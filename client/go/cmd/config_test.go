@@ -43,6 +43,14 @@ func TestConfig(t *testing.T) {
 
 	assertConfigCommand(t, configHome, "", "config", "set", "application", "t1.a1")
 	assertConfigCommand(t, configHome, "application = t1.a1.default\n", "config", "get", "application")
+
+	// Write empty value, which should be ignored. This is for compatibility with older config formats
+	configFile := filepath.Join(configHome, "config.yaml")
+	data, err := os.ReadFile(configFile)
+	require.Nil(t, err)
+	config := string(data) + "zone: \"\"\n"
+	require.Nil(t, os.WriteFile(configFile, []byte(config), 0600))
+	assertConfigCommand(t, configHome, "zone = <unset>\n", "config", "get", "zone")
 }
 
 func TestLocalConfig(t *testing.T) {

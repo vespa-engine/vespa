@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -18,15 +17,14 @@ import (
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"github.com/spf13/viper"
 	"github.com/vespa-engine/vespa/client/go/auth/auth0"
+	"github.com/vespa-engine/vespa/client/go/config"
 	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
 const (
-	configName = "config"
-	configType = "yaml"
+	configFile = "config.yaml"
 )
 
 func newConfigCmd() *cobra.Command {
@@ -143,9 +141,6 @@ $ vespa config set --local wait 600
 				if _, err := cli.applicationPackageFrom(nil, false); err != nil {
 					return fmt.Errorf("failed to write local configuration: %w", err)
 				}
-				if err := cli.config.loadLocalConfigFrom(".", true, true); err != nil {
-					return fmt.Errorf("failed to create local configuration: %w", err)
-				}
 				config = cli.config.local
 			}
 			if err := config.set(args[0], args[1]); err != nil {
@@ -179,14 +174,11 @@ $ vespa config get --local
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := cli.config
 			if localArg {
-				if err := cli.config.loadLocalConfigFrom(".", false, true); err != nil {
-					return fmt.Errorf("failed to load local configuration: %w", err)
-				}
-				config = cli.config.local
-				if config == nil {
+				if cli.config.local == nil {
 					cli.printWarning("no local configuration present")
 					return nil
 				}
+				config = cli.config.local
 			}
 			if len(args) == 0 { // Print all values
 				for _, option := range config.list() {
@@ -208,8 +200,8 @@ type Config struct {
 	environment map[string]string
 	local       *Config
 
-	flags *pflag.FlagSet
-	viper *viper.Viper
+	flags  map[string]*pflag.Flag
+	config *config.Config
 }
 
 type KeyPair struct {
@@ -218,23 +210,23 @@ type KeyPair struct {
 	PrivateKeyFile  string
 }
 
-func loadConfig(environment map[string]string, globalFlags *pflag.FlagSet) (*Config, error) {
+func loadConfig(environment map[string]string, flags map[string]*pflag.Flag) (*Config, error) {
 	home, err := vespaCliHome(environment)
 	if err != nil {
 		return nil, fmt.Errorf("could not detect config directory: %w", err)
 	}
-	config, err := loadConfigFrom(home, environment, globalFlags)
+	config, err := loadConfigFrom(home, environment, flags)
 	if err != nil {
 		return nil, err
 	}
-	// Load local config from working directory by default, if any
-	if err := config.loadLocalConfigFrom(".", false, false); err != nil {
+	// Load local config from working directory by default
+	if err := config.loadLocalConfigFrom("."); err != nil {
 		return nil, err
 	}
 	return config, nil
 }
 
-func loadConfigFrom(dir string, environment map[string]string, globalFlags *pflag.FlagSet) (*Config, error) {
+func loadConfigFrom(dir string, environment map[string]string, flags map[string]*pflag.Flag) (*Config, error) {
 	cacheDir, err := vespaCliCacheDir(environment)
 	if err != nil {
 		return nil, fmt.Errorf("could not detect cache directory: %w", err)
@@ -243,38 +235,32 @@ func loadConfigFrom(dir string, environment map[string]string, globalFlags *pfla
 		homeDir:     dir,
 		cacheDir:    cacheDir,
 		environment: environment,
-		flags:       globalFlags,
+		flags:       flags,
 	}
-	v := viper.New()
-	v.SetConfigName(configName)
-	v.SetConfigType(configType)
-	v.AddConfigPath(c.homeDir)
-	v.BindPFlags(globalFlags)
-	c.viper = v
-	if err := v.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+	f, err := os.Open(filepath.Join(dir, configFile))
+	var cfg *config.Config
+	if os.IsNotExist(err) {
+		cfg = config.New()
+	} else if err != nil {
+		return nil, err
+	} else {
+		defer f.Close()
+		cfg, err = config.Read(f)
+		if err != nil {
 			return nil, err
 		}
 	}
+	c.config = cfg
 	return c, nil
 }
 
-func (c *Config) loadLocalConfigFrom(parent string, create, noFlags bool) error {
+func (c *Config) loadLocalConfigFrom(parent string) error {
 	home := filepath.Join(parent, ".vespa")
 	_, err := os.Stat(home)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return err
-		}
-		if !create {
-			return nil
-		}
+	if err != nil && !os.IsNotExist(err) {
+		return err
 	}
-	flags := c.flags
-	if noFlags {
-		flags = &pflag.FlagSet{}
-	}
-	config, err := loadConfigFrom(home, c.environment, flags)
+	config, err := loadConfigFrom(home, c.environment, c.flags)
 	if err != nil {
 		return err
 	}
@@ -286,14 +272,8 @@ func (c *Config) write() error {
 	if err := os.MkdirAll(c.homeDir, 0700); err != nil {
 		return err
 	}
-	configFile := filepath.Join(c.homeDir, configName+"."+configType)
-	if !util.PathExists(configFile) {
-		if _, err := os.Create(configFile); err != nil {
-			return err
-		}
-	}
-	err := c.viper.WriteConfig()
-	return err
+	configFile := filepath.Join(c.homeDir, configFile)
+	return c.config.WriteFile(configFile)
 }
 
 func (c *Config) targetType() (string, error) {
@@ -470,28 +450,46 @@ func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (stri
 	return filepath.Join(appDir, name), nil
 }
 
-func (c *Config) list() []string {
-	options := c.viper.AllKeys()
-	sort.Strings(options)
-	return options
+func (c *Config) list() []string { return c.config.Keys() }
+
+// flagValue returns the set value and default value of the named flag.
+func (c *Config) flagValue(name string) (string, string) {
+	f, ok := c.flags[name]
+	if !ok {
+		return "", ""
+	}
+	return f.Value.String(), f.DefValue
 }
 
-func (c *Config) isSet(option string) bool { return c.viper.IsSet(option) }
-
-func (c *Config) get(option string) (string, bool) {
-	if c.local != nil {
-		// when reading from local config, the option must be explicitly set to be considered
-		if c.local.isSet(option) {
-			if value, ok := c.local.get(option); ok {
-				return value, ok
-			}
-		}
-	}
-	value := c.viper.GetString(option)
-	if value == "" {
+// getNonEmpty returns value of given option, if that value is non-empty
+func (c *Config) getNonEmpty(option string) (string, bool) {
+	v, ok := c.config.Get(option)
+	if v == "" {
 		return "", false
 	}
-	return value, true
+	return v, ok
+}
+
+// get returns the value associated with option, from the most preferred source in the following order: flag > local
+// config > global config.
+func (c *Config) get(option string) (string, bool) {
+	flagValue, flagDefault := c.flagValue(option)
+	// explicit flag value always takes precedence over everything else
+	if flagValue != flagDefault {
+		return flagValue, true
+	}
+	// ... then local config, if option is explicitly defined there
+	if c.local != nil {
+		if value, ok := c.local.getNonEmpty(option); ok {
+			return value, ok
+		}
+	}
+	// ... then global config
+	if v, ok := c.getNonEmpty(option); ok {
+		return v, ok
+	}
+	// ... then finally default flag value, if any
+	return flagDefault, flagDefault != ""
 }
 
 func (c *Config) set(option, value string) error {
@@ -499,11 +497,11 @@ func (c *Config) set(option, value string) error {
 	case targetFlag:
 		switch value {
 		case vespa.TargetLocal, vespa.TargetCloud, vespa.TargetHosted:
-			c.viper.Set(option, value)
+			c.config.Set(option, value)
 			return nil
 		}
 		if strings.HasPrefix(value, "http://") || strings.HasPrefix(value, "https://") {
-			c.viper.Set(option, value)
+			c.config.Set(option, value)
 			return nil
 		}
 	case applicationFlag:
@@ -511,27 +509,27 @@ func (c *Config) set(option, value string) error {
 		if err != nil {
 			return err
 		}
-		c.viper.Set(option, app.String())
+		c.config.Set(option, app.String())
 		return nil
 	case instanceFlag:
-		c.viper.Set(option, value)
+		c.config.Set(option, value)
 		return nil
 	case waitFlag:
 		if n, err := strconv.Atoi(value); err != nil || n < 0 {
 			return fmt.Errorf("%s option must be an integer >= 0, got %q", option, value)
 		}
-		c.viper.Set(option, value)
+		c.config.Set(option, value)
 		return nil
 	case colorFlag:
 		switch value {
 		case "auto", "never", "always":
-			c.viper.Set(option, value)
+			c.config.Set(option, value)
 			return nil
 		}
 	case quietFlag:
 		switch value {
 		case "true", "false":
-			c.viper.Set(option, value)
+			c.config.Set(option, value)
 			return nil
 		}
 	}
