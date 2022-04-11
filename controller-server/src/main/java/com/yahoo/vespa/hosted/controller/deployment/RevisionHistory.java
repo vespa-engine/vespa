@@ -46,6 +46,12 @@ public class RevisionHistory {
         for (ApplicationVersion revision : productionRevisions)
             production.put(revision.id(), revision);
 
+        // TODO jonmv: remove once it's run once on serialised data
+        String hash = "";
+        for (ApplicationVersion revision : List.copyOf(production.values()))
+            if (hash.equals(hash = revision.bundleHash().orElse("")) && ! hash.isEmpty())
+                production.put(revision.id(), revision.skipped());
+
         NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(comparator);
         developmentRevisions.forEach((job, jobRevisions) -> {
             NavigableMap<RevisionId, ApplicationVersion> revisions = development.computeIfAbsent(job, __ -> new TreeMap<>());
@@ -70,8 +76,11 @@ public class RevisionHistory {
         return new RevisionHistory(production, development);
     }
 
-    /** Returns a copy of this with the production revision added or updated */
+    /** Returns a copy of this with the production revision added or updated. */
     public RevisionHistory with(ApplicationVersion revision) {
+        if ( ! production.isEmpty() && revision.bundleHash().flatMap(hash -> production.lastEntry().getValue().bundleHash().map(hash::equals)).orElse(false))
+            revision = revision.skipped();
+
         NavigableMap<RevisionId, ApplicationVersion> production = new TreeMap<>(this.production);
         production.put(revision.id(), revision);
         return new RevisionHistory(production, development);
@@ -117,13 +126,11 @@ public class RevisionHistory {
     /** Returns the currently deployable revisions of the application. */
     public Deque<ApplicationVersion> deployable(boolean ascending) {
         Deque<ApplicationVersion> versions = new ArrayDeque<>();
-        String previousHash = "";
         for (ApplicationVersion version : withPackage()) {
-            if (version.isDeployable() && (version.bundleHash().isEmpty() || ! previousHash.equals(version.bundleHash().get()))) {
+            if (version.isDeployable()) {
                 if (ascending) versions.addLast(version);
                 else versions.addFirst(version);
             }
-            previousHash = version.bundleHash().orElse("");
         }
         return versions;
     }

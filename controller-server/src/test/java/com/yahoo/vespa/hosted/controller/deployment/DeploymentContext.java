@@ -272,8 +272,8 @@ public class DeploymentContext {
     }
 
     /** Submit given application package for deployment */
-    public DeploymentContext submit(ApplicationPackage applicationPackage, long salt) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt, 0);
+    public DeploymentContext submit(ApplicationPackage applicationPackage, long salt, int risk) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt, risk);
     }
 
     /** Submit given application package for deployment */

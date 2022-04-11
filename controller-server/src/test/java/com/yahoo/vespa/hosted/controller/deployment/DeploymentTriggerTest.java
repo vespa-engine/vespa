@@ -221,7 +221,7 @@ public class DeploymentTriggerTest {
                 .region("us-east-3")
                 .build();
 
-        DeploymentContext app = tester.newDeploymentContext().submit(firstPackage, 5417);
+        DeploymentContext app = tester.newDeploymentContext().submit(firstPackage, 5417, 0);
         var version = app.lastSubmission();
         assertEquals(version, app.instance().change().application());
         app.runJob(systemTest)
@@ -238,7 +238,7 @@ public class DeploymentTriggerTest {
                 .test("us-east-3")
                 .build();
 
-        app.submit(secondPackage, 5417);
+        app.submit(secondPackage, 5417, 0);
         app.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
         assertEquals(version, app.instance().change().application());
@@ -249,7 +249,7 @@ public class DeploymentTriggerTest {
         assertEquals(Change.empty(), app.instance().change());
 
         // The original application package is submitted again. No new jobs are added, so no change needs to roll out now.
-        app.submit(firstPackage, 5417);
+        app.submit(firstPackage, 5417, 0);
         app.triggerJobs();
         assertEquals(List.of(), tester.jobs().active());
         assertEquals(Change.empty(), app.instance().change());

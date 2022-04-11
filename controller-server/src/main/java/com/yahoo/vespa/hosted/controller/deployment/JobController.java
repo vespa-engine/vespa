@@ -471,9 +471,9 @@ public class JobController {
                                                 testPackageBytes,
                                                 diff);
             applications.applicationStore().putMeta(id.tenant(),
-                                                                 id.application(),
-                                                                 controller.clock().instant(),
-                                                                 applicationPackage.metaDataZip());
+                                                    id.application(),
+                                                    controller.clock().instant(),
+                                                    applicationPackage.metaDataZip());
 
             application = application.withProjectId(OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
