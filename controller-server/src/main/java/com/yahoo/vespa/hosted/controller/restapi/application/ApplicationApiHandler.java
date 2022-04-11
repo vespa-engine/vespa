@@ -2543,17 +2543,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
     }
 
-    /*
-    private void toSlime(Run run, Cursor object) {
-        object.setLong("id", run.id().number());
-        object.setString("version", run.versions().targetPlatform().toFullString());
-        if ( ! run.versions().targetRevision().isUnknown())
-            JobControllerApiHandlerHelper.toSlime(object.setObject("revision"), run.versions().targetRevision());
-        object.setString("reason", "unknown reason");
-        object.setLong("at", run.end().orElse(run.start()).toEpochMilli());
-    }
-    */
-
     private Slime toSlime(InputStream jsonStream) {
         try {
             byte[] jsonBytes = IOUtils.readBytes(jsonStream, 1000 * 1000);
