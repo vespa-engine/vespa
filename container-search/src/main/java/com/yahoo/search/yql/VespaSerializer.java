@@ -548,8 +548,8 @@ public class VespaSerializer {
         }
 
         static String fuzzyAnnotations(FuzzyItem fuzzyItem) {
-            boolean isMaxEditDistanceSet = fuzzyItem.getMaxEditDistance() != FuzzyItem.DefaultMaxEditDistance;
-            boolean isPrefixLengthSet = fuzzyItem.getPrefixLength() != FuzzyItem.DefaultPrefixLength;
+            boolean isMaxEditDistanceSet = fuzzyItem.getMaxEditDistance() != FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE;
+            boolean isPrefixLengthSet = fuzzyItem.getPrefixLength() != FuzzyItem.DEFAULT_PREFIX_LENGTH;
             boolean anyAnnotationSet = isMaxEditDistanceSet || isPrefixLengthSet;
 
             StringBuilder builder = new StringBuilder();

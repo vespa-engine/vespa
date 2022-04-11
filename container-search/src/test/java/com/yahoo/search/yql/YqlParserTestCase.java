@@ -387,8 +387,8 @@ public class YqlParserTestCase {
         assertSame(FuzzyItem.class, root.getClass());
         assertEquals("baz", ((FuzzyItem) root).getIndexName());
         assertEquals("a b", ((FuzzyItem) root).stringValue());
-        assertEquals(FuzzyItem.DefaultMaxEditDistance, ((FuzzyItem) root).getMaxEditDistance());
-        assertEquals(FuzzyItem.DefaultPrefixLength, ((FuzzyItem) root).getPrefixLength());
+        assertEquals(FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE, ((FuzzyItem) root).getMaxEditDistance());
+        assertEquals(FuzzyItem.DEFAULT_PREFIX_LENGTH, ((FuzzyItem) root).getPrefixLength());
     }
 
     @Test

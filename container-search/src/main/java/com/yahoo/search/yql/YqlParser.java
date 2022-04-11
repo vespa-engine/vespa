@@ -1322,14 +1322,14 @@ public class YqlParser implements Parser {
                 ast,
                 MAX_EDIT_DISTANCE,
                 Integer.class,
-                FuzzyItem.DefaultMaxEditDistance,
+                FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE,
                 MAX_EDIT_DISTANCE_DESCRIPTION);
 
         Integer prefixLength = getAnnotation(
                 ast,
                 PREFIX_LENGTH,
                 Integer.class,
-                FuzzyItem.DefaultPrefixLength,
+                FuzzyItem.DEFAULT_PREFIX_LENGTH,
                 PREFIX_LENGTH_DESCRIPTION);
 
         FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength);

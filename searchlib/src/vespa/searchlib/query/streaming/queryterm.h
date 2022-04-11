@@ -87,8 +87,6 @@ public:
     const string & getIndex() const override { return _index; }
     void setFuzzyMaxEditDistance(uint32_t fuzzyMaxEditDistance) { _fuzzyMaxEditDistance = fuzzyMaxEditDistance; }
     void setFuzzyPrefixLength(uint32_t fuzzyPrefixLength) { _fuzzyPrefixLength = fuzzyPrefixLength; }
-    uint32_t fuzzyMaxEditDistance() const { return _fuzzyMaxEditDistance; }
-    uint32_t fuzzyPrefixLength() const { return _fuzzyPrefixLength; }
 protected:
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;

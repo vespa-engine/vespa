@@ -17,8 +17,8 @@ public class FuzzyItem extends TermItem {
     private int maxEditDistance;
     private int prefixLength;
 
-    public static int DefaultMaxEditDistance = 2;
-    public static int DefaultPrefixLength = 0;
+    public static int DEFAULT_MAX_EDIT_DISTANCE = 2;
+    public static int DEFAULT_PREFIX_LENGTH = 0;
 
     public FuzzyItem(String indexName, boolean isFromQuery, String term, int maxEditDistance, int prefixLength) {
         super(indexName, isFromQuery, null);

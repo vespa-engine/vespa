@@ -1169,8 +1169,8 @@ public class SelectParser implements Parser {
 
         String wordData = children.get(0).asString();
 
-        Integer maxEditDistance = getIntegerAnnotation(MAX_EDIT_DISTANCE, annotations, FuzzyItem.DefaultMaxEditDistance);
-        Integer prefixLength = getIntegerAnnotation(PREFIX_LENGTH, annotations, FuzzyItem.DefaultPrefixLength);
+        Integer maxEditDistance = getIntegerAnnotation(MAX_EDIT_DISTANCE, annotations, FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE);
+        Integer prefixLength = getIntegerAnnotation(PREFIX_LENGTH, annotations, FuzzyItem.DEFAULT_PREFIX_LENGTH);
 
         FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength);
 
