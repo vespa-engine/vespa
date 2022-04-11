@@ -157,7 +157,9 @@ public class History {
             // The active node was retired
             retired,
             // The active node went down according to the service monitor
-            down, 
+            down,
+            // The active node came up according to the service monitor
+            up,
             // The node made a config request, indicating it is live
             requested,
             // The node resources/flavor were changed
@@ -168,9 +170,9 @@ public class History {
             osUpgraded(false),
             // The node verified its firmware (whether this resulted in a reboot depends on the node model)
             firmwareVerified(false);
-            
+
             private final boolean applicationLevel;
-            
+
             /** Creates an application level event */
             Type() {
                 this.applicationLevel = true;
@@ -179,7 +181,7 @@ public class History {
             Type(boolean applicationLevel) {
                 this.applicationLevel = applicationLevel;
             }
-            
+
             /** Returns true if this is an application level event and false it it is a node level event */
             public boolean isApplicationLevel() { return applicationLevel; }
         }
