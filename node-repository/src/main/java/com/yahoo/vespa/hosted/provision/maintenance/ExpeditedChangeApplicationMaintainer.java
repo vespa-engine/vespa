@@ -78,11 +78,11 @@ public class ExpeditedChangeApplicationMaintainer extends ApplicationMaintainer 
 
         List<String> reasons = nodes.stream()
                                     .flatMap(node -> node.history()
-                                                            .events()
-                                                            .stream()
-                                                            .filter(event -> expediteChangeBy(event.agent()))
-                                                            .filter(event -> lastDeployTime.get().isBefore(event.at()))
-                                                            .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
+                                                         .asList()
+                                                         .stream()
+                                                         .filter(event -> expediteChangeBy(event.agent()))
+                                                         .filter(event -> lastDeployTime.get().isBefore(event.at()))
+                                                         .map(event -> event.type() + (event.agent() == Agent.system ? "" : " by " + event.agent())))
                                     .sorted()
                                     .distinct()
                                     .collect(Collectors.toList());

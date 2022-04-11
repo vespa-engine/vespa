@@ -219,7 +219,7 @@ public class NodeSerializer {
     }
 
     private void toSlime(History history, Cursor array) {
-        for (History.Event event : history.events())
+        for (History.Event event : history.asList())
             toSlime(event, array.addObject());
     }
 

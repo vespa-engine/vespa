@@ -155,7 +155,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         for (Node node : activeNodes) {
             Instant graceTimeStart = clock().instant().minus(nodeRepository().nodes().suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
-            if (node.history().hasEventBefore(History.Event.Type.down, graceTimeStart) && !applicationSuspended(node)) {
+            if (downBefore(graceTimeStart, node) && !applicationSuspended(node)) {
                 // Allow a grace period after node re-activation
                 if (!node.history().hasEventAfter(History.Event.Type.activated, graceTimeStart))
                     failingNodes.add(new FailingNode(node, "Node has been down longer than " + downTimeLimit));
@@ -276,6 +276,11 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 return false;
             }
         }
+    }
+
+    /** Returns whether node is down, and has been down since before given instant */
+    private static boolean downBefore(Instant instant, Node node) {
+        return node.isDown() && node.history().event(History.Event.Type.down).get().at().isBefore(instant);
     }
 
     private void wantToFail(Node node, boolean wantToFail, Mutex lock) {

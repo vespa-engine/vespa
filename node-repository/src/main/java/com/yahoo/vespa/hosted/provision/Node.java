@@ -347,19 +347,24 @@ public final class Node implements Nodelike {
                         allocation, history, type, reports, Optional.empty(), reservedTo, exclusiveToApplicationId, exclusiveToClusterType, switchHostname, trustStoreItems);
     }
 
-    /** Returns a copy of this with a history record saying it was detected to be down at this instant */
+    /** Returns a copy of this with a history record saying it was detected to be down at given instant */
     public Node downAt(Instant instant, Agent agent) {
         return with(history.with(new History.Event(History.Event.Type.down, agent, instant)));
     }
 
-    /** Returns a copy of this with any history record saying it has been detected down removed */
-    public Node up() {
-        return with(history.without(History.Event.Type.down));
+    /** Returns a copy of this with a history record saying it was detected to be up at given instant */
+    public Node upAt(Instant instant, Agent agent) {
+        return with(history.with(new History.Event(History.Event.Type.up, agent, instant)));
     }
 
-    /** Returns whether this node has a record of being down */
+    /** Returns whether this node is down, according to its recorded 'down' and 'up' events */
     public boolean isDown() {
-        return history().event(History.Event.Type.down).isPresent();
+        Optional<Instant> downAt = history().event(History.Event.Type.down).map(History.Event::at);
+        if (downAt.isEmpty()) return false;
+
+        Optional<Instant> upAt = history().event(History.Event.Type.up).map(History.Event::at);
+        if (upAt.isEmpty()) return true;
+        return !downAt.get().isBefore(upAt.get());
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */

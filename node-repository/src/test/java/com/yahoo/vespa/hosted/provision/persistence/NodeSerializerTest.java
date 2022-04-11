@@ -71,7 +71,7 @@ public class NodeSerializerTest {
         assertEquals(node.id(), copy.id());
         assertEquals(node.state(), copy.state());
         assertFalse(copy.allocation().isPresent());
-        assertEquals(0, copy.history().events().size());
+        assertEquals(0, copy.history().asList().size());
     }
 
     @Test
@@ -81,14 +81,14 @@ public class NodeSerializerTest {
                                                              DiskSpeed.any, StorageType.any, Architecture.arm64);
 
         clock.advance(Duration.ofMinutes(3));
-        assertEquals(0, node.history().events().size());
+        assertEquals(0, node.history().asList().size());
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
                              ClusterMembership.from("content/myId/0/0/stateful", Vtag.currentVersion, Optional.empty()),
                              requestedResources,
                              clock.instant());
-        assertEquals(1, node.history().events().size());
+        assertEquals(1, node.history().asList().size());
         node = node.withRestart(new Generation(1, 2));
         node = node.withReboot(new Generation(3, 4));
         node = node.with(FlavorConfigBuilder.createDummies("arm64").getFlavorOrThrow("arm64"), Agent.system, clock.instant());
@@ -112,7 +112,7 @@ public class NodeSerializerTest {
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
         assertEquals(node.allocation().get().requestedResources(), copy.allocation().get().requestedResources());
         assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
-        assertEquals(2, copy.history().events().size());
+        assertEquals(2, copy.history().asList().size());
         assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.reserved).get().at());
         assertEquals(NodeType.tenant, copy.type());
     }
@@ -160,7 +160,7 @@ public class NodeSerializerTest {
         assertEquals(3, node.allocation().get().restartGeneration().wanted());
         assertEquals(4, node.allocation().get().restartGeneration().current());
         assertEquals(Arrays.asList(History.Event.Type.provisioned, History.Event.Type.reserved),
-                node.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
+                node.history().asList().stream().map(History.Event::type).collect(Collectors.toList()));
         assertTrue(node.allocation().get().isRemovable());
         assertEquals(NodeType.tenant, node.type());
     }
@@ -170,18 +170,18 @@ public class NodeSerializerTest {
         Node node = createNode();
 
         clock.advance(Duration.ofMinutes(3));
-        assertEquals(0, node.history().events().size());
+        assertEquals(0, node.history().asList().size());
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
                                                 ApplicationName.from("myApplication"),
                                                 InstanceName.from("myInstance")),
                              ClusterMembership.from("content/myId/0/0/stateful", Vtag.currentVersion, Optional.empty()),
                              node.flavor().resources(),
                              clock.instant());
-        assertEquals(1, node.history().events().size());
+        assertEquals(1, node.history().asList().size());
         clock.advance(Duration.ofMinutes(2));
         node = node.retire(Agent.application, clock.instant());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
-        assertEquals(2, copy.history().events().size());
+        assertEquals(2, copy.history().asList().size());
         assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.retired).get().at());
         assertEquals(Agent.application,
                      (copy.history().event(History.Event.Type.retired).get()).agent());
@@ -209,13 +209,13 @@ public class NodeSerializerTest {
                 "    \"wantedVespaVersion\": \"6.42.2\"\n" +
                 "  }\n" +
                 "}\n").getBytes());
-        assertEquals(0, node.history().events().size());
+        assertEquals(0, node.history().asList().size());
         assertTrue(node.allocation().isPresent());
         assertEquals("ugccloud-container", node.allocation().get().membership().cluster().id().value());
         assertEquals("container", node.allocation().get().membership().cluster().type().name());
         assertEquals(0, node.allocation().get().membership().cluster().group().get().index());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
-        assertEquals(0, copy.history().events().size());
+        assertEquals(0, copy.history().asList().size());
     }
 
     @Test
@@ -356,7 +356,7 @@ public class NodeSerializerTest {
                                .withCurrentOsVersion(Version.fromString("7.1"), Instant.ofEpochMilli(456));
         serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(serialized));
         assertEquals(Version.fromString("7.1"), serialized.status().osVersion().current().get());
-        var osUpgradedEvents = serialized.history().events().stream()
+        var osUpgradedEvents = serialized.history().asList().stream()
                                          .filter(event -> event.type() == History.Event.Type.osUpgraded)
                                          .collect(Collectors.toList());
         assertEquals("OS upgraded event is added", 1, osUpgradedEvents.size());

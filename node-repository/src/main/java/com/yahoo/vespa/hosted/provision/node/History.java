@@ -1,17 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.node;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Instant;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * An immutable record of the last event of each type happening to this node.
+ * An immutable list of events happening to this node, in chronological order.
+ *
  * Note that the history cannot be used to find the nodes current state - it will have a record of some
  * event happening in the past even if that event is later undone.
  *
@@ -19,67 +21,63 @@ import java.util.stream.Collectors;
  */
 public class History {
 
-    private final ImmutableMap<Event.Type, Event> events;
+    /** The maximum number of events to keep for a node */
+    private static final int MAX_SIZE = 15;
 
-    public History(Collection<Event> events) {
-        this(toImmutableMap(events));
+    private final List<Event> events;
+
+    public History(List<Event> events) {
+        this(events, MAX_SIZE);
     }
 
-    private History(ImmutableMap<Event.Type, Event> events) {
-        this.events = events;
+    History(List<Event> events, int maxSize) {
+        this.events = Objects.requireNonNull(events, "events must be non-null")
+                             .stream()
+                             .sorted(Comparator.comparing(Event::at))
+                             .skip(Math.max(events.size() - maxSize, 0))
+                             .collect(Collectors.toUnmodifiableList());
     }
 
-    private static ImmutableMap<Event.Type, Event> toImmutableMap(Collection<Event> events) {
-        ImmutableMap.Builder<Event.Type, Event> builder = new ImmutableMap.Builder<>();
-        for (Event event : events)
-            builder.put(event.type(), event);
-        return builder.build();
+    /** Returns the latest event of given type, if it is present in this history */
+    public Optional<Event> event(Event.Type type) {
+        return events.stream().filter(event -> event.type() == type).max(Comparator.comparing(Event::at));
     }
-
-    /** Returns this event if it is present in this history */
-    public Optional<Event> event(Event.Type type) { return Optional.ofNullable(events.get(type)); }
 
     /** Returns true if a given event is registered in this history at the given time */
     public boolean hasEventAt(Event.Type type, Instant time) {
-        return event(type)
-                       .map(event -> event.at().equals(time))
-                       .orElse(false);
+        return event(type).map(event -> event.at().equals(time))
+                          .orElse(false);
     }
 
     /** Returns true if a given event is registered in this history after the given time */
     public boolean hasEventAfter(Event.Type type, Instant time) {
-        return event(type)
-                .map(event -> event.at().isAfter(time))
-                .orElse(false);
+        return event(type).map(event -> event.at().isAfter(time))
+                          .orElse(false);
     }
 
     /** Returns true if a given event is registered in this history before the given time */
     public boolean hasEventBefore(Event.Type type, Instant time) {
-        return event(type)
-                .map(event -> event.at().isBefore(time))
-                .orElse(false);
+        return event(type).map(event -> event.at().isBefore(time))
+                          .orElse(false);
     }
 
-    public Collection<Event> events() { return events.values(); }
+    public List<Event> asList() {
+        return events;
+    }
 
     /** Returns a copy of this history with the given event added */
     public History with(Event event) {
-        ImmutableMap.Builder<Event.Type, Event> builder = builderWithout(event.type());
-        builder.put(event.type(), event);
-        return new History(builder.build());
-    }
-
-    /** Returns a copy of this history with the given event type removed (or an identical history if it was not present) */
-    public History without(Event.Type type) {
-        return new History(builderWithout(type).build());
-    }
-
-    private ImmutableMap.Builder<Event.Type, Event> builderWithout(Event.Type type) {
-        ImmutableMap.Builder<Event.Type, Event> builder = new ImmutableMap.Builder<>();
-        for (Event event : events.values())
-            if (event.type() != type)
-                builder.put(event.type(), event);
-        return builder;
+        List<Event> copy = new ArrayList<>(events);
+        if (!copy.isEmpty()) {
+            // Let given event overwrite the latest if they're of the same type. Some events may be repeated, such as
+            // 'reserved'
+            Event last = copy.get(copy.size() - 1);
+            if (last.type() == event.type()) {
+                copy.remove(last);
+            }
+        }
+        copy.add(event);
+        return new History(copy);
     }
 
     /** Returns a copy of this history with a record of this state transition added, if applicable */
@@ -106,17 +104,17 @@ public class History {
      * This returns a copy of this history with all application level events removed. 
      */
     private History withoutApplicationEvents() {
-        return new History(events().stream().filter(e -> ! e.type().isApplicationLevel()).collect(Collectors.toList()));
+        return new History(asList().stream().filter(e -> ! e.type().isApplicationLevel()).collect(Collectors.toList()));
     }
 
     /** Returns the empty history */
-    public static History empty() { return new History(Collections.emptyList()); }
+    public static History empty() { return new History(List.of()); }
 
     @Override
     public String toString() {
         if (events.isEmpty()) return "history: (empty)";
         StringBuilder b = new StringBuilder("history: ");
-        for (Event e : events.values())
+        for (Event e : events)
             b.append(e).append(", ");
          b.setLength(b.length() - 2); // remove last comma
         return b.toString();
@@ -148,27 +146,27 @@ public class History {
             readied,
             reserved,
 
-            // The node was scheduled for retirement (hard)
+            /** The node was scheduled for retirement (hard) */
             wantToRetire(false),
-            // The node was scheduled for retirement (soft)
+            /** The node was scheduled for retirement (soft) */
             preferToRetire(false),
-            // This node was scheduled for failing
+            /** This node was scheduled for failing */
             wantToFail,
-            // The active node was retired
+            /** The active node was retired */
             retired,
-            // The active node went down according to the service monitor
+            /** The active node went down according to the service monitor */
             down,
-            // The active node came up according to the service monitor
+            /** The active node came up according to the service monitor */
             up,
-            // The node made a config request, indicating it is live
+            /** The node made a config request, indicating it is live */
             requested,
-            // The node resources/flavor were changed
+            /** The node resources/flavor were changed */
             resized(false),
-            // The node was rebooted
+            /** The node was rebooted */
             rebooted(false),
-            // The node upgraded its OS (implies a reboot)
+            /** The node upgraded its OS (implies a reboot) */
             osUpgraded(false),
-            // The node verified its firmware (whether this resulted in a reboot depends on the node model)
+            /** The node verified its firmware (whether this resulted in a reboot depends on the node model) */
             firmwareVerified(false);
 
             private final boolean applicationLevel;
