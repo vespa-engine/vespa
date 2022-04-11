@@ -38,7 +38,7 @@ import static org.junit.Assert.fail;
  */
 public class ContainerTester {
 
-    private static final boolean writeResponses = true;
+    private static final boolean writeResponses = false;
 
     private final JDisc container;
     private final String responseFilePath;
