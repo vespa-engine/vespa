@@ -359,7 +359,7 @@ public class ApplicationSerializer {
         Map<JobId, List<ApplicationVersion>> devRevisions = new HashMap<>();
         devVersionsArray.traverse((ArrayTraverser) (__, devRevisionsObject) -> {
             JobId job = jobIdFromSlime(id, devRevisionsObject);
-            devRevisions.put(jobIdFromSlime(id, devRevisionsObject), revisionsFromSlime(devRevisionsObject.field(versionsField), job));
+            devRevisions.put(job, revisionsFromSlime(devRevisionsObject.field(versionsField), job));
         });
 
         return RevisionHistory.ofRevisions(revisions, devRevisions);
