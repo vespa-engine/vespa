@@ -15,8 +15,10 @@ import (
 func TestConfig(t *testing.T) {
 	configHome := t.TempDir()
 	assertConfigCommandErr(t, configHome, "Error: invalid option or value: foo = bar\n", "config", "set", "foo", "bar")
-	assertConfigCommand(t, configHome, "foo = <unset>\n", "config", "get", "foo")
-	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "target")
+	assertConfigCommandErr(t, configHome, "Error: invalid option: foo\n", "config", "get", "foo")
+
+	// target
+	assertConfigCommand(t, configHome, "target = local\n", "config", "get", "target") // default value
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "hosted")
 	assertConfigCommand(t, configHome, "target = hosted\n", "config", "get", "target")
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "cloud")
@@ -25,30 +27,48 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "target", "https://127.0.0.1")
 	assertConfigCommand(t, configHome, "target = https://127.0.0.1\n", "config", "get", "target")
 
+	// application
 	assertConfigCommandErr(t, configHome, "Error: invalid application: \"foo\"\n", "config", "set", "application", "foo")
 	assertConfigCommand(t, configHome, "application = <unset>\n", "config", "get", "application")
 	assertConfigCommand(t, configHome, "", "config", "set", "application", "t1.a1.i1")
 	assertConfigCommand(t, configHome, "application = t1.a1.i1\n", "config", "get", "application")
-
-	assertConfigCommand(t, configHome, "", "config", "set", "wait", "60")
-	assertConfigCommandErr(t, configHome, "Error: wait option must be an integer >= 0, got \"foo\"\n", "config", "set", "wait", "foo")
-	assertConfigCommand(t, configHome, "wait = 60\n", "config", "get", "wait")
-	assertConfigCommand(t, configHome, "wait = 30\n", "config", "get", "--wait", "30", "wait") // flag overrides global config
-
-	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "true")
-	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "false")
-
-	assertConfigCommand(t, configHome, "", "config", "set", "instance", "i2")
-	assertConfigCommand(t, configHome, "instance = i2\n", "config", "get", "instance")
-
 	assertConfigCommand(t, configHome, "", "config", "set", "application", "t1.a1")
 	assertConfigCommand(t, configHome, "application = t1.a1.default\n", "config", "get", "application")
 
-	// Write empty value, which should be ignored. This is for compatibility with older config formats
+	// instance
+	assertConfigCommand(t, configHome, "instance = <unset>\n", "config", "get", "instance")
+	assertConfigCommand(t, configHome, "", "config", "set", "instance", "i2")
+	assertConfigCommand(t, configHome, "instance = i2\n", "config", "get", "instance")
+
+	// wait
+	assertConfigCommandErr(t, configHome, "Error: wait option must be an integer >= 0, got \"foo\"\n", "config", "set", "wait", "foo")
+	assertConfigCommand(t, configHome, "", "config", "set", "wait", "60")
+	assertConfigCommand(t, configHome, "wait = 60\n", "config", "get", "wait")
+	assertConfigCommand(t, configHome, "wait = 30\n", "config", "get", "--wait", "30", "wait") // flag overrides global config
+
+	// color
+	assertConfigCommandErr(t, configHome, "Error: invalid option or value: color = foo\n", "config", "set", "color", "foo")
+	assertConfigCommand(t, configHome, "", "config", "set", "color", "never")
+	assertConfigCommand(t, configHome, "color = never\n", "config", "get", "color")
+	assertConfigCommand(t, configHome, "", "config", "unset", "color")
+	assertConfigCommand(t, configHome, "color = auto\n", "config", "get", "color")
+
+	// quiet
+	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "true")
+	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "false")
+
+	// zone
+	assertConfigCommand(t, configHome, "", "config", "set", "zone", "dev.us-east-1")
+	assertConfigCommand(t, configHome, "zone = dev.us-east-1\n", "config", "get", "zone")
+
+	// Write empty value to YAML config, which should be ignored. This is for compatibility with older config formats
 	configFile := filepath.Join(configHome, "config.yaml")
+	assertConfigCommand(t, configHome, "", "config", "unset", "zone")
 	data, err := os.ReadFile(configFile)
 	require.Nil(t, err)
-	config := string(data) + "zone: \"\"\n"
+	yamlConfig := string(data)
+	assert.NotContains(t, yamlConfig, "zone:")
+	config := yamlConfig + "zone: \"\"\n"
 	require.Nil(t, os.WriteFile(configFile, []byte(config), 0600))
 	assertConfigCommand(t, configHome, "zone = <unset>\n", "config", "get", "zone")
 }

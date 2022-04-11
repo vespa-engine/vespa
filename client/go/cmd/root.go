@@ -229,6 +229,7 @@ func (c *CLI) configureCommands() {
 	rootCmd.AddCommand(newCloneCmd(c))              // clone
 	configCmd.AddCommand(newConfigGetCmd(c))        // config get
 	configCmd.AddCommand(newConfigSetCmd(c))        // config set
+	configCmd.AddCommand(newConfigUnsetCmd(c))      // config unset
 	rootCmd.AddCommand(configCmd)                   // config
 	rootCmd.AddCommand(newCurlCmd(c))               // curl
 	rootCmd.AddCommand(newDeployCmd(c))             // deploy
