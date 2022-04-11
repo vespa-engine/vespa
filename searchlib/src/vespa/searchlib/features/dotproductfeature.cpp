@@ -402,8 +402,8 @@ DotProductByContentFillExecutor<BaseType>::~DotProductByContentFillExecutor() = 
 
 namespace {
 
-template<typename T> struct IsNonWeightedType : std::false_type {};
-template<typename BaseType> struct IsNonWeightedType<multivalue::Value<BaseType>> : std::true_type {};
+template<typename T> struct IsNonWeightedType : std::true_type {};
+template<typename BaseType> struct IsNonWeightedType<multivalue::WeightedValue<BaseType>> : std::false_type {};
 
 // Compile-time sanity check for type compatibility of gnarly BaseType <-> multivalue::Value
 // reinterpret_cast used by some getAttributeValues calls.
