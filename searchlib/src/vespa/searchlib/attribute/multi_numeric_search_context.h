@@ -33,7 +33,7 @@ public:
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
         auto values(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {
-            if (this->match(values[i].value())) {
+            if (this->match(multivalue::get_value(values[i]))) {
                 weight = multivalue::get_weight(values[i]);
                 return i;
             }
@@ -45,7 +45,7 @@ public:
     int32_t find(DocId doc, int32_t elemId) const {
         auto values(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {
-            if (this->match(values[i].value())) {
+            if (this->match(multivalue::get_value(values[i]))) {
                 return i;
             }
         }

@@ -127,14 +127,14 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
             culled.reserve(new_values.size());
             if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
                 for (size_t i = 0; i < new_values.size(); ++i) {
-                    auto iter = tombstones.find(new_values[i].value());
+                    auto iter = tombstones.find(multivalue::get_value(new_values[i]));
                     if (iter == tombstones.end() || (iter->second <= i)) {
                         culled.emplace_back(new_values[i]);
                     }
                 }
             } else {
                 for (size_t i = 0; i < new_values.size(); ++i) {
-                    auto iter = tombstones.find(new_values[i].value_ref().load_relaxed());
+                    auto iter = tombstones.find(multivalue::get_value_ref(new_values[i]).load_relaxed());
                     if (iter == tombstones.end() || (iter->second <= i)) {
                         culled.emplace_back(new_values[i]);
                     }
@@ -173,9 +173,9 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
         wset_inserted.resize((old_values.size() + max_elems_inserted) * 2);
         for (const auto& e : old_values) {
             if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-                wset_inserted[e.value()] = multivalue::get_weight(e);
+                wset_inserted[multivalue::get_value(e)] = multivalue::get_weight(e);
             } else {
-                wset_inserted[e.value_ref().load_relaxed()] = multivalue::get_weight(e);
+                wset_inserted[multivalue::get_value_ref(e).load_relaxed()] = multivalue::get_weight(e);
             }
         }
         // iterate through all changes for this document

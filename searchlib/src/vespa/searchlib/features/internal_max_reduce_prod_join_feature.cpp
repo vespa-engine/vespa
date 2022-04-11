@@ -62,11 +62,21 @@ RawExecutor<BaseType>::RawExecutor(const ArrayReadView* array_read_view, const I
 {
 }
 
+namespace {
+
+template <typename T>
+inline T get_array_element_value(const multivalue::Value<T>& value) noexcept { return multivalue::get_value(value); }
+
+template <typename T>
+inline T get_array_element_value(const search::attribute::WeightedType<T>& value) noexcept { return value.value(); }
+
+}
+
 template<typename A, typename V>
 feature_t maxProduct(const A &array, size_t count, const V &query) {
     feature_t val = -std::numeric_limits<double>::max();
     for (size_t i = 0; i < count; ++i) {
-        auto itr = query.getDimMap().find(array[i].value());
+        auto itr = query.getDimMap().find(get_array_element_value(array[i]));
         if (itr != query.getDimMap().end()) {
             feature_t v = itr->second; // weight from attribute is assumed to be 1.0
             if (v > val) {

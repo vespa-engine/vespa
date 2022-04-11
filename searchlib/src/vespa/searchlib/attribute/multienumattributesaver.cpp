@@ -68,7 +68,7 @@ public:
             if (_indexes.size() >= _indexes.capacity()) {
                 flush();
             }
-            _indexes.push_back(valueRef.value_ref().load_acquire());
+            _indexes.push_back(multivalue::get_value_ref(valueRef).load_acquire());
         }
     }
 };

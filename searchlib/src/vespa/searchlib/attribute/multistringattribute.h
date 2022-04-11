@@ -59,7 +59,7 @@ public:
         if (indices.size() == 0) {
             return NULL;
         } else {
-            return this->_enumStore.get_value(indices[0].value_ref().load_acquire());
+            return this->_enumStore.get_value(multivalue::get_value_ref(indices[0]).load_acquire());
         }
     }
 
@@ -75,7 +75,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
-            buffer[i] = this->_enumStore.get_value(indices[i].value_ref().load_acquire());
+            buffer[i] = this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire());
         }
         return valueCount;
     }
@@ -92,7 +92,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(this->_enumStore.get_value(indices[i].value_ref().load_acquire()), multivalue::get_weight(indices[i]));
+            buffer[i] = WeightedType(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire()), multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }

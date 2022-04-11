@@ -245,7 +245,7 @@ MultiAttributeExecutor<BaseType>::execute(uint32_t docId)
 {
     auto values = _array_read_view->get_raw_values(docId);
     auto o = outputs().get_bound();
-    o[0].as_number = __builtin_expect(_idx < values.size(), true) ? values[_idx].value() : 0;
+    o[0].as_number = __builtin_expect(_idx < values.size(), true) ? multivalue::get_value(values[_idx]) : 0;
 }
 
 void

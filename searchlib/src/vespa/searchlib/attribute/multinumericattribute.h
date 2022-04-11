@@ -77,15 +77,15 @@ public:
     //-------------------------------------------------------------------------
     T get(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
-        return ((values.size() > 0) ? values[0].value() : T());
+        return ((values.size() > 0) ? multivalue::get_value(values[0]) : T());
     }
     largeint_t getInt(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
-        return static_cast<largeint_t>((values.size() > 0) ? values[0].value() : T());
+        return static_cast<largeint_t>((values.size() > 0) ? multivalue::get_value(values[0]) : T());
     }
     double getFloat(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
-        return static_cast<double>((values.size() > 0) ? values[0].value() : T());
+        return static_cast<double>((values.size() > 0) ? multivalue::get_value(values[0]) : T());
     }
     EnumHandle getEnum(DocId doc) const override {
         (void) doc;
@@ -105,7 +105,7 @@ public:
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
         uint32_t ret = handle.size();
         for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
-            buffer[i] = static_cast<BufferType>(handle[i].value());
+            buffer[i] = static_cast<BufferType>(multivalue::get_value(handle[i]));
         }
         return ret;
     }
@@ -139,7 +139,7 @@ public:
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
         uint32_t ret = handle.size();
         for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
-            buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()),
+            buffer[i] = WeightedType(static_cast<ValueType>(multivalue::get_value(handle[i])),
                                      multivalue::get_weight(handle[i]));
         }
         return ret;
