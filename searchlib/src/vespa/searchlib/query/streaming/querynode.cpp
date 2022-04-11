@@ -140,6 +140,10 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             auto qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm);
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
+            if (qt->isFuzzy()) {
+                qt->setFuzzyMaxEditDistance(queryRep.getFuzzyMaxEditDistance());
+                qt->setFuzzyPrefixLength(queryRep.getFuzzyPrefixLength());
+            }
             if (qt->encoding().isBase10Integer() ||
                 ! qt->encoding().isFloat() ||
                 ! factory.getRewriteFloatTerms() ||

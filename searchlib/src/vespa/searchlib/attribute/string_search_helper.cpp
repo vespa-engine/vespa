@@ -27,7 +27,10 @@ StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
         _term._char = term.getTerm();
         _termLen = term.getTermLen();
     } else if (isFuzzy()) {
-        _fuzzyMatcher = vespalib::FuzzyMatcher::from_term(term.getTerm());
+        _fuzzyMatcher = vespalib::FuzzyMatcher::from_term(
+            term.getTerm(),
+            term.getFuzzyMaxEditDistance(),
+            term.getFuzzyPrefixLength());
     } else {
         term.term(_term._ucs4);
     }

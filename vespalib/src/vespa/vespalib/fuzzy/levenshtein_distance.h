@@ -3,7 +3,7 @@
 
 #include <optional>
 #include <cstdint>
-#include <vector>
+#include <span>
 
 namespace vespalib {
 
@@ -19,7 +19,7 @@ namespace vespalib {
  */
 class LevenshteinDistance {
 public:
-    static std::optional<uint32_t> calculate(const std::vector<uint32_t>& left, const std::vector<uint32_t>& right, uint32_t threshold);
+    static std::optional<uint32_t> calculate(std::span<const uint32_t> left, std::span<const uint32_t> right, uint32_t threshold);
 };
 
 }

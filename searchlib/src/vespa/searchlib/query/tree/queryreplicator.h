@@ -197,7 +197,8 @@ private:
     void visit(FuzzyTerm &node) override {
         replicate(node, _builder.addFuzzyTerm(
                 node.getTerm(), node.getView(),
-                node.getId(), node.getWeight()));
+                node.getId(), node.getWeight(),
+                node.getMaxEditDistance(), node.getPrefixLength()));
     }
 };
 

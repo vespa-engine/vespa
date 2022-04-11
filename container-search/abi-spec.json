@@ -548,7 +548,11 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, boolean, java.lang.String)",
+      "public void <init>(java.lang.String, boolean, java.lang.String, int, int)",
+      "public void setMaxEditDistance(int)",
+      "public void setPrefixLength(int)",
+      "public int getPrefixLength()",
+      "public int getMaxEditDistance()",
       "public void setValue(java.lang.String)",
       "public java.lang.String getRawWord()",
       "public boolean isWords()",
@@ -560,10 +564,13 @@
       "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public java.lang.String toString()",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void encodeThis(java.nio.ByteBuffer)"
     ],
-    "fields": []
+    "fields": [
+      "public static int DEFAULT_MAX_EDIT_DISTANCE",
+      "public static int DEFAULT_PREFIX_LENGTH"
+    ]
   },
   "com.yahoo.prelude.query.GeoLocationItem": {
     "superClass": "com.yahoo.prelude.query.TermItem",

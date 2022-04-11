@@ -126,6 +126,8 @@ public class YqlParser implements Parser {
     private static final String RANKED_DESCRIPTION = "setting for whether to use term for ranking";
     private static final String STEM_DESCRIPTION = "setting for whether to use stem if field implies it";
     private static final String USE_POSITION_DATA_DESCRIPTION = "setting for whether to use position data for ranking this item";
+    private static final String MAX_EDIT_DISTANCE_DESCRIPTION = "setting for an inclusive upper bound for a fuzzy edit-distance search";
+    private static final String PREFIX_LENGTH_DESCRIPTION = "setting for a prefix length that is considered frozen for a fuzzy search";
     private static final String USER_INPUT_ALLOW_EMPTY = "allowEmpty";
     private static final String USER_INPUT_DEFAULT_INDEX = "defaultIndex";
     private static final String USER_INPUT_GRAMMAR = "grammar";
@@ -194,6 +196,9 @@ public class YqlParser implements Parser {
     public static final String WEIGHT = "weight";
     public static final String WEIGHTED_SET = "weightedSet";
     public static final String FUZZY = "fuzzy";
+    public static final String MAX_EDIT_DISTANCE = "maxEditDistance";
+    public static final String PREFIX_LENGTH = "prefixLength";
+
 
     private final IndexFacts indexFacts;
     private final List<ConnectedItem> connectedItems = new ArrayList<>();
@@ -1313,7 +1318,21 @@ public class YqlParser implements Parser {
 
         String wordData = getStringContents(args.get(0));
 
-        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData);
+        Integer maxEditDistance = getAnnotation(
+                ast,
+                MAX_EDIT_DISTANCE,
+                Integer.class,
+                FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE,
+                MAX_EDIT_DISTANCE_DESCRIPTION);
+
+        Integer prefixLength = getAnnotation(
+                ast,
+                PREFIX_LENGTH,
+                Integer.class,
+                FuzzyItem.DEFAULT_PREFIX_LENGTH,
+                PREFIX_LENGTH_DESCRIPTION);
+
+        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength);
         return leafStyleSettings(ast, fuzzy);
     }
 

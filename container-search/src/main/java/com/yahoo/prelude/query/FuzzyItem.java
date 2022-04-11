@@ -1,7 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query;
 
+import com.yahoo.compress.IntegerCompressor;
+
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * Fuzzy search term
@@ -11,9 +14,37 @@ import java.nio.ByteBuffer;
 public class FuzzyItem extends TermItem {
     private String term;
 
-    public FuzzyItem(String indexName, boolean isFromQuery, String term) {
+    private int maxEditDistance;
+    private int prefixLength;
+
+    public static int DEFAULT_MAX_EDIT_DISTANCE = 2;
+    public static int DEFAULT_PREFIX_LENGTH = 0;
+
+    public FuzzyItem(String indexName, boolean isFromQuery, String term, int maxEditDistance, int prefixLength) {
         super(indexName, isFromQuery, null);
         setValue(term);
+        setMaxEditDistance(maxEditDistance);
+        setPrefixLength(prefixLength);
+    }
+
+    public void setMaxEditDistance(int maxEditDistance) {
+        if (maxEditDistance < 0)
+            throw new IllegalArgumentException("Can not use negative maxEditDistance " + maxEditDistance);
+        this.maxEditDistance = maxEditDistance;
+    }
+
+    public void setPrefixLength(int prefixLength) {
+        if (prefixLength < 0)
+            throw new IllegalArgumentException("Can not use negative prefixLength " + prefixLength);
+        this.prefixLength = prefixLength;
+    }
+
+    public int getPrefixLength() {
+        return this.prefixLength;
+    }
+
+    public int getMaxEditDistance() {
+        return this.maxEditDistance;
     }
 
     @Override
@@ -73,35 +104,36 @@ public class FuzzyItem extends TermItem {
             return false;
         }
         FuzzyItem other = (FuzzyItem) obj;
-        if (term == null) {
-            if (other.term != null) {
-                return false;
-            }
-        } else if (!term.equals(other.term)) {
-            return false;
-        }
+        if (!this.term.equals(other.term)) return false;
+        if (this.maxEditDistance != other.maxEditDistance) return false;
+        if (this.prefixLength != other.prefixLength) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = super.hashCode();
-        result = prime * result + ((term == null) ? 0 : term.hashCode());
-        return result;
+        return Objects.hash(super.hashCode(), term, maxEditDistance, prefixLength);
     }
 
     @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("FuzzyItem [term=").append(term).append("]");
-        return builder.toString();
+    protected void appendHeadingString(StringBuilder buffer) {
+        buffer.append(getName());
+        buffer.append("(");
+        buffer.append(this.term);
+        buffer.append(",");
+        buffer.append(this.maxEditDistance);
+        buffer.append(",");
+        buffer.append(this.prefixLength);
+        buffer.append(")");
+        buffer.append(" ");
     }
 
     @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
         putString(getIndexedString(), buffer);
+        IntegerCompressor.putCompressedPositiveNumber(this.maxEditDistance, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(this.prefixLength, buffer);
     }
 }
 

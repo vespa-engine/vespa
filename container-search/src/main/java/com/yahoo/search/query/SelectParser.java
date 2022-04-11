@@ -61,6 +61,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
+import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
 import static com.yahoo.slime.Type.ARRAY;
 import static com.yahoo.slime.Type.DOUBLE;
 import static com.yahoo.slime.Type.LONG;
@@ -1161,9 +1163,16 @@ public class SelectParser implements Parser {
 
     private Item instantiateFuzzyItem(String field, String key, Inspector value) {
         HashMap<Integer, Inspector> children = childMap(value);
+        HashMap<String, Inspector> annotations = getAnnotationMap(value);
+
         Preconditions.checkArgument(children.size() == 1, "Expected 1 argument, got %s.", children.size());
+
         String wordData = children.get(0).asString();
-        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData);
+
+        Integer maxEditDistance = getIntegerAnnotation(MAX_EDIT_DISTANCE, annotations, FuzzyItem.DEFAULT_MAX_EDIT_DISTANCE);
+        Integer prefixLength = getIntegerAnnotation(PREFIX_LENGTH, annotations, FuzzyItem.DEFAULT_PREFIX_LENGTH);
+
+        FuzzyItem fuzzy = new FuzzyItem(field, true, wordData, maxEditDistance, prefixLength);
 
         return leafStyleSettings(getAnnotations(value), fuzzy);
     }

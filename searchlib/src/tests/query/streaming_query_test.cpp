@@ -805,9 +805,9 @@ TEST("testSameElementEvaluate") {
 }
 
 TEST("Control the size of query terms") {
-    EXPECT_EQUAL(104u, sizeof(QueryTermSimple));
-    EXPECT_EQUAL(120u, sizeof(QueryTermUCS4));
-    EXPECT_EQUAL(264u, sizeof(QueryTerm));
+    EXPECT_EQUAL(112u, sizeof(QueryTermSimple));
+    EXPECT_EQUAL(128u, sizeof(QueryTermUCS4));
+    EXPECT_EQUAL(272u, sizeof(QueryTerm));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

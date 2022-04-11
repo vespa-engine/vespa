@@ -4,9 +4,10 @@
 #include "levenshtein_distance.h"
 
 #include <limits>
+#include <vector>
 
 std::optional<uint32_t>
-vespalib::LevenshteinDistance::calculate(const std::vector<uint32_t>& left, const std::vector<uint32_t>& right, uint32_t threshold)
+vespalib::LevenshteinDistance::calculate(std::span<const uint32_t> left, std::span<const uint32_t> right, uint32_t threshold)
 {
     uint32_t n = left.size();
     uint32_t m = right.size();

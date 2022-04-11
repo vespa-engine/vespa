@@ -54,6 +54,7 @@ private:
     VESPA_DLL_LOCAL bool readPredicate(const char *&p);
     VESPA_DLL_LOCAL bool readNN(const char *&p);
     VESPA_DLL_LOCAL bool readComplexTerm(const char *& p);
+    VESPA_DLL_LOCAL bool readFuzzy(const char *&p);
     VESPA_DLL_LOCAL bool readNext();
 public:
     /**
@@ -114,6 +115,10 @@ public:
     double getThresholdBoostFactor() const { return _extraDoubleArg5; }
     bool getAllowApproximate() const { return (_extraIntArg2 != 0); }
     uint32_t getExploreAdditionalHits() const { return _extraIntArg3; }
+
+    // fuzzy match arguments
+    uint32_t getFuzzyMaxEditDistance() const { return _extraIntArg1; }
+    uint32_t getFuzzyPrefixLength() const { return _extraIntArg2; }
 
     query::PredicateQueryTerm::UP getPredicateQueryTerm() { return std::move(_predicate_query_term); }
 
