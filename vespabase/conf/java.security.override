@@ -1,0 +1,22 @@
+securerandom.source=file:/dev/urandom
+networkaddress.cache.ttl=5
+networkaddress.cache.negative.ttl=5
+jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, RC4, DES, MD5withRSA, \
+    DH keySize < 1024, EC keySize < 224, 3DES_EDE_CBC, anon, NULL, \
+    DES40_CBC, RC4_40, 3DES_EDE_CBC, \
+    TLS_RSA_WITH_3DES_EDE_CBC_SHA, \
+    TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA, \
+    RSA_WITH_3DES_EDE_CBC_SHA, \
+    TLS_DHE_RSA_WITH_AES_128_GCM_SHA256, \
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA, \
+    TLS_DHE_RSA_WITH_AES_128_CBC_SHA256, \
+    TLS_DHE_RSA_WITH_AES_256_GCM_SHA384, \
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA, \
+    TLS_DHE_RSA_WITH_AES_256_CBC_SHA256
+jdk.tls.legacyAlgorithms= \
+        K_NULL, C_NULL, M_NULL, \
+        DHE_DSS_EXPORT, DHE_RSA_EXPORT, DH_anon_EXPORT, DH_DSS_EXPORT, \
+        DH_RSA_EXPORT, RSA_EXPORT, \
+        DH_anon, ECDH_anon, \
+        RC4_128, RC4_40, DES_CBC, DES40_CBC, \
+        3DES_EDE_CBC
