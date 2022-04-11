@@ -4,7 +4,6 @@ package com.yahoo.documentapi;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.ThrottlePolicy;
@@ -51,7 +50,6 @@ public class VisitorParameters extends Parameters {
     private LoadType loadType = LoadType.DEFAULT; // TODO: Remove on Vespa 8
     private DocumentProtocol.Priority priority = null;
     private int traceLevel = 0;
-    private ThrottlePolicy throttlePolicy = null;
     private boolean skipBucketsOnFatalErrors = false;
     private int slices = 1;
     private int sliceId = 0;
@@ -323,14 +321,6 @@ public class VisitorParameters extends Parameters {
 
     public void setPriority(DocumentProtocol.Priority priority) {
         this.priority = priority;
-    }
-
-    public ThrottlePolicy getThrottlePolicy() {
-        return throttlePolicy;
-    }
-
-    public void setThrottlePolicy(ThrottlePolicy policy) {
-        throttlePolicy = policy;
     }
 
     /**

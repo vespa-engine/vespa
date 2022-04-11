@@ -147,7 +147,7 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
     public void requireThatThrottlePolicyCanBeConfigured() {
         var asyncParams = new AsyncParameters();
         ThrottlePolicy allPass = new AllPassThrottlePolicy();
-        asyncParams.setThrottlePolicyOverride(allPass);
+        asyncParams.setThrottlePolicy(allPass);
         MessageBusAsyncSession mbusSession = (MessageBusAsyncSession) access().createAsyncSession(asyncParams);
         assertSame(allPass, mbusSession.getThrottlePolicy());
         mbusSession.destroy();

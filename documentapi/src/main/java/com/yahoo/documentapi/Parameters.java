@@ -13,12 +13,12 @@ import java.util.Optional;
  * @author bratseth
  */
 public class Parameters {
-    ThrottlePolicy throttlePolicyOverride;
-    public void setThrottlePolicyOverride(ThrottlePolicy throttlePolicyOverride) {
-        this.throttlePolicyOverride = throttlePolicyOverride;
+    ThrottlePolicy throttlePolicy;
+    public void setThrottlePolicy(ThrottlePolicy throttlePolicy) {
+        this.throttlePolicy = throttlePolicy;
     }
 
-    public Optional<ThrottlePolicy> getThrottlePolicyOverride() {
-        return Optional.ofNullable(throttlePolicyOverride);
+    public ThrottlePolicy getThrottlePolicy() {
+        return throttlePolicy;
     }
 }

@@ -271,7 +271,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>()"
+      "public void <init>()",
+      "public void setThrottlePolicy(com.yahoo.messagebus.ThrottlePolicy)",
+      "public com.yahoo.messagebus.ThrottlePolicy getThrottlePolicy()"
     ],
     "fields": []
   },
@@ -926,8 +928,6 @@
       "public void setTraceLevel(int)",
       "public int getTraceLevel()",
       "public void setPriority(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
-      "public com.yahoo.messagebus.ThrottlePolicy getThrottlePolicy()",
-      "public void setThrottlePolicy(com.yahoo.messagebus.ThrottlePolicy)",
       "public void setLoadType(com.yahoo.documentapi.messagebus.loadtypes.LoadType)",
       "public com.yahoo.documentapi.messagebus.loadtypes.LoadType getLoadType()",
       "public boolean skipBucketsOnFatalErrors()",

@@ -96,7 +96,9 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         routeForGet = mbusParams.getRouteForGet();
         traceLevel = mbusParams.getTraceLevel();
         SourceSessionParams sourceSessionParams = new SourceSessionParams(mbusParams.getSourceSessionParams());
-        asyncParams.getThrottlePolicyOverride().ifPresent(policy -> sourceSessionParams.setThrottlePolicy(policy));
+        if (asyncParams.getThrottlePolicy() != null) {
+            sourceSessionParams.setThrottlePolicy(asyncParams.getThrottlePolicy());
+        }
         sourceSessionParams.setReplyHandler((handler != null) ? handler : new MyReplyHandler(asyncParams.getResponseHandler(), responses));
         session = bus.createSourceSession(sourceSessionParams);
     }
