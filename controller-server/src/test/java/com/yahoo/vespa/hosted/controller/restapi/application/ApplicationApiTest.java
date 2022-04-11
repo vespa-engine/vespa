@@ -834,6 +834,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Application package version: 1.0.4-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
 
+        // DELETE submitted build, to mark it as non-deployable
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/3", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Marked build '3' as non-deployable\"}");
+
         // GET deployment job overview, after triggering system and staging test jobs.
         assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job", GET)

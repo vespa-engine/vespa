@@ -695,7 +695,7 @@
       "commit": "commit1",
       "description": "my best commit yet",
       "risk": 9001,
-      "deployable": true
+      "deployable": false
     },
     {
       "build": 2,

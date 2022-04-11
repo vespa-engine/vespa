@@ -66,6 +66,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeReposi
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
@@ -354,6 +355,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return removeDeployKey(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit/{build}")) return cancelBuild(path.get("tenant"), path.get("application"), path.get("build"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("choice"));
@@ -1930,6 +1932,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                                                    application.id().application(),
                                                                                                    build))
                           .orElseThrow(() -> new IllegalArgumentException("Build number '" + build + "' was not found"));
+    }
+
+    private HttpResponse cancelBuild(String tenantName, String applicationName, String build){
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        RevisionId revision = RevisionId.forProduction(Long.parseLong(build));
+        controller.applications().lockApplicationOrThrow(id, application -> {
+            controller.applications().store(application.withRevisions(revisions -> revisions.with(revisions.get(revision).skipped())));
+        });
+        return new MessageResponse("Marked build '" + build + "' as non-deployable");
     }
 
     /** Cancel ongoing change for given application, e.g., everything with {"cancel":"all"} */

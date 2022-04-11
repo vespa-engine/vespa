@@ -103,6 +103,7 @@ enum PathGroup {
     /** Paths used by application administrators. */
     applicationInfo(Matcher.tenant,
                     Matcher.application,
+                    "/application/v4/tenant/{tenant}/application/{application}/submit/{build}",
                     "/application/v4/tenant/{tenant}/application/{application}/package",
                     "/application/v4/tenant/{tenant}/application/{application}/diff/{number}",
                     "/application/v4/tenant/{tenant}/application/{application}/compile-version",

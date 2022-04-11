@@ -85,12 +85,13 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
         return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, Optional.empty(), true, false, Optional.empty(), 0);
     }
 
-    /** Creates a version from a completed build, an author email, and build meta data. */
+    /** Creates a version from a completed build, an author email, and build metadata. */
     public static ApplicationVersion from(SourceRevision source, long buildNumber, String authorEmail,
                                           Version compileVersion, Instant buildTime) {
         return new ApplicationVersion(Optional.of(source), OptionalLong.of(buildNumber), Optional.of(authorEmail), Optional.of(compileVersion), Optional.of(buildTime), Optional.empty(), Optional.empty(), false, Optional.empty(), true, false, Optional.empty(), 0);
     }
 
+    /** Creates a minimal version for a development build. */
     public static ApplicationVersion forDevelopment(long buildNumber, Optional<Version> compileVersion) {
         return new ApplicationVersion(Optional.empty(), OptionalLong.of(buildNumber), Optional.empty(), compileVersion, Optional.empty(), Optional.empty(), Optional.empty(), true, Optional.empty(), true, false, Optional.empty(), 0);
     }
@@ -165,7 +166,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this without a package stored. */
     public ApplicationVersion withoutPackage() {
-        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, false, shouldSkip, Optional.empty(), 0);
+        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, false, shouldSkip, description, risk);
     }
 
     /** Whether we still have the package for this revision. */
@@ -175,7 +176,7 @@ public class ApplicationVersion implements Comparable<ApplicationVersion> {
 
     /** Returns a copy of this which will not be rolled out to production. */
     public ApplicationVersion skipped() {
-        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, hasPackage, true, Optional.empty(), 0);
+        return new ApplicationVersion(source, buildNumber, authorEmail, compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash, hasPackage, true, description, risk);
     }
 
     /** Whether we still have the package for this revision. */
