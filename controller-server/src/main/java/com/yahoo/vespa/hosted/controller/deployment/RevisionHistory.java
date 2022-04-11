@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.TreeMap;
 
+import static java.util.Collections.emptyNavigableMap;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -89,7 +90,7 @@ public class RevisionHistory {
     /** Returns a copy of this with the new development revision added, and the previous version without a package. */
     public RevisionHistory with(ApplicationVersion revision, JobId job) {
         NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(this.development);
-        NavigableMap<RevisionId, ApplicationVersion> revisions = development.computeIfAbsent(job, __ -> new TreeMap<>());
+        NavigableMap<RevisionId, ApplicationVersion> revisions = new TreeMap<>(development.getOrDefault(job, emptyNavigableMap()));
         if ( ! revisions.isEmpty()) revisions.compute(revisions.lastKey(), (__, last) -> last.withoutPackage());
         revisions.put(revision.id(), revision);
         return new RevisionHistory(production, development);
@@ -107,7 +108,7 @@ public class RevisionHistory {
 
     /** Returns the development {@link ApplicationVersion} for the give job, with this revision ID. */
     public ApplicationVersion get(RevisionId id, JobId job) {
-        return development.getOrDefault(job, Collections.emptyNavigableMap())
+        return development.getOrDefault(job, emptyNavigableMap())
                           .getOrDefault(id, revisionOf(id, false));
     }
 
