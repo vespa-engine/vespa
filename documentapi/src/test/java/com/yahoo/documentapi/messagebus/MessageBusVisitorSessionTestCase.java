@@ -1,18 +1,36 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.documentapi.messagebus.test;
+package com.yahoo.documentapi.messagebus;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocIdOnly;
 import com.yahoo.document.select.parser.ParseException;
-import com.yahoo.documentapi.*;
-import com.yahoo.documentapi.messagebus.MessageBusVisitorSession;
+import com.yahoo.documentapi.AckToken;
+import com.yahoo.documentapi.ProgressToken;
+import com.yahoo.documentapi.VisitorControlHandler;
+import com.yahoo.documentapi.VisitorControlSession;
+import com.yahoo.documentapi.VisitorDataHandler;
+import com.yahoo.documentapi.VisitorDataQueue;
+import com.yahoo.documentapi.VisitorParameters;
+import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.protocol.*;
-import com.yahoo.messagebus.*;
+import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
+import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
+import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+import com.yahoo.documentapi.messagebus.protocol.DocumentReply;
+import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
+import com.yahoo.documentapi.messagebus.protocol.VisitorInfoMessage;
+import com.yahoo.documentapi.messagebus.protocol.WrongDistributionReply;
 import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageHandler;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
+import com.yahoo.messagebus.Trace;
+import com.yahoo.messagebus.TraceNode;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.messagebus.routing.RouteSpec;
 import com.yahoo.messagebus.routing.RoutingTable;
@@ -21,21 +39,28 @@ import com.yahoo.vdslib.VisitorStatistics;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 // TODO replace explicit pre-mockito mock classes with proper mockito mocks wherever possible
 public class MessageBusVisitorSessionTestCase {
     private class MockSender implements MessageBusVisitorSession.Sender {
         private int maxPending = 1000;
         private int pendingCount = 0;
-        private ArrayList<Message> messages = new ArrayList<Message>();
+        private ArrayList<Message> messages = new ArrayList<>();
         private ReplyHandler replyHandler = null;
         private boolean destroyed = false;
         private RuntimeException exceptionOnSend = null;
@@ -313,7 +338,7 @@ public class MessageBusVisitorSessionTestCase {
     public class MockAsyncTaskExecutor implements MessageBusVisitorSession.AsyncTaskExecutor {
         private long sequenceCounter = 0;
         private long timeMs = 0;
-        private Set<TaskDescriptor> tasks = new TreeSet<TaskDescriptor>();
+        private Set<TaskDescriptor> tasks = new TreeSet<>();
         private int rejectTasksAfter = -1;
 
         public void setRejectTasksAfter(int rejectTasksAfter) {

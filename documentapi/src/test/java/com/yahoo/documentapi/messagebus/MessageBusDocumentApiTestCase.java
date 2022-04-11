@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.documentapi.messagebus.test;
+package com.yahoo.documentapi.messagebus;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
@@ -14,17 +14,17 @@ import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
-import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.test.AbstractDocumentApiTestCase;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
+import com.yahoo.messagebus.AllPassThrottlePolicy;
+import com.yahoo.messagebus.DynamicThrottlePolicy;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.Reply;
-import com.yahoo.messagebus.SourceSessionParams;
+import com.yahoo.messagebus.ThrottlePolicy;
 import com.yahoo.messagebus.network.Identity;
 import org.junit.After;
 import org.junit.Before;
@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -67,7 +68,6 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         params.setRouteNameForGet("Route");
         params.setRoutingConfigId("file:src/test/cfg/messagebus.cfg");
         params.setTraceLevel(9);
-        params.setSourceSessionParams(new SourceSessionParams().setThrottlePolicy(null));
         access = new MessageBusDocumentAccess(params);
 
         destination = new VisitableDestination(slobrokConfigId, params.getDocumentManagerConfigId());
@@ -131,6 +131,26 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         assertNotNull(response.get());
         assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
         session.destroy();
+    }
+
+    @Test
+    public void requireThatDefaultThrottlePolicyIsDynamicAndShared() {
+        MessageBusAsyncSession mbusSessionA = (MessageBusAsyncSession) access().createAsyncSession(new AsyncParameters());
+        assertTrue(mbusSessionA.getThrottlePolicy() instanceof DynamicThrottlePolicy);
+        MessageBusAsyncSession mbusSessionB = (MessageBusAsyncSession) access().createAsyncSession(new AsyncParameters());
+        assertSame(mbusSessionA.getThrottlePolicy(), mbusSessionB.getThrottlePolicy());
+        mbusSessionB.destroy();
+        mbusSessionA.destroy();
+    }
+
+    @Test
+    public void requireThatThrottlePolicyCanBeConfigured() {
+        var asyncParams = new AsyncParameters();
+        ThrottlePolicy allPass = new AllPassThrottlePolicy();
+        asyncParams.setThrottlePolicy(allPass);
+        MessageBusAsyncSession mbusSession = (MessageBusAsyncSession) access().createAsyncSession(asyncParams);
+        assertSame(allPass, mbusSession.getThrottlePolicy());
+        mbusSession.destroy();
     }
 
 }

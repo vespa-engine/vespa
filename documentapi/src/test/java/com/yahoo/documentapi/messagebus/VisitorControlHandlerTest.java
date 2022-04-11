@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.documentapi.messagebus.test;
+package com.yahoo.documentapi.messagebus;
 
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.vdslib.VisitorStatistics;
