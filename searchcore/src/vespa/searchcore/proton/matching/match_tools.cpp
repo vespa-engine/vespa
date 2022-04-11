@@ -70,7 +70,8 @@ extractDiversityParams(const RankSetup &rankSetup, const Properties &rankPropert
 AttributeBlueprintParams
 extractAttributeBlueprintParams(const RankSetup& rank_setup, const Properties &rankProperties)
 {
-    return AttributeBlueprintParams(NearestNeighborBruteForceLimit::lookup(rankProperties, rank_setup.get_nearest_neighbor_brute_force_limit()));
+    return AttributeBlueprintParams(GlobalFilterLowerLimit::lookup(rankProperties, rank_setup.get_global_filter_lower_limit()),
+                                    GlobalFilterUpperLimit::lookup(rankProperties, rank_setup.get_global_filter_upper_limit()));
 }
 
 } // namespace proton::matching::<unnamed>

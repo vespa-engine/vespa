@@ -294,20 +294,6 @@ namespace matching {
     };
 
     /**
-     * Property to control fallback to brute force search for nearest
-     * neighbor query terms.  If the ratio of candidates in the global
-     * filter (which tracks the documents that can match the query
-     * based on the other parts of the query) is less than this limit
-     * then use brute force search.
-     **/
-    struct NearestNeighborBruteForceLimit {
-        static const vespalib::string NAME;
-        static const double DEFAULT_VALUE;
-        static double lookup(const Properties &props);
-        static double lookup(const Properties &props, double defaultValue);
-    };
-
-    /**
      * Property to control fallback to not building a global filter
      * for a query with a blueprint that wants a global filter. If the
      * estimated ratio of matching documents is less than this limit

@@ -407,9 +407,6 @@ public:
     void setSoftTimeoutFactor(double v) { _softTimeoutFactor = v; }
     double getSoftTimeoutFactor() const { return _softTimeoutFactor; }
 
-    void set_nearest_neighbor_brute_force_limit(double v) { _nearest_neighbor_brute_force_limit = v; }
-    double get_nearest_neighbor_brute_force_limit() const { return _nearest_neighbor_brute_force_limit; }
-
     void set_global_filter_lower_limit(double v) { _global_filter_lower_limit = v; }
     double get_global_filter_lower_limit() const { return _global_filter_lower_limit; }
     void set_global_filter_upper_limit(double v) { _global_filter_upper_limit = v; }
