@@ -3,6 +3,7 @@
 #pragma once
 
 #include "multivalueattributesaver.h"
+#include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace search {
 
@@ -17,7 +18,7 @@ class MultiValueNumericAttributeSaver : public MultiValueAttributeSaver
 {
     using Parent = MultiValueAttributeSaver;
     using MultiValueType = MultiValueT;
-    using ValueType = typename MultiValueType::ValueType;
+    using ValueType = multivalue::ValueType_t<MultiValueType>;
     using GenerationHandler = vespalib::GenerationHandler;
     using Parent::_frozenIndices;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;

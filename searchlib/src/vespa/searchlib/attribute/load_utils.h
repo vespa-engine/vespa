@@ -6,6 +6,7 @@
 #include "attributevector.h"
 #include "readerbase.h"
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace vespalib::datastore {
 
@@ -46,7 +47,7 @@ template <class MvMapping, class Saver>
 uint32_t
 loadFromEnumeratedMultiValue(MvMapping &mapping,
                              ReaderBase &attrReader,
-                             vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<typename MvMapping::MultiValueType::ValueType>> enumValueToValueMap,
+                             vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>> enumValueToValueMap,
                              vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
                              Saver saver) __attribute((noinline));
 

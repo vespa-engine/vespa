@@ -11,13 +11,13 @@ template <class MvMapping, class Saver>
 uint32_t
 loadFromEnumeratedMultiValue(MvMapping & mapping,
                              ReaderBase & attrReader,
-                             vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<typename MvMapping::MultiValueType::ValueType>> enumValueToValueMap,
+                             vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<multivalue::ValueType_t<typename MvMapping::MultiValueType>>> enumValueToValueMap,
                              vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
                              Saver saver)
 {
     mapping.prepareLoadFromMultiValue();
     using MultiValueType = typename MvMapping::MultiValueType;
-    using ValueType = typename MultiValueType::ValueType;
+    using ValueType = multivalue::ValueType_t<MultiValueType>;
     using NonAtomicValueType = atomic_utils::NonAtomicValue_t<ValueType>;
     std::vector<MultiValueType> indices;
     uint32_t numDocs = attrReader.getNumIdx() - 1;
@@ -36,7 +36,7 @@ loadFromEnumeratedMultiValue(MvMapping & mapping,
             if (!enum_value_remapping.empty()) {
                 enumValue = enum_value_remapping[enumValue];
             }
-            int32_t weight = MultiValueType::_hasWeight ? attrReader.getNextWeight() : 1;
+            int32_t weight = multivalue::is_WeightedValue_v<MultiValueType> ? attrReader.getNextWeight() : 1;
             if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
                 indices.emplace_back(enumValueToValueMap[enumValue], weight);
             } else {

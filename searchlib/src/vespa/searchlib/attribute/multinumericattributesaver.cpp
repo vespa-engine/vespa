@@ -31,8 +31,9 @@ public:
     void
     writeValues(vespalib::ConstArrayRef<MultiValueT> values) {
         for (const MultiValueT &valueRef : values) {
-            typename MultiValueT::ValueType value(valueRef);
-            _datWriter->write(&value, sizeof(typename MultiValueT::ValueType));
+            using ValueType = multivalue::ValueType_t<MultiValueT>;
+            ValueType value(valueRef);
+            _datWriter->write(&value, sizeof(ValueType));
         }
     }
 };
@@ -63,7 +64,7 @@ MultiValueNumericAttributeSaver<MultiValueT>::
 onSave(IAttributeSaveTarget &saveTarget)
 {
     CountWriter countWriter(saveTarget);
-    WeightWriter<MultiValueType::_hasWeight> weightWriter(saveTarget);
+    WeightWriter<multivalue::is_WeightedValue_v<MultiValueType>> weightWriter(saveTarget);
     DatWriter datWriter(saveTarget);
 
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {

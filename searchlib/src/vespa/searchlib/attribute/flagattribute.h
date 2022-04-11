@@ -22,7 +22,7 @@ private:
     void setNewValues(DocId doc, const std::vector<typename B::WType> & values) override;
 
 public:
-    void setNewBVValue(DocId doc, typename B::WType::ValueType value);
+    void setNewBVValue(DocId doc, multivalue::ValueType_t<typename B::WType> value);
 
 private:
     bool onAddDoc(DocId doc) override;
