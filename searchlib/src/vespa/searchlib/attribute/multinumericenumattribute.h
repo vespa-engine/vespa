@@ -92,7 +92,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(indices[i].value_ref().load_acquire())), indices[i].weight());
+            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(indices[i].value_ref().load_acquire())), multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }

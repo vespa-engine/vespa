@@ -3,6 +3,7 @@
 #pragma once
 
 #include "load_utils.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search {
 namespace attribute {
@@ -38,9 +39,9 @@ loadFromEnumeratedMultiValue(MvMapping & mapping,
             }
             int32_t weight = multivalue::is_WeightedValue_v<MultiValueType> ? attrReader.getNextWeight() : 1;
             if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-                indices.emplace_back(enumValueToValueMap[enumValue], weight);
+                indices.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(enumValueToValueMap[enumValue], weight));
             } else {
-                indices.emplace_back(ValueType(enumValueToValueMap[enumValue]), weight);
+                indices.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(ValueType(enumValueToValueMap[enumValue]), weight));
             }
             saver.save(enumValue, doc, weight);
         }

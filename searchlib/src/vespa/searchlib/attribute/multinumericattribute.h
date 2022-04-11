@@ -144,7 +144,7 @@ public:
         uint32_t ret = handle.size();
         for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
             buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()),
-                                     handle[i].weight());
+                                     multivalue::get_weight(handle[i]));
         }
         return ret;
     }

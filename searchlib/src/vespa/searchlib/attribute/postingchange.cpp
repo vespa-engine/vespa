@@ -178,7 +178,7 @@ private:
     {
         const WeightedIndex *srce = src + sz;
         for (const WeightedIndex *i = src; i < srce; ++i) {
-            dst.emplace_back(AtomicEntryRef(mapEnumIndex(i->value_ref().load_relaxed())), i->weight());
+            dst.emplace_back(multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(mapEnumIndex(i->value_ref().load_relaxed())), multivalue::get_weight(*i)));
         }
     }
 
@@ -206,11 +206,11 @@ class MergeDupIterator {
     bool _valid;
     void merge() {
         EnumIndex idx = _cur->value_ref().load_relaxed();
-        int32_t weight = _cur->weight();
+        int32_t weight = multivalue::get_weight(*_cur);
         ++_cur;
         while (_cur != _end && _cur->value_ref().load_relaxed() == idx) {
             // sum weights together. Overflow is not handled.
-            weight += _cur->weight();
+            weight += multivalue::get_weight(*_cur);
             ++_cur;
         }
         _entry = Entry(AtomicEntryRef(idx), weight);

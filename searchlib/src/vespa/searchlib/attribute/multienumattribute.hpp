@@ -80,7 +80,7 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
         this->_mvMapping.prepareLoadFromMultiValue();
         for (DocId doc = 0; doc < numDocs; ++doc) {
             for(const auto* v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
-                indices.push_back(WeightedIndex(AtomicEntryRef(v->getEidx()), v->getWeight()));
+                indices.push_back(multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(v->getEidx()), v->getWeight()));
             }
             this->checkSetMaxValueCount(indices.size());
             this->_mvMapping.set(doc, indices);

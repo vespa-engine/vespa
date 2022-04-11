@@ -5,6 +5,7 @@
 #include "numeric_search_context.h"
 #include "multi_value_mapping_read_view.h"
 #include "numeric_range_matcher.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search::attribute {
 
@@ -33,7 +34,7 @@ public:
         auto values(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < values.size(); i++) {
             if (this->match(values[i].value())) {
-                weight = values[i].weight();
+                weight = multivalue::get_weight(values[i]);
                 return i;
             }
         }
