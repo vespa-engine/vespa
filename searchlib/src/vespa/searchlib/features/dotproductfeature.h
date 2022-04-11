@@ -4,6 +4,7 @@
 
 #include "utils.h"
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
 #include <vespa/searchcommon/attribute/multivalue.h>
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
@@ -131,20 +132,21 @@ public:
     void execute(uint32_t docId) override;
 };
 
-template <typename A>
-class DotProductExecutor final : public DotProductExecutorBase<typename A::BaseType> {
+template <typename BaseType>
+class DotProductByWeightedSetReadViewExecutor final : public DotProductExecutorBase<BaseType> {
 public:
-    using AT = typename DotProductExecutorBase<typename A::BaseType>::AT;
-    using V  = typename DotProductExecutorBase<typename A::BaseType>::V;
+    using WeightedSetReadView = attribute::IWeightedSetReadView<BaseType>;
+    using AT = typename DotProductExecutorBase<BaseType>::AT;
+    using V  = typename DotProductExecutorBase<BaseType>::V;
 protected:
-    const A * _attribute;
+    const WeightedSetReadView * _weighted_set_read_view;
 private:
     std::unique_ptr<V> _backing;
     vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
 public:
-    DotProductExecutor(const A * attribute, const V & queryVector);
-    DotProductExecutor(const A * attribute, std::unique_ptr<V> queryVector);
-    ~DotProductExecutor();
+    DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, const V & queryVector);
+    DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView * weighted_set_read_view, std::unique_ptr<V> queryVector);
+    ~DotProductByWeightedSetReadViewExecutor();
 };
 
 
@@ -191,6 +193,24 @@ public:
 };
 
 /**
+ * Implements the executor for the dotproduct feature using array read view.
+ */
+template <typename BaseType>
+class DotProductByArrayReadViewExecutor : public DotProductExecutorBase<BaseType> {
+public:
+    using AT = typename DotProductExecutorBase<BaseType>::AT;
+    using V  = typename DotProductExecutorBase<BaseType>::V;
+    using ArrayReadView = attribute::IArrayReadView<BaseType>;
+protected:
+    const ArrayReadView* _array_read_view;
+private:
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
+public:
+    DotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector);
+    ~DotProductByArrayReadViewExecutor();
+};
+
+/**
  * Implements the executor for the dotproduct feature.
  */
 template <typename A>
@@ -200,8 +220,6 @@ public:
     using V  = typename DotProductExecutorBase<typename A::BaseType>::V;
 protected:
     const A * _attribute;
-private:
-    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
 public:
     DotProductExecutor(const A * attribute, const V & queryVector);
     ~DotProductExecutor();
@@ -246,31 +264,46 @@ private:
     ValueFiller _filler;
 };
 
-template <typename A>
-class SparseDotProductExecutor : public DotProductExecutor<A> {
+template <typename BaseType>
+class SparseDotProductExecutorBase : public DotProductExecutorBase<BaseType> {
 public:
     typedef std::vector<uint32_t> IV;
-    typedef typename DotProductExecutor<A>::V V;
-    SparseDotProductExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes);
-    ~SparseDotProductExecutor();
-private:
-    typedef typename DotProductExecutor<A>::AT AT;
-    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
+    typedef typename DotProductExecutorBase<BaseType>::V V;
+    SparseDotProductExecutorBase(const V & queryVector, const IV & queryIndexes);
+    ~SparseDotProductExecutorBase();
 protected:
+    typedef typename DotProductExecutorBase<BaseType>::AT AT;
     IV              _queryIndexes;
     std::vector<AT> _scratch;
 };
 
+template <typename BaseType>
+class SparseDotProductByArrayReadViewExecutor : public SparseDotProductExecutorBase<BaseType> {
+public:
+    using SparseDotProductExecutorBase<BaseType>::_queryIndexes;
+    using SparseDotProductExecutorBase<BaseType>::_scratch;
+    typedef std::vector<uint32_t> IV;
+    typedef typename SparseDotProductExecutorBase<BaseType>::V V;
+    using ArrayReadView = attribute::IArrayReadView<BaseType>;
+    SparseDotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector, const IV & queryIndexes);
+    ~SparseDotProductByArrayReadViewExecutor();
+private:
+    typedef typename SparseDotProductExecutorBase<BaseType>::AT AT;
+    vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) override;
+    const ArrayReadView* _array_read_view;
+};
+
 template <typename A>
-class SparseDotProductByCopyExecutor : public SparseDotProductExecutor<A> {
+class SparseDotProductByCopyExecutor : public SparseDotProductExecutorBase<typename A::BaseType> {
 public:
     typedef std::vector<uint32_t> IV;
-    typedef typename DotProductExecutor<A>::V V;
+    typedef typename SparseDotProductExecutorBase<typename A::BaseType>::V V;
     SparseDotProductByCopyExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes);
     ~SparseDotProductByCopyExecutor();
 private:
-    typedef typename DotProductExecutor<A>::AT AT;
+    typedef typename SparseDotProductExecutorBase<typename A::BaseType>::AT AT;
     vespalib::ConstArrayRef<AT> getAttributeValues(uint32_t docid) final override;
+    const A*                          _attribute;
     std::vector<typename A::BaseType> _copy;
 };
 
