@@ -58,6 +58,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -154,11 +155,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** The timeout of the query, in milliseconds */
     private long timeout = defaultTimeout;
 
-
     /** Whether this query is forbidden to access cached information */
     private boolean noCache = false;
 
-    /** Whether or not grouping should use a session cache */
+    /** Whether grouping should use a session cache */
     private boolean groupingSessionCache = true;
 
     //--------------  Generic property containers --------------------------------
@@ -459,17 +459,32 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
     }
 
+    private static final List<CompoundName> fieldsToSetFirst = List.of(CompoundName.from("ranking.profile"),
+                                                                       CompoundName.from("model.sources"),
+                                                                       CompoundName.from("model.restrict"));
+
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
-        // Set rank profile first because it contains type information in inputs which impacts other values set
-        String rankProfile = Ranking.lookupRankProfileIn(requestMap);
-        if (rankProfile != null)
-            properties.set(Ranking.RANKING + "." + Ranking.PROFILE, rankProfile, requestMap);
+        // Set these first because they contain type information in inputs which impacts other values set
+        for (var fieldName : fieldsToSetFirst)
+            lookupIn(requestMap, fieldName).ifPresent(value -> properties.set(fieldName, value));
 
         for (var entry : requestMap.entrySet()) {
             if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
             properties.set(entry.getKey(), entry.getValue(), requestMap);
         }
+    }
+
+    private Optional<String> lookupIn(Map<String, String> requestMap, CompoundName fieldName) {
+        String value = requestMap.get(fieldName.toString());
+        if (value != null) return Optional.of(value);
+        FieldDescription field = argumentType.getField(fieldName);
+        for (String alias : field.getAliases()) {
+            value = requestMap.get(alias);
+            if (value != null)
+                return Optional.of(value);
+        }
+        return Optional.empty();
     }
 
     /** Returns the properties of this query. The properties are modifiable */

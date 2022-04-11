@@ -226,7 +226,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
         return ((QueryProfileFieldType) fieldDescription.getType()).getQueryProfileType();
     }
 
-    /** Returns the field type of the given name under this, of null if none */
+    /** Returns the type of the given name under this, of null if none */
     public FieldType getFieldType(CompoundName name) {
         FieldDescription field = getField(name.first());
         if (field == null) return null;
@@ -239,18 +239,31 @@ public class QueryProfileType extends FreezableSimpleComponent {
         return ((QueryProfileFieldType)fieldType).getQueryProfileType().getFieldType(name.rest());
     }
 
+    /** Returns the description of the given name under this, of null if none */
+    public FieldDescription getField(CompoundName globalName) {
+        FieldDescription field = getField(globalName.first());
+        if (field == null) return null;
+
+        if (globalName.size() == 1) return field;
+
+        FieldType fieldType = field.getType();
+        if ( ! (fieldType instanceof QueryProfileFieldType)) return null;
+
+        return ((QueryProfileFieldType)fieldType).getQueryProfileType().getField(globalName.rest());
+    }
+
     /**
      * Returns the description of the field with the given name in this type or an inherited type
      * (depth first left to right search). Returns null if the field is not defined in this or an inherited profile.
      */
-    public FieldDescription getField(String name) {
-        FieldDescription field = fields.get(name);
+    public FieldDescription getField(String localName) {
+        FieldDescription field = fields.get(localName);
         if ( field != null ) return field;
 
         if ( isFrozen() ) return null; // Inherited are collapsed into this
 
         for (QueryProfileType inheritedType : this.inherited() ) {
-            field = inheritedType.getField(name);
+            field = inheritedType.getField(localName);
             if (field != null) return field;
         }
 

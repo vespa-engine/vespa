@@ -53,8 +53,9 @@ public class Ranking implements Cloneable {
     public static final String PROPERTIES = "properties";
 
     /** For internal use only. */
-    public static String lookupRankProfileIn(Map<String, String> properties) {
-        return Optional.ofNullable(properties.get(RANKING + "." + PROFILE)).orElse(properties.get("ranking"));
+    public static Optional<String> lookupRankProfileIn(Map<String, String> properties) {
+        return Optional.ofNullable(Optional.ofNullable(properties.get(RANKING + "." + PROFILE))
+                                           .orElse(properties.get("ranking")));
     }
 
     static {
