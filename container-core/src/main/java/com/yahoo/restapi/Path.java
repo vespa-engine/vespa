@@ -46,6 +46,11 @@ public class Path {
         this.path = HttpURL.Path.parse(uri.getRawPath(), validator);
     }
 
+    /** Create a new Path for matching the given URI against patterns, without any segment validation. */
+    public static Path withoutValidation(URI uri) {
+        return new Path(uri, __ -> { });
+    }
+
     private boolean matchesInner(String pathSpec) {
         values.clear();
         List<String> specElements = HttpURL.Path.parse(pathSpec).segments();

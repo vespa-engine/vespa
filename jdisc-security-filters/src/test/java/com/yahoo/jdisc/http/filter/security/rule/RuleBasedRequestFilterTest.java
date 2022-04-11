@@ -51,7 +51,7 @@ class RuleBasedRequestFilterTest {
         Metric metric = mock(Metric.class);
         RuleBasedRequestFilter filter = new RuleBasedRequestFilter(metric, config);
         MockResponseHandler responseHandler = new MockResponseHandler();
-        filter.filter(request("PATCH", "http://myserver:80/path-to-resource"), responseHandler);
+        filter.filter(request("PATCH", "http://myserver:80/path-to-resource%2F"), responseHandler);
 
         assertAllowed(responseHandler, metric);
 
