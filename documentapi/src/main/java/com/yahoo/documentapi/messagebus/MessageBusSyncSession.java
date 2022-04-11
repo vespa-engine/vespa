@@ -7,7 +7,6 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.DocumentAccessException;
 import com.yahoo.documentapi.DocumentOperationParameters;

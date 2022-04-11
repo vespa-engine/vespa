@@ -827,7 +827,8 @@
       "public com.yahoo.messagebus.Result send(com.yahoo.messagebus.Message, java.lang.String, boolean)",
       "public com.yahoo.messagebus.ReplyHandler getReplyHandler()",
       "public int getPendingCount()",
-      "public com.yahoo.messagebus.SourceSession setTimeout(double)"
+      "public com.yahoo.messagebus.SourceSession setTimeout(double)",
+      "public com.yahoo.messagebus.ThrottlePolicy getThrottlePolicy()"
     ],
     "fields": []
   },
