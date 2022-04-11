@@ -1356,8 +1356,8 @@ Test::testDotProduct()
     TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1,b:2}", "search::features::dotproduct::wset::(anonymous namespace)::DotProductExecutorByEnum"));
     TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{a:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByEnum"));
     TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsstr", "{unknown:1}", "search::features::SingleZeroValueExecutor"));
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1, 2:3}", "search::features::dotproduct::wset::DotProductExecutor<search::MultiValueNumericAttribute<search::IntegerAttributeTemplate<int>, search::multivalue::WeightedValue<int> > >"));
-    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductExecutorByValue<search::MultiValueNumericAttribute<search::IntegerAttributeTemplate<int>, search::multivalue::WeightedValue<int> > >"));
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1, 2:3}", "search::features::dotproduct::wset::DotProductByWeightedSetReadViewExecutor<int>"));
+    TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{1:1}", "search::features::dotproduct::wset::(anonymous namespace)::SingleDotProductByWeightedValueExecutor<int>"));
     TEST_DO(verifyCorrectDotProductExecutor(_factory, "wsint", "{}", "search::features::SingleZeroValueExecutor"));
 
 }
