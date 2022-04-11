@@ -6,17 +6,13 @@
 
 namespace search::multivalue {
 
-template <typename T> class Value;
 template <typename T> class WeightedValue;
 
 /*
  * Check for the presence of a weight.
  */
 template <typename T>
-struct is_WeightedValue;
-
-template <typename T>
-struct is_WeightedValue<Value<T>> : std::false_type {};
+struct is_WeightedValue : std::false_type {};
 
 template <typename T>
 struct is_WeightedValue<WeightedValue<T>> : std::true_type {};
@@ -28,10 +24,7 @@ inline constexpr bool is_WeightedValue_v = is_WeightedValue<T>::value;
  * Extract inner type.
  */
 template <typename T>
-struct ValueType;
-
-template <typename T>
-struct ValueType<Value<T>> { using type = T; };
+struct ValueType { using type = T; };
 
 template <typename T>
 struct ValueType<WeightedValue<T>> { using type = T; };
