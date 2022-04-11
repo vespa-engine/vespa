@@ -15,12 +15,14 @@ func TestConfig(t *testing.T) {
 	config := New()
 	config.Set("key1", "value1")
 	config.Set("key2", "value2")
-	assert.Equal(t, []string{"key1", "key2"}, config.Keys())
+	config.Set("key3", "value3")
+	assert.Equal(t, []string{"key1", "key2", "key3"}, config.Keys())
 
-	v, ok := config.Get("key1")
+	v, ok := config.Get("key3")
 	assert.True(t, ok)
-	assert.Equal(t, "value1", v)
+	assert.Equal(t, "value3", v)
 
+	config.Del("key3")
 	_, ok = config.Get("key3")
 	assert.False(t, ok)
 

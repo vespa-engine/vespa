@@ -4,7 +4,6 @@ package cmd
 import (
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -51,6 +50,8 @@ func TestConfig(t *testing.T) {
 	assertConfigCommandErr(t, configHome, "Error: invalid option or value: color = foo\n", "config", "set", "color", "foo")
 	assertConfigCommand(t, configHome, "", "config", "set", "color", "never")
 	assertConfigCommand(t, configHome, "color = never\n", "config", "get", "color")
+	assertConfigCommand(t, configHome, "", "config", "unset", "color")
+	assertConfigCommand(t, configHome, "color = auto\n", "config", "get", "color")
 
 	// quiet
 	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "true")
@@ -60,11 +61,14 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "zone", "dev.us-east-1")
 	assertConfigCommand(t, configHome, "zone = dev.us-east-1\n", "config", "get", "zone")
 
-	// Write empty value, which should be ignored. This is for compatibility with older config formats
+	// Write empty value to YAML config, which should be ignored. This is for compatibility with older config formats
 	configFile := filepath.Join(configHome, "config.yaml")
+	assertConfigCommand(t, configHome, "", "config", "unset", "zone")
 	data, err := os.ReadFile(configFile)
 	require.Nil(t, err)
-	config := strings.ReplaceAll(string(data), "dev.us-east-1", `""`)
+	yamlConfig := string(data)
+	assert.NotContains(t, yamlConfig, "zone:")
+	config := yamlConfig + "zone: \"\"\n"
 	require.Nil(t, os.WriteFile(configFile, []byte(config), 0600))
 	assertConfigCommand(t, configHome, "zone = <unset>\n", "config", "get", "zone")
 }
