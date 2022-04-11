@@ -532,6 +532,12 @@ func (c *Config) set(option, value string) error {
 			c.config.Set(option, value)
 			return nil
 		}
+	case zoneFlag:
+		if _, err := vespa.ZoneFromString(value); err != nil {
+			return err
+		}
+		c.config.Set(option, value)
+		return nil
 	}
 	return fmt.Errorf("invalid option or value: %s = %s", option, value)
 }

@@ -4,6 +4,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -55,11 +56,15 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "true")
 	assertConfigCommand(t, configHome, "", "config", "set", "quiet", "false")
 
+	// zone
+	assertConfigCommand(t, configHome, "", "config", "set", "zone", "dev.us-east-1")
+	assertConfigCommand(t, configHome, "zone = dev.us-east-1\n", "config", "get", "zone")
+
 	// Write empty value, which should be ignored. This is for compatibility with older config formats
 	configFile := filepath.Join(configHome, "config.yaml")
 	data, err := os.ReadFile(configFile)
 	require.Nil(t, err)
-	config := string(data) + "zone: \"\"\n"
+	config := strings.ReplaceAll(string(data), "dev.us-east-1", `""`)
 	require.Nil(t, os.WriteFile(configFile, []byte(config), 0600))
 	assertConfigCommand(t, configHome, "zone = <unset>\n", "config", "get", "zone")
 }
