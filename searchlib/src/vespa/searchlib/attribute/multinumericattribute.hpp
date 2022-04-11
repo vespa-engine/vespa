@@ -153,7 +153,7 @@ MultiValueNumericAttribute<B, M>::onLoad(vespalib::Executor *)
         const uint32_t valueCount(attrReader.getNextValueCount());
         for (uint32_t i(0); i < valueCount; i++) {
             MValueType currData = attrReader.getNextData();
-            values.emplace_back(currData, hasWeight ? attrReader.getNextWeight() : 1);
+            values.emplace_back(multivalue::ValueBuilder<M>::build(currData, hasWeight ? attrReader.getNextWeight() : 1));
         }
         this->checkSetMaxValueCount(valueCount);
         setNewValues(doc, values);

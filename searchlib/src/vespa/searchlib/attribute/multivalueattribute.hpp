@@ -39,7 +39,7 @@ template <typename B, typename M>
 int32_t MultiValueAttribute<B, M>::getWeight(DocId doc, uint32_t idx) const
 {
     MultiValueArrayRef values(this->_mvMapping.get(doc));
-    return ((idx < values.size()) ? values[idx].weight() : 1);
+    return ((idx < values.size()) ? multivalue::get_weight(values[idx]) : 1);
 }
 
 namespace {
@@ -111,9 +111,9 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_array(DocumentValues& docV
             }
             if (current->_type == ChangeBase::APPEND) {
                 if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-                    new_values.emplace_back(data, current->_weight);
+                    new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(data, current->_weight));
                 } else {
-                    new_values.emplace_back(ValueType(data), current->_weight);
+                    new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(ValueType(data), current->_weight));
                 }
             } else if (current->_type == ChangeBase::REMOVE) {
                 // Defer all removals to the very end by tracking when, during value vector build time,
@@ -173,9 +173,9 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
         wset_inserted.resize((old_values.size() + max_elems_inserted) * 2);
         for (const auto& e : old_values) {
             if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-                wset_inserted[e.value()] = e.weight();
+                wset_inserted[e.value()] = multivalue::get_weight(e);
             } else {
-                wset_inserted[e.value_ref().load_relaxed()] = e.weight();
+                wset_inserted[e.value_ref().load_relaxed()] = multivalue::get_weight(e);
             }
         }
         // iterate through all changes for this document
@@ -211,9 +211,9 @@ MultiValueAttribute<B, M>::apply_attribute_changes_to_wset(DocumentValues& docVa
         std::vector<MultiValueType> new_values;
         new_values.reserve(wset_inserted.size());
         if constexpr (std::is_same_v<ValueType, NonAtomicValueType>) {
-            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(e.first, e.second); });
+            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(e.first, e.second)); });
         } else {
-            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(ValueType(e.first), e.second); });
+            wset_inserted.for_each([&new_values](const auto& e){ new_values.emplace_back(multivalue::ValueBuilder<MultiValueType>::build(ValueType(e.first), e.second)); });
         }
 
         this->checkSetMaxValueCount(new_values.size());
