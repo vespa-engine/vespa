@@ -45,17 +45,15 @@ public class Instance {
     private final RotationStatus rotationStatus;
     private final Map<JobType, Instant> jobPauses;
     private final Change change;
-    private final Optional<ApplicationVersion> latestDeployed;
 
     /** Creates an empty instance */
     public Instance(ApplicationId id) {
-        this(id, Set.of(), Map.of(), List.of(), RotationStatus.EMPTY, Change.empty(), Optional.empty());
+        this(id, Set.of(), Map.of(), List.of(), RotationStatus.EMPTY, Change.empty());
     }
 
     /** Creates an empty instance*/
     public Instance(ApplicationId id, Collection<Deployment> deployments, Map<JobType, Instant> jobPauses,
-                    List<AssignedRotation> rotations, RotationStatus rotationStatus, Change change,
-                    Optional<ApplicationVersion> latestDeployed) {
+                    List<AssignedRotation> rotations, RotationStatus rotationStatus, Change change) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.deployments = Objects.requireNonNull(deployments, "deployments cannot be null").stream()
                                   .collect(Collectors.toUnmodifiableMap(Deployment::zone, Function.identity()));
@@ -63,7 +61,6 @@ public class Instance {
         this.rotations = List.copyOf(Objects.requireNonNull(rotations, "rotations cannot be null"));
         this.rotationStatus = Objects.requireNonNull(rotationStatus, "rotationStatus cannot be null");
         this.change = Objects.requireNonNull(change, "change cannot be null");
-        this.latestDeployed = Objects.requireNonNull(latestDeployed, "latestDeployed cannot be null");
     }
 
     public Instance withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
@@ -90,7 +87,7 @@ public class Instance {
         else
             jobPauses.remove(jobType);
 
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change, latestDeployed);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public Instance recordActivityAt(Instant instant, ZoneId zone) {
@@ -121,19 +118,15 @@ public class Instance {
     }
 
     public Instance with(List<AssignedRotation> assignedRotations) {
-        return new Instance(id, deployments.values(), jobPauses, assignedRotations, rotationStatus, change, latestDeployed);
+        return new Instance(id, deployments.values(), jobPauses, assignedRotations, rotationStatus, change);
     }
 
     public Instance with(RotationStatus rotationStatus) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change, latestDeployed);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public Instance withChange(Change change) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change, latestDeployed);
-    }
-
-    public Instance withLatestDeployed(ApplicationVersion latestDeployed) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change, Optional.of(latestDeployed));
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     private Instance with(Deployment deployment) {
@@ -143,7 +136,7 @@ public class Instance {
     }
 
     private Instance with(Map<ZoneId, Deployment> deployments) {
-        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change, latestDeployed);
+        return new Instance(id, deployments.values(), jobPauses, rotations, rotationStatus, change);
     }
 
     public ApplicationId id() { return id; }
@@ -186,11 +179,6 @@ public class Instance {
     /** Returns the currently deploying change for this instance. */
     public Change change() {
         return change;
-    }
-
-    /** Returns the application version that last rolled out to this instance. */
-    public Optional<ApplicationVersion> latestDeployed() {
-        return latestDeployed;
     }
 
     /** Returns the total quota usage for this instance, excluding temporary deployments **/

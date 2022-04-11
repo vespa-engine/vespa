@@ -104,8 +104,8 @@ public class Versions {
                                            .map(source -> source + " -> ").orElse(""),
                              targetPlatform,
                              sourceApplication.filter(source -> !source.equals(targetApplication))
-                                              .map(source -> source.id() + " -> ").orElse(""),
-                             targetApplication.id());
+                                              .map(source -> source.stringId() + " -> ").orElse(""),
+                             targetApplication.stringId());
     }
 
     /** Create versions using given change and application */
@@ -144,8 +144,8 @@ public class Versions {
 
     private static ApplicationVersion defaultApplicationVersion(Application application) {
         return application.oldestDeployedApplication()
-                          .or(application::latestVersion)
-                          .orElse(ApplicationVersion.unknown);
+                          .or(() -> application.revisions().last())
+                          .orElseThrow(() -> new IllegalStateException("no known prod revisions, but asked for one, for " + application));
     }
 
     private static <T extends Comparable<T>> Optional<T> max(Optional<T> o1, Optional<T> o2) {

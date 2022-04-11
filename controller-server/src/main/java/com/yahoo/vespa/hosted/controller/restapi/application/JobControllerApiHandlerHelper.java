@@ -43,7 +43,6 @@ import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -276,8 +275,8 @@ class JobControllerApiHandlerHelper {
             stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
             stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))) // Dummy version — just anything with a platform.
                       .ifPresent(until -> stepObject.setLong("platformBlockedUntil", until.toEpochMilli()));
-            application.latestVersion().map(Change::of).flatMap(stepStatus::blockedUntil) // Dummy version — just anything with an application.
-                      .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
+            application.revisions().last().map(Change::of).flatMap(stepStatus::blockedUntil) // Dummy version — just anything with an application.
+                       .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
 
             if (stepStatus.type() == DeploymentStatus.StepType.delay)
                 stepStatus.completedAt(change).ifPresent(completed -> stepObject.setLong("completedAt", completed.toEpochMilli()));
@@ -315,7 +314,7 @@ class JobControllerApiHandlerHelper {
                     change.platform().ifPresent(version -> availableArray.addObject().setString("platform", version.toFullString()));
                     toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
                 }
-                List<ApplicationVersion> availableApplications = new ArrayList<>(application.deployableVersions(false));
+                List<ApplicationVersion> availableApplications = new ArrayList<>(application.revisions().deployable(false));
                 if ( ! availableApplications.isEmpty()) {
                     var latestApplication = availableApplications.get(0);
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
@@ -375,7 +374,7 @@ class JobControllerApiHandlerHelper {
         }
 
         Cursor buildsArray = responseObject.setArray("builds");
-        application.versions().stream().sorted(reverseOrder()).forEach(version -> toSlime(buildsArray.addObject(), version));
+        application.revisions().withPackage().stream().sorted(reverseOrder()).forEach(version -> toSlime(buildsArray.addObject(), version));
 
         return new SlimeJsonResponse(slime);
     }

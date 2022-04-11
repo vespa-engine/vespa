@@ -8,8 +8,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.LockedApplication;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -37,11 +39,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -50,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static com.yahoo.collections.Iterables.reversed;
@@ -63,8 +66,10 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -85,6 +90,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 public class JobController {
 
     public static final Duration maxHistoryAge = Duration.ofDays(60);
+
+    private static final Logger log = Logger.getLogger(JobController.class.getName());
 
     private final int historyLength;
     private final Controller controller;
@@ -337,11 +344,7 @@ public class JobController {
 
     private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
         return new DeploymentStatus(application,
-                                    DeploymentStatus.jobsFor(application, controller.system()).stream()
-                                                    .collect(toMap(job -> job,
-                                                                   job -> jobStatus(job),
-                                                                   (j1, j2) -> { throw new IllegalArgumentException("Duplicate key " + j1.id()); },
-                                                                   LinkedHashMap::new)),
+                                    this::jobStatus,
                                     controller.system(),
                                     systemVersion,
                                     instance -> controller.applications().versionCompatibility(application.id().instance(instance)),
@@ -417,20 +420,8 @@ public class JobController {
                 });
                 logs.flush(id);
                 metric.jobFinished(run.id().job(), finishedRun.status());
+                pruneRevisions(unlockedRun);
 
-                DeploymentId deploymentId = new DeploymentId(unlockedRun.id().application(), unlockedRun.id().job().type().zone(controller.system()));
-                (unlockedRun.versions().targetApplication().isDeployedDirectly() ?
-                 Stream.of(unlockedRun.id().type()) :
-                 JobType.allIn(controller.system()).stream().filter(jobType -> !jobType.environment().isManuallyDeployed()))
-                        .flatMap(jobType -> controller.jobController().runs(unlockedRun.id().application(), jobType).values().stream())
-                        .mapToLong(r -> r.versions().targetApplication().buildNumber().orElse(Integer.MAX_VALUE))
-                        .min()
-                        .ifPresent(oldestBuild -> {
-                            if (unlockedRun.versions().targetApplication().isDeployedDirectly())
-                                controller.applications().applicationStore().pruneDevDiffs(deploymentId, oldestBuild);
-                            else
-                                controller.applications().applicationStore().pruneDiffs(deploymentId.applicationId().tenant(), deploymentId.applicationId().application(), oldestBuild);
-                        });
                 return finishedRun;
             });
         }
@@ -454,10 +445,11 @@ public class JobController {
     public ApplicationVersion submit(TenantAndApplicationId id, Optional<SourceRevision> revision, Optional<String> authorEmail,
                                      Optional<String> sourceUrl, long projectId, ApplicationPackage applicationPackage,
                                      byte[] testPackageBytes) {
+        ApplicationController applications = controller.applications();
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
-        controller.applications().lockApplicationOrThrow(id, application -> {
-            Optional<ApplicationVersion> previousVersion = application.get().latestVersion();
-            Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> controller.applications().applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
+        applications.lockApplicationOrThrow(id, application -> {
+            Optional<ApplicationVersion> previousVersion = application.get().revisions().last();
+            Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> applications.applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
                                                                           .map(ApplicationPackage::new);
             long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
             String packageHash = applicationPackage.bundleHash() + ApplicationPackage.calculateHash(testPackageBytes);
@@ -471,26 +463,66 @@ public class JobController {
 
             byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, applicationPackage))
                                          .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
-            controller.applications().applicationStore().put(id.tenant(),
+            applications.applicationStore().put(id.tenant(),
                                                              id.application(),
                                                              version.get(),
                                                              applicationPackage.zippedContent(),
                                                              diff);
-            controller.applications().applicationStore().putTester(id.tenant(),
+            applications.applicationStore().putTester(id.tenant(),
                                                                    id.application(),
                                                                    version.get(),
                                                                    testPackageBytes);
-            controller.applications().applicationStore().putMeta(id.tenant(),
+            applications.applicationStore().putMeta(id.tenant(),
                                                                  id.application(),
                                                                  controller.clock().instant(),
                                                                  applicationPackage.metaDataZip());
 
-            prunePackages(id);
-            controller.applications().storeWithUpdatedConfig(application, applicationPackage);
+            application = application.withProjectId(OptionalLong.of(projectId));
+            application = application.withRevisions(revisions -> revisions.with(version.get()));
+            application = withPrunedPackages(application);
 
-            controller.applications().deploymentTrigger().notifyOfSubmission(id, version.get(), projectId);
+            applications.storeWithUpdatedConfig(application, applicationPackage);
+            applications.deploymentTrigger().triggerNewRevision(id);
         });
         return version.get();
+    }
+
+    private LockedApplication withPrunedPackages(LockedApplication application){
+        TenantAndApplicationId id = application.get().id();
+        Optional<ApplicationVersion> oldestDeployed = application.get().oldestDeployedApplication();
+        if (oldestDeployed.isPresent()) {
+            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
+            controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed.get());
+
+            for (ApplicationVersion version : application.get().revisions().withPackage())
+                if (version.compareTo(oldestDeployed.get()) < 0)
+                    application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
+        }
+        return application;
+    }
+
+    /** Forget revisions no longer present in any relevant job history. */
+    private void pruneRevisions(Run run) {
+        TenantAndApplicationId applicationId = TenantAndApplicationId.from(run.id().application());
+        boolean isProduction = run.versions().targetApplication().id().isProduction();
+        (isProduction ? deploymentStatus(controller.applications().requireApplication(applicationId)).jobs().asList().stream()
+                      : Stream.of(jobStatus(run.id().job())))
+                .flatMap(jobs -> jobs.runs().values().stream())
+                .map(r -> r.versions().targetApplication().id())
+                .filter(id -> id.isProduction() == isProduction)
+                .min(naturalOrder())
+                .ifPresent(oldestRevision -> {
+                    controller.applications().lockApplicationOrThrow(applicationId, application -> {
+                        if (isProduction) {
+                            controller.applications().applicationStore().pruneDiffs(run.id().application().tenant(), run.id().application().application(), oldestRevision.number());
+                            controller.applications().store(application.withRevisions(revisions -> revisions.withoutOlderThan(oldestRevision)));
+                        }
+                        else {
+                            controller.applications().applicationStore().pruneDevDiffs(new DeploymentId(run.id().application(), run.id().job().type().zone(controller.system())), oldestRevision.number());
+                            controller.applications().store(application.withRevisions(revisions -> revisions.withoutOlderThan(oldestRevision, run.id().job())));
+                        }
+                    });
+                });
     }
 
     /** Orders a run of the given type, or throws an IllegalStateException if that job type is already running. */
@@ -553,6 +585,7 @@ public class JobController {
                   false,
                   dryRun ? JobProfile.developmentDryRun : JobProfile.development,
                   Optional.empty());
+            controller.applications().store(application.withRevisions(revisions -> revisions.with(version, new JobId(id, type))));
         });
 
         locked(id, type, __ -> {
@@ -634,29 +667,19 @@ public class JobController {
                                        // It's probably already deleted, so if we fail, that's OK.
                                    }
                                    curator.deleteRunData(id, type);
-                                   logs.delete(id);
                                }
                            });
+                       logs.delete(id);
+                       curator.deleteRunData(id);
                    }
                    catch (Exception e) {
-                       return; // Don't remove the data if we couldn't clean up all resources.
+                       log.log(WARNING, "failed cleaning up after deleted application", e);
                    }
-                   curator.deleteRunData(id);
                });
     }
 
     public void deactivateTester(TesterId id, JobType type) {
         controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
-    }
-
-    private void prunePackages(TenantAndApplicationId id) {
-        controller.applications().lockApplicationIfPresent(id, application -> {
-            application.get().oldestDeployedApplication()
-                       .ifPresent(oldestDeployed -> {
-                           controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
-                           controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed);
-                       });
-        });
     }
 
     /** Locks all runs and modifies the list of historic runs for the given application and job type. */

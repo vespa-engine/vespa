@@ -792,12 +792,12 @@ public class UpgraderTest {
 
         // New application change
         app.submit(applicationPackage("default"));
-        String applicationVersion = app.lastSubmission().get().id();
+        String applicationVersion = app.lastSubmission().get().stringId();
 
         // Application change recorded together with ongoing upgrade
         assertTrue("Change contains both upgrade and application change",
                    app.instance().change().platform().get().equals(version) &&
-                   app.instance().change().application().get().id().equals(applicationVersion));
+                   app.instance().change().application().get().stringId().equals(applicationVersion));
 
         // Deployment completes
         app.runJob(systemTest).runJob(stagingTest)
@@ -807,7 +807,7 @@ public class UpgraderTest {
 
         for (Deployment deployment : app.instance().deployments().values()) {
             assertEquals(version, deployment.version());
-            assertEquals(applicationVersion, deployment.applicationVersion().id());
+            assertEquals(applicationVersion, deployment.applicationVersion().stringId());
         }
     }
 

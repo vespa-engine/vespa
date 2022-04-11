@@ -147,7 +147,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Scanner;
-import java.util.SortedSet;
 import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -817,7 +816,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
         var tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
-        SortedSet<ApplicationVersion> versions = controller.applications().requireApplication(tenantAndApplication).versions();
+        List<ApplicationVersion> versions = controller.applications().requireApplication(tenantAndApplication).revisions().withPackage();
         if (versions.isEmpty())
             throw new NotExistsException("No application package has been submitted for '" + tenantAndApplication + "'");
 
@@ -833,7 +832,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         .filter(ver -> ver.buildNumber().orElse(-1) == build)
                         .findFirst()
                         .orElseThrow(() -> new NotExistsException("No application package found for '" + tenantAndApplication + "' with build number " + build)))
-                .orElseGet(versions::last);
+                .orElseGet(() -> versions.get(versions.size() - 1));
 
         boolean tests = request.getBooleanProperty("tests");
         byte[] applicationPackage = tests ?
@@ -1317,7 +1316,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  request.getUri()).toString());
 
         DeploymentStatus status = controller.jobController().deploymentStatus(application);
-        application.latestVersion().ifPresent(version -> JobControllerApiHandlerHelper.toSlime(object.setObject("latestVersion"), version));
+        application.revisions().last().ifPresent(version -> JobControllerApiHandlerHelper.toSlime(object.setObject("latestVersion"), version));
 
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
@@ -1440,7 +1439,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                  "/instance/" + instance.id().instance().value() + "/job/",
                                                  request.getUri()).toString());
 
-        application.latestVersion().ifPresent(version -> {
+        application.revisions().last().ifPresent(version -> {
             version.sourceUrl().ifPresent(url -> object.setString("sourceUrl", url));
             version.commit().ifPresent(commit -> object.setString("commit", commit));
         });
@@ -1622,7 +1621,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("nodes", withPathAndQuery("/zone/v2/" + deploymentId.zoneId().environment() + "/" + deploymentId.zoneId().region() + "/nodes/v2/node/", "recursive=true&application=" + deploymentId.applicationId().tenant() + "." + deploymentId.applicationId().application() + "." + deploymentId.applicationId().instance(), request.getUri()).toString());
         response.setString("yamasUrl", monitoringSystemUri(deploymentId).toString());
         response.setString("version", deployment.version().toFullString());
-        response.setString("revision", deployment.applicationVersion().id());
+        response.setString("revision", deployment.applicationVersion().stringId());
         Instant lastDeploymentStart = lastDeploymentStart(deploymentId.applicationId(), deployment);
         response.setLong("deployTimeEpochMs", lastDeploymentStart.toEpochMilli());
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
@@ -1769,7 +1768,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Cursor root = slime.setObject();
         if ( ! instance.change().isEmpty()) {
             instance.change().platform().ifPresent(version -> root.setString("platform", version.toString()));
-            instance.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.id()));
+            instance.change().application().ifPresent(applicationVersion -> root.setString("application", applicationVersion.stringId()));
             root.setBool("pinned", instance.change().isPinned());
         }
         return new SlimeJsonResponse(slime);
@@ -1914,7 +1913,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         StringBuilder response = new StringBuilder();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
-            ApplicationVersion version = build == -1 ? application.get().latestVersion().get()
+            ApplicationVersion version = build == -1 ? application.get().revisions().last().get()
                                                      : getApplicationVersion(application.get(), build);
             Change change = Change.of(version);
             controller.applications().deploymentTrigger().forceChange(id, change);
@@ -1924,7 +1923,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private ApplicationVersion getApplicationVersion(Application application, Long build) {
-        return application.versions().stream()
+        return application.revisions().withPackage().stream()
                           .filter(version -> version.buildNumber().stream().anyMatch(build::equals))
                           .findFirst()
                           .filter(version -> controller.applications().applicationStore().hasBuild(application.id().tenant(),
@@ -2486,7 +2485,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                       .map(Run::start)
                                                                       .max(Comparator.naturalOrder()));
         Optional<Instant> lastSubmission = applications.stream()
-                                                       .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
+                                                       .flatMap(app -> app.revisions().last().flatMap(ApplicationVersion::buildTime).stream())
                                                        .max(Comparator.naturalOrder());
         object.setLong("createdAtMillis", tenant.createdAt().toEpochMilli());
         if (tenant.type() == Tenant.Type.deleted)

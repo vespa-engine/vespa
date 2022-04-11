@@ -79,12 +79,6 @@
           "upgradePolicy": "default",
           "jobs": [
             {
-              "name": "system-test"
-            },
-            {
-              "name": "staging-test"
-            },
-            {
               "name": "production-us-west-1"
             }
           ],
@@ -329,12 +323,6 @@
           "upgrading": true,
           "upgradePolicy": "default",
           "jobs": [
-            {
-              "name": "system-test"
-            },
-            {
-              "name": "staging-test"
-            },
             {
               "name": "production-us-west-1",
               "pending": "platform"

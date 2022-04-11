@@ -76,18 +76,6 @@ public class DeploymentTrigger {
     }
 
     public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
-        if (applications().getApplication(id).isEmpty()) {
-            log.log(Level.WARNING, "Ignoring submission from project '" + projectId +
-                                      "': Unknown application '" + id + "'");
-            return;
-        }
-
-        applications().lockApplicationOrThrow(id, application -> {
-            application = application.withProjectId(OptionalLong.of(projectId));
-            application = application.withNewSubmission(version);
-            applications().store(application);
-        });
-        triggerNewRevision(id);
     }
 
     /**
@@ -464,11 +452,8 @@ public class DeploymentTrigger {
         Change remaining = change;
         if (status.hasCompleted(instance.name(), change.withoutApplication()))
             remaining = remaining.withoutPlatform();
-        if (status.hasCompleted(instance.name(), change.withoutPlatform())) {
+        if (status.hasCompleted(instance.name(), change.withoutPlatform()))
             remaining = remaining.withoutApplication();
-            if (change.application().isPresent())
-                instance = instance.withLatestDeployed(change.application().get());
-        }
         return instance.withChange(remaining);
     }
 
@@ -510,7 +495,7 @@ public class DeploymentTrigger {
         public String toString() {
             return jobType + " for " + instanceId +
                    " on (" + versions.targetPlatform() + versions.sourcePlatform().map(version -> " <-- " + version).orElse("") +
-                   ", " + versions.targetApplication().id()  + versions.sourceApplication().map(version -> " <-- " + version.id()).orElse("") +
+                   ", " + versions.targetApplication().stringId() + versions.sourceApplication().map(version -> " <-- " + version.stringId()).orElse("") +
                    "), ready since " + availableSince;
         }
 
