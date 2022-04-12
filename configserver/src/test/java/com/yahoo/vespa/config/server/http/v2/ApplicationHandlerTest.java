@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
@@ -78,6 +79,7 @@ import static com.yahoo.vespa.config.server.http.HandlerTest.assertHttpStatusCod
 import static com.yahoo.vespa.config.server.http.SessionHandlerTest.getRenderedString;
 import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceListResponse;
 import static com.yahoo.vespa.config.server.http.v2.ApplicationHandler.HttpServiceResponse.createResponse;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -364,11 +366,17 @@ public class ApplicationHandlerTest {
                                              "service=" + invoc.getArgument(2, String.class) + "," +
                                              "path=" + invoc.getArgument(3, HttpURL.Path.class) + "," +
                                              "query=" + invoc.getArgument(4, HttpURL.Query.class) +
+                                             (invoc.getArgument(5, HttpURL.class) == null ? "" : ("," +
+                                             "forwardedUrl=" + invoc.getArgument(5, HttpURL.class))) +
                                              "</html>"))
-                .when(mockHttpProxy).get(any(), any(), any(), any(), any());
+                .when(mockHttpProxy).get(any(), any(), any(), any(), any(), any());
 
         HttpResponse response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/container-clustercontroller/" + host + "/status/some/path/clusterName1?foo=bar", GET));
         assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=container-clustercontroller,path=path '/clustercontroller-status/v1/some/path/clusterName1',query=query 'foo=bar'</html>");
+
+        String forwarded = "https://api:123/my/base/path?bar=%2E";
+        response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/distributor/" + host + "/state/v1/something/more?foo=bar&forwarded-url=" + URLEncoder.encode(forwarded, UTF_8), GET));
+        assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=path '/state/v1/something/more',query=query 'foo=bar',forwardedUrl=https://api:123/my/base/path?bar=.</html>");
 
         response = mockHandler.handle(createTestRequest(toUrlPath(applicationId, Zone.defaultZone(), true) + "/service/distributor/" + host + "/status/something?foo=bar", GET));
         assertHttpStatusCodeAndMessage(response, 200, "text/html", "<html>host=foo.yahoo.com,service=distributor,path=path '/something',query=query 'foo=bar'</html>");
@@ -419,7 +427,7 @@ public class ApplicationHandlerTest {
         var mockHandler = createApplicationHandler();
 
         var requestString = "{\"name\":\"store\",\"awsId\":\"aws-id\",\"role\":\"role\",\"region\":\"us-west-1\",\"parameterName\":\"some-parameter\"}";
-        var requestData = new ByteArrayInputStream(requestString.getBytes(StandardCharsets.UTF_8));
+        var requestData = new ByteArrayInputStream(requestString.getBytes(UTF_8));
         var response = mockHandler.handle(createTestRequest(url, POST, requestData));
         assertEquals(200, response.getStatus());
 
@@ -455,7 +463,7 @@ public class ApplicationHandlerTest {
         String url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/tester/run/staging-test";
         ApplicationHandler mockHandler = createApplicationHandler();
 
-        InputStream requestData =  new ByteArrayInputStream("foo".getBytes(StandardCharsets.UTF_8));
+        InputStream requestData =  new ByteArrayInputStream("foo".getBytes(UTF_8));
         HttpRequest testRequest = createTestRequest(url, POST, requestData);
         HttpResponse response = mockHandler.handle(testRequest);
         assertEquals(200, response.getStatus());

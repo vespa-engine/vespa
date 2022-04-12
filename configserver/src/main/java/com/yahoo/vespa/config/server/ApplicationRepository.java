@@ -560,8 +560,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public HttpResponse proxyServiceHostnameRequest(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path path, Query query) {
-        return httpProxy.get(getApplication(applicationId), hostName, serviceName, path, query);
+    public HttpResponse proxyServiceHostnameRequest(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path path, Query query, HttpURL forwardedUrl) {
+        return httpProxy.get(getApplication(applicationId), hostName, serviceName, path, query, forwardedUrl);
     }
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {
