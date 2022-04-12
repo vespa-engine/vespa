@@ -330,7 +330,7 @@ template class PostingChange<AttributeWeightPosting>;
 typedef PostingChange<vespalib::btree::BTreeKeyData<unsigned int, int> > WeightedPostingChange;
 typedef std::map<EnumPostingPair, WeightedPostingChange> WeightedPostingChangeMap;
 typedef multivalue::WeightedValue<AtomicEntryRef> WeightedIndex;
-typedef multivalue::Value<AtomicEntryRef> ValueIndex;
+typedef AtomicEntryRef ValueIndex;
 
 using WeightedMultiValueMapping = attribute::MultiValueMapping<WeightedIndex>;
 using ValueMultiValueMapping = attribute::MultiValueMapping<ValueIndex>;

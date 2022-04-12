@@ -18,7 +18,7 @@ namespace search {
  * This class is used for both array and weighted set types.
  *
  * B: Base class: EnumAttribute<StringAttribute>
- * M: multivalue::Value<IEnumStore::Index> (array) or
+ * M: IEnumStore::Index (array) or
  *    multivalue::WeightedValue<IEnumStore::Index> (weighted set)
  */
 template <typename B, typename M>
@@ -108,7 +108,7 @@ public:
 };
 
 
-using ArrayStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<vespalib::datastore::AtomicEntryRef> >;
+using ArrayStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>;
 using WeightedSetStringAttribute = MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef> >;
 
 }

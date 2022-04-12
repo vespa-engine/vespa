@@ -4,8 +4,8 @@
 
 #define ENUM_ATTRIBUTE(B) EnumAttribute<B>
 
-#define MULTIVALUE_ARG(T) multivalue::Value<T>
-#define MULTIVALUE_ENUM_ARG multivalue::Value<vespalib::datastore::AtomicEntryRef>
+#define MULTIVALUE_ARG(T) T
+#define MULTIVALUE_ENUM_ARG vespalib::datastore::AtomicEntryRef
 #define WEIGHTED_MULTIVALUE_ARG(T) multivalue::WeightedValue<T>
 #define WEIGHTED_MULTIVALUE_ENUM_ARG multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>
 

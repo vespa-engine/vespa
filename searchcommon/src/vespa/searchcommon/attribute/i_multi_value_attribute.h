@@ -18,7 +18,7 @@ public:
     class Tag {};
 
     template<typename T>
-    using ArrayTag = Tag<search::multivalue::Value<T>>;
+    using ArrayTag = Tag<T>;
 
     using ArrayEnumTag = ArrayTag<vespalib::datastore::AtomicEntryRef>;
 

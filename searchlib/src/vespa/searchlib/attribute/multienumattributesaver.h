@@ -11,7 +11,7 @@ namespace search {
 /**
  * Class for saving an enumerated multivalue attribute.
  *
- * Template argument MultiValueT is either  multivalue::Value<ValueType> or
+ * Template argument MultiValueT is either ValueType or
  * multivalue::WeightedValue<ValueType>
  */
 template <typename MultiValueT>

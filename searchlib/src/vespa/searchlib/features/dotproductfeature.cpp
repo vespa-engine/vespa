@@ -575,7 +575,7 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
     }
     const A * iattr = dynamic_cast<const A *>(attribute);
     using T = typename A::BaseType;
-    using VT = multivalue::Value<T>;
+    using VT = T;
     auto array_read_view = get_multi_value_read_view<VT>(*attribute);
     if (indexes.empty()) {
         if (array_read_view != nullptr) {

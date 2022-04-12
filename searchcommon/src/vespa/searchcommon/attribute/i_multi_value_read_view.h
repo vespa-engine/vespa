@@ -24,7 +24,7 @@ public:
  * @tparam T The value type of the raw data to access.
  */
 template <typename T>
-using IArrayReadView = IMultiValueReadView<multivalue::Value<T>>;
+using IArrayReadView = IMultiValueReadView<T>;
 
 /**
  * Read view for the raw data stored in a weighted set attribute.

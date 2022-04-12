@@ -10,7 +10,6 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>
 
-using search::multivalue::Value;
 using search::multivalue::WeightedValue;
 using vespalib::datastore::AtomicEntryRef;
 
@@ -81,7 +80,7 @@ LoadUtils::loadUDAT(const AttributeVector& attr)
 
 
 #define INSTANTIATE_ARRAY(ValueType, Saver) \
-template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<Value<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
+template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<ValueType>&, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
 #define INSTANTIATE_WSET(ValueType, Saver) \
 template uint32_t loadFromEnumeratedMultiValue(MultiValueMapping<WeightedValue<ValueType>> &, ReaderBase &, vespalib::ConstArrayRef<atomic_utils::NonAtomicValue_t<ValueType>>, vespalib::ConstArrayRef<uint32_t>, Saver)
 #define INSTANTIATE_SINGLE(ValueType, Saver) \

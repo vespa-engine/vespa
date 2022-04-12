@@ -5,7 +5,7 @@
 
 namespace search {
 
-template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::Value<vespalib::datastore::AtomicEntryRef> >;
+template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, vespalib::datastore::AtomicEntryRef>;
 template class MultiValueStringAttributeT<EnumAttribute<StringAttribute>, multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef> >;
 
 } // namespace search

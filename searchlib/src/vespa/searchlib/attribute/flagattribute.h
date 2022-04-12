@@ -6,7 +6,7 @@
 
 namespace search {
 
-typedef MultiValueNumericAttribute< IntegerAttributeTemplate<int8_t>, multivalue::Value<int8_t> > FlagBaseImpl;
+typedef MultiValueNumericAttribute< IntegerAttributeTemplate<int8_t>, int8_t > FlagBaseImpl;
 
 template <typename B>
 class FlagAttributeT : public B {
