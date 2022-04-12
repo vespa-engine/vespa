@@ -384,25 +384,9 @@ MinHitsPerThread::lookup(const Properties &props, uint32_t defaultValue)
     return lookupUint32(props, NAME, defaultValue);
 }
 
-const vespalib::string NearestNeighborBruteForceLimit::NAME("vespa.matching.nearest_neighbor.brute_force_limit");
-
-const double NearestNeighborBruteForceLimit::DEFAULT_VALUE(0.05);
-
-double
-NearestNeighborBruteForceLimit::lookup(const Properties &props)
-{
-    return lookup(props, DEFAULT_VALUE);
-}
-
-double
-NearestNeighborBruteForceLimit::lookup(const Properties &props, double defaultValue)
-{
-    return lookupDouble(props, NAME, defaultValue);
-}
-
 const vespalib::string GlobalFilterLowerLimit::NAME("vespa.matching.global_filter.lower_limit");
 
-const double GlobalFilterLowerLimit::DEFAULT_VALUE(0.0);
+const double GlobalFilterLowerLimit::DEFAULT_VALUE(0.05);
 
 double
 GlobalFilterLowerLimit::lookup(const Properties &props)

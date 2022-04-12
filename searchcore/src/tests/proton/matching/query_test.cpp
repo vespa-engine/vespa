@@ -43,34 +43,34 @@ using search::fef::ITermFieldData;
 using search::fef::IllegalHandle;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
-using search::fef::TermFieldMatchData;
 using search::fef::TermFieldHandle;
+using search::fef::TermFieldMatchData;
 using search::query::CustomTypeTermVisitor;
 using search::query::Node;
 using search::query::QueryBuilder;
 using search::query::Range;
 using search::query::StackDumpCreator;
 using search::query::Weight;
-using search::queryeval::termAsString;
+using search::queryeval::AndBlueprint;
+using search::queryeval::AndNotBlueprint;
 using search::queryeval::Blueprint;
+using search::queryeval::ExecuteInfo;
+using search::queryeval::FakeBlueprint;
+using search::queryeval::FakeRequestContext;
 using search::queryeval::FakeResult;
 using search::queryeval::FakeSearchable;
-using search::queryeval::FakeRequestContext;
-using search::queryeval::FakeBlueprint;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
-using search::queryeval::Searchable;
-using search::queryeval::SearchIterator;
-using search::queryeval::SimpleBlueprint;
-using search::queryeval::SimpleResult;
+using search::queryeval::GlobalFilter;
+using search::queryeval::IntermediateBlueprint;
 using search::queryeval::ParallelWeakAndBlueprint;
 using search::queryeval::RankBlueprint;
-using search::queryeval::AndBlueprint;
-using search::queryeval::IntermediateBlueprint;
-using search::queryeval::AndNotBlueprint;
+using search::queryeval::SearchIterator;
+using search::queryeval::Searchable;
+using search::queryeval::SimpleBlueprint;
+using search::queryeval::SimpleResult;
 using search::queryeval::SourceBlenderBlueprint;
-using search::queryeval::ExecuteInfo;
-
+using search::queryeval::termAsString;
 using std::string;
 using std::vector;
 namespace fef_test = search::fef::test;
@@ -121,6 +121,7 @@ class Test : public vespalib::TestApp {
     void requireThatSameElementDoesNotAllocateMatchData();
     void requireThatSameElementIteratorsCanBeBuilt();
     void requireThatConstBoolBlueprintsAreCreatedCorrectly();
+    void global_filter_is_calculated_and_handled();
 
 public:
     ~Test() override;
@@ -1113,6 +1114,62 @@ void Test::requireThatConstBoolBlueprintsAreCreatedCorrectly() {
     EXPECT_TRUE(fbp != nullptr);
 }
 
+class GlobalFilterBlueprint : public SimpleBlueprint {
+public:
+    std::shared_ptr<const GlobalFilter> filter;
+    GlobalFilterBlueprint(const SimpleResult& result,
+                          bool want_global_filter)
+        : search::queryeval::SimpleBlueprint(result),
+          filter()
+    {
+        set_want_global_filter(want_global_filter);
+    }
+    ~GlobalFilterBlueprint() {}
+    void set_global_filter(const GlobalFilter& filter_) override {
+        filter = filter_.shared_from_this();
+    }
+};
+
+void
+Test::global_filter_is_calculated_and_handled()
+{
+    // estimated hits = 3, estimated hit ratio = 0.3
+    auto result = SimpleResult().addHit(3).addHit(5).addHit(7);
+    uint32_t docid_limit = 10;
+    { // global filter is not wanted
+        GlobalFilterBlueprint bp(result, false);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0, 1);
+        EXPECT_FALSE(res);
+        EXPECT_FALSE(bp.filter);
+    }
+    { // estimated_hit_ratio < global_filter_lower_limit
+        GlobalFilterBlueprint bp(result, true);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0.31, 1);
+        EXPECT_FALSE(res);
+        EXPECT_FALSE(bp.filter);
+    }
+    { // estimated_hit_ratio <= global_filter_upper_limit
+        GlobalFilterBlueprint bp(result, true);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.3);
+        EXPECT_TRUE(res);
+        EXPECT_TRUE(bp.filter);
+        EXPECT_TRUE(bp.filter->has_filter());
+
+        auto* bv = bp.filter->filter();
+        EXPECT_EQUAL(3u, bv->countTrueBits());
+        EXPECT_TRUE(bv->testBit(3));
+        EXPECT_TRUE(bv->testBit(5));
+        EXPECT_TRUE(bv->testBit(7));
+    }
+    { // estimated_hit_ratio > global_filter_upper_limit
+        GlobalFilterBlueprint bp(result, true);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.29);
+        EXPECT_TRUE(res);
+        EXPECT_TRUE(bp.filter);
+        EXPECT_FALSE(bp.filter->has_filter());
+    }
+}
+
 Test::~Test() = default;
 
 int
@@ -1152,6 +1209,7 @@ Test::Main()
     TEST_CALL(requireThatSameElementDoesNotAllocateMatchData);
     TEST_CALL(requireThatSameElementIteratorsCanBeBuilt);
     TEST_CALL(requireThatConstBoolBlueprintsAreCreatedCorrectly);
+    TEST_CALL(global_filter_is_calculated_and_handled);
 
     TEST_DONE();
 }

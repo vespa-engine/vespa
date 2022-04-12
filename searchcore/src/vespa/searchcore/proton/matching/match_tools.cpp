@@ -70,7 +70,8 @@ extractDiversityParams(const RankSetup &rankSetup, const Properties &rankPropert
 AttributeBlueprintParams
 extractAttributeBlueprintParams(const RankSetup& rank_setup, const Properties &rankProperties)
 {
-    return AttributeBlueprintParams(NearestNeighborBruteForceLimit::lookup(rankProperties, rank_setup.get_nearest_neighbor_brute_force_limit()));
+    return AttributeBlueprintParams(GlobalFilterLowerLimit::lookup(rankProperties, rank_setup.get_global_filter_lower_limit()),
+                                    GlobalFilterUpperLimit::lookup(rankProperties, rank_setup.get_global_filter_upper_limit()));
 }
 
 } // namespace proton::matching::<unnamed>
@@ -205,7 +206,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
             trace.addEvent(5, "MTF: Handle Global Filters");
             double lower_limit = GlobalFilterLowerLimit::lookup(rankProperties, rankSetup.get_global_filter_lower_limit());
             double upper_limit = GlobalFilterUpperLimit::lookup(rankProperties, rankSetup.get_global_filter_upper_limit());
-            _query.handle_global_filters(searchContext.getDocIdLimit(), lower_limit, upper_limit);
+            _query.handle_global_filter(searchContext.getDocIdLimit(), lower_limit, upper_limit);
         }
         _query.freeze();
         trace.addEvent(5, "MTF: prepareSharedState");
