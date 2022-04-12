@@ -536,7 +536,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath, Query query) {
-        return new ProxyResponse("<h1>OK</h1>".getBytes(StandardCharsets.UTF_8), "text/html", 200);
+        return new ProxyResponse((subPath + " and " + query).getBytes(StandardCharsets.UTF_8), "text/html", 200);
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 public class StaticResponse extends HttpResponse {
+
     private final String contentType;
     private final byte[] body;
 
@@ -30,4 +31,5 @@ public class StaticResponse extends HttpResponse {
     public String getContentType() {
         return contentType;
     }
+
 }
