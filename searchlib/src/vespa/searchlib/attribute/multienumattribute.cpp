@@ -8,7 +8,7 @@ namespace search::multienumattribute {
 
 using EnumIndex = IEnumStore::Index;
 using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
-using Value = multivalue::Value<vespalib::datastore::AtomicEntryRef>;
+using Value = vespalib::datastore::AtomicEntryRef;
 using WeightedValue = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
 
 template <typename WeightedIndex>

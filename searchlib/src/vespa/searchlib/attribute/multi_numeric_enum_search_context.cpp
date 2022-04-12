@@ -3,7 +3,7 @@
 #include "multi_numeric_enum_search_context.hpp"
 #include <vespa/searchcommon/attribute/multivalue.h>
 
-using ValueRef = search::multivalue::Value<vespalib::datastore::AtomicEntryRef>;
+using ValueRef = vespalib::datastore::AtomicEntryRef;
 using WeightedValueRef = search::multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
 
 namespace search::attribute {

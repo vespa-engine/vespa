@@ -65,7 +65,7 @@ RawExecutor<BaseType>::RawExecutor(const ArrayReadView* array_read_view, const I
 namespace {
 
 template <typename T>
-inline T get_array_element_value(const multivalue::Value<T>& value) noexcept { return multivalue::get_value(value); }
+inline T get_array_element_value(const T& value) noexcept { return multivalue::get_value(value); }
 
 template <typename T>
 inline T get_array_element_value(const search::attribute::WeightedType<T>& value) noexcept { return value.value(); }
@@ -144,7 +144,7 @@ template<typename BaseType, typename V>
 FeatureExecutor &
 selectTypedExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &stash) {
     if (!attribute->isImported()) {
-        using VT = multivalue::Value<BaseType>;
+        using VT = BaseType;
         auto multi_value_attribute = attribute->as_multi_value_attribute();
         if (multi_value_attribute != nullptr) {
             auto array_read_view = multi_value_attribute->as_read_view(attribute::IMultiValueAttribute::Tag<VT>());

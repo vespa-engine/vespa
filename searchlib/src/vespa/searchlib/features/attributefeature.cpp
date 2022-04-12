@@ -344,7 +344,7 @@ struct MultiValueExecutorCreator {
     bool handle(const IAttributeVector *attribute) {
         auto multi_value_attribute = attribute->as_multi_value_attribute();
         if (multi_value_attribute != nullptr) {
-            _array_read_view = multi_value_attribute->as_read_view(attribute::IMultiValueAttribute::Tag<multivalue::Value<typename T::BaseType>>());
+            _array_read_view = multi_value_attribute->as_read_view(attribute::IMultiValueAttribute::Tag<typename T::BaseType>());
         }
         return _array_read_view != nullptr;
     }

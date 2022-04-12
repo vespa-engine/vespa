@@ -180,7 +180,7 @@ namespace array {
 template <typename BaseType>
 class DotProductExecutorBase : public fef::FeatureExecutor {
 public:
-    using AT = multivalue::Value<BaseType>;
+    using AT = BaseType;
     using V  = std::vector<BaseType>;
 private:
     const vespalib::hwaccelrated::IAccelrated   & _multiplier;

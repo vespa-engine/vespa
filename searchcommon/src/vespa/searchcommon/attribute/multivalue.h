@@ -7,9 +7,6 @@
 namespace search::multivalue {
 
 template <typename T>
-using Value = T;
-
-template <typename T>
 class WeightedValue {
 public:
     WeightedValue() noexcept : _v(), _w(1) { }
