@@ -880,7 +880,7 @@ public class ProvisioningTest {
         assertTrue("Time of event is updated for all nodes",
                    reserved.stream()
                            .allMatch(n -> n.history()
-                           .lastEvent(History.Event.Type.reserved)
+                           .event(History.Event.Type.reserved)
                            .get().at()
                            .equals(tester.clock().instant().truncatedTo(MILLIS))));
 
@@ -1167,7 +1167,7 @@ public class ProvisioningTest {
 
     /** A predicate that returns whether a node has been retired by the given agent */
     private static Predicate<Node> retiredBy(Agent agent) {
-        return (node) -> node.history().lastEvent(History.Event.Type.retired)
+        return (node) -> node.history().event(History.Event.Type.retired)
                 .filter(e -> e.type() == History.Event.Type.retired)
                 .filter(e -> e.agent() == agent)
                 .isPresent();

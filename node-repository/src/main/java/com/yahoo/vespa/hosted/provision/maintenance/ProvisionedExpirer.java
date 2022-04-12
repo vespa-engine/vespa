@@ -54,7 +54,7 @@ public class ProvisionedExpirer extends Expirer {
     }
 
     private boolean parkedByProvisionedExpirer(Node node) {
-        return node.history().lastEvent(History.Event.Type.parked)
+        return node.history().event(History.Event.Type.parked)
                 .map(History.Event::agent)
                 .map(Agent.ProvisionedExpirer::equals)
                 .orElse(false);

@@ -55,11 +55,11 @@ public class NodeRebooter extends NodeRepositoryMaintainer {
         var rebootEvents = EnumSet.of(History.Event.Type.provisioned, History.Event.Type.rebooted, History.Event.Type.osUpgraded);
         var rebootInterval = Duration.ofDays(rebootIntervalInDays.value());
 
-        Optional<Duration> overdue = node.history().asList().stream()
-                                         .filter(event -> rebootEvents.contains(event.type()))
-                                         .map(History.Event::at)
-                                         .max(Comparator.naturalOrder())
-                                         .map(lastReboot -> Duration.between(lastReboot, clock().instant()).minus(rebootInterval));
+        Optional<Duration> overdue = node.history().events().stream()
+                .filter(event -> rebootEvents.contains(event.type()))
+                .map(History.Event::at)
+                .max(Comparator.naturalOrder())
+                .map(lastReboot -> Duration.between(lastReboot, clock().instant()).minus(rebootInterval));
 
         if (overdue.isEmpty()) // should never happen as all hosts should have provisioned timestamp
             return random.nextDouble() < interval().getSeconds() / (double) rebootInterval.getSeconds();

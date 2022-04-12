@@ -107,7 +107,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         // Scaling event is complete if:
         // - 1. no nodes which was retired by this are still present (which also implies data distribution is complete)
         if (clusterNodes.retired().stream()
-                        .anyMatch(node -> node.history().hasLastEventAt(event.at(), History.Event.Type.retired)))
+                        .anyMatch(node -> node.history().hasEventAt(History.Event.Type.retired, event.at())))
             return cluster;
         // - 2. all nodes have switched to the right config generation (currently only measured on containers)
         for (var nodeTimeseries : nodeRepository().metricsDb().getNodeTimeseries(Duration.between(event.at(), clock().instant()),

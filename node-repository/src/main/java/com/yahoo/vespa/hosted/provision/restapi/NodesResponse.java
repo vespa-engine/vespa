@@ -197,7 +197,7 @@ class NodesResponse extends SlimeJsonResponse {
     }
 
     private void toSlime(History history, Cursor array) {
-        for (History.Event event : history.asList()) {
+        for (History.Event event : history.events()) {
             Cursor object = array.addObject();
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());
