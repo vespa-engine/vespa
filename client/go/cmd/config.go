@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -210,14 +211,14 @@ $ vespa config get --local
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := cli.config
 			if localArg {
-				if cli.config.local == nil {
+				if cli.config.local.isEmpty() {
 					cli.printWarning("no local configuration present")
 					return nil
 				}
 				config = cli.config.local
 			}
 			if len(args) == 0 { // Print all values
-				for _, option := range config.list() {
+				for _, option := range config.list(!localArg) {
 					config.printOption(option)
 				}
 			} else {
@@ -486,7 +487,21 @@ func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (stri
 	return filepath.Join(appDir, name), nil
 }
 
-func (c *Config) list() []string { return c.config.Keys() }
+func (c *Config) isEmpty() bool { return len(c.config.Keys()) == 0 }
+
+// list returns the options that have been set in this configuration. If includeUnset is true, also return options that
+// haven't been set.
+func (c *Config) list(includeUnset bool) []string {
+	if !includeUnset {
+		return c.config.Keys()
+	}
+	var flags []string
+	for k := range c.flags {
+		flags = append(flags, k)
+	}
+	sort.Strings(flags)
+	return flags
+}
 
 // flagValue returns the set value and default value of the named flag.
 func (c *Config) flagValue(name string) (string, string) {

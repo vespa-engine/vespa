@@ -85,6 +85,7 @@ func TestLocalConfig(t *testing.T) {
 	require.Nil(t, err)
 	t.Cleanup(func() { os.Chdir(wd) })
 	require.Nil(t, os.Chdir(rootDir))
+	assertConfigCommandStdErr(t, configHome, "Warning: no local configuration present\n", "config", "get", "--local")
 	assertConfigCommand(t, configHome, "", "config", "set", "--local", "instance", "foo")
 	assertConfigCommand(t, configHome, "instance = foo\n", "config", "get", "instance")
 	assertConfigCommand(t, configHome, "instance = bar\n", "config", "get", "--instance", "bar", "instance") // flag overrides local config
@@ -95,10 +96,21 @@ func TestLocalConfig(t *testing.T) {
 	// get reads global option if unset locally
 	assertConfigCommand(t, configHome, "target = cloud\n", "config", "get", "target")
 
+	// get merges settings from local and global config
+	assertConfigCommand(t, configHome, "", "config", "set", "--local", "application", "t1.a1")
+	assertConfigCommand(t, configHome, `application = t1.a1.default
+color = auto
+instance = foo
+quiet = false
+target = cloud
+wait = 0
+zone = <unset>
+`, "config", "get")
+
 	// Only locally set options are written
 	localConfig, err := os.ReadFile(filepath.Join(rootDir, ".vespa", "config.yaml"))
 	require.Nil(t, err)
-	assert.Equal(t, "instance: foo\n", string(localConfig))
+	assert.Equal(t, "application: t1.a1.default\ninstance: foo\n", string(localConfig))
 
 	// Changing back to original directory reads from global config
 	require.Nil(t, os.Chdir(wd))
@@ -120,12 +132,17 @@ func assertEnvConfigCommand(t *testing.T, configHome, expected string, env []str
 	assert.Equal(t, expected, stdout.String())
 }
 
-func assertConfigCommandErr(t *testing.T, configHome, expected string, args ...string) {
+func assertConfigCommandStdErr(t *testing.T, configHome, expected string, args ...string) error {
 	t.Helper()
 	cli, _, stderr := newTestCLI(t)
 	err := cli.Run(args...)
-	assert.NotNil(t, err)
 	assert.Equal(t, expected, stderr.String())
+	return err
+}
+
+func assertConfigCommandErr(t *testing.T, configHome, expected string, args ...string) {
+	t.Helper()
+	assert.NotNil(t, assertConfigCommandStdErr(t, configHome, expected, args...))
 }
 
 func TestUseAPIKey(t *testing.T) {
