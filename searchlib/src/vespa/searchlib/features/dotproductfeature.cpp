@@ -272,9 +272,8 @@ template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     auto values = getAttributeValues(docId);
     size_t commonRange = std::min(values.size(), _queryVector.size());
-    static_assert(std::is_same_v<multivalue::ValueType_t<AT>, BaseType>);
     outputs().set_number(0, _multiplier.dotProduct(
-            &_queryVector[0], reinterpret_cast<const multivalue::ValueType_t<AT> *>(values.data()), commonRange));
+            &_queryVector[0], values.data(), commonRange));
 }
 
 template <typename BaseType>
@@ -288,7 +287,7 @@ template <typename BaseType>
 DotProductByArrayReadViewExecutor<BaseType>::~DotProductByArrayReadViewExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<typename DotProductByArrayReadViewExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 DotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
     return _array_read_view->get_raw_values(docId);
@@ -326,7 +325,7 @@ template <typename BaseType>
 SparseDotProductByArrayReadViewExecutor<BaseType>::~SparseDotProductByArrayReadViewExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<typename SparseDotProductByArrayReadViewExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docid)
 {
     auto allValues = _array_read_view->get_raw_values(docid);
@@ -348,7 +347,7 @@ template <typename A>
 DotProductByCopyExecutor<A>::~DotProductByCopyExecutor() = default;
 
 template <typename A>
-vespalib::ConstArrayRef<typename DotProductByCopyExecutor<A>::AT>
+vespalib::ConstArrayRef<typename A::BaseType>
 DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
 {
     size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
@@ -356,7 +355,7 @@ DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
         _copy.resize(count);
         count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
     }
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_copy.data()), count);
+    return vespalib::ConstArrayRef(_copy.data(), count);
 }
 
 template <typename A>
@@ -371,7 +370,7 @@ template <typename A>
 SparseDotProductByCopyExecutor<A>::~SparseDotProductByCopyExecutor() = default;
 
 template <typename A>
-vespalib::ConstArrayRef<typename SparseDotProductByCopyExecutor<A>::AT>
+vespalib::ConstArrayRef<typename A::BaseType>
 SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
 {
     size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
@@ -383,7 +382,7 @@ SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
     for (const IV & iv(this->_queryIndexes); (i < iv.size()) && (iv[i] < count); i++) {
         _copy[i] = _copy[iv[i]];
     }
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_copy.data()), i);
+    return vespalib::ConstArrayRef(_copy.data(), i);
 }
 
 template <typename BaseType>
@@ -400,29 +399,11 @@ DotProductByContentFillExecutor<BaseType>::DotProductByContentFillExecutor(
 template <typename BaseType>
 DotProductByContentFillExecutor<BaseType>::~DotProductByContentFillExecutor() = default;
 
-namespace {
-
-template<typename T> struct IsNonWeightedType : std::true_type {};
-template<typename BaseType> struct IsNonWeightedType<multivalue::WeightedValue<BaseType>> : std::false_type {};
-
-// Compile-time sanity check for type compatibility of gnarly BaseType <-> multivalue::Value
-// reinterpret_cast used by some getAttributeValues calls.
-template <typename BaseType, typename AttributeValueType, typename FillerValueType>
-constexpr void sanity_check_reinterpret_cast_compatibility() {
-    static_assert(IsNonWeightedType<AttributeValueType>::value);
-    static_assert(sizeof(BaseType) == sizeof(AttributeValueType));
-    static_assert(sizeof(BaseType) == sizeof(FillerValueType));
-    static_assert(std::is_same_v<BaseType, multivalue::ValueType_t<AttributeValueType>>);
-}
-
-}
-
 template <typename BaseType>
-vespalib::ConstArrayRef<typename DotProductByContentFillExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 DotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid) {
     _filler.fill(*_attribute, docid);
-    sanity_check_reinterpret_cast_compatibility<BaseType, AT, decltype(*_filler.data())>();
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_filler.data()), _filler.size());
+    return vespalib::ConstArrayRef(_filler.data(), _filler.size());
 }
 
 template <typename BaseType>
@@ -442,7 +423,7 @@ template <typename BaseType>
 SparseDotProductByContentFillExecutor<BaseType>::~SparseDotProductByContentFillExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<typename SparseDotProductByContentFillExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid)
 {
     _filler.fill(*_attribute, docid);
@@ -454,8 +435,7 @@ SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t doc
         data[i] = data[_queryIndexes[i]];
     }
 
-    sanity_check_reinterpret_cast_compatibility<BaseType, AT, decltype(*_filler.data())>();
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(data), i);
+    return vespalib::ConstArrayRef(data, i);
 }
 
 }
