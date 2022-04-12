@@ -90,21 +90,6 @@ public class RunSerializerTest {
         assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
         RevisionId revision1 = RevisionId.forDevelopment(123, id.job());
         RevisionId revision2 = RevisionId.forProduction(122);
-        ApplicationVersion applicationVersion1 = new ApplicationVersion(revision1,
-                                                                        Optional.of(new SourceRevision("git@github.com:user/repo.git", "master", "f00bad")),
-                                                                        Optional.of("a@b"),
-                                                                        Optional.of(Version.fromString("6.3.1")),
-                                                                        Optional.of(Instant.ofEpochMilli(100)),
-                                                                        Optional.empty(),
-                                                                        Optional.empty(),
-                                                                        Optional.empty(),
-                                                                        true,
-                                                                        false,
-                                                                        Optional.empty(),
-                                                                        0);
-        ApplicationVersion applicationVersion2 = ApplicationVersion.from(revision2, new SourceRevision("git@github.com:user/repo.git",
-                                                                                            "master",
-                                                                                            "badb17"));
         assertEquals(revision1, run.versions().targetRevision());
         assertEquals("because", run.reason().get());
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
@@ -138,8 +123,6 @@ public class RunSerializerTest {
                         .build(),
                 run.steps());
 
-        Map<RevisionId, ApplicationVersion> revisions = Map.of(revision1, applicationVersion1, revision2, applicationVersion2);
-
         run = run.with(1L << 50)
                  .with(Instant.now().truncatedTo(MILLIS))
                  .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
@@ -148,8 +131,7 @@ public class RunSerializerTest {
         assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 
-        // Run phoenix = serializer.runsFromSlime(serializer.toSlime(List.of(run))); // TODO jonmv: use runs again, once compatability code is gone.
-        Run phoenix = serializer.runFromSlime(serializer.toSlime(run, revisions::get));
+        Run phoenix = serializer.runsFromSlime(serializer.toSlime(List.of(run))).get(id);
         assertEquals(run.id(), phoenix.id());
         assertEquals(run.start(), phoenix.start());
         assertEquals(run.end(), phoenix.end());
@@ -162,11 +144,11 @@ public class RunSerializerTest {
         assertEquals(run.isDryRun(), phoenix.isDryRun());
         assertEquals(run.reason(), phoenix.reason());
 
-        assertEquals(new String(SlimeUtils.toJsonBytes(serializer.toSlime(run, revisions::get).get(), false), UTF_8),
-                     new String(SlimeUtils.toJsonBytes(serializer.toSlime(phoenix, revisions::get).get(), false), UTF_8));
+        assertEquals(new String(SlimeUtils.toJsonBytes(serializer.toSlime(run).get(), false), UTF_8),
+                     new String(SlimeUtils.toJsonBytes(serializer.toSlime(phoenix).get(), false), UTF_8));
 
         Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production, Optional.empty());
-        assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial, revisions::get)));
+        assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
     }
 
 }

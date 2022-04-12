@@ -190,11 +190,11 @@ public class ApplicationSerializer {
         for (Instance instance : application.instances().values()) {
             Cursor instanceObject = array.addObject();
             instanceObject.setString(instanceNameField, instance.name().value());
-            deploymentsToSlime(instance.deployments().values(), application, instanceObject.setArray(deploymentsField));
+            deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
             toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
             assignedRotationsToSlime(instance.rotations(), instanceObject);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
-            toSlime(instance.change(), application, instanceObject, deployingField);
+            toSlime(instance.change(), instanceObject, deployingField);
         }
     }
 
@@ -202,16 +202,16 @@ public class ApplicationSerializer {
         deployKeys.forEach(key -> array.addString(KeyUtils.toPem(key)));
     }
 
-    private void deploymentsToSlime(Collection<Deployment> deployments, Application application, Cursor array) {
+    private void deploymentsToSlime(Collection<Deployment> deployments, Cursor array) {
         for (Deployment deployment : deployments)
-            deploymentToSlime(deployment, application.revisions()::get, array.addObject());
+            deploymentToSlime(deployment, array.addObject());
     }
 
-    private void deploymentToSlime(Deployment deployment, Function<RevisionId, ApplicationVersion> compatibility, Cursor object) {
+    private void deploymentToSlime(Deployment deployment, Cursor object) {
         zoneIdToSlime(deployment.zone(), object.setObject(zoneField));
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
-        toSlime(compatibility.apply(deployment.revision()), object.setObject(applicationPackageRevisionField));
+        toSlime(deployment.revision(), object.setObject(applicationPackageRevisionField));
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
@@ -254,6 +254,11 @@ public class ApplicationSerializer {
         revisions.forEach(version -> toSlime(version, revisionsArray.addObject()));
     }
 
+    private void toSlime(RevisionId revision, Cursor object) {
+        object.setLong(applicationBuildNumberField, revision.number());
+        object.setBool(deployedDirectlyField, ! revision.isProduction());
+    }
+
     private void toSlime(ApplicationVersion applicationVersion, Cursor object) {
         applicationVersion.buildNumber().ifPresent(number -> object.setLong(applicationBuildNumberField, number));
         applicationVersion.source().ifPresent(source -> toSlime(source, object.setObject(sourceRevisionField)));
@@ -285,14 +290,14 @@ public class ApplicationSerializer {
         });
     }
 
-    private void toSlime(Change deploying, Application application, Cursor parentObject, String fieldName) {
+    private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
         if (deploying.isEmpty()) return;
 
         Cursor object = parentObject.setObject(fieldName);
         if (deploying.platform().isPresent())
             object.setString(versionField, deploying.platform().get().toString());
         if (deploying.revision().isPresent())
-            toSlime(application.revisions().get(deploying.revision().get()), object);
+            toSlime(deploying.revision().get(), object);
         if (deploying.isPinned())
             object.setBool(pinnedField, true);
     }
