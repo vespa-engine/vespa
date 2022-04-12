@@ -19,8 +19,7 @@ namespace search {
  */
 template <typename B, typename M>
 class MultiValueAttribute : public B,
-                            public attribute::IMultiValueAttribute,
-                            public attribute::IMultiValueReadView<M>
+                            public attribute::IMultiValueAttribute
 {
 protected:
     typedef typename B::DocId                             DocId;
@@ -80,19 +79,10 @@ public:
     void onShrinkLidSpace() override ;
     void onAddDocs(DocId lidLimit) override;
 
-    const IMultiValueAttribute* as_multi_value_attribute() const override {
-        return this;
-    }
+    const IMultiValueAttribute* as_multi_value_attribute() const override;
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<MultiValueType>* as_read_view(attribute::IMultiValueAttribute::Tag<MultiValueType>) const override {
-        return this;
-    }
-
-    // Implements attribute::IMultiValueReadView
-    vespalib::ConstArrayRef<MultiValueType> get_raw_values(uint32_t docid) const override {
-        return this->_mvMapping.get(docid);
-    }
+    const attribute::IMultiValueReadView<MultiValueType>* make_read_view(attribute::IMultiValueAttribute::Tag<MultiValueType>, vespalib::Stash& stash) const override;
 };
 
 } // namespace search
