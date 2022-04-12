@@ -186,7 +186,8 @@ class ResultBuilder {
         GroupListBuilder getOrCreateChildList(int tag, boolean ranked) {
             int index = tag + 1; // Add 1 to avoid the dreaded -1 default value.
             if (childLists == null || index >= childLists.length) {
-                int reservedSize = (((index + 1) + (CHILDLIST_SIZE_INCREMENTS -1))/CHILDLIST_SIZE_INCREMENTS) * CHILDLIST_SIZE_INCREMENTS;
+                int minSize = index + 1;
+                int reservedSize = ((minSize + (CHILDLIST_SIZE_INCREMENTS - 1))/CHILDLIST_SIZE_INCREMENTS) * CHILDLIST_SIZE_INCREMENTS;
                 childLists = (childLists == null)
                         ? new GroupListBuilder[reservedSize]
                         : Arrays.copyOf(childLists, reservedSize);
