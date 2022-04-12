@@ -1,14 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.aggregation;
 
-import com.yahoo.searchlib.expression.*;
+import com.yahoo.searchlib.expression.AggregationRefNode;
+import com.yahoo.searchlib.expression.ConstantNode;
+import com.yahoo.searchlib.expression.ExpressionNode;
+import com.yahoo.searchlib.expression.IntegerResultNode;
+import com.yahoo.searchlib.expression.NegateFunctionNode;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Identifiable;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -25,9 +33,14 @@ public class GroupTestCase {
     }
 
     @Test
-    public void requireThatAggregationResultListIsNotImmutable() {
+    public void requireThatAggregationResultListIsImmutable() {
         Group group = new Group();
-        group.getAggregationResults().add(new AverageAggregationResult());
+        try {
+            group.getAggregationResults().add(new AverageAggregationResult());
+            fail();
+        } catch (UnsupportedOperationException e) {
+
+        }
     }
 
     @Test
@@ -37,7 +50,7 @@ public class GroupTestCase {
         group.addOrderBy(foo, true);
         assertEquals(1, group.getOrderByExpressions().size());
         assertSame(foo, group.getOrderByExpressions().get(0));
-        assertEquals(Arrays.asList(1), group.getOrderByIndexes());
+        assertEquals(List.of(1), group.getOrderByIndexes());
 
         ExpressionNode bar = new ConstantNode(new IntegerResultNode(9));
         group.addOrderBy(bar, false);
