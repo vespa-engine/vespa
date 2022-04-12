@@ -447,12 +447,15 @@ public final class Node implements Nodelike {
 
     /** Returns a copy of this node with the current OS version set to the given version at the given instant */
     public Node withCurrentOsVersion(Version version, Instant instant) {
-        var newStatus = status.withOsVersion(status.osVersion().withCurrent(Optional.of(version)));
-        var newHistory = history();
-        // Only update history if version has changed
-        if (status.osVersion().current().isEmpty() || !status.osVersion().current().get().equals(version)) {
+        Optional<Version> newVersion = Optional.of(version);
+        if (status.osVersion().current().equals(newVersion)) return this; // No change
+
+        History newHistory = history();
+        // Only update history if version was non-empty and changed to a different version
+        if (status.osVersion().current().isPresent() && !status.osVersion().current().equals(newVersion)) {
             newHistory = history.with(new History.Event(History.Event.Type.osUpgraded, Agent.system, instant));
         }
+        Status newStatus = status.withOsVersion(status.osVersion().withCurrent(newVersion));
         return this.with(newStatus).with(newHistory);
     }
 

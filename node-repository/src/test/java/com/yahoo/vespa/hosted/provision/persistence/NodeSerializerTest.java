@@ -356,11 +356,13 @@ public class NodeSerializerTest {
         assertFalse(serialized.status().osVersion().current().isPresent());
 
         // Update OS version
-        serialized = serialized.withCurrentOsVersion(Version.fromString("7.1"), Instant.ofEpochMilli(123))
-                               // Another update for same version:
-                               .withCurrentOsVersion(Version.fromString("7.1"), Instant.ofEpochMilli(456));
+        serialized = serialized.withCurrentOsVersion(Version.fromString("7.1"), Instant.ofEpochMilli(42));
+        assertFalse("No event is added when initial version is set",
+                    serialized.history().event(History.Event.Type.osUpgraded).isPresent());
+        serialized = serialized.withCurrentOsVersion(Version.fromString("7.2"), Instant.ofEpochMilli(123))
+                               .withCurrentOsVersion(Version.fromString("7.2"), Instant.ofEpochMilli(456));
         serialized = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(serialized));
-        assertEquals(Version.fromString("7.1"), serialized.status().osVersion().current().get());
+        assertEquals(Version.fromString("7.2"), serialized.status().osVersion().current().get());
         var osUpgradedEvents = serialized.history().events().stream()
                                          .filter(event -> event.type() == History.Event.Type.osUpgraded)
                                          .collect(Collectors.toList());

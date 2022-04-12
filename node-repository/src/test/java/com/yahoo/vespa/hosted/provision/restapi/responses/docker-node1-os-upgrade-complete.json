@@ -55,11 +55,6 @@
       "event": "activated",
       "at": 123,
       "agent": "application"
-    },
-    {
-      "event": "osUpgraded",
-      "at": 123,
-      "agent": "system"
     }
   ],
   "log": [
@@ -92,11 +87,6 @@
       "event": "activated",
       "at": 123,
       "agent": "application"
-    },
-    {
-      "event": "osUpgraded",
-      "at": 123,
-      "agent": "system"
     }
   ],
   "ipAddresses": [
