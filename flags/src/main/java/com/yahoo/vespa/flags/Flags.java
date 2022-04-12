@@ -60,21 +60,21 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_TASK_LIMIT = defineIntFlag(
-            "feed-task-limit", 1000,
+            "feed-task-limit", -1000,
             List.of("geirst, baldersheim"), "2021-10-14", "2022-06-01",
             "The task limit used by the executors handling feed in proton",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_MASTER_TASK_LIMIT = defineIntFlag(
-            "feed-master-task-limit", 1000,
+            "feed-master-task-limit", 0,
             List.of("geirst, baldersheim"), "2021-11-18", "2022-06-01",
             "The task limit used by the master thread in each document db in proton. Ignored when set to 0.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag SHARED_FIELD_WRITER_EXECUTOR = defineStringFlag(
-            "shared-field-writer-executor", "NONE",
+            "shared-field-writer-executor", "DOCUMENT_DB",
             List.of("geirst, baldersheim"), "2021-11-05", "2022-06-01",
             "Whether to use a shared field writer executor for the document database(s) in proton. " +
             "Valid values: NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB",
@@ -283,7 +283,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag PERSISTENCE_ASYNC_THROTTLING = defineStringFlag(
-            "persistence-async-throttling", "UNLIMITED",
+            "persistence-async-throttling", "DYNAMIC",
             List.of("vekterli"), "2022-01-12", "2022-05-01",
             "Sets the throttling policy used for async persistence operations on the content nodes. " +
             "Valid values: UNLIMITED, DYNAMIC",
@@ -341,7 +341,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING = defineFeatureFlag(
-            "inhibit-default-merges-when-global-merges-pending", false,
+            "inhibit-default-merges-when-global-merges-pending", true,
             List.of("geirst", "vekterli"), "2022-02-11", "2022-06-01",
             "Inhibits all merges to buckets in the default bucket space if the current " +
                     "cluster state bundle indicates that global merges are pending in the cluster",
