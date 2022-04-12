@@ -77,7 +77,7 @@ public class HttpProxy {
         public UrlRewritingProxyResponse(HttpResponse wrapped, HttpURL requestUrl, HttpURL forwardedUrl) {
             super(wrapped.getStatus());
             this.wrapped = wrapped;
-            this.patten = Pattern.quote(requestUrl.withPath(requestUrl.path().withoutTrailingSlash()).withQuery(Query.empty()).asURI().toString());
+            this.patten = requestUrl.withPath(requestUrl.path().withoutTrailingSlash()).withQuery(Query.empty()).asURI().toString();
             this.replacement = forwardedUrl.withPath(forwardedUrl.path().withoutTrailingSlash()).withQuery(Query.empty()).asURI().toString();
         }
 
@@ -86,7 +86,7 @@ public class HttpProxy {
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             wrapped.render(buffer);
             outputStream.write(buffer.toString(Charset.forName(wrapped.getCharacterEncoding()))
-                                     .replaceAll(patten, replacement)
+                                     .replace(patten, replacement)
                                      .getBytes(UTF_8));
         }
 
