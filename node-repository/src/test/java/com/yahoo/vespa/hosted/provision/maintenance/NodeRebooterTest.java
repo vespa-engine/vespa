@@ -16,7 +16,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -61,8 +60,7 @@ public class NodeRebooterTest {
         // OS upgrade counts as reboot, so within 0x-1x there is no reboots
         tester.clock().advance(rebootInterval);
         rebooter.maintain();
-        scheduleOsUpgrade(nodeRepository);
-        simulateOsUpgrade(nodeRepository);
+        simulateReboot(nodeRepository);
         assertReadyHosts(15, nodeRepository, 1L);
 
         // OS upgrade counts as reboot, but within 1x-2x reboots are scheduled again
@@ -111,8 +109,6 @@ public class NodeRebooterTest {
 
     private void makeReadyHosts(int count, ProvisioningTester tester) {
         tester.makeReadyNodes(count, new NodeResources(64, 256, 1000, 10), NodeType.host, 10);
-        // Set initial OS version
-        tester.patchNodes(node -> node.type().isHost(), (node) -> node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(Optional.of(Version.fromString("7.0"))))));
     }
 
     /** Set current reboot generation to the wanted reboot generation whenever it is larger (i.e record a reboot) */
@@ -126,7 +122,7 @@ public class NodeRebooterTest {
 
     /** Schedule OS upgrade for all host nodes */
     private void scheduleOsUpgrade(NodeRepository nodeRepository) {
-        nodeRepository.osVersions().setTarget(NodeType.host, Version.fromString("7.1"), Duration.ZERO, false);
+        nodeRepository.osVersions().setTarget(NodeType.host, Version.fromString("7.0"), Duration.ZERO, false);
     }
 
     /** Simulate completion of an OS upgrade */

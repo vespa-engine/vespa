@@ -185,7 +185,7 @@ public class NodeRepositoryTest {
         tester.clock().advance(Duration.ofSeconds(1));
         tester.addHost("id1", "host1", "default", NodeType.host);
         tester.addHost("id2", "host2", "default", NodeType.host);
-        assertFalse(tester.nodeRepository().nodes().node("host1").get().history().hasLastEventAfter(testStart, History.Event.Type.deprovisioned));
+        assertFalse(tester.nodeRepository().nodes().node("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
         // Set host 1 properties and deprovision it
         try (var lock = tester.nodeRepository().nodes().lockAndGetRequired("host1")) {
@@ -208,7 +208,7 @@ public class NodeRepositoryTest {
         Node host1 = tester.nodeRepository().nodes().node("host1").get();
         Node host2 = tester.nodeRepository().nodes().node("host2").get();
         assertEquals(Node.State.deprovisioned, host1.state());
-        assertTrue(host1.history().hasLastEventAfter(testStart, History.Event.Type.deprovisioned));
+        assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
         // Adding it again preserves some information from the deprovisioned host and removes it
         tester.addHost("id2", "host1", "default", NodeType.host);
@@ -218,7 +218,7 @@ public class NodeRepositoryTest {
                     tester.nodeRepository().nodes().node("host1", Node.State.deprovisioned).isPresent());
         assertFalse("Not transferred from deprovisioned host", host1.status().wantToRetire());
         assertFalse("Not transferred from deprovisioned host", host1.status().wantToDeprovision());
-        assertTrue("Transferred from deprovisioned host", host1.history().hasLastEventAfter(testStart, History.Event.Type.deprovisioned));
+        assertTrue("Transferred from deprovisioned host", host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
         assertTrue("Transferred from deprovisioned host", host1.status().firmwareVerifiedAt().isPresent());
         assertEquals("Transferred from deprovisioned host", 1, host1.status().failCount());
         assertEquals("Transferred from deprovisioned host", 1, host1.reports().getReports().size());

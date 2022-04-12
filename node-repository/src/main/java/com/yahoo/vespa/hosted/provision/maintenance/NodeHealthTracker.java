@@ -61,7 +61,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                 Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
                 if (lastLocalRequest.isEmpty()) continue;
 
-                if (!node.history().hasLastEventAfter(lastLocalRequest.get(), History.Event.Type.requested)) {
+                if (!node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
                     History updatedHistory = node.history()
                                                  .with(new History.Event(History.Event.Type.requested, Agent.NodeHealthTracker, lastLocalRequest.get()));
                     nodeRepository().nodes().write(node.with(updatedHistory), lock);
@@ -96,7 +96,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                 if (isDown) {
                     recordAsDown(node.get(), lock);
                 } else {
-                    recordAsUp(node.get(), lock);
+                    clearDownRecord(node.get(), lock);
                 }
             } catch (ApplicationLockException e) {
                 // Fine, carry on with other nodes. We'll try updating this one in the next run
@@ -129,14 +129,14 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     /** Record a node as down if not already recorded */
     private void recordAsDown(Node node, Mutex lock) {
-        if (node.isDown()) return; // already down: Don't change down timestamp
+        if (node.history().event(History.Event.Type.down).isPresent()) return; // already down: Don't change down timestamp
         nodeRepository().nodes().write(node.downAt(clock().instant(), Agent.NodeHealthTracker), lock);
     }
 
     /** Clear down record for node, if any */
-    private void recordAsUp(Node node, Mutex lock) {
-        if (!node.isDown()) return; // already up: Don't change up timestamp
-        nodeRepository().nodes().write(node.upAt(clock().instant(), Agent.NodeHealthTracker), lock);
+    private void clearDownRecord(Node node, Mutex lock) {
+        if (node.history().event(History.Event.Type.down).isEmpty()) return;
+        nodeRepository().nodes().write(node.up(), lock);
     }
 
 }
