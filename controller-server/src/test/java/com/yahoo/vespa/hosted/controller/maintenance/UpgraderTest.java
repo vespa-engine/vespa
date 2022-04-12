@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -792,12 +793,12 @@ public class UpgraderTest {
 
         // New application change
         app.submit(applicationPackage("default"));
-        String applicationVersion = app.lastSubmission().get().stringId();
+        RevisionId revision = app.lastSubmission().get();
 
         // Application change recorded together with ongoing upgrade
         assertTrue("Change contains both upgrade and application change",
                    app.instance().change().platform().get().equals(version) &&
-                   app.instance().change().application().get().stringId().equals(applicationVersion));
+                   app.instance().change().revision().get().equals(revision));
 
         // Deployment completes
         app.runJob(systemTest).runJob(stagingTest)
@@ -807,7 +808,7 @@ public class UpgraderTest {
 
         for (Deployment deployment : app.instance().deployments().values()) {
             assertEquals(version, deployment.version());
-            assertEquals(applicationVersion, deployment.applicationVersion().stringId());
+            assertEquals(revision, deployment.revision());
         }
     }
 

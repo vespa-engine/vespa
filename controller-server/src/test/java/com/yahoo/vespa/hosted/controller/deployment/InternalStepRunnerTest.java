@@ -12,6 +12,7 @@ import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
@@ -480,15 +481,16 @@ public class InternalStepRunnerTest {
 
     @Test
     public void realDeploymentRequiresForTesterCert() {
-        tester.controllerTester().zoneRegistry().setSystemName(SystemName.Public);
-        var zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
-                            ZoneApiMock.fromId("staging.aws-us-east-1c"),
-                            ZoneApiMock.fromId("prod.aws-us-east-1c"));
-        tester.controllerTester().zoneRegistry()
-              .setZones(zones)
-              .setRoutingMethod(zones, RoutingMethod.exclusive);
+        List<ZoneApiMock> zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                                          ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                                          ZoneApiMock.fromId("prod.aws-us-east-1c"));
+        ControllerTester wrapped = new ControllerTester(SystemName.Public);
+        wrapped.zoneRegistry()
+               .setZones(zones)
+               .setRoutingMethod(zones, RoutingMethod.exclusive);
+        tester = new DeploymentTester(wrapped);
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.values());
-        ZoneId testZone = JobType.systemTest.zone(tester.controller().system());
+        app = tester.newDeploymentContext();
         RunId id = app.newRun(JobType.systemTest);
         tester.configServer().throwOnPrepare(instanceId -> {
             if (instanceId.instance().isTester())
@@ -517,14 +519,16 @@ public class InternalStepRunnerTest {
 
     @Test
     public void certificateTimeoutAbortsJob() {
-        tester.controllerTester().zoneRegistry().setSystemName(SystemName.Public);
-        var zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
-                            ZoneApiMock.fromId("staging.aws-us-east-1c"),
-                            ZoneApiMock.fromId("prod.aws-us-east-1c"));
-        tester.controllerTester().zoneRegistry()
-              .setZones(zones)
-              .setRoutingMethod(zones, RoutingMethod.exclusive);
+        List<ZoneApiMock> zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
+                                          ZoneApiMock.fromId("staging.aws-us-east-1c"),
+                                          ZoneApiMock.fromId("prod.aws-us-east-1c"));
+        ControllerTester wrapped = new ControllerTester(SystemName.Public);
+        wrapped.zoneRegistry()
+               .setZones(zones)
+               .setRoutingMethod(zones, RoutingMethod.exclusive);
+        tester = new DeploymentTester(wrapped);
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.values());
+        app = tester.newDeploymentContext();
         RunId id = app.startSystemTestTests();
 
         List<X509Certificate> trusted = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());

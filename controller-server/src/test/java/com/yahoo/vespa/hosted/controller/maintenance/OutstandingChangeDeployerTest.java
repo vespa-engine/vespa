@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -36,12 +37,12 @@ public class OutstandingChangeDeployerTest {
         assertFalse(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
 
         app.submit(applicationPackage);
-        Optional<ApplicationVersion> revision = app.lastSubmission();
+        Optional<RevisionId> revision = app.lastSubmission();
         assertFalse(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
         assertEquals(Change.of(version).with(revision.get()), app.instance().change());
 
         app.submit(applicationPackage);
-        Optional<ApplicationVersion> outstanding = app.lastSubmission();
+        Optional<RevisionId> outstanding = app.lastSubmission();
         assertTrue(app.deploymentStatus().outstandingChange(app.instance().name()).hasTargets());
         assertEquals(Change.of(version).with(revision.get()), app.instance().change());
 

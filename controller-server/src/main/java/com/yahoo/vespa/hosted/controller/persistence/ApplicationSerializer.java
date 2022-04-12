@@ -4,9 +4,11 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
@@ -20,6 +22,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -51,6 +54,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -154,6 +158,12 @@ public class ApplicationSerializer {
 
     private static final String deploymentCostField = "cost";
 
+    private final SystemName system;
+
+    public ApplicationSerializer(SystemName system) {
+        this.system = system;
+    }
+
     // ------------------ Serialization
 
     public Slime toSlime(Application application) {
@@ -171,7 +181,6 @@ public class ApplicationSerializer {
         root.setDouble(queryQualityField, application.metrics().queryServiceQuality());
         root.setDouble(writeQualityField, application.metrics().writeServiceQuality());
         deployKeysToSlime(application.deployKeys(), root.setArray(pemDeployKeysField));
-        revisionsToSlime(application.revisions().withPackage(), root.setArray(versionsField));
         revisionsToSlime(application.revisions(), root.setArray(prodVersionsField), root.setArray(devVersionsField));
         instancesToSlime(application, root.setArray(instancesField));
         return slime;
@@ -181,11 +190,11 @@ public class ApplicationSerializer {
         for (Instance instance : application.instances().values()) {
             Cursor instanceObject = array.addObject();
             instanceObject.setString(instanceNameField, instance.name().value());
-            deploymentsToSlime(instance.deployments().values(), instanceObject.setArray(deploymentsField));
+            deploymentsToSlime(instance.deployments().values(), application, instanceObject.setArray(deploymentsField));
             toSlime(instance.jobPauses(), instanceObject.setObject(deploymentJobsField));
             assignedRotationsToSlime(instance.rotations(), instanceObject);
             toSlime(instance.rotationStatus(), instanceObject.setArray(rotationStatusField));
-            toSlime(instance.change(), instanceObject, deployingField);
+            toSlime(instance.change(), application, instanceObject, deployingField);
         }
     }
 
@@ -193,16 +202,16 @@ public class ApplicationSerializer {
         deployKeys.forEach(key -> array.addString(KeyUtils.toPem(key)));
     }
 
-    private void deploymentsToSlime(Collection<Deployment> deployments, Cursor array) {
+    private void deploymentsToSlime(Collection<Deployment> deployments, Application application, Cursor array) {
         for (Deployment deployment : deployments)
-            deploymentToSlime(deployment, array.addObject());
+            deploymentToSlime(deployment, application.revisions()::get, array.addObject());
     }
 
-    private void deploymentToSlime(Deployment deployment, Cursor object) {
+    private void deploymentToSlime(Deployment deployment, Function<RevisionId, ApplicationVersion> compatibility, Cursor object) {
         zoneIdToSlime(deployment.zone(), object.setObject(zoneField));
         object.setString(versionField, deployment.version().toString());
         object.setLong(deployTimeField, deployment.at().toEpochMilli());
-        toSlime(deployment.applicationVersion(), object.setObject(applicationPackageRevisionField));
+        toSlime(compatibility.apply(deployment.revision()), object.setObject(applicationPackageRevisionField));
         deploymentMetricsToSlime(deployment.metrics(), object);
         deployment.activity().lastQueried().ifPresent(instant -> object.setLong(lastQueriedField, instant.toEpochMilli()));
         deployment.activity().lastWritten().ifPresent(instant -> object.setLong(lastWrittenField, instant.toEpochMilli()));
@@ -276,14 +285,14 @@ public class ApplicationSerializer {
         });
     }
 
-    private void toSlime(Change deploying, Cursor parentObject, String fieldName) {
+    private void toSlime(Change deploying, Application application, Cursor parentObject, String fieldName) {
         if (deploying.isEmpty()) return;
 
         Cursor object = parentObject.setObject(fieldName);
         if (deploying.platform().isPresent())
             object.setString(versionField, deploying.platform().get().toString());
-        if (deploying.application().isPresent())
-            toSlime(deploying.application().get(), object);
+        if (deploying.revision().isPresent())
+            toSlime(application.revisions().get(deploying.revision().get()), object);
         if (deploying.isPinned())
             object.setBool(pinnedField, true);
     }
@@ -338,21 +347,20 @@ public class ApplicationSerializer {
         Set<PublicKey> deployKeys = deployKeysFromSlime(root.field(pemDeployKeysField));
         List<Instance> instances = instancesFromSlime(id, root.field(instancesField));
         OptionalLong projectId = SlimeUtils.optionalLong(root.field(projectIdField));
-        RevisionHistory revisions = revisionsFromSlime(root.field(versionsField), root.field(prodVersionsField), root.field(devVersionsField), id);
+        RevisionHistory revisions = revisionsFromSlime(root.field(prodVersionsField), root.field(devVersionsField), id);
 
         return new Application(id, createdAt, deploymentSpec, validationOverrides,
                                deploymentIssueId, ownershipIssueId, owner, majorVersion, metrics,
                                deployKeys, projectId, revisions, instances);
     }
 
-    // TODO jonmv: read only from prodVersionsArray, once data is migrated.
-    private RevisionHistory revisionsFromSlime(Inspector versionsArray, Inspector prodVersionsArray, Inspector devVersionsArray, TenantAndApplicationId id) {
-        // Once last controller updates storage after upgrade, these should be in sync.
-        List<ApplicationVersion> revisions = prodVersionsArray.valid() ? revisionsFromSlime(prodVersionsArray)
-                                                                       : revisionsFromSlime(versionsArray);
+    private RevisionHistory revisionsFromSlime(Inspector prodVersionsArray, Inspector devVersionsArray, TenantAndApplicationId id) {
+        List<ApplicationVersion> revisions = revisionsFromSlime(prodVersionsArray, null);
         Map<JobId, List<ApplicationVersion>> devRevisions = new HashMap<>();
-        devVersionsArray.traverse((ArrayTraverser) (__, devRevisionsObject) ->
-                devRevisions.put(jobIdFromSlime(id, devRevisionsObject), revisionsFromSlime(devRevisionsObject.field(versionsField))));
+        devVersionsArray.traverse((ArrayTraverser) (__, devRevisionsObject) -> {
+            JobId job = jobIdFromSlime(id, devRevisionsObject);
+            devRevisions.put(job, revisionsFromSlime(devRevisionsObject.field(versionsField), job));
+        });
 
         return RevisionHistory.ofRevisions(revisions, devRevisions);
     }
@@ -362,9 +370,9 @@ public class ApplicationSerializer {
                          JobType.fromJobName(idObject.field(jobTypeField).asString()));
     }
 
-    private List<ApplicationVersion> revisionsFromSlime(Inspector versionsArray) {
+    private List<ApplicationVersion> revisionsFromSlime(Inspector versionsArray, JobId job) {
         List<ApplicationVersion> revisions = new ArrayList<>();
-        versionsArray.traverse((ArrayTraverser) (__, revisionObject) -> revisions.add(applicationVersionFromSlime(revisionObject)));
+        versionsArray.traverse((ArrayTraverser) (__, revisionObject) -> revisions.add(applicationVersionFromSlime(revisionObject, job)));
         return revisions;
     }
 
@@ -372,7 +380,7 @@ public class ApplicationSerializer {
         List<Instance> instances = new ArrayList<>();
         field.traverse((ArrayTraverser) (name, object) -> {
             InstanceName instanceName = InstanceName.from(object.field(instanceNameField).asString());
-            List<Deployment> deployments = deploymentsFromSlime(object.field(deploymentsField));
+            List<Deployment> deployments = deploymentsFromSlime(object.field(deploymentsField), id.instance(instanceName));
             Map<JobType, Instant> jobPauses = jobPausesFromSlime(object.field(deploymentJobsField));
             List<AssignedRotation> assignedRotations = assignedRotationsFromSlime(object);
             RotationStatus rotationStatus = rotationStatusFromSlime(object);
@@ -393,15 +401,16 @@ public class ApplicationSerializer {
         return keys;
     }
 
-    private List<Deployment> deploymentsFromSlime(Inspector array) {
+    private List<Deployment> deploymentsFromSlime(Inspector array, ApplicationId id) {
         List<Deployment> deployments = new ArrayList<>();
-        array.traverse((ArrayTraverser) (int i, Inspector item) -> deployments.add(deploymentFromSlime(item)));
+        array.traverse((ArrayTraverser) (int i, Inspector item) -> deployments.add(deploymentFromSlime(item, id)));
         return deployments;
     }
 
-    private Deployment deploymentFromSlime(Inspector deploymentObject) {
-        return new Deployment(zoneIdFromSlime(deploymentObject.field(zoneField)),
-                              applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
+    private Deployment deploymentFromSlime(Inspector deploymentObject, ApplicationId id) {
+        ZoneId zone = zoneIdFromSlime(deploymentObject.field(zoneField));
+        return new Deployment(zone,
+                              revisionFromSlime(deploymentObject.field(applicationPackageRevisionField), new JobId(id, JobType.from(system, zone).get())),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               SlimeUtils.instant(deploymentObject.field(deployTimeField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
@@ -458,27 +467,30 @@ public class ApplicationSerializer {
         return ZoneId.from(object.field(environmentField).asString(), object.field(regionField).asString());
     }
 
-    private ApplicationVersion applicationVersionFromSlime(Inspector object) {
-        if ( ! object.valid()) return ApplicationVersion.unknown;
-        OptionalLong applicationBuildNumber = SlimeUtils.optionalLong(object.field(applicationBuildNumberField));
-        if (applicationBuildNumber.isEmpty())
-            return ApplicationVersion.unknown;
+    private RevisionId revisionFromSlime(Inspector object, JobId job) {
+        long build = object.field(applicationBuildNumberField).asLong();
+        boolean production =      object.field(deployedDirectlyField).valid() // TODO jonmv: remove after migration
+                             &&   build > 0
+                             && ! object.field(deployedDirectlyField).asBool();
+        return production ? RevisionId.forProduction(build) : RevisionId.forDevelopment(build, job);
+    }
 
+    private ApplicationVersion applicationVersionFromSlime(Inspector object, JobId job) {
+        RevisionId id = revisionFromSlime(object, job);
         Optional<SourceRevision> sourceRevision = sourceRevisionFromSlime(object.field(sourceRevisionField));
         Optional<String> authorEmail = SlimeUtils.optionalString(object.field(authorEmailField));
         Optional<Version> compileVersion = SlimeUtils.optionalString(object.field(compileVersionField)).map(Version::fromString);
         Optional<Instant> buildTime = SlimeUtils.optionalInstant(object.field(buildTimeField));
         Optional<String> sourceUrl = SlimeUtils.optionalString(object.field(sourceUrlField));
         Optional<String> commit = SlimeUtils.optionalString(object.field(commitField));
-        boolean deployedDirectly = object.field(deployedDirectlyField).asBool();
-        boolean hasPackage = ! object.field(hasPackageField).valid() || object.field(hasPackageField).asBool(); // TODO jonmv: remove default
+        boolean hasPackage = object.field(hasPackageField).asBool();
         boolean shouldSkip = object.field(shouldSkipField).asBool();
         Optional<String> description = SlimeUtils.optionalString(object.field(descriptionField));
         int risk = (int) object.field(riskField).asLong();
         Optional<String> bundleHash = SlimeUtils.optionalString(object.field(bundleHashField));
 
-        return new ApplicationVersion(sourceRevision, applicationBuildNumber, authorEmail, compileVersion, buildTime, sourceUrl,
-                                      commit, deployedDirectly, bundleHash, hasPackage, shouldSkip, description, risk);
+        return new ApplicationVersion(id, sourceRevision, authorEmail, compileVersion, buildTime, sourceUrl,
+                                      commit, bundleHash, hasPackage, shouldSkip, description, risk);
     }
 
     private Optional<SourceRevision> sourceRevisionFromSlime(Inspector object) {
@@ -504,7 +516,7 @@ public class ApplicationSerializer {
         if (versionFieldValue.valid())
             change = Change.of(Version.fromString(versionFieldValue.asString()));
         if (object.field(applicationBuildNumberField).valid())
-            change = change.with(applicationVersionFromSlime(object));
+            change = change.with(revisionFromSlime(object, null));
         if (object.field(pinnedField).asBool())
             change = change.withPin();
         return change;

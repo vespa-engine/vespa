@@ -19,6 +19,7 @@
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=us-west-1&application=tenant1.application1.instance1",
   "version": "6.1.0",
   "revision": "1.0.1-commit1",
+  "build": 1,
   "deployTimeEpochMs": 1600000000000,
   "screwdriverId": "1000",
   "applicationVersion": {

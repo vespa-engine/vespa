@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -86,19 +87,19 @@ class JobControllerApiHandlerHelper {
 
                   Cursor jobObject = jobsArray.addObject();
                   jobObject.setString("jobName", job.type().jobName());
-                  toSlime(jobObject.setArray("runs"), runs, 10, baseUriForJobs);
+                  toSlime(jobObject.setArray("runs"), runs, controller.applications().requireApplication(TenantAndApplicationId.from(id)), 10, baseUriForJobs);
               });
 
         return new SlimeJsonResponse(slime);
     }
 
     /** Returns a response with the runs for the given job type. */
-    static HttpResponse runResponse(Map<RunId, Run> runs, Optional<String> limitStr, URI baseUriForJobType) {
+    static HttpResponse runResponse(Application application, Map<RunId, Run> runs, Optional<String> limitStr, URI baseUriForJobType) {
         Slime slime = new Slime();
         Cursor cursor = slime.setObject();
 
         int limit = limitStr.map(Integer::parseInt).orElse(Integer.MAX_VALUE);
-        toSlime(cursor.setArray("runs"), runs.values(), limit, baseUriForJobType);
+        toSlime(cursor.setArray("runs"), runs.values(), application, limit, baseUriForJobType);
 
         return new SlimeJsonResponse(slime);
     }
@@ -200,7 +201,7 @@ class JobControllerApiHandlerHelper {
         ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application), sourceRevision, authorEmail,
                                                           sourceUrl, projectId, applicationPackage, testPackage, description, risk);
 
-        return new MessageResponse(version.toString());
+        return new MessageResponse("application " + version);
     }
 
     /** Aborts any job of the given type. */
@@ -270,8 +271,8 @@ class JobControllerApiHandlerHelper {
             stepStatus.coolingDownUntil(change).ifPresent(until -> stepObject.setLong("coolingDownUntil", until.toEpochMilli()));
             stepStatus.blockedUntil(Change.of(controller.systemVersion(versionStatus))) // Dummy version — just anything with a platform.
                       .ifPresent(until -> stepObject.setLong("platformBlockedUntil", until.toEpochMilli()));
-            application.revisions().last().map(Change::of).flatMap(stepStatus::blockedUntil) // Dummy version — just anything with an application.
-                       .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
+            stepStatus.blockedUntil(Change.of(RevisionId.forProduction(1))) // Dummy version — just anything with an application.
+                      .ifPresent(until -> stepObject.setLong("applicationBlockedUntil", until.toEpochMilli()));
 
             if (stepStatus.type() == DeploymentStatus.StepType.delay)
                 stepStatus.completedAt(change).ifPresent(completed -> stepObject.setLong("completedAt", completed.toEpochMilli()));
@@ -280,7 +281,7 @@ class JobControllerApiHandlerHelper {
                 Cursor deployingObject = stepObject.setObject("deploying");
                 if ( ! change.isEmpty()) {
                     change.platform().ifPresent(version -> deployingObject.setString("platform", version.toFullString()));
-                    change.application().ifPresent(version -> toSlime(deployingObject.setObject("application"), version));
+                    change.revision().ifPresent(revision -> toSlime(deployingObject.setObject("application"), application.revisions().get(revision)));
                 }
 
                 Cursor latestVersionsObject = stepObject.setObject("latestVersions");
@@ -315,20 +316,20 @@ class JobControllerApiHandlerHelper {
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
                     toSlime(latestApplicationObject.setObject("application"), latestApplication);
                     latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
-                    latestApplicationObject.setBool("upgrade",    change.application().map(latestApplication::compareTo).orElse(1) > 0 && deployments.isEmpty()
-                                                               || deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(latestApplication) < 0));
+                    latestApplicationObject.setBool("upgrade", change.revision().map(latestApplication.id()::compareTo).orElse(1) > 0 && deployments.isEmpty()
+                                                               || deployments.stream().anyMatch(deployment -> deployment.revision().compareTo(latestApplication.id()) < 0));
 
                     Cursor availableArray = latestApplicationObject.setArray("available");
                     for (ApplicationVersion available : availableApplications) {
-                        if (   deployments.stream().anyMatch(deployment -> deployment.applicationVersion().compareTo(available) > 0)
-                            || deployments.stream().noneMatch(deployment -> deployment.applicationVersion().compareTo(available) < 0) && ! deployments.isEmpty()
-                            || status.hasCompleted(stepStatus.instance(), Change.of(available))
-                            || change.application().map(available::compareTo).orElse(1) <= 0)
+                        if (   deployments.stream().anyMatch(deployment -> deployment.revision().compareTo(available.id()) > 0)
+                            || deployments.stream().noneMatch(deployment -> deployment.revision().compareTo(available.id()) < 0) && ! deployments.isEmpty()
+                            || status.hasCompleted(stepStatus.instance(), Change.of(available.id()))
+                            || change.revision().map(available.id()::compareTo).orElse(1) <= 0)
                             break;
 
                         toSlime(availableArray.addObject().setObject("application"), available);
                     }
-                    change.application().ifPresent(version -> toSlime(availableArray.addObject().setObject("application"), version));
+                    change.revision().ifPresent(revision -> toSlime(availableArray.addObject().setObject("application"), application.revisions().get(revision)));
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
                 }
             }
@@ -345,7 +346,7 @@ class JobControllerApiHandlerHelper {
                 if (job.type().isProduction() && job.type().isDeployment()) {
                     status.deploymentFor(job).ifPresent(deployment -> {
                         stepObject.setString("currentPlatform", deployment.version().toFullString());
-                        toSlime(stepObject.setObject("currentApplication"), deployment.applicationVersion());
+                        toSlime(stepObject.setObject("currentApplication"), application.revisions().get(deployment.revision()));
                     });
                 }
 
@@ -361,10 +362,10 @@ class JobControllerApiHandlerHelper {
                         continue; // Run will be contained in the "runs" array.
 
                     Cursor runObject = toRunArray.addObject();
-                    toSlime(runObject.setObject("versions"), versions.versions());
+                    toSlime(runObject.setObject("versions"), versions.versions(), application);
                 }
 
-                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), 10, baseUriForJob);
+                toSlime(stepObject.setArray("runs"), jobStatus.runs().descendingMap().values(), application, 10, baseUriForJob);
             });
         }
 
@@ -388,11 +389,11 @@ class JobControllerApiHandlerHelper {
         version.commit().ifPresent(commit -> versionObject.setString("commit", commit));
     }
 
-    private static void toSlime(Cursor versionsObject, Versions versions) {
+    private static void toSlime(Cursor versionsObject, Versions versions, Application application) {
         versionsObject.setString("targetPlatform", versions.targetPlatform().toFullString());
-        toSlime(versionsObject.setObject("targetApplication"), versions.targetApplication());
+        toSlime(versionsObject.setObject("targetApplication"), application.revisions().get(versions.targetRevision()));
         versions.sourcePlatform().ifPresent(platform -> versionsObject.setString("sourcePlatform", platform.toFullString()));
-        versions.sourceApplication().ifPresent(application -> toSlime(versionsObject.setObject("sourceApplication"), application));
+        versions.sourceRevision().ifPresent(revision -> toSlime(versionsObject.setObject("sourceApplication"), application.revisions().get(revision)));
     }
 
     private static void toSlime(Cursor blockersArray, Stream<ChangeBlocker> blockers) {
@@ -428,7 +429,7 @@ class JobControllerApiHandlerHelper {
         return candidates;
     }
 
-    private static void toSlime(Cursor runsArray, Collection<Run> runs, int limit, URI baseUriForJob) {
+    private static void toSlime(Cursor runsArray, Collection<Run> runs, Application application, int limit, URI baseUriForJob) {
         runs.stream().limit(limit).forEach(run -> {
             Cursor runObject = runsArray.addObject();
             runObject.setLong("id", run.id().number());
@@ -436,7 +437,7 @@ class JobControllerApiHandlerHelper {
             runObject.setLong("start", run.start().toEpochMilli());
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
             runObject.setString("status", run.status().name());
-            toSlime(runObject.setObject("versions"), run.versions());
+            toSlime(runObject.setObject("versions"), run.versions(), application);
             Cursor runStepsArray = runObject.setArray("steps");
             run.steps().forEach((step, info) -> {
                 Cursor runStepObject = runStepsArray.addObject();

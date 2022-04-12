@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
@@ -126,9 +127,9 @@ public class DeploymentStatus {
     }
 
     /** Whether any job is failing on versions selected by the given filter, with errors other than lack of capacity in a test zone.. */
-    public boolean hasFailures(Predicate<ApplicationVersion> versionFilter) {
+    public boolean hasFailures(Predicate<RevisionId> revisionFilter) {
         return ! allJobs.failingHard()
-                        .matching(job -> versionFilter.test(job.lastTriggered().get().versions().targetApplication()))
+                        .matching(job -> revisionFilter.test(job.lastTriggered().get().versions().targetRevision()))
                         .isEmpty();
     }
 
@@ -263,10 +264,10 @@ public class DeploymentStatus {
         Change candidate = Change.empty();
         for (ApplicationVersion version : application.revisions().deployable(ascending)) {
             // A revision is only a candidate if it upgrades, and does not downgrade, this instance.
-            Change change = Change.of(version);
+            Change change = Change.of(version.id());
             if (application.productionDeployments().getOrDefault(instance, List.of()).stream()
-                           .anyMatch(deployment -> change.downgrades(deployment.applicationVersion()))) continue;
-            if ( ! application.require(instance).change().application().map(change::upgrades).orElse(true)) continue;
+                           .anyMatch(deployment -> change.downgrades(deployment.revision()))) continue;
+            if ( ! application.require(instance).change().revision().map(change::upgrades).orElse(true)) continue;
             if (hasCompleted(instance, change))
                 if (ascending) continue;    // Keep looking for the next revision which is an upgrade, or ...
                 else return Change.empty(); // ... if the latest is already complete, there's nothing outstanding.
@@ -275,7 +276,7 @@ public class DeploymentStatus {
             skippedCumulativeRisk += version.risk();
             nextRisk = nextRisk > 0 ? nextRisk : version.risk();
             // If it's not yet ready to roll out, we keep looking.
-            Optional<Instant> readyAt = status.dependenciesCompletedAt(Change.of(version), Optional.empty());
+            Optional<Instant> readyAt = status.dependenciesCompletedAt(Change.of(version.id()), Optional.empty());
             if (readyAt.map(now::isBefore).orElse(true)) continue;
 
             // It's ready. If looking for the latest, max risk is 0, and we'll return now; otherwise, we _may_ keep on looking for more.
@@ -337,9 +338,9 @@ public class DeploymentStatus {
             // When computing eager test jobs for outstanding changes, assume current change completes successfully.
             Optional<Deployment> deployment = deploymentFor(job);
             Optional<Version> existingPlatform = deployment.map(Deployment::version);
-            Optional<ApplicationVersion> existingApplication = deployment.map(Deployment::applicationVersion);
-            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.application(), instance)
-                                                   || areIncompatible(change.platform(), existingApplication, instance);
+            Optional<RevisionId> existingRevision = deployment.map(Deployment::revision);
+            boolean deployingCompatibilityChange =    areIncompatible(existingPlatform, change.revision(), job)
+                                                   || areIncompatible(change.platform(), existingRevision, job);
             if (assumeUpgradesSucceed) {
                 if (deployingCompatibilityChange) // No eager tests for this.
                     return;
@@ -347,34 +348,36 @@ public class DeploymentStatus {
                 Change currentChange = application.require(instance).change();
                 Versions target = Versions.from(currentChange, application, deployment, systemVersion);
                 existingPlatform = Optional.of(target.targetPlatform());
-                existingApplication = Optional.of(target.targetApplication());
+                existingRevision = Optional.of(target.targetRevision());
             }
             List<Job> toRun = new ArrayList<>();
             List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
             for (Change partial : changes) {
                 Job jobToRun = new Job(job.type(),
-                                       Versions.from(partial, application, existingPlatform, existingApplication, systemVersion),
+                                       Versions.from(partial, application, existingPlatform, existingRevision, systemVersion),
                                        step.readyAt(partial, Optional.of(job)),
                                        partial);
                 toRun.add(jobToRun);
                 // Assume first partial change is applied before the second.
                 existingPlatform = Optional.of(jobToRun.versions.targetPlatform());
-                existingApplication = Optional.of(jobToRun.versions.targetApplication());
+                existingRevision = Optional.of(jobToRun.versions.targetRevision());
             }
             jobs.put(job, toRun);
         });
         return jobs;
     }
 
-    private boolean areIncompatible(Optional<Version> platform, Optional<ApplicationVersion> application, InstanceName instance) {
+    private boolean areIncompatible(Optional<Version> platform, Optional<RevisionId> revision, JobId job) {
+        Optional<Version> compileVersion = revision.map(application.revisions()::get)
+                                                   .flatMap(ApplicationVersion::compileVersion);
         return    platform.isPresent()
-               && application.flatMap(ApplicationVersion::compileVersion).isPresent()
-               && versionCompatibility.apply(instance).refuse(platform.get(), application.get().compileVersion().get());
+               && compileVersion.isPresent()
+               && versionCompatibility.apply(job.application().instance()).refuse(platform.get(), compileVersion.get());
     }
 
     /** Changes to deploy with the given job, possibly split in two steps. */
     private List<Change> changes(JobId job, StepStatus step, Change change) {
-        if (change.platform().isEmpty() || change.application().isEmpty() || change.isPinned())
+        if (change.platform().isEmpty() || change.revision().isEmpty() || change.isPinned())
             return List.of(change);
 
         if (   step.completedAt(change.withoutApplication(), Optional.of(job)).isPresent()
@@ -749,7 +752,7 @@ public class DeploymentStatus {
         @Override
         Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
             return    (   (change.platform().isEmpty() || change.platform().equals(instance.change().platform()))
-                       && (change.application().isEmpty() || change.application().equals(instance.change().application()))
+                       && (change.revision().isEmpty() || change.revision().equals(instance.change().revision()))
                    || step().steps().stream().noneMatch(step -> step.concerns(prod)))
                       ? dependenciesCompletedAt(change, dependent).or(() -> Optional.of(Instant.EPOCH).filter(__ -> change.hasTargets()))
                       : Optional.empty();
@@ -763,7 +766,7 @@ public class DeploymentStatus {
                     while (   blocker.window().includes(current)
                            && now.plus(Duration.ofDays(7)).isAfter(current)
                            && (   change.platform().isPresent() && blocker.blocksVersions()
-                               || change.application().isPresent() && blocker.blocksRevisions())) {
+                               || change.revision().isPresent() && blocker.blocksRevisions())) {
                         blocked = true;
                         current = current.plus(Duration.ofHours(1)).truncatedTo(ChronoUnit.HOURS);
                     }
@@ -804,7 +807,7 @@ public class DeploymentStatus {
             if (job.firstFailing().isEmpty() || ! job.firstFailing().get().hasEnded()) return Optional.empty();
             Versions lastVersions = job.lastCompleted().get().versions();
             if (change.platform().isPresent() && ! change.platform().get().equals(lastVersions.targetPlatform())) return Optional.empty();
-            if (change.application().isPresent() && ! change.application().get().equals(lastVersions.targetApplication())) return Optional.empty();
+            if (change.revision().isPresent() && ! change.revision().get().equals(lastVersions.targetRevision())) return Optional.empty();
             if (job.id().type().environment().isTest() && job.isNodeAllocationFailure()) return Optional.empty();
 
             Instant firstFailing = job.firstFailing().get().end().get();
@@ -841,14 +844,14 @@ public class DeploymentStatus {
                         && ! existingDeployment.map(Deployment::version).equals(change.platform()))
                         return Optional.empty();
 
-                    if (     change.application().isPresent()
-                        && ! existingDeployment.map(Deployment::applicationVersion).equals(change.application())
+                    if (     change.revision().isPresent()
+                        && ! existingDeployment.map(Deployment::revision).equals(change.revision())
                         &&   dependent.equals(job())) // Job should (re-)run in this case, but other dependents need not wait.
                         return Optional.empty();
 
                     Change fullChange = status.application().require(job.id().application().instance()).change();
-                    if (existingDeployment.map(deployment ->    ! (change.upgrades(deployment.version()) || change.upgrades(deployment.applicationVersion()))
-                                                             &&   (fullChange.downgrades(deployment.version()) || fullChange.downgrades(deployment.applicationVersion())))
+                    if (existingDeployment.map(deployment ->    ! (change.upgrades(deployment.version()) || change.upgrades(deployment.revision()))
+                                                             &&   (fullChange.downgrades(deployment.version()) || fullChange.downgrades(deployment.revision())))
                                           .orElse(false))
                         return job.lastCompleted().flatMap(Run::end);
 
@@ -901,7 +904,7 @@ public class DeploymentStatus {
                                                                                                                          Optional.of(deployment),
                                                                                                                          status.systemVersion)))
                                                             .orElseGet(() ->    (change.platform().isEmpty()    || change.platform().get().equals(run.versions().targetPlatform()))
-                                                                             && (change.application().isEmpty() || change.application().get().equals(run.versions().targetApplication()))))
+                                                                             && (change.revision().isEmpty() || change.revision().get().equals(run.versions().targetRevision()))))
                                   .status(RunStatus.success)
                                   .asList().stream()
                                   .map(run -> run.end().get())

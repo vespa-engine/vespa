@@ -149,10 +149,10 @@ public class RotationRepositoryTest {
                 ZoneApiMock.fromId("staging.cd-us-west-1"),
                 ZoneApiMock.fromId("prod.cd-us-east-1"),
                 ZoneApiMock.fromId("prod.cd-us-west-1"));
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(rotationsConfig, SystemName.cd));
         tester.controllerTester().zoneRegistry()
               .setZones(zones)
-              .setRoutingMethod(zones, RoutingMethod.sharedLayer4)
-              .setSystemName(SystemName.cd);
+              .setRoutingMethod(zones, RoutingMethod.sharedLayer4);
         tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
         var application2 = tester.newDeploymentContext("tenant2", "app2", "default");
         application2.submit(applicationPackage).deploy();

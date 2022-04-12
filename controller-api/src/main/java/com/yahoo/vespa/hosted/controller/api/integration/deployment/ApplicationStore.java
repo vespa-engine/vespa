@@ -16,8 +16,8 @@ import java.util.Optional;
  */
 public interface ApplicationStore {
 
-    /** Returns the tenant application package of the given version. */
-    byte[] get(DeploymentId deploymentId, ApplicationVersion applicationVersion);
+    /** Returns the application package of the given revision. */
+    byte[] get(DeploymentId deploymentId, RevisionId revisionId);
 
     /** Returns the application package diff, compared to the previous build, for the given tenant, application and build number */
     Optional<byte[]> getDiff(TenantName tenantName, ApplicationName applicationName, long buildNumber);
@@ -34,16 +34,16 @@ public interface ApplicationStore {
     }
 
     /** Stores the given tenant application and test packages of the given revision, and diff since previous version. */
-    void put(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion, byte[] applicationPackage, byte[] testPackage, byte[] diff);
+    void put(TenantName tenant, ApplicationName application, RevisionId revision, byte[] applicationPackage, byte[] testPackage, byte[] diff);
 
-    /** Removes application and test packages older than the given version, for the given application. */
-    void prune(TenantName tenant, ApplicationName application, ApplicationVersion olderThanVersion);
+    /** Removes application and test packages older than the given revision, for the given application. */
+    void prune(TenantName tenant, ApplicationName application, RevisionId revision);
 
     /** Removes all application and test packages for the given application, including any development package. */
     void removeAll(TenantName tenant, ApplicationName application);
 
-    /** Returns the tester application package of the given version. Does NOT contain the services.xml. */
-    byte[] getTester(TenantName tenant, ApplicationName application, ApplicationVersion applicationVersion);
+    /** Returns the tester application package of the given revision. Does NOT contain the services.xml. */
+    byte[] getTester(TenantName tenant, ApplicationName application, RevisionId revision);
 
     /** Returns the application package diff, compared to the previous build, for the given deployment and build number */
     Optional<byte[]> getDevDiff(DeploymentId deploymentId, long buildNumber);
@@ -51,8 +51,8 @@ public interface ApplicationStore {
     /** Removes diffs for dev packages before the given build number */
     void pruneDevDiffs(DeploymentId deploymentId, long beforeBuildNumber);
 
-    /** Stores the given application package as the development package for the given deployment and version and diff since previous version. */
-    void putDev(DeploymentId deploymentId, ApplicationVersion version, byte[] applicationPackage, byte[] diff);
+    /** Stores the given application package as the development package for the given deployment and revision and diff since previous version. */
+    void putDev(DeploymentId deploymentId, RevisionId revision, byte[] applicationPackage, byte[] diff);
 
     /** Stores the given application metadata with the current time as part of the path. */
     void putMeta(TenantName tenant, ApplicationName application, Instant now, byte[] metaZip);

@@ -7,7 +7,7 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
@@ -186,10 +186,10 @@ public class Application {
     /**
      * Returns the oldest application version this has deployed in a permanent zone (not test or staging).
      */
-    public Optional<ApplicationVersion> oldestDeployedApplication() {
+    public Optional<RevisionId> oldestDeployedRevision() {
         return productionDeployments().values().stream().flatMap(List::stream)
-                                      .map(Deployment::applicationVersion)
-                                      .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
+                                      .map(Deployment::revision)
+                                      .filter(RevisionId::isProduction)
                                       .min(Comparator.naturalOrder());
     }
 
@@ -214,15 +214,6 @@ public class Application {
 
     /** Returns the set of deploy keys for this application. */
     public Set<PublicKey> deployKeys() { return deployKeys; }
-
-    private static Optional<ApplicationVersion> requireNotUnknown(Optional<ApplicationVersion> latestVersion) {
-        Objects.requireNonNull(latestVersion, "latestVersion cannot be null");
-        latestVersion.ifPresent(version -> {
-            if (version.isUnknown())
-                throw new IllegalArgumentException("latestVersion cannot be unknown");
-        });
-        return latestVersion;
-    }
 
     @Override
     public boolean equals(Object o) {

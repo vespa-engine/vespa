@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.ApplicationData;
 import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
@@ -62,9 +63,8 @@ public class DeploymentQuotaCalculatorTest {
 
         var existing_dev_deployment = new Application(TenantAndApplicationId.from(ApplicationId.defaultId()), Instant.EPOCH, DeploymentSpec.empty, ValidationOverrides.empty, Optional.empty(),
                                                       Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(1, 1), Set.of(), OptionalLong.empty(), RevisionHistory.empty(),
-                                                      List.of(new Instance(ApplicationId.defaultId()).withNewDeployment(
-                                                              ZoneId.from(Environment.dev, RegionName.defaultName()), ApplicationVersion.unknown, Version.emptyVersion, Instant.EPOCH, Map.of(),
-                                                              QuotaUsage.create(0.53d))));
+                                                      List.of(new Instance(ApplicationId.defaultId()).withNewDeployment(ZoneId.from(Environment.dev, RegionName.defaultName()),
+                                                                                                                        RevisionId.forProduction(1), Version.emptyVersion, Instant.EPOCH, Map.of(), QuotaUsage.create(0.53d))));
 
         Quota calculated = DeploymentQuotaCalculator.calculate(Quota.unlimited().withBudget(2), List.of(existing_dev_deployment), ApplicationId.defaultId(), ZoneId.defaultId(),
                 DeploymentSpec.fromXml(

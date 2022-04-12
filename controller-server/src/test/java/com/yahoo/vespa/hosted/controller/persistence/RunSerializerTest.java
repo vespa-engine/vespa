@@ -8,6 +8,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
@@ -19,11 +20,14 @@ import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
@@ -46,6 +50,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.startTests;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,22 +88,27 @@ public class RunSerializerTest {
         assertEquals(running, run.status());
         assertEquals(3, run.lastTestLogEntry());
         assertEquals(new Version(1, 2, 3), run.versions().targetPlatform());
-        ApplicationVersion applicationVersion = new ApplicationVersion(Optional.of(new SourceRevision("git@github.com:user/repo.git",
-                                                                                                      "master",
-                                                                                                      "f00bad")), OptionalLong.of(123), Optional.of("a@b"), Optional.of(Version.fromString("6.3.1")), Optional.of(Instant.ofEpochMilli(100)), Optional.empty(), Optional.empty(), true, Optional.empty(), true, false, Optional.empty(), 0);
-        assertEquals(applicationVersion, run.versions().targetApplication());
-        assertEquals(applicationVersion.authorEmail(), run.versions().targetApplication().authorEmail());
-        assertEquals(applicationVersion.buildTime(), run.versions().targetApplication().buildTime());
-        assertEquals(applicationVersion.compileVersion(), run.versions().targetApplication().compileVersion());
-        assertEquals("f00bad", run.versions().targetApplication().commit().get());
-        assertEquals("https://github.com/user/repo/tree/f00bad", run.versions().targetApplication().sourceUrl().get());
+        RevisionId revision1 = RevisionId.forDevelopment(123, id.job());
+        RevisionId revision2 = RevisionId.forProduction(122);
+        ApplicationVersion applicationVersion1 = new ApplicationVersion(revision1,
+                                                                        Optional.of(new SourceRevision("git@github.com:user/repo.git", "master", "f00bad")),
+                                                                        Optional.of("a@b"),
+                                                                        Optional.of(Version.fromString("6.3.1")),
+                                                                        Optional.of(Instant.ofEpochMilli(100)),
+                                                                        Optional.empty(),
+                                                                        Optional.empty(),
+                                                                        Optional.empty(),
+                                                                        true,
+                                                                        false,
+                                                                        Optional.empty(),
+                                                                        0);
+        ApplicationVersion applicationVersion2 = ApplicationVersion.from(revision2, new SourceRevision("git@github.com:user/repo.git",
+                                                                                            "master",
+                                                                                            "badb17"));
+        assertEquals(revision1, run.versions().targetRevision());
         assertEquals("because", run.reason().get());
         assertEquals(new Version(1, 2, 2), run.versions().sourcePlatform().get());
-        assertEquals(ApplicationVersion.from(new SourceRevision("git@github.com:user/repo.git",
-                                                                "master",
-                                                                "badb17"),
-                                             122),
-                     run.versions().sourceApplication().get());
+        assertEquals(revision2, run.versions().sourceRevision().get());
         assertEquals(Optional.of(new ConvergenceSummary(1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233)),
                      run.convergenceSummary());
         assertEquals(X509CertificateUtils.fromPem("-----BEGIN CERTIFICATE-----\n" +
@@ -128,6 +138,8 @@ public class RunSerializerTest {
                         .build(),
                 run.steps());
 
+        Map<RevisionId, ApplicationVersion> revisions = Map.of(revision1, applicationVersion1, revision2, applicationVersion2);
+
         run = run.with(1L << 50)
                  .with(Instant.now().truncatedTo(MILLIS))
                  .noNodesDownSince(Instant.now().truncatedTo(MILLIS))
@@ -136,7 +148,8 @@ public class RunSerializerTest {
         assertEquals(aborted, run.status());
         assertTrue(run.hasEnded());
 
-        Run phoenix = serializer.runsFromSlime(serializer.toSlime(Collections.singleton(run))).get(id);
+        // Run phoenix = serializer.runsFromSlime(serializer.toSlime(List.of(run))); // TODO jonmv: use runs again, once compatability code is gone.
+        Run phoenix = serializer.runFromSlime(serializer.toSlime(run, revisions::get));
         assertEquals(run.id(), phoenix.id());
         assertEquals(run.start(), phoenix.start());
         assertEquals(run.end(), phoenix.end());
@@ -149,8 +162,11 @@ public class RunSerializerTest {
         assertEquals(run.isDryRun(), phoenix.isDryRun());
         assertEquals(run.reason(), phoenix.reason());
 
+        assertEquals(new String(SlimeUtils.toJsonBytes(serializer.toSlime(run, revisions::get).get(), false), UTF_8),
+                     new String(SlimeUtils.toJsonBytes(serializer.toSlime(phoenix, revisions::get).get(), false), UTF_8));
+
         Run initial = Run.initial(id, run.versions(), run.isRedeployment(), run.start(), JobProfile.production, Optional.empty());
-        assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial)));
+        assertEquals(initial, serializer.runFromSlime(serializer.toSlime(initial, revisions::get)));
     }
 
 }

@@ -42,7 +42,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
      */
     public InstanceList compatibleWithPlatform(Version platform, Function<ApplicationId, VersionCompatibility> compatibility) {
         return matching(id -> instance(id).productionDeployments().values().stream()
-                                          .flatMap(deployment -> deployment.applicationVersion().compileVersion().stream())
+                                          .flatMap(deployment -> application(id).revisions().get(deployment.revision()).compileVersion().stream())
                                           .noneMatch(version -> compatibility.apply(id).refuse(platform, version)));
     }
 
@@ -95,7 +95,7 @@ public class InstanceList extends AbstractFilteringList<ApplicationId, InstanceL
 
     /** Returns the subset of instances which are currently deploying a new revision */
     public InstanceList changingRevision() {
-        return matching(id -> instance(id).change().application().isPresent());
+        return matching(id -> instance(id).change().revision().isPresent());
     }
 
     /** Returns the subset of instances which currently have failing jobs on the given version */

@@ -19,6 +19,7 @@
   "yamasUrl": "http://monitoring-system.test/?environment=prod&region=aws-us-east-1c&application=scoober.albums",
   "version": "7.164.0",
   "revision": "1.0.1-commit1",
+  "build": 1,
   "deployTimeEpochMs": 1600000000000,
   "screwdriverId": "1000",
   "applicationVersion": {

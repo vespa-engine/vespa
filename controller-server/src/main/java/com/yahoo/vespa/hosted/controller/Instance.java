@@ -6,8 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -63,16 +63,16 @@ public class Instance {
         this.change = Objects.requireNonNull(change, "change cannot be null");
     }
 
-    public Instance withNewDeployment(ZoneId zone, ApplicationVersion applicationVersion, Version version,
+    public Instance withNewDeployment(ZoneId zone, RevisionId revision, Version version,
                                       Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings, QuotaUsage quotaUsage) {
         // Use info from previous deployment if available, otherwise create a new one.
-        Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
+        Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, revision,
                                                                                       version, instant,
                                                                                       DeploymentMetrics.none,
                                                                                       DeploymentActivity.none,
                                                                                       QuotaUsage.none,
                                                                                       OptionalDouble.empty()));
-        Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
+        Deployment newDeployment = new Deployment(zone, revision, version, instant,
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity(),
                                                   quotaUsage,

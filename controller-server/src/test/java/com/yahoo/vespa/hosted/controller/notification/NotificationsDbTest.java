@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.notification;
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -66,7 +67,7 @@ public class NotificationsDbTest {
             notification(1501, Type.deployment, Level.warning, NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), JobType.devUsEast1, 4)), "run id msg"));
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(12345));
-    private final MockCuratorDb curatorDb = new MockCuratorDb();
+    private final MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
     private final MockMailer mailer = new MockMailer();
     private final NotificationsDb notificationsDb = new NotificationsDb(clock, curatorDb, new Notifier(curatorDb, mailer));
 

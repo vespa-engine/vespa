@@ -23,6 +23,8 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -59,6 +61,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
@@ -92,13 +95,13 @@ public class ControllerTest {
         var context = tester.newDeploymentContext();
         context.submit(applicationPackage);
         assertEquals("Application version is known from completion of initial job",
-                     ApplicationVersion.from(DeploymentContext.defaultSourceRevision, 1, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
-                     context.instance().change().application().get());
+                     ApplicationVersion.from(RevisionId.forProduction(1), DeploymentContext.defaultSourceRevision, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
+                     context.application().revisions().get(context.instance().change().revision().get()));
         context.runJob(systemTest);
         context.runJob(stagingTest);
 
-        ApplicationVersion applicationVersion = context.instance().change().application().get();
-        assertFalse("Application version has been set during deployment", applicationVersion.isUnknown());
+        RevisionId applicationVersion = context.instance().change().revision().get();
+        assertTrue("Application version has been set during deployment", applicationVersion.isProduction());
 
         tester.triggerJobs();
         // Causes first deployment job to be triggered
@@ -735,7 +738,7 @@ public class ControllerTest {
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version1).build());
         assertEquals(version2, context.deployment(zone).version());
-        assertEquals(Optional.of(version1), context.deployment(zone).applicationVersion().compileVersion());
+        assertEquals(Optional.of(version1), context.application().revisions().get(context.deployment(zone).revision()).compileVersion());
 
         try {
             context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version1).majorVersion(8).build());
@@ -764,11 +767,11 @@ public class ControllerTest {
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version3).majorVersion(8).build());
         assertEquals(version3, context.deployment(zone).version());
-        assertEquals(Optional.of(version3), context.deployment(zone).applicationVersion().compileVersion());
+        assertEquals(Optional.of(version3), context.application().revisions().get(context.deployment(zone).revision()).compileVersion());
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version3).build());
         assertEquals(version3, context.deployment(zone).version());
-        assertEquals(Optional.of(version3), context.deployment(zone).applicationVersion().compileVersion());
+        assertEquals(Optional.of(version3), context.application().revisions().get(context.deployment(zone).revision()).compileVersion());
     }
 
     @Test
@@ -1040,7 +1043,7 @@ public class ControllerTest {
 
     @Test
     public void testReadableApplications() {
-        var db = new MockCuratorDb();
+        var db = new MockCuratorDb(tester.controller().system());
         var tester = new DeploymentTester(new ControllerTester(db));
 
         // Create and deploy two applications

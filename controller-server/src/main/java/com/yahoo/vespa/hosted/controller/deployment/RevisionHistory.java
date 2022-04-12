@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import ai.vespa.validation.Validation;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -16,6 +17,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.TreeMap;
 
+import static ai.vespa.validation.Validation.require;
 import static java.util.Collections.emptyNavigableMap;
 import static java.util.stream.Collectors.toList;
 
@@ -77,39 +79,35 @@ public class RevisionHistory {
         return new RevisionHistory(production, development);
     }
 
-    /** Returns a copy of this with the production revision added or updated. */
+    /** Returns a copy of this with the revision added or updated. */
     public RevisionHistory with(ApplicationVersion revision) {
-        if ( ! production.isEmpty() && revision.bundleHash().flatMap(hash -> production.lastEntry().getValue().bundleHash().map(hash::equals)).orElse(false))
-            revision = revision.skipped();
+        if (revision.id().isProduction()) {
+            if ( ! production.isEmpty() && revision.bundleHash().flatMap(hash -> production.lastEntry().getValue().bundleHash().map(hash::equals)).orElse(false))
+                revision = revision.skipped();
 
-        NavigableMap<RevisionId, ApplicationVersion> production = new TreeMap<>(this.production);
-        production.put(revision.id(), revision);
-        return new RevisionHistory(production, development);
-    }
-
-    /** Returns a copy of this with the new development revision added, and the previous version without a package. */
-    public RevisionHistory with(ApplicationVersion revision, JobId job) {
-        NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(this.development);
-        NavigableMap<RevisionId, ApplicationVersion> revisions = development.compute(job, (__, old) -> new TreeMap<>(old != null ? old : emptyNavigableMap()));
-        if ( ! revisions.isEmpty()) revisions.compute(revisions.lastKey(), (__, last) -> last.withoutPackage());
-        revisions.put(revision.id(), revision);
-        return new RevisionHistory(production, development);
+            NavigableMap<RevisionId, ApplicationVersion> production = new TreeMap<>(this.production);
+            production.put(revision.id(), revision);
+            return new RevisionHistory(production, development);
+        }
+        else {
+            NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(this.development);
+            NavigableMap<RevisionId, ApplicationVersion> revisions = development.compute(revision.id().job(), (__, old) -> new TreeMap<>(old != null ? old : emptyNavigableMap()));
+            if ( ! revisions.isEmpty()) revisions.compute(revisions.lastKey(), (__, last) -> last.withoutPackage());
+            revisions.put(revision.id(), revision);
+            return new RevisionHistory(production, development);
+        }
     }
 
     // Fallback for when an application version isn't known for the given key.
-    private static ApplicationVersion revisionOf(RevisionId id, boolean production) {
-        return new ApplicationVersion(Optional.empty(), OptionalLong.of(id.number()), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), ! production, Optional.empty(), false, false, Optional.empty(), 0);
+    private static ApplicationVersion revisionOf(RevisionId id) {
+        return new ApplicationVersion(id, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), false, false, Optional.empty(), 0);
     }
 
     /** Returns the production {@link ApplicationVersion} with this revision ID. */
     public ApplicationVersion get(RevisionId id) {
-        return production.getOrDefault(id, revisionOf(id, true));
-    }
-
-    /** Returns the development {@link ApplicationVersion} for the give job, with this revision ID. */
-    public ApplicationVersion get(RevisionId id, JobId job) {
-        return development.getOrDefault(job, emptyNavigableMap())
-                          .getOrDefault(id, revisionOf(id, false));
+        return id.isProduction() ? production.getOrDefault(id, revisionOf(id))
+                                 : development.getOrDefault(id.job(), emptyNavigableMap())
+                                              .getOrDefault(id, revisionOf(id));
     }
 
     /** Returns the last submitted production build. */
