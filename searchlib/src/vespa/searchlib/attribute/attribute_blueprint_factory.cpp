@@ -253,6 +253,19 @@ public:
         }
     }
 
+    SearchIterator::UP
+    createFilterSearch(bool strict, FilterConstraint constraint) const override
+    {
+        if (constraint == FilterConstraint::UPPER_BOUND) {
+            auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
+            wrapper->wrap(createLeafSearch(wrapper->tfmda(), strict));
+            return wrapper;
+        } else {
+            LOG_ASSERT(constraint == FilterConstraint::LOWER_BOUND);
+            return std::make_unique<search::queryeval::EmptySearch>();
+        }
+    }
+
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override {
         for (size_t i(0); i < _rangeSearches.size(); i++) {
             _rangeSearches[i]->fetchPostings(execInfo);
