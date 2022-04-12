@@ -30,22 +30,6 @@ public class HistoryTest {
                      history.asList().stream().map(e -> e.at().toEpochMilli()).collect(Collectors.toList()));
     }
 
-    @Test
-    public void repeating_event_overwrites_existing() {
-        Instant i0 = Instant.ofEpochMilli(1);
-        History history = new History(List.of(new Event(Event.Type.readied, Agent.system, i0)));
-
-        Instant i1 = Instant.ofEpochMilli(2);
-        history = history.with(new Event(Event.Type.reserved, Agent.system, i1));
-        assertEquals(2, history.asList().size());
-
-        Instant i2 = Instant.ofEpochMilli(3);
-        history = history.with(new Event(Event.Type.reserved, Agent.system, i2));
-
-        assertEquals(2, history.asList().size());
-        assertEquals(i2, history.asList().get(1).at());
-    }
-
     private static List<Event> shuffledEvents(int count) {
         Instant start = Instant.ofEpochMilli(0);
         List<Event> events = new ArrayList<>();

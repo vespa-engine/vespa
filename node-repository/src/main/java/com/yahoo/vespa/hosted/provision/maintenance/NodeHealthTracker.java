@@ -61,7 +61,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                 Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
                 if (lastLocalRequest.isEmpty()) continue;
 
-                if (!node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
+                if (!node.history().hasLastEventAfter(lastLocalRequest.get(), History.Event.Type.requested)) {
                     History updatedHistory = node.history()
                                                  .with(new History.Event(History.Event.Type.requested, Agent.NodeHealthTracker, lastLocalRequest.get()));
                     nodeRepository().nodes().write(node.with(updatedHistory), lock);

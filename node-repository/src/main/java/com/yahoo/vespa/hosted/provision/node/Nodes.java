@@ -840,7 +840,7 @@ public class Nodes {
         if (agent == Agent.operator) return false;
         if (node.type() == NodeType.tenant && node.status().wantToDeprovision()) return false;
         boolean retirementRequestedByOperator = node.status().wantToRetire() &&
-                                                node.history().event(History.Event.Type.wantToRetire)
+                                                node.history().lastEvent(History.Event.Type.wantToRetire)
                                                     .map(History.Event::agent)
                                                     .map(a -> a == Agent.operator)
                                                     .orElse(false);

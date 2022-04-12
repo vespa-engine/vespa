@@ -57,7 +57,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
     }
 
     protected final boolean isExpired(Node node, Duration expiryTime) {
-        return node.history().hasEventBefore(eventType, clock().instant().minus(expiryTime));
+        return node.history().hasLastEventBefore(clock().instant().minus(expiryTime), eventType);
     }
 
     /** Implement this callback to take action to expire these nodes */

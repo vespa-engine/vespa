@@ -359,10 +359,10 @@ public final class Node implements Nodelike {
 
     /** Returns whether this node is down, according to its recorded 'down' and 'up' events */
     public boolean isDown() {
-        Optional<Instant> downAt = history().event(History.Event.Type.down).map(History.Event::at);
+        Optional<Instant> downAt = history().lastEvent(History.Event.Type.down).map(History.Event::at);
         if (downAt.isEmpty()) return false;
 
-        Optional<Instant> upAt = history().event(History.Event.Type.up).map(History.Event::at);
+        Optional<Instant> upAt = history().lastEvent(History.Event.Type.up).map(History.Event::at);
         if (upAt.isEmpty()) return true;
         return !downAt.get().isBefore(upAt.get());
     }

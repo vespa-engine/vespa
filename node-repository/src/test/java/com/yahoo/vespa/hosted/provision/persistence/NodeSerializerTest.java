@@ -113,7 +113,7 @@ public class NodeSerializerTest {
         assertEquals(node.allocation().get().requestedResources(), copy.allocation().get().requestedResources());
         assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
         assertEquals(2, copy.history().asList().size());
-        assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.reserved).get().at());
+        assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().lastEvent(History.Event.Type.reserved).get().at());
         assertEquals(NodeType.tenant, copy.type());
     }
 
@@ -182,9 +182,9 @@ public class NodeSerializerTest {
         node = node.retire(Agent.application, clock.instant());
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(2, copy.history().asList().size());
-        assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.retired).get().at());
+        assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().lastEvent(History.Event.Type.retired).get().at());
         assertEquals(Agent.application,
-                     (copy.history().event(History.Event.Type.retired).get()).agent());
+                     (copy.history().lastEvent(History.Event.Type.retired).get()).agent());
         assertTrue(copy.allocation().get().membership().retired());
 
         Node removable = copy.with(node.allocation().get().removable(true));
@@ -296,7 +296,7 @@ public class NodeSerializerTest {
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(1234, copy.flavor().resources().diskGb(), 0);
         assertEquals(node, copy);
-        assertTrue(node.history().event(History.Event.Type.resized).isPresent());
+        assertTrue(node.history().lastEvent(History.Event.Type.resized).isPresent());
     }
 
     @Test
@@ -372,7 +372,7 @@ public class NodeSerializerTest {
         node = node.withFirmwareVerifiedAt(Instant.ofEpochMilli(100));
         node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
         assertEquals(100, node.status().firmwareVerifiedAt().get().toEpochMilli());
-        assertEquals(Instant.ofEpochMilli(100), node.history().event(History.Event.Type.firmwareVerified).get().at());
+        assertEquals(Instant.ofEpochMilli(100), node.history().lastEvent(History.Event.Type.firmwareVerified).get().at());
     }
 
     @Test

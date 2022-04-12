@@ -38,27 +38,27 @@ public class History {
                              .collect(Collectors.toUnmodifiableList());
     }
 
-    /** Returns the latest event of given type, if it is present in this history */
-    public Optional<Event> event(Event.Type type) {
+    /** Returns the last event of given type, if it is present in this history */
+    public Optional<Event> lastEvent(Event.Type type) {
         return events.stream().filter(event -> event.type() == type).max(Comparator.comparing(Event::at));
     }
 
-    /** Returns true if a given event is registered in this history at the given time */
-    public boolean hasEventAt(Event.Type type, Instant time) {
-        return event(type).map(event -> event.at().equals(time))
-                          .orElse(false);
+    /** Returns true if the last event of this type is registered in this history at the given time */
+    public boolean hasLastEventAt(Instant time, Event.Type type) {
+        return lastEvent(type).map(event -> event.at().equals(time))
+                              .orElse(false);
     }
 
-    /** Returns true if a given event is registered in this history after the given time */
-    public boolean hasEventAfter(Event.Type type, Instant time) {
-        return event(type).map(event -> event.at().isAfter(time))
-                          .orElse(false);
+    /** Returns true if the last event of this type is registered after the given time */
+    public boolean hasLastEventAfter(Instant time, Event.Type type) {
+        return lastEvent(type).map(event -> event.at().isAfter(time))
+                              .orElse(false);
     }
 
-    /** Returns true if a given event is registered in this history before the given time */
-    public boolean hasEventBefore(Event.Type type, Instant time) {
-        return event(type).map(event -> event.at().isBefore(time))
-                          .orElse(false);
+    /** Returns true if the last event of this type is registered before the given time */
+    public boolean hasLastEventBefore(Instant time, Event.Type type) {
+        return lastEvent(type).map(event -> event.at().isBefore(time))
+                              .orElse(false);
     }
 
     public List<Event> asList() {
@@ -68,21 +68,13 @@ public class History {
     /** Returns a copy of this history with the given event added */
     public History with(Event event) {
         List<Event> copy = new ArrayList<>(events);
-        if (!copy.isEmpty()) {
-            // Let given event overwrite the latest if they're of the same type. Some events may be repeated, such as
-            // 'reserved'
-            Event last = copy.get(copy.size() - 1);
-            if (last.type() == event.type()) {
-                copy.remove(last);
-            }
-        }
         copy.add(event);
         return new History(copy);
     }
 
     /** Returns a copy of this history with a record of this state transition added, if applicable */
     public History recordStateTransition(Node.State from, Node.State to, Agent agent, Instant at) {
-        // If the event is a re-reservation, allow the new one to override the older one.
+        // If the event is a re-reservation, allow the new event to overwrite the older one.
         if (from == to && from != Node.State.reserved) return this;
         switch (to) {
             case provisioned:   return this.with(new Event(Event.Type.provisioned, agent, at));
@@ -90,7 +82,14 @@ public class History {
             case ready:         return this.withoutApplicationEvents().with(new Event(Event.Type.readied, agent, at));
             case active:        return this.with(new Event(Event.Type.activated, agent, at));
             case inactive:      return this.with(new Event(Event.Type.deactivated, agent, at));
-            case reserved:      return this.with(new Event(Event.Type.reserved, agent, at));
+            case reserved: {
+                History history = this;
+                if (!events.isEmpty() && events.get(events.size() - 1).type() == Event.Type.reserved) {
+                    // Avoid repeating reserved event
+                    history = new History(events.subList(0, events.size() - 1));
+                }
+                return history.with(new Event(Event.Type.reserved, agent, at));
+            }
             case failed:        return this.with(new Event(Event.Type.failed, agent, at));
             case dirty:         return this.with(new Event(Event.Type.deallocated, agent, at));
             case parked:        return this.with(new Event(Event.Type.parked, agent, at));

@@ -157,7 +157,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             Instant graceTimeStart = clock().instant().minus(nodeRepository().nodes().suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
             if (downBefore(graceTimeStart, node) && !applicationSuspended(node)) {
                 // Allow a grace period after node re-activation
-                if (!node.history().hasEventAfter(History.Event.Type.activated, graceTimeStart))
+                if (!node.history().hasLastEventAfter(graceTimeStart, History.Event.Type.activated))
                     failingNodes.add(new FailingNode(node, "Node has been down longer than " + downTimeLimit));
             }
         }
@@ -280,7 +280,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Returns whether node is down, and has been down since before given instant */
     private static boolean downBefore(Instant instant, Node node) {
-        return node.isDown() && node.history().event(History.Event.Type.down).get().at().isBefore(instant);
+        return node.isDown() && node.history().hasLastEventBefore(instant, History.Event.Type.down);
     }
 
     private void wantToFail(Node node, boolean wantToFail, Mutex lock) {
@@ -293,8 +293,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
         NodeList allNodes = nodeRepository().nodes().list();
         NodeList recentlyFailedNodes = allNodes.state(Node.State.failed)
-                                               .matching(n -> n.history().hasEventAfter(History.Event.Type.failed,
-                                                                                        startOfThrottleWindow));
+                                               .matching(n -> n.history().hasLastEventAfter(startOfThrottleWindow, History.Event.Type.failed
+                                               ));
 
         // Allow failing any node within policy
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
