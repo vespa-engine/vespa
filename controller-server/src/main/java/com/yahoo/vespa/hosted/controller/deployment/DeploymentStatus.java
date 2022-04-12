@@ -925,7 +925,7 @@ public class DeploymentStatus {
         private final Change change;
 
         public Job(JobType type, Versions versions, Optional<Instant> readyAt, Change change) {
-            this.versions = type == systemTest ? versions.withoutSources() : versions;
+            this.versions = type.isSystemTest() ? versions.withoutSources() : versions;
             this.readyAt = readyAt;
             this.change = change;
         }

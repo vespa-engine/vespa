@@ -57,7 +57,7 @@ public class RevisionId implements Comparable<RevisionId> {
     @Override
     public String toString() {
         return isProduction() ? "build " + number
-                              : "dev build " + number + " for " + job.type() + " of " + job.application().instance();
+                              : "dev build " + number + " for " + job.type().jobName() + " of " + job.application().instance();
     }
 
 }
