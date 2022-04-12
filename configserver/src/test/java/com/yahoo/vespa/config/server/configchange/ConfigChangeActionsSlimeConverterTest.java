@@ -30,16 +30,13 @@ public class ConfigChangeActionsSlimeConverterTest {
     @Test
     public void json_representation_of_empty_actions() throws IOException {
         ConfigChangeActions actions = new ConfigChangeActionsBuilder().build();
-        assertEquals(   "{\n" +
-                        " \"configChangeActions\": {\n" +
-                        "  \"restart\": [\n" +
-                        "  ],\n" +
-                        "  \"refeed\": [\n" +
-                        "  ],\n" +
-                        "  \"reindex\": [\n" +
-                        "  ]\n" +
-                        " }\n" +
-                        "}\n",
+        assertEquals("{\n"
+                     + "  \"configChangeActions\": {\n"
+                     + "    \"restart\": [ ],\n"
+                     + "    \"refeed\": [ ],\n"
+                     + "    \"reindex\": [ ]\n"
+                     + "  }\n"
+                     + "}\n",
                      toJson(actions));
     }
 
@@ -50,39 +47,37 @@ public class ConfigChangeActionsSlimeConverterTest {
                 restart(CHANGE_MSG, CLUSTER, CLUSTER_TYPE, SERVICE_TYPE, SERVICE_NAME_2).
                 restart(CHANGE_MSG_2, CLUSTER, CLUSTER_TYPE, SERVICE_TYPE, SERVICE_NAME).
                 restart(CHANGE_MSG_2, CLUSTER, CLUSTER_TYPE, SERVICE_TYPE, SERVICE_NAME_2).build();
-        assertEquals("{\n" +
-                        " \"configChangeActions\": {\n" +
-                        "  \"restart\": [\n" +
-                        "   {\n" +
-                        "    \"clusterName\": \"foo\",\n" +
-                        "    \"clusterType\": \"search\",\n" +
-                        "    \"serviceType\": \"searchnode\",\n" +
-                        "    \"messages\": [\n" +
-                        "     \"change\",\n" +
-                        "     \"other change\"\n" +
-                        "    ],\n" +
-                        "    \"services\": [\n" +
-                        "     {\n" +
-                        "      \"serviceName\": \"baz\",\n" +
-                        "      \"serviceType\": \"searchnode\",\n" +
-                        "      \"configId\": \"searchnode/baz\",\n" +
-                        "      \"hostName\": \"hostname\"\n" +
-                        "     },\n" +
-                        "     {\n" +
-                        "      \"serviceName\": \"qux\",\n" +
-                        "      \"serviceType\": \"searchnode\",\n" +
-                        "      \"configId\": \"searchnode/qux\",\n" +
-                        "      \"hostName\": \"hostname\"\n" +
-                        "     }\n" +
-                        "    ]\n" +
-                        "   }\n" +
-                        "  ],\n" +
-                        "  \"refeed\": [\n" +
-                        "  ],\n" +
-                        "  \"reindex\": [\n" +
-                        "  ]\n" +
-                        " }\n" +
-                        "}\n",
+        assertEquals("{\n"
+                     + "  \"configChangeActions\": {\n"
+                     + "    \"restart\": [\n"
+                     + "      {\n"
+                     + "        \"clusterName\": \"foo\",\n"
+                     + "        \"clusterType\": \"search\",\n"
+                     + "        \"serviceType\": \"searchnode\",\n"
+                     + "        \"messages\": [\n"
+                     + "          \"change\",\n"
+                     + "          \"other change\"\n"
+                     + "        ],\n"
+                     + "        \"services\": [\n"
+                     + "          {\n"
+                     + "            \"serviceName\": \"baz\",\n"
+                     + "            \"serviceType\": \"searchnode\",\n"
+                     + "            \"configId\": \"searchnode/baz\",\n"
+                     + "            \"hostName\": \"hostname\"\n"
+                     + "          },\n"
+                     + "          {\n"
+                     + "            \"serviceName\": \"qux\",\n"
+                     + "            \"serviceType\": \"searchnode\",\n"
+                     + "            \"configId\": \"searchnode/qux\",\n"
+                     + "            \"hostName\": \"hostname\"\n"
+                     + "          }\n"
+                     + "        ]\n"
+                     + "      }\n"
+                     + "    ],\n"
+                     + "    \"refeed\": [ ],\n"
+                     + "    \"reindex\": [ ]\n"
+                     + "  }\n"
+                     + "}\n",
                      toJson(actions));
     }
 
@@ -91,48 +86,46 @@ public class ConfigChangeActionsSlimeConverterTest {
         ConfigChangeActions actions = new ConfigChangeActionsBuilder().
                 refeed(CHANGE_ID, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_TYPE).
                 refeed(CHANGE_ID_2, CHANGE_MSG, DOC_TYPE_2, CLUSTER, SERVICE_TYPE).build();
-        assertEquals("{\n" +
-                        " \"configChangeActions\": {\n" +
-                        "  \"restart\": [\n" +
-                        "  ],\n" +
-                        "  \"refeed\": [\n" +
-                        "   {\n" +
-                        "    \"name\": \"field-type-change\",\n" +
-                        "    \"documentType\": \"music\",\n" +
-                        "    \"clusterName\": \"foo\",\n" +
-                        "    \"messages\": [\n" +
-                        "     \"change\"\n" +
-                        "    ],\n" +
-                        "    \"services\": [\n" +
-                        "     {\n" +
-                        "      \"serviceName\": \"searchnode\",\n" +
-                        "      \"serviceType\": \"myservicetype\",\n" +
-                        "      \"configId\": \"myservicetype/searchnode\",\n" +
-                        "      \"hostName\": \"hostname\"\n" +
-                        "     }\n" +
-                        "    ]\n" +
-                        "   },\n" +
-                        "   {\n" +
-                        "    \"name\": \"indexing-change\",\n" +
-                        "    \"documentType\": \"book\",\n" +
-                        "    \"clusterName\": \"foo\",\n" +
-                        "    \"messages\": [\n" +
-                        "     \"change\"\n" +
-                        "    ],\n" +
-                        "    \"services\": [\n" +
-                        "     {\n" +
-                        "      \"serviceName\": \"searchnode\",\n" +
-                        "      \"serviceType\": \"myservicetype\",\n" +
-                        "      \"configId\": \"myservicetype/searchnode\",\n" +
-                        "      \"hostName\": \"hostname\"\n" +
-                        "     }\n" +
-                        "    ]\n" +
-                        "   }\n" +
-                        "  ],\n" +
-                        "  \"reindex\": [\n" +
-                        "  ]\n" +
-                        " }\n" +
-                        "}\n",
+        assertEquals("{\n"
+                     + "  \"configChangeActions\": {\n"
+                     + "    \"restart\": [ ],\n"
+                     + "    \"refeed\": [\n"
+                     + "      {\n"
+                     + "        \"name\": \"field-type-change\",\n"
+                     + "        \"documentType\": \"music\",\n"
+                     + "        \"clusterName\": \"foo\",\n"
+                     + "        \"messages\": [\n"
+                     + "          \"change\"\n"
+                     + "        ],\n"
+                     + "        \"services\": [\n"
+                     + "          {\n"
+                     + "            \"serviceName\": \"searchnode\",\n"
+                     + "            \"serviceType\": \"myservicetype\",\n"
+                     + "            \"configId\": \"myservicetype/searchnode\",\n"
+                     + "            \"hostName\": \"hostname\"\n"
+                     + "          }\n"
+                     + "        ]\n"
+                     + "      },\n"
+                     + "      {\n"
+                     + "        \"name\": \"indexing-change\",\n"
+                     + "        \"documentType\": \"book\",\n"
+                     + "        \"clusterName\": \"foo\",\n"
+                     + "        \"messages\": [\n"
+                     + "          \"change\"\n"
+                     + "        ],\n"
+                     + "        \"services\": [\n"
+                     + "          {\n"
+                     + "            \"serviceName\": \"searchnode\",\n"
+                     + "            \"serviceType\": \"myservicetype\",\n"
+                     + "            \"configId\": \"myservicetype/searchnode\",\n"
+                     + "            \"hostName\": \"hostname\"\n"
+                     + "          }\n"
+                     + "        ]\n"
+                     + "      }\n"
+                     + "    ],\n"
+                     + "    \"reindex\": [ ]\n"
+                     + "  }\n"
+                     + "}\n",
                 toJson(actions));
     }
 
@@ -140,34 +133,31 @@ public class ConfigChangeActionsSlimeConverterTest {
         public void json_representation_of_reindex_actions() throws IOException {
             ConfigChangeActions actions = new ConfigChangeActionsBuilder().
                     reindex(CHANGE_ID, CHANGE_MSG, DOC_TYPE, CLUSTER, SERVICE_TYPE).build();
-            assertEquals(
-                    "{\n" +
-                            " \"configChangeActions\": {\n" +
-                            "  \"restart\": [\n" +
-                            "  ],\n" +
-                            "  \"refeed\": [\n" +
-                            "  ],\n" +
-                            "  \"reindex\": [\n" +
-                            "   {\n" +
-                            "    \"name\": \"field-type-change\",\n" +
-                            "    \"documentType\": \"music\",\n" +
-                            "    \"clusterName\": \"foo\",\n" +
-                            "    \"messages\": [\n" +
-                            "     \"change\"\n" +
-                            "    ],\n" +
-                            "    \"services\": [\n" +
-                            "     {\n" +
-                            "      \"serviceName\": \"searchnode\",\n" +
-                            "      \"serviceType\": \"myservicetype\",\n" +
-                            "      \"configId\": \"myservicetype/searchnode\",\n" +
-                            "      \"hostName\": \"hostname\"\n" +
-                            "     }\n" +
-                            "    ]\n" +
-                            "   }\n" +
-                            "  ]\n" +
-                            " }\n" +
-                            "}\n",
-                    toJson(actions));
+            assertEquals("{\n"
+                         + "  \"configChangeActions\": {\n"
+                         + "    \"restart\": [ ],\n"
+                         + "    \"refeed\": [ ],\n"
+                         + "    \"reindex\": [\n"
+                         + "      {\n"
+                         + "        \"name\": \"field-type-change\",\n"
+                         + "        \"documentType\": \"music\",\n"
+                         + "        \"clusterName\": \"foo\",\n"
+                         + "        \"messages\": [\n"
+                         + "          \"change\"\n"
+                         + "        ],\n"
+                         + "        \"services\": [\n"
+                         + "          {\n"
+                         + "            \"serviceName\": \"searchnode\",\n"
+                         + "            \"serviceType\": \"myservicetype\",\n"
+                         + "            \"configId\": \"myservicetype/searchnode\",\n"
+                         + "            \"hostName\": \"hostname\"\n"
+                         + "          }\n"
+                         + "        ]\n"
+                         + "      }\n"
+                         + "    ]\n"
+                         + "  }\n"
+                         + "}\n",
+                         toJson(actions));
     }
 
 }

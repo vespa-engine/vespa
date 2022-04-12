@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -47,10 +46,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -83,6 +78,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -838,6 +834,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Application package version: 1.0.4-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
 
+        // DELETE submitted build, to mark it as non-deployable
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/2", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Marked build '2' as non-deployable\"}");
+
         // GET deployment job overview, after triggering system and staging test jobs.
         assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job", GET)
@@ -1053,6 +1054,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testDeployWithApplicationPackage() {
         // Setup
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+        deploymentTester.controllerTester().upgradeController(new Version("6.2"));
 
         // POST (deploy) a system application with an application package
         MultiPartStreamer noAppEntity = createApplicationDeployData(Optional.empty());
@@ -1606,6 +1608,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
         );
 
         // Should be 1 available grant
+        tester.serviceRegistry().clock().advance(Duration.ofSeconds(1));
+        now = tester.serviceRegistry().clock().instant();
         List<SupportAccessGrant> activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
         assertEquals(1, activeGrants.size());
 
@@ -1715,7 +1719,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     static MultiPartStreamer createApplicationSubmissionData(ApplicationPackage applicationPackage, long projectId) {
         return new MultiPartStreamer().addJson(EnvironmentResource.SUBMIT_OPTIONS, "{\"repository\":\"repository1\",\"branch\":\"master\",\"commit\":\"commit1\","
-                                                                                   + "\"projectId\":" + projectId + ",\"authorEmail\":\"a@b\"}")
+                                                                                   + "\"projectId\":" + projectId + ",\"authorEmail\":\"a@b\","
+                                                                                   + "\"description\":\"my best commit yet\",\"risk\":9001}")
                                       .addBytes(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent())
                                       .addBytes(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());
     }

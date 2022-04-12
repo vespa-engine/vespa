@@ -28,16 +28,16 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
-import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -258,7 +258,12 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext resubmit(ApplicationPackage applicationPackage) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.get());
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.get(), 0);
+    }
+
+    /** Submit given application package for deployment */
+    public DeploymentContext submit(ApplicationPackage applicationPackage, int risk) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.incrementAndGet(), risk);
     }
 
     /** Submit given application package for deployment */
@@ -267,24 +272,23 @@ public class DeploymentContext {
     }
 
     /** Submit given application package for deployment */
-    public DeploymentContext submit(ApplicationPackage applicationPackage, long salt) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt);
+    public DeploymentContext submit(ApplicationPackage applicationPackage, long salt, int risk) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt, risk);
     }
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision) {
-        return submit(applicationPackage, sourceRevision, salt.incrementAndGet());
+        return submit(applicationPackage, sourceRevision, salt.incrementAndGet(), 0);
     }
 
     /** Submit given application package for deployment */
-    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt) {
+    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt, int risk) {
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         var testerpackage = new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt };
-        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     projectId, applicationPackage, testerpackage);
+        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(), projectId, applicationPackage, testerpackage, Optional.empty(), risk);
         return this;
     }
 

@@ -22,7 +22,7 @@ import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 public class SupportAccessSerializerTest {
 
@@ -37,41 +37,41 @@ public class SupportAccessSerializerTest {
             .withAllowedUntil(hour(36), "andreer", hour(30));
 
     @Language("JSON")
-    private final String expectedWithCertificates = "{\n" +
-            " \"history\": [\n" +
-            "  {\n" +
-            "   \"state\": \"allowed\",\n" +
-            "   \"at\": \"1970-01-02T06:00:00Z\",\n" +
-            "   \"until\": \"1970-01-02T12:00:00Z\",\n" +
-            "   \"by\": \"andreer\"\n" +
-            "  },\n" +
-            "  {\n" +
-            "   \"state\": \"disallowed\",\n" +
-            "   \"at\": \"1970-01-01T22:00:00Z\",\n" +
-            "   \"by\": \"andreer\"\n" +
-            "  },\n" +
-            "  {\n" +
-            "   \"state\": \"allowed\",\n" +
-            "   \"at\": \"1970-01-01T02:00:00Z\",\n" +
-            "   \"until\": \"1970-01-02T00:00:00Z\",\n" +
-            "   \"by\": \"andreer\"\n" +
-            "  }\n" +
-            " ],\n" +
-            " \"grants\": [\n" +
-            "  {\n" +
-            "   \"requestor\": \"mortent\",\n" +
-            "   \"certificate\": \"" + toPem(cert_7_to_19) + "\",\n" +
-            "   \"notBefore\": \"1970-01-01T07:00:00Z\",\n" +
-            "   \"notAfter\": \"1970-01-01T19:00:00Z\"\n" +
-            "  },\n" +
-            "  {\n" +
-            "   \"requestor\": \"mortent\",\n" +
-            "   \"certificate\": \"" + toPem(cert_3_to_4) + "\",\n" +
-            "   \"notBefore\": \"1970-01-01T03:00:00Z\",\n" +
-            "   \"notAfter\": \"1970-01-01T04:00:00Z\"\n" +
-            "  }\n" +
-            " ]\n" +
-            "}\n";
+    private final String expectedWithCertificates = "{\n"
+                                                    + "  \"history\": [\n"
+                                                    + "    {\n"
+                                                    + "      \"state\": \"allowed\",\n"
+                                                    + "      \"at\": \"1970-01-02T06:00:00Z\",\n"
+                                                    + "      \"until\": \"1970-01-02T12:00:00Z\",\n"
+                                                    + "      \"by\": \"andreer\"\n"
+                                                    + "    },\n"
+                                                    + "    {\n"
+                                                    + "      \"state\": \"disallowed\",\n"
+                                                    + "      \"at\": \"1970-01-01T22:00:00Z\",\n"
+                                                    + "      \"by\": \"andreer\"\n"
+                                                    + "    },\n"
+                                                    + "    {\n"
+                                                    + "      \"state\": \"allowed\",\n"
+                                                    + "      \"at\": \"1970-01-01T02:00:00Z\",\n"
+                                                    + "      \"until\": \"1970-01-02T00:00:00Z\",\n"
+                                                    + "      \"by\": \"andreer\"\n"
+                                                    + "    }\n"
+                                                    + "  ],\n"
+                                                    + "  \"grants\": [\n"
+                                                    + "    {\n"
+                                                    + "      \"requestor\": \"mortent\",\n"
+                                                    + "      \"certificate\": \"" + toPem(cert_7_to_19) + "\",\n"
+                                                    + "      \"notBefore\": \"1970-01-01T07:00:00Z\",\n"
+                                                    + "      \"notAfter\": \"1970-01-01T19:00:00Z\"\n"
+                                                    + "    },\n"
+                                                    + "    {\n"
+                                                    + "      \"requestor\": \"mortent\",\n"
+                                                    + "      \"certificate\": \"" + toPem(cert_3_to_4) + "\",\n"
+                                                    + "      \"notBefore\": \"1970-01-01T03:00:00Z\",\n"
+                                                    + "      \"notAfter\": \"1970-01-01T04:00:00Z\"\n"
+                                                    + "    }\n"
+                                                    + "  ]\n"
+                                                    + "}\n";
 
     public String toPem(X509Certificate cert) {
         return X509CertificateUtils.toPem(cert).replace("\n", "\\n");
@@ -81,14 +81,12 @@ public class SupportAccessSerializerTest {
     public void serialize_default() {
         var slime = SupportAccessSerializer.serializeCurrentState(SupportAccess.DISALLOWED_NO_HISTORY, Instant.EPOCH);
         assertSerialized(slime, "{\n" +
-                " \"state\": {\n" +
-                "  \"supportAccess\": \"NOT_ALLOWED\"\n" +
-                " },\n" +
-                " \"history\": [\n" +
-                " ],\n" +
-                " \"grants\": [\n" +
-                " ]\n" +
-                "}\n");
+                                "  \"state\": {\n" +
+                                "    \"supportAccess\": \"NOT_ALLOWED\"\n" +
+                                "  },\n" +
+                                "  \"history\": [ ],\n" +
+                                "  \"grants\": [ ]\n" +
+                                "}\n");
     }
 
     @Test
@@ -101,46 +99,45 @@ public class SupportAccessSerializerTest {
     public void serialize_with_status() {
         var slime = SupportAccessSerializer.serializeCurrentState(supportAccessExample, hour(12));
         assertSerialized(slime,
-                "{\n" +
-                        " \"state\": {\n" +
-                        "  \"supportAccess\": \"ALLOWED\",\n" +
-                        "  \"until\": \"1970-01-02T12:00:00Z\",\n" +
-                        "  \"by\": \"andreer\"\n" +
-                        " },\n" +
-                        " \"history\": [\n" +
-                        "  {\n" +
-                        "   \"state\": \"allowed\",\n" +
-                        "   \"at\": \"1970-01-02T06:00:00Z\",\n" +
-                        "   \"until\": \"1970-01-02T12:00:00Z\",\n" +
-                        "   \"by\": \"andreer\"\n" +
-                        "  },\n" +
-                        "  {\n" +
-                        "   \"state\": \"disallowed\",\n" +
-                        "   \"at\": \"1970-01-01T22:00:00Z\",\n" +
-                        "   \"by\": \"andreer\"\n" +
-                        "  },\n" +
-                        "  {\n" +
-                        "   \"state\": \"allowed\",\n" +
-                        "   \"at\": \"1970-01-01T02:00:00Z\",\n" +
-                        "   \"until\": \"1970-01-02T00:00:00Z\",\n" +
-                        "   \"by\": \"andreer\"\n" +
-                        "  },\n" +
-                        "  {\n" +
-                        "   \"state\": \"grant\",\n" +
-                        "   \"at\": \"1970-01-01T03:00:00Z\",\n" +
-                        "   \"until\": \"1970-01-01T04:00:00Z\",\n" +
-                        "   \"by\": \"mortent\"\n" +
-                        "  }\n" +
-                        " ],\n" +
-                        " \"grants\": [\n" +
-                        "  {\n" +
-                        "   \"requestor\": \"mortent\",\n" +
-                        "   \"notBefore\": \"1970-01-01T07:00:00Z\",\n" +
-                        "   \"notAfter\": \"1970-01-01T19:00:00Z\"\n" +
-                        "  }" +
-                        "\n" +
-                        " ]\n" +
-                        "}\n");
+                         "{\n"
+                         + "  \"state\": {\n"
+                         + "    \"supportAccess\": \"ALLOWED\",\n"
+                         + "    \"until\": \"1970-01-02T12:00:00Z\",\n"
+                         + "    \"by\": \"andreer\"\n"
+                         + "  },\n"
+                         + "  \"history\": [\n"
+                         + "    {\n"
+                         + "      \"state\": \"allowed\",\n"
+                         + "      \"at\": \"1970-01-02T06:00:00Z\",\n"
+                         + "      \"until\": \"1970-01-02T12:00:00Z\",\n"
+                         + "      \"by\": \"andreer\"\n"
+                         + "    },\n"
+                         + "    {\n"
+                         + "      \"state\": \"disallowed\",\n"
+                         + "      \"at\": \"1970-01-01T22:00:00Z\",\n"
+                         + "      \"by\": \"andreer\"\n"
+                         + "    },\n"
+                         + "    {\n"
+                         + "      \"state\": \"allowed\",\n"
+                         + "      \"at\": \"1970-01-01T02:00:00Z\",\n"
+                         + "      \"until\": \"1970-01-02T00:00:00Z\",\n"
+                         + "      \"by\": \"andreer\"\n"
+                         + "    },\n"
+                         + "    {\n"
+                         + "      \"state\": \"grant\",\n"
+                         + "      \"at\": \"1970-01-01T03:00:00Z\",\n"
+                         + "      \"until\": \"1970-01-01T04:00:00Z\",\n"
+                         + "      \"by\": \"mortent\"\n"
+                         + "    }\n"
+                         + "  ],\n"
+                         + "  \"grants\": [\n"
+                         + "    {\n"
+                         + "      \"requestor\": \"mortent\",\n"
+                         + "      \"notBefore\": \"1970-01-01T07:00:00Z\",\n"
+                         + "      \"notAfter\": \"1970-01-01T19:00:00Z\"\n"
+                         + "    }\n"
+                         + "  ]\n"
+                         + "}\n");
     }
 
     @Test

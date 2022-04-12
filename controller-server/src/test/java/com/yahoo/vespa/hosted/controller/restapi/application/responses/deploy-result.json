@@ -1,9 +1,9 @@
 {
-  "revisionId":"(ignore)",
-  "applicationZipSize":"(ignore)",
-  "prepareMessages":[],
-  "configChangeActions":{
-    "restart":[],
-    "refeed":[]
+  "revisionId": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+  "applicationZipSize": 0,
+  "prepareMessages": [ ],
+  "configChangeActions": {
+    "restart": [ ],
+    "refeed": [ ]
   }
 }

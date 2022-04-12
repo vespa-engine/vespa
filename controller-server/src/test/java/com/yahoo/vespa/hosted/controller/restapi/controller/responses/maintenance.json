@@ -85,7 +85,7 @@
       "name": "ResourceTagMaintainer"
     },
     {
-      "name":"RetriggerMaintainer"
+      "name": "RetriggerMaintainer"
     },
     {
       "name": "SystemRoutingPolicyMaintainer"
@@ -94,7 +94,7 @@
       "name": "SystemUpgrader"
     },
     {
-      "name":"TenantRoleMaintainer"
+      "name": "TenantRoleMaintainer"
     },
     {
       "name": "TrafficShareUpdater"

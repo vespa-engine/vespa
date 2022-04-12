@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.TreeMap;
 
+import static java.util.Collections.emptyNavigableMap;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -46,6 +47,12 @@ public class RevisionHistory {
         for (ApplicationVersion revision : productionRevisions)
             production.put(revision.id(), revision);
 
+        // TODO jonmv: remove once it's run once on serialised data
+        String hash = "";
+        for (ApplicationVersion revision : List.copyOf(production.values()))
+            if (hash.equals(hash = revision.bundleHash().orElse("")) && ! hash.isEmpty())
+                production.put(revision.id(), revision.skipped());
+
         NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(comparator);
         developmentRevisions.forEach((job, jobRevisions) -> {
             NavigableMap<RevisionId, ApplicationVersion> revisions = development.computeIfAbsent(job, __ -> new TreeMap<>());
@@ -70,8 +77,11 @@ public class RevisionHistory {
         return new RevisionHistory(production, development);
     }
 
-    /** Returns a copy of this with the production revision added or updated */
+    /** Returns a copy of this with the production revision added or updated. */
     public RevisionHistory with(ApplicationVersion revision) {
+        if ( ! production.isEmpty() && revision.bundleHash().flatMap(hash -> production.lastEntry().getValue().bundleHash().map(hash::equals)).orElse(false))
+            revision = revision.skipped();
+
         NavigableMap<RevisionId, ApplicationVersion> production = new TreeMap<>(this.production);
         production.put(revision.id(), revision);
         return new RevisionHistory(production, development);
@@ -80,7 +90,7 @@ public class RevisionHistory {
     /** Returns a copy of this with the new development revision added, and the previous version without a package. */
     public RevisionHistory with(ApplicationVersion revision, JobId job) {
         NavigableMap<JobId, NavigableMap<RevisionId, ApplicationVersion>> development = new TreeMap<>(this.development);
-        NavigableMap<RevisionId, ApplicationVersion> revisions = development.computeIfAbsent(job, __ -> new TreeMap<>());
+        NavigableMap<RevisionId, ApplicationVersion> revisions = development.compute(job, (__, old) -> new TreeMap<>(old != null ? old : emptyNavigableMap()));
         if ( ! revisions.isEmpty()) revisions.compute(revisions.lastKey(), (__, last) -> last.withoutPackage());
         revisions.put(revision.id(), revision);
         return new RevisionHistory(production, development);
@@ -88,9 +98,7 @@ public class RevisionHistory {
 
     // Fallback for when an application version isn't known for the given key.
     private static ApplicationVersion revisionOf(RevisionId id, boolean production) {
-        return new ApplicationVersion(Optional.empty(), OptionalLong.of(id.number()), Optional.empty(),
-                                      Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(),
-                                      ! production, Optional.empty(), false, false);
+        return new ApplicationVersion(Optional.empty(), OptionalLong.of(id.number()), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), ! production, Optional.empty(), false, false, Optional.empty(), 0);
     }
 
     /** Returns the production {@link ApplicationVersion} with this revision ID. */
@@ -100,7 +108,7 @@ public class RevisionHistory {
 
     /** Returns the development {@link ApplicationVersion} for the give job, with this revision ID. */
     public ApplicationVersion get(RevisionId id, JobId job) {
-        return development.getOrDefault(job, Collections.emptyNavigableMap())
+        return development.getOrDefault(job, emptyNavigableMap())
                           .getOrDefault(id, revisionOf(id, false));
     }
 
@@ -119,13 +127,11 @@ public class RevisionHistory {
     /** Returns the currently deployable revisions of the application. */
     public Deque<ApplicationVersion> deployable(boolean ascending) {
         Deque<ApplicationVersion> versions = new ArrayDeque<>();
-        String previousHash = "";
         for (ApplicationVersion version : withPackage()) {
-            if (version.isDeployable() && (version.bundleHash().isEmpty() || ! previousHash.equals(version.bundleHash().get()))) {
+            if (version.isDeployable()) {
                 if (ascending) versions.addLast(version);
                 else versions.addFirst(version);
             }
-            previousHash = version.bundleHash().orElse("");
         }
         return versions;
     }

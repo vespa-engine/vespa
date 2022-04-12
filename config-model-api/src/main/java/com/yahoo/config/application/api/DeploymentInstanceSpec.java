@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
+import ai.vespa.validation.Validation;
+import com.yahoo.config.application.api.DeploymentSpec.RevisionTarget;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
@@ -20,6 +22,11 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static ai.vespa.validation.Validation.require;
+import static ai.vespa.validation.Validation.requireAtLeast;
+import static ai.vespa.validation.Validation.requireInRange;
+import static com.yahoo.config.application.api.DeploymentSpec.RevisionChange.whenClear;
+import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
 import static com.yahoo.config.provision.Environment.prod;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
@@ -41,6 +48,9 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final DeploymentSpec.RevisionTarget revisionTarget;
     private final DeploymentSpec.RevisionChange revisionChange;
     private final DeploymentSpec.UpgradeRollout upgradeRollout;
+    private final int minRisk;
+    private final int maxRisk;
+    private final int maxIdleHours;
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
     private final Optional<String> globalServiceId;
     private final Optional<AthenzService> athenzService;
@@ -53,6 +63,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   DeploymentSpec.RevisionTarget revisionTarget,
                                   DeploymentSpec.RevisionChange revisionChange,
                                   DeploymentSpec.UpgradeRollout upgradeRollout,
+                                  int minRisk, int maxRisk, int maxIdleHours,
                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
                                   Optional<String> globalServiceId,
                                   Optional<AthenzService> athenzService,
@@ -62,9 +73,14 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         super(steps);
         this.name = name;
         this.upgradePolicy = upgradePolicy;
-        this.revisionTarget = revisionTarget;
-        this.revisionChange = revisionChange;
+        this.revisionTarget = require(maxRisk == 0 || revisionTarget == next, revisionTarget,
+                                      "revision-target must be 'next' when max-risk is specified");
+        this.revisionChange = require(maxRisk == 0 || revisionChange == whenClear, revisionChange,
+                                      "revision-change must be 'when-clear' when max-risk is specified");
         this.upgradeRollout = upgradeRollout;
+        this.minRisk = requireAtLeast(minRisk, "minimum risk score", 0);
+        this.maxRisk = require(maxRisk >= minRisk, maxRisk, "maximum risk cannot be less than minimum risk score");
+        this.maxIdleHours = requireInRange(maxIdleHours, "maximum idle hours", 0, 168);
         this.changeBlockers = changeBlockers;
         this.globalServiceId = globalServiceId;
         this.athenzService = athenzService;
@@ -151,7 +167,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
         instant = instant.truncatedTo(ChronoUnit.HOURS);
         Duration step = Duration.ofHours(1);
         Duration max = Duration.ofDays(maxUpgradeBlockingDays);
-        for (Instant current = instant; !canUpgradeAt(current); current = current.plus(step)) {
+        for (Instant current = instant; ! canUpgradeAt(current); current = current.plus(step)) {
             Duration blocked = Duration.between(instant, current);
             if (blocked.compareTo(max) > 0) {
                 return false;
@@ -171,6 +187,15 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     /** Returns the upgrade rollout strategy of this, which is {@link DeploymentSpec.UpgradeRollout#separate} by default */
     public DeploymentSpec.UpgradeRollout upgradeRollout() { return upgradeRollout; }
+
+    /** Minimum cumulative, enqueued risk required for a new revision to roll out to this instance. 0 by default. */
+    public int minRisk() { return minRisk; }
+
+    /** Maximum cumulative risk that will automatically roll out to this instance, as long as this is possible. 0 by default. */
+    public int maxRisk() { return maxRisk; }
+
+    /* Maximum number of hours to wait for enqueued risk to reach the minimum, before rolling out whatever revisions are enqueued. 8 by default. */
+    public int maxIdleHours() { return maxIdleHours; }
 
     /** Returns time windows where upgrades are disallowed for these instances */
     public List<DeploymentSpec.ChangeBlocker> changeBlocker() { return changeBlockers; }

@@ -71,7 +71,6 @@ import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -236,7 +235,7 @@ public class JobController {
     }
 
     /** Returns all job types which have been run for the given application. */
-    public List<JobType> jobs(ApplicationId id) {
+    private List<JobType> jobs(ApplicationId id) {
         return JobType.allIn(controller.system()).stream()
                       .filter(type -> last(id, type).isPresent())
                       .collect(toUnmodifiableList());
@@ -444,7 +443,7 @@ public class JobController {
     /** Accepts and stores a new application package and test jar pair under a generated application version key. */
     public ApplicationVersion submit(TenantAndApplicationId id, Optional<SourceRevision> revision, Optional<String> authorEmail,
                                      Optional<String> sourceUrl, long projectId, ApplicationPackage applicationPackage,
-                                     byte[] testPackageBytes) {
+                                     byte[] testPackageBytes, Optional<String> description, int risk) {
         ApplicationController applications = controller.applications();
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         applications.lockApplicationOrThrow(id, application -> {
@@ -453,29 +452,28 @@ public class JobController {
                                                                           .map(ApplicationPackage::new);
             long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
             String packageHash = applicationPackage.bundleHash() + ApplicationPackage.calculateHash(testPackageBytes);
-            version.set(ApplicationVersion.from(revision, 1 + previousBuild, authorEmail,
-                                                applicationPackage.compileVersion(),
-                                                applicationPackage.buildTime(),
-                                                sourceUrl,
-                                                revision.map(SourceRevision::commit),
-                                                false,
-                                                Optional.of(packageHash)));
+            version.set(ApplicationVersion.forProduction(revision, 1 + previousBuild, authorEmail,
+                                                         applicationPackage.compileVersion(),
+                                                         applicationPackage.buildTime(),
+                                                         sourceUrl,
+                                                         revision.map(SourceRevision::commit),
+                                                         false,
+                                                         Optional.of(packageHash),
+                                                         description,
+                                                         risk));
 
             byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, applicationPackage))
                                          .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
             applications.applicationStore().put(id.tenant(),
-                                                             id.application(),
-                                                             version.get(),
-                                                             applicationPackage.zippedContent(),
-                                                             diff);
-            applications.applicationStore().putTester(id.tenant(),
-                                                                   id.application(),
-                                                                   version.get(),
-                                                                   testPackageBytes);
+                                                id.application(),
+                                                version.get(),
+                                                applicationPackage.zippedContent(),
+                                                testPackageBytes,
+                                                diff);
             applications.applicationStore().putMeta(id.tenant(),
-                                                                 id.application(),
-                                                                 controller.clock().instant(),
-                                                                 applicationPackage.metaDataZip());
+                                                    id.application(),
+                                                    controller.clock().instant(),
+                                                    applicationPackage.metaDataZip());
 
             application = application.withProjectId(OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
@@ -492,7 +490,6 @@ public class JobController {
         Optional<ApplicationVersion> oldestDeployed = application.get().oldestDeployedApplication();
         if (oldestDeployed.isPresent()) {
             controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
-            controller.applications().applicationStore().pruneTesters(id.tenant(), id.application(), oldestDeployed.get());
 
             for (ApplicationVersion version : application.get().revisions().withPackage())
                 if (version.compareTo(oldestDeployed.get()) < 0)
@@ -569,10 +566,7 @@ public class JobController {
         lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
 
         long build = 1 + lastRun.map(run -> run.versions().targetApplication().buildNumber().orElse(0)).orElse(0L);
-        ApplicationVersion version = ApplicationVersion.from(Optional.empty(), build, Optional.empty(),
-                                                             applicationPackage.compileVersion(),
-                                                             Optional.empty(), Optional.empty(),
-                                                             Optional.empty(), true, Optional.empty());
+        ApplicationVersion version = ApplicationVersion.forDevelopment(build, applicationPackage.compileVersion());
 
         byte[] diff = getDiff(applicationPackage, deploymentId, lastRun);
 

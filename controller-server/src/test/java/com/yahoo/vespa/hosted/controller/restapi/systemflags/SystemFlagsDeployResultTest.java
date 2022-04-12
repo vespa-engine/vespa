@@ -11,7 +11,9 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.*;
+import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.FlagDataChange;
+import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.OperationError;
+import static com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.merge;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**

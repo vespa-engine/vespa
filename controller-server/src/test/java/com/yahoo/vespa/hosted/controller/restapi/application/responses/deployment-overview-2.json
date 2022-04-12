@@ -5,7 +5,7 @@
   "steps": [
     {
       "type": "instance",
-      "dependencies": [],
+      "dependencies": [ ],
       "declared": true,
       "instance": "default",
       "readyAt": 0,
@@ -130,7 +130,7 @@
     },
     {
       "type": "test",
-      "dependencies": [],
+      "dependencies": [ ],
       "declared": false,
       "instance": "default",
       "readyAt": 0,
@@ -138,7 +138,7 @@
       "url": "https://some.url:43/instance/default/job/system-test",
       "environment": "test",
       "region": "test.us-east-1",
-      "toRun": [],
+      "toRun": [ ],
       "runs": [
         {
           "id": 3,
@@ -318,7 +318,7 @@
     },
     {
       "type": "test",
-      "dependencies": [],
+      "dependencies": [ ],
       "declared": true,
       "instance": "default",
       "readyAt": 15153000,
@@ -769,7 +769,7 @@
         "sourceUrl": "repository1/tree/commit1",
         "commit": "commit1"
       },
-      "toRun": [],
+      "toRun": [ ],
       "runs": [
         {
           "id": 3,
@@ -1230,19 +1230,22 @@
       "build": 3,
       "compileVersion": "6.1.0",
       "sourceUrl": "repository1/tree/commit1",
-      "commit": "commit1"
+      "commit": "commit1",
+      "deployable": true
     },
     {
       "build": 2,
       "compileVersion": "6.1.0",
       "sourceUrl": "repository1/tree/commit1",
-      "commit": "commit1"
+      "commit": "commit1",
+      "deployable": true
     },
     {
       "build": 1,
       "compileVersion": "6.1.0",
       "sourceUrl": "repository1/tree/commit1",
-      "commit": "commit1"
+      "commit": "commit1",
+      "deployable": true
     }
   ]
 }

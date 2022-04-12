@@ -164,7 +164,7 @@
       "upgradeBudget": "PT24H",
       "scheduledAt": 1234,
       "cloud": "cloud2",
-      "nodes": []
+      "nodes": [ ]
     }
   ]
 }

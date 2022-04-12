@@ -54,7 +54,7 @@ import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import com.yahoo.yolean.concurrent.Sleeper;
@@ -394,7 +394,6 @@ public final class ControllerTester {
                                                serviceRegistry.zoneRegistry().system().isPublic() ?
                                                        new CloudAccessControl(new MockUserManagement(), flagSource, serviceRegistry) :
                                                        new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
-                                               () -> "test-controller",
                                                flagSource,
                                                new MockMavenRepository(),
                                                serviceRegistry,

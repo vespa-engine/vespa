@@ -26,8 +26,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.yahoo.application.container.handler.Request.Method.*;
-import static org.junit.Assert.*;
+import static com.yahoo.application.container.handler.Request.Method.DELETE;
+import static com.yahoo.application.container.handler.Request.Method.GET;
+import static com.yahoo.application.container.handler.Request.Method.PATCH;
+import static com.yahoo.application.container.handler.Request.Method.POST;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author olaa
@@ -101,7 +105,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         billingController.setPlan(tenant, PlanId.from("some-plan"), true);
 
         var request = request("/billing/v1/tenant/tenant1/billing?until=2020-05-28").roles(tenantRole);
-        tester.assertResponse(request, new File("tenant-billing-view"));
+        tester.assertResponse(request, new File("tenant-billing-view.json"));
 
     }
 
@@ -117,7 +121,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
         tester.assertResponse(request, accessDenied, 403);
         request.roles(financeAdmin);
-        tester.assertResponse(request, new File("invoice-creation-response"));
+        tester.assertResponse(request, new File("invoice-creation-response.json"));
 
         bills = billingController.getBillsForTenant(tenant);
         assertEquals(1, bills.size());
@@ -152,7 +156,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         request = request("/billing/v1/invoice/tenant/tenant1/line-item")
                 .roles(financeAdmin);
 
-        tester.assertResponse(request, new File("line-item-list"));
+        tester.assertResponse(request, new File("line-item-list.json"));
     }
 
     @Test
@@ -183,7 +187,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
         var request = request("/billing/v1/billing?until=2020-05-28").roles(financeAdmin);
 
-        tester.assertResponse(request, new File("billing-all-tenants"));
+        tester.assertResponse(request, new File("billing-all-tenants.json"));
     }
 
     @Test

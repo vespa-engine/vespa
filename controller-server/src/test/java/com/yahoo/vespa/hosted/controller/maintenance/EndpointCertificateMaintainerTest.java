@@ -2,8 +2,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
@@ -116,7 +114,7 @@ public class EndpointCertificateMaintainerTest {
         assertEquals(updatedMetadata.version(), originalMetadata.version()+1);
 
         // after another 4 days, we should force trigger deployment if it hasn't already happened
-        tester.clock().advance(Duration.ofDays(4));
+        tester.clock().advance(Duration.ofDays(4).plusSeconds(1));
         deploymentContext.assertNotRunning(productionUsWest1);
         assertEquals(1.0, maintainer.maintain(), 0.0000001);
         deploymentContext.assertRunning(productionUsWest1);

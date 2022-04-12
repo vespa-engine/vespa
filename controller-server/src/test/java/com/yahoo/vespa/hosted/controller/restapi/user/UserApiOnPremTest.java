@@ -58,7 +58,7 @@ public class UserApiOnPremTest extends ControllerContainerTest {
                     .forEach(d -> d.admin(AthenzIdentities.from("domain1.bob")));
 
             tester.assertResponse(createUserRequest(user, operator),
-                    new File("user-without-applications.json"));
+                    new File("on-prem-user-without-applications.json"));
 
             tester.assertResponse(createUserRequest(user, tenantAdmin),
                     new File("user-with-applications-athenz.json"));

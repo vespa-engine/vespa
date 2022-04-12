@@ -7,8 +7,8 @@
       "date": 0,
       "controllerVersion": false,
       "systemVersion": false,
-      "configServers": [],
-      "failingApplications": [],
+      "configServers": [ ],
+      "failingApplications": [ ],
       "productionApplications": [
         {
           "tenant": "tenant1",
@@ -29,7 +29,7 @@
           "productionSuccesses": 1
         }
       ],
-      "deployingApplications": [],
+      "deployingApplications": [ ],
       "applications": [
         {
           "tenant": "tenant1",
@@ -40,11 +40,11 @@
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": "(ignore)"
+              "coolingDownUntil": 1600000000000
             },
             {
               "name": "staging-test",
-              "coolingDownUntil": "(ignore)"
+              "coolingDownUntil": 1600000000000
             },
             {
               "name": "production-us-west-1"
@@ -54,8 +54,8 @@
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "success"
               }
             }
@@ -64,8 +64,8 @@
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "success"
               }
             }
@@ -86,8 +86,8 @@
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "success"
               }
             }
@@ -96,8 +96,8 @@
             "production-us-west-1": {
               "success": {
                 "number": 1,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "success"
               }
             }
@@ -187,12 +187,12 @@
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": "(ignore)",
+              "coolingDownUntil": 1600000000000,
               "pending": "application"
             },
             {
               "name": "staging-test",
-              "coolingDownUntil": "(ignore)",
+              "coolingDownUntil": 1600000000000,
               "pending": "platform"
             },
             {
@@ -204,26 +204,26 @@
             "system-test": {
               "failing": {
                 "number": 2,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": "(ignore)",
+                "start": 1600000000000,
                 "status": "running"
               }
             },
             "staging-test": {
               "failing": {
                 "number": 2,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": "(ignore)",
+                "start": 1600000000000,
                 "status": "running"
               }
             }
@@ -232,26 +232,26 @@
             "system-test": {
               "failing": {
                 "number": 2,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": "(ignore)",
+                "start": 1600000000000,
                 "status": "running"
               }
             },
             "staging-test": {
               "failing": {
                 "number": 2,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "error"
               },
               "running": {
                 "number": 3,
-                "start": "(ignore)",
+                "start": 1600000000000,
                 "status": "running"
               }
             }
@@ -266,7 +266,7 @@
           "jobs": [
             {
               "name": "system-test",
-              "coolingDownUntil": "(ignore)",
+              "coolingDownUntil": 1600000000000,
               "pending": "application"
             },
             {
@@ -282,35 +282,35 @@
             "system-test": {
               "failing": {
                 "number": 3,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "error"
               }
             },
             "staging-test": {
               "running": {
                 "number": 3,
-                "start": "(ignore)",
+                "start": 1600000000000,
                 "status": "running"
               }
             },
             "production-us-west-1": {
               "success": {
                 "number": 2,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "success"
               }
             }
           },
           "upgradeRuns": {
-            "system-test": {},
-            "staging-test": {},
+            "system-test": { },
+            "staging-test": { },
             "production-us-west-1": {
               "success": {
                 "number": 2,
-                "start": "(ignore)",
-                "end": "(ignore)",
+                "start": 1600000000000,
+                "end": 1600000000000,
                 "status": "success"
               }
             }
@@ -332,7 +332,7 @@
             "production-us-west-1": {
               "running": {
                 "number": 2,
-                "start": "(ignore)",
+                "start": 1600000000000,
                 "status": "running"
               }
             }
@@ -341,7 +341,7 @@
             "production-us-west-1": {
               "running": {
                 "number": 2,
-                "start": "(ignore)",
+                "start": 1600000000000,
                 "status": "running"
               }
             }

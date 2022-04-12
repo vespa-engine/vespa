@@ -10,12 +10,13 @@
     {
       "key": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\npDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\n-----END PUBLIC KEY-----\n",
       "user": "developer@tenant"
-    }],
-  "secretStores": [],
+    }
+  ],
+  "secretStores": [ ],
   "integrations": {
     "aws": {
       "tenantRole": "my-tenant-tenant-role",
-      "accounts": []
+      "accounts": [ ]
     }
   },
   "quota": {
@@ -30,7 +31,7 @@
       "url": "http://localhost:8080/application/v4/tenant/my-tenant/application/my-app"
     }
   ],
-  "metaData":{
-    "createdAtMillis": "(ignore)"
+  "metaData": {
+    "createdAtMillis": 1600000000000
   }
 }

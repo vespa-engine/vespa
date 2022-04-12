@@ -10,11 +10,11 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.aborted;
 import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.broken;
 import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.high;
 import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.low;
 import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.normal;
-import static com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor.Confidence.aborted;
 
 /**
  * This maintenance job periodically updates the version status.

@@ -12,7 +12,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author olaa

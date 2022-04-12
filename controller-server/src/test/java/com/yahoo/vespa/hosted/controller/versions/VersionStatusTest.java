@@ -8,12 +8,13 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -57,10 +58,11 @@ public class VersionStatusTest {
     @Test
     public void testSystemVersionIsControllerVersionIfConfigServersAreNewer() {
         ControllerTester tester = new ControllerTester();
-        Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
+        Version controllerVersion = tester.controller().readVersionStatus().controllerVersion().get().versionNumber();
+        Version largerThanCurrent = new Version(controllerVersion.getMajor() + 1);
         tester.upgradeSystemApplications(largerThanCurrent);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
-        assertEquals(Vtag.currentVersion, versionStatus.systemVersion().get().versionNumber());
+        assertEquals(controllerVersion, versionStatus.systemVersion().get().versionNumber());
     }
 
     @Test

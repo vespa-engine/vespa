@@ -7,13 +7,13 @@ import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.Path;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.restapi.ErrorResponse;
-import com.yahoo.restapi.Path;
-import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.Comparator;

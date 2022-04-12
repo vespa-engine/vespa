@@ -254,19 +254,47 @@ public class DeploymentStatus {
     public Change outstandingChange(InstanceName instance) {
         StepStatus status = instanceSteps().get(instance);
         if (status == null) return Change.empty();
-        boolean ascending = next == application.deploymentSpec().requireInstance(instance).revisionTarget();
+        DeploymentInstanceSpec spec = application.deploymentSpec().requireInstance(instance);
+        boolean ascending = next == spec.revisionTarget();
+        int cumulativeRisk = 0;
+        int nextRisk = 0;
+        int skippedCumulativeRisk = 0;
+        Instant readySince = now;
+        Change candidate = Change.empty();
         for (ApplicationVersion version : application.revisions().deployable(ascending)) {
-            if (status.dependenciesCompletedAt(Change.of(version), Optional.empty()).map(now::isBefore).orElse(true)) continue;
+            // A revision is only a candidate if it upgrades, and does not downgrade, this instance.
             Change change = Change.of(version);
             if (application.productionDeployments().getOrDefault(instance, List.of()).stream()
                            .anyMatch(deployment -> change.downgrades(deployment.applicationVersion()))) continue;
             if ( ! application.require(instance).change().application().map(change::upgrades).orElse(true)) continue;
             if (hasCompleted(instance, change))
-                if (ascending) continue;
-                else break;
-            return change;
+                if (ascending) continue;    // Keep looking for the next revision which is an upgrade, or ...
+                else return Change.empty(); // ... if the latest is already complete, there's nothing outstanding.
+
+            // This revision contains something new, so start aggregating the risk score.
+            skippedCumulativeRisk += version.risk();
+            nextRisk = nextRisk > 0 ? nextRisk : version.risk();
+            // If it's not yet ready to roll out, we keep looking.
+            Optional<Instant> readyAt = status.dependenciesCompletedAt(Change.of(version), Optional.empty());
+            if (readyAt.map(now::isBefore).orElse(true)) continue;
+
+            // It's ready. If looking for the latest, max risk is 0, and we'll return now; otherwise, we _may_ keep on looking for more.
+            cumulativeRisk += skippedCumulativeRisk;
+            skippedCumulativeRisk = 0;
+            nextRisk = 0;
+            if (cumulativeRisk >= spec.maxRisk())
+                return candidate.equals(Change.empty()) ? change : candidate; // If the first candidate exceeds max risk, we have to accept that.
+
+            // Otherwise, we may note this as a candidate, and keep looking for a newer revision, unless that makes us exceed max risk.
+            if (readyAt.get().isBefore(readySince)) readySince = readyAt.get();
+            candidate = change;
         }
-        return Change.empty();
+        // If min risk is ready, or max idle time has passed, we return the candidate. Otherwise, no outstanding change is ready.
+        return      instanceJobs(instance).values().stream().allMatch(jobs -> jobs.lastTriggered().isEmpty())
+               ||   cumulativeRisk >= spec.minRisk()
+               ||   cumulativeRisk + nextRisk > spec.maxRisk()
+               || ! now.isBefore(readySince.plus(Duration.ofHours(spec.maxIdleHours())))
+               ? candidate : Change.empty();
     }
 
     /** Earliest instant when job was triggered with given versions, or both system and staging tests were successful. */

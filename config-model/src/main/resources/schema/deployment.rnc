@@ -54,6 +54,9 @@ Upgrade = element upgrade {
     attribute policy { xsd:string }? &
     attribute revision-target { xsd:string }? &
     attribute revision-change { xsd:string }? &
+    attribute min-risk { xsd:long }? &
+    attribute max-risk { xsd:long }? &
+    attribute max-idle-hours { xsd:long }? &
     attribute rollout { xsd:string }?
 }
 

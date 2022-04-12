@@ -1,9 +1,9 @@
 {
   "tenant": "tenant1",
   "type": "DELETED",
-  "applications": [],
+  "applications": [ ],
   "metaData": {
-    "createdAtMillis": "(ignore)",
-    "deletedAtMillis": "(ignore)"
+    "createdAtMillis": 1600000000000,
+    "deletedAtMillis": 1600000000000
   }
 }

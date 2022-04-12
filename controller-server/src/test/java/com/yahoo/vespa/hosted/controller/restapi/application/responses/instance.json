@@ -57,7 +57,7 @@
           "rotationId": "rotation-id-1",
           "clusterId": "foo",
           "status": "UNKNOWN",
-          "lastUpdated": "(ignore)"
+          "lastUpdated": 0
         }
       ],
       "environment": "prod",
@@ -74,7 +74,7 @@
       "region": "us-west-1"
     }
   ],
-  "pemDeployKeys": [],
+  "pemDeployKeys": [ ],
   "metrics": {
     "queryServiceQuality": 0.5,
     "writeServiceQuality": 0.7

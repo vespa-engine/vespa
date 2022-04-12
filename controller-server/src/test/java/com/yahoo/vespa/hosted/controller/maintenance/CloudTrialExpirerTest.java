@@ -18,7 +18,6 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * @author ogronnesby

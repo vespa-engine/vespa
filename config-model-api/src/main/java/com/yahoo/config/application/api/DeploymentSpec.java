@@ -566,9 +566,9 @@ public class DeploymentSpec {
 
     /** Determines what application changes to deploy to the instance. */
     public enum RevisionTarget {
-        /** Next: Application changes are rolled through this instance in the same manner as they become ready. */
+        /** Next: Application changes are rolled through this instance in the same manner as they become ready, optionally adjusted further by min and max risk settings. */
         next,
-        /** Latest: Application changes are merged, so the latest available is always chosen for roll-out. */
+        /** Latest: Application changes are always merged, so the latest available is always chosen for roll-out. */
         latest
     }
 
@@ -593,7 +593,6 @@ public class DeploymentSpec {
         // /** Simultaneous: Application changes deploy independently of platform upgrades. */
         simultaneous
     }
-
 
     /** A blocking of changes in a given time window */
     public static class ChangeBlocker {

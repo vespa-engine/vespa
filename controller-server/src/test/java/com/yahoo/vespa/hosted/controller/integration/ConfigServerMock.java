@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import ai.vespa.http.DomainName;
+import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
@@ -14,8 +16,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
-import ai.vespa.http.DomainName;
-import ai.vespa.http.HttpURL.Path;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;

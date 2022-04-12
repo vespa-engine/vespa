@@ -2,6 +2,8 @@
 package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import ai.vespa.hosted.api.Signatures;
+import ai.vespa.http.DomainName;
+import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Query;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -26,10 +28,8 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
-import ai.vespa.http.DomainName;
 import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
-import ai.vespa.http.HttpURL;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
@@ -66,6 +66,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeReposi
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
@@ -354,6 +355,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", path.get("choice"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/key")) return removeDeployKey(path.get("tenant"), path.get("application"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/submit/{build}")) return cancelBuild(path.get("tenant"), path.get("application"), path.get("build"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}")) return deleteInstance(path.get("tenant"), path.get("application"), path.get("instance"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), "all");
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploying/{choice}")) return cancelDeploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("choice"));
@@ -1932,6 +1934,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                           .orElseThrow(() -> new IllegalArgumentException("Build number '" + build + "' was not found"));
     }
 
+    private HttpResponse cancelBuild(String tenantName, String applicationName, String build){
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
+        RevisionId revision = RevisionId.forProduction(Long.parseLong(build));
+        controller.applications().lockApplicationOrThrow(id, application -> {
+            controller.applications().store(application.withRevisions(revisions -> revisions.with(revisions.get(revision).skipped())));
+        });
+        return new MessageResponse("Marked build '" + build + "' as non-deployable");
+    }
+
     /** Cancel ongoing change for given application, e.g., everything with {"cancel":"all"} */
     private HttpResponse cancelDeploy(String tenantName, String applicationName, String instanceName, String choice) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
@@ -2732,6 +2743,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                   : Optional.empty();
         Optional<String> sourceUrl = optional("sourceUrl", submitOptions);
         Optional<String> authorEmail = optional("authorEmail", submitOptions);
+        Optional<String> description = optional("description", submitOptions);
+        int risk = (int) submitOptions.field("risk").asLong();
 
         sourceUrl.map(URI::create).ifPresent(url -> {
             if (url.getHost() == null || url.getScheme() == null)
@@ -2754,6 +2767,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                             sourceRevision,
                                                             authorEmail,
                                                             sourceUrl,
+                                                            description,
+                                                            risk,
                                                             projectId,
                                                             applicationPackage,
                                                             dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
@@ -2761,7 +2776,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse removeAllProdDeployments(String tenant, String application) {
         JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
-                Optional.empty(), Optional.empty(), Optional.empty(), 1,
+                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), 0, 1,
                 ApplicationPackage.deploymentRemoval(), new byte[0]);
         return new MessageResponse("All deployments removed");
     }

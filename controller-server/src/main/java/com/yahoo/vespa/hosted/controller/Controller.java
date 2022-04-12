@@ -7,11 +7,11 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.maintenance.JobControl;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.net.HostName;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
@@ -28,7 +28,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessControl;
-import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
@@ -68,7 +68,6 @@ public class Controller extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(Controller.class.getName());
 
-    private final Supplier<String> hostnameSupplier;
     private final CuratorDb curator;
     private final JobControl jobControl;
     private final ApplicationController applicationController;
@@ -100,15 +99,14 @@ public class Controller extends AbstractComponent {
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl, FlagSource flagSource,
                       MavenRepository mavenRepository, ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
                       ControllerConfig controllerConfig) {
-        this(curator, rotationsConfig, accessControl, HostName::getLocalhost, flagSource,
+        this(curator, rotationsConfig, accessControl, flagSource,
              mavenRepository, serviceRegistry, metric, secretStore, controllerConfig, Sleeper.DEFAULT);
     }
 
     public Controller(CuratorDb curator, RotationsConfig rotationsConfig, AccessControl accessControl,
-                      Supplier<String> hostnameSupplier, FlagSource flagSource, MavenRepository mavenRepository,
+                      FlagSource flagSource, MavenRepository mavenRepository,
                       ServiceRegistry serviceRegistry, Metric metric, SecretStore secretStore,
                       ControllerConfig controllerConfig, Sleeper sleeper) {
-        this.hostnameSupplier = Objects.requireNonNull(hostnameSupplier, "HostnameSupplier cannot be null");
         this.curator = Objects.requireNonNull(curator, "Curator cannot be null");
         this.serviceRegistry = Objects.requireNonNull(serviceRegistry, "ServiceRegistry cannot be null");
         this.zoneRegistry = Objects.requireNonNull(serviceRegistry.zoneRegistry(), "ZoneRegistry cannot be null");
@@ -133,7 +131,7 @@ public class Controller extends AbstractComponent {
         supportAccessControl = new SupportAccessControl(this);
 
         // Record the version of this controller
-        curator().writeControllerVersion(this.hostname(), ControllerVersion.CURRENT);
+        curator().writeControllerVersion(this.hostname(), serviceRegistry.controllerVersion());
 
         jobController.updateStorage();
     }
@@ -282,8 +280,8 @@ public class Controller extends AbstractComponent {
     }
 
     /** Returns the hostname of this controller */
-    public com.yahoo.config.provision.HostName hostname() {
-        return com.yahoo.config.provision.HostName.of(hostnameSupplier.get());
+    public HostName hostname() {
+        return serviceRegistry.getHostname();
     }
 
     public SystemName system() {

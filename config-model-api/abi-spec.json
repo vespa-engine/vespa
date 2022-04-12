@@ -194,12 +194,15 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionTarget revisionTarget()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionChange revisionChange()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout upgradeRollout()",
+      "public int minRisk()",
+      "public int maxRisk()",
+      "public int maxIdleHours()",
       "public java.util.List changeBlocker()",
       "public java.util.Optional globalServiceId()",
       "public boolean canUpgradeAt(java.time.Instant)",

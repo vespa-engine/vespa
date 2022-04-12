@@ -85,16 +85,10 @@ public class ApplicationSerializerTest {
 
         List<Deployment> deployments = new ArrayList<>();
         ApplicationVersion applicationVersion1 = new ApplicationVersion(Optional.of(new SourceRevision("git@github:org/repo.git", "branch1", "commit1")),
-                                                                        OptionalLong.of(31),
-                                                                        Optional.of("william@shakespeare"),
-                                                                        Optional.of(Version.fromString("1.2.3")),
-                                                                        Optional.of(Instant.ofEpochMilli(666)),
-                                                                        Optional.empty(),
-                                                                        Optional.of("best commit"),
-                                                                        true,
-                                                                        Optional.of("hash1"),
-                                                                        true,
-                                                                        false);
+                                                                        OptionalLong.of(31), Optional.of("william@shakespeare"),
+                                                                        Optional.of(Version.fromString("1.2.3")), Optional.of(Instant.ofEpochMilli(666)),
+                                                                        Optional.empty(), Optional.of("best commit"), true, Optional.of("hash1"),
+                                                                        true, false, Optional.of("~(˘▾˘)~"), 3);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
         ApplicationVersion applicationVersion2 = ApplicationVersion
@@ -120,8 +114,8 @@ public class ApplicationSerializerTest {
 
         ApplicationId id1 = ApplicationId.from("t1", "a1", "i1");
         ApplicationId id3 = ApplicationId.from("t1", "a1", "i3");
-        RevisionHistory revisions = RevisionHistory.ofRevisions(List.of(applicationVersion2),
-                                                                Map.of(new JobId(id3, JobType.devUsEast1), List.of(applicationVersion1)));
+        RevisionHistory revisions = RevisionHistory.ofRevisions(List.of(applicationVersion1),
+                                                                Map.of(new JobId(id3, JobType.devUsEast1), List.of(applicationVersion2)));
         List<Instance> instances = List.of(new Instance(id1,
                                                         deployments,
                                                         Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
@@ -153,12 +147,17 @@ public class ApplicationSerializerTest {
 
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
+        assertEquals(applicationVersion1, serialized.revisions().last().get());
         assertEquals(original.revisions().last(), serialized.revisions().last());
         assertEquals(original.revisions().last().get().authorEmail(), serialized.revisions().last().get().authorEmail());
         assertEquals(original.revisions().last().get().buildTime(), serialized.revisions().last().get().buildTime());
         assertEquals(original.revisions().last().get().sourceUrl(), serialized.revisions().last().get().sourceUrl());
         assertEquals(original.revisions().last().get().commit(), serialized.revisions().last().get().commit());
         assertEquals(original.revisions().last().get().bundleHash(), serialized.revisions().last().get().bundleHash());
+        assertEquals(original.revisions().last().get().hasPackage(), serialized.revisions().last().get().hasPackage());
+        assertEquals(original.revisions().last().get().shouldSkip(), serialized.revisions().last().get().shouldSkip());
+        assertEquals(original.revisions().last().get().description(), serialized.revisions().last().get().description());
+        assertEquals(original.revisions().last().get().risk(), serialized.revisions().last().get().risk());
         assertEquals(original.revisions().withPackage(), serialized.revisions().withPackage());
         assertEquals(original.revisions().production(), serialized.revisions().production());
         assertEquals(original.revisions().development(), serialized.revisions().development());

@@ -1,7 +1,7 @@
 {
-  "resources":[
+  "resources": [
     {
-      "url":"http://localhost:8080/application/v4/tenant/"
+      "url": "http://localhost:8080/application/v4/tenant/"
     }
   ]
 }

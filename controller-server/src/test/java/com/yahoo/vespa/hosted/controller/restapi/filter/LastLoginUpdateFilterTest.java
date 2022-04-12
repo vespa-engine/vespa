@@ -3,9 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.RequestHandlerTestDriver;
-import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
@@ -19,7 +16,6 @@ import java.util.Set;
 import static com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo.UserLevel.administrator;
 import static com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo.UserLevel.developer;
 import static com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo.UserLevel.user;
-
 import static org.junit.Assert.assertEquals;
 
 public class LastLoginUpdateFilterTest {

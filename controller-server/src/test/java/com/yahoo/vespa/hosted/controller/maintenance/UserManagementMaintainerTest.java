@@ -7,7 +7,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author olaa

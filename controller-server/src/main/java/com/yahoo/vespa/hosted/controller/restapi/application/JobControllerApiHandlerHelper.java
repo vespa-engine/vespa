@@ -195,15 +195,10 @@ class JobControllerApiHandlerHelper {
      */
     static HttpResponse submitResponse(JobController jobController, String tenant, String application,
                                        Optional<SourceRevision> sourceRevision, Optional<String> authorEmail,
-                                       Optional<String> sourceUrl, long projectId,
+                                       Optional<String> sourceUrl, Optional<String> description, int risk, long projectId,
                                        ApplicationPackage applicationPackage, byte[] testPackage) {
-        ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application),
-                                                          sourceRevision,
-                                                          authorEmail,
-                                                          sourceUrl,
-                                                          projectId,
-                                                          applicationPackage,
-                                                          testPackage);
+        ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application), sourceRevision, authorEmail,
+                                                          sourceUrl, projectId, applicationPackage, testPackage, description, risk);
 
         return new MessageResponse(version.toString());
     }
@@ -374,9 +369,16 @@ class JobControllerApiHandlerHelper {
         }
 
         Cursor buildsArray = responseObject.setArray("builds");
-        application.revisions().withPackage().stream().sorted(reverseOrder()).forEach(version -> toSlime(buildsArray.addObject(), version));
+        application.revisions().withPackage().stream().sorted(reverseOrder()).forEach(version -> toRichSlime(buildsArray.addObject(), version));
 
         return new SlimeJsonResponse(slime);
+    }
+
+    static void toRichSlime(Cursor versionObject, ApplicationVersion version) {
+        toSlime(versionObject, version);
+        version.description().ifPresent(description -> versionObject.setString("description", description));
+        if (version.risk() != 0) versionObject.setLong("risk", version.risk());
+        versionObject.setBool("deployable", version.isDeployable());
     }
 
     static void toSlime(Cursor versionObject, ApplicationVersion version) {

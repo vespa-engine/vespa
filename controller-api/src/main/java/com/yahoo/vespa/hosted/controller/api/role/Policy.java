@@ -87,7 +87,7 @@ enum Policy {
                              .on(PathGroup.application, PathGroup.applicationInfo, PathGroup.reindexing, PathGroup.serviceDump)
                              .in(SystemName.all())),
 
-    /** Read access to application information and settings. */
+    /** Update access to application information and settings. */
     applicationUpdate(Privilege.grant(Action.update)
                                .on(PathGroup.application, PathGroup.applicationInfo)
                                .in(SystemName.all())),

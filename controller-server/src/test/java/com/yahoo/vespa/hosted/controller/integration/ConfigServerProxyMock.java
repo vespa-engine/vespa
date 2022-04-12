@@ -3,9 +3,9 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.StringResponse;
 import com.yahoo.vespa.hosted.controller.proxy.ConfigServerRestExecutor;
 import com.yahoo.vespa.hosted.controller.proxy.ProxyRequest;
-import com.yahoo.restapi.StringResponse;
 
 import java.io.InputStream;
 import java.util.Optional;

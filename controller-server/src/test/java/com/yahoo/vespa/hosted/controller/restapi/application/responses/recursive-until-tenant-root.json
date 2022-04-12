@@ -1,5 +1,45 @@
 [
-  @include(tenant-with-application-with-metadata.json),
-  @include(tenant2.json)
+  {
+    "tenant": "tenant1",
+    "type": "ATHENS",
+    "athensDomain": "domain1",
+    "property": "property1",
+    "applications": [
+      {
+        "tenant": "tenant1",
+        "application": "application1",
+        "instance": "instance1",
+        "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1"
+      }
+    ],
+    "metaData": {
+      "createdAtMillis": 1600000000000,
+      "lastDeploymentToDevMillis": 1600000000000,
+      "lastSubmissionToProdMillis": 1000
+    }
+  },
+  {
+    "tenant": "tenant2",
+    "type": "ATHENS",
+    "athensDomain": "domain2",
+    "property": "property2",
+    "propertyId": "1234",
+    "propertyUrl": "www.properties.tld/1234",
+    "contactsUrl": "www.contacts.tld/1234",
+    "issueCreationUrl": "www.issues.tld/1234",
+    "contacts": [
+      [
+        "alice"
+      ],
+      [
+        "bob"
+      ]
+    ],
+    "applications": [ ],
+    "metaData": {
+      "createdAtMillis": 1600000000000,
+      "lastLoginByUserMillis": 1234,
+      "lastLoginByAdministratorMillis": 1234
+    }
+  }
 ]
-

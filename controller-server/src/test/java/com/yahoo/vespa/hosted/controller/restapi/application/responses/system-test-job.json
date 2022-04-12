@@ -3,7 +3,7 @@
     {
       "id": 2,
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/2",
-      "start": "(ignore)",
+      "start": 1600000000000,
       "status": "running",
       "versions": {
         "targetPlatform": "6.1.0",
@@ -60,8 +60,8 @@
     {
       "id": 1,
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test/run/1",
-      "start": "(ignore)",
-      "end": "(ignore)",
+      "start": 1600000000000,
+      "end": 1600000000000,
       "status": "success",
       "versions": {
         "targetPlatform": "6.1.0",

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.certificates;
 
 import com.yahoo.config.provision.ApplicationId;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -20,6 +21,11 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
 
     private final Map<ApplicationId, List<String>> dnsNames = new HashMap<>();
     private final Map<String, EndpointCertificateMetadata> providerMetadata = new HashMap<>();
+    private final Clock clock;
+
+    public EndpointCertificateMock(Clock clock) {
+        this.clock = clock;
+    }
 
     public List<String> dnsNamesOf(ApplicationId application) {
         return Collections.unmodifiableList(dnsNames.getOrDefault(application, List.of()));
