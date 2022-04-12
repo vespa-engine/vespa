@@ -116,7 +116,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
                 // allowing the removal of any config server.
                 return false;
             }
-        } else if (node.history().hasEventBefore(History.Event.Type.retired, clock().instant().minus(retiredExpiry))) {
+        } else if (node.history().hasLastEventBefore(clock().instant().minus(retiredExpiry), History.Event.Type.retired)) {
             log.warning("Node " + node + " has been retired longer than " + retiredExpiry + ": Allowing removal. This may cause data loss");
             return true;
         }

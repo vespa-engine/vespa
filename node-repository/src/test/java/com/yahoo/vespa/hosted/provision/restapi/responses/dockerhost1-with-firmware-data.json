@@ -37,6 +37,11 @@
   "wantToRebuild": false,
   "history": [
     {
+      "event": "firmwareVerified",
+      "at": 100,
+      "agent": "system"
+    },
+    {
       "event": "provisioned",
       "at": 123,
       "agent": "system"
@@ -55,11 +60,6 @@
       "event": "activated",
       "at": 123,
       "agent": "application"
-    },
-    {
-      "event": "firmwareVerified",
-      "at": 100,
-      "agent": "system"
     }
   ],
   "ipAddresses": [

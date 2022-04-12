@@ -6,9 +6,9 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
@@ -164,8 +164,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         }
 
         return candidatesForRemoval(nodes).stream()
-                .sorted(Comparator.comparing(node -> node.history().events().stream()
-                                                         .map(History.Event::at).min(Comparator.naturalOrder()).orElse(Instant.MIN)))
+                .sorted(Comparator.comparing(node -> node.history().asList().stream().findFirst().map(History.Event::at).orElse(Instant.MIN)))
                 .filter(node -> {
                     if (!sharedHosts.containsKey(node.hostname()) || sharedHosts.size() > minCount) {
                         sharedHosts.remove(node.hostname());
