@@ -202,7 +202,7 @@ class ResultBuilder {
                     results = Arrays.copyOf(results, tag+8);
                 }
                 if ( ! results[tag] ) {
-                    this.group.getAggregationResults().add(res);
+                    this.group.addAggregationResult(res);
                     results[tag] = true;
                 }
             }
