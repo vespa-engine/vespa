@@ -143,9 +143,9 @@ class ResultBuilder {
     }
 
     private class GroupBuilder {
-
+        private static final int CHILDLIST_SIZE_INCREMENTS = 4;
         boolean [] results = new boolean[8];
-        GroupListBuilder [] childLists = new GroupListBuilder[8];
+        GroupListBuilder [] childLists;
         int childCount = 0;
         final ResultId resultId;
         final com.yahoo.searchlib.aggregation.Group group;
@@ -173,9 +173,11 @@ class ResultBuilder {
                     }
                 }
             }
-            for (GroupListBuilder child : childLists) {
-                if (child != null) {
-                    group.add(child.build());
+            if (childLists != null) {
+                for (GroupListBuilder child : childLists) {
+                    if (child != null) {
+                        group.add(child.build());
+                    }
                 }
             }
             return group;
@@ -183,8 +185,12 @@ class ResultBuilder {
 
         GroupListBuilder getOrCreateChildList(int tag, boolean ranked) {
             int index = tag + 1; // Add 1 to avoid the dreaded -1 default value.
-            if (index >= childLists.length) {
-                childLists = Arrays.copyOf(childLists, tag + 8);
+            if (childLists == null || index >= childLists.length) {
+                int minSize = index + 1;
+                int reservedSize = ((minSize + (CHILDLIST_SIZE_INCREMENTS - 1))/CHILDLIST_SIZE_INCREMENTS) * CHILDLIST_SIZE_INCREMENTS;
+                childLists = (childLists == null)
+                        ? new GroupListBuilder[reservedSize]
+                        : Arrays.copyOf(childLists, reservedSize);
             }
             GroupListBuilder ret = childLists[index];
             if (ret == null) {
