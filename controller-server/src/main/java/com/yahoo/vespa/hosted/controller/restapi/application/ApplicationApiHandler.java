@@ -801,9 +801,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse devApplicationPackage(ApplicationId id, JobType type) {
-        if ( ! type.environment().isManuallyDeployed())
-            throw new IllegalArgumentException("Only manually deployed zones have dev packages");
-
         ZoneId zone = type.zone(controller.system());
         RevisionId revision = controller.jobController().last(id, type).get().versions().targetRevision();
         byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), revision);
@@ -2724,7 +2721,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
-        long projectId = Math.max(1, submitOptions.field("projectId").asLong()); // Absence of this means it's not a prod app :/
+        long projectId = submitOptions.field("projectId").asLong(); // Absence of this means it's not a prod app :/
+        projectId = projectId == 0 ? 1 : projectId;
         Optional<String> repository = optional("repository", submitOptions);
         Optional<String> branch = optional("branch", submitOptions);
         Optional<String> commit = optional("commit", submitOptions);

@@ -478,7 +478,7 @@ public class JobController {
                                                     controller.clock().instant(),
                                                     applicationPackage.metaDataZip());
 
-            application = application.withProjectId(OptionalLong.of(projectId));
+            application = application.withProjectId(projectId == -1 ? OptionalLong.empty() : OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
             application = withPrunedPackages(application);
 
