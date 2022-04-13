@@ -60,6 +60,9 @@ public interface ConfigServer {
     /** Returns a proxied response from a given path running on a given service and node */
     ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath, Query query);
 
+    /** Returns health status for the services of an application */
+    ProxyResponse getServiceNodes(DeploymentId deployment);
+
     /**
      * Gets the Vespa logs of the given deployment.
      *
