@@ -22,6 +22,7 @@ import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -171,7 +172,8 @@ class NodesResponse extends SlimeJsonResponse {
         object.setBool("preferToRetire", node.status().preferToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         object.setBool("wantToRebuild", node.status().wantToRebuild());
-        toSlime(node.history(), object.setArray("history"));
+        toSlime(node.history().events(), object.setArray("history"));
+        toSlime(node.history().log(), object.setArray("log"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.ipConfig().pool().ipSet(), object.setArray("additionalIpAddresses"));
         addressesToSlime(node.ipConfig().pool().getAddressList(), object);
@@ -196,8 +198,8 @@ class NodesResponse extends SlimeJsonResponse {
         object.setBool("retired", membership.retired());
     }
 
-    private void toSlime(History history, Cursor array) {
-        for (History.Event event : history.events()) {
+    private void toSlime(Collection<History.Event> events, Cursor array) {
+        for (History.Event event : events) {
             Cursor object = array.addObject();
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());

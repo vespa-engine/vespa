@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
-import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.persistence.CacheStats;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
@@ -248,7 +247,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
             boolean down = NodeHealthTracker.allDown(services);
             metric.set("nodeFailerBadNode", (down ? 1 : 0), context);
 
-            boolean nodeDownInNodeRepo = node.history().event(History.Event.Type.down).isPresent();
+            boolean nodeDownInNodeRepo = node.isDown();
             metric.set("downInNodeRepo", (nodeDownInNodeRepo ? 1 : 0), context);
         }
 

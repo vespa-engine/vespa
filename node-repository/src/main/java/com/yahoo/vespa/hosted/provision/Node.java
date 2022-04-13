@@ -353,13 +353,16 @@ public final class Node implements Nodelike {
     }
 
     /** Returns a copy of this with any history record saying it has been detected down removed */
-    public Node up() {
-        return with(history.without(History.Event.Type.down));
+    public Node upAt(Instant instant, Agent agent) {
+        return with(history.with(new History.Event(History.Event.Type.up, agent, instant)));
     }
 
-    /** Returns whether this node has a record of being down */
+    /** Returns whether this node is down, according to its recorded 'down' and 'up' events */
     public boolean isDown() {
-        return history().event(History.Event.Type.down).isPresent();
+        Optional<Instant> downAt = history().event(History.Event.Type.down).map(History.Event::at);
+        if (downAt.isEmpty()) return false;
+
+        return !history().hasEventAfter(History.Event.Type.up, downAt.get());
     }
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
