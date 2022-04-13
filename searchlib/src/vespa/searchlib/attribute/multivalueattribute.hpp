@@ -3,10 +3,12 @@
 #pragma once
 
 #include "address_space_components.h"
+#include "raw_multi_value_read_view.h"
 #include <vespa/searchlib/attribute/multivalueattribute.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
+#include <vespa/vespalib/util/stash.h>
 
 namespace search {
 
@@ -289,6 +291,19 @@ MultiValueAttribute<B, M>::onShrinkLidSpace()
     this->setNumDocs(committedDocIdLimit);
 }
 
+template <typename B, typename M>
+const attribute::IMultiValueAttribute*
+MultiValueAttribute<B, M>::as_multi_value_attribute() const
+{
+    return this;
+}
+
+template <typename B, typename M>
+const attribute::IMultiValueReadView<M>*
+MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<MultiValueType>, vespalib::Stash& stash) const
+{
+    return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+}
 
 } // namespace search
 

@@ -243,7 +243,7 @@ template <typename BaseType>
 void
 MultiAttributeExecutor<BaseType>::execute(uint32_t docId)
 {
-    auto values = _array_read_view->get_raw_values(docId);
+    auto values = _array_read_view->get_values(docId);
     auto o = outputs().get_bound();
     o[0].as_number = __builtin_expect(_idx < values.size(), true) ? multivalue::get_value(values[_idx]) : 0;
 }
@@ -341,10 +341,10 @@ struct MultiValueExecutorCreator {
     using ArrayReadView = attribute::IArrayReadView<typename T::BaseType>;
     using ExecType = MultiAttributeExecutor<typename T::BaseType>;
     MultiValueExecutorCreator() : _array_read_view(nullptr) {}
-    bool handle(const IAttributeVector *attribute) {
+    bool handle(vespalib::Stash &stash, const IAttributeVector *attribute) {
         auto multi_value_attribute = attribute->as_multi_value_attribute();
         if (multi_value_attribute != nullptr) {
-            _array_read_view = multi_value_attribute->as_read_view(attribute::IMultiValueAttribute::Tag<typename T::BaseType>());
+            _array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<typename T::BaseType>(), stash);
         }
         return _array_read_view != nullptr;
     }
@@ -422,19 +422,19 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         } else if (attribute->isIntegerType()) {
             if (basicType == BasicType::INT32) {
                 MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else if (basicType == BasicType::INT64) {
                 MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
         } else { // FLOAT
             if (basicType == BasicType::DOUBLE) {
                 MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else {
                 MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }
