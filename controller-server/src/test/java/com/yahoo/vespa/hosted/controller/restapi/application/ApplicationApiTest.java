@@ -694,21 +694,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("suspended.json"));
 
-        // GET services
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service", GET)
-                                      .userIdentity(USER_ID),
-                              new File("services.json"));
-
-        // GET service
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/state/v1/", GET)
-                                      .userIdentity(USER_ID),
-                              new File("service.json"));
-
-        // GET service/state/v1
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/service/storagenode/host.com/state/v1/?foo=bar", GET)
-                                      .userIdentity(USER_ID),
-                              new File("service"));
-
         // DELETE application with active deployments fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID)
@@ -1637,32 +1622,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Should be no available grant
         activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
         assertEquals(0, activeGrants.size());
-    }
-
-    @Test
-    public void testServiceView() {
-        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
-        String serviceApi="/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service";
-        // Not allowed to request apis not listed in feature flag allowed-service-view-apis. e.g /document/v1
-        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/document/v1/", GET)
-                                      .userIdentity(USER_ID)
-                                      .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
-                              404);
-
-        // Test path traversal
-        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state/v1/../../document/v1/", GET)
-                                      .userIdentity(USER_ID)
-                                      .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
-                              404);
-
-        // Test urlencoded path traversal
-        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state%2Fv1%2F..%2F..%2Fdocument%2Fv1%2F", GET)
-                                      .userIdentity(USER_ID)
-                                      .oAuthCredentials(OKTA_CREDENTIALS),
-                              accessDenied,
-                              403);
     }
 
     @Test

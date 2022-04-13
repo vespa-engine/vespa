@@ -34,13 +34,6 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>serviceview</artifactId>
-            <scope>provided</scope>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-provisioning</artifactId>
             <scope>provided</scope>
             <version>${project.version}</version>
