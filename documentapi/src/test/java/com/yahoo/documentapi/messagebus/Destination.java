@@ -27,11 +27,12 @@ import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Mock-up destination used for testing.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class Destination implements MessageHandler {
 
@@ -46,7 +47,7 @@ public class Destination implements MessageHandler {
         params.setDocumentManagerConfigId(documentManagerConfigId);
         access = new LocalDocumentAccess(params);
         local = access.createSyncSession(new SyncParameters.Builder().build());
-        bus = new RPCMessageBus(Arrays.asList((Protocol)new DocumentProtocol(access.getDocumentTypeManager())),
+        bus = new RPCMessageBus(List.of(new DocumentProtocol(access.getDocumentTypeManager())),
                                 new RPCNetworkParams().setNumNetworkThreads(1)
                                         .setIdentity(new Identity("test/destination"))
                                         .setSlobrokConfigId(slobrokConfigId),

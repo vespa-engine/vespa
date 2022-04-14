@@ -12,6 +12,7 @@ import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response;
+import com.yahoo.documentapi.Response.Outcome;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
@@ -119,17 +120,24 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         AsyncSession session = access().createAsyncSession(new AsyncParameters());
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
         Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
-        assertTrue(session.put(new DocumentPut(doc1),
-                               DocumentOperationParameters.parameters()
-                                                          .withResponseHandler(result -> {
-                                                              response.set(result);
-                                                              latch.countDown();
-                                                          })
-                                                          .withDeadline(Instant.now().minusSeconds(1)))
-                          .isSuccess());
-        assertTrue(latch.await(60, TimeUnit.SECONDS));
-        assertNotNull(response.get());
-        assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
+
+        // The setup is broken. Zero or negative timeout has semantics in messagebus, so ensuring a timeout is impossible,as negative
+        // remaining time is converted to 1 ms further down. We therefore try tenfold, and accept > 0 timeouts as success ...  (；☉_☉)
+        // We could return a timeout from the destination, but then we're not testing what we want, namely that the sender times out.
+        int attempts = 10;
+        for (int i = 0; ++i <= attempts; ) {
+            assertTrue(session.put(new DocumentPut(doc1),
+                                   DocumentOperationParameters.parameters()
+                                                              .withResponseHandler(result -> {
+                                                                  response.set(result);
+                                                                  latch.countDown();
+                                                              })
+                                                              .withDeadline(Instant.now().plusMillis(40)))
+                              .isSuccess());
+            assertTrue(latch.await(60, TimeUnit.SECONDS));
+            if (response.get().outcome() == Outcome.TIMEOUT) break;
+            if (i == attempts) assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
+        }
         session.destroy();
     }
 
