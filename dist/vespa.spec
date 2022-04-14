@@ -595,8 +595,7 @@ mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
        .
 
 make %{_smp_mflags}
-go env
-VERSION=%{version} make -C client/go install-all
+VERSION=%{version} CI=true make -C client/go install-all
 %endif
 
 %install
