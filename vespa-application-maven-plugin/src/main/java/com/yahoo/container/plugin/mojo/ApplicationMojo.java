@@ -60,7 +60,9 @@ public class ApplicationMojo extends AbstractMojo {
             return;
 
          // Compile version is the build version of the parent project, unless specifically set.
-        Version parentVersion = Version.from(project.getParent().getVersion());
+        MavenProject parent = project;
+        while (parent.getParent() != null) parent = parent.getParent();
+        Version parentVersion = Version.from(parent.getVersion());
         Version compileVersion = vespaversion == null ? parentVersion : Version.from(vespaversion);
         if (parentVersion.compareTo(compileVersion) < 0)
             throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
