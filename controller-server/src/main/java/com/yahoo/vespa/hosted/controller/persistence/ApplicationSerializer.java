@@ -54,7 +54,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.function.Function;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -245,7 +244,7 @@ public class ApplicationSerializer {
         revisions.development().forEach((job, devRevisions) -> {
             Cursor devRevisionsObject = devRevisionsArray.addObject();
             devRevisionsObject.setString(instanceNameField, job.application().instance().value());
-            devRevisionsObject.setString(jobTypeField, job.type().jobName());
+            devRevisionsObject.setString(jobTypeField, job.type().serialized(system));
             revisionsToSlime(devRevisions, devRevisionsObject.setArray(versionsField));
         });
     }
@@ -285,7 +284,7 @@ public class ApplicationSerializer {
         Cursor jobStatusArray = cursor.setArray(jobStatusField);
         jobPauses.forEach((type, until) -> {
             Cursor jobPauseObject = jobStatusArray.addObject();
-            jobPauseObject.setString(jobTypeField, type.jobName());
+            jobPauseObject.setString(jobTypeField, type.serialized(system));
             jobPauseObject.setLong(pausedUntilField, until.toEpochMilli());
         });
     }

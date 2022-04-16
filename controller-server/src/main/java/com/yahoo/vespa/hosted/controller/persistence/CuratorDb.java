@@ -107,7 +107,6 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
-    private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionTargetSerializer osVersionTargetSerializer = new OsVersionTargetSerializer(osVersionSerializer);
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
@@ -116,6 +115,7 @@ public class CuratorDb {
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
     private final ApplicationSerializer applicationSerializer;
+    private final RunSerializer runSerializer;
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -138,6 +138,7 @@ public class CuratorDb {
         this.tryLockTimeout = tryLockTimeout;
         this.lockScheme = Flags.CONTROLLER_LOCK_SCHEME.bindTo(flagSource);
         this.applicationSerializer = new ApplicationSerializer(system);
+        this.runSerializer = new RunSerializer(system);
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */

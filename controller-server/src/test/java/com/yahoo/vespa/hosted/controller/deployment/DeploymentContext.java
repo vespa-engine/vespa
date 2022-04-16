@@ -476,7 +476,7 @@ public class DeploymentContext {
         }
 
         Run run = jobs.active().stream()
-                      .filter(r -> r.id().type() == type)
+                      .filter(r -> r.id().type().equals(type))
                       .findAny()
                       .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         return run.id();
@@ -499,12 +499,12 @@ public class DeploymentContext {
 
     public void assertRunning(JobType type) {
         assertTrue(jobId(type) + " should be among the active: " + jobs.active(),
-                   jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type() == type));
+                   jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)));
     }
 
     public void assertNotRunning(JobType type) {
         assertFalse(jobId(type) + " should not be among the active: " + jobs.active(),
-                    jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type() == type));
+                    jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)));
     }
 
     /** Deploys tester and real app, and completes tester and initial staging installation first if needed. */
@@ -522,7 +522,7 @@ public class DeploymentContext {
         if (job.type().isTest())
             doInstallTester(job);
 
-        if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
+        if (job.type().equals(JobType.stagingTest)) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
             tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
             configServer().convergeServices(id.application(), zone);
@@ -555,7 +555,7 @@ public class DeploymentContext {
     /** Returns the current run for the given job type, and verifies it is still running normally. */
     private Run currentRun(JobId job) {
         Run run = jobs.last(job)
-                      .filter(r -> r.id().type() == job.type())
+                      .filter(r -> r.id().type().equals(job.type()))
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
         assertFalse(run.id() + " should not have failed yet: " + run, run.hasFailed());
         assertFalse(run.id() + " should not have ended yet: " + run, run.hasEnded());

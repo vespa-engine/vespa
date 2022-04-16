@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -10,12 +11,9 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.Application;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
@@ -30,9 +28,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.TreeMap;
-import java.util.function.Function;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
@@ -100,6 +96,12 @@ class RunSerializer {
     private static final String testerCertificateField = "testerCertificate";
     private static final String isDryRunField = "isDryRun";
     private static final String reasonField = "reason";
+
+    private final SystemName system;
+
+    RunSerializer(SystemName system) {
+        this.system = system;
+    }
 
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
@@ -209,7 +211,7 @@ class RunSerializer {
 
     private void toSlime(Run run, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
-        runObject.setString(jobTypeField, run.id().type().jobName());
+        runObject.setString(jobTypeField, run.id().type().serialized(system));
         runObject.setBool(isRedeploymentField, run.isRedeployment());
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());

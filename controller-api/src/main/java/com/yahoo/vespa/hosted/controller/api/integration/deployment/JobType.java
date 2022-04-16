@@ -255,10 +255,12 @@ public final class JobType implements Comparable<JobType> {
         return zones.get(system);
     }
 
+    /** A system test in a test zone, or throws if no test zones are present.. */
     public static JobType systemTest(ZoneRegistry zones) {
         return testIn(test, zones);
     }
 
+    /** A staging test in a staging zone, or throws if no staging zones are present. */
     public static JobType stagingTest(ZoneRegistry zones){
         return testIn(staging, zones);
     }
@@ -268,18 +270,22 @@ public final class JobType implements Comparable<JobType> {
                     .findFirst().orElseThrow(() -> new IllegalArgumentException("no zones in " + environment + " among " + zones.zones().controllerUpgraded().zones()));
     }
 
+    /** A deployment to the given dev region. */
     public static JobType dev(String region) {
         return deploymentTo(ZoneId.from("dev", region));
     }
 
+    /** A deployment to the given perf region. */
     public static JobType perf(String region) {
         return deploymentTo(ZoneId.from("perf", region));
     }
 
+    /** A deployment to the given prod region. */
     public static JobType prod(String region) {
         return deploymentTo(ZoneId.from("prod", region));
     }
 
+    /** A production test in the given region. */
     public static JobType test(String region) {
         return productionTestOf(ZoneId.from("prod", region));
     }
@@ -311,10 +317,9 @@ public final class JobType implements Comparable<JobType> {
         throw new IllegalArgumentException("illegal serialized job type '" + raw + "'");
     }
 
-    // TODO jonmv: use for serialisation
-    public String serialized() {
-        throw new UnsupportedOperationException();
-        // return zone.environment().value() + "." + zone.region().value() + (isProductionTest ? ".test");
+    public String serialized(SystemName system) {
+        ZoneId zone = zone(system);
+        return zone.environment().value() + "." + zone.region().value() + (isProductionTest ? ".test" : "");
     }
 
     public static List<JobType> allIn(ZoneRegistry zones) {
