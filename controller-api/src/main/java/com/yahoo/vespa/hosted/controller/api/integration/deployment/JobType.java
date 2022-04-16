@@ -198,6 +198,11 @@ public final class JobType implements Comparable<JobType> {
 
     public String jobName() { return jobName; }
 
+    /** Returns the zone for this job in the given system. */
+    public ZoneId zone() {
+        throw new UnsupportedOperationException();
+    }
+
     /** Returns the zone for this job in the given system, or throws if this job does not have a zone */
     public ZoneId zone(SystemName system) {
         if ( ! zones.containsKey(system))
