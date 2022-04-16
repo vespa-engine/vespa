@@ -32,7 +32,7 @@
     </scm>
 
     <properties>
-        <vespaversion>7-SNAPSHOT</vespaversion>
+        <vespaversion>${project.version}</vespaversion>
         <target_jdk_version>11</target_jdk_version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.0</maven-surefire-plugin.version>
