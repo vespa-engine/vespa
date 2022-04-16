@@ -3,6 +3,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
@@ -23,29 +24,35 @@ public class RetriggerEntrySerializer {
     private static final String JOB_TYPE_KEY = "jobType";
     private static final String MIN_REQUIRED_RUN_ID_KEY = "minimumRunId";
 
-    public static List<RetriggerEntry> fromSlime(Slime slime) {
+    private final SystemName system;
+
+    public RetriggerEntrySerializer(SystemName system) {
+        this.system = system;
+    }
+
+    public List<RetriggerEntry> fromSlime(Slime slime) {
         return SlimeUtils.entriesStream(slime.get().field("entries"))
-                .map(RetriggerEntrySerializer::deserializeEntry)
+                .map(this::deserializeEntry)
                 .collect(Collectors.toList());
     }
 
-    public static Slime toSlime(List<RetriggerEntry> entryList) {
+    public Slime toSlime(List<RetriggerEntry> entryList) {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
         Cursor entries = root.setArray("entries");
-        entryList.forEach(e -> RetriggerEntrySerializer.serializeEntry(entries, e));
+        entryList.forEach(e -> serializeEntry(entries, e));
         return slime;
     }
 
-    private static void serializeEntry(Cursor array, RetriggerEntry entry) {
+    private void serializeEntry(Cursor array, RetriggerEntry entry) {
         Cursor root = array.addObject();
         Cursor jobid = root.setObject(JOB_ID_KEY);
         jobid.setString(APPLICATION_ID_KEY, entry.jobId().application().serializedForm());
-        jobid.setString(JOB_TYPE_KEY, entry.jobId().type().jobName());
+        jobid.setString(JOB_TYPE_KEY, entry.jobId().type().serialized(system));
         root.setLong(MIN_REQUIRED_RUN_ID_KEY, entry.requiredRun());
     }
 
-    private static RetriggerEntry deserializeEntry(Inspector inspector) {
+    private RetriggerEntry deserializeEntry(Inspector inspector) {
         Inspector jobid = inspector.field(JOB_ID_KEY);
         ApplicationId applicationId = ApplicationId.fromSerializedForm(require(jobid, APPLICATION_ID_KEY).asString());
         JobType jobType = JobType.fromJobName(require(jobid, JOB_TYPE_KEY).asString());
@@ -53,11 +60,12 @@ public class RetriggerEntrySerializer {
         return new RetriggerEntry(new JobId(applicationId, jobType), minRequiredRunId);
     }
 
-    private static Inspector require(Inspector inspector, String fieldName) {
+    private Inspector require(Inspector inspector, String fieldName) {
         Inspector field = inspector.field(fieldName);
         if (!field.valid()) {
             throw new IllegalStateException("Could not deserialize, field not found in json: " + fieldName);
         }
         return field;
     }
+
 }
