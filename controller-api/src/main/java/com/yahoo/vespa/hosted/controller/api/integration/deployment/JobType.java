@@ -320,6 +320,21 @@ public final class JobType implements Comparable<JobType> {
                 .orElseThrow(() -> new IllegalArgumentException("Unknown job name '" + jobName + "'"));
     }
 
+    // TODO jonmv: require zones
+    public static JobType fromJobName(String jobName, ZoneRegistry zones) {
+        String[] parts = jobName.split("-", 2);
+        if (parts.length != 2) throw new IllegalArgumentException("job names must be 'system-test', 'staging-test', or environment and region parts, separated by '-', but got: " + jobName);
+        switch (parts[0]) {
+            case "system": return systemTest(zones);
+            case "staging": return stagingTest(zones);
+            case "production": return prod(parts[1]);
+            case "test": return test(parts[1]);
+            case "dev": return dev(parts[1]);
+            case "perf": return perf(parts[1]);
+            default: throw new IllegalArgumentException("job names must begin with one of: system, staging, production, test, dev, perf; but got: " + jobName);
+        }
+    }
+
     /** Returns the job type for the given zone */
     public static Optional<JobType> from(SystemName system, ZoneId zone, boolean isTest) {
         return Stream.of(values)
