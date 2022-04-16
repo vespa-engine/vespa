@@ -274,13 +274,10 @@ public final class JobType implements Comparable<JobType> {
     }
 
     public static List<JobType> allIn(ZoneRegistry zones) {
-        return Stream.of(values).filter(job -> job.zones.containsKey(zones.system())).collect(Collectors.toUnmodifiableList());
-        /*
         return zones.zones().controllerUpgraded().zones().stream()
-                    .flatMap(zone -> zone.getEnvironment().isProduction() ? Stream.of(of(zone.getId()), ofTest(zone.getId()))
-                                                                          : Stream.of(of(zone.getId())))
+                    .flatMap(zone -> zone.getEnvironment().isProduction() ? Stream.of(deploymentTo(zone.getId()), productionTestOf(zone.getId()))
+                                                                          : Stream.of(deploymentTo(zone.getId())))
                     .collect(Collectors.toUnmodifiableList());
-        */
     }
 
     static JobType[] values() {

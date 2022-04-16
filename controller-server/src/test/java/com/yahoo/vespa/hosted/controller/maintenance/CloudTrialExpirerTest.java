@@ -83,7 +83,7 @@ public class CloudTrialExpirerTest {
                 .withSystem(tester.zoneRegistry().system())
                 .withId("prod." + regionName)
                 .build();
-        tester.zoneRegistry().setZones(zone);
+        tester.zoneRegistry().setZones(ZoneApiMock.fromId("test.aws-us-east-1c"), ZoneApiMock.fromId("staging.aws-us-east-1c"), zone);
         var app = tester.createApplication(tenantName, appName, instanceName);
         var ctx = deploymentTester.newDeploymentContext(tenantName, appName, instanceName);
         var pkg = new ApplicationPackageBuilder()
