@@ -41,140 +41,91 @@ public final class JobType implements Comparable<JobType> {
                                    PublicCd, ZoneId.from("staging", "aws-us-east-1c"),
                                    Public  , ZoneId.from("staging", "aws-us-east-1c")));
 
-    public static final JobType productionUsEast3  = of("production-us-east-3",
-                            Map.of(main, ZoneId.from("prod"   , "us-east-3")));
+    public static final JobType productionUsEast3  = prod("us-east-3");
 
-    public static final JobType testUsEast3        = of("test-us-east-3",
-                            Map.of(main, ZoneId.from("prod"   , "us-east-3")), true);
+    public static final JobType testUsEast3        = test("us-east-3");
 
-    public static final JobType productionUsWest1  = of("production-us-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-west-1")));
+    public static final JobType productionUsWest1  = prod("us-west-1");
 
-    public static final JobType testUsWest1        = of("test-us-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-west-1")), true);
+    public static final JobType testUsWest1        = test("us-west-1");
 
-    public static final JobType productionUsCentral1 = of("production-us-central-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-central-1")));
+    public static final JobType productionUsCentral1 = prod("us-central-1");
 
-    public static final JobType testUsCentral1     = of("test-us-central-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-central-1")), true);
+    public static final JobType testUsCentral1     = test("us-central-1");
 
-    public static final JobType productionApNortheast1 = of("production-ap-northeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-1")));
+    public static final JobType productionApNortheast1 = prod("ap-northeast-1");
 
-    public static final JobType testApNortheast1   = of("test-ap-northeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-1")), true);
+    public static final JobType testApNortheast1   = test("ap-northeast-1");
 
-    public static final JobType productionApNortheast2 = of("production-ap-northeast-2",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-2")));
+    public static final JobType productionApNortheast2 = prod("ap-northeast-2");
 
-    public static final JobType testApNortheast2   = of("test-ap-northeast-2",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-2")), true);
+    public static final JobType testApNortheast2   = test("ap-northeast-2");
 
-    public static final JobType productionApSoutheast1 = of("production-ap-southeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-southeast-1")));
+    public static final JobType productionApSoutheast1 = prod("ap-southeast-1");
 
-    public static final JobType testApSoutheast1   = of("test-ap-southeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-southeast-1")), true);
+    public static final JobType testApSoutheast1   = test("ap-southeast-1");
 
-    public static final JobType productionEuWest1  = of("production-eu-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "eu-west-1")));
+    public static final JobType productionEuWest1  = prod("eu-west-1");
 
-    public static final JobType testEuWest1        = of("test-eu-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "eu-west-1")), true);
+    public static final JobType testEuWest1        = test("eu-west-1");
 
-    public static final JobType productionAwsUsEast1a= of("production-aws-us-east-1a",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1a")));
+    public static final JobType productionAwsUsEast1a= prod("aws-us-east-1a");
 
-    public static final JobType testAwsUsEast1a    = of("test-aws-us-east-1a",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1a")), true);
+    public static final JobType testAwsUsEast1a    = test("aws-us-east-1a");
 
-    public static final JobType productionAwsUsEast1c= of("production-aws-us-east-1c",
-                            Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"),
-                                   Public,   ZoneId.from("prod", "aws-us-east-1c")));
+    public static final JobType productionAwsUsEast1c= prod("aws-us-east-1c");
 
-    public static final JobType testAwsUsEast1c    = of("test-aws-us-east-1c",
-                            Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"),
-                                   Public,   ZoneId.from("prod", "aws-us-east-1c")), true);
+    public static final JobType testAwsUsEast1c    = test("aws-us-east-1c");
 
-    public static final JobType productionAwsApNortheast1a= of("production-aws-ap-northeast-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a")));
+    public static final JobType productionAwsApNortheast1a= prod("aws-ap-northeast-1a");
 
-    public static final JobType testAwsApNortheast1a = of("test-aws-ap-northeast-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a")), true);
+    public static final JobType testAwsApNortheast1a = test("aws-ap-northeast-1a");
 
-    public static final JobType productionAwsEuWest1a= of("production-aws-eu-west-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-eu-west-1a")));
+    public static final JobType productionAwsEuWest1a= prod("aws-eu-west-1a");
 
-    public static final JobType testAwsEuWest1a     = of("test-aws-eu-west-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-eu-west-1a")), true);
+    public static final JobType testAwsEuWest1a     = test("aws-eu-west-1a");
 
-    public static final JobType productionAwsUsWest2a= of("production-aws-us-west-2a",
-                            Map.of(main,   ZoneId.from("prod", "aws-us-west-2a"),
-                                   Public, ZoneId.from("prod", "aws-us-west-2a")));
+    public static final JobType productionAwsUsWest2a= prod("aws-us-west-2a");
 
-    public static final JobType testAwsUsWest2a    = of("test-aws-us-west-2a",
-                            Map.of(main,   ZoneId.from("prod", "aws-us-west-2a"),
-                                   Public, ZoneId.from("prod", "aws-us-west-2a")), true);
+    public static final JobType testAwsUsWest2a    = test("aws-us-west-2a");
 
-    public static final JobType productionAwsUsEast1b= of("production-aws-us-east-1b",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1b")));
+    public static final JobType productionAwsUsEast1b= prod("aws-us-east-1b");
 
-    public static final JobType testAwsUsEast1b    = of("test-aws-us-east-1b",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1b")), true);
+    public static final JobType testAwsUsEast1b    = test("aws-us-east-1b");
 
-    public static final JobType devUsEast1         = of("dev-us-east-1",
-                            Map.of(main, ZoneId.from("dev"    , "us-east-1")));
+    public static final JobType devUsEast1         = dev("us-east-1");
 
-    public static final JobType devAwsUsEast2a     = of("dev-aws-us-east-2a",
-                            Map.of(main, ZoneId.from("dev"    , "aws-us-east-2a")));
+    public static final JobType devAwsUsEast2a     = dev("aws-us-east-2a");
 
-    public static final JobType productionCdAwsUsEast1a = of("production-cd-aws-us-east-1a",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-aws-us-east-1a")));
+    public static final JobType productionCdAwsUsEast1a = prod("cd-aws-us-east-1a");
 
-    public static final JobType testCdAwsUsEast1a  = of("test-cd-aws-us-east-1a",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-aws-us-east-1a")), true);
+    public static final JobType testCdAwsUsEast1a  = test("cd-aws-us-east-1a");
 
-    public static final JobType productionCdUsCentral1  = of("production-cd-us-central-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-1")));
+    public static final JobType productionCdUsCentral1  = prod("cd-us-central-1");
 
-    public static final JobType testCdUsCentral1   = of("test-cd-us-central-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-1")), true);
+    public static final JobType testCdUsCentral1   = test("cd-us-central-1");
 
-    // TODO: Cannot remove production-cd-us-central-2 until we know there are no serialized data in controller referencing it
-    public static final JobType productionCdUsCentral2  = of("production-cd-us-central-2",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2")));
+    public static final JobType productionCdUsCentral2  = prod("cd-us-central-2");
 
-    public static final JobType testCdUsCentral2   = of("test-cd-us-central-2",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2")), true);
+    public static final JobType testCdUsCentral2   = test("cd-us-central-2");
 
-    public static final JobType productionCdUsEast1= of("production-cd-us-east-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-east-1")));
+    public static final JobType productionCdUsEast1= prod("cd-us-east-1");
 
-    public static final JobType testCdUsEast1      = of("test-cd-us-east-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-east-1")), true);
+    public static final JobType testCdUsEast1      = test("cd-us-east-1");
 
-    public static final JobType productionCdUsWest1= of("production-cd-us-west-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1")));
+    public static final JobType productionCdUsWest1= prod("cd-us-west-1");
 
-    public static final JobType testCdUsWest1      = of("test-cd-us-west-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1")), true);
+    public static final JobType testCdUsWest1      = test("cd-us-west-1");
 
-    public static final JobType devCdUsCentral1    = of("dev-cd-us-central-1",
-                            Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1")));
+    public static final JobType devCdUsCentral1    = dev("cd-us-central-1");
 
-    public static final JobType devCdUsWest1       = of("dev-cd-us-west-1",
-                            Map.of(cd  , ZoneId.from("dev"    , "cd-us-west-1")));
+    public static final JobType devCdUsWest1       = dev("cd-us-west-1");
 
-    public static final JobType devAwsUsEast1c     = of("dev-aws-us-east-1c",
-                            Map.of(Public,   ZoneId.from("dev", "aws-us-east-1c"),
-                                   PublicCd, ZoneId.from("dev", "aws-us-east-1c")));
+    public static final JobType devAwsUsEast1c     = dev("aws-us-east-1c");
 
-    public static final JobType perfAwsUsEast1c     = of("perf-aws-us-east-1c",
-                            Map.of(Public,   ZoneId.from("perf", "aws-us-east-1c")));
+    public static final JobType perfAwsUsEast1c     = perf("aws-us-east-1c");
 
-    public static final JobType perfUsEast3        = of("perf-us-east-3",
-                            Map.of(main, ZoneId.from("perf"   , "us-east-3")));
+    public static final JobType perfUsEast3        = perf("us-east-3");
 
     private static final JobType[] values = new JobType[] {
             systemTest,
@@ -417,7 +368,12 @@ public final class JobType implements Comparable<JobType> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(jobName);
+        return jobName.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return jobName;
     }
 
 }
