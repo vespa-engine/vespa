@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -132,7 +133,7 @@ public class JobController {
 
     /** Returns the logged entries for the given run, which are after the given id threshold. */
     public Optional<RunLog> details(RunId id, long after) {
-        try (Lock __ = curator.lock(id.application(), id.type())) {
+        try (Mutex __ = curator.lock(id.application(), id.type())) {
             Run run = runs(id.application(), id.type()).get(id);
             if (run == null)
                 return Optional.empty();
@@ -378,7 +379,7 @@ public class JobController {
      * Throws TimeoutException if some step in this job is still being run.
      */
     public void finish(RunId id) throws TimeoutException {
-        List<Lock> locks = new ArrayList<>();
+        List<Mutex> locks = new ArrayList<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
             Run unlockedRun = run(id).get();
@@ -426,7 +427,7 @@ public class JobController {
             });
         }
         finally {
-            for (Lock lock : locks)
+            for (Mutex lock : locks)
                 lock.close();
         }
     }
@@ -658,7 +659,7 @@ public class JobController {
                        TesterId tester = TesterId.of(id);
                        for (JobType type : jobs(id))
                            locked(id, type, deactivateTester, __ -> {
-                               try (Lock ___ = curator.lock(id, type)) {
+                               try (Mutex ___ = curator.lock(id, type)) {
                                    try {
                                        deactivateTester(tester, type);
                                    }
@@ -684,7 +685,7 @@ public class JobController {
     /** Locks all runs and modifies the list of historic runs for the given application and job type. */
     private void locked(ApplicationId id, JobType type, Consumer<SortedMap<RunId, Run>> modifications) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
-        try (Lock __ = curator.lock(id, type)) {
+        try (Mutex __ = curator.lock(id, type)) {
             SortedMap<RunId, Run> runs = new TreeMap<>(curator.readHistoricRuns(id, type));
             modifications.accept(runs);
             curator.writeHistoricRuns(id, type, runs.values(), application);
@@ -694,7 +695,7 @@ public class JobController {
     /** Locks and modifies the run with the given id, provided it is still active. */
     public void locked(RunId id, UnaryOperator<Run> modifications) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id.application()));
-        try (Lock __ = curator.lock(id.application(), id.type())) {
+        try (Mutex __ = curator.lock(id.application(), id.type())) {
             active(id).ifPresent(run -> {
                 run = modifications.apply(run);
                 curator.writeLastRun(run, application);
@@ -704,9 +705,9 @@ public class JobController {
 
     /** Locks the given step and checks none of its prerequisites are running, then performs the given actions. */
     public void locked(ApplicationId id, JobType type, Step step, Consumer<LockedStep> action) throws TimeoutException {
-        try (Lock lock = curator.lock(id, type, step)) {
+        try (Mutex lock = curator.lock(id, type, step)) {
             for (Step prerequisite : step.allPrerequisites(last(id, type).get().steps().keySet())) // Check that no prerequisite is still running.
-                try (Lock __ = curator.lock(id, type, prerequisite)) { ; }
+                try (Mutex __ = curator.lock(id, type, prerequisite)) { ; }
 
             action.accept(new LockedStep(lock, step));
         }

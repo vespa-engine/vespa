@@ -13,6 +13,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.MultiplePathsLock;
@@ -149,14 +150,15 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
-    public Lock lock(TenantName name) {
+    public Mutex lock(TenantName name) {
         return curator.lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
-    public Lock lock(TenantAndApplicationId id) {
+    public Mutex lock(TenantAndApplicationId id) {
         switch (lockScheme.value()) {
             case "BOTH":
-                return new MultiplePathsLock(lockPath(id), legacyLockPath(id), defaultLockTimeout.multipliedBy(2), curator);
+                return new MultiplePathsLock(curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2)),
+                                             curator.lock(legacyLockPath(id), defaultLockTimeout.multipliedBy(2)));
             case "OLD":
                 return curator.lock(legacyLockPath(id), defaultLockTimeout.multipliedBy(2));
             case "NEW":
@@ -166,10 +168,11 @@ public class CuratorDb {
         }
     }
 
-    public Lock lockForDeployment(ApplicationId id, ZoneId zone) {
+    public Mutex lockForDeployment(ApplicationId id, ZoneId zone) {
         switch (lockScheme.value()) {
             case "BOTH":
-                return new MultiplePathsLock(lockPath(id, zone), legacyLockPath(id, zone), deployLockTimeout, curator);
+                return new MultiplePathsLock(curator.lock(lockPath(id, zone), defaultLockTimeout),
+                                             curator.lock(legacyLockPath(id, zone), defaultLockTimeout));
             case "OLD":
                 return curator.lock(legacyLockPath(id, zone), deployLockTimeout);
             case "NEW":
@@ -179,10 +182,11 @@ public class CuratorDb {
         }
     }
 
-    public Lock lock(ApplicationId id, JobType type) {
+    public Mutex lock(ApplicationId id, JobType type) {
         switch (lockScheme.value()) {
             case "BOTH":
-                return new MultiplePathsLock(lockPath(id, type), legacyLockPath(id, type), defaultLockTimeout, curator);
+                return new MultiplePathsLock(curator.lock(lockPath(id, type), defaultLockTimeout),
+                                             curator.lock(legacyLockPath(id, type), defaultLockTimeout));
             case "OLD":
                 return curator.lock(legacyLockPath(id, type), defaultLockTimeout);
             case "NEW":
@@ -192,7 +196,7 @@ public class CuratorDb {
         }
     }
 
-    public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
+    public Mutex lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
         switch (lockScheme.value()) {
             case "BOTH":
                 return tryLock(lockPath(id, type, step), legacyLockPath(id, type, step));
@@ -205,15 +209,15 @@ public class CuratorDb {
         }
     }
 
-    public Lock lockRotations() {
+    public Mutex lockRotations() {
         return curator.lock(lockRoot.append("rotations"), defaultLockTimeout);
     }
 
-    public Lock lockConfidenceOverrides() {
+    public Mutex lockConfidenceOverrides() {
         return curator.lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
     }
 
-    public Lock lockMaintenanceJob(String jobName) {
+    public Mutex lockMaintenanceJob(String jobName) {
         try {
             return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
         } catch (TimeoutException e) {
@@ -221,52 +225,51 @@ public class CuratorDb {
         }
     }
 
-    @SuppressWarnings("unused") // Called by internal code
-    public Lock lockProvisionState(String provisionStateId) {
+    public Mutex lockProvisionState(String provisionStateId) {
         return curator.lock(lockPath(provisionStateId), Duration.ofSeconds(1));
     }
 
-    public Lock lockOsVersions() {
+    public Mutex lockOsVersions() {
         return curator.lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
     }
 
-    public Lock lockOsVersionStatus() {
+    public Mutex lockOsVersionStatus() {
         return curator.lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
-    public Lock lockRoutingPolicies() {
+    public Mutex lockRoutingPolicies() {
         return curator.lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
     }
 
-    public Lock lockAuditLog() {
+    public Mutex lockAuditLog() {
         return curator.lock(lockRoot.append("auditLog"), defaultLockTimeout);
     }
 
-    public Lock lockNameServiceQueue() {
+    public Mutex lockNameServiceQueue() {
         return curator.lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
     }
 
-    public Lock lockMeteringRefreshTime() throws TimeoutException {
+    public Mutex lockMeteringRefreshTime() throws TimeoutException {
         return tryLock(lockRoot.append("meteringRefreshTime"));
     }
 
-    public Lock lockArchiveBuckets(ZoneId zoneId) {
+    public Mutex lockArchiveBuckets(ZoneId zoneId) {
         return curator.lock(lockRoot.append("archiveBuckets").append(zoneId.value()), defaultLockTimeout);
     }
 
-    public Lock lockChangeRequests() {
+    public Mutex lockChangeRequests() {
         return curator.lock(lockRoot.append("changeRequests"), defaultLockTimeout);
     }
 
-    public Lock lockNotifications(TenantName tenantName) {
+    public Mutex lockNotifications(TenantName tenantName) {
         return curator.lock(lockRoot.append("notifications").append(tenantName.value()), defaultLockTimeout);
     }
 
-    public Lock lockSupportAccess(DeploymentId deploymentId) {
+    public Mutex lockSupportAccess(DeploymentId deploymentId) {
         return curator.lock(lockRoot.append("supportAccess").append(deploymentId.dottedString()), defaultLockTimeout);
     }
 
-    public Lock lockDeploymentRetriggerQueue() {
+    public Mutex lockDeploymentRetriggerQueue() {
         return curator.lock(lockRoot.append("deploymentRetriggerQueue"), defaultLockTimeout);
     }
 
@@ -276,7 +279,7 @@ public class CuratorDb {
      *
      * Useful for maintenance jobs, where there is no point in running the jobs back to back.
      */
-    private Lock tryLock(Path path) throws TimeoutException {
+    private Mutex tryLock(Path path) throws TimeoutException {
         try {
             return curator.lock(path, tryLockTimeout);
         }
@@ -289,9 +292,9 @@ public class CuratorDb {
      *
      * Useful for maintenance jobs, where there is no point in running the jobs back to back.
      */
-    private Lock tryLock(Path path, Path path2) throws TimeoutException {
+    private Mutex tryLock(Path path, Path path2) throws TimeoutException {
         try {
-            return new MultiplePathsLock(path, path2, tryLockTimeout, curator);
+            return new MultiplePathsLock(curator.lock(path, tryLockTimeout), curator.lock(path2, tryLockTimeout));
         }
         catch (UncheckedTimeoutException e) {
             throw new TimeoutException(e.getMessage());
