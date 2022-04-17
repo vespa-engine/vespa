@@ -145,7 +145,7 @@ template <typename BaseType>
 vespalib::ConstArrayRef<typename DotProductByWeightedSetReadViewExecutor<BaseType>::AT>
 DotProductByWeightedSetReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
-    return _weighted_set_read_view->get_raw_values(docId);
+    return _weighted_set_read_view->get_values(docId);
 }
 
 namespace {
@@ -190,7 +190,7 @@ DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
 void
 DotProductExecutorByEnum::execute(uint32_t docId) {
     feature_t val = 0;
-    auto values = _weighted_set_enum_read_view->get_raw_values(docId);
+    auto values = _weighted_set_enum_read_view->get_values(docId);
     for (size_t i = 0; i < values.size(); ++i) {
         auto itr = _queryVector.getDimMap().find(values[i].value_ref().load_relaxed().ref());
         if (itr != _end) {
@@ -210,7 +210,7 @@ public:
     {}
 
     void execute(uint32_t docId) override {
-        auto values = _weighted_set_enum_read_view->get_raw_values(docId);
+        auto values = _weighted_set_enum_read_view->get_values(docId);
         for (size_t i = 0; i < values.size(); ++i) {
             if (values[i].value_ref().load_relaxed().ref() == _key) {
                 outputs().set_number(0, values[i].weight()*_value);
@@ -236,7 +236,7 @@ public:
     {}
 
     void execute(uint32_t docId) override {
-        auto values = _weighted_set_read_view->get_raw_values(docId);
+        auto values = _weighted_set_read_view->get_values(docId);
         for (size_t i = 0; i < values.size(); ++i) {
             if (values[i].value() == _key) {
                 outputs().set_number(0, values[i].weight() * _value);
@@ -290,7 +290,7 @@ template <typename BaseType>
 vespalib::ConstArrayRef<BaseType>
 DotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
-    return _array_read_view->get_raw_values(docId);
+    return _array_read_view->get_values(docId);
 }
 
 template <typename A>
@@ -328,7 +328,7 @@ template <typename BaseType>
 vespalib::ConstArrayRef<BaseType>
 SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docid)
 {
-    auto allValues = _array_read_view->get_raw_values(docid);
+    auto allValues = _array_read_view->get_values(docid);
     size_t i(0);
     for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < allValues.size()); i++) {
         _scratch[i] = allValues[_queryIndexes[i]];
@@ -533,11 +533,11 @@ using dotproduct::ArrayParam;
 
 template <typename AT>
 const attribute::IMultiValueReadView<AT>*
-get_multi_value_read_view(const IAttributeVector& attribute)
+make_multi_value_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
 {
     auto multi_value_attribute = attribute.as_multi_value_attribute();
     if (multi_value_attribute != nullptr) {
-        return multi_value_attribute->as_read_view(attribute::IMultiValueAttribute::Tag<AT>());
+        return multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<AT>(), stash);
     }
     return nullptr;
 }
@@ -556,7 +556,7 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
     const A * iattr = dynamic_cast<const A *>(attribute);
     using T = typename A::BaseType;
     using VT = T;
-    auto array_read_view = get_multi_value_read_view<VT>(*attribute);
+    auto array_read_view = make_multi_value_read_view<VT>(*attribute, stash);
     if (indexes.empty()) {
         if (array_read_view != nullptr) {
             return stash.create<dotproduct::array::DotProductByArrayReadViewExecutor<T>>(array_read_view, values);
@@ -658,7 +658,7 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespali
     using T = typename A::BaseType;
     const A * iattr = dynamic_cast<const A *>(attribute);
     using VT = multivalue::WeightedValue<T>;
-    auto weighted_set_read_view = get_multi_value_read_view<VT>(*attribute);
+    auto weighted_set_read_view = make_multi_value_read_view<VT>(*attribute, stash);
     if (!attribute->isImported() && (iattr != nullptr) && weighted_set_read_view != nullptr) {
         if (extractSize(vector) == 1) {
             auto elem = extractElem(vector, 0ul);
@@ -719,7 +719,7 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
                 return stash.create<SingleZeroValueExecutor>();
             }
             using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
-            auto* weighted_set_enum_read_view = get_multi_value_read_view<VT>(*attribute);
+            auto* weighted_set_enum_read_view = make_multi_value_read_view<VT>(*attribute, stash);
             if (weighted_set_enum_read_view != nullptr) {
                 if (vector.getVector().size() == 1) {
                     const auto & elem = vector.getVector()[0];
@@ -814,7 +814,7 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
         }
         vector->syncMap();
         using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
-        auto* weighted_set_enum_read_view = get_multi_value_read_view<VT>(*attribute);
+        auto* weighted_set_enum_read_view = make_multi_value_read_view<VT>(*attribute, stash);
         if (weighted_set_enum_read_view != nullptr) {
             if (vector->getVector().size() == 1) {
                 const auto & elem = vector->getVector()[0];

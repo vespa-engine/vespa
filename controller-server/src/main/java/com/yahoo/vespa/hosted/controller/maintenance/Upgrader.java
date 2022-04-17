@@ -66,7 +66,9 @@ public class Upgrader extends ControllerMaintainer {
 
     /** Returns a list of all production application instances, except those which are pinned, which we should not manipulate here. */
     private InstanceList instances(Version systemVersion) {
-        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable()), systemVersion))
+        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())
+                                                                                                .withProjectId(),
+                                                                                 systemVersion))
                            .withDeclaredJobs()
                            .shuffle(random)
                            .byIncreasingDeployedVersion()

@@ -94,6 +94,7 @@ vespa_add_library(searchlib_attribute OBJECT
     postinglisttraits.cpp
     postingstore.cpp
     predicate_attribute.cpp
+    raw_multi_value_read_view.cpp
     readerbase.cpp
     reference_attribute.cpp
     reference_attribute_saver.cpp

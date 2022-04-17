@@ -269,6 +269,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspended")) return suspended(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{host}/status/{*}")) return status(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/service/{service}/{host}/state/v1/{*}")) return stateV1(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("service"), path.get("host"), path.getRest(), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/orchestrator")) return orchestrator(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/nodes")) return nodes(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/clusters")) return clusters(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/content/{*}")) return content(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.getRest(), request);
@@ -796,9 +797,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse devApplicationPackage(ApplicationId id, JobType type) {
-        if ( ! type.environment().isManuallyDeployed())
-            throw new IllegalArgumentException("Only manually deployed zones have dev packages");
-
         ZoneId zone = type.zone(controller.system());
         RevisionId revision = controller.jobController().last(id, type).get().versions().targetRevision();
         byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), revision);
@@ -1786,6 +1784,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                                               Query.empty().add(request.getJDiscRequest().parameters()));
     }
 
+    private HttpResponse orchestrator(String tenantName, String applicationName, String instanceName, String environment, String region) {
+        DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
+        return controller.serviceRegistry().configServer().getServiceNodes(deploymentId);
+    }
+
     private HttpResponse stateV1(String tenantName, String applicationName, String instanceName, String environment, String region, String serviceName, String host, HttpURL.Path rest, HttpRequest request) {
         DeploymentId deploymentId = new DeploymentId(ApplicationId.from(tenantName, applicationName, instanceName), requireZone(environment, region));
         Query query = Query.empty().add(request.getJDiscRequest().parameters());
@@ -2697,7 +2700,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse submit(String tenant, String application, HttpRequest request) {
         Map<String, byte[]> dataParts = parseDataParts(request);
         Inspector submitOptions = SlimeUtils.jsonToSlime(dataParts.get(EnvironmentResource.SUBMIT_OPTIONS)).get();
-        long projectId = Math.max(1, submitOptions.field("projectId").asLong()); // Absence of this means it's not a prod app :/
+        long projectId = submitOptions.field("projectId").asLong(); // Absence of this means it's not a prod app :/
+        projectId = projectId == 0 ? 1 : projectId;
         Optional<String> repository = optional("repository", submitOptions);
         Optional<String> branch = optional("branch", submitOptions);
         Optional<String> commit = optional("commit", submitOptions);
