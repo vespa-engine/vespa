@@ -157,8 +157,8 @@ public class CuratorDb {
     public Mutex lock(TenantAndApplicationId id) {
         switch (lockScheme.value()) {
             case "BOTH":
-                return new MultiplePathsLock(curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2)),
-                                             curator.lock(legacyLockPath(id), defaultLockTimeout.multipliedBy(2)));
+                return new MultiplePathsLock(curator.lock(legacyLockPath(id), defaultLockTimeout.multipliedBy(2)),
+                                             curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2)));
             case "OLD":
                 return curator.lock(legacyLockPath(id), defaultLockTimeout.multipliedBy(2));
             case "NEW":
@@ -171,8 +171,8 @@ public class CuratorDb {
     public Mutex lockForDeployment(ApplicationId id, ZoneId zone) {
         switch (lockScheme.value()) {
             case "BOTH":
-                return new MultiplePathsLock(curator.lock(lockPath(id, zone), defaultLockTimeout),
-                                             curator.lock(legacyLockPath(id, zone), defaultLockTimeout));
+                return new MultiplePathsLock(curator.lock(legacyLockPath(id, zone), defaultLockTimeout),
+                                             curator.lock(lockPath(id, zone), defaultLockTimeout));
             case "OLD":
                 return curator.lock(legacyLockPath(id, zone), deployLockTimeout);
             case "NEW":
@@ -185,8 +185,8 @@ public class CuratorDb {
     public Mutex lock(ApplicationId id, JobType type) {
         switch (lockScheme.value()) {
             case "BOTH":
-                return new MultiplePathsLock(curator.lock(lockPath(id, type), defaultLockTimeout),
-                                             curator.lock(legacyLockPath(id, type), defaultLockTimeout));
+                return new MultiplePathsLock(curator.lock(legacyLockPath(id, type), defaultLockTimeout),
+                                             curator.lock(lockPath(id, type), defaultLockTimeout));
             case "OLD":
                 return curator.lock(legacyLockPath(id, type), defaultLockTimeout);
             case "NEW":
@@ -199,7 +199,7 @@ public class CuratorDb {
     public Mutex lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
         switch (lockScheme.value()) {
             case "BOTH":
-                return tryLock(lockPath(id, type, step), legacyLockPath(id, type, step));
+                return tryLock(legacyLockPath(id, type, step), lockPath(id, type, step));
             case "OLD":
                 return tryLock(legacyLockPath(id, type, step));
             case "NEW":
