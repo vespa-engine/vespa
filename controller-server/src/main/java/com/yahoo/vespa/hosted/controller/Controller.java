@@ -12,6 +12,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
@@ -197,7 +198,7 @@ public class Controller extends AbstractComponent {
 
     /** Remove confidence override for versions matching given filter */
     public void removeConfidenceOverride(Predicate<Version> filter) {
-        try (Lock lock = curator.lockConfidenceOverrides()) {
+        try (Mutex lock = curator.lockConfidenceOverrides()) {
             Map<Version, VespaVersion.Confidence> overrides = new LinkedHashMap<>(curator.readConfidenceOverrides());
             overrides.keySet().removeIf(filter);
             curator.writeConfidenceOverrides(overrides);
@@ -236,7 +237,7 @@ public class Controller extends AbstractComponent {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
         }
         Instant scheduledAt = clock.instant();
-        try (Lock lock = curator.lockOsVersions()) {
+        try (Mutex lock = curator.lockOsVersions()) {
             Map<CloudName, OsVersionTarget> targets = curator.readOsVersionTargets().stream()
                                                              .collect(Collectors.toMap(t -> t.osVersion().cloud(),
                                                                                        Function.identity()));
@@ -266,7 +267,7 @@ public class Controller extends AbstractComponent {
 
     /** Replace the current OS version status with a new one */
     public void updateOsVersionStatus(OsVersionStatus newStatus) {
-        try (Lock lock = curator.lockOsVersionStatus()) {
+        try (Mutex lock = curator.lockOsVersionStatus()) {
             OsVersionStatus currentStatus = curator.readOsVersionStatus();
             for (CloudName cloud : clouds()) {
                 Set<Version> newVersions = newStatus.versionsIn(cloud);

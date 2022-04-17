@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Text;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -65,7 +66,7 @@ public class NotificationsDb {
      */
     public void setNotification(NotificationSource source, Type type, Level level, List<String> messages) {
         Optional<Notification> changed = Optional.empty();
-        try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
+        try (Mutex lock = curatorDb.lockNotifications(source.tenant())) {
             var existingNotifications = curatorDb.readNotifications(source.tenant());
             List<Notification> notifications = existingNotifications.stream()
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
@@ -82,7 +83,7 @@ public class NotificationsDb {
 
     /** Remove the notification with the given source and type */
     public void removeNotification(NotificationSource source, Type type) {
-        try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
+        try (Mutex lock = curatorDb.lockNotifications(source.tenant())) {
             List<Notification> initial = curatorDb.readNotifications(source.tenant());
             List<Notification> filtered = initial.stream()
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
@@ -94,7 +95,7 @@ public class NotificationsDb {
 
     /** Remove all notifications for this source or sources contained by this source */
     public void removeNotifications(NotificationSource source) {
-        try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
+        try (Mutex lock = curatorDb.lockNotifications(source.tenant())) {
             if (source.application().isEmpty()) { // Source is tenant
                 curatorDb.deleteNotifications(source.tenant());
                 return;
@@ -130,7 +131,7 @@ public class NotificationsDb {
                 .collect(Collectors.toUnmodifiableList());
 
         NotificationSource deploymentSource = NotificationSource.from(deploymentId);
-        try (Lock lock = curatorDb.lockNotifications(deploymentSource.tenant())) {
+        try (Mutex lock = curatorDb.lockNotifications(deploymentSource.tenant())) {
             List<Notification> initial = curatorDb.readNotifications(deploymentSource.tenant());
             List<Notification> updated = Stream.concat(
                     initial.stream()

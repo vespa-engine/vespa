@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
@@ -176,7 +177,7 @@ public class Upgrader extends ControllerMaintainer {
                                                " for version " + version.toFullString() +
                                                ": Version may be in use by applications");
         }
-        try (Lock lock = curator.lockConfidenceOverrides()) {
+        try (Mutex lock = curator.lockConfidenceOverrides()) {
             Map<Version, Confidence> overrides = new LinkedHashMap<>(curator.readConfidenceOverrides());
             overrides.put(version, confidence);
             curator.writeConfidenceOverrides(overrides);

@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.text.Text;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -275,7 +276,7 @@ public class DeploymentTrigger {
 
         if (existingRun.isPresent()) {
             Run run = existingRun.get();
-            try (Lock lock = controller.curator().lockDeploymentRetriggerQueue()) {
+            try (Mutex lock = controller.curator().lockDeploymentRetriggerQueue()) {
                 List<RetriggerEntry> retriggerEntries = controller.curator().readRetriggerEntries();
                 List<RetriggerEntry> newList = new ArrayList<>(retriggerEntries);
                 RetriggerEntry requiredEntry = new RetriggerEntry(new JobId(deployment.applicationId(), jobType), run.id().number() + 1);

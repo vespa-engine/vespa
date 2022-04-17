@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -30,7 +31,7 @@ import java.util.function.UnaryOperator;
  */
 public class LockedApplication {
 
-    private final Lock lock;
+    private final Mutex lock;
     private final TenantAndApplicationId id;
     private final Instant createdAt;
     private final DeploymentSpec deploymentSpec;
@@ -51,7 +52,7 @@ public class LockedApplication {
      * @param application The application to lock.
      * @param lock The lock for the application.
      */
-    LockedApplication(Application application, Lock lock) {
+    LockedApplication(Application application, Mutex lock) {
         this(Objects.requireNonNull(lock, "lock cannot be null"), application.id(), application.createdAt(),
              application.deploymentSpec(), application.validationOverrides(),
              application.deploymentIssueId(), application.ownershipIssueId(),
@@ -59,7 +60,7 @@ public class LockedApplication {
              application.projectId(), application.instances(), application.revisions());
     }
 
-    private LockedApplication(Lock lock, TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec,
+    private LockedApplication(Mutex lock, TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec,
                               ValidationOverrides validationOverrides,
                               Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                               OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys,

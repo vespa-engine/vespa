@@ -6,6 +6,7 @@ import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -46,7 +47,7 @@ public abstract class LockedTenant {
         this.lastLoginInfo = requireNonNull(lastLoginInfo);
     }
 
-    static LockedTenant of(Tenant tenant, Lock lock) {
+    static LockedTenant of(Tenant tenant, Mutex lock) {
         switch (tenant.type()) {
             case athenz:  return new Athenz((AthenzTenant) tenant);
             case cloud:   return new Cloud((CloudTenant) tenant);
