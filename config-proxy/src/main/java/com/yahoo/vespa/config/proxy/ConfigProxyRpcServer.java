@@ -19,11 +19,14 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static com.yahoo.vespa.config.ErrorCode.INTERNAL_ERROR;
 
 /**
  * An RPC server that handles config and file distribution requests.
@@ -247,25 +250,26 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher {
     private void getConfigImpl(JRTServerConfigRequest request) {
         ResponseHandler responseHandler = new ResponseHandler();
         request.getRequestTrace().trace(TRACELEVEL, "Config proxy getConfig()");
-        log.log(Level.FINE, () ->"getConfig: " + request.getShortDescription() + ",config checksums=" + request.getRequestConfigChecksums());
+        log.log(Level.FINE, () ->"getConfig: " + request);
         if (!request.validateParameters()) {
-            // Error code is set in verifyParameters if parameters are not OK.
-            log.log(Level.WARNING, "Parameters for request " + request + " did not validate: " + request.errorCode() + " : " + request.errorMessage());
-            responseHandler.returnErrorResponse(request, request.errorCode(), "Parameters for request " + request.getShortDescription() + " did not validate: " + request.errorMessage());
+            // Error code is set in validateParameters if parameters are not OK.
+            log.log(Level.WARNING, "Invalid parameters for request " + request + ": " + request.errorCode() + " : " + request.errorMessage());
+            responseHandler.returnErrorResponse(request, request.errorCode(), "Invalid parameters for request " + request +
+                    ": " + request.errorMessage());
             return;
         }
+
         try {
-            RawConfig config = proxyServer.resolveConfig(request);
-            if (config == null) {
-                log.log(Level.FINEST, () -> "No config received yet for " + request.getShortDescription() + ", not sending response");
-            } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
-                responseHandler.returnOkResponse(request, config);
-            } else {
-                log.log(Level.FINEST, () -> "No new config for " + request.getShortDescription() + ", not sending response");
-            }
+            Optional<RawConfig> config = proxyServer.resolveConfig(request);
+            if (config.isEmpty())
+                log.log(Level.FINEST, () -> "No config received yet for " + request + ", not sending response");
+            else if (ProxyServer.configOrGenerationHasChanged(config.get(), request))
+                responseHandler.returnOkResponse(request, config.get());
+            else
+                log.log(Level.FINEST, () -> "No new config for " + request + ", not sending response");
         } catch (Exception e) {
-            e.printStackTrace();
-            responseHandler.returnErrorResponse(request, com.yahoo.vespa.config.ErrorCode.INTERNAL_ERROR, e.getMessage());
+            log.log(Level.WARNING, "Resolving config " + request + " failed", e);
+            responseHandler.returnErrorResponse(request, INTERNAL_ERROR, e.getMessage());
         }
     }
 

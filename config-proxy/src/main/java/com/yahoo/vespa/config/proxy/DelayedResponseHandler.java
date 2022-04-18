@@ -6,6 +6,7 @@ import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.yolean.Exceptions;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,9 +48,9 @@ public class DelayedResponseHandler implements Runnable {
             while ((response = delayedResponses.responses().poll()) != null) {
                 JRTServerConfigRequest request = response.getRequest();
                 ConfigCacheKey cacheKey = new ConfigCacheKey(request.getConfigKey(), request.getRequestDefMd5());
-                RawConfig config = memoryCache.get(cacheKey);
-                if (config != null) {
-                    responseHandler.returnOkResponse(request, config);
+                Optional<RawConfig> config = memoryCache.get(cacheKey);
+                if (config.isPresent()) {
+                    responseHandler.returnOkResponse(request, config.get());
                     sentResponses.incrementAndGet();
                 } else {
                     log.log(Level.WARNING, "Timed out (timeout " + request.getTimeout() + ") getting config " +

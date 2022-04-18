@@ -110,7 +110,7 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
      * @return A Config with a payload.
      */
     @Override
-    public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
+    public Optional<RawConfig> getConfig(RawConfig input, JRTServerConfigRequest request) {
         // Always add to delayed responses (we remove instead if we find config in cache)
         // This is to avoid a race where we might end up not adding to delayed responses
         // nor subscribing to config if another request for the same config
@@ -119,29 +119,29 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
         delayedResponses.add(delayedResponse);
 
         ConfigCacheKey configCacheKey = new ConfigCacheKey(input.getKey(), input.getDefMd5());
-        RawConfig cachedConfig = memoryCache.get(configCacheKey);
+        Optional<RawConfig> cachedConfig = memoryCache.get(configCacheKey);
         boolean needToGetConfig = true;
 
-        RawConfig ret = null;
-        if (cachedConfig != null) {
-            log.log(Level.FINE, () -> "Found config " + configCacheKey + " in cache, generation=" + cachedConfig.getGeneration() +
-                    ",config checksums=" + cachedConfig.getPayloadChecksums());
-            log.log(Level.FINEST, () -> "input config=" + input + ",cached config=" + cachedConfig);
-            if (ProxyServer.configOrGenerationHasChanged(cachedConfig, request)) {
+        if (cachedConfig.isPresent()) {
+            RawConfig config = cachedConfig.get();
+            log.log(Level.FINE, () -> "Found config " + configCacheKey + " in cache, generation=" + config.getGeneration() +
+                    ",config checksums=" + config.getPayloadChecksums());
+            log.log(Level.FINEST, () -> "input config=" + input + ",cached config=" + config);
+            if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 log.log(Level.FINEST, () -> "Cached config is not equal to requested, will return it");
                 if (delayedResponses.remove(delayedResponse)) {
                     // unless another thread already did it
-                    ret = cachedConfig;
+                    return cachedConfig;
                 }
             }
-            if (!cachedConfig.isError() && cachedConfig.getGeneration() > 0) {
+            if (!config.isError() && config.getGeneration() > 0) {
                 needToGetConfig = false;
             }
         }
         if (needToGetConfig) {
             subscribeToConfig(input, configCacheKey);
         }
-        return ret;
+        return Optional.empty();
     }
 
     private void subscribeToConfig(RawConfig input, ConfigCacheKey configCacheKey) {
