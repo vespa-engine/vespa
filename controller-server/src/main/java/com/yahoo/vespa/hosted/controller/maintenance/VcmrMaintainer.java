@@ -246,7 +246,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
     }
 
     private boolean hasRetired(Node node, HostAction hostAction) {
-        return hostAction.getState() == State.RETIRING &&
+        return List.of(State.RETIRING, State.REQUIRES_OPERATOR_ACTION).contains(hostAction.getState()) &&
                 node.state() == Node.State.parked;
     }
 
