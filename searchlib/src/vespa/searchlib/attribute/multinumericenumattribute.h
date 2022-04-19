@@ -106,6 +106,10 @@ public:
         return getWeightedHelper<WeightedFloat, double>(doc, v, sz);
     }
 
+    // Implements attribute::IMultiValueAttribute
+    const attribute::IMultiValueReadView<T>* make_read_view(attribute::IMultiValueAttribute::Tag<T>, vespalib::Stash& stash) const override;
+    const attribute::IMultiValueReadView<multivalue::WeightedValue<T>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<T>>, vespalib::Stash& stash) const override;
+
 private:
     using AttributeReader = PrimitiveReader<typename B::LoadedValueType>;
     void loadAllAtOnce(AttributeReader & attrReader, size_t numDocs, size_t numValues);

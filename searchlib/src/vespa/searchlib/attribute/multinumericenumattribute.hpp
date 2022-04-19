@@ -4,10 +4,12 @@
 
 #include "load_utils.h"
 #include "loadednumericvalue.h"
+#include "enumerated_multi_value_read_view.h"
 #include "multinumericenumattribute.h"
 #include "multi_numeric_enum_search_context.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.hpp>
+#include <vespa/vespalib/util/stash.h>
 
 namespace search {
 
@@ -111,6 +113,20 @@ MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
     loadAllAtOnce(attrReader, numDocs, numValues);
 
     return true;
+}
+
+template <typename B, typename M>
+const attribute::IMultiValueReadView<typename B::BaseClass::BaseType>*
+MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const
+{
+    return &stash.create<attribute::EnumeratedMultiValueReadView<T, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
+}
+
+template <typename B, typename M>
+const attribute::IMultiValueReadView<multivalue::WeightedValue<typename B::BaseClass::BaseType>>*
+MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<typename B::BaseClass::BaseType>>, vespalib::Stash& stash) const
+{
+    return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<T>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
 template <typename B, typename M>
