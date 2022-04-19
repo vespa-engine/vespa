@@ -1,12 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import static org.junit.Assert.assertEquals;
-
 import com.yahoo.cloud.config.ApplicationIdConfig;
 import com.yahoo.test.TotalOrderTester;
 import org.junit.Test;
-import com.google.common.testing.EqualsTester;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static com.yahoo.config.provision.ApplicationId.from;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -15,19 +19,11 @@ import com.google.common.testing.EqualsTester;
  */
 public class ApplicationIdTest {
 
-    ApplicationId idFrom(String tenant, String name, String instance) {
-        ApplicationId.Builder b = new ApplicationId.Builder();
-        b.tenant(tenant);
-        b.applicationName(name);
-        b.instanceName(instance);
-        return b.build();
-    }
-
     @Test
     public void require_that_application_id_is_set() {
         ApplicationId app = applicationId("application");
         assertEquals("application", app.application().value());
-        app = idFrom("tenant", "application", "instance");
+        app = from("tenant", "application", "instance");
         assertEquals("tenant", app.tenant().value());
         assertEquals("application", app.application().value());
         assertEquals("instance", app.instance().value());
@@ -35,22 +31,25 @@ public class ApplicationIdTest {
 
     @Test
     public void require_that_equals_and_hashcode_behaves_correctly() {
-        new EqualsTester()
-                .addEqualityGroup(idFrom("tenant1", "name1", "instance1"),
-                                  idFrom("tenant1", "name1", "instance1"))
-                .addEqualityGroup(idFrom("tenant2", "name1", "instance1"))
-                .addEqualityGroup(idFrom("tenant1", "name2", "instance1"))
-                .addEqualityGroup(idFrom("tenant1", "name1", "instance2"))
-                .addEqualityGroup(applicationId("onlyName1"))
-                .addEqualityGroup(applicationId("onlyName2"))
-                .testEquals();
+        assertEquals(Set.of(from("tenant1", "name1", "instance1"),
+                            from("tenant2", "name1", "instance1"),
+                            from("tenant1", "name2", "instance1"),
+                            from("tenant1", "name1", "instance2"),
+                            applicationId("name1"),
+                            applicationId("name2")),
+                     new HashSet<>(List.of(from("tenant1", "name1", "instance1"),
+                                           from("tenant2", "name1", "instance1"),
+                                           from("tenant1", "name2", "instance1"),
+                                           from("tenant1", "name1", "instance2"),
+                                           applicationId("name1"),
+                                           applicationId("name2"))));
     }
 
     @Test
     public void require_that_value_format_is_correct() {
         ApplicationId id1 = applicationId("foo");
         ApplicationId id2 = applicationId("bar");
-        ApplicationId id3 = idFrom("tenant", "baz", "bim");
+        ApplicationId id3 = from("tenant", "baz", "bim");
         assertEquals("default:foo:default", id1.serializedForm());
         assertEquals("default:bar:default", id2.serializedForm());
         assertEquals("tenant:baz:bim", id3.serializedForm());
@@ -59,8 +58,8 @@ public class ApplicationIdTest {
     @Test
     public void require_string_formats_are_correct() {
         ApplicationId id1 = applicationId("foo");
-        ApplicationId id2 = idFrom("bar", "baz", "default");
-        ApplicationId id3 = idFrom("tenant", "baz", "bim");
+        ApplicationId id2 = from("bar", "baz", "default");
+        ApplicationId id3 = from("tenant", "baz", "bim");
         assertEquals("default.foo", id1.toShortString());
         assertEquals("default.foo.default", id1.toFullString());
         assertEquals("bar.baz", id2.toShortString());
@@ -92,11 +91,11 @@ public class ApplicationIdTest {
     @Test
     public void require_that_compare_to_is_correct() {
         new TotalOrderTester<ApplicationId>()
-                .theseObjects(idFrom("tenant1", "name1", "instance1"),
-                              idFrom("tenant1", "name1", "instance1"))
-                 .areLessThan(idFrom("tenant2", "name1", "instance1"))
-                 .areLessThan(idFrom("tenant2", "name2", "instance1"))
-                 .areLessThan(idFrom("tenant2", "name2", "instance2"))
+                .theseObjects(from("tenant1", "name1", "instance1"),
+                              from("tenant1", "name1", "instance1"))
+                 .areLessThan(from("tenant2", "name1", "instance1"))
+                 .areLessThan(from("tenant2", "name2", "instance1"))
+                 .areLessThan(from("tenant2", "name2", "instance2"))
                 .testOrdering();
     }
 
@@ -106,15 +105,14 @@ public class ApplicationIdTest {
         builder.tenant("a");
         builder.application("b");
         builder.instance("c");
-        ApplicationId applicationId = ApplicationId.from(new ApplicationIdConfig(builder));
+        ApplicationId applicationId = from(new ApplicationIdConfig(builder));
         assertEquals("a", applicationId.tenant().value());
         assertEquals("b", applicationId.application().value());
         assertEquals("c", applicationId.instance().value());
     }
 
     private ApplicationId applicationId(String applicationName) {
-        return ApplicationId.from(TenantName.defaultName(),
-                                  ApplicationName.from(applicationName), InstanceName.defaultName());
+        return from(TenantName.defaultName(), ApplicationName.from(applicationName), InstanceName.defaultName());
     }
 
 }
