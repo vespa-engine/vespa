@@ -141,7 +141,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return configInstance;
     }
 
-    // Called by JRTConfigRequester when there is a config with new generation for this subscription
+    // Called by JRTConfigRequester when there is a config response for this subscription
     void updateConfig(JRTClientConfigRequest jrtReq) {
         if ( ! responseQueue.offer(jrtReq))
             setException(new ConfigurationRuntimeException("Failed offering returned request to queue of subscription " + this));
