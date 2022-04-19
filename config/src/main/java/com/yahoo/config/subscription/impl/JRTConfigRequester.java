@@ -6,6 +6,7 @@ import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
+import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.ErrorCode;
@@ -19,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -194,7 +196,18 @@ public class JRTConfigRequester implements RequestWaiter {
         failures = 0;
         sub.setLastCallBackOKTS(Instant.now());
         log.log(FINE, () -> "OK response received in handleOkRequest: " + jrtReq);
-        sub.updateConfig(jrtReq);
+        if (jrtReq.hasUpdatedGeneration()) {
+            sub.updateConfig(jrtReq);
+        } else if (jrtReq.hasUpdatedConfig()) {
+            SnippetGenerator generator = new SnippetGenerator();
+            int sizeHint = 500;
+            String config = jrtReq.getNewPayload().toString();
+            log.log(Level.WARNING, "Config " + jrtReq.getConfigKey() + " has changed without a change in config generation: generation " +
+                    jrtReq.getNewGeneration() + ", config: " + generator.makeSnippet(config, sizeHint) +
+                    ". This might happen when a newly upgraded config server responds with different config when bootstrapping  " +
+                    " (changes to code generating config that are different between versions) or non-deterministic config generation" +
+                    " (e.g. when using collections with non-deterministic iteration order)");
+        }
         scheduleNextRequest(jrtReq, sub, calculateSuccessDelay(), calculateSuccessTimeout());
     }
 
