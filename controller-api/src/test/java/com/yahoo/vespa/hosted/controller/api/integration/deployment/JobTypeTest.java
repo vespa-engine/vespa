@@ -33,29 +33,29 @@ public class JobTypeTest {
         assertEquals(JobType.testUsEast3, JobType.fromJobName("prod.us-east-3.test"));
         assertEquals(JobType.devAwsUsEast1c, JobType.fromJobName("dev.aws-us-east-1c"));
 
-        assertFalse(JobType.dev("snøhetta").isTest());
-        assertTrue(JobType.dev("snøhetta").isDeployment());
-        assertFalse(JobType.dev("snøhetta").isProduction());
+        assertFalse(JobType.dev("snohetta").isTest());
+        assertTrue(JobType.dev("snohetta").isDeployment());
+        assertFalse(JobType.dev("snohetta").isProduction());
 
-        assertFalse(JobType.perf("snøhetta").isTest());
-        assertTrue(JobType.perf("snøhetta").isDeployment());
-        assertFalse(JobType.perf("snøhetta").isProduction());
+        assertFalse(JobType.perf("snohetta").isTest());
+        assertTrue(JobType.perf("snohetta").isDeployment());
+        assertFalse(JobType.perf("snohetta").isProduction());
 
-        assertTrue(JobType.deploymentTo(ZoneId.from("test", "snøhetta")).isTest());
-        assertTrue(JobType.deploymentTo(ZoneId.from("test", "snøhetta")).isDeployment());
-        assertFalse(JobType.deploymentTo(ZoneId.from("test", "snøhetta")).isProduction());
+        assertTrue(JobType.deploymentTo(ZoneId.from("test", "snohetta")).isTest());
+        assertTrue(JobType.deploymentTo(ZoneId.from("test", "snohetta")).isDeployment());
+        assertFalse(JobType.deploymentTo(ZoneId.from("test", "snohetta")).isProduction());
 
-        assertTrue(JobType.deploymentTo(ZoneId.from("staging", "snøhetta")).isTest());
-        assertTrue(JobType.deploymentTo(ZoneId.from("staging", "snøhetta")).isDeployment());
-        assertFalse(JobType.deploymentTo(ZoneId.from("staging", "snøhetta")).isProduction());
+        assertTrue(JobType.deploymentTo(ZoneId.from("staging", "snohetta")).isTest());
+        assertTrue(JobType.deploymentTo(ZoneId.from("staging", "snohetta")).isDeployment());
+        assertFalse(JobType.deploymentTo(ZoneId.from("staging", "snohetta")).isProduction());
 
-        assertFalse(JobType.prod("snøhetta").isTest());
-        assertTrue(JobType.prod("snøhetta").isDeployment());
-        assertTrue(JobType.prod("snøhetta").isProduction());
+        assertFalse(JobType.prod("snohetta").isTest());
+        assertTrue(JobType.prod("snohetta").isDeployment());
+        assertTrue(JobType.prod("snohetta").isProduction());
 
-        assertTrue(JobType.test("snøhetta").isTest());
-        assertFalse(JobType.test("snøhetta").isDeployment());
-        assertTrue(JobType.test("snøhetta").isProduction());
+        assertTrue(JobType.test("snohetta").isTest());
+        assertFalse(JobType.test("snohetta").isDeployment());
+        assertTrue(JobType.test("snohetta").isProduction());
     }
 
 }
