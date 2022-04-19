@@ -187,6 +187,8 @@ public class CapacityChecker {
         var resourceMap = new HashMap<>(availableResources);
         List<Node> validAllocationTargets = allHosts.stream()
                                                     .filter(h -> !hostsToRemove.contains(h))
+                                                    .filter(host -> !host.status().wantToRetire() &&
+                                                            !host.status().wantToFail())
                                                     .collect(Collectors.toList());
         if (validAllocationTargets.size() == 0)
             return Optional.of(HostRemovalFailure.none());
