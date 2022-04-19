@@ -773,12 +773,15 @@ public class Nodes {
     public Mutex lockUnallocated() { return db.lockInactive(); }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
-    public Optional<NodeMutex> lockAndGet(Node node) {
+    public Optional<NodeMutex> lockAndGet(Node node) { return lockAndGet(node, Optional.empty()); }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(Node node, Optional<Duration> timeout) {
         Node staleNode = node;
 
         final int maxRetries = 4;
         for (int i = 0; i < maxRetries; ++i) {
-            Mutex lockToClose = lock(staleNode);
+            Mutex lockToClose = timeout.isPresent() ? lock(staleNode, timeout.get()) : lock(staleNode);
             try {
                 // As an optimization we first try finding the node in the same state
                 Optional<Node> freshNode = node(staleNode.hostname(), staleNode.state());
@@ -813,6 +816,11 @@ public class Nodes {
     }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public Optional<NodeMutex> lockAndGet(String hostname, Duration timeout) {
+        return node(hostname).flatMap(node -> lockAndGet(node, Optional.of(timeout)));
+    }
+
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public NodeMutex lockAndGetRequired(Node node) {
         return lockAndGet(node).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + node.hostname() + "'"));
     }
@@ -822,8 +830,17 @@ public class Nodes {
         return lockAndGet(hostname).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
+    /** Returns the unallocated/application lock, and the node acquired under that lock. */
+    public NodeMutex lockAndGetRequired(String hostname, Duration timeout) {
+        return lockAndGet(hostname, timeout).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
+    }
+
     private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
+    }
+
+    private Mutex lock(Node node, Duration timeout) {
+        return node.allocation().isPresent() ? lock(node.allocation().get().owner(), timeout) : lockUnallocated();
     }
 
     private Node requireNode(String hostname) {
