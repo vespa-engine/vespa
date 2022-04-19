@@ -29,14 +29,12 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccessControl;
-import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
-import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.yolean.concurrent.Sleeper;
 
 import java.time.Clock;
@@ -50,7 +48,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -172,11 +169,6 @@ public class Controller extends AbstractComponent {
     public MavenRepository mavenRepository() { return mavenRepository; }
 
     public ControllerConfig controllerConfig() { return controllerConfig; }
-
-    public ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName,
-                                              String environment, String region) {
-        return serviceRegistry.configServer().getApplicationView(tenantName, applicationName, instanceName, environment, region);
-    }
 
     /** Replace the current version status by a new one */
     public void updateVersionStatus(VersionStatus newStatus) {

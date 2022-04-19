@@ -117,7 +117,6 @@
         <module>searchsummary</module>
         <module>security-tools</module>
         <module>security-utils</module>
-        <module>serviceview</module>
         <module>service-monitor</module>
         <module>socket_test</module>
         <module>standalone-container</module>

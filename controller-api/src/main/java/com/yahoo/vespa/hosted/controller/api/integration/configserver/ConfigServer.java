@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
-import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -52,10 +51,6 @@ public interface ConfigServer {
     void deactivate(DeploymentId deployment);
 
     boolean isSuspended(DeploymentId deployment);
-
-    ApplicationView getApplicationView(String tenantName, String applicationName, String instanceName, String environment, String region);
-
-    Map<?,?> getServiceApiResponse(DeploymentId deployment, String serviceName, Path restPath);
 
     /** Returns a proxied response from a given path running on a given service and node */
     ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath, Query query);

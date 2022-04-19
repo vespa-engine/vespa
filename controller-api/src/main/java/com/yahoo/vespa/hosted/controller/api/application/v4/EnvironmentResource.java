@@ -70,9 +70,6 @@ public interface EnvironmentResource {
                                    @PathParam("instanceId") InstanceId instanceId,
                                    @QueryParam("timeout") long timeoutInSeconds);
 
-    @Path("{environmentId}/region/{regionId}/instance/{instanceId}/service")
-    ServiceViewResource service();
-
     @PUT
     @Path("{environmentId}/region/{regionId}/instance/{instanceId}/global-rotation/override")
     String setRotationOut(@PathParam("tenantId") TenantId tenantId,
