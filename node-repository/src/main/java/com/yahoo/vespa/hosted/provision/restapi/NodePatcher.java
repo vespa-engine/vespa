@@ -29,6 +29,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.InputStream;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,7 +87,7 @@ public class NodePatcher {
         Map<String, Inspector> recursiveFields = Maps.filterKeys(fields, RECURSIVE_FIELDS::contains);
 
         // Patch
-        NodeMutex nodeMutex = nodeRepository.nodes().lockAndGetRequired(hostname);
+        NodeMutex nodeMutex = nodeRepository.nodes().lockAndGetRequired(hostname, Duration.ofSeconds(10)); // timeout should match the one used by clients
         patch(nodeMutex, regularFields, root, false);
         patchIpConfig(hostname, ipConfigFields);
         if (nodeMutex.node().type().isHost()) {
