@@ -37,10 +37,12 @@ defaultFilters[].localPort int
 strictFiltering                       bool   default = false
 
 # Max number of threads in underlying Jetty pool
-maxWorkerThreads                      int    default = 200
+# Defaults to 16+vCPU
+maxWorkerThreads                      int    default = -1
 
 # Min number of threads in underlying Jetty pool
-minWorkerThreads                      int    default = 8
+# Defaults to 16+vCPU
+minWorkerThreads                      int    default = -1
 
 # Stop timeout in seconds. The maximum allowed time to process in-flight requests during server shutdown. Setting it to 0 disable graceful shutdown.
 stopTimeout                           double default = 30.0
