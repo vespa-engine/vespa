@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -92,13 +93,16 @@ public class ContainerTester implements AutoCloseable {
                                   storageMaintainer, flagSource,
                                   Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1),
                                   VespaServiceDumper.DUMMY_INSTANCE) {
+                    AtomicBoolean stopped = new AtomicBoolean();
                     @Override public void converge(NodeAgentContext context) {
                         super.converge(context);
                         phaser.arriveAndAwaitAdvance();
                     }
                     @Override public void stopForHostSuspension(NodeAgentContext context) {
-                        super.stopForHostSuspension(context);
-                        phaser.arriveAndDeregister();
+                        if (stopped.compareAndSet(false, true)) {
+                            super.stopForHostSuspension(context);
+                            phaser.arriveAndDeregister();
+                        }
                     }
              };
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);

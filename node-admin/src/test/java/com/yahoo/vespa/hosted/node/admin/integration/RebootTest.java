@@ -35,8 +35,7 @@ public class RebootTest {
 
             tester.setWantedState(NodeAdminStateUpdater.State.SUSPENDED);
 
-            tester.inOrder(tester.orchestrator).suspend(
-                    eq(HOST_HOSTNAME.value()), eq(List.of(hostname, HOST_HOSTNAME.value())));
+            tester.inOrder(tester.orchestrator).suspend(eq(HOST_HOSTNAME.value()), eq(List.of(hostname, HOST_HOSTNAME.value())));
             tester.inOrder(tester.containerOperations).stopServices(containerMatcher(host1));
             assertTrue(tester.nodeAdmin.setFrozen(true));
         }
