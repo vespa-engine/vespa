@@ -20,33 +20,33 @@ protected:
     uint32_t _fieldNodes;
     ResultSet _resultSet;
 
-    static const int OrPriority = 100;
-    static const int AndPriority = 200;
-    static const int NotPriority = 300;
-    static const int ComparePriority = 400;
-    static const int AddPriority = 500;
-    static const int SubPriority = 500;
-    static const int MulPriority = 600;
-    static const int DivPriority = 600;
-    static const int ModPriority = 700;
-    static const int DocumentTypePriority = 1000;
-    static const int FieldValuePriority = 1000;
-    static const int InvalidConstPriority = 1000;
-    static const int InvalidValPriority = 1000;
-    static const int ConstPriority = 1000;
-    static const int FuncPriority = 1000;
-    static const int VariablePriority = 1000;
-    static const int FloatPriority = 1000;
-    static const int IntegerPriority = 1000;
-    static const int CurrentTimePriority = 1000;
-    static const int StringPriority = 1000;
-    static const int NullValPriority = 1000;
-    static const int IdPriority = 1000;
-    static const int SearchColPriority = 1000;
+    static constexpr int OrPriority = 100;
+    static constexpr int AndPriority = 200;
+    static constexpr int NotPriority = 300;
+    static constexpr int ComparePriority = 400;
+    static constexpr int AddPriority = 500;
+    static constexpr int SubPriority = 500;
+    static constexpr int MulPriority = 600;
+    static constexpr int DivPriority = 600;
+    static constexpr int ModPriority = 700;
+    static constexpr int DocumentTypePriority = 1000;
+    static constexpr int FieldValuePriority = 1000;
+    static constexpr int InvalidConstPriority = 1000;
+    static constexpr int InvalidValPriority = 1000;
+    static constexpr int ConstPriority = 1000;
+    static constexpr int FuncPriority = 1000;
+    static constexpr int VariablePriority = 1000;
+    static constexpr int FloatPriority = 1000;
+    static constexpr int IntegerPriority = 1000;
+    static constexpr int BoolPriority = 1000;
+    static constexpr int CurrentTimePriority = 1000;
+    static constexpr int StringPriority = 1000;
+    static constexpr int NullValPriority = 1000;
+    static constexpr int IdPriority = 1000;
 
 public:
     CloningVisitor();
-    ~CloningVisitor();
+    ~CloningVisitor() override;
 
     void visitAndBranch(const And &expr) override;
     void visitOrBranch(const Or &expr) override;
@@ -62,6 +62,7 @@ public:
     void visitFloatValueNode(const FloatValueNode &expr) override;
     void visitVariableValueNode(const VariableValueNode &expr) override;
     void visitIntegerValueNode(const IntegerValueNode &expr) override;
+    void visitBoolValueNode(const BoolValueNode &expr) override;
     void visitCurrentTimeValueNode(const CurrentTimeValueNode &expr) override;
     void visitStringValueNode(const StringValueNode &expr) override;
     void visitNullValueNode(const NullValueNode &expr) override;
@@ -77,7 +78,7 @@ public:
                                 int rhsPriority, bool rhsConstVal);
 
     void swap(CloningVisitor &rhs);
-    void revisit(void);
+    void revisit();
 };
 
 }

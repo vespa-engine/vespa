@@ -57,12 +57,11 @@ protected:
         }
     }
 
-    ValueNode::UP wrapParens(ValueNode* node) const {
-        ValueNode::UP ret(node);
+    std::unique_ptr<ValueNode> wrapParens(std::unique_ptr<ValueNode> node) const {
         if (_parentheses) {
-            ret->setParentheses();
+            node->setParentheses();
         }
-        return ret;
+        return node;
     }
 
     std::unique_ptr<Value> defaultTrace(std::unique_ptr<Value> val, std::ostream& out) const;
