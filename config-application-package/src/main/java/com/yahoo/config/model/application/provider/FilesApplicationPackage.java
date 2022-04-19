@@ -481,12 +481,13 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private static ApplicationMetaData readMetaData(File appDir) {
+        String originalAppDir = preprocessed.equals(appDir.getName()) ? appDir.getParentFile().getName() : appDir.getName();
         ApplicationMetaData defaultMetaData = new ApplicationMetaData("n/a",
                                                                       "n/a",
                                                                       0L,
                                                                       false,
                                                                       ApplicationId.from(TenantName.defaultName(),
-                                                                                         ApplicationName.from(appDir.getName()),
+                                                                                         ApplicationName.from(originalAppDir),
                                                                                          InstanceName.defaultName()),
                                                                       "",
                                                                       0L,

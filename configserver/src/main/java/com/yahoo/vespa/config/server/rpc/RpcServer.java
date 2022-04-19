@@ -379,7 +379,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             if (completionService == null) {
                 executorService.submit(task);
             } else {
-                completionService.submit(() -> { task.run();return true;});
+                completionService.submit(() -> { task.run(); return true; });
             }
             updateWorkQueueMetrics();
             return true;

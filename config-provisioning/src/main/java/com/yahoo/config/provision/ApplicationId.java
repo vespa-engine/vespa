@@ -16,14 +16,11 @@ import java.util.regex.Pattern;
  */
 public class ApplicationId implements Comparable<ApplicationId> {
 
-    // TODO: remove '.' and '*' from this pattern.
-    static final Pattern namePattern = Pattern.compile("(?!\\.\\.)[a-zA-Z0-9_.*-]{1,256}");
+    static final Pattern namePattern = Pattern.compile("(?!\\.\\.)[a-zA-Z0-9_-]{1,256}");
 
-    private static final ApplicationId global = new ApplicationId(TenantName.from("*"),
-                                                                  ApplicationName.from("*"),
-                                                                  InstanceName.from("*")) {
-        @Override public boolean equals(Object other) { return this == other; }
-    };
+    private static final ApplicationId global = new ApplicationId(TenantName.from("hosted-vespa"),
+                                                                  ApplicationName.from("routing"),
+                                                                  InstanceName.from("default")) { };
 
     private static final Comparator<ApplicationId> comparator = Comparator.comparing(ApplicationId::tenant)
                                                                           .thenComparing(ApplicationId::application)

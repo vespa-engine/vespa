@@ -10,7 +10,9 @@ import java.util.List;
 import java.util.Set;
 
 import static com.yahoo.config.provision.ApplicationId.from;
+import static com.yahoo.config.provision.ApplicationId.global;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author Ulf Lilleengen
@@ -109,6 +111,13 @@ public class ApplicationIdTest {
         assertEquals("a", applicationId.tenant().value());
         assertEquals("b", applicationId.application().value());
         assertEquals("c", applicationId.instance().value());
+    }
+
+    @Test
+    public void require_that_global_is_special() {
+        assertEquals(global(), global());
+        assertNotEquals(global(), from("hosted-vespa", "routing", "default"));
+        assertEquals(global().serializedForm(), from("hosted-vespa", "routing", "default").serializedForm());
     }
 
     private ApplicationId applicationId(String applicationName) {
