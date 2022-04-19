@@ -19,10 +19,8 @@ namespace document {
 
 using namespace fieldvalue;
 
-IMPLEMENT_IDENTIFIABLE(AssignFieldPathUpdate, FieldPathUpdate);
-
 AssignFieldPathUpdate::AssignFieldPathUpdate()
-    : FieldPathUpdate(),
+    : FieldPathUpdate(Assign),
       _newValue(),
       _expression(),
       _removeIfZero(false),
@@ -34,9 +32,9 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
         const DataType& type,
         stringref fieldPath,
         stringref whereClause,
-        const FieldValue& newValue)
-    : FieldPathUpdate(fieldPath, whereClause),
-      _newValue(newValue.clone()),
+        std::unique_ptr<FieldValue> newValue)
+    : FieldPathUpdate(Assign, fieldPath, whereClause),
+      _newValue(std::move(newValue)),
       _expression(),
       _removeIfZero(false),
       _createMissingPath(true)
@@ -45,7 +43,7 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(
 }
 
 AssignFieldPathUpdate::AssignFieldPathUpdate(stringref fieldPath, stringref whereClause, stringref expression)
-    : FieldPathUpdate(fieldPath, whereClause),
+    : FieldPathUpdate(Assign, fieldPath, whereClause),
       _newValue(),
       _expression(expression),
       _removeIfZero(false),
@@ -57,12 +55,8 @@ AssignFieldPathUpdate::AssignFieldPathUpdate(stringref fieldPath, stringref wher
     }
 }
 
-AssignFieldPathUpdate::~AssignFieldPathUpdate() { }
+AssignFieldPathUpdate::~AssignFieldPathUpdate() = default;
 
-FieldPathUpdate*
-AssignFieldPathUpdate::clone() const {
-    return new AssignFieldPathUpdate(*this);
-}
 namespace {
 
 class AssignValueIteratorHandler : public IteratorHandler
@@ -186,10 +180,8 @@ AssignFieldPathUpdate::getIteratorHandler(Document& doc, const DocumentTypeRepo 
 bool
 AssignFieldPathUpdate::operator==(const FieldPathUpdate& other) const
 {
-    if (other.getClass().id() != AssignFieldPathUpdate::classId) return false;
     if (!FieldPathUpdate::operator==(other)) return false;
-    const AssignFieldPathUpdate& assignOther
-        = static_cast<const AssignFieldPathUpdate&>(other);
+    const auto & assignOther = static_cast<const AssignFieldPathUpdate&>(other);
     if (assignOther._newValue.get() && _newValue.get()) {
         if (*assignOther._newValue != *_newValue) return false;
     }
