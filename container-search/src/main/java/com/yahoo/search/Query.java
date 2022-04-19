@@ -382,7 +382,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                         .chain(new DefaultProperties());
 
             // Pass the values from the query profile which maps through a field in the Query object model
-            // through the property chain to cause those values to be set in the Query object model
+            // through the property chain to cause those values to be set in the Query object model with
+            // the right types according to query profiles
             setFieldsFrom(queryProfileProperties, requestMap);
 
             // We need special handling for "select" because it can be both the prefix of the nested JSON select

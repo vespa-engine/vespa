@@ -50,7 +50,7 @@ public class ProtobufSerialization {
         }
     }
 
-    private static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId) {
+    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId) {
         var builder = SearchProtocol.SearchRequest.newBuilder().setHits(hits).setOffset(query.getOffset())
                 .setTimeout((int) query.getTimeLeft());
 
