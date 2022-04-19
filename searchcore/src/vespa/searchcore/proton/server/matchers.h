@@ -17,7 +17,7 @@ namespace matching {
 
 class Matchers {
 private:
-    typedef vespalib::hash_map<vespalib::string, std::shared_ptr<matching::Matcher>> Map;
+    using Map = vespalib::hash_map<vespalib::string, std::shared_ptr<matching::Matcher>>;
     Map                                _rpmap;
     std::shared_ptr<matching::Matcher> _fallback;
     std::shared_ptr<matching::Matcher> _default;
@@ -27,11 +27,15 @@ public:
     Matchers(const vespalib::Clock &clock,
              matching::QueryLimiter &queryLimiter,
              const matching::IConstantValueRepo &constantValueRepo);
+    Matchers(const Matchers &) = delete;
+    Matchers & operator =(const Matchers &) = delete;
     ~Matchers();
     void add(const vespalib::string &name, std::shared_ptr<matching::Matcher> matcher);
     matching::MatchingStats getStats() const;
     matching::MatchingStats getStats(const vespalib::string &name) const;
     std::shared_ptr<matching::Matcher> lookup(const vespalib::string &name) const;
+    vespalib::string listMatchers() const;
+    uint32_t numMatchers() const { return _rpmap.size(); }
 };
 
 } // namespace proton

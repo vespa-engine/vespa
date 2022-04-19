@@ -57,4 +57,14 @@ Matchers::lookup(const vespalib::string &name) const
     //TODO add warning log message when not found, may want to use "_fallback" in most cases here
 }
 
+vespalib::string
+Matchers::listMatchers() const {
+    vespalib::string matchers;
+    for (const auto & entry : _rpmap) {
+        matchers += entry.first;
+        matchers += ' ';
+    }
+    return matchers;
+}
+
 } // namespace proton
