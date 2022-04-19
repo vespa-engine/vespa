@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -98,6 +99,10 @@ public class ContainerTester implements AutoCloseable {
                     }
                     @Override public void stopForHostSuspension(NodeAgentContext context) {
                         super.stopForHostSuspension(context);
+                        phaser.arriveAndAwaitAdvance();
+                    }
+                    @Override public void stopForRemoval(NodeAgentContext context) {
+                        super.stopForRemoval(context);
                         phaser.arriveAndDeregister();
                     }
              };
@@ -109,7 +114,7 @@ public class ContainerTester implements AutoCloseable {
 
         loopThread = new Thread(() -> {
             nodeAdminStateUpdater.start();
-            while ( !phaser.isTerminated()) {
+            while ( ! phaser.isTerminated()) {
                 try {
                     nodeAdminStateUpdater.converge(wantedState);
                 } catch (RuntimeException e) {
