@@ -20,7 +20,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/vespa-engine/vespa/client/go/auth/auth0"
 	"github.com/vespa-engine/vespa/client/go/config"
-	"github.com/vespa-engine/vespa/client/go/util"
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
@@ -433,30 +432,21 @@ func (c *Config) authConfigPath() string {
 	return filepath.Join(c.homeDir, "auth.json")
 }
 
-func (c *Config) readAPIKey(tenantName string) ([]byte, error) {
+func (c *Config) readAPIKey(cli *CLI, system vespa.System, tenantName string) ([]byte, error) {
 	if override, ok := c.apiKeyFromEnv(); ok {
 		return override, nil
 	}
-	return os.ReadFile(c.apiKeyPath(tenantName))
-}
-
-// useAPIKey returns true if an API key should be used when authenticating with system.
-func (c *Config) useAPIKey(cli *CLI, system vespa.System, tenantName string) bool {
-	if _, ok := c.apiKeyFromEnv(); ok {
-		return true
-	}
-	if _, ok := c.apiKeyFileFromEnv(); ok {
-		return true
+	if path, ok := c.apiKeyFileFromEnv(); ok {
+		return os.ReadFile(path)
 	}
 	if !cli.isCI() {
-		// Fall back to API key, if present and Auth0 has not been configured
 		client, err := auth0.New(c.authConfigPath(), system.Name, system.URL)
-		if err != nil || !client.HasCredentials() {
-			cli.printWarning("Regular authentication is preferred over API key in a non-CI context", "Authenticate with 'vespa auth login'")
-			return util.PathExists(c.apiKeyPath(tenantName))
+		if err == nil && client.HasCredentials() {
+			return nil, nil // use Auth0
 		}
+		cli.printWarning("Authenticating with API key. This is discouraged in non-CI environments", "Authenticate with 'vespa auth login'")
 	}
-	return false
+	return os.ReadFile(c.apiKeyPath(tenantName))
 }
 
 func (c *Config) readSessionID(app vespa.ApplicationID) (int64, error) {

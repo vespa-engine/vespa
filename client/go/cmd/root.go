@@ -324,11 +324,9 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions) (vespa.Ta
 	)
 	switch targetType {
 	case vespa.TargetCloud:
-		if c.config.useAPIKey(c, system, deployment.Application.Tenant) {
-			apiKey, err = c.config.readAPIKey(deployment.Application.Tenant)
-			if err != nil {
-				return nil, err
-			}
+		apiKey, err = c.config.readAPIKey(c, system, deployment.Application.Tenant)
+		if err != nil {
+			return nil, err
 		}
 		authConfigPath = c.config.authConfigPath()
 		deploymentTLSOptions = vespa.TLSOptions{}
