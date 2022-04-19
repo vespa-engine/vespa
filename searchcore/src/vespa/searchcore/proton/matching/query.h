@@ -92,7 +92,25 @@ public:
      **/
     void optimize();
     void fetchPostings();
-    void handle_global_filters(uint32_t docidLimit, double global_filter_lower_limit, double global_filter_upper_limit);
+
+    void handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit);
+
+    /**
+     * Calculates and handles the global filter if needed by the blueprint tree.
+     *
+     * The estimated hit ratio from the blueprint tree is used to select strategy:
+     * 1) estimated_hit_ratio < global_filter_lower_limit:
+     *     Nothing is done.
+     * 2) estimated_hit_ratio <= global_filter_upper_limit:
+     *     Calculate the global filter and set it on the blueprint.
+     * 3) estimated_hit_ratio > global_filter_upper_limit:
+     *     Set a "match all filter" on the blueprint.
+     *
+     * @return whether the global filter was set on the blueprint.
+     */
+    static bool handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
+                                     double global_filter_lower_limit, double global_filter_upper_limit);
+
     void freeze();
 
     /**

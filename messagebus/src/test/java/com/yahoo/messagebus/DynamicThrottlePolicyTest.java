@@ -195,7 +195,7 @@ public class DynamicThrottlePolicyTest {
             assertInRange(minMaxPending, summary.averagePending, maxMaxPending);
             for (int j = 0; j < p; j++) {
                 double expectedShare = (j + 1) / (0.5 * p * (p + 1));
-                double imperfectionFactor = 1.5;
+                double imperfectionFactor = 1.6;
                 // Actual shares are not distributed perfectly proportionally to weights, but close enough.
                 assertInRange(minMaxPending * expectedShare / imperfectionFactor,
                               summary.averageWindows[j],

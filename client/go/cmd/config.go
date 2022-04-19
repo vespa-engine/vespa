@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -153,6 +154,42 @@ $ vespa config set --local wait 600
 	return cmd
 }
 
+func newConfigUnsetCmd(cli *CLI) *cobra.Command {
+	var localArg bool
+	cmd := &cobra.Command{
+		Use:   "unset option-name",
+		Short: "Unset a configuration option.",
+		Long: `Unset a configuration option.
+
+Unsetting a configuration option will reset it to its default value, which may be empty.
+`,
+		Example: `# Reset target to its default value
+$ vespa config unset target
+
+# Stop overriding application option in local config
+$ vespa config unset --local application
+`,
+		DisableAutoGenTag: true,
+		SilenceUsage:      true,
+		Args:              cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			config := cli.config
+			if localArg {
+				if _, err := cli.applicationPackageFrom(nil, false); err != nil {
+					return fmt.Errorf("failed to write local configuration: %w", err)
+				}
+				config = cli.config.local
+			}
+			if err := config.unset(args[0]); err != nil {
+				return err
+			}
+			return config.write()
+		},
+	}
+	cmd.Flags().BoolVarP(&localArg, "local", "l", false, "Unset option in local configuration, i.e. for the current application")
+	return cmd
+}
+
 func newConfigGetCmd(cli *CLI) *cobra.Command {
 	var localArg bool
 	cmd := &cobra.Command{
@@ -174,18 +211,18 @@ $ vespa config get --local
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := cli.config
 			if localArg {
-				if cli.config.local == nil {
+				if cli.config.local.isEmpty() {
 					cli.printWarning("no local configuration present")
 					return nil
 				}
 				config = cli.config.local
 			}
 			if len(args) == 0 { // Print all values
-				for _, option := range config.list() {
+				for _, option := range config.list(!localArg) {
 					config.printOption(option)
 				}
 			} else {
-				config.printOption(args[0])
+				return config.printOption(args[0])
 			}
 			return nil
 		},
@@ -450,7 +487,21 @@ func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (stri
 	return filepath.Join(appDir, name), nil
 }
 
-func (c *Config) list() []string { return c.config.Keys() }
+func (c *Config) isEmpty() bool { return len(c.config.Keys()) == 0 }
+
+// list returns the options that have been set in this configuration. If includeUnset is true, also return options that
+// haven't been set.
+func (c *Config) list(includeUnset bool) []string {
+	if !includeUnset {
+		return c.config.Keys()
+	}
+	var flags []string
+	for k := range c.flags {
+		flags = append(flags, k)
+	}
+	sort.Strings(flags)
+	return flags
+}
 
 // flagValue returns the set value and default value of the named flag.
 func (c *Config) flagValue(name string) (string, string) {
@@ -532,11 +583,35 @@ func (c *Config) set(option, value string) error {
 			c.config.Set(option, value)
 			return nil
 		}
+	case zoneFlag:
+		if _, err := vespa.ZoneFromString(value); err != nil {
+			return err
+		}
+		c.config.Set(option, value)
+		return nil
 	}
 	return fmt.Errorf("invalid option or value: %s = %s", option, value)
 }
 
-func (c *Config) printOption(option string) {
+func (c *Config) unset(option string) error {
+	if err := c.checkOption(option); err != nil {
+		return err
+	}
+	c.config.Del(option)
+	return nil
+}
+
+func (c *Config) checkOption(option string) error {
+	if _, ok := c.flags[option]; !ok {
+		return fmt.Errorf("invalid option: %s", option)
+	}
+	return nil
+}
+
+func (c *Config) printOption(option string) error {
+	if err := c.checkOption(option); err != nil {
+		return err
+	}
 	value, ok := c.get(option)
 	if !ok {
 		faintColor := color.New(color.FgWhite, color.Faint)
@@ -545,6 +620,7 @@ func (c *Config) printOption(option string) {
 		value = color.CyanString(value)
 	}
 	log.Printf("%s = %s", option, value)
+	return nil
 }
 
 func vespaCliHome(env map[string]string) (string, error) {

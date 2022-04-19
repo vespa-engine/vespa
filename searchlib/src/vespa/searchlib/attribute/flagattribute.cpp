@@ -62,7 +62,7 @@ void FlagAttributeT<B>::clearOldValues(DocId doc)
 {
     const typename B::WType * values(nullptr);
     for (uint32_t i(0), m(this->get(doc, values)); i < m; i++) {
-        BitVector * bv = _bitVectors[getOffset(values[i].value())];
+        BitVector * bv = _bitVectors[getOffset(multivalue::get_value(values[i]))];
         if (bv != nullptr) {
             bv->clearBitAndMaintainCount(doc);
         }

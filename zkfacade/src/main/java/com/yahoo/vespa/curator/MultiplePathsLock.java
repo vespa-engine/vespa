@@ -2,8 +2,10 @@
 package com.yahoo.vespa.curator;
 
 import com.yahoo.path.Path;
+import com.yahoo.transaction.Mutex;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -14,26 +16,28 @@ import java.util.logging.Logger;
  *
  * @author hmusum
  */
-public class MultiplePathsLock extends Lock {
+public class MultiplePathsLock implements Mutex {
 
     private static final Logger log = Logger.getLogger(MultiplePathsLock.class.getName());
 
-    private final Lock oldLock;
+    private final List<Lock> locks;
 
-    public MultiplePathsLock(Path newLockPath, Path oldLockPath, Duration timeout, Curator curator) {
-        super(newLockPath.getAbsolute(), curator);
-        log.log(Level.INFO, "Acquiring lock " + oldLockPath);
-        this.oldLock = curator.lock(oldLockPath, timeout);;
-        log.log(Level.INFO, "Acquiring lock " + lockPath());
-        super.acquire(timeout);
+    /** Wrapped locks, in acquisition order. */
+    public MultiplePathsLock(Lock... locks) {
+        this.locks = List.of(locks);
     }
 
     @Override
     public void close() {
-        log.log(Level.INFO, "Closing lock " + lockPath());
-        super.close();
-        log.log(Level.INFO, "Closing lock " + oldLock.lockPath());
-        oldLock.close();
+        close(0);
+    }
+
+    private void close(int i) {
+        if (i < locks.size())
+            try (Lock lock = locks.get(i)) {
+                close(i + 1);
+                log.log(Level.INFO, "Closing lock " + lock.lockPath());
+            }
     }
 
 }

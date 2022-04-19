@@ -145,29 +145,30 @@ template <typename BaseType>
 vespalib::ConstArrayRef<typename DotProductByWeightedSetReadViewExecutor<BaseType>::AT>
 DotProductByWeightedSetReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
-    return _weighted_set_read_view->get_raw_values(docId);
+    return _weighted_set_read_view->get_values(docId);
 }
 
 namespace {
 
 class DotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
+    using IWeightedSetEnumReadView = attribute::IWeightedSetEnumReadView;
     using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
 private:
-    const IWeightedIndexVector * _attribute;
+    const IWeightedSetEnumReadView* _weighted_set_enum_read_view;
     const V & _queryVector;
     const typename V::HashMap::const_iterator _end;
     std::unique_ptr<V>     _backing;
 public:
-    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, const V & queryVector);
-    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, std::unique_ptr<V> queryVector);
+    DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, const V & queryVector);
+    DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, std::unique_ptr<V> queryVector);
     ~DotProductExecutorByEnum() override;
     void execute(uint32_t docId) override;
 };
 
-DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, const V & queryVector)
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, const V & queryVector)
     : FeatureExecutor(),
-      _attribute(attribute),
+      _weighted_set_enum_read_view(weighted_set_enum_read_view),
       _queryVector(queryVector),
       _end(_queryVector.getDimMap().end()),
       _backing()
@@ -175,9 +176,9 @@ DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * 
 }
 
 
-DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, std::unique_ptr<V> queryVector)
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, std::unique_ptr<V> queryVector)
     : FeatureExecutor(),
-      _attribute(attribute),
+      _weighted_set_enum_read_view(weighted_set_enum_read_view),
       _queryVector(*queryVector),
       _end(_queryVector.getDimMap().end()),
       _backing(std::move(queryVector))
@@ -189,9 +190,8 @@ DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
 void
 DotProductExecutorByEnum::execute(uint32_t docId) {
     feature_t val = 0;
-    const IWeightedIndexVector::WeightedIndex *values(nullptr);
-    uint32_t sz = _attribute->getEnumHandles(docId, values);
-    for (size_t i = 0; i < sz; ++i) {
+    auto values = _weighted_set_enum_read_view->get_values(docId);
+    for (size_t i = 0; i < values.size(); ++i) {
         auto itr = _queryVector.getDimMap().find(values[i].value_ref().load_relaxed().ref());
         if (itr != _end) {
             val += values[i].weight() * itr->second;
@@ -202,16 +202,16 @@ DotProductExecutorByEnum::execute(uint32_t docId) {
 
 class SingleDotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
-    SingleDotProductExecutorByEnum(const IWeightedIndexVector * attribute, EnumHandle key, feature_t value)
-        : _attribute(attribute),
+    using IWeightedSeEnumReadView = attribute::IWeightedSetEnumReadView;
+    SingleDotProductExecutorByEnum(const IWeightedSetEnumReadView * weighted_set_enum_read_view, EnumHandle key, feature_t value)
+        : _weighted_set_enum_read_view(weighted_set_enum_read_view),
           _key(key),
           _value(value)
     {}
 
     void execute(uint32_t docId) override {
-        const IWeightedIndexVector::WeightedIndex *values(nullptr);
-        uint32_t sz = _attribute->getEnumHandles(docId, values);
-        for (size_t i = 0; i < sz; ++i) {
+        auto values = _weighted_set_enum_read_view->get_values(docId);
+        for (size_t i = 0; i < values.size(); ++i) {
             if (values[i].value_ref().load_relaxed().ref() == _key) {
                 outputs().set_number(0, values[i].weight()*_value);
                 return;
@@ -220,7 +220,7 @@ public:
         outputs().set_number(0, 0);
     }
 private:
-    const IWeightedIndexVector * _attribute;
+    const IWeightedSetEnumReadView * _weighted_set_enum_read_view;
     EnumHandle                   _key;
     feature_t                    _value;
 };
@@ -236,7 +236,7 @@ public:
     {}
 
     void execute(uint32_t docId) override {
-        auto values = _weighted_set_read_view->get_raw_values(docId);
+        auto values = _weighted_set_read_view->get_values(docId);
         for (size_t i = 0; i < values.size(); ++i) {
             if (values[i].value() == _key) {
                 outputs().set_number(0, values[i].weight() * _value);
@@ -272,9 +272,8 @@ template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     auto values = getAttributeValues(docId);
     size_t commonRange = std::min(values.size(), _queryVector.size());
-    static_assert(std::is_same_v<multivalue::ValueType_t<AT>, BaseType>);
     outputs().set_number(0, _multiplier.dotProduct(
-            &_queryVector[0], reinterpret_cast<const multivalue::ValueType_t<AT> *>(values.data()), commonRange));
+            &_queryVector[0], values.data(), commonRange));
 }
 
 template <typename BaseType>
@@ -288,10 +287,10 @@ template <typename BaseType>
 DotProductByArrayReadViewExecutor<BaseType>::~DotProductByArrayReadViewExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<typename DotProductByArrayReadViewExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 DotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
-    return _array_read_view->get_raw_values(docId);
+    return _array_read_view->get_values(docId);
 }
 
 template <typename A>
@@ -326,10 +325,10 @@ template <typename BaseType>
 SparseDotProductByArrayReadViewExecutor<BaseType>::~SparseDotProductByArrayReadViewExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<typename SparseDotProductByArrayReadViewExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docid)
 {
-    auto allValues = _array_read_view->get_raw_values(docid);
+    auto allValues = _array_read_view->get_values(docid);
     size_t i(0);
     for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < allValues.size()); i++) {
         _scratch[i] = allValues[_queryIndexes[i]];
@@ -348,7 +347,7 @@ template <typename A>
 DotProductByCopyExecutor<A>::~DotProductByCopyExecutor() = default;
 
 template <typename A>
-vespalib::ConstArrayRef<typename DotProductByCopyExecutor<A>::AT>
+vespalib::ConstArrayRef<typename A::BaseType>
 DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
 {
     size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
@@ -356,7 +355,7 @@ DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
         _copy.resize(count);
         count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
     }
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_copy.data()), count);
+    return vespalib::ConstArrayRef(_copy.data(), count);
 }
 
 template <typename A>
@@ -371,7 +370,7 @@ template <typename A>
 SparseDotProductByCopyExecutor<A>::~SparseDotProductByCopyExecutor() = default;
 
 template <typename A>
-vespalib::ConstArrayRef<typename SparseDotProductByCopyExecutor<A>::AT>
+vespalib::ConstArrayRef<typename A::BaseType>
 SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
 {
     size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
@@ -383,7 +382,7 @@ SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
     for (const IV & iv(this->_queryIndexes); (i < iv.size()) && (iv[i] < count); i++) {
         _copy[i] = _copy[iv[i]];
     }
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_copy.data()), i);
+    return vespalib::ConstArrayRef(_copy.data(), i);
 }
 
 template <typename BaseType>
@@ -400,29 +399,11 @@ DotProductByContentFillExecutor<BaseType>::DotProductByContentFillExecutor(
 template <typename BaseType>
 DotProductByContentFillExecutor<BaseType>::~DotProductByContentFillExecutor() = default;
 
-namespace {
-
-template<typename T> struct IsNonWeightedType : std::false_type {};
-template<typename BaseType> struct IsNonWeightedType<multivalue::Value<BaseType>> : std::true_type {};
-
-// Compile-time sanity check for type compatibility of gnarly BaseType <-> multivalue::Value
-// reinterpret_cast used by some getAttributeValues calls.
-template <typename BaseType, typename AttributeValueType, typename FillerValueType>
-constexpr void sanity_check_reinterpret_cast_compatibility() {
-    static_assert(IsNonWeightedType<AttributeValueType>::value);
-    static_assert(sizeof(BaseType) == sizeof(AttributeValueType));
-    static_assert(sizeof(BaseType) == sizeof(FillerValueType));
-    static_assert(std::is_same_v<BaseType, multivalue::ValueType_t<AttributeValueType>>);
-}
-
-}
-
 template <typename BaseType>
-vespalib::ConstArrayRef<typename DotProductByContentFillExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 DotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid) {
     _filler.fill(*_attribute, docid);
-    sanity_check_reinterpret_cast_compatibility<BaseType, AT, decltype(*_filler.data())>();
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(_filler.data()), _filler.size());
+    return vespalib::ConstArrayRef(_filler.data(), _filler.size());
 }
 
 template <typename BaseType>
@@ -442,7 +423,7 @@ template <typename BaseType>
 SparseDotProductByContentFillExecutor<BaseType>::~SparseDotProductByContentFillExecutor() = default;
 
 template <typename BaseType>
-vespalib::ConstArrayRef<typename SparseDotProductByContentFillExecutor<BaseType>::AT>
+vespalib::ConstArrayRef<BaseType>
 SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid)
 {
     _filler.fill(*_attribute, docid);
@@ -454,8 +435,7 @@ SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t doc
         data[i] = data[_queryIndexes[i]];
     }
 
-    sanity_check_reinterpret_cast_compatibility<BaseType, AT, decltype(*_filler.data())>();
-    return vespalib::ConstArrayRef(reinterpret_cast<const AT *>(data), i);
+    return vespalib::ConstArrayRef(data, i);
 }
 
 }
@@ -553,27 +533,14 @@ using dotproduct::ArrayParam;
 
 template <typename AT>
 const attribute::IMultiValueReadView<AT>*
-get_multi_value_read_view(const IAttributeVector& attribute)
+make_multi_value_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
 {
     auto multi_value_attribute = attribute.as_multi_value_attribute();
     if (multi_value_attribute != nullptr) {
-        return multi_value_attribute->as_read_view(attribute::IMultiValueAttribute::Tag<AT>());
+        return multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<AT>(), stash);
     }
     return nullptr;
 }
-
-bool supportsGetEnumHandles(const IWeightedIndexVector * attr) noexcept {
-    if (attr == nullptr) return false;
-    try {
-        const IWeightedIndexVector::WeightedIndex * tmp = nullptr;
-        attr->getEnumHandles(0, tmp); // Throws if unsupported
-        return true;
-    } catch (const std::runtime_error & e) {
-        (void) e;
-        return false;
-    }
-}
-
 
 // Precondition: attribute->isImported() == false
 template <typename A>
@@ -588,8 +555,8 @@ createForDirectArrayImpl(const IAttributeVector * attribute,
     }
     const A * iattr = dynamic_cast<const A *>(attribute);
     using T = typename A::BaseType;
-    using VT = multivalue::Value<T>;
-    auto array_read_view = get_multi_value_read_view<VT>(*attribute);
+    using VT = T;
+    auto array_read_view = make_multi_value_read_view<VT>(*attribute, stash);
     if (indexes.empty()) {
         if (array_read_view != nullptr) {
             return stash.create<dotproduct::array::DotProductByArrayReadViewExecutor<T>>(array_read_view, values);
@@ -691,7 +658,7 @@ createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespali
     using T = typename A::BaseType;
     const A * iattr = dynamic_cast<const A *>(attribute);
     using VT = multivalue::WeightedValue<T>;
-    auto weighted_set_read_view = get_multi_value_read_view<VT>(*attribute);
+    auto weighted_set_read_view = make_multi_value_read_view<VT>(*attribute, stash);
     if (!attribute->isImported() && (iattr != nullptr) && weighted_set_read_view != nullptr) {
         if (extractSize(vector) == 1) {
             auto elem = extractElem(vector, 0ul);
@@ -751,13 +718,14 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
             if (vector.empty()) {
                 return stash.create<SingleZeroValueExecutor>();
             }
-            const auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
-            if (supportsGetEnumHandles(getEnumHandles)) {
+            using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
+            auto* weighted_set_enum_read_view = make_multi_value_read_view<VT>(*attribute, stash);
+            if (weighted_set_enum_read_view != nullptr) {
                 if (vector.getVector().size() == 1) {
                     const auto & elem = vector.getVector()[0];
-                    return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+                    return stash.create<SingleDotProductExecutorByEnum>(weighted_set_enum_read_view, elem.first, elem.second);
                 }
-                return stash.create<DotProductExecutorByEnum>(getEnumHandles, vector);
+                return stash.create<DotProductExecutorByEnum>(weighted_set_enum_read_view, vector);
             }
             return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, vector);
         } else {
@@ -845,13 +813,14 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
             return stash.create<SingleZeroValueExecutor>();
         }
         vector->syncMap();
-        auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
-        if (supportsGetEnumHandles(getEnumHandles)) {
+        using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
+        auto* weighted_set_enum_read_view = make_multi_value_read_view<VT>(*attribute, stash);
+        if (weighted_set_enum_read_view != nullptr) {
             if (vector->getVector().size() == 1) {
                 const auto & elem = vector->getVector()[0];
-                return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+                return stash.create<SingleDotProductExecutorByEnum>(weighted_set_enum_read_view, elem.first, elem.second);
             }
-            return stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
+            return stash.create<DotProductExecutorByEnum>(weighted_set_enum_read_view, std::move(vector));
         }
         return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, std::move(vector));
     } else {

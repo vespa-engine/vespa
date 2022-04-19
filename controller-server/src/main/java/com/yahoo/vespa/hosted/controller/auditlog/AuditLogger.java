@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.auditlog;
 
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -70,7 +71,7 @@ public class AuditLogger {
         Instant now = clock.instant();
         AuditLog.Entry entry = new AuditLog.Entry(now, principal.getName(), method.get(), pathAndQueryOf(request.getUri()),
                                                   Optional.of(new String(data, StandardCharsets.UTF_8)));
-        try (Lock lock = db.lockAuditLog()) {
+        try (Mutex lock = db.lockAuditLog()) {
             AuditLog auditLog = db.readAuditLog()
                                   .pruneBefore(now.minus(entryTtl))
                                   .with(entry)

@@ -302,10 +302,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     public void archive_uri_test() {
-        new DeploymentTester(new ControllerTester(tester))
-                .newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
-                .submit()
-                .deploy();
+        ControllerTester wrapped = new ControllerTester(tester);
+        wrapped.upgradeSystem(Version.fromString("7.1"));
+        new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
+                                     .submit()
+                                     .deploy();
 
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
                 (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),

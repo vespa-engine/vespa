@@ -58,7 +58,7 @@ public:
         if (indices.size() == 0) {
             return T();
         } else {
-            return this->_enumStore.get_value(indices[0].value_ref().load_acquire());
+            return this->_enumStore.get_value(multivalue::get_value_ref(indices[0]).load_acquire());
         }
     }
     largeint_t getInt(DocId doc) const override {
@@ -73,7 +73,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
-            buffer[i] = static_cast<BufferType>(this->_enumStore.get_value(indices[i].value_ref().load_acquire()));
+            buffer[i] = static_cast<BufferType>(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire()));
         }
         return valueCount;
     }
@@ -92,7 +92,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(indices[i].value_ref().load_acquire())), indices[i].weight());
+            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire())), multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }

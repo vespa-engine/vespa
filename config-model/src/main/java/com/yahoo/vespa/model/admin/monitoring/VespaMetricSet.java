@@ -855,6 +855,15 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.visitor.sum.latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("vds.distributor.visitor.sum.ok.rate"));
         metrics.add(new Metric("vds.distributor.visitor.sum.failures.total.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.notready.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.notconnected.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.wrongdistributor.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.safe_time_not_reached.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.storagefailure.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.timeout.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.busy.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.inconsistent_bucket.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.notfound.rate"));
 
         metrics.add(new Metric("vds.distributor.docsstored.average"));
         metrics.add(new Metric("vds.distributor.bytesstored.average"));

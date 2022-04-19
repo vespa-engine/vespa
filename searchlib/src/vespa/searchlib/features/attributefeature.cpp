@@ -139,13 +139,14 @@ public:
 /**
  * Implements the executor for fetching values from a single or array attribute vector
  */
-template <typename T>
+template <typename BaseType>
 class MultiAttributeExecutor final : public fef::FeatureExecutor {
 private:
-    const T & _attribute;
+    using ArrayReadView = attribute::IArrayReadView<BaseType>;
+    const ArrayReadView* _array_read_view;
     uint32_t  _idx;
 public:
-    MultiAttributeExecutor(const T & attribute, uint32_t idx) : _attribute(attribute), _idx(idx) { }
+    MultiAttributeExecutor(const ArrayReadView* array_read_view, uint32_t idx) : _array_read_view(array_read_view), _idx(idx) { }
     void execute(uint32_t docId) override;
     void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
@@ -238,15 +239,13 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
                      : util::getAsFeature(v);
 }
 
-template <typename T>
+template <typename BaseType>
 void
-MultiAttributeExecutor<T>::execute(uint32_t docId)
+MultiAttributeExecutor<BaseType>::execute(uint32_t docId)
 {
-    const multivalue::Value<typename T::BaseType> * values = nullptr;
-    uint32_t numValues = _attribute.getRawValues(docId, values);
-
+    auto values = _array_read_view->get_values(docId);
     auto o = outputs().get_bound();
-    o[0].as_number = __builtin_expect(_idx < numValues, true) ? values[_idx].value() : 0;
+    o[0].as_number = __builtin_expect(_idx < values.size(), true) ? multivalue::get_value(values[_idx]) : 0;
 }
 
 void
@@ -339,19 +338,21 @@ private:
 
 template <typename T>
 struct MultiValueExecutorCreator {
-    using AttrType = MultiValueNumericAttribute<T, multivalue::Value<typename T::BaseType>>;
-    using PtrType = const AttrType *;
-    using ExecType = MultiAttributeExecutor<AttrType>;
-    MultiValueExecutorCreator() : ptr(nullptr) {}
-    bool handle(const IAttributeVector *attribute) {
-        ptr = dynamic_cast<PtrType>(attribute);
-        return ptr != nullptr;
+    using ArrayReadView = attribute::IArrayReadView<typename T::BaseType>;
+    using ExecType = MultiAttributeExecutor<typename T::BaseType>;
+    MultiValueExecutorCreator() : _array_read_view(nullptr) {}
+    bool handle(vespalib::Stash &stash, const IAttributeVector *attribute) {
+        auto multi_value_attribute = attribute->as_multi_value_attribute();
+        if (multi_value_attribute != nullptr) {
+            _array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<typename T::BaseType>(), stash);
+        }
+        return _array_read_view != nullptr;
     }
     fef::FeatureExecutor & create(vespalib::Stash &stash, uint32_t idx) const {
-        return stash.create<ExecType>(*ptr, idx);
+        return stash.create<ExecType>(_array_read_view, idx);
     }
 private:
-    PtrType ptr;
+    const ArrayReadView* _array_read_view;
 };
 
 fef::FeatureExecutor &
@@ -421,19 +422,19 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         } else if (attribute->isIntegerType()) {
             if (basicType == BasicType::INT32) {
                 MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else if (basicType == BasicType::INT64) {
                 MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
         } else { // FLOAT
             if (basicType == BasicType::DOUBLE) {
                 MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else {
                 MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }

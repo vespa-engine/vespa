@@ -182,6 +182,8 @@ public class DeploymentStatus {
     }
 
     private Map<JobId, List<Job>> jobsToRun(Map<InstanceName, Change> changes, boolean eagerTests) {
+        if (application.revisions().last().isEmpty()) return Map.of();
+
         Map<JobId, List<Job>> productionJobs = new LinkedHashMap<>();
         changes.forEach((instance, change) -> productionJobs.putAll(productionJobs(instance, change, eagerTests)));
         Map<JobId, List<Job>> testJobs = testJobs(productionJobs);

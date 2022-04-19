@@ -60,10 +60,10 @@ MultiValueEnumAttribute<B, M>::applyValueChanges(const DocIndices& docIndices, E
         uint32_t valueCount = oldIndices.size();
         this->_mvMapping.set(doc_values.first, doc_values.second);
         for (uint32_t i = 0; i < doc_values.second.size(); ++i) {
-            updater.inc_ref_count(doc_values.second[i].value_ref().load_relaxed());
+            updater.inc_ref_count(multivalue::get_value_ref(doc_values.second[i]).load_relaxed());
         }
         for (uint32_t i = 0; i < valueCount; ++i) {
-            updater.dec_ref_count(oldIndices[i].value_ref().load_relaxed());
+            updater.dec_ref_count(multivalue::get_value_ref(oldIndices[i]).load_relaxed());
         }
     }
 }
@@ -80,7 +80,7 @@ MultiValueEnumAttribute<B, M>::fillValues(LoadedVector & loaded)
         this->_mvMapping.prepareLoadFromMultiValue();
         for (DocId doc = 0; doc < numDocs; ++doc) {
             for(const auto* v = & loaded.read();(count < numValues) && (v->_docId == doc); count++, loaded.next(), v = & loaded.read()) {
-                indices.push_back(WeightedIndex(AtomicEntryRef(v->getEidx()), v->getWeight()));
+                indices.push_back(multivalue::ValueBuilder<WeightedIndex>::build(AtomicEntryRef(v->getEidx()), v->getWeight()));
             }
             this->checkSetMaxValueCount(indices.size());
             this->_mvMapping.set(doc, indices);
@@ -130,31 +130,6 @@ MultiValueEnumAttribute(const vespalib::string &baseFileName,
                         const AttributeVector::Config & cfg)
     : MultiValueAttribute<B, M>(baseFileName, cfg)
 {
-}
-
-namespace {
-
-template<typename T>
-const IWeightedIndexVector::WeightedIndex *
-extract(const T *) {
-    throw std::runtime_error("IWeightedIndexVector::getEnumHandles not implemented");
-}
-
-template <>
-inline const IWeightedIndexVector::WeightedIndex *
-extract(const IWeightedIndexVector::WeightedIndex * values) {
-    return values;
-}
-
-}
-
-template <typename B, typename M>
-uint32_t
-MultiValueEnumAttribute<B, M>::getEnumHandles(DocId doc, const IWeightedIndexVector::WeightedIndex * & values) const
-{
-    WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
-    values = extract(&indices[0]);
-    return indices.size();
 }
 
 template <typename B, typename M>

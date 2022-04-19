@@ -35,18 +35,6 @@ template<typename T>
 IntegerAttributeTemplate<T>::~IntegerAttributeTemplate() = default;
 
 template<typename T>
-uint32_t
-IntegerAttributeTemplate<T>::getRawValues(DocId, const multivalue::Value<T> * &) const {
-    throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
-}
-
-template<typename T>
-uint32_t
-IntegerAttributeTemplate<T>::getRawValues(DocId, const multivalue::WeightedValue<T> * &) const {
-    throw std::runtime_error(getNativeClassName() + "::getRawValues() not implemented.");
-}
-
-template<typename T>
 bool
 IntegerAttributeTemplate<T>::findEnum(const char *value, EnumHandle &e) const {
     vespalib::asciistream iss(value);

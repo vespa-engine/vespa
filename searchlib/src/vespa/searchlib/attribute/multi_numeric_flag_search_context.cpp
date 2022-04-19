@@ -45,6 +45,6 @@ MultiNumericFlagSearchContext<T, M>::createIterator(fef::TermFieldMatchData* mat
     }
 }
 
-template class MultiNumericFlagSearchContext<int8_t, multivalue::Value<int8_t>>;
+template class MultiNumericFlagSearchContext<int8_t, int8_t>;
 
 }

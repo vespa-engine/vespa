@@ -698,10 +698,21 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service", GET)
                                       .userIdentity(USER_ID),
                               new File("services.json"));
+
         // GET service
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/state/v1/", GET)
                                       .userIdentity(USER_ID),
                               new File("service.json"));
+
+        // GET service/state/v1
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/service/storagenode/host.com/state/v1/?foo=bar", GET)
+                                      .userIdentity(USER_ID),
+                              new File("service"));
+
+        // GET orchestrator
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/orchestrator", GET)
+                                      .userIdentity(USER_ID),
+                              "{\"json\":\"thank you very much\"}");
 
         // DELETE application with active deployments fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)

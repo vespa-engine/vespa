@@ -9,14 +9,14 @@
 namespace search::attribute {
 
 /**
- * Read view for the raw data stored in a multi-value attribute.
- * @tparam MultiValueType The multi-value type of the raw data to access.
+ * Read view for the data stored in a multi-value attribute.
+ * @tparam MultiValueType The multi-value type of the data to access.
  */
 template <typename MultiValueType>
 class IMultiValueReadView {
 public:
     virtual ~IMultiValueReadView() {}
-    virtual vespalib::ConstArrayRef<MultiValueType> get_raw_values(uint32_t docid) const = 0;
+    virtual vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t docid) const = 0;
 };
 
 /**
@@ -24,7 +24,7 @@ public:
  * @tparam T The value type of the raw data to access.
  */
 template <typename T>
-using IArrayReadView = IMultiValueReadView<multivalue::Value<T>>;
+using IArrayReadView = IMultiValueReadView<T>;
 
 /**
  * Read view for the raw data stored in a weighted set attribute.

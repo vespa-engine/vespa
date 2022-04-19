@@ -10,21 +10,6 @@
 
 namespace search {
 
-class IWeightedIndexVector {
-public:
-    virtual ~IWeightedIndexVector() = default;
-    using WeightedIndex = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
-    /**
-     * Provides a reference to the underlying enum/weight pairs.
-     * This method should only be invoked if @ref getCollectionType(docId) returns CollectionType::WEIGHTED_SET.
-     *
-     * @param doc document identifier
-     * @param values Reference to values and weights
-     * @return the number of values for this document
-     **/
-    virtual uint32_t getEnumHandles(uint32_t doc, const WeightedIndex * & values) const;
-};
-
 class ReaderBase;
 
 /**
@@ -35,8 +20,7 @@ class ReaderBase;
  * M: MultiValueType
  */
 template <typename B, typename M>
-class MultiValueEnumAttribute : public MultiValueAttribute<B, M>,
-                                public IWeightedIndexVector
+class MultiValueEnumAttribute : public MultiValueAttribute<B, M>
 {
 protected:
     using AtomicEntryRef = vespalib::datastore::AtomicEntryRef;
@@ -76,8 +60,6 @@ protected:
 public:
     MultiValueEnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
 
-    uint32_t getEnumHandles(DocId doc, const IWeightedIndexVector::WeightedIndex * & values) const override final;
-
     void onCommit() override;
     void onUpdateStat() override;
 
@@ -92,7 +74,7 @@ public:
         if (indices.size() == 0) {
             return std::numeric_limits<uint32_t>::max();
         } else {
-            return indices[0].value_ref().load_acquire().ref();
+            return multivalue::get_value_ref(indices[0]).load_acquire().ref();
         }
     }
 
@@ -100,7 +82,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            e[i] = indices[i].value_ref().load_acquire().ref();
+            e[i] = multivalue::get_value_ref(indices[i]).load_acquire().ref();
         }
         return valueCount;
     }
@@ -108,7 +90,7 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            e[i] = WeightedEnum(indices[i].value_ref().load_acquire().ref(), indices[i].weight());
+            e[i] = WeightedEnum(multivalue::get_value_ref(indices[i]).load_acquire().ref(), multivalue::get_weight(indices[i]));
         }
         return valueCount;
     }

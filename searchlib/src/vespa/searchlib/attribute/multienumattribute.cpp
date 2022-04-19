@@ -4,20 +4,11 @@
 #include "multienumattribute.hpp"
 #include <stdexcept>
 
-namespace search {
-
-uint32_t
-IWeightedIndexVector::getEnumHandles(uint32_t, const WeightedIndex * &) const {
-    throw std::runtime_error("IWeightedIndexVector::getEnumHandles() not implmented");
-}
-
-}
-
 namespace search::multienumattribute {
 
 using EnumIndex = IEnumStore::Index;
 using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
-using Value = multivalue::Value<vespalib::datastore::AtomicEntryRef>;
+using Value = vespalib::datastore::AtomicEntryRef;
 using WeightedValue = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
 
 template <typename WeightedIndex>
@@ -33,10 +24,10 @@ remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v, att
         for (uint32_t doc = 0; doc < v.getNumDocs(); ++doc) {
             vespalib::ArrayRef<WeightedIndex> indices(multi_value_mapping.get_writable(doc));
             for (auto& entry : indices) {
-                EnumIndex ref = entry.value_ref().load_relaxed();
+                EnumIndex ref = multivalue::get_value_ref(entry).load_relaxed();
                 if (ref.valid() && filter.has(ref)) {
                     ref = remapper.remap(ref);
-                    entry.value_ref().store_release(ref);
+                    multivalue::get_value_ref(entry).store_release(ref);
                 }
             }
         }

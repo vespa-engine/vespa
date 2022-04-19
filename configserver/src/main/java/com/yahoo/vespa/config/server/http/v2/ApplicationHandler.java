@@ -39,6 +39,7 @@ import com.yahoo.vespa.config.server.http.v2.response.ReindexingResponse;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
@@ -87,7 +88,7 @@ public class ApplicationHandler extends HttpHandler {
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/metrics/proton")) return protonMetrics(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/reindexing")) return getReindexingStatus(applicationId(path));
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/status/{*}")) return serviceStatusPage(applicationId(path), path.get("service"), path.get("hostname"), path.getRest(), request);
-        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/state/v1/metrics")) return serviceStateV1metrics(applicationId(path), path.get("service"), path.get("hostname"));
+        if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/service/{service}/{hostname}/state/v1/{*}")) return serviceStateV1(applicationId(path), path.get("service"), path.get("hostname"), path.getRest(), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge")) return listServiceConverge(applicationId(path), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/serviceconverge/{hostAndPort}")) return checkServiceConverge(applicationId(path), path.get("hostAndPort"), request);
         if (path.matches("/application/v2/tenant/{tenant}/application/{application}/environment/{ignore}/region/{ignore}/instance/{instance}/suspended")) return isSuspended(applicationId(path));
@@ -147,11 +148,16 @@ public class ApplicationHandler extends HttpHandler {
             default:
                 throw new com.yahoo.vespa.config.server.NotFoundException("No status page for service: " + service);
         }
-        return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service, pathPrefix.append(pathSuffix), Query.empty().add(request.getJDiscRequest().parameters()));
+        return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service, pathPrefix.append(pathSuffix), Query.empty().add(request.getJDiscRequest().parameters()), null);
     }
 
-    private HttpResponse serviceStateV1metrics(ApplicationId applicationId, String service, String hostname) {
-        return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service, HttpURL.Path.parse("/state/v1/metrics"), Query.empty());
+    private HttpResponse serviceStateV1(ApplicationId applicationId, String service, String hostname, HttpURL.Path rest, HttpRequest request) {
+        Query query = Query.empty().add(request.getJDiscRequest().parameters());
+        String forwardedUrl = query.lastEntries().get("forwarded-url");
+        return applicationRepository.proxyServiceHostnameRequest(applicationId, hostname, service,
+                                                                 HttpURL.Path.parse("/state/v1").append(rest),
+                                                                 query.remove("forwarded-url"),
+                                                                 forwardedUrl == null ? null : HttpURL.from(URI.create(forwardedUrl)));
     }
 
     private HttpResponse content(ApplicationId applicationId, HttpURL.Path contentPath, HttpRequest request) {

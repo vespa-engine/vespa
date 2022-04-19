@@ -74,6 +74,7 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 import static com.yahoo.config.provision.NodeResources.StorageType.remote;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author mortent
@@ -536,7 +537,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public ProxyResponse getServiceNodePage(DeploymentId deployment, String serviceName, DomainName node, Path subPath, Query query) {
-        return new ProxyResponse("<h1>OK</h1>".getBytes(StandardCharsets.UTF_8), "text/html", 200);
+        return new ProxyResponse((subPath + " and " + query).getBytes(UTF_8), "text/html", 200);
+    }
+
+    @Override
+    public ProxyResponse getServiceNodes(DeploymentId deployment) {
+        return new ProxyResponse("{\"json\":\"thank you very much\"}".getBytes(UTF_8), "application.json", 200);
     }
 
     @Override
@@ -566,12 +572,12 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Override
     public InputStream getLogs(DeploymentId deployment, Map<String, String> queryParameters) {
-        return new ByteArrayInputStream(log.get().getBytes(StandardCharsets.UTF_8));
+        return new ByteArrayInputStream(log.get().getBytes(UTF_8));
     }
 
     @Override
     public ProxyResponse getApplicationPackageContent(DeploymentId deployment, Path path, URI requestUri) {
-        return new ProxyResponse(("{\"path\":\"/" + String.join("/", path.segments()) + "\"}").getBytes(StandardCharsets.UTF_8), "application/json", 200);
+        return new ProxyResponse(("{\"path\":\"/" + String.join("/", path.segments()) + "\"}").getBytes(UTF_8), "application/json", 200);
     }
 
     public void setLogStream(Supplier<String> log) {

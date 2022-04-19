@@ -46,6 +46,13 @@ func (c *Config) Set(key, value string) {
 	c.values[key] = value
 }
 
+// Del removes the value associated with key.
+func (c *Config) Del(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	delete(c.values, key)
+}
+
 // Write writes config in YAML format to writer w.
 func (c *Config) Write(w io.Writer) error {
 	c.mu.RLock()

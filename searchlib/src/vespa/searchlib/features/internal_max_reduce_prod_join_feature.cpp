@@ -32,42 +32,51 @@ namespace {
  */
 template<typename BaseType>
 class RawExecutor : public FeatureExecutor {
-private:
+    using ArrayReadView = attribute::IArrayReadView<BaseType>;
     std::unique_ptr<IntegerVector> _backing;
-protected:
-    const IAttributeVector *_attribute;
-    const IntegerVector    &_queryVector;
+    const ArrayReadView*           _array_read_view;
+    const IntegerVector&           _queryVector;
 
 public:
-    RawExecutor(const IAttributeVector *attribute, const IntegerVector & queryVector);
-    RawExecutor(const IAttributeVector *attribute, std::unique_ptr<IntegerVector> queryVector);
+    RawExecutor(const ArrayReadView* array_read_view, const IntegerVector& queryVector);
+    RawExecutor(const ArrayReadView* array_read_view, std::unique_ptr<IntegerVector> queryVector);
 
     void execute(uint32_t docId) override;
 };
 
 template<typename BaseType>
-RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute,  std::unique_ptr<IntegerVector> queryVector)
+RawExecutor<BaseType>::RawExecutor(const ArrayReadView* array_read_view,  std::unique_ptr<IntegerVector> queryVector)
     : FeatureExecutor(),
       _backing(std::move(queryVector)),
-      _attribute(attribute),
+      _array_read_view(array_read_view),
       _queryVector(*_backing)
 {
 }
 
 template<typename BaseType>
-RawExecutor<BaseType>::RawExecutor(const IAttributeVector *attribute, const IntegerVector & queryVector)
+RawExecutor<BaseType>::RawExecutor(const ArrayReadView* array_read_view, const IntegerVector& queryVector)
     : FeatureExecutor(),
       _backing(),
-      _attribute(attribute),
+      _array_read_view(array_read_view),
       _queryVector(queryVector)
 {
+}
+
+namespace {
+
+template <typename T>
+inline T get_array_element_value(const T& value) noexcept { return multivalue::get_value(value); }
+
+template <typename T>
+inline T get_array_element_value(const search::attribute::WeightedType<T>& value) noexcept { return value.value(); }
+
 }
 
 template<typename A, typename V>
 feature_t maxProduct(const A &array, size_t count, const V &query) {
     feature_t val = -std::numeric_limits<double>::max();
     for (size_t i = 0; i < count; ++i) {
-        auto itr = query.getDimMap().find(array[i].value());
+        auto itr = query.getDimMap().find(get_array_element_value(array[i]));
         if (itr != query.getDimMap().end()) {
             feature_t v = itr->second; // weight from attribute is assumed to be 1.0
             if (v > val) {
@@ -81,20 +90,20 @@ feature_t maxProduct(const A &array, size_t count, const V &query) {
 template<typename BaseType>
 void
 RawExecutor<BaseType>::execute(uint32_t docId) {
-    using A = IntegerAttributeTemplate<BaseType>;
-    const multivalue::Value<BaseType> *values(nullptr);
-    const A *iattr = static_cast<const A *>(_attribute);
-    size_t count = iattr->getRawValues(docId, values);
-    outputs().set_number(0, maxProduct(values, count, _queryVector));
+    auto values = _array_read_view->get_values(docId);
+    outputs().set_number(0, maxProduct(values.data(), values.size(), _queryVector));
 }
 
 /**
  * Executor when array can't be accessed directly
  */
 template<typename BaseType>
-class BufferedExecutor : public RawExecutor<BaseType> {
+class BufferedExecutor : public FeatureExecutor {
 private:
-    WeightedIntegerContent _buffer;
+    std::unique_ptr<IntegerVector> _backing;
+    const IAttributeVector*        _attribute;
+    const IntegerVector&           _queryVector;
+    WeightedIntegerContent         _buffer;
 
 public:
     BufferedExecutor(const IAttributeVector *attribute, const IntegerVector & queryVector);
@@ -104,15 +113,21 @@ public:
 };
 
 template<typename BaseType>
-BufferedExecutor<BaseType>::BufferedExecutor(const IAttributeVector *attribute, const IntegerVector & queryVector)
-    : RawExecutor<BaseType>(attribute, queryVector),
+BufferedExecutor<BaseType>::BufferedExecutor(const IAttributeVector *attribute, const IntegerVector& queryVector)
+    : FeatureExecutor(),
+      _backing(),
+      _attribute(attribute),
+      _queryVector(queryVector),
       _buffer()
 {
 }
 
 template<typename BaseType>
 BufferedExecutor<BaseType>::BufferedExecutor(const IAttributeVector *attribute, std::unique_ptr<IntegerVector> queryVector)
-    : RawExecutor<BaseType>(attribute, std::move(queryVector)),
+    : FeatureExecutor(),
+      _backing(std::move(queryVector)),
+      _attribute(attribute),
+      _queryVector(*_backing),
       _buffer()
 {
 }
@@ -125,32 +140,16 @@ BufferedExecutor<BaseType>::execute(uint32_t docId) {
     this->outputs().set_number(0, maxProduct(_buffer, _buffer.size(), this->_queryVector));
 }
 
-
-template<typename A>
-bool supportsGetRawValues(const A &attr) noexcept {
-    try {
-        const multivalue::Value<typename A::BaseType> *tmp = nullptr;
-        attr.getRawValues(0, tmp); // Throws if unsupported
-        return true;
-    } catch (const std::runtime_error &e) {
-        (void) e;
-        return false;
-    }
-}
-
 template<typename BaseType, typename V>
 FeatureExecutor &
 selectTypedExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &stash) {
     if (!attribute->isImported()) {
-        using A = IntegerAttributeTemplate<BaseType>;
-        using VT = multivalue::Value<BaseType>;
-        using ExactA = MultiValueNumericAttribute<A, VT>;
-
-        const A *iattr = dynamic_cast<const A *>(attribute);
-        if (supportsGetRawValues(*iattr)) {
-            const ExactA *exactA = dynamic_cast<const ExactA *>(iattr);
-            if (exactA != nullptr) {
-                return stash.create<RawExecutor<BaseType>>(attribute, std::forward<V>(vector));
+        using VT = BaseType;
+        auto multi_value_attribute = attribute->as_multi_value_attribute();
+        if (multi_value_attribute != nullptr) {
+            auto array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<VT>(), stash);
+            if (array_read_view != nullptr) {
+                return stash.create<RawExecutor<BaseType>>(array_read_view, std::forward<V>(vector));
             }
         }
     }

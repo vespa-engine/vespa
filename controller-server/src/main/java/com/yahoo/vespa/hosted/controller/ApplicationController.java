@@ -13,6 +13,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Text;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -402,7 +403,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(TenantAndApplicationId id, Credentials credentials) {
-        try (Lock lock = lock(id)) {
+        try (Mutex lock = lock(id)) {
             if (getApplication(id).isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (getApplication(dashToUnderscore(id)).isPresent()) // VESPA-1945
@@ -456,7 +457,7 @@ public class ApplicationController {
         ZoneId zone = job.type().zone(controller.system());
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
-        try (Lock deploymentLock = lockForDeployment(job.application(), zone)) {
+        try (Mutex deploymentLock = lockForDeployment(job.application(), zone)) {
             Set<ContainerEndpoint> containerEndpoints;
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
 
@@ -470,7 +471,7 @@ public class ApplicationController {
             RevisionId revision = run.versions().sourceRevision().filter(__ -> deploySourceVersions).orElse(run.versions().targetRevision());
             ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(deployment, revision));
 
-            try (Lock lock = lock(applicationId)) {
+            try (Mutex lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
                 Instance instance = application.get().require(job.application().instance());
 
@@ -742,7 +743,7 @@ public class ApplicationController {
      * @param action Function which acts on the locked application.
      */
     public void lockApplicationIfPresent(TenantAndApplicationId applicationId, Consumer<LockedApplication> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Mutex lock = lock(applicationId)) {
             getApplication(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
         }
     }
@@ -755,7 +756,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException when application does not exist.
      */
     public void lockApplicationOrThrow(TenantAndApplicationId applicationId, Consumer<LockedApplication> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Mutex lock = lock(applicationId)) {
             action.accept(new LockedApplication(requireApplication(applicationId), lock));
         }
     }
@@ -828,14 +829,14 @@ public class ApplicationController {
      * Any operation which stores an application need to first acquire this lock, then read, modify
      * and store the application, and finally release (close) the lock.
      */
-    Lock lock(TenantAndApplicationId application) {
+    Mutex lock(TenantAndApplicationId application) {
         return curator.lock(application);
     }
 
     /**
      * Returns a lock which provides exclusive rights to deploying this application to the given zone.
      */
-    private Lock lockForDeployment(ApplicationId application, ZoneId zone) {
+    private Mutex lockForDeployment(ApplicationId application, ZoneId zone) {
         return curator.lockForDeployment(application, zone);
     }
 

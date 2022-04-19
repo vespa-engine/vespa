@@ -5,6 +5,7 @@
 #include "numeric_search_context.h"
 #include "enumstore.h"
 #include "multi_value_mapping_read_view.h"
+#include <vespa/searchcommon/attribute/multivalue.h>
 
 namespace search::attribute {
 
@@ -35,9 +36,9 @@ public:
     int32_t find(DocId doc, int32_t elemId, int32_t & weight) const {
         auto indices(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < indices.size(); i++) {
-            T v = _enum_store.get_value(indices[i].value_ref().load_acquire());
+            T v = _enum_store.get_value(multivalue::get_value_ref(indices[i]).load_acquire());
             if (this->match(v)) {
-                weight = indices[i].weight();
+                weight = multivalue::get_weight(indices[i]);
                 return i;
             }
         }
@@ -48,7 +49,7 @@ public:
     int32_t find(DocId doc, int32_t elemId) const {
         auto indices(_mv_mapping_read_view.get(doc));
         for (uint32_t i(elemId); i < indices.size(); i++) {
-            T v = _enum_store.get_value(indices[i].value_ref().load_acquire());
+            T v = _enum_store.get_value(multivalue::get_value_ref(indices[i]).load_acquire());
             if (this->match(v)) {
                 return i;
             }

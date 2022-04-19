@@ -68,7 +68,7 @@ public:
             if (_indexes.size() >= _indexes.capacity()) {
                 flush();
             }
-            _indexes.push_back(valueRef.value_ref().load_acquire());
+            _indexes.push_back(multivalue::get_value_ref(valueRef).load_acquire());
         }
     }
 };
@@ -134,7 +134,7 @@ onSave(IAttributeSaveTarget &saveTarget)
     return !compaction_broke_save;
 }
 
-using EnumIdxArray = multivalue::Value<vespalib::datastore::AtomicEntryRef>;
+using EnumIdxArray = vespalib::datastore::AtomicEntryRef;
 using EnumIdxWset = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
 
 template class MultiValueEnumAttributeSaver<EnumIdxArray>;
