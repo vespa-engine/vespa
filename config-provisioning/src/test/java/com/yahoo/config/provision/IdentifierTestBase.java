@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.testing.EqualsTester;
 import org.junit.Test;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -12,7 +15,6 @@ import static org.junit.Assert.assertTrue;
 /**
  * Generic test for identifiers such as {@link Environment} and {@link RegionName}.
  * @author Ulf Lilleengen
- * @since 5.23
  */
 public abstract class IdentifierTestBase<ID_TYPE> {
 
@@ -34,10 +36,8 @@ public abstract class IdentifierTestBase<ID_TYPE> {
 
     @Test
     public void testEquals() {
-        new EqualsTester()
-                .addEqualityGroup(createInstance("foo"), createInstance("foo"))
-                .addEqualityGroup(createInstance("bar"))
-                .addEqualityGroup(createInstance("baz"))
-                .testEquals();
+        assertEquals(Set.of(createInstance("foo"), createInstance("bar"), createInstance("baz")),
+                     new HashSet<>(List.of(createInstance("foo"), createInstance("foo"), createInstance("bar"), createInstance("baz"))));
     }
+
 }

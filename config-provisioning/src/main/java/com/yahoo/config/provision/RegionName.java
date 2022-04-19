@@ -1,56 +1,35 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import java.util.Objects;
+import ai.vespa.validation.PatternedStringWrapper;
+
+import java.util.regex.Pattern;
 
 /**
- * Represents an application's region, which may be any kind of string or default. This type is defined
- * in order to provide a type safe API for defining regions.
+ * A region in a hosted Vespa system.
+ * A region name must be all lowercase, start with a letter, and contain letters and digits, separated by dashes.
  *
- * @author Ulf Lilleengen
- * @since 5.11
+ * @author jonmv
  */
-public class RegionName implements Comparable<RegionName> {
+public class RegionName extends PatternedStringWrapper<RegionName> {
 
-    private final String region;
+    private static final Pattern pattern = Pattern.compile("[a-z]([a-z0-9-]*[a-z0-9])*");
+    private static final RegionName defaultName = from("default");
 
     private RegionName(String region) {
-        this.region = region;
+        super(region, pattern, "region name");
     }
 
-    @Override
-    public int hashCode() {
-        return region.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof RegionName)) return false;
-        return Objects.equals(((RegionName) obj).region, region);
-    }
-
-    @Override
-    public String toString() {
-        return region;
-    }
-
-    // TODO: Add verification of region name.
     public static RegionName from(String region) {
         return new RegionName(region);
     }
 
     public static RegionName defaultName() {
-        return new RegionName("default");
+        return defaultName;
     }
 
     public boolean isDefault() {
-        return equals(RegionName.defaultName());
+        return equals(defaultName());
     }
 
-    public String value() { return region; }
-
-    @Override
-    public int compareTo(RegionName region) {
-        return this.region.compareTo(region.region);
-    }
 }
