@@ -22,25 +22,25 @@ import java.util.logging.Logger;
  * @author bratseth
  * @author bjorncs
  */
-public class DefaultContainerThreadpool extends AbstractComponent implements AutoCloseable, ContainerThreadPool {
+public class ContainerThreadpoolImpl extends AbstractComponent implements AutoCloseable, ContainerThreadPool {
 
-    private static final Logger log = Logger.getLogger(DefaultContainerThreadpool.class.getName());
+    private static final Logger log = Logger.getLogger(ContainerThreadpoolImpl.class.getName());
     private static final int MIN_QUEUE_SIZE = 650;
     private static final int MIN_THREADS_WHEN_SCALE_FACTOR = 8;
 
     private final ExecutorServiceWrapper threadpool;
 
     @Inject
-    public DefaultContainerThreadpool(ContainerThreadpoolConfig config, Metric metric) {
+    public ContainerThreadpoolImpl(ContainerThreadpoolConfig config, Metric metric) {
         this(config, metric, new ProcessTerminator());
     }
 
-    public DefaultContainerThreadpool(ContainerThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator) {
+    public ContainerThreadpoolImpl(ContainerThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator) {
         this(config, metric, processTerminator, Runtime.getRuntime().availableProcessors());
     }
 
-    DefaultContainerThreadpool(ContainerThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator,
-                               int cpus) {
+    ContainerThreadpoolImpl(ContainerThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator,
+                            int cpus) {
         String name = config.name();
         int maxThreads = maxThreads(config, cpus);
         int minThreads = minThreads(config, maxThreads, cpus);

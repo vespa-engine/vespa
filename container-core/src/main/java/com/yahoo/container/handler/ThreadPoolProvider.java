@@ -6,15 +6,16 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
-import com.yahoo.container.handler.threadpool.DefaultContainerThreadpool;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolImpl;
 import com.yahoo.container.protect.ProcessTerminator;
 import com.yahoo.jdisc.Metric;
 
 import java.util.concurrent.Executor;
 
 /**
- * A configurable thread pool provider. This provides the worker threads used for normal request processing.
- * Request an Executor injected in your component constructor if you want to use it.
+ * A configurable thread pool provider for the jdisc default threadpool.
+ * This provides the worker threads used for normal request processing.
+ * Request an {@link Executor} injected in your component constructor if you want to use it.
  *
  * @author Steinar Knutsen
  * @author baldersheim
@@ -26,11 +27,11 @@ public class ThreadPoolProvider extends AbstractComponent implements Provider<Ex
 
     @Inject
     public ThreadPoolProvider(ThreadpoolConfig config, Metric metric) {
-        this.threadpool = new DefaultContainerThreadpool(translateConfig(config), metric);
+        this.threadpool = new ContainerThreadpoolImpl(translateConfig(config), metric);
     }
 
     public ThreadPoolProvider(ThreadpoolConfig config, Metric metric, ProcessTerminator processTerminator) {
-        this.threadpool = new DefaultContainerThreadpool(translateConfig(config), metric, processTerminator);
+        this.threadpool = new ContainerThreadpoolImpl(translateConfig(config), metric, processTerminator);
     }
 
     /**

@@ -20,7 +20,7 @@ import static org.junit.Assert.fail;
  * @author Steinar Knutsen
  * @author bjorncs
  */
-public class DefaultContainerThreadPoolTest {
+public class ContainerThreadPoolImplTest {
 
     private static final int CPUS = 16;
 
@@ -28,7 +28,7 @@ public class DefaultContainerThreadPoolTest {
     public final void testThreadPool() throws InterruptedException {
         Metric metrics = new MetricMock();
         ContainerThreadpoolConfig config = new ContainerThreadpoolConfig(new ContainerThreadpoolConfig.Builder().maxThreads(1));
-        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, metrics);
+        ContainerThreadPool threadPool = new ContainerThreadpoolImpl(config, metrics);
         Executor exec = threadPool.executor();
         Tuple2<Receiver.MessageState, Boolean> reply;
         FlipIt command = new FlipIt();
@@ -66,7 +66,7 @@ public class DefaultContainerThreadPoolTest {
                 .maxThreads(maxThreads)
                 .minThreads(maxThreads)
                 .queueSize(queueSize));
-        ContainerThreadPool threadPool = new DefaultContainerThreadpool(
+        ContainerThreadPool threadPool = new ContainerThreadpoolImpl(
                 config, metric, new MockProcessTerminator(), CPUS);
         ExecutorServiceWrapper wrapper = (ExecutorServiceWrapper) threadPool.executor();
         WorkerCompletionTimingThreadPoolExecutor executor = (WorkerCompletionTimingThreadPoolExecutor)wrapper.delegate();
@@ -128,7 +128,7 @@ public class DefaultContainerThreadPoolTest {
                         .maxThreadExecutionTimeSeconds(1));
         MockProcessTerminator terminator = new MockProcessTerminator();
         Metric metrics = new MetricMock();
-        ContainerThreadPool threadPool = new DefaultContainerThreadpool(config, metrics, terminator);
+        ContainerThreadPool threadPool = new ContainerThreadpoolImpl(config, metrics, terminator);
 
         // No dying when threads hang shorter than max thread execution time
         threadPool.executor().execute(new Hang(500));
