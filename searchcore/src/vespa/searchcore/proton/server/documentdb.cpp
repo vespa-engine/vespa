@@ -765,7 +765,12 @@ DocumentDB::match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle
 {
     // Ignore input searchhandler. Use readysubdb's searchhandler instead.
     ISearchHandler::SP view(_subDBs.getReadySubDB()->getSearchView());
-    return view->match(req, threadBundle);
+    try {
+        return view->match(req, threadBundle);
+    } catch (const std::exception & e) {
+        LOG(warning, "match failed for document type '%s' with exception: %s", getName().c_str(), e.what());
+        throw e;
+    }
 }
 
 std::unique_ptr<DocsumReply>
