@@ -204,10 +204,11 @@ public abstract class ConfigSubscription<T extends ConfigInstance> {
         if (previousConfig != null && configChanged) {
             SnippetGenerator generator = new SnippetGenerator();
             int sizeHint = 500;
-            log.log(Level.INFO, "Config has changed unexpectedly for " + key + ", generation " + generation +
+            log.log(Level.WARNING, "Config has changed unexpectedly for " + key + ", generation " + generation +
                     ", config in state :" + generator.makeSnippet(previousConfig.toString(), sizeHint) + ", new config: " +
                     generator.makeSnippet(config.toString(), sizeHint) +
-                    ". This might happen if a feature flag is changed when upgrading config servers (either in code or with overrides)");
+                    ". This likely happened because config changed on a previous generation" +
+                    ", look for earlier entry in log with warning about config changing without a change in config generation.");
         }
         this.config.set(new ConfigState<>(true, generation, applyOnRestart, configChanged, config, payloadChecksums));
     }
