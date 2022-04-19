@@ -566,6 +566,9 @@ public class JobController {
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment.*/
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage, boolean dryRun) {
+        if ( ! controller.zoneRegistry().hasZone(type.zone()))
+            throw new IllegalArgumentException(type.zone() + " is not present in this system");
+
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
