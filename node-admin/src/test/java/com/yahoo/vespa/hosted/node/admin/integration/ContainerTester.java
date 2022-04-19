@@ -101,6 +101,10 @@ public class ContainerTester implements AutoCloseable {
                         super.stopForHostSuspension(context);
                         phaser.arriveAndAwaitAdvance();
                     }
+                    @Override public void stopForRemoval(NodeAgentContext context) {
+                        super.stopForRemoval(context);
+                        phaser.arriveAndDeregister();
+                    }
              };
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
