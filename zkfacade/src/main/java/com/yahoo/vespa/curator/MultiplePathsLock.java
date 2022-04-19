@@ -1,10 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
-import com.yahoo.path.Path;
 import com.yahoo.transaction.Mutex;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -36,7 +34,7 @@ public class MultiplePathsLock implements Mutex {
         if (i < locks.size())
             try (Lock lock = locks.get(i)) {
                 close(i + 1);
-                log.log(Level.INFO, "Closing lock " + lock.lockPath());
+                log.log(Level.FINE, "Closing lock " + lock.lockPath());
             }
     }
 
