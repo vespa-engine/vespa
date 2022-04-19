@@ -119,14 +119,12 @@ public class VespaModelFactory implements ModelFactory {
         for (ConfigChangeAction action : changeActions) {
             if (action.getType().equals(ConfigChangeAction.Type.REINDEX)) {
                 VespaModel currentModel = (VespaModel) currentActiveModel.get();
-                var currentVersion = currentModel.version();
                 var currentMeta = currentModel.applicationPackage().getMetaData();
-                var nextVersion = nextModel.version();
                 var nextMeta = nextModel.applicationPackage().getMetaData();
                 log.log(Level.INFO, String.format("Model [%s/%s] -> [%s/%s] triggers reindexing: %s",
                                                   currentModel.version().toString(), currentMeta.toString(),
                                                   nextModel.version().toString(), nextMeta.toString(),
-                                                  action.toString()));
+                                                  action));
             }
         }
     }

@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
  */
 public class AthenzDomain {
 
-    private static final Pattern NAME_PATTERN = Pattern.compile("[a-zA-Z0-9_][a-zA-Z0-9_\\-.]*[a-zA-Z0-9_]");
+    private static final Pattern NAME_PATTERN = Pattern.compile("[a-zA-Z0-9_][a-zA-Z0-9_.-]*[a-zA-Z0-9_]");
 
     private final String name;
 
