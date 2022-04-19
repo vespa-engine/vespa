@@ -31,7 +31,7 @@ public:
 
     virtual ~FieldPathUpdate();
 
-    FieldPathUpdateType type() const { return _type; }
+    FieldPathUpdateType type() const noexcept { return _type; }
     void applyTo(Document& doc) const;
 
     virtual bool operator==(const FieldPathUpdate& other) const;
