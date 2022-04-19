@@ -12,6 +12,7 @@ import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentOperationParameters;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response;
+import com.yahoo.documentapi.Response.Outcome;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
@@ -70,7 +71,7 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         params.setTraceLevel(9);
         access = new MessageBusDocumentAccess(params);
 
-        destination = new VisitableDestination(slobrokConfigId, params.getDocumentManagerConfigId());
+        destination = new Destination(slobrokConfigId, params.getDocumentManagerConfigId());
     }
 
     @After
@@ -79,25 +80,6 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         destination.shutdown();
         slobrok.stop();
     }
-
-    private static class VisitableDestination extends Destination {
-        private VisitableDestination(String slobrokConfigId, String documentManagerConfigId) {
-            super(slobrokConfigId, documentManagerConfigId);
-        }
-
-        public void handleMessage(Message msg) {
-            if (msg.getType() == DocumentProtocol.MESSAGE_CREATEVISITOR) {
-                Reply reply = ((DocumentMessage)msg).createReply();
-                msg.swapState(reply);
-                CreateVisitorReply visitorReply = (CreateVisitorReply)reply;
-                visitorReply.setLastBucket(ProgressToken.FINISHED_BUCKET);
-                sendReply(reply);
-            } else {
-                super.handleMessage(msg);
-            }
-        }
-    }
-
 
     @Test
     public void requireThatVisitorSessionWorksWithMessageBus() throws ParseException, InterruptedException {
@@ -119,17 +101,19 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         AsyncSession session = access().createAsyncSession(new AsyncParameters());
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
         Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
+
+        destination.phaser.register();
         assertTrue(session.put(new DocumentPut(doc1),
                                DocumentOperationParameters.parameters()
                                                           .withResponseHandler(result -> {
                                                               response.set(result);
                                                               latch.countDown();
                                                           })
-                                                          .withDeadline(Instant.now().minusSeconds(1)))
+                                                          .withDeadline(Instant.now().plusMillis(100)))
                           .isSuccess());
         assertTrue(latch.await(60, TimeUnit.SECONDS));
-        assertNotNull(response.get());
         assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
+        destination.phaser.arriveAndDeregister();
         session.destroy();
     }
 
