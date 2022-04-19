@@ -71,7 +71,7 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         params.setTraceLevel(9);
         access = new MessageBusDocumentAccess(params);
 
-        destination = new VisitableDestination(slobrokConfigId, params.getDocumentManagerConfigId());
+        destination = new Destination(slobrokConfigId, params.getDocumentManagerConfigId());
     }
 
     @After
@@ -80,25 +80,6 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         destination.shutdown();
         slobrok.stop();
     }
-
-    private static class VisitableDestination extends Destination {
-        private VisitableDestination(String slobrokConfigId, String documentManagerConfigId) {
-            super(slobrokConfigId, documentManagerConfigId);
-        }
-
-        public void handleMessage(Message msg) {
-            if (msg.getType() == DocumentProtocol.MESSAGE_CREATEVISITOR) {
-                Reply reply = ((DocumentMessage)msg).createReply();
-                msg.swapState(reply);
-                CreateVisitorReply visitorReply = (CreateVisitorReply)reply;
-                visitorReply.setLastBucket(ProgressToken.FINISHED_BUCKET);
-                sendReply(reply);
-            } else {
-                super.handleMessage(msg);
-            }
-        }
-    }
-
 
     @Test
     public void requireThatVisitorSessionWorksWithMessageBus() throws ParseException, InterruptedException {
@@ -121,23 +102,18 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
         Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
 
-        // The setup is broken. Zero or negative timeout has semantics in messagebus, so ensuring a timeout is impossible,as negative
-        // remaining time is converted to 1 ms further down. We therefore try tenfold, and accept > 0 timeouts as success ...  (；☉_☉)
-        // We could return a timeout from the destination, but then we're not testing what we want, namely that the sender times out.
-        int attempts = 10;
-        for (int i = 0; ++i <= attempts; ) {
-            assertTrue(session.put(new DocumentPut(doc1),
-                                   DocumentOperationParameters.parameters()
-                                                              .withResponseHandler(result -> {
-                                                                  response.set(result);
-                                                                  latch.countDown();
-                                                              })
-                                                              .withDeadline(Instant.now().plusMillis(40)))
-                              .isSuccess());
-            assertTrue(latch.await(60, TimeUnit.SECONDS));
-            if (response.get().outcome() == Outcome.TIMEOUT) break;
-            if (i == attempts) assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
-        }
+        destination.phaser.register();
+        assertTrue(session.put(new DocumentPut(doc1),
+                               DocumentOperationParameters.parameters()
+                                                          .withResponseHandler(result -> {
+                                                              response.set(result);
+                                                              latch.countDown();
+                                                          })
+                                                          .withDeadline(Instant.now().plusMillis(100)))
+                          .isSuccess());
+        assertTrue(latch.await(60, TimeUnit.SECONDS));
+        assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
+        destination.phaser.arriveAndDeregister();
         session.destroy();
     }
 

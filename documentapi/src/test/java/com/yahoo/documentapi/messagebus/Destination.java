@@ -4,9 +4,11 @@ package com.yahoo.documentapi.messagebus;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentAccessParams;
+import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.SyncParameters;
 import com.yahoo.documentapi.SyncSession;
 import com.yahoo.documentapi.local.LocalDocumentAccess;
+import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
@@ -28,6 +30,7 @@ import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Phaser;
 
 /**
  * Mock-up destination used for testing.
@@ -35,6 +38,8 @@ import java.util.List;
  * @author Einar M R Rosenvinge
  */
 public class Destination implements MessageHandler {
+
+    final Phaser phaser = new Phaser(1);
 
     private final DestinationSession session;
     private final DocumentAccess access;
@@ -55,33 +60,35 @@ public class Destination implements MessageHandler {
         session = bus.getMessageBus().createDestinationSession("session", true, this);
     }
 
-    protected void sendReply(Reply reply) {
-        session.reply(reply);
-    }
-
     public void handleMessage(Message msg) {
+
+        phaser.arriveAndAwaitAdvance();
         Reply reply = ((DocumentMessage)msg).createReply();
         try {
             switch (msg.getType()) {
 
-            case DocumentProtocol.MESSAGE_GETDOCUMENT:
-                reply = new GetDocumentReply(local.get(((GetDocumentMessage)msg).getDocumentId()));
-                break;
+                case DocumentProtocol.MESSAGE_GETDOCUMENT:
+                    reply = new GetDocumentReply(local.get(((GetDocumentMessage)msg).getDocumentId()));
+                    break;
 
-            case DocumentProtocol.MESSAGE_PUTDOCUMENT:
-                local.put(((PutDocumentMessage)msg).getDocumentPut());
-                break;
+                case DocumentProtocol.MESSAGE_PUTDOCUMENT:
+                    local.put(((PutDocumentMessage)msg).getDocumentPut());
+                    break;
 
-            case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
-                local.remove(new DocumentRemove(((RemoveDocumentMessage)msg).getDocumentId()));
-                break;
+                case DocumentProtocol.MESSAGE_REMOVEDOCUMENT:
+                    local.remove(new DocumentRemove(((RemoveDocumentMessage)msg).getDocumentId()));
+                    break;
 
-            case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
-                local.update(((UpdateDocumentMessage)msg).getDocumentUpdate());
-                break;
+                case DocumentProtocol.MESSAGE_UPDATEDOCUMENT:
+                    local.update(((UpdateDocumentMessage)msg).getDocumentUpdate());
+                    break;
 
-            default:
-                throw new UnsupportedOperationException("Unsupported message type '" + msg.getType() + "'.");
+                case DocumentProtocol.MESSAGE_CREATEVISITOR:
+                    ((CreateVisitorReply) reply).setLastBucket(ProgressToken.FINISHED_BUCKET);
+                    break;
+
+                default:
+                    throw new UnsupportedOperationException("Unsupported message type '" + msg.getType() + "'.");
             }
         } catch (Exception e) {
             reply = new EmptyReply();
