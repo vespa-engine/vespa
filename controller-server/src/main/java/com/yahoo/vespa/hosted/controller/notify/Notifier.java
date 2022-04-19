@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.notify;
 
+import com.yahoo.config.provision.Environment;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
@@ -56,7 +57,12 @@ public class Notifier {
 
     private boolean skipSource(NotificationSource source) {
         // Limit sources to production systems only. Dev and test systems cause too much noise at the moment.
-        return source.jobType().map(t -> !t.isProduction()).orElse(false);
+        if (source.zoneId().map(z -> z.environment() != Environment.prod).orElse(false)) {
+            return true;
+        } else if (source.jobType().map(t -> !t.isProduction()).orElse(false)) {
+            return true;
+        }
+        return false;
     }
 
     public void dispatch(Notification notification) {
