@@ -6,7 +6,6 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
 import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
-import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.FleetControllerContext;
 import com.yahoo.vespa.clustercontroller.core.rpc.EnvelopedClusterStateBundleCodec;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlimeClusterStateBundleCodec;
@@ -44,7 +43,6 @@ public class ZooKeeperDatabase extends Database {
     private final ZooKeeper session;
     private boolean sessionOpen = true;
     private final FleetControllerContext context;
-    private final int nodeIndex;
     private final MasterDataGatherer masterDataGatherer;
     // Expected ZK znode versions. Note: these are _not_ -1 as that would match anything.
     // We expect the caller to invoke the load methods prior to calling any store methods.
@@ -102,17 +100,16 @@ public class ZooKeeperDatabase extends Database {
         }
     }
 
-    public ZooKeeperDatabase(FleetControllerContext context, ContentCluster cluster, int nodeIndex, String address, int timeout, DatabaseListener zksl) throws IOException, KeeperException, InterruptedException {
+    public ZooKeeperDatabase(FleetControllerContext context, String address, int timeout, DatabaseListener zksl) throws IOException, KeeperException, InterruptedException {
         this.context = context;
-        this.nodeIndex = nodeIndex;
-        this.paths = new ZooKeeperPaths(cluster.getName(), nodeIndex);
+        this.paths = new ZooKeeperPaths(context.id());
         session = new ZooKeeper(address, timeout, watcher, new ZkClientConfigBuilder().toConfig());
         boolean completedOk = false;
         try{
             this.listener = zksl;
             setupRoot();
             context.log(log, Level.FINEST, "Asking for initial data on master election");
-            masterDataGatherer = new MasterDataGatherer(session, paths, listener, nodeIndex);
+            masterDataGatherer = new MasterDataGatherer(session, paths, listener, context.id().index());
             completedOk = true;
         } finally {
             if (!completedOk) session.close();
@@ -145,10 +142,10 @@ public class ZooKeeperDatabase extends Database {
         createNode(paths.startTimestamps(), new byte[0]);
         createNode(paths.latestVersion(), Integer.valueOf(0).toString().getBytes(utf8));
         createNode(paths.publishedStateBundle(), new byte[0]); // TODO dedupe string constants
-        byte[] val = String.valueOf(nodeIndex).getBytes(utf8);
-        deleteNodeIfExists(paths.indexesOfMe());
+        byte[] val = String.valueOf(context.id().index()).getBytes(utf8);
+        deleteNodeIfExists(paths.indexOfMe());
         context.log(log, Level.INFO, "Creating ephemeral master vote node with vote to self.");
-        session.create(paths.indexesOfMe(), val, acl, CreateMode.EPHEMERAL);
+        session.create(paths.indexOfMe(), val, acl, CreateMode.EPHEMERAL);
     }
 
     private void deleteNodeIfExists(String path) throws KeeperException, InterruptedException {
@@ -188,8 +185,8 @@ public class ZooKeeperDatabase extends Database {
     public boolean storeMasterVote(int wantedMasterIndex) {
         byte[] val = String.valueOf(wantedMasterIndex).getBytes(utf8);
         try{
-            session.setData(paths.indexesOfMe(), val, -1);
-            context.log(log, Level.INFO, "Stored new vote in ephemeral node. " + nodeIndex + " -> " + wantedMasterIndex);
+            session.setData(paths.indexOfMe(), val, -1);
+            context.log(log, Level.INFO, "Stored new vote in ephemeral node. " + context.id().index() + " -> " + wantedMasterIndex);
             return true;
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

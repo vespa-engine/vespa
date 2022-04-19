@@ -191,9 +191,8 @@ public class DatabaseHandler {
                 // being called, but after receiving a database loss event.
                 clearSessionMetaData(false);
                 fleetControllerContext.log(logger, Level.INFO, "Setting up new ZooKeeper session at " + zooKeeperAddress);
-                DatabaseFactory.Params params = new DatabaseFactory.Params()
-                        .cluster(cluster)
-                        .nodeIndex(fleetControllerContext.id().index())
+                DatabaseFactory.Params params = new DatabaseFactory
+                        .Params()
                         .databaseAddress(zooKeeperAddress)
                         .databaseSessionTimeout(zooKeeperSessionTimeout)
                         .databaseListener(dbListener);

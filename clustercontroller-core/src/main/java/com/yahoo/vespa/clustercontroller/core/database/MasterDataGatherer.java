@@ -54,7 +54,7 @@ public class MasterDataGatherer {
                     synchronized (nextMasterData) {
                         nextMasterData.put(index, null);
                     }
-                    session.getData(paths.indexesOf(index), this, nodeListener, null);
+                    session.getData(paths.indexOf(index), this, nodeListener, null);
                     break;
                 case NodeCreated: // How can this happen? Can one leave watches on non-existing nodes?
                     log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeCreated");
@@ -85,8 +85,8 @@ public class MasterDataGatherer {
                     int index = Integer.parseInt(node);
                     nextMasterData.put(index, null);
                     log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '"
-                                              + paths.indexesOf(index) + "' to see vote");
-                    session.getData(paths.indexesOf(index), changeWatcher, nodeListener, null);
+                                              + paths.indexOf(index) + "' to see vote");
+                    session.getData(paths.indexOf(index), changeWatcher, nodeListener, null);
                     // Invocation of cycleCompleted() for fully accumulated election state will happen
                     // as soon as all getData calls have been processed.
                 }
