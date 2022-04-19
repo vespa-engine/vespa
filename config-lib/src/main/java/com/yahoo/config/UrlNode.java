@@ -28,6 +28,10 @@ public class UrlNode extends LeafNode<File> {
         this.value = new File(url.value());
     }
 
+    public UrlNode(String url) {
+        this(new UrlReference(url));
+    }
+
     public File value() {
         return value;
     }
@@ -58,6 +62,16 @@ public class UrlNode extends LeafNode<File> {
     public static Map<String, UrlReference> toUrlReferenceMap(Map<String, UrlNode> urlNodeMap) {
         return urlNodeMap.entrySet().stream().collect(
                 Collectors.toMap(Map.Entry::getKey, e -> e.getValue().getUrlReference()));
+    }
+
+    @Override
+    void serialize(String name, Serializer serializer) {
+        serializer.serialize(name, url.value());
+    }
+
+    @Override
+    void serialize(Serializer serializer) {
+        serializer.serialize(url.value());
     }
 
 }

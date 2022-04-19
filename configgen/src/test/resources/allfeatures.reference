@@ -406,6 +406,9 @@ public final class AllfeaturesConfig extends ConfigInstance {
       return this;
     }
 
+    private Builder urlVal(String __value) {
+      return urlVal(UrlReference.valueOf(__value));
+    }
 
     public Builder boolarr(Boolean __value) {
       boolarr.add(__value);
@@ -527,6 +530,10 @@ public final class AllfeaturesConfig extends ConfigInstance {
       return this;
     }
 
+    private Builder urlArr(String __value) {
+      return urlArr(UrlReference.valueOf(__value));
+    }
+
     public Builder intMap(String __key, Integer __value) {
       intMap.put(__key, __value);
       return this;
@@ -559,6 +566,10 @@ public final class AllfeaturesConfig extends ConfigInstance {
     public Builder urlMap(Map<String, UrlReference> __values) {
       urlMap.putAll(__values);
       return this;
+    }
+
+    private Builder urlMap(String __key, String __value) {
+      return urlMap(__key, UrlReference.valueOf(__value));
     }
 
     public Builder basic_struct(Basic_struct.Builder __builder) {

@@ -1,7 +1,8 @@
-package=ai.vespa.embedding
+
+namespace=embedding
 
 # Transformer model settings
-transformerModelUrl  url
+transformerModelUrl  url  default=https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx
 
 # Max length of token sequence model can handle
 transformerMaxTokens int default=384
@@ -23,5 +24,4 @@ onnxInterOpThreads int default=1
 onnxIntraOpThreads int default=-4  # n=number of threads -> n<0: CPUs/(-n), n==0: CPUs, n>0: n
 
 # Settings for wordpiece tokenizer
-tokenizerVocabUrl  url
-
+tokenizerVocabUrl  url default=https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt
