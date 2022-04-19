@@ -182,7 +182,7 @@ public class Grouping extends Identifiable {
      *
      * @param level the level to add
      * @return this, to allow chaining
-     * @throws NullPointerException ff <code>level</code> argument is null
+     * @throws NullPointerException if <code>level</code> argument is null
      */
     public Grouping addLevel(GroupingLevel level) {
         groupingLevels.add(Objects.requireNonNull(level));
