@@ -194,7 +194,9 @@ public class JRTConfigRequester implements RequestWaiter {
         failures = 0;
         sub.setLastCallBackOKTS(Instant.now());
         log.log(FINE, () -> "OK response received in handleOkRequest: " + jrtReq);
-        sub.updateConfig(jrtReq);
+        if (jrtReq.hasUpdatedGeneration()) {
+            sub.updateConfig(jrtReq);
+        }
         scheduleNextRequest(jrtReq, sub, calculateSuccessDelay(), calculateSuccessTimeout());
     }
 

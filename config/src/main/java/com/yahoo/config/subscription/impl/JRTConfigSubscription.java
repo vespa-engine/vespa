@@ -4,7 +4,6 @@ package com.yahoo.config.subscription.impl;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
 import com.yahoo.config.subscription.ConfigInterruptedException;
-import com.yahoo.text.internal.SnippetGenerator;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.TimingValues;
@@ -17,7 +16,6 @@ import java.time.Instant;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
 import static com.yahoo.vespa.config.PayloadChecksum.Type.MD5;
 import static java.util.logging.Level.FINE;
@@ -65,16 +63,6 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
             } else {
                 setNewConfigAndGeneration(response);
             }
-        } else if (response.hasUpdatedConfig()) {
-            SnippetGenerator generator = new SnippetGenerator();
-            int sizeHint = 500;
-            T config = toConfigInstance(response);
-            log.log(Level.WARNING, "Config " + key + " has changed without a change in config generation: generation " +
-                    response.getNewGeneration() + ", config: " + generator.makeSnippet(config.toString(), sizeHint) +
-                    ". This might happen when a newly upgraded config server responds with different config when bootstrapping  " +
-                    " (changes to code generating config that are different between versions) or non-deterministic config generation" +
-                    " (e.g. when using collections with non-deterministic iteration order)");
-            setNewConfigAndGeneration(response);
         }
 
         return newConfigOrException();
@@ -153,7 +141,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return configInstance;
     }
 
-    // Called by JRTConfigRequester when there is a config response for this subscription
+    // Called by JRTConfigRequester when there is a config with new generation for this subscription
     void updateConfig(JRTClientConfigRequest jrtReq) {
         if ( ! responseQueue.offer(jrtReq))
             setException(new ConfigurationRuntimeException("Failed offering returned request to queue of subscription " + this));
