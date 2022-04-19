@@ -353,12 +353,9 @@
       "public"
     ],
     "methods": [
-      "public static com.yahoo.searchlib.rankingexpression.Reference fromIdentifier(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.searchlib.rankingexpression.rule.Arguments, java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.rule.Arguments arguments()",
       "public java.lang.String output()",
-      "public static com.yahoo.searchlib.rankingexpression.Reference simple(java.lang.String, java.lang.String)",
-      "public static java.util.Optional simple(java.lang.String)",
       "public boolean isIdentifier()",
       "public boolean isSimple()",
       "public java.util.Optional simpleArgument()",
@@ -369,6 +366,9 @@
       "public java.lang.String toString()",
       "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
       "public int compareTo(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public static com.yahoo.searchlib.rankingexpression.Reference fromIdentifier(java.lang.String)",
+      "public static com.yahoo.searchlib.rankingexpression.Reference simple(java.lang.String, java.lang.String)",
+      "public static java.util.Optional simple(java.lang.String)",
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": []
@@ -1598,7 +1598,6 @@
       "public void <init>(java.lang.String, java.util.List, java.lang.String)",
       "public void <init>(com.yahoo.searchlib.rankingexpression.Reference)",
       "public java.lang.String getName()",
-      "public int hashCode()",
       "public com.yahoo.searchlib.rankingexpression.rule.Arguments getArguments()",
       "public com.yahoo.searchlib.rankingexpression.rule.ReferenceNode setArguments(java.util.List)",
       "public java.lang.String getOutput()",
@@ -1608,7 +1607,8 @@
       "public com.yahoo.searchlib.rankingexpression.Reference reference()",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
-      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)"
+      "public com.yahoo.searchlib.rankingexpression.rule.CompositeNode setChildren(java.util.List)",
+      "public int hashCode()"
     ],
     "fields": []
   },

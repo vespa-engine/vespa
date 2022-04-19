@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
-import com.yahoo.container.handler.threadpool.DefaultContainerThreadpool;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolImpl;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
@@ -26,7 +26,7 @@ public class ContainerThreadpool extends SimpleComponent implements ContainerThr
         super(new ComponentModel(
                 BundleInstantiationSpecification.getFromStrings(
                         "threadpool@" + name,
-                        DefaultContainerThreadpool.class.getName(),
+                        ContainerThreadpoolImpl.class.getName(),
                         null)));
         this.name = name;
         this.userOptions = userOptions;
