@@ -197,11 +197,11 @@ public class ApplicationPackage {
                                     RegionName.defaultName())
                         .run(); // Populates the zip archive cache with files that would be included.
             }
-            catch (RuntimeException e) {
+            catch (IllegalArgumentException e) {
                 throw e;
             }
             catch (Exception e) {
-                throw new RuntimeException(e);
+                throw new IllegalArgumentException(e);
             }
     }
 
