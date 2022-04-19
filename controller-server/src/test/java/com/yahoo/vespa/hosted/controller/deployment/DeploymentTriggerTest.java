@@ -24,12 +24,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static ai.vespa.validation.Validation.require;
@@ -215,9 +213,9 @@ public class DeploymentTriggerTest {
         app.runJob(systemTest).runJob(stagingTest);
         tester.triggerJobs();
         tester.runner().run();
-        assertEquals(Set.of(productionUsCentral1), tester.jobs().active().stream()
-                                                         .map(run -> run.id().type())
-                                                         .collect(Collectors.toCollection(HashSet::new)));
+        assertEquals(EnumSet.of(productionUsCentral1), tester.jobs().active().stream()
+                                                             .map(run -> run.id().type())
+                                                             .collect(Collectors.toCollection(() -> EnumSet.noneOf(JobType.class))));
     }
 
     @Test

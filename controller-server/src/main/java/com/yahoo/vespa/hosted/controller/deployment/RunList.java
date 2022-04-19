@@ -38,7 +38,7 @@ public class RunList extends AbstractFilteringList<Run, RunList> {
 
     private static boolean matchingVersions(Run run, Versions versions) {
         return    versions.targetsMatch(run.versions())
-               && (versions.sourcesMatchIfPresent(run.versions()) || run.id().type().isSystemTest());
+               && (versions.sourcesMatchIfPresent(run.versions()) || run.id().type() == JobType.systemTest);
     }
 
 }
