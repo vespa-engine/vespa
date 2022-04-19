@@ -210,7 +210,7 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
                       });
                   });
         }
-        JobType.allIn(controller.zoneRegistry()).stream()
+        JobType.allIn(controller.system()).stream()
                .filter(job -> ! job.environment().isManuallyDeployed())
                .map(JobType::jobName).forEach(root.setArray("jobs")::addString);
         return new SlimeJsonResponse(slime);

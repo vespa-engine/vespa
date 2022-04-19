@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 
@@ -79,8 +78,8 @@ public interface TesterCloud {
         production;
 
         public static Suite of(JobType type, boolean isSetup) {
-            if (type.isSystemTest()) return system;
-            if (type.isStagingTest()) return isSetup ? staging_setup : staging;
+            if (type == JobType.systemTest) return system;
+            if (type == JobType.stagingTest) return isSetup ? staging_setup : staging;
             if (type.isProduction()) return production;
             throw new AssertionError("Unknown JobType '" + type + "'!");
         }

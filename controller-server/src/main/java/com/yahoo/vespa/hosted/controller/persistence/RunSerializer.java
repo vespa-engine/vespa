@@ -90,9 +90,17 @@ class RunSerializer {
     private static final String versionsField = "versions";
     private static final String isRedeploymentField = "isRedeployment";
     private static final String platformVersionField = "platform";
+    private static final String repositoryField = "repository";
+    private static final String branchField = "branch";
+    private static final String commitField = "commit";
+    private static final String authorEmailField = "authorEmail";
     private static final String deployedDirectlyField = "deployedDirectly";
+    private static final String compileVersionField = "compileVersion";
+    private static final String buildTimeField = "buildTime";
+    private static final String sourceUrlField = "sourceUrl";
     private static final String buildField = "build";
     private static final String sourceField = "source";
+    private static final String bundleHashField = "bundleHash";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
     private static final String noNodesDownSinceField = "noNodesDownSince";
@@ -194,20 +202,24 @@ class RunSerializer {
                                                   summaryArray.entry(12).asLong()));
     }
 
-    Slime toSlime(Iterable<Run> runs) {
+    Slime toSlime(Iterable<Run> runs, Application application) {
         Slime slime = new Slime();
         Cursor runArray = slime.setArray();
-        runs.forEach(run -> toSlime(run, runArray.addObject()));
+        runs.forEach(run -> toSlime(run, application.revisions()::get, runArray.addObject()));
         return slime;
     }
 
-    Slime toSlime(Run run) {
+    Slime toSlime(Run run, Application application) {
+        return toSlime(run, application.revisions()::get);
+    }
+
+    Slime toSlime(Run run, Function<RevisionId, ApplicationVersion> compatilibity) {
         Slime slime = new Slime();
-        toSlime(run, slime.setObject());
+        toSlime(run, compatilibity, slime.setObject());
         return slime;
     }
 
-    private void toSlime(Run run, Cursor runObject) {
+    private void toSlime(Run run, Function<RevisionId, ApplicationVersion> compatibility, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
         runObject.setString(jobTypeField, run.id().type().jobName());
         runObject.setBool(isRedeploymentField, run.isRedeployment());
@@ -232,10 +244,10 @@ class RunSerializer {
                         stepDetailsObject.setObject(valueOf(step)).setLong(startTimeField, valueOf(startTime))));
 
         Cursor versionsObject = runObject.setObject(versionsField);
-        toSlime(run.versions().targetPlatform(), run.versions().targetRevision(), versionsObject);
+        toSlime(run.versions().targetPlatform(), compatibility.apply(run.versions().targetRevision()), versionsObject);
         run.versions().sourcePlatform().ifPresent(sourcePlatformVersion -> {
             toSlime(sourcePlatformVersion,
-                    run.versions().sourceRevision()
+                    run.versions().sourceRevision().map(compatibility)
                        .orElseThrow(() -> new IllegalArgumentException("Source versions must be both present or absent.")),
                     versionsObject.setObject(sourceField));
         });
@@ -243,10 +255,18 @@ class RunSerializer {
         run.reason().ifPresent(reason -> runObject.setString(reasonField, reason));
     }
 
-    private void toSlime(Version platformVersion, RevisionId revsion, Cursor versionsObject) {
+    private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
-        versionsObject.setLong(buildField, revsion.number());
-        versionsObject.setBool(deployedDirectlyField, ! revsion.isProduction());
+        applicationVersion.buildNumber().ifPresent(number -> versionsObject.setLong(buildField, number));
+        applicationVersion.source().map(SourceRevision::repository).ifPresent(repository -> versionsObject.setString(repositoryField, repository));
+        applicationVersion.source().map(SourceRevision::branch).ifPresent(branch -> versionsObject.setString(branchField, branch));
+        applicationVersion.source().map(SourceRevision::commit).ifPresent(commit -> versionsObject.setString(commitField, commit));
+        applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
+        applicationVersion.compileVersion().ifPresent(version -> versionsObject.setString(compileVersionField, version.toString()));
+        applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
+        applicationVersion.sourceUrl().ifPresent(url -> versionsObject.setString(sourceUrlField, url));
+        applicationVersion.commit().ifPresent(commit -> versionsObject.setString(commitField, commit));
+        versionsObject.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
     }
 
     // Don't change this - introduce a separate array with new values if needed.

@@ -71,9 +71,9 @@ public class DeploymentFailureMails {
     }
 
     private String jobToString(JobType type) {
-        if (type.isSystemTest())
+        if (type == JobType.systemTest)
             return "System test";
-        if (type.isStagingTest())
+        if (type == JobType.stagingTest)
             return "Staging test";
         return (type.isDeployment() ? "Deployment to " : "Verification test of ") +
                type.zone(registry.system()).region();

@@ -2492,7 +2492,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                 .max(Comparator.naturalOrder())
                                                 .or(() -> applications.stream()
                                                                       .flatMap(application -> application.instances().values().stream())
-                                                                      .flatMap(instance -> JobType.allIn(controller.zoneRegistry()).stream()
+                                                                      .flatMap(instance -> JobType.allIn(controller.system()).stream()
                                                                                                   .filter(job -> job.environment() == Environment.dev)
                                                                                                   .flatMap(jobType -> controller.jobController().last(instance.id(), jobType).stream()))
                                                                       .map(Run::start)
