@@ -23,6 +23,13 @@
       "agent": "operator"
     }
   ],
+  "log": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "operator"
+    }
+  ],
   "ipAddresses": [
     "127.0.0.1"
   ],

@@ -96,7 +96,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
                 if (isDown) {
                     recordAsDown(node.get(), lock);
                 } else {
-                    clearDownRecord(node.get(), lock);
+                    recordAsUp(node.get(), lock);
                 }
             } catch (ApplicationLockException e) {
                 // Fine, carry on with other nodes. We'll try updating this one in the next run
@@ -129,14 +129,14 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     /** Record a node as down if not already recorded */
     private void recordAsDown(Node node, Mutex lock) {
-        if (node.history().event(History.Event.Type.down).isPresent()) return; // already down: Don't change down timestamp
+        if (node.isDown()) return; // already down: Don't change down timestamp
         nodeRepository().nodes().write(node.downAt(clock().instant(), Agent.NodeHealthTracker), lock);
     }
 
     /** Clear down record for node, if any */
-    private void clearDownRecord(Node node, Mutex lock) {
-        if (node.history().event(History.Event.Type.down).isEmpty()) return;
-        nodeRepository().nodes().write(node.up(), lock);
+    private void recordAsUp(Node node, Mutex lock) {
+        if (!node.isDown()) return; // already up: Don't change down timestamp
+        nodeRepository().nodes().write(node.upAt(clock().instant(), Agent.NodeHealthTracker), lock);
     }
 
 }

@@ -45,6 +45,23 @@
       "agent": "application"
     }
   ],
+  "log": [
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"
+    }
+  ],
   "ipAddresses": [
     "::102:2"
   ],

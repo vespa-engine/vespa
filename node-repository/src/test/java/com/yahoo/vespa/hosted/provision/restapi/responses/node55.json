@@ -27,6 +27,18 @@
       "agent": "system"
     }
   ],
+  "log": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "deallocated",
+      "at": 123,
+      "agent": "system"
+    }
+  ],
   "ipAddresses": [
     "127.0.55.1",
     "::55:1"
