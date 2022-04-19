@@ -695,7 +695,7 @@ public class JobController {
     public void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Mutex __ = curator.lock(id.application(), id.type())) {
             active(id).ifPresent(run -> {
-                kurator.writeLastRun(modifications.apply(run));
+                curator.writeLastRun(modifications.apply(run));
             });
         }
     }
