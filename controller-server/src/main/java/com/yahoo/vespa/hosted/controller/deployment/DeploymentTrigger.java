@@ -74,10 +74,7 @@ public class DeploymentTrigger {
     }
 
     public DeploymentSteps steps(DeploymentInstanceSpec spec) {
-        return new DeploymentSteps(spec, controller::system);
-    }
-
-    public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
+        return new DeploymentSteps(spec, controller.zoneRegistry());
     }
 
     /**
@@ -268,8 +265,7 @@ public class DeploymentTrigger {
 
     /** Retrigger job. If the job is already running, it will be canceled, and retrigger enqueued. */
     public Optional<JobId> reTriggerOrAddToQueue(DeploymentId deployment, String reason) {
-        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
-                .orElseThrow(() -> new IllegalArgumentException(Text.format("No job to trigger for (system/zone): %s/%s", controller.system().value(), deployment.zoneId().value())));
+        JobType jobType = JobType.deploymentTo(deployment.zoneId());
         Optional<Run> existingRun = controller.jobController().active(deployment.applicationId()).stream()
                 .filter(run -> run.id().type().equals(jobType))
                 .findFirst();
@@ -389,7 +385,7 @@ public class DeploymentTrigger {
     /** Returns whether the application is healthy in all other production zones. */
     private boolean isUnhealthyInAnotherZone(Application application, JobId job) {
         for (Deployment deployment : application.require(job.application().instance()).productionDeployments().values()) {
-            if (   ! deployment.zone().equals(job.type().zone(controller.system()))
+            if (   ! deployment.zone().equals(job.type().zone())
                 && ! controller.applications().isHealthy(new DeploymentId(job.application(), deployment.zone())))
                 return true;
         }
@@ -418,9 +414,7 @@ public class DeploymentTrigger {
         boolean blocked = status.jobs().get(job).get().isRunning();
 
         if ( ! job.type().isTest()) {
-            Optional<JobStatus> productionTest = JobType.testFrom(controller.system(), job.type().zone(controller.system()).region())
-                                                        .map(type -> new JobId(job.application(), type))
-                                                        .flatMap(status.jobs()::get);
+            Optional<JobStatus> productionTest = status.jobs().get(new JobId(job.application(), JobType.productionTestOf(job.type().zone())));
             if (productionTest.isPresent()) {
                 abortIfOutdated(status, jobs, productionTest.get().id());
                 // Production deployments are also blocked by their declared tests, if the next versions to run

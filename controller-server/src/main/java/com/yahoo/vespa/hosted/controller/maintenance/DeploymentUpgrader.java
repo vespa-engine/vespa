@@ -47,7 +47,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
             for (Instance instance : application.instances().values())
                 for (Deployment deployment : instance.deployments().values())
                     try {
-                        JobId job = new JobId(instance.id(), JobType.from(controller().system(), deployment.zone()).get());
+                        JobId job = new JobId(instance.id(), JobType.deploymentTo(deployment.zone()));
                         if ( ! deployment.zone().environment().isManuallyDeployed()) continue;
 
                         Run last = controller().jobController().last(job).get();
@@ -60,7 +60,7 @@ public class DeploymentUpgrader extends ControllerMaintainer {
 
                         log.log(Level.FINE, "Upgrading deployment of " + instance.id() + " in " + deployment.zone());
                         attempts.incrementAndGet();
-                        controller().jobController().start(instance.id(), JobType.from(controller().system(), deployment.zone()).get(), target, true, Optional.of("automated upgrade"));
+                        controller().jobController().start(instance.id(), JobType.deploymentTo(deployment.zone()), target, true, Optional.of("automated upgrade"));
                     } catch (Exception e) {
                         failures.incrementAndGet();
                         log.log(Level.WARNING, "Failed upgrading " + deployment + " of " + instance +

@@ -47,7 +47,7 @@ public class JobMetrics {
                       "tenantName", id.application().tenant().value(),
                       "app", id.application().application().value() + "." + id.application().instance().value(),
                       "test", Boolean.toString(id.type().isTest()),
-                      "zone", id.type().zone(system.get()).value());
+                      "zone", id.type().zone().value());
     }
 
     static String valueOf(RunStatus status) {

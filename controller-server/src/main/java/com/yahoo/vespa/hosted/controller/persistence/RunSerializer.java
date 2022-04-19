@@ -98,12 +98,6 @@ class RunSerializer {
     private static final String isDryRunField = "isDryRun";
     private static final String reasonField = "reason";
 
-    private final SystemName system;
-
-    RunSerializer(SystemName system) {
-        this.system = system;
-    }
-
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
     }
@@ -132,7 +126,7 @@ class RunSerializer {
             steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), startTime));
         });
         RunId id = new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
-                                 JobType.fromJobName(runObject.field(jobTypeField).asString()),
+                             JobType.ofSerialized(runObject.field(jobTypeField).asString()),
                                  runObject.field(numberField).asLong());
         return new Run(id,
                        steps,
@@ -212,7 +206,7 @@ class RunSerializer {
 
     private void toSlime(Run run, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
-        runObject.setString(jobTypeField, run.id().type().serialized(system));
+        runObject.setString(jobTypeField, run.id().type().serialized());
         runObject.setBool(isRedeploymentField, run.isRedeployment());
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());

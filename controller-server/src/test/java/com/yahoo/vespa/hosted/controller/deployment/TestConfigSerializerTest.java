@@ -7,7 +7,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import org.junit.Test;
@@ -28,9 +27,9 @@ public class TestConfigSerializerTest {
 
     @Test
     public void testConfig() throws IOException {
-        ZoneId zone = JobType.systemTest.zone(SystemName.PublicCd);
+        ZoneId zone = DeploymentContext.systemTest.zone();
         byte[] json = new TestConfigSerializer(SystemName.PublicCd).configJson(instanceId,
-                                                                               JobType.systemTest,
+                                                                               DeploymentContext.systemTest,
                                                                                true,
                                                                                Map.of(zone, List.of(Endpoint.of(ApplicationId.defaultId())
                                                                                                             .target(EndpointId.of("ai"), ClusterSpec.Id.from("qrs"),

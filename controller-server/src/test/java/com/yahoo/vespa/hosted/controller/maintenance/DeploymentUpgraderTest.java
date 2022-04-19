@@ -13,8 +13,8 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentUpgrader.mostLikelyWeeHour;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;

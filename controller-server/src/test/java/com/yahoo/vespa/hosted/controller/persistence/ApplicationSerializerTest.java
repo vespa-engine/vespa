@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -25,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.routing.rotation.RotationId;
@@ -55,7 +55,7 @@ import static org.junit.Assert.assertEquals;
 
 public class ApplicationSerializerTest {
 
-    private static final ApplicationSerializer APPLICATION_SERIALIZER = new ApplicationSerializer(SystemName.main);
+    private static final ApplicationSerializer APPLICATION_SERIALIZER = new ApplicationSerializer();
     private static final Path testData = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/");
     private static final ZoneId zone1 = ZoneId.from("prod", "us-west-1");
     private static final ZoneId zone2 = ZoneId.from("prod", "us-east-3");
@@ -102,7 +102,7 @@ public class ApplicationSerializerTest {
                                                                         3);
         assertEquals("https://github/org/repo/tree/commit1", applicationVersion1.sourceUrl().get());
 
-        ApplicationVersion applicationVersion2 = ApplicationVersion.from(RevisionId.forDevelopment(31, new JobId(id1, JobType.productionUsEast3)),
+        ApplicationVersion applicationVersion2 = ApplicationVersion.from(RevisionId.forDevelopment(31, new JobId(id1, DeploymentContext.productionUsEast3)),
                                                                          new SourceRevision("repo1", "branch1", "commit1"), "a@b",
                                                                          Version.fromString("6.3.1"),
                                                                          Instant.ofEpochMilli(496));
@@ -125,10 +125,10 @@ public class ApplicationSerializerTest {
                                                                 Instant.ofEpochMilli(42))));
 
         RevisionHistory revisions = RevisionHistory.ofRevisions(List.of(applicationVersion1),
-                                                                Map.of(new JobId(id1, JobType.productionUsEast3), List.of(applicationVersion2)));
+                                                                Map.of(new JobId(id1, DeploymentContext.productionUsEast3), List.of(applicationVersion2)));
         List<Instance> instances = List.of(new Instance(id1,
                                                         deployments,
-                                                        Map.of(JobType.systemTest, Instant.ofEpochMilli(333)),
+                                                        Map.of(DeploymentContext.systemTest, Instant.ofEpochMilli(333)),
                                                         List.of(AssignedRotation.fromStrings("foo", "default", "my-rotation", Set.of("us-west-1"))),
                                                         rotationStatus,
                                                         Change.of(new Version("6.1"))),
@@ -188,10 +188,10 @@ public class ApplicationSerializerTest {
         assertEquals(original.require(id1.instance()).deployments().get(zone1), serialized.require(id1.instance()).deployments().get(zone1));
         assertEquals(original.require(id1.instance()).deployments().get(zone2), serialized.require(id1.instance()).deployments().get(zone2));
 
-        assertEquals(original.require(id1.instance()).jobPause(JobType.systemTest),
-                     serialized.require(id1.instance()).jobPause(JobType.systemTest));
-        assertEquals(original.require(id1.instance()).jobPause(JobType.stagingTest),
-                     serialized.require(id1.instance()).jobPause(JobType.stagingTest));
+        assertEquals(original.require(id1.instance()).jobPause(DeploymentContext.systemTest),
+                     serialized.require(id1.instance()).jobPause(DeploymentContext.systemTest));
+        assertEquals(original.require(id1.instance()).jobPause(DeploymentContext.stagingTest),
+                     serialized.require(id1.instance()).jobPause(DeploymentContext.stagingTest));
 
         assertEquals(original.ownershipIssueId(), serialized.ownershipIssueId());
         assertEquals(original.owner(), serialized.owner());

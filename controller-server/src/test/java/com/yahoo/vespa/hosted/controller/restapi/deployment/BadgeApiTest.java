@@ -2,9 +2,9 @@
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -36,24 +36,24 @@ public class BadgeApiTest extends ControllerContainerTest {
                                                                                .build();
         application.submit(applicationPackage).deploy();
         application.submit(applicationPackage)
-                   .runJob(JobType.systemTest)
-                   .runJob(JobType.stagingTest)
-                   .runJob(JobType.productionUsWest1)
-                   .runJob(JobType.productionAwsUsEast1a)
-                   .runJob(JobType.testUsWest1)
-                   .runJob(JobType.productionApSoutheast1)
-                   .failDeployment(JobType.testApSoutheast1);
+                   .runJob(DeploymentContext.systemTest)
+                   .runJob(DeploymentContext.stagingTest)
+                   .runJob(DeploymentContext.productionUsWest1)
+                   .runJob(DeploymentContext.productionAwsUsEast1a)
+                   .runJob(DeploymentContext.testUsWest1)
+                   .runJob(DeploymentContext.productionApSoutheast1)
+                   .failDeployment(DeploymentContext.testApSoutheast1);
         application.submit(applicationPackage)
-                   .failTests(JobType.systemTest, true)
-                   .runJob(JobType.stagingTest);
+                   .failTests(DeploymentContext.systemTest, true)
+                   .runJob(DeploymentContext.stagingTest);
         for (int i = 0; i < 31; i++)
             if ((i & 1) == 0)
-                application.failDeployment(JobType.productionUsWest1);
+                application.failDeployment(DeploymentContext.productionUsWest1);
             else
-                application.triggerJobs().abortJob(JobType.productionUsWest1);
+                application.triggerJobs().abortJob(DeploymentContext.productionUsWest1);
         application.triggerJobs();
-        tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), JobType.systemTest, "reason");
-        tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), JobType.testEuWest1, "reason");
+        tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), DeploymentContext.systemTest, "reason");
+        tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), DeploymentContext.testEuWest1, "reason");
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default"),
                               Files.readString(Paths.get(responseFiles + "overview.svg")), 200);
@@ -64,7 +64,7 @@ public class BadgeApiTest extends ControllerContainerTest {
 
         // New change not reflected before cache entry expires.
         tester.serviceRegistry().clock().advance(Duration.ofSeconds(59));
-        application.runJob(JobType.productionUsWest1);
+        application.runJob(DeploymentContext.productionUsWest1);
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=32"),
                               Files.readString(Paths.get(responseFiles + "history.svg")), 200);
 

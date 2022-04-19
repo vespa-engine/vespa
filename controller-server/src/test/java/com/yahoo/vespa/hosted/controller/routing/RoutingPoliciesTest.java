@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -410,10 +409,7 @@ public class RoutingPoliciesTest {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         context.submit(applicationPackage).deploy();
         var zone = ZoneId.from("dev", "us-east-1");
-        var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
-        tester.controllerTester().serviceRegistry().zoneRegistry()
-              .setZones(zoneApi)
-              .exclusiveRoutingIn(zoneApi);
+        tester.controllerTester().setRoutingMethod(List.of(zone), RoutingMethod.exclusive);
         var prodRecords = Set.of("app1.tenant1.us-central-1.vespa.oath.cloud", "app1.tenant1.us-west-1.vespa.oath.cloud");
         assertEquals(prodRecords, tester.recordNames());
 
@@ -624,7 +620,7 @@ public class RoutingPoliciesTest {
 
         // Application starts deployment
         context = context.submit(applicationPackage);
-        for (var testJob : List.of(JobType.systemTest, JobType.stagingTest)) {
+        for (var testJob : List.of(DeploymentContext.systemTest, DeploymentContext.stagingTest)) {
             context = context.runJob(testJob);
             // Since runJob implicitly tears down the deployment and immediately deletes DNS records associated with the
             // deployment, we consume only one DNS update at a time here
@@ -879,8 +875,8 @@ public class RoutingPoliciesTest {
         var sharedRegion = RegionName.from("aws-us-east-1c");
         return List.of(ZoneId.from(Environment.prod, sharedRegion),
                        ZoneId.from(Environment.prod, RegionName.from("aws-eu-west-1a")),
-                       ZoneId.from(Environment.staging, sharedRegion),
-                       ZoneId.from(Environment.test, sharedRegion));
+                       ZoneId.from(Environment.staging, RegionName.from("us-east-3")),
+                       ZoneId.from(Environment.test, RegionName.from("us-east-1")));
     }
 
     private static class RoutingPoliciesTester {

@@ -37,7 +37,7 @@ public class TestConfigSerializer {
         Cursor root = slime.setObject();
 
         root.setString("application", id.serializedForm());
-        root.setString("zone", type.zone(system).value());
+        root.setString("zone", type.zone().value());
         root.setString("system", system.value());
         root.setBool("isCI", isCI);
 

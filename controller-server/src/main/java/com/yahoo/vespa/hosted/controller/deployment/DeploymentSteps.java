@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
 import java.util.Collection;
@@ -29,16 +30,16 @@ import static java.util.stream.Collectors.collectingAndThen;
 public class DeploymentSteps {
 
     private final DeploymentInstanceSpec spec;
-    private final Supplier<SystemName> system;
+    private final ZoneRegistry zones;
 
-    public DeploymentSteps(DeploymentInstanceSpec spec, Supplier<SystemName> system) {
+    public DeploymentSteps(DeploymentInstanceSpec spec, ZoneRegistry zones) {
         this.spec = Objects.requireNonNull(spec, "spec cannot be null");
-        this.system = Objects.requireNonNull(system, "system cannot be null");
+        this.zones = Objects.requireNonNull(zones, "system cannot be null");
     }
 
     /** Returns jobs for this, in the order they should run */
     public List<JobType> jobs() {
-        return Stream.concat(production().isEmpty() ? Stream.of() : Stream.of(JobType.systemTest, JobType.stagingTest),
+        return Stream.concat(production().isEmpty() ? Stream.of() : Stream.of(JobType.systemTest(zones), JobType.stagingTest(zones)),
                              spec.steps().stream().flatMap(step -> toJobs(step).stream()))
                      .distinct()
                      .collect(Collectors.toUnmodifiableList());
@@ -67,7 +68,6 @@ public class DeploymentSteps {
     public List<JobType> toJobs(DeploymentSpec.Step step) {
         return step.zones().stream()
                    .map(this::toJob)
-                   .flatMap(Optional::stream)
                    .collect(Collectors.toUnmodifiableList());
     }
 
@@ -93,8 +93,13 @@ public class DeploymentSteps {
     }
 
     /** Resolve job from deployment zone */
-    private Optional<JobType> toJob(DeploymentSpec.DeclaredZone zone) {
-        return JobType.from(system.get(), zone.environment(), zone.region().orElse(null));
+    private JobType toJob(DeploymentSpec.DeclaredZone zone) {
+        switch (zone.environment()) {
+            case prod: return JobType.prod(zone.region().get());
+            case test: return JobType.systemTest(zones);
+            case staging: return JobType.stagingTest(zones);
+            default: throw new IllegalArgumentException("region must be one with automated deployments, but got: " + zone.environment());
+        }
     }
 
     /** Resolve jobs from steps */

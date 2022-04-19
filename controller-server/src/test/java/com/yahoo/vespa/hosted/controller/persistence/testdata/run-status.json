@@ -1,7 +1,7 @@
 [
   {
     "id": "tenant:application:default",
-    "type": "production-us-east-3",
+    "type": "prod.us-east-3",
     "number": 112358,
     "start": 1196676930000,
     "sleepUntil": 1196676930100,

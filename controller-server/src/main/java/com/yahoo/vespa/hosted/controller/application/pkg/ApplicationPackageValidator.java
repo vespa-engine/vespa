@@ -62,7 +62,7 @@ public class ApplicationPackageValidator {
     /** Verify that each of the production zones listed in the deployment spec exist in this system */
     private void validateSteps(DeploymentSpec deploymentSpec) {
         for (var spec : deploymentSpec.instances()) {
-            new DeploymentSteps(spec, controller::system).jobs();
+            new DeploymentSteps(spec, controller.zoneRegistry()).jobs();
             spec.zones().stream()
                 .filter(zone -> zone.environment() == Environment.prod)
                 .forEach(zone -> {

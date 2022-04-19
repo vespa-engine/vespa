@@ -296,7 +296,7 @@ public class ApplicationController {
 
     /** Reads the oldest installed platform for the given application and zone from the node repo of that zone. */
     private Optional<Version> oldestInstalledPlatform(JobId job) {
-        return configServer.nodeRepository().list(job.type().zone(controller.system()),
+        return configServer.nodeRepository().list(job.type().zone(),
                                                   NodeFilter.all()
                                                             .applications(job.application())
                                                             .states(active, reserved))
@@ -454,7 +454,7 @@ public class ApplicationController {
             throw new IllegalArgumentException("'" + job.application() + "' is a tester application!");
 
         TenantAndApplicationId applicationId = TenantAndApplicationId.from(job.application());
-        ZoneId zone = job.type().zone(controller.system());
+        ZoneId zone = job.type().zone();
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         try (Mutex deploymentLock = lockForDeployment(job.application(), zone)) {

@@ -402,7 +402,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .build();
         new ControllerTester(tester).upgradeSystem(new Version("6.1"));
         tester.controller().jobController().deploy(ApplicationId.from("scoober", "albums", "default"),
-                                                   JobType.productionAwsUsEast1c,
+                                                   JobType.prod("aws-us-east-1c"),
                                                    Optional.empty(),
                                                    applicationPackage);
     }

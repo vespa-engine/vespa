@@ -157,12 +157,6 @@ public class ApplicationSerializer {
 
     private static final String deploymentCostField = "cost";
 
-    private final SystemName system;
-
-    public ApplicationSerializer(SystemName system) {
-        this.system = system;
-    }
-
     // ------------------ Serialization
 
     public Slime toSlime(Application application) {
@@ -244,7 +238,7 @@ public class ApplicationSerializer {
         revisions.development().forEach((job, devRevisions) -> {
             Cursor devRevisionsObject = devRevisionsArray.addObject();
             devRevisionsObject.setString(instanceNameField, job.application().instance().value());
-            devRevisionsObject.setString(jobTypeField, job.type().serialized(system));
+            devRevisionsObject.setString(jobTypeField, job.type().serialized());
             revisionsToSlime(devRevisions, devRevisionsObject.setArray(versionsField));
         });
     }
@@ -284,7 +278,7 @@ public class ApplicationSerializer {
         Cursor jobStatusArray = cursor.setArray(jobStatusField);
         jobPauses.forEach((type, until) -> {
             Cursor jobPauseObject = jobStatusArray.addObject();
-            jobPauseObject.setString(jobTypeField, type.serialized(system));
+            jobPauseObject.setString(jobTypeField, type.serialized());
             jobPauseObject.setLong(pausedUntilField, until.toEpochMilli());
         });
     }
@@ -371,7 +365,7 @@ public class ApplicationSerializer {
 
     private JobId jobIdFromSlime(TenantAndApplicationId base, Inspector idObject) {
         return new JobId(base.instance(idObject.field(instanceNameField).asString()),
-                         JobType.fromJobName(idObject.field(jobTypeField).asString()));
+                         JobType.ofSerialized(idObject.field(jobTypeField).asString()));
     }
 
     private List<ApplicationVersion> revisionsFromSlime(Inspector versionsArray, JobId job) {
@@ -414,7 +408,7 @@ public class ApplicationSerializer {
     private Deployment deploymentFromSlime(Inspector deploymentObject, ApplicationId id) {
         ZoneId zone = zoneIdFromSlime(deploymentObject.field(zoneField));
         return new Deployment(zone,
-                              revisionFromSlime(deploymentObject.field(applicationPackageRevisionField), new JobId(id, JobType.from(system, zone).get())),
+                              revisionFromSlime(deploymentObject.field(applicationPackageRevisionField), new JobId(id, JobType.deploymentTo(zone))),
                               Version.fromString(deploymentObject.field(versionField).asString()),
                               SlimeUtils.instant(deploymentObject.field(deployTimeField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
@@ -507,9 +501,8 @@ public class ApplicationSerializer {
     private Map<JobType, Instant> jobPausesFromSlime(Inspector object) {
         Map<JobType, Instant> jobPauses = new HashMap<>();
         object.field(jobStatusField).traverse((ArrayTraverser) (__, jobPauseObject) ->
-                JobType.fromOptionalJobName(jobPauseObject.field(jobTypeField).asString())
-                       .ifPresent(jobType -> jobPauses.put(jobType,
-                                                           SlimeUtils.instant(jobPauseObject.field(pausedUntilField)))));
+                jobPauses.put(JobType.ofSerialized(jobPauseObject.field(jobTypeField).asString()),
+                              SlimeUtils.instant(jobPauseObject.field(pausedUntilField))));
         return jobPauses;
     }
 

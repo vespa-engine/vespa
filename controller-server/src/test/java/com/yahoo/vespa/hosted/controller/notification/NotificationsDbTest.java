@@ -11,10 +11,10 @@ import com.yahoo.path.Path;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.notify.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -65,7 +65,7 @@ public class NotificationsDbTest {
             notification(1201, Type.deployment, Level.error, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg"),
             notification(1301, Type.deployment, Level.warning, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app2", "instance2"), ZoneId.from("prod", "us-north-2"))), "deployment msg"),
             notification(1401, Type.feedBlock, Level.error, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("dev", "us-south-1")), ClusterSpec.Id.from("cluster1")), "cluster msg"),
-            notification(1501, Type.deployment, Level.warning, NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), JobType.devUsEast1, 4)), "run id msg"));
+            notification(1501, Type.deployment, Level.warning, NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), DeploymentContext.devUsEast1, 4)), "run id msg"));
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(12345));
     private final MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
@@ -78,8 +78,8 @@ public class NotificationsDbTest {
         assertEquals(notificationIndices(0, 1, 2, 3), notificationsDb.listNotifications(NotificationSource.from(tenant), true));
         assertEquals(notificationIndices(2, 3), notificationsDb.listNotifications(NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app2")), false));
         assertEquals(notificationIndices(4, 5), notificationsDb.listNotifications(NotificationSource.from(ApplicationId.from(tenant.value(), "app1", "instance1")), false));
-        assertEquals(notificationIndices(5), notificationsDb.listNotifications(NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), JobType.devUsEast1, 5)), false));
-        assertEquals(List.of(), notificationsDb.listNotifications(NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), JobType.productionUsEast3, 4)), false));
+        assertEquals(notificationIndices(5), notificationsDb.listNotifications(NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), DeploymentContext.devUsEast1, 5)), false));
+        assertEquals(List.of(), notificationsDb.listNotifications(NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), DeploymentContext.productionUsEast3, 4)), false));
     }
 
     @Test

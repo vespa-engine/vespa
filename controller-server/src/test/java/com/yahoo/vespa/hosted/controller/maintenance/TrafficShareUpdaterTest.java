@@ -6,8 +6,8 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Test;
@@ -33,7 +33,7 @@ public class TrafficShareUpdaterTest {
         ZoneId prod1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId prod2 = ZoneId.from("prod", "us-east-3");
         ZoneId prod3 = ZoneId.from("prod", "us-west-1");
-        application.runJob(JobType.productionApNortheast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.productionApNortheast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
 
         // Single zone
         setQpsMetric(50.0, application.application().id().defaultInstance(), prod1, tester);
@@ -42,7 +42,7 @@ public class TrafficShareUpdaterTest {
         assertTrafficFraction(1.0, 1.0, application.instanceId(), prod1, tester);
 
         // Two zones
-        application.runJob(JobType.productionUsEast3, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.productionUsEast3, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
         // - one cold
         setQpsMetric(50.0, application.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(0.0, application.application().id().defaultInstance(), prod2, tester);
@@ -59,7 +59,7 @@ public class TrafficShareUpdaterTest {
         assertTrafficFraction(0.47, 1.0, application.instanceId(), prod2, tester);
 
         // Three zones
-        application.runJob(JobType.productionUsWest1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.productionUsWest1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
         // - one cold
         setQpsMetric(53.0, application.application().id().defaultInstance(), prod1, tester);
         setQpsMetric(47.0, application.application().id().defaultInstance(), prod2, tester);

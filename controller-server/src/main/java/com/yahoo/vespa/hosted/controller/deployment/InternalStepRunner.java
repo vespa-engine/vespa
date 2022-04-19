@@ -217,7 +217,7 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Deploying the tester container on platform " + platform + " ...");
         return deploy(() -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
-                                                                   id.type().zone(controller.system()),
+                                                                   id.type().zone(),
                                                                    platform),
                       controller.jobController().run(id).get()
                                 .stepInfo(deployTester).get()
@@ -314,19 +314,19 @@ public class InternalStepRunner implements StepRunner {
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
 
         Run run = controller.jobController().run(id).get();
-        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone(controller.system())),
+        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone()),
                                                                                                                Optional.of(platform));
         if (services.isEmpty()) {
             logger.log("Config status not currently available -- will retry.");
             return Optional.empty();
         }
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(),
                                                                                              NodeFilter.all()
                                                                                                        .applications(id.application())
                                                                                                        .states(active));
 
         Set<HostName> parentHostnames = nodes.stream().map(node -> node.parentHostname().get()).collect(toSet());
-        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(),
                                                                                                NodeFilter.all()
                                                                                                          .hostnames(parentHostnames));
         boolean firstTick = run.convergenceSummary().isEmpty();
@@ -357,8 +357,8 @@ public class InternalStepRunner implements StepRunner {
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
-            if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
-                if (containersAreUp(id.application(), id.type().zone(controller.system()), logger)) {
+            if (endpointsAvailable(id.application(), id.type().zone(), logger)) {
+                if (containersAreUp(id.application(), id.type().zone(), logger)) {
                     logger.log("Installation succeeded!");
                     return Optional.of(running);
                 }
@@ -440,7 +440,7 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
         Run run = controller.jobController().run(id).get();
         Version platform = testerPlatformVersion(id);
-        ZoneId zone = id.type().zone(controller.system());
+        ZoneId zone = id.type().zone();
         ApplicationId testerId = id.tester().id();
 
         Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(testerId, zone),
@@ -609,7 +609,7 @@ public class InternalStepRunner implements StepRunner {
                                     .productionDeployments().keySet().stream()
                                     .map(zone -> new DeploymentId(id.application(), zone))
                                     .collect(Collectors.toSet());
-        ZoneId zoneId = id.type().zone(controller.system());
+        ZoneId zoneId = id.type().zone();
         deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
@@ -722,8 +722,8 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
         try {
-            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone() + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone());
             return Optional.of(running);
         }
         catch (RuntimeException e) {
@@ -737,7 +737,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         try {
-            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone() + " ...");
             controller.jobController().deactivateTester(id.tester(), id.type());
             return Optional.of(running);
         }
@@ -870,7 +870,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the deployment of the real application in the zone of the given job, if it exists. */
     private Optional<Deployment> deployment(ApplicationId id, JobType type) {
-        return Optional.ofNullable(application(id).deployments().get(type.zone(controller.system())));
+        return Optional.ofNullable(application(id).deployments().get(type.zone()));
     }
 
     /** Returns the real application with the given id. */
@@ -908,7 +908,7 @@ public class InternalStepRunner implements StepRunner {
         RevisionId revision = controller.jobController().run(id).get().versions().targetRevision();
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
 
-        ZoneId zone = id.type().zone(controller.system());
+        ZoneId zone = id.type().zone();
         boolean useTesterCertificate = useTesterCertificate(id);
 
         byte[] servicesXml = servicesXml( ! controller.system().isPublic(),
@@ -952,7 +952,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private DeploymentId getTesterDeploymentId(RunId runId) {
-        ZoneId zoneId = runId.type().zone(controller.system());
+        ZoneId zoneId = runId.type().zone();
         return new DeploymentId(runId.tester().id(), zoneId);
     }
 
