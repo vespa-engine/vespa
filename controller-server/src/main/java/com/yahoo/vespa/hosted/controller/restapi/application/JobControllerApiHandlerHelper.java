@@ -77,18 +77,18 @@ class JobControllerApiHandlerHelper {
         Cursor responseObject = slime.setObject();
 
         Cursor jobsArray = responseObject.setArray("deployment");
-        Arrays.stream(JobType.values())
-              .filter(type -> type.environment().isManuallyDeployed())
-              .map(devType -> new JobId(id, devType))
-              .forEach(job -> {
-                  Collection<Run> runs = controller.jobController().runs(job).descendingMap().values();
-                  if (runs.isEmpty())
-                      return;
+        JobType.allIn(controller.zoneRegistry()).stream()
+               .filter(type -> type.environment().isManuallyDeployed())
+               .map(devType -> new JobId(id, devType))
+               .forEach(job -> {
+                   Collection<Run> runs = controller.jobController().runs(job).descendingMap().values();
+                   if (runs.isEmpty())
+                       return;
 
-                  Cursor jobObject = jobsArray.addObject();
-                  jobObject.setString("jobName", job.type().jobName());
-                  toSlime(jobObject.setArray("runs"), runs, controller.applications().requireApplication(TenantAndApplicationId.from(id)), 10, baseUriForJobs);
-              });
+                   Cursor jobObject = jobsArray.addObject();
+                   jobObject.setString("jobName", job.type().jobName());
+                   toSlime(jobObject.setArray("runs"), runs, controller.applications().requireApplication(TenantAndApplicationId.from(id)), 10, baseUriForJobs);
+               });
 
         return new SlimeJsonResponse(slime);
     }

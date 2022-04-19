@@ -465,13 +465,13 @@ public class CuratorDb {
 
     // -------------- Job Runs ------------------------------------------------
 
-    public void writeLastRun(Run run, Application application) {
-        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run, application)));
+    public void writeLastRun(Run run) {
+        curator.set(lastRunPath(run.id().application(), run.id().type()), asJson(runSerializer.toSlime(run)));
     }
 
-    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs, Application application) {
+    public void writeHistoricRuns(ApplicationId id, JobType type, Iterable<Run> runs) {
         Path path = runsPath(id, type);
-        curator.set(path, asJson(runSerializer.toSlime(runs, application)));
+        curator.set(path, asJson(runSerializer.toSlime(runs)));
     }
 
     public Optional<Run> readLastRun(ApplicationId id, JobType type) {

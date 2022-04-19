@@ -121,7 +121,7 @@ public class JobController {
         for (ApplicationId id : instances())
             for (JobType type : jobs(id)) {
                 locked(id, type, runs -> { // Runs are not modified here, and are written as they were.
-                    curator.readLastRun(id, type).ifPresent(run -> curator.writeLastRun(run, controller.applications().requireApplication(TenantAndApplicationId.from(id))));
+                    curator.readLastRun(id, type).ifPresent(curator::writeLastRun);
                 });
             }
     }
@@ -238,7 +238,7 @@ public class JobController {
 
     /** Returns all job types which have been run for the given application. */
     private List<JobType> jobs(ApplicationId id) {
-        return JobType.allIn(controller.system()).stream()
+        return JobType.allIn(controller.zoneRegistry()).stream()
                       .filter(type -> last(id, type).isPresent())
                       .collect(toUnmodifiableList());
     }
@@ -317,20 +317,20 @@ public class JobController {
     /** Returns a list of all active runs for the given application. */
     public List<Run> active(TenantAndApplicationId id) {
         return controller.applications().requireApplication(id).instances().keySet().stream()
-                         .flatMap(name -> Stream.of(JobType.values())
-                                                .map(type -> last(id.instance(name), type))
-                                                .flatMap(Optional::stream)
-                                                .filter(run -> !run.hasEnded()))
+                         .flatMap(name -> JobType.allIn(controller.zoneRegistry()).stream()
+                                                 .map(type -> last(id.instance(name), type))
+                                                 .flatMap(Optional::stream)
+                                                 .filter(run -> ! run.hasEnded()))
                          .collect(toUnmodifiableList());
     }
 
     /** Returns a list of all active runs for the given instance. */
     public List<Run> active(ApplicationId id) {
-        return Stream.of(JobType.values())
-                     .map(type -> last(id, type))
-                     .flatMap(Optional::stream)
-                     .filter(run -> !run.hasEnded())
-                     .collect(toUnmodifiableList());
+        return JobType.allIn(controller.zoneRegistry()).stream()
+                      .map(type -> last(id, type))
+                      .flatMap(Optional::stream)
+                      .filter(run -> !run.hasEnded())
+                      .collect(toUnmodifiableList());
     }
 
     /** Returns the job status of the given job, possibly empty. */
@@ -546,7 +546,7 @@ public class JobController {
                 throw new IllegalArgumentException("Cannot start " + type + " for " + id + "; it is already running!");
 
             RunId newId = new RunId(id, type, last.map(run -> run.id().number()).orElse(0L) + 1);
-            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile, reason), controller.applications().requireApplication(TenantAndApplicationId.from(id)));
+            curator.writeLastRun(Run.initial(newId, versions, isRedeployment, controller.clock().instant(), profile, reason));
             metric.jobStarted(newId.job());
         });
     }
@@ -684,21 +684,18 @@ public class JobController {
 
     /** Locks all runs and modifies the list of historic runs for the given application and job type. */
     private void locked(ApplicationId id, JobType type, Consumer<SortedMap<RunId, Run>> modifications) {
-        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id));
-        try (Mutex __ = curator.lock(id, type)) {
+      try (Mutex __ = curator.lock(id, type)) {
             SortedMap<RunId, Run> runs = new TreeMap<>(curator.readHistoricRuns(id, type));
             modifications.accept(runs);
-            curator.writeHistoricRuns(id, type, runs.values(), application);
+            curator.writeHistoricRuns(id, type, runs.values());
         }
     }
 
     /** Locks and modifies the run with the given id, provided it is still active. */
     public void locked(RunId id, UnaryOperator<Run> modifications) {
-        Application application = controller.applications().requireApplication(TenantAndApplicationId.from(id.application()));
         try (Mutex __ = curator.lock(id.application(), id.type())) {
             active(id).ifPresent(run -> {
-                run = modifications.apply(run);
-                curator.writeLastRun(run, application);
+                kurator.writeLastRun(modifications.apply(run));
             });
         }
     }
