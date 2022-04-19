@@ -54,8 +54,8 @@ MatchView::getMatcher(const vespalib::string & rankProfile) const
 {
     Matcher::SP retval = _matchers->lookup(rankProfile);
     if ( ! retval) {
-        throw IllegalArgumentException(fmt("Failed locating Matcher for rank profile '%s' docIdLimit=%d",
-                                           rankProfile.c_str(), _docIdLimit.get()), VESPA_STRLOC);
+        throw IllegalArgumentException(fmt("Failed locating Matcher for rank profile '%s' docIdLimit=%d num_matchers=%d matchers='%s'",
+                                           rankProfile.c_str(), _docIdLimit.get(), _matchers->numMatchers(), _matchers->listMatchers().c_str()), VESPA_STRLOC);
     }
     LOG(debug, "Rankprofile = %s has termwise_limit=%f", rankProfile.c_str(), retval->get_termwise_limit());
     return retval;
