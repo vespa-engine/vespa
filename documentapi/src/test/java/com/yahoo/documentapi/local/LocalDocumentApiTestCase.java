@@ -111,7 +111,7 @@ public class LocalDocumentApiTestCase extends AbstractDocumentApiTestCase {
         for (DocumentId id : ids) {
             Result result = session.get(id);
             if ( ! result.isSuccess())
-                throw new IllegalStateException("Failed requesting document " + id, result.getError().getCause());
+                throw new IllegalStateException("Failed requesting document " + id + ": " + result.error().toString());
             outstandingRequests.add(result.getRequestId());
         }
 

@@ -484,12 +484,16 @@
       "public"
     ],
     "methods": [
+      "public void <init>()",
       "public void <init>(long)",
       "public void <init>(com.yahoo.documentapi.Result$ResultType, java.lang.Error)",
+      "public void <init>(com.yahoo.documentapi.Result$ResultType, com.yahoo.messagebus.Error)",
       "public boolean isSuccess()",
       "public java.lang.Error getError()",
+      "public com.yahoo.messagebus.Error error()",
       "public long getRequestId()",
-      "public com.yahoo.documentapi.Result$ResultType type()"
+      "public com.yahoo.documentapi.Result$ResultType type()",
+      "public static com.yahoo.messagebus.Error toError(com.yahoo.documentapi.Result$ResultType)"
     ],
     "fields": []
   },

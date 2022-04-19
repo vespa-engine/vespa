@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi;
 
+import com.yahoo.messagebus.Error;
+import com.yahoo.messagebus.ErrorCode;
+
 /**
  * The <i>synchronous</i> result of submitting an asynchronous operation.
  * A result is either a success or not. If it is not a success, it will contain an explanation of why.
@@ -11,22 +14,40 @@ package com.yahoo.documentapi;
 public class Result {
 
     /** Null if this is a success, set to the error occurring if this is a failure */
-    private Error error = null;
+    private final Error error;
 
     /** The id of this operation */
-    private long requestId;
+    private final long requestId;
 
-    private ResultType type = ResultType.SUCCESS;
+    private final ResultType type;
 
+    /** Creates a successful result with requestId zero */
+    public Result() {
+        this(0);
+
+    }
     /**
      * Creates a successful result
      *
      * @param requestId the ID of the request
      */
     public Result(long requestId) {
+        this.error = null;
         this.requestId = requestId;
+        type = ResultType.SUCCESS;
     }
 
+    /**
+     * Creates a unsuccessful result
+     *
+     * @deprecated Will be removed on Vespa 8 due to incorrect java.lang.Error
+     */
+    @Deprecated(forRemoval = true, since="7")
+    public Result(ResultType type, java.lang.Error error) {
+        this.type = type;
+        this.error = new Error(0, error.getMessage());
+        this.requestId = 0;
+    }
     /**
      * Creates a unsuccessful result
      *
@@ -37,6 +58,7 @@ public class Result {
     public Result(ResultType type, Error error) {
         this.type = type;
         this.error = error;
+        this.requestId = 0;
     }
 
     /**
@@ -54,8 +76,12 @@ public class Result {
      * If this was a success, this method returns null.
      *
      * @return the Error, or null
+     * @deprecated Will be removed on Vespa 8
      */
-    public Error getError() { return error; }
+    @Deprecated(forRemoval = true, since="7")
+    public java.lang.Error getError() { return new java.lang.Error(error.getMessage()); }
+
+    public Error error() { return error; }
 
     /**
      * Returns the id of this operation. The asynchronous response to this operation
@@ -84,6 +110,17 @@ public class Result {
         /** Condition specified in operation not met error  */
         @Deprecated(since = "7", forRemoval = true) // TODO: Remove on Vespa 8 — this is a Response outcome, not a Result outcome.
         CONDITION_NOT_MET_ERROR
+    }
+    public static Error toError(ResultType result) {
+        switch (result) {
+            case TRANSIENT_ERROR:
+                return new Error(ErrorCode.TRANSIENT_ERROR, ResultType.TRANSIENT_ERROR.name());
+            case CONDITION_NOT_MET_ERROR:
+                return new Error(ErrorCode.TRANSIENT_ERROR, ResultType.CONDITION_NOT_MET_ERROR.name());
+            case FATAL_ERROR:
+                return new Error(ErrorCode.FATAL_ERROR, ResultType.FATAL_ERROR.name());
+        }
+        return new Error(ErrorCode.NONE, "SUCCESS");
     }
 
 }
