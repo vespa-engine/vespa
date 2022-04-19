@@ -28,9 +28,7 @@ public class ExpressionCountAggregationResult extends AggregationResult {
     private long estimatedUniqueCount = UNDEFINED;
 
 
-    /**
-     * Constructor used for deserialization. Will be instantiated with a default sketch.
-     */
+    /** Constructor used for deserialization. Will be instantiated with a default sketch. */
     @SuppressWarnings("UnusedDeclaration")
     public ExpressionCountAggregationResult() {
         this(new SparseSketch(), new HyperLogLogEstimator());
@@ -39,7 +37,7 @@ public class ExpressionCountAggregationResult extends AggregationResult {
     /**
      * Constructs an instance with a given sketch, sketch merger and unique count estimator. For test purposes.
      *
-     * @param initialSketch The HLL sketch.
+     * @param initialSketch the HLL sketch
      */
     public ExpressionCountAggregationResult(Sketch<?> initialSketch, UniqueCountEstimator<Sketch<?>> estimator) {
         this.sketch = initialSketch;
