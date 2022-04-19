@@ -5,12 +5,14 @@
 #include "stringattribute.h"
 #include "multistringattribute.h"
 #include "enumattribute.hpp"
+#include "enumerated_multi_value_read_view.h"
 #include "multienumattribute.hpp"
 #include "multi_string_enum_hint_search_context.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/regexp.h>
+#include <vespa/vespalib/util/stash.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
 namespace search {
@@ -45,6 +47,20 @@ MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP qTerm,
     bool cased = this->get_match_is_cased();
     auto doc_id_limit = this->getCommittedDocIdLimit();
     return std::make_unique<attribute::MultiStringEnumHintSearchContext<M>>(std::move(qTerm), cased, *this, this->_mvMapping.make_read_view(doc_id_limit), this->_enumStore, doc_id_limit, this->getStatus().getNumValues());
+}
+
+template <typename B, typename M>
+const attribute::IMultiValueReadView<const char*>*
+MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<const char*>, vespalib::Stash& stash) const
+{
+    return &stash.create<attribute::EnumeratedMultiValueReadView<const char*, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
+}
+
+template <typename B, typename M>
+const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>*
+MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const
+{
+    return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<const char*>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
 } // namespace search

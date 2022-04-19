@@ -105,6 +105,10 @@ public:
 
     std::unique_ptr<attribute::SearchContext>
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
+
+    // Implements attribute::IMultiValueAttribute
+    const attribute::IMultiValueReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::Tag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const override;
 };
 
 

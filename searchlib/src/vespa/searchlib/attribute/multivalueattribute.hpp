@@ -4,6 +4,7 @@
 
 #include "address_space_components.h"
 #include "raw_multi_value_read_view.h"
+#include "copy_multi_value_read_view.h"
 #include <vespa/searchlib/attribute/multivalueattribute.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -299,10 +300,25 @@ MultiValueAttribute<B, M>::as_multi_value_attribute() const
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueReadView<M>*
-MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<MultiValueType>, vespalib::Stash& stash) const
+const attribute::IMultiValueReadView<multivalue::ValueType_t<M>>*
+MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<ValueType>, vespalib::Stash& stash) const
 {
-    return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+    if constexpr (std::is_same_v<MultiValueType, ValueType>) {
+        return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+    } else {
+        return &stash.create<attribute::CopyMultiValueReadView<ValueType, MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+    }
+}
+
+template <typename B, typename M>
+const attribute::IMultiValueReadView<multivalue::WeightedValue<multivalue::ValueType_t<M>>>*
+MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<ValueType>>, vespalib::Stash& stash) const
+{
+    if constexpr (std::is_same_v<MultiValueType, multivalue::WeightedValue<ValueType>>) {
+        return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+    } else {
+        return &stash.create<attribute::CopyMultiValueReadView<multivalue::WeightedValue<ValueType>, MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
+    }
 }
 
 } // namespace search

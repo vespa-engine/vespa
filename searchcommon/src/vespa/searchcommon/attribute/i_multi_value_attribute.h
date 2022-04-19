@@ -38,6 +38,7 @@ public:
     virtual const IArrayReadView<int64_t>* make_read_view(ArrayTag<int64_t>, vespalib::Stash&) const { return nullptr; }
     virtual const IArrayReadView<float>* make_read_view(ArrayTag<float>, vespalib::Stash&) const { return nullptr; }
     virtual const IArrayReadView<double>* make_read_view(ArrayTag<double>, vespalib::Stash&) const { return nullptr; }
+    virtual const IArrayReadView<const char*>* make_read_view(ArrayTag<const char*>, vespalib::Stash&) const { return nullptr; }
 
     virtual const IWeightedSetReadView<int8_t>* make_read_view(WeightedSetTag<int8_t>, vespalib::Stash&) const { return nullptr; }
     virtual const IWeightedSetReadView<int16_t>* make_read_view(WeightedSetTag<int16_t>, vespalib::Stash&) const { return nullptr; }
@@ -45,6 +46,7 @@ public:
     virtual const IWeightedSetReadView<int64_t>* make_read_view(WeightedSetTag<int64_t>, vespalib::Stash&) const { return nullptr; }
     virtual const IWeightedSetReadView<float>* make_read_view(WeightedSetTag<float>, vespalib::Stash&) const { return nullptr; }
     virtual const IWeightedSetReadView<double>* make_read_view(WeightedSetTag<double>, vespalib::Stash&) const { return nullptr; }
+    virtual const IWeightedSetReadView<const char*>* make_read_view(WeightedSetTag<const char*>, vespalib::Stash&) const { return nullptr; }
 
     virtual const IArrayEnumReadView* make_read_view(ArrayEnumTag, vespalib::Stash&) const { return nullptr; }
     virtual const IWeightedSetEnumReadView* make_read_view(WeightedSetEnumTag, vespalib::Stash&) const { return nullptr; }

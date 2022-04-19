@@ -26,6 +26,7 @@ vespa_add_library(searchlib_attribute OBJECT
     bitvector_search_cache.cpp
     changevector.cpp
     configconverter.cpp
+    copy_multi_value_read_view.cpp
     createarrayfastsearch.cpp
     createarraystd.cpp
     createsetfastsearch.cpp
@@ -45,6 +46,7 @@ vespa_add_library(searchlib_attribute OBJECT
     enum_store_dictionary.cpp
     enum_store_loaders.cpp
     enumstore.cpp
+    enumerated_multi_value_read_view.cpp
     extendableattributes.cpp
     fixedsourceselector.cpp
     flagattribute.cpp

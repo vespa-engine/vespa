@@ -88,6 +88,7 @@ vespa_define_module(
     src/tests/attribute/imported_attribute_vector
     src/tests/attribute/imported_search_context
     src/tests/attribute/multi_value_mapping
+    src/tests/attribute/multi_value_read_view
     src/tests/attribute/posting_list_merger
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
