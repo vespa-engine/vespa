@@ -93,16 +93,13 @@ public class ContainerTester implements AutoCloseable {
                                   storageMaintainer, flagSource,
                                   Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1),
                                   VespaServiceDumper.DUMMY_INSTANCE) {
-                    AtomicBoolean stopped = new AtomicBoolean();
                     @Override public void converge(NodeAgentContext context) {
                         super.converge(context);
                         phaser.arriveAndAwaitAdvance();
                     }
                     @Override public void stopForHostSuspension(NodeAgentContext context) {
-                        if (stopped.compareAndSet(false, true)) {
-                            super.stopForHostSuspension(context);
-                            phaser.arriveAndDeregister();
-                        }
+                        super.stopForHostSuspension(context);
+                        phaser.arriveAndAwaitAdvance();
                     }
              };
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
@@ -113,7 +110,7 @@ public class ContainerTester implements AutoCloseable {
 
         loopThread = new Thread(() -> {
             nodeAdminStateUpdater.start();
-            while ( !phaser.isTerminated()) {
+            while ( ! phaser.isTerminated()) {
                 try {
                     nodeAdminStateUpdater.converge(wantedState);
                 } catch (RuntimeException e) {
