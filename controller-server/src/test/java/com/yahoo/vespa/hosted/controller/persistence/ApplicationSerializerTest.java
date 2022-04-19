@@ -159,6 +159,7 @@ public class ApplicationSerializerTest {
         assertEquals(original.id(), serialized.id());
         assertEquals(original.createdAt(), serialized.createdAt());
         assertEquals(applicationVersion1, serialized.revisions().last().get());
+        assertEquals(applicationVersion1, serialized.revisions().get(serialized.instances().get(id1.instance()).deployments().get(zone1).revision()));
         assertEquals(original.revisions().last(), serialized.revisions().last());
         assertEquals(original.revisions().last().get().authorEmail(), serialized.revisions().last().get().authorEmail());
         assertEquals(original.revisions().last().get().buildTime(), serialized.revisions().last().get().buildTime());
