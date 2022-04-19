@@ -104,7 +104,7 @@ public class ContentCluster {
 
     public void setDistribution(Distribution distribution) {
         this.distribution = distribution;
-        for (NodeInfo info : clusterInfo.getAllNodeInfo()) {
+        for (NodeInfo info : clusterInfo.getAllNodeInfos()) {
             info.setGroup(distribution);
         }
     }
@@ -128,7 +128,7 @@ public class ContentCluster {
     }
 
     public void clearStates() {
-        for (NodeInfo info : clusterInfo.getAllNodeInfo()) {
+        for (NodeInfo info : clusterInfo.getAllNodeInfos()) {
             info.setReportedState(null, 0);
         }
     }
@@ -145,8 +145,8 @@ public class ContentCluster {
         return clusterInfo.getConfiguredNodes();
     }
 
-    public Collection<NodeInfo> getNodeInfo() {
-        return Collections.unmodifiableCollection(clusterInfo.getAllNodeInfo());
+    public Collection<NodeInfo> getNodeInfos() {
+        return Collections.unmodifiableCollection(clusterInfo.getAllNodeInfos());
     }
 
     public ClusterInfo clusterInfo() { return clusterInfo; }
@@ -158,7 +158,7 @@ public class ContentCluster {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ContentCluster(").append(clusterName).append(") {");
-        for (NodeInfo node : clusterInfo.getAllNodeInfo()) {
+        for (NodeInfo node : clusterInfo.getAllNodeInfos()) {
             sb.append("\n  ").append(node);
         }
         sb.append("\n}");
@@ -197,14 +197,14 @@ public class ContentCluster {
         switch (state) {
             case MAINTENANCE:  // Orchestrator's ALLOWED_TO_BE_DOWN
             case DOWN:  // Orchestrator's PERMANENTLY_DOWN
-                return clusterInfo.getStorageNodeInfo().stream()
-                        .filter(storageNodeInfo -> {
+                return clusterInfo.getStorageNodeInfos().stream()
+                                  .filter(storageNodeInfo -> {
                             NodeState userWantedState = storageNodeInfo.getUserWantedState();
                             return userWantedState.getState() == state &&
                                     Objects.equals(userWantedState.getDescription(), ORCHESTRATOR_RESERVED_DESCRIPTION);
                         })
-                        .map(NodeInfo::getNodeIndex)
-                        .collect(Collectors.toList());
+                                  .map(NodeInfo::getNodeIndex)
+                                  .collect(Collectors.toList());
             default:
                 // Note: There is no trace left if the Orchestrator set the state to UP, so that's handled
                 // like any other state:

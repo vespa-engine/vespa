@@ -246,7 +246,7 @@ public class StateChangeHandler {
         boolean triggeredAnyTimers = false;
         final long currentTime = timer.getCurrentTimeInMillis();
 
-        for(NodeInfo node : cluster.getNodeInfo()) {
+        for(NodeInfo node : cluster.getNodeInfos()) {
             triggeredAnyTimers |= handleTimeDependentOpsForNode(currentClusterState, nodeListener, currentTime, node);
         }
 

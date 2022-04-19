@@ -188,18 +188,18 @@ public class SystemStateBroadcaster {
     }
 
     private List<NodeInfo> resolveStateVersionSendSet(DatabaseHandler.DatabaseContext dbContext) {
-        return dbContext.getCluster().getNodeInfo().stream()
-                .filter(this::nodeNeedsClusterStateBundle)
-                .filter(node -> !newestStateBundleAlreadySentToNode(node))
-                .collect(Collectors.toList());
+        return dbContext.getCluster().getNodeInfos().stream()
+                        .filter(this::nodeNeedsClusterStateBundle)
+                        .filter(node -> !newestStateBundleAlreadySentToNode(node))
+                        .collect(Collectors.toList());
     }
 
     // Precondition: no nodes in the cluster need to receive the current cluster state version bundle
     private List<NodeInfo> resolveStateActivationSendSet(DatabaseHandler.DatabaseContext dbContext) {
-        return dbContext.getCluster().getNodeInfo().stream()
-                .filter(this::nodeNeedsClusterStateActivation)
-                .filter(node -> !newestStateActivationAlreadySentToNode(node))
-                .collect(Collectors.toList());
+        return dbContext.getCluster().getNodeInfos().stream()
+                        .filter(this::nodeNeedsClusterStateActivation)
+                        .filter(node -> !newestStateActivationAlreadySentToNode(node))
+                        .collect(Collectors.toList());
     }
 
     private boolean newestStateBundleAlreadySentToNode(NodeInfo node) {
@@ -222,9 +222,9 @@ public class SystemStateBroadcaster {
             return; // Nothing to do for the current state
         }
         final int currentStateVersion = clusterStateBundle.getVersion();
-        boolean anyDistributorsNeedStateBundle = dbContext.getCluster().getNodeInfo().stream()
-                .filter(NodeInfo::isDistributor)
-                .anyMatch(this::nodeNeedsClusterStateBundle);
+        boolean anyDistributorsNeedStateBundle = dbContext.getCluster().getNodeInfos().stream()
+                                                          .filter(NodeInfo::isDistributor)
+                                                          .anyMatch(this::nodeNeedsClusterStateBundle);
 
         if (!anyDistributorsNeedStateBundle && (currentStateVersion > lastStateVersionBundleAcked)) {
             markCurrentClusterStateBundleAsReceivedByAllDistributors();
@@ -243,9 +243,9 @@ public class SystemStateBroadcaster {
             return;
         }
 
-        boolean anyDistributorsNeedActivation = dbContext.getCluster().getNodeInfo().stream()
-                .filter(NodeInfo::isDistributor)
-                .anyMatch(this::nodeNeedsClusterStateActivation);
+        boolean anyDistributorsNeedActivation = dbContext.getCluster().getNodeInfos().stream()
+                                                         .filter(NodeInfo::isDistributor)
+                                                         .anyMatch(this::nodeNeedsClusterStateActivation);
 
         if (!anyDistributorsNeedActivation && (currentStateVersion > lastClusterStateVersionConverged)) {
             markCurrentClusterStateAsConverged(database, dbContext, fleetController);
@@ -352,7 +352,7 @@ public class SystemStateBroadcaster {
 
     private static ClusterState buildModifiedClusterState(ClusterState sourceState, DatabaseHandler.DatabaseContext dbContext) {
         ClusterState newState = sourceState.clone();
-        for (NodeInfo n : dbContext.getCluster().getNodeInfo()) {
+        for (NodeInfo n : dbContext.getCluster().getNodeInfos()) {
             NodeState ns = newState.getNodeState(n.getNode());
             if (!n.isDistributor() && ns.getStartTimestamp() == 0) {
                 ns.setStartTimestamp(n.getStartTimestamp());

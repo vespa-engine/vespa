@@ -429,7 +429,7 @@ public class DatabaseHandler {
     public void saveWantedStates(DatabaseContext databaseContext) {
         fleetControllerContext.log(logger, Level.FINE, () -> "Checking whether wanted states have changed compared to zookeeper version.");
         Map<Node, NodeState> wantedStates = new TreeMap<>();
-        for (NodeInfo info : databaseContext.getCluster().getNodeInfo()) {
+        for (NodeInfo info : databaseContext.getCluster().getNodeInfos()) {
             if (!info.getUserWantedState().equals(new NodeState(info.getNode().getType(), State.UP))) {
                 wantedStates.put(info.getNode(), info.getUserWantedState());
             }
@@ -477,7 +477,7 @@ public class DatabaseHandler {
         }
 
         // Remove wanted state from any node having a wanted state set that is no longer valid
-        for (NodeInfo info : databaseContext.getCluster().getNodeInfo()) {
+        for (NodeInfo info : databaseContext.getCluster().getNodeInfos()) {
             NodeState wantedState = wantedStates.get(info.getNode());
             if (wantedState == null && !info.getUserWantedState().equals(new NodeState(info.getNode().getType(), State.UP))) {
                 info.setWantedState(null);

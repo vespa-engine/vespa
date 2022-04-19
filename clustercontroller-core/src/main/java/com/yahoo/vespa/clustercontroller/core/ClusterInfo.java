@@ -40,11 +40,11 @@ public class ClusterInfo {
     /** Returns information about the given node id, or null if this node does not exist */
     public NodeInfo getNodeInfo(Node node) { return allNodeInfo.get(node); }
 
-    Collection<DistributorNodeInfo> getDistributorNodeInfo() { return Collections.unmodifiableCollection(distributorNodeInfo.values()); }
+    Collection<DistributorNodeInfo> getDistributorNodeInfos() { return Collections.unmodifiableCollection(distributorNodeInfo.values()); }
 
-    Collection<StorageNodeInfo> getStorageNodeInfo() { return Collections.unmodifiableCollection(storageNodeInfo.values()); }
+    Collection<StorageNodeInfo> getStorageNodeInfos() { return Collections.unmodifiableCollection(storageNodeInfo.values()); }
 
-    Collection<NodeInfo> getAllNodeInfo() { return Collections.unmodifiableCollection(allNodeInfo.values()); }
+    Collection<NodeInfo> getAllNodeInfos() { return Collections.unmodifiableCollection(allNodeInfo.values()); }
 
     /** Returns the configured nodes of this as a read-only map indexed on node index (distribution key) */
     Map<Integer, ConfiguredNode> getConfiguredNodes() { return Collections.unmodifiableMap(nodes); }

@@ -57,7 +57,7 @@ public class NodeStateGatherer {
     public boolean sendMessages(ContentCluster cluster, Communicator communicator, NodeStateOrHostInfoChangeHandler listener) {
         boolean sentAnyMessages = false;
         long currentTime = timer.getCurrentTimeInMillis();
-        for (NodeInfo info : cluster.getNodeInfo()) {
+        for (NodeInfo info : cluster.getNodeInfos()) {
             Long requestTime = info.getLatestNodeStateRequestTime();
 
             if (requestTime != null && (currentTime - requestTime < nodeStateRequestTimeoutMS)) continue; // pending request

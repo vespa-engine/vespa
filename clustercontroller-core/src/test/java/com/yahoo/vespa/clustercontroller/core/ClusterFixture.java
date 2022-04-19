@@ -142,7 +142,7 @@ public class ClusterFixture {
     }
 
     public ClusterFixture assignDummyRpcAddresses() {
-        cluster.getNodeInfo().forEach(ni -> {
+        cluster.getNodeInfos().forEach(ni -> {
             ni.setRpcAddress(String.format("tcp/%s.%d.local:0",
                     ni.isStorage() ? "storage" : "distributor",
                     ni.getNodeIndex()));

@@ -91,7 +91,7 @@ public class SystemStateBroadcasterTest {
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.broadcaster.handleNewClusterStates(stateBundle);
         f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 3);
-        cf.cluster().getNodeInfo().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
+        cf.cluster().getNodeInfos().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
     }
 
     @Test
@@ -121,7 +121,7 @@ public class SystemStateBroadcasterTest {
         f.broadcaster.handleNewClusterStates(stateBundle);
         f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 3);
 
-        cf.cluster().getNodeInfo().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
+        cf.cluster().getNodeInfos().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
     }
 
     @Test
@@ -153,7 +153,7 @@ public class SystemStateBroadcasterTest {
         f.broadcaster.handleNewClusterStates(stateBundle);
         f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 99);
 
-        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+        cf.cluster().getNodeInfos().forEach(nodeInfo -> {
             verify(f.mockCommunicator, times(0)).setSystemState(any(), eq(nodeInfo), any());
         });
     }
@@ -166,7 +166,7 @@ public class SystemStateBroadcasterTest {
         f.broadcaster.handleNewClusterStates(stateBundle);
         f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 100);
 
-        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+        cf.cluster().getNodeInfos().forEach(nodeInfo -> {
             verify(f.mockCommunicator, times(1)).setSystemState(any(), eq(nodeInfo), any());
         });
     }
@@ -276,7 +276,7 @@ public class SystemStateBroadcasterTest {
         f.simulateBroadcastTick(cf, 123);
 
         // No activations should be sent yet
-        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+        cf.cluster().getNodeInfos().forEach(nodeInfo -> {
             verify(f.mockCommunicator, times(0)).activateClusterStateVersion(eq(123), eq(nodeInfo), any());
         });
         assertNull(f.broadcaster.getLastClusterStateBundleConverged());
@@ -285,7 +285,7 @@ public class SystemStateBroadcasterTest {
         f.simulateBroadcastTick(cf, 123);
 
         // Activation should now be sent to _all_ nodes (distributor and storage)
-        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+        cf.cluster().getNodeInfos().forEach(nodeInfo -> {
             verify(f.mockCommunicator).activateClusterStateVersion(eq(123), eq(nodeInfo), any());
         });
         // But not converged yet, as activations have not been ACKed

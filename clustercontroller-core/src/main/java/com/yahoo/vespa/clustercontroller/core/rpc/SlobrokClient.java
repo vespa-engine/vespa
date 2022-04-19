@@ -149,7 +149,7 @@ public class SlobrokClient implements NodeLookup {
             }
         }
         cluster.setSlobrokGenerationCount(mirrorVersion);
-        for (NodeInfo nodeInfo : cluster.getNodeInfo()) {
+        for (NodeInfo nodeInfo : cluster.getNodeInfos()) {
             if (slobrokNodes.containsKey(nodeInfo.getNode()) && nodeInfo.isRpcAddressOutdated()) {
                 context.log(log,
                             Level.WARNING,
@@ -174,7 +174,7 @@ public class SlobrokClient implements NodeLookup {
             List<SlobrokData> alteredRpcAddress,
             List<NodeInfo> returningRpcAddressNodeInfos)
     {
-        Iterator<NodeInfo> oldIt = oldCluster.getNodeInfo().iterator();
+        Iterator<NodeInfo> oldIt = oldCluster.getNodeInfos().iterator();
         Iterator<SlobrokData> newIt = slobrokNodes.values().iterator();
         NodeInfo oldNext = null;
         SlobrokData newNext = null;

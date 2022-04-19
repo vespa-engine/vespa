@@ -380,7 +380,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         ClusterState baselineState = stateBundle.getBaselineClusterState();
         newStates.add(stateBundle);
         metricUpdater.updateClusterStateMetrics(cluster, baselineState,
-                ResourceUsageStats.calculateFrom(cluster.getNodeInfo(), options.clusterFeedBlockLimit, stateBundle.getFeedBlock()));
+                ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit, stateBundle.getFeedBlock()));
         lastMetricUpdateCycleCount = cycleCount;
         systemStateBroadcaster.handleNewClusterStates(stateBundle);
         // Iff master, always store new version in ZooKeeper _before_ publishing to any
@@ -399,7 +399,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             ClusterStateBundle stateBundle = stateVersionTracker.getVersionedClusterStateBundle();
             ClusterState baselineState = stateBundle.getBaselineClusterState();
             metricUpdater.updateClusterStateMetrics(cluster, baselineState,
-                    ResourceUsageStats.calculateFrom(cluster.getNodeInfo(), options.clusterFeedBlockLimit, stateBundle.getFeedBlock()));
+                    ResourceUsageStats.calculateFrom(cluster.getNodeInfos(), options.clusterFeedBlockLimit, stateBundle.getFeedBlock()));
             lastMetricUpdateCycleCount = cycleCount;
             return true;
         } else {
@@ -806,10 +806,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (bundle == null) {
             return List.of();
         }
-        return cluster.getNodeInfo().stream().
-                filter(n -> effectiveActivatedStateVersion(n, bundle) < version).
-                map(NodeInfo::getNode).
-                collect(Collectors.toList());
+        return cluster.getNodeInfos().stream().
+                      filter(n -> effectiveActivatedStateVersion(n, bundle) < version).
+                      map(NodeInfo::getNode).
+                      collect(Collectors.toList());
     }
 
     private static <E> String stringifyListWithLimits(List<E> list, int limit) {
@@ -939,7 +939,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                     .stateDeriver(createBucketSpaceStateDeriver())
                     .deferredActivation(options.enableTwoPhaseClusterStateActivation)
                     .feedBlock(createResourceExhaustionCalculator()
-                            .inferContentClusterFeedBlockOrNull(cluster.getNodeInfo()))
+                            .inferContentClusterFeedBlockOrNull(cluster.getNodeInfos()))
                     .deriveAndBuild();
             stateVersionTracker.updateLatestCandidateStateBundle(candidateBundle);
             invokeCandidateStateListeners(candidateBundle);
@@ -1183,7 +1183,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         synchronized (monitor) {
             while (true) {
                 int ackedNodes = 0;
-                for (NodeInfo node : cluster.getNodeInfo()) {
+                for (NodeInfo node : cluster.getNodeInfos()) {
                     if (node.getClusterStateVersionBundleAcknowledged() >= version) {
                         ++ackedNodes;
                     }
@@ -1206,7 +1206,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         synchronized (monitor) {
             while (true) {
                 int distCount = 0, storCount = 0;
-                for (NodeInfo info : cluster.getNodeInfo()) {
+                for (NodeInfo info : cluster.getNodeInfos()) {
                     if (!info.isRpcAddressOutdated()) {
                         if (info.isDistributor()) ++distCount;
                         else ++storCount;

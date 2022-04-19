@@ -140,7 +140,7 @@ public class DummyCommunicator implements Communicator, NodeLookup {
             for (Node node : tmp)
                 cluster.clusterInfo().setRpcAddress(node, "foo");
 
-            for (NodeInfo info : cluster.getNodeInfo()) {
+            for (NodeInfo info : cluster.getNodeInfos()) {
                 if (!tmp.contains(info.getNode())) {
                     info.markRpcAddressOutdated(timer);
                     listener.handleMissingNode(info);

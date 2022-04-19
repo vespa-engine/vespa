@@ -234,7 +234,7 @@ public class RpcServer {
                     log.log(Level.FINE, "Resolving RPC getNodeList request");
                     List<String> slobrok = new ArrayList<String>();
                     List<String> rpc = new ArrayList<String>();
-                    for(NodeInfo node : cluster.getNodeInfo()) {
+                    for(NodeInfo node : cluster.getNodeInfos()) {
                         String s1 = node.getSlobrokAddress();
                         String s2 = node.getRpcAddress();
                         assert(s1 != null);
