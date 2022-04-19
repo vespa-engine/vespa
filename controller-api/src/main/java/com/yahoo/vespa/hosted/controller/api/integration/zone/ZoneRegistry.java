@@ -81,6 +81,9 @@ public interface ZoneRegistry {
     /** Returns a URL where an informative dashboard can be found. */
     URI dashboardUrl();
 
+    /** Returns a URL which displays information about the given tenant. */
+    URI dashboardUrl(TenantName id);
+
     /** Returns a URL which displays information about the given application. */
     URI dashboardUrl(ApplicationId id);
 

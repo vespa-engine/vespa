@@ -2,14 +2,14 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
-import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.Notification;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.NotificationSource;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -30,7 +30,7 @@ public class NotificationsSerializerTest {
                 new Notification(Instant.ofEpochSecond(1234),
                         Notification.Type.applicationPackage,
                         Notification.Level.warning,
-                        NotificationSource.from(TenantAndApplicationId.from(tenantName.value(), "app1")),
+                        NotificationSource.from(tenantName, ApplicationName.from("app1")),
                         List.of("Something something deprecated...")),
                 new Notification(Instant.ofEpochSecond(2345),
                         Notification.Type.deployment,

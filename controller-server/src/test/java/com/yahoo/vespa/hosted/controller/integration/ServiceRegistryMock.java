@@ -32,6 +32,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.MemoryNameService;
 import com.yahoo.vespa.hosted.controller.api.integration.entity.MemoryEntityService;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.HorizonClient;
 import com.yahoo.vespa.hosted.controller.api.integration.horizon.MockHorizonClient;
+import com.yahoo.vespa.hosted.controller.api.integration.notify.NotifyDispatcher;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockContactRetriever;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
@@ -48,6 +49,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
+import com.yahoo.vespa.hosted.controller.notify.MockNotifyDispatcher;
 
 import java.time.Instant;
 
@@ -92,6 +94,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ResourceDatabaseClient resourceDb = new ResourceDatabaseClientMock(planRegistry);
     private final BillingDatabaseClient billingDb = new BillingDatabaseClientMock(clock, planRegistry);
     private final RoleMaintainerMock roleMaintainer = new RoleMaintainerMock();
+    private final NotifyDispatcher notifyDispatcher = new MockNotifyDispatcher();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -283,6 +286,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public RoleMaintainer roleMaintainer() {
         return roleMaintainer;
+    }
+
+    @Override
+    public NotifyDispatcher notifyDispatcher() {
+        return notifyDispatcher;
     }
 
     public ConfigServerMock configServerMock() {

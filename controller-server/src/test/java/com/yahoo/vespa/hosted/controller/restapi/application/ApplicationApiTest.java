@@ -43,6 +43,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.Notification;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -57,8 +59,6 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
-import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
@@ -1866,7 +1866,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     private void addNotifications(TenantName tenantName) {
         tester.controller().notificationsDb().setNotification(
-                NotificationSource.from(TenantAndApplicationId.from(tenantName.value(), "app1")),
+                NotificationSource.from(tenantName, ApplicationName.from("app1")),
                 Notification.Type.applicationPackage,
                 Notification.Level.warning,
                 "Something something deprecated...");

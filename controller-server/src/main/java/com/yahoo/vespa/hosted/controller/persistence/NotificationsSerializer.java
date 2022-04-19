@@ -11,8 +11,8 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
-import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.Notification;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.NotificationSource;
 
 import java.util.List;
 import java.util.stream.Collectors;

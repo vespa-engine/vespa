@@ -6,10 +6,11 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Text;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.Notification;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.notify.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
@@ -22,8 +23,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.notification.Notification.Level;
-import static com.yahoo.vespa.hosted.controller.notification.Notification.Type;
+import static com.yahoo.vespa.hosted.controller.api.integration.notification.Notification.Level;
+import static com.yahoo.vespa.hosted.controller.api.integration.notification.Notification.Type;
 
 /**
  * Adds, updates and removes tenant notifications in ZK

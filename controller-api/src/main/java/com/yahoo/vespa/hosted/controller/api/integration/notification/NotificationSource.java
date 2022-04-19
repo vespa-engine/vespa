@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.notification;
+package com.yahoo.vespa.hosted.controller.api.integration.notification;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -12,7 +12,6 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -127,8 +126,8 @@ public class NotificationSource {
         return from(tenantName, null, null, null, null, null, null);
     }
 
-    public static NotificationSource from(TenantAndApplicationId id) {
-        return from(id.tenant(), id.application(), null, null, null, null, null);
+    public static NotificationSource from(TenantName tenantName, ApplicationName applicationName) {
+        return from(tenantName, applicationName, null, null, null, null, null);
     }
 
     public static NotificationSource from(ApplicationId app) {

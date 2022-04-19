@@ -19,7 +19,6 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
@@ -38,13 +37,13 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.Notification;
+import com.yahoo.vespa.hosted.controller.api.integration.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -60,11 +59,8 @@ import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
-import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
-import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
@@ -85,7 +81,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -494,7 +489,7 @@ public class ApplicationController {
             // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
             // the source since it's the same application, so it should have the same warnings
             NotificationSource source = zone.environment().isManuallyDeployed() ?
-                    NotificationSource.from(deployment) : NotificationSource.from(applicationId);
+                    NotificationSource.from(deployment) : NotificationSource.from(applicationId.tenant(), applicationId.application());
 
             @SuppressWarnings("deprecation")
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
@@ -541,7 +536,7 @@ public class ApplicationController {
         // Validate new deployment spec thoroughly before storing it.
         controller.jobController().deploymentStatus(application.get());
 
-        for (Notification notification : controller.notificationsDb().listNotifications(NotificationSource.from(application.get().id()), true)) {
+        for (Notification notification : controller.notificationsDb().listNotifications(NotificationSource.from(application.get().id().tenant(), application.get().id().application()), true)) {
             if ( ! notification.source().instance().map(declaredInstances::contains).orElse(false))
                 controller.notificationsDb().removeNotifications(notification.source());
             if (notification.source().instance().isPresent() &&
@@ -694,7 +689,7 @@ public class ApplicationController {
             curator.removeApplication(id);
 
             controller.jobController().collectGarbage();
-            controller.notificationsDb().removeNotifications(NotificationSource.from(id));
+            controller.notificationsDb().removeNotifications(NotificationSource.from(id.tenant(), id.application()));
             log.info("Deleted " + id);
         });
     }
