@@ -3,6 +3,7 @@
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
@@ -41,7 +42,7 @@ protected:
     ~MultiValueReadViewTest() override = default;
 
     template <typename AttributeBaseType, typename BaseType>
-    void populate_helper(AttributeBaseType& attr, const std::vector<BaseType>& values);
+    void populate_helper(AttributeVector& attr, const std::vector<BaseType>& values);
     void populate(AttributeVector& attr);
     template <typename MultiValueType>
     void check_values_helper(const AttributeVector &attr, const std::vector<multivalue::ValueType_t<MultiValueType>>& exp_values);
@@ -51,23 +52,41 @@ protected:
     void check_floating_point_values(const AttributeVector &attr);
     void check_string_values(const AttributeVector &attr);
     void check_values(const AttributeVector& attr);
+    std::shared_ptr<AttributeVector> make_extendable_attribute(CollectionType collection_type);
     void test_normal_attribute_vector(CollectionType collection_type, bool fast_search);
+    void test_extendable_attribute_vector(CollectionType collection_type);
 };
 
 template <typename AttributeBaseType, typename BaseType>
 void
-MultiValueReadViewTest::populate_helper(AttributeBaseType& attr, const std::vector<BaseType>& values)
+MultiValueReadViewTest::populate_helper(AttributeVector& attr, const std::vector<BaseType>& values)
 {
-    attr.addReservedDoc();
+    auto extend_interface = attr.getExtendInterface();
+    if (extend_interface == nullptr) {
+        attr.addReservedDoc();
+    } else {
+        uint32_t doc_id = 0;
+        EXPECT_TRUE(attr.addDoc(doc_id));
+        EXPECT_EQ(0u, doc_id);
+    }
     uint32_t doc_id = 0;
     attr.addDoc(doc_id);
-    EXPECT_NE(0u, doc_id);
-    attr.clearDoc(doc_id);
+    EXPECT_EQ(1u, doc_id);
+    if (extend_interface == nullptr) {
+        attr.clearDoc(doc_id);
+    }
     attr.addDoc(doc_id);
-    EXPECT_NE(0u, doc_id);
-    attr.clearDoc(doc_id);
-    attr.append(doc_id, values[0], 2);
-    attr.append(doc_id, values[1], 7);
+    EXPECT_EQ(2u, doc_id);
+    if (extend_interface == nullptr) {
+        attr.clearDoc(doc_id);
+        auto& spec_attr = dynamic_cast<AttributeBaseType&>(attr);
+        EXPECT_TRUE(spec_attr.append(doc_id, values[0], 2));
+        EXPECT_TRUE(spec_attr.append(doc_id, values[1], 7));
+        attr.commit();
+    } else {
+        EXPECT_TRUE(extend_interface->add(values[0], 2));
+        EXPECT_TRUE(extend_interface->add(values[1], 7));
+    }
 }
 
 void
@@ -78,19 +97,18 @@ MultiValueReadViewTest::populate(AttributeVector& attr)
     case BasicType::Type::INT16:
     case BasicType::Type::INT32:
     case BasicType::Type::INT64:
-        populate_helper<IntegerAttribute, int64_t>(dynamic_cast<IntegerAttribute&>(attr), {42, 44});
+        populate_helper<IntegerAttribute, int64_t>(attr, {42, 44});
         break;
     case BasicType::Type::FLOAT:
     case BasicType::Type::DOUBLE:
-        populate_helper<FloatingPointAttribute, double>(dynamic_cast<FloatingPointAttribute&>(attr), {42.0, 44.0});
+        populate_helper<FloatingPointAttribute, double>(attr, {42.0, 44.0});
         break;
     case BasicType::Type::STRING:
-        populate_helper<StringAttribute, const char*>(dynamic_cast<StringAttribute&>(attr), {"42", "44"});
+        populate_helper<StringAttribute, const char*>(attr, {"42", "44"});
         break;
     default:
         FAIL() << "Cannot populate attribute vector";
     }
-    attr.commit();
 }
 
 namespace {
@@ -202,6 +220,50 @@ MultiValueReadViewTest::check_values(const AttributeVector& attr)
     }
 }
 
+std::shared_ptr<AttributeVector>
+MultiValueReadViewTest::make_extendable_attribute(CollectionType collection_type)
+{
+    vespalib::string name("attr");
+    // Match strategy in streaming visitor
+    switch (collection_type.type()) {
+    case CollectionType::Type::ARRAY:
+        switch (GetParam().basic_type().type()) {
+        case BasicType::Type::INT8:
+        case BasicType::Type::INT16:
+        case BasicType::Type::INT32:
+        case BasicType::Type::INT64:
+            return std::make_shared<MultiIntegerExtAttribute>(name);
+        case BasicType::Type::FLOAT:
+        case BasicType::Type::DOUBLE:
+            return std::make_shared<MultiFloatExtAttribute>(name);
+        case BasicType::Type::STRING:
+            return std::make_shared<MultiStringExtAttribute>(name);
+        default:
+            ;
+        }
+        break;
+    case CollectionType::Type::WSET:
+        switch (GetParam().basic_type().type()) {
+        case BasicType::Type::INT8:
+        case BasicType::Type::INT16:
+        case BasicType::Type::INT32:
+        case BasicType::Type::INT64:
+            return std::make_shared<WeightedSetIntegerExtAttribute>(name);
+        case BasicType::Type::FLOAT:
+        case BasicType::Type::DOUBLE:
+            return std::make_shared<WeightedSetFloatExtAttribute>(name);
+        case BasicType::Type::STRING:
+            return std::make_shared<WeightedSetStringExtAttribute>(name);
+        default:
+            ;
+        }
+        break;
+    default:
+        ;
+    }
+    return {};
+}
+
 void
 MultiValueReadViewTest::test_normal_attribute_vector(CollectionType collection_type, bool fast_search)
 {
@@ -209,6 +271,17 @@ MultiValueReadViewTest::test_normal_attribute_vector(CollectionType collection_t
     Config config(param.basic_type(), collection_type);
     config.setFastSearch(fast_search);
     auto attr = AttributeFactory::createAttribute("attr", config);
+    populate(*attr);
+    check_values(*attr);
+}
+
+void
+MultiValueReadViewTest::test_extendable_attribute_vector(CollectionType collection_type)
+{
+    auto attr = make_extendable_attribute(collection_type);
+    if (attr == nullptr) {
+        FAIL() << "Cannot create extend attribute";
+    }
     populate(*attr);
     check_values(*attr);
 }
@@ -232,6 +305,16 @@ TEST_P(MultiValueReadViewTest, test_enumerated_weighted_set)
 {
     test_normal_attribute_vector(CollectionType::Type::WSET, true);
 };
+
+TEST_P(MultiValueReadViewTest, test_extendable_array)
+{
+    test_extendable_attribute_vector(CollectionType::Type::ARRAY);
+}
+
+TEST_P(MultiValueReadViewTest, test_extendable_weighted_set)
+{
+    test_extendable_attribute_vector(CollectionType::Type::WSET);
+}
 
 auto test_values = ::testing::Values(TestParam(BasicType::Type::INT8),
                                      TestParam(BasicType::Type::INT16),
