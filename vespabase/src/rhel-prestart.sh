@@ -91,17 +91,9 @@ fixdir () {
     fi
 
     parent=`dirname "$4"`
-    if ! [ -d "$parent" ]; then
-        fixdir "$1" "$2" "$3" "$parent"
-    fi
-
-    if ! [ -d "$4" ]; then
-        mkdir --mode "$3" "$4"
-    fi
-
-    if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
-      chown $1:$2 "$4"
-    fi
+    [ -d "$parent" ] || fixdir "$1" "$2" "$3" "$parent"
+    [ -d "$4" ] || mkdir --mode "$3" "$4"
+    [ "${VESPA_UNPRIVILEGED}" == yes ] || chown $1:$2 "$4"
 }
 
 # BEGIN directory fixups
