@@ -121,7 +121,7 @@ public final class ConfiguredApplication implements Application {
      */
     private static void installBouncyCastleSecurityProvider() {
         BouncyCastleProvider bcProvider = new BouncyCastleProvider();
-        if (Security.insertProviderAt(bcProvider, 1) != -1) {
+        if (Security.addProvider(bcProvider) != -1) {
             log.info("Installed '" + bcProvider.getInfo() + "' as Java Security Provider");
         } else {
             Provider alreadyInstalledBcProvider = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
