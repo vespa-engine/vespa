@@ -326,9 +326,9 @@ class ResultBuilder {
         void addGroup(com.yahoo.searchlib.aggregation.Group execGroup) {
             GroupBuilder groupBuilder = getOrCreateGroup(execGroup);
             if (execGroup.getNumChildren() > 0) {
+                execGroup.sortChildrenByRank();
                 List<com.yahoo.searchlib.aggregation.Group> children = execGroup.getChildren();
                 boolean ranked = children.get(0).isRankedByRelevance();
-                execGroup.sortChildrenByRank();
                 for (com.yahoo.searchlib.aggregation.Group childGroup : children) {
                     GroupListBuilder childList = groupBuilder.getOrCreateChildList(childGroup.getTag(), ranked);
                     childList.addGroup(childGroup);
