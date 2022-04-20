@@ -5,7 +5,7 @@
 namespace search::attribute {
 
 template <class MultiValueType, typename BaseType>
-ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::ExtendableNumericArrayMultiValueReadView(vespalib::ConstArrayRef<BaseType> data, vespalib::ConstArrayRef<uint32_t> idx)
+ExtendableNumericArrayMultiValueReadView<MultiValueType, BaseType>::ExtendableNumericArrayMultiValueReadView(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx)
     : attribute::IMultiValueReadView<MultiValueType>(),
       _data(data),
       _idx(idx),

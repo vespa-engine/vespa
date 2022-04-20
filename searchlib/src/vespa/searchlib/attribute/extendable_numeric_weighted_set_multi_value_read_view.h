@@ -16,12 +16,12 @@ namespace search::attribute {
 template <typename MultiValueType, typename BaseType>
 class ExtendableNumericWeightedSetMultiValueReadView : public attribute::IMultiValueReadView<MultiValueType>
 {
-    vespalib::ConstArrayRef<BaseType>   _data;
-    vespalib::ConstArrayRef<uint32_t>   _idx;
-    vespalib::ConstArrayRef<int32_t>    _weights;
+    const std::vector<BaseType>&        _data;
+    const std::vector<uint32_t>&        _idx;
+    const std::vector<int32_t>&         _weights;
     mutable std::vector<MultiValueType> _copy;
 public:
-    ExtendableNumericWeightedSetMultiValueReadView(vespalib::ConstArrayRef<BaseType> data, vespalib::ConstArrayRef<uint32_t> idx, vespalib::ConstArrayRef<int32_t> weights);
+    ExtendableNumericWeightedSetMultiValueReadView(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx, const std::vector<int32_t>& weights);
     ~ExtendableNumericWeightedSetMultiValueReadView() override;
     vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t doc_id) const override;
 };

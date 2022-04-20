@@ -5,7 +5,7 @@
 namespace search::attribute {
 
 template <class MultiValueType>
-ExtendableStringWeightedSetMultiValueReadView<MultiValueType>::ExtendableStringWeightedSetMultiValueReadView(vespalib::ConstArrayRef<char> buffer, vespalib::ConstArrayRef<uint32_t> offsets, vespalib::ConstArrayRef<uint32_t> idx, vespalib::ConstArrayRef<int32_t> weights)
+ExtendableStringWeightedSetMultiValueReadView<MultiValueType>::ExtendableStringWeightedSetMultiValueReadView(const std::vector<char>& buffer, const vespalib::Array<uint32_t>& offsets, const std::vector<uint32_t>& idx, const std::vector<int32_t>& weights)
     : attribute::IMultiValueReadView<MultiValueType>(),
       _buffer(buffer),
       _offsets(offsets),
@@ -24,7 +24,7 @@ ExtendableStringWeightedSetMultiValueReadView<MultiValueType>::get_values(uint32
 {
     auto offset = _idx[doc_id];
     auto next_offset = _idx[doc_id + 1];
-    vespalib::ConstArrayRef<uint32_t> raw(_offsets.data() + offset, next_offset - offset);
+    vespalib::ConstArrayRef<uint32_t> raw(&_offsets[offset], next_offset - offset);
     if (_copy.size() < raw.size()) {
         _copy.resize(raw.size());
     }
