@@ -15,13 +15,13 @@ namespace search::attribute {
 template <typename MultiValueType>
 class ExtendableStringWeightedSetMultiValueReadView : public attribute::IMultiValueReadView<MultiValueType>
 {
-    vespalib::ConstArrayRef<char>       _buffer;
-    vespalib::ConstArrayRef<uint32_t>   _offsets;
-    vespalib::ConstArrayRef<uint32_t>   _idx;
-    vespalib::ConstArrayRef<int32_t>    _weights;
+    const std::vector<char>&            _buffer;
+    const vespalib::Array<uint32_t>&    _offsets;
+    const std::vector<uint32_t>&        _idx;
+    const std::vector<int32_t>&         _weights;
     mutable std::vector<MultiValueType> _copy;
 public:
-    ExtendableStringWeightedSetMultiValueReadView(vespalib::ConstArrayRef<char> buffer, vespalib::ConstArrayRef<uint32_t> offsets, vespalib::ConstArrayRef<uint32_t> idx, vespalib::ConstArrayRef<int32_t> weights);
+    ExtendableStringWeightedSetMultiValueReadView(const std::vector<char>& buffer, const vespalib::Array<uint32_t>& offsets, const std::vector<uint32_t>& idx, const std::vector<int32_t>& weights);
     ~ExtendableStringWeightedSetMultiValueReadView() override;
     vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t doc_id) const override;
 };
