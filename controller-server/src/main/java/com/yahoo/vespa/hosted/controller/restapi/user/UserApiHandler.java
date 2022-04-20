@@ -172,7 +172,6 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
         toSlime(root.setObject("user"), user);
 
         Cursor tenants = root.setObject("tenants");
-        InstanceName userInstance = InstanceName.from(user.nickname());
         tenantRolesByTenantName.keySet().stream()
                 .sorted()
                 .forEach(tenant -> {
