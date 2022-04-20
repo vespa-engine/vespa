@@ -26,8 +26,6 @@ import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
@@ -46,12 +44,6 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  * @author freva
  */
 class ContainerFileSystemProvider extends FileSystemProvider {
-
-    private static final FileAttribute<?> DEFAULT_FILE_PERMISSIONS = PosixFilePermissions.asFileAttribute(Set.of( // 0640
-            PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.GROUP_READ));
-    private static final FileAttribute<?> DEFAULT_DIRECTORY_PERMISSIONS = PosixFilePermissions.asFileAttribute(Set.of( // 0750
-            PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE, PosixFilePermission.OWNER_EXECUTE, PosixFilePermission.GROUP_READ, PosixFilePermission.GROUP_EXECUTE));
-
     private final ContainerFileSystem containerFs;
     private final ContainerUserPrincipalLookupService userPrincipalLookupService;
 
@@ -90,8 +82,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         Path pathOnHost = pathOnHost(path);
         try (SecureDirectoryStream<Path> sds = leafDirectoryStream(pathOnHost)) {
             boolean existedBefore = Files.exists(pathOnHost);
-            SeekableByteChannel seekableByteChannel = sds.newByteChannel(
-                    pathOnHost.getFileName(), addNoFollow(options), addPermissions(DEFAULT_FILE_PERMISSIONS, attrs));
+            SeekableByteChannel seekableByteChannel = sds.newByteChannel(pathOnHost.getFileName(), addNoFollow(options), attrs);
             if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(path));
             return seekableByteChannel;
         }
@@ -108,7 +99,7 @@ class ContainerFileSystemProvider extends FileSystemProvider {
     public void createDirectory(Path dir, FileAttribute<?>... attrs) throws IOException {
         Path pathOnHost = pathOnHost(dir);
         boolean existedBefore = Files.exists(pathOnHost);
-        provider(pathOnHost).createDirectory(pathOnHost, addPermissions(DEFAULT_DIRECTORY_PERMISSIONS, attrs));
+        provider(pathOnHost).createDirectory(pathOnHost);
         if (!existedBefore) fixOwnerToContainerRoot(toContainerPath(dir));
     }
 
@@ -331,18 +322,6 @@ class ContainerFileSystemProvider extends FileSystemProvider {
         CopyOption[] copy = new CopyOption[options.length + 1];
         System.arraycopy(options, 0, copy, 0, options.length);
         copy[options.length] = LinkOption.NOFOLLOW_LINKS;
-        return copy;
-    }
-
-    private static FileAttribute<?>[] addPermissions(FileAttribute<?> defaultPermissions, FileAttribute<?>... attrs) {
-        for (FileAttribute<?> attr : attrs) {
-            if (attr.name().equals("posix:permissions") || attr.name().equals("unix:permissions"))
-                return attrs;
-        }
-
-        FileAttribute<?>[] copy = new FileAttribute<?>[attrs.length + 1];
-        System.arraycopy(attrs, 0, copy, 0, attrs.length);
-        copy[attrs.length] = defaultPermissions;
         return copy;
     }
 }
