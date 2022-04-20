@@ -15,7 +15,6 @@ import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -112,7 +111,7 @@ public class UserConfigBuilderTest {
         Reader xmlReader = new StringReader("<model>" + xml + "</model>");
         Document doc;
         try {
-            doc = XmlHelper.getDocumentBuilder().parse(new InputSource(xmlReader));
+            doc = XmlHelper.getDocument(xmlReader);
         } catch (Exception e) {
             throw new RuntimeException();
         }
