@@ -157,6 +157,12 @@ func TestReadAPIKey(t *testing.T) {
 	require.Nil(t, err)
 	assert.Equal(t, []byte("foo"), key)
 
+	// Cloud CI does not read key from disk as it's not expected to have any
+	cli, _, _ = newTestCLI(t, "VESPA_CLI_CLOUD_CI=true")
+	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
+	require.Nil(t, err)
+	assert.Nil(t, key)
+
 	// From file specified in environment
 	keyFile := filepath.Join(t.TempDir(), "key")
 	require.Nil(t, os.WriteFile(keyFile, []byte("bar"), 0600))
@@ -192,5 +198,5 @@ func TestReadAPIKey(t *testing.T) {
 	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte(authContent), 0600))
 	key, err = cli.config.readAPIKey(cli, vespa.PublicSystem, "t1")
 	require.Nil(t, err)
-	assert.Equal(t, []byte(nil), key)
+	assert.Nil(t, key)
 }

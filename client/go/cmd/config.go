@@ -439,6 +439,9 @@ func (c *Config) readAPIKey(cli *CLI, system vespa.System, tenantName string) ([
 	if path, ok := c.apiKeyFileFromEnv(); ok {
 		return os.ReadFile(path)
 	}
+	if cli.isCloudCI() {
+		return nil, nil // Vespa Cloud CI only talks to data plane and does not have an API key
+	}
 	if !cli.isCI() {
 		client, err := auth0.New(c.authConfigPath(), system.Name, system.URL)
 		if err == nil && client.HasCredentials() {
