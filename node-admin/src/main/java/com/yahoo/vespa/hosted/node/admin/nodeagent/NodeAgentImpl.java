@@ -27,6 +27,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDumper;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -136,6 +138,30 @@ public class NodeAgentImpl implements NodeAgent {
     public void start(NodeAgentContext initialContext) {
         if (loopThread != null)
             throw new IllegalStateException("Can not re-start a node agent.");
+
+        // TODO: Remove after this has rolled out everywhere
+        int[] stats = new int[]{0, 0, 0};
+        FileFinder.files(initialContext.paths().underVespaHome("")).forEachPath(path -> {
+            UnixPath unixPath = new UnixPath(path);
+
+            String permissions = unixPath.getPermissions();
+            if (!permissions.endsWith("---")) {
+                unixPath.setPermissions(permissions.substring(0, 6) + "---");
+                stats[0]++;
+            }
+
+            if (unixPath.getOwnerId() != initialContext.users().vespa().uid()) {
+                unixPath.setOwnerId(initialContext.users().vespa().uid());
+                stats[1]++;
+            }
+
+            if (unixPath.getGroupId() != initialContext.users().vespa().gid()) {
+                unixPath.setGroupId(initialContext.users().vespa().gid());
+                stats[2]++;
+            }
+        });
+        if (stats[0] + stats[1] + stats[2] > 0)
+            initialContext.log(logger, "chmod %d, chown UID %d, chown GID %d files", stats[0], stats[1], stats[2]);
 
         loopThread = new Thread(() -> {
             while (!terminated.get()) {
