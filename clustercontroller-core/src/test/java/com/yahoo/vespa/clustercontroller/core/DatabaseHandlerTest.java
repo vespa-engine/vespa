@@ -4,8 +4,8 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vespa.clustercontroller.core.database.Database;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -52,12 +52,12 @@ public class DatabaseHandlerTest {
                 }
 
                 @Override
-                public NodeAddedOrRemovedListener getNodeAddedOrRemovedListener() {
+                public SlobrokListener getNodeAddedOrRemovedListener() {
                     return null;
                 }
 
                 @Override
-                public NodeStateOrHostInfoChangeHandler getNodeStateUpdateListener() {
+                public NodeListener getNodeStateUpdateListener() {
                     return null;
                 }
             };

@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.Node;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -52,15 +53,23 @@ public class ClusterInfo {
     boolean hasConfiguredNode(int index) { return nodes.containsKey(index); }
 
     /** Sets the nodes which belongs to this cluster */
-    void setNodes(Collection<ConfiguredNode> newNodes, ContentCluster owner, Distribution distribution) {
+    void setNodes(Collection<ConfiguredNode> newNodes, ContentCluster owner,
+                  Distribution distribution, NodeListener nodeListener) {
         // Remove info for removed nodes
         Set<ConfiguredNode> newNodesSet = new HashSet<>(newNodes);
         for (ConfiguredNode existingNode : this.nodes.values()) {
             if ( ! newNodesSet.contains(existingNode)) {
-                Node existingStorageNode = storageNodeInfo.remove(existingNode.index()).getNode();
-                Node existingDistributorNode = distributorNodeInfo.remove(existingNode.index()).getNode();
-                allNodeInfo.remove(existingDistributorNode);
-                allNodeInfo.remove(existingStorageNode);
+                {
+                    Node existingStorageNode = storageNodeInfo.remove(existingNode.index()).getNode();
+                    allNodeInfo.remove(existingStorageNode);
+                    nodeListener.handleRemovedNode(existingStorageNode);
+                }
+
+                {
+                    Node existingDistributorNode = distributorNodeInfo.remove(existingNode.index()).getNode();
+                    allNodeInfo.remove(existingDistributorNode);
+                    nodeListener.handleRemovedNode(existingDistributorNode);
+                }
             }
         }
 

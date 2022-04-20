@@ -8,7 +8,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -57,7 +57,7 @@ public class ClusterFixture {
     private void doReportNodeState(final Node node, final NodeState nodeState) {
         final ClusterState stateBefore = rawGeneratedClusterState();
 
-        NodeStateOrHostInfoChangeHandler handler = mock(NodeStateOrHostInfoChangeHandler.class);
+        NodeListener handler = mock(NodeListener.class);
         NodeInfo nodeInfo = cluster.getNodeInfo(node);
 
         nodeStateChangeHandler.handleNewReportedNodeState(stateBefore, nodeInfo, nodeState, handler);
@@ -169,7 +169,7 @@ public class ClusterFixture {
         Set<ConfiguredNode> configuredNodes = new HashSet<>(cluster.getConfiguredNodes().values());
         configuredNodes.remove(new ConfiguredNode(nodeIndex, false));
         configuredNodes.add(new ConfiguredNode(nodeIndex, true));
-        cluster.setNodes(configuredNodes);
+        cluster.setNodes(configuredNodes, new NodeListener() {});
         return this;
     }
 

@@ -11,7 +11,7 @@ import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker;
 import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTask;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Id;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.MissingIdException;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
@@ -62,7 +62,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 condition,
                 newStates,
                 id.getNode(),
-                context.nodeStateOrHostInfoChangeHandler,
+                context.nodeListener,
                 context.currentConsolidatedState,
                 context.masterInfo.inMasterMoratorium(),
                 probe);
@@ -112,7 +112,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             SetUnitStateRequest.Condition condition,
             Map<String, UnitState> newStates,
             Node node,
-            NodeStateOrHostInfoChangeHandler stateListener,
+            NodeListener stateListener,
             ClusterState currentClusterState,
             boolean inMasterMoratorium,
             boolean probe) throws StateRestApiException {
@@ -159,7 +159,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             SetUnitStateRequest.Condition condition,
             NodeInfo nodeInfo,
             ContentCluster cluster,
-            NodeStateOrHostInfoChangeHandler stateListener,
+            NodeListener stateListener,
             boolean probe) {
         if (result.settingWantedStateIsAllowed()) {
             setNewWantedState(nodeInfo, newWantedState, stateListener, probe);
@@ -186,7 +186,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
     private static void setDistributorWantedState(ContentCluster cluster,
                                                   int index,
                                                   NodeState newStorageWantedState,
-                                                  NodeStateOrHostInfoChangeHandler stateListener,
+                                                  NodeListener stateListener,
                                                   boolean probe) {
         Node distributorNode = new Node(NodeType.DISTRIBUTOR, index);
         NodeInfo nodeInfo = cluster.getNodeInfo(distributorNode);
@@ -224,7 +224,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
 
     private static void setNewWantedState(NodeInfo nodeInfo,
                                           NodeState newWantedState,
-                                          NodeStateOrHostInfoChangeHandler stateListener,
+                                          NodeListener stateListener,
                                           boolean probe) {
         if (probe) return;
         nodeInfo.setWantedState(newWantedState);

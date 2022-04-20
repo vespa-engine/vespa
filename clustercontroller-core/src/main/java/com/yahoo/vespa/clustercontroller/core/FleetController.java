@@ -12,8 +12,8 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabaseFactory;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.listeners.SystemStateListener;
 import com.yahoo.vespa.clustercontroller.core.rpc.RPCCommunicator;
 import com.yahoo.vespa.clustercontroller.core.rpc.RpcServer;
@@ -47,7 +47,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAddedOrRemovedListener, SystemStateListener,
+public class FleetController implements NodeListener, SlobrokListener, SystemStateListener,
                                         Runnable, RemoteClusterControllerTaskScheduler {
 
     private static final Logger logger = Logger.getLogger(FleetController.class.getName());
@@ -332,6 +332,13 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     @Override
+    public void handleRemovedNode(Node node) {
+        verifyInControllerThread();
+        // Prune orphaned wanted states
+        wantedStateChanged = true;
+    }
+
+    @Override
     public void handleUpdatedHostInfo(NodeInfo nodeInfo, HostInfo newHostInfo) {
         verifyInControllerThread();
         triggerBundleRecomputationIfResourceExhaustionStateChanged(nodeInfo, newHostInfo);
@@ -511,7 +518,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         eventLog.setMaxSize(options.eventLogMaxSize, options.eventNodeLogMaxSize);
         cluster.setPollingFrequency(options.statePollingFrequency);
         cluster.setDistribution(options.storageDistribution);
-        cluster.setNodes(options.nodes);
+        cluster.setNodes(options.nodes, databaseContext.getNodeStateUpdateListener());
         database.setZooKeeperAddress(options.zooKeeperServerAddress, databaseContext);
         database.setZooKeeperSessionTimeout(options.zooKeeperSessionTimeout, databaseContext);
         stateGatherer.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
@@ -790,8 +797,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             @Override public boolean inMasterMoratorium() { return inMasterMoratorium; }
         };
 
-        context.nodeStateOrHostInfoChangeHandler = this;
-        context.nodeAddedOrRemovedListener = this;
+        context.nodeListener = this;
+        context.slobrokListener = this;
         return context;
     }
 
@@ -1095,7 +1102,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 didWork = true;
             }
             if (wantedStateChanged) {
-                database.saveWantedStates(databaseContext);
+                didWork |= database.saveWantedStates(databaseContext);
                 wantedStateChanged = false;
             }
         } else {
@@ -1150,9 +1157,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         @Override
         public FleetController getFleetController() { return FleetController.this; }
         @Override
-        public NodeAddedOrRemovedListener getNodeAddedOrRemovedListener() { return FleetController.this; }
+        public SlobrokListener getNodeAddedOrRemovedListener() { return FleetController.this; }
         @Override
-        public NodeStateOrHostInfoChangeHandler getNodeStateUpdateListener() { return FleetController.this; }
+        public NodeListener getNodeStateUpdateListener() { return FleetController.this; }
     };
 
     public void waitForCompleteCycle(long timeoutMS) {

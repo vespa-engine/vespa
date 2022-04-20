@@ -6,8 +6,8 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -69,12 +69,12 @@ public class SystemStateBroadcasterTest {
             }
 
             @Override
-            public NodeAddedOrRemovedListener getNodeAddedOrRemovedListener() {
+            public SlobrokListener getNodeAddedOrRemovedListener() {
                 return null;
             }
 
             @Override
-            public NodeStateOrHostInfoChangeHandler getNodeStateUpdateListener() {
+            public NodeListener getNodeStateUpdateListener() {
                 return null;
             }
         };

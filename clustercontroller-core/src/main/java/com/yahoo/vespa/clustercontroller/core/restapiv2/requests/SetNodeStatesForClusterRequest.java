@@ -70,7 +70,7 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
                     condition,
                     newStates,
                     node,
-                    context.nodeStateOrHostInfoChangeHandler,
+                    context.nodeListener,
                     context.currentConsolidatedState,
                     context.masterInfo.inMasterMoratorium(),
                     probe);

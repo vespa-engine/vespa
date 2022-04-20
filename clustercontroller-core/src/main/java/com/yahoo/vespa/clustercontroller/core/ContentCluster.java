@@ -10,6 +10,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.HtmlTable;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
@@ -42,7 +43,7 @@ public class ContentCluster {
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
         this.distribution = distribution;
-        setNodes(configuredNodes);
+        setNodes(configuredNodes, new NodeListener() {});
     }
 
     // TODO move out, this doesn't belong in a domain model class
@@ -110,8 +111,8 @@ public class ContentCluster {
     }
 
     /** Sets the configured nodes of this cluster */
-    public final void setNodes(Collection<ConfiguredNode> configuredNodes) {
-        clusterInfo.setNodes(configuredNodes, this, distribution);
+    public final void setNodes(Collection<ConfiguredNode> configuredNodes, NodeListener nodeListener) {
+        clusterInfo.setNodes(configuredNodes, this, distribution, nodeListener);
     }
 
     public void setStartTimestamp(Node n, long startTimestamp) {

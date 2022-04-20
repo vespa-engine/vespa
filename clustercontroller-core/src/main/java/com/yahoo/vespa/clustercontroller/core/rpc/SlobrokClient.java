@@ -13,7 +13,7 @@ import com.yahoo.vespa.clustercontroller.core.FleetControllerContext;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.NodeLookup;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -78,7 +78,7 @@ public class SlobrokClient implements NodeLookup {
     }
 
     @Override
-    public boolean updateCluster(ContentCluster cluster, NodeAddedOrRemovedListener listener) {
+    public boolean updateCluster(ContentCluster cluster, SlobrokListener listener) {
         if (mirror == null) return false;
         int mirrorVersion = mirror.updates();
         if (freshMirror) {

@@ -10,8 +10,8 @@ import com.yahoo.vespa.clustercontroller.core.FleetControllerContext;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import org.apache.zookeeper.KeeperException;
 
 import java.io.PrintWriter;
@@ -32,8 +32,8 @@ public class DatabaseHandler {
     public interface DatabaseContext {
         ContentCluster getCluster();
         FleetController getFleetController();
-        NodeAddedOrRemovedListener getNodeAddedOrRemovedListener();
-        NodeStateOrHostInfoChangeHandler getNodeStateUpdateListener();
+        SlobrokListener getNodeAddedOrRemovedListener();
+        NodeListener getNodeStateUpdateListener();
     }
 
     private static class Data {
@@ -425,7 +425,7 @@ public class DatabaseHandler {
         }
     }
 
-    public void saveWantedStates(DatabaseContext databaseContext) {
+    public boolean saveWantedStates(DatabaseContext databaseContext) {
         fleetControllerContext.log(logger, Level.FINE, () -> "Checking whether wanted states have changed compared to zookeeper version.");
         Map<Node, NodeState> wantedStates = new TreeMap<>();
         for (NodeInfo info : databaseContext.getCluster().getNodeInfos()) {
@@ -443,6 +443,9 @@ public class DatabaseHandler {
             fleetControllerContext.log(logger, Level.FINE, () -> "Scheduling new wanted states to be stored into zookeeper.");
             pendingStore.wantedStates = wantedStates;
             doNextZooKeeperTask(databaseContext);
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -465,7 +468,11 @@ public class DatabaseHandler {
         boolean altered = false;
         for (Node node : wantedStates.keySet()) {
             NodeInfo nodeInfo = databaseContext.getCluster().getNodeInfo(node);
-            if (nodeInfo == null) continue; // ignore wanted state of nodes which doesn't exist
+            if (nodeInfo == null) {
+                databaseContext.getNodeStateUpdateListener().handleRemovedNode(node);
+                altered = true;
+                continue;
+            }
             NodeState wantedState = wantedStates.get(node);
             if ( ! nodeInfo.getUserWantedState().equals(wantedState)) {
                 nodeInfo.setWantedState(wantedState);

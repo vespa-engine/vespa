@@ -27,8 +27,8 @@ import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.MasterElectionHandler;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.Timer;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -186,8 +186,8 @@ public class RpcServer {
     }
 
     public boolean handleRpcRequests(ContentCluster cluster, ClusterState systemState,
-                                     NodeStateOrHostInfoChangeHandler changeListener,
-                                     NodeAddedOrRemovedListener addedListener)
+                                     NodeListener changeListener,
+                                     SlobrokListener addedListener)
     {
         boolean handledAnyRequests = false;
         if (!isConnected()) {

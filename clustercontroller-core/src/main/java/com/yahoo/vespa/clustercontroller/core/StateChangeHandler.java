@@ -8,7 +8,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 import java.util.Map;
 import java.util.Set;
@@ -113,7 +113,7 @@ public class StateChangeHandler {
     public void handleNewReportedNodeState(final ClusterState currentClusterState,
                                            final NodeInfo node,
                                            final NodeState reportedState,
-                                           final NodeStateOrHostInfoChangeHandler nodeListener)
+                                           final NodeListener nodeListener)
     {
         final NodeState currentState = currentClusterState.getNodeState(node.getNode());
         final Level level = (currentState.equals(reportedState) && node.getVersion() == 0) ? Level.FINEST : Level.FINE;
@@ -164,7 +164,7 @@ public class StateChangeHandler {
 
     public void handleMissingNode(final ClusterState currentClusterState,
                                   final NodeInfo node,
-                                  final NodeStateOrHostInfoChangeHandler nodeListener) {
+                                  final NodeListener nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
 
         if (node.getLatestNodeStateRequestTime() != null) {
@@ -241,7 +241,7 @@ public class StateChangeHandler {
     //  `--> this will require adding more event edges and premature crash handling to it. Which is fine.
     public boolean watchTimers(final ContentCluster cluster,
                                final ClusterState currentClusterState,
-                               final NodeStateOrHostInfoChangeHandler nodeListener)
+                               final NodeListener nodeListener)
     {
         boolean triggeredAnyTimers = false;
         final long currentTime = timer.getCurrentTimeInMillis();
@@ -257,7 +257,7 @@ public class StateChangeHandler {
     }
 
     private boolean handleTimeDependentOpsForNode(final ClusterState currentClusterState,
-                                                  final NodeStateOrHostInfoChangeHandler nodeListener,
+                                                  final NodeListener nodeListener,
                                                   final long currentTime,
                                                   final NodeInfo node)
     {
@@ -334,7 +334,7 @@ public class StateChangeHandler {
     }
 
     private boolean reportDownIfOutdatedSlobrokNode(ClusterState currentClusterState,
-                                                    NodeStateOrHostInfoChangeHandler nodeListener,
+                                                    NodeListener nodeListener,
                                                     long currentTime,
                                                     NodeInfo node,
                                                     NodeState lastReportedState)
@@ -379,7 +379,7 @@ public class StateChangeHandler {
     private void updateNodeInfoFromReportedState(final NodeInfo node,
                                                  final NodeState currentState,
                                                  final NodeState reportedState,
-                                                 final NodeStateOrHostInfoChangeHandler nodeListener) {
+                                                 final NodeListener nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
         log.log(Level.FINE, () -> String.format("Finding new cluster state entry for %s switching state %s", node, currentState.getTextualDifference(reportedState)));
 
@@ -400,7 +400,7 @@ public class StateChangeHandler {
     private void markNodeUnstableIfDownEdgeDuringInit(final NodeInfo node,
                                                       final NodeState currentState,
                                                       final NodeState reportedState,
-                                                      final NodeStateOrHostInfoChangeHandler nodeListener,
+                                                      final NodeListener nodeListener,
                                                       final long timeNow) {
         if (currentState.getState().equals(State.INITIALIZING)
                 && reportedState.getState().oneOf("ds")
@@ -419,7 +419,7 @@ public class StateChangeHandler {
     private boolean handleImplicitCrashEdgeFromReverseInitProgress(final NodeInfo node,
                                                                    final NodeState currentState,
                                                                    final NodeState reportedState,
-                                                                   final NodeStateOrHostInfoChangeHandler nodeListener,
+                                                                   final NodeListener nodeListener,
                                                                    final long timeNow) {
         if (currentState.getState().equals(State.INITIALIZING) &&
             (reportedState.getState().equals(State.INITIALIZING) && reportedState.getInitProgress() < currentState.getInitProgress()))
@@ -438,7 +438,7 @@ public class StateChangeHandler {
     }
 
     private boolean handleReportedNodeCrashEdge(NodeInfo node, NodeState currentState,
-                                                NodeState reportedState, NodeStateOrHostInfoChangeHandler nodeListener,
+                                                NodeState reportedState, NodeListener nodeListener,
                                                 long timeNow) {
         if (nodeUpToDownEdge(node, currentState, reportedState)) {
             node.setTransitionTime(timeNow);
@@ -467,7 +467,7 @@ public class StateChangeHandler {
             && (node.getWantedState().getState().equals(State.RETIRED) || !reportedState.getState().equals(State.INITIALIZING));
     }
 
-    private boolean handlePrematureCrash(NodeInfo node, NodeStateOrHostInfoChangeHandler changeListener) {
+    private boolean handlePrematureCrash(NodeInfo node, NodeListener changeListener) {
         node.setPrematureCrashCount(node.getPrematureCrashCount() + 1);
         if (disableUnstableNodes && node.getPrematureCrashCount() > maxPrematureCrashes) {
             NodeState wantedState = new NodeState(node.getNode().getType(), State.DOWN)
