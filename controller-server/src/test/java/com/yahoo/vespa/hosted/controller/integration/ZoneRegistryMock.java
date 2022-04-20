@@ -199,6 +199,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public URI dashboardUrl(TenantName tenantName) {
+        return URI.create("https://dashboard.tld/" + tenantName);
+    }
+
+    @Override
     public URI dashboardUrl(RunId id) {
         return URI.create("https://dashboard.tld/" + id.application() + "/" + id.type().jobName() + "/" + id.number());
     }
