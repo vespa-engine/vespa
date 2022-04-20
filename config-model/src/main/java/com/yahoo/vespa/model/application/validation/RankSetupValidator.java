@@ -170,12 +170,13 @@ public class RankSetupValidator extends Validator {
     }
 
     private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        String job = String.format("%s %s", binaryName, configId);
-        ProcessExecuter executer = new ProcessExecuter(true);
+        String command = String.format("%s %s", binaryName, configId);
         try {
-            Pair<Integer, String> ret = executer.exec(job);
-            if (ret.getFirst() != 0) {
-                validateFail(ret.getSecond(), sc, sdName, deployLogger);
+            Pair<Integer, String> ret = new ProcessExecuter(true).exec(command);
+            Integer exitCode = ret.getFirst();
+            String output = ret.getSecond();
+            if (exitCode != 0) {
+                validateFail(output, exitCode, sc, sdName, deployLogger);
             }
         } catch (IOException e) {
             validateWarn(e, deployLogger);
@@ -191,23 +192,32 @@ public class RankSetupValidator extends Validator {
         deployLogger.logApplicationPackage(Level.WARNING, msg);
     }
 
-    private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        StringBuilder errMsg = new StringBuilder("Error in rank setup in schema '").append(sdName)
+    private void validateFail(String output, int exitCode, SearchCluster sc, String sdName, DeployLogger deployLogger) {
+        StringBuilder message = new StringBuilder("Error in rank setup in schema '").append(sdName)
                 .append("' for content cluster '").append(sc.getClusterName()).append("'.").append(" Details:\n");
-        for (String line : output.split("\n")) {
-            // Remove debug lines from start script
-            if (line.startsWith("debug\t")) continue;
-            try {
-                LogMessage logMessage = LogMessage.parseNativeFormat(line);
-                errMsg.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
-            } catch (InvalidLogFormatException e) {
-                errMsg.append(line).append("\n");
+        if (output.isEmpty()) {
+            message.append("Verifying rank setup failed and got no output from stderr and stdout from '")
+                  .append(binaryName)
+                  .append("' (exit code: ")
+                  .append(exitCode)
+                  .append("). This could be due to full disk, out of memory etc.");
+        } else {
+            for (String line : output.split("\n")) {
+                // Remove debug lines from start script
+                if (line.startsWith("debug\t")) continue;
+                try {
+                    LogMessage logMessage = LogMessage.parseNativeFormat(line);
+                    message.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
+                } catch (InvalidLogFormatException e) {
+                    message.append(line).append("\n");
+                }
             }
         }
+
         if (ignoreValidationErrors) {
-            deployLogger.log(Level.WARNING, errMsg.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
+            deployLogger.log(Level.WARNING, message.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
         } else {
-            throw new IllegalArgumentException(errMsg.toString());
+            throw new IllegalArgumentException(message.toString());
         }
     }
 
