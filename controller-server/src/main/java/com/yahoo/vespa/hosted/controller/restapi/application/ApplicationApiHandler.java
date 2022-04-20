@@ -1119,6 +1119,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
             nodeObject.setBool("down", !isUp);
+//            nodeObject.setBool("down", node.down()); // TODO (valerijf): Enable when all configservers expose this
             nodeObject.setBool("retired", node.retired() || node.wantToRetire());
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());
