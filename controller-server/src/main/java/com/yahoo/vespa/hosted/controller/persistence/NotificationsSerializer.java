@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
@@ -43,7 +44,13 @@ public class NotificationsSerializer {
     private static final String jobTypeField = "jobId";
     private static final String runNumberField = "runNumber";
 
-    public static Slime toSlime(List<Notification> notifications) {
+    private final SystemName system;
+
+    NotificationsSerializer(SystemName system) {
+        this.system = system;
+    }
+
+    public Slime toSlime(List<Notification> notifications) {
         Slime slime = new Slime();
         Cursor notificationsArray = slime.setObject().setArray(notificationsFieldName);
 
@@ -59,20 +66,20 @@ public class NotificationsSerializer {
             notification.source().instance().ifPresent(instance -> notificationObject.setString(instanceField, instance.value()));
             notification.source().zoneId().ifPresent(zoneId -> notificationObject.setString(zoneField, zoneId.value()));
             notification.source().clusterId().ifPresent(clusterId -> notificationObject.setString(clusterIdField, clusterId.value()));
-            notification.source().jobType().ifPresent(jobType -> notificationObject.setString(jobTypeField, jobType.jobName()));
+            notification.source().jobType().ifPresent(jobType -> notificationObject.setString(jobTypeField, jobType.serialized(system)));
             notification.source().runNumber().ifPresent(runNumber -> notificationObject.setLong(runNumberField, runNumber));
         }
 
         return slime;
     }
 
-    public static List<Notification> fromSlime(TenantName tenantName, Slime slime) {
+    public List<Notification> fromSlime(TenantName tenantName, Slime slime) {
         return SlimeUtils.entriesStream(slime.get().field(notificationsFieldName))
                 .map(inspector -> fromInspector(tenantName, inspector))
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    private static Notification fromInspector(TenantName tenantName, Inspector inspector) {
+    private Notification fromInspector(TenantName tenantName, Inspector inspector) {
         return new Notification(
                 SlimeUtils.instant(inspector.field(atFieldName)),
                 typeFrom(inspector.field(typeField)),
@@ -125,4 +132,5 @@ public class NotificationsSerializer {
             default: throw new IllegalArgumentException("Unknown serialized notification level value '" + field.asString() + "'");
         }
     }
+
 }

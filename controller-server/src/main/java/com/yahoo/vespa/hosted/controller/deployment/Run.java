@@ -297,7 +297,7 @@ public class Run {
         return steps.entrySet().stream()
                     .filter(entry -> entry.getValue().status() == unfinished
                                      && entry.getKey().prerequisites().stream()
-                                             .allMatch(step -> steps.get(step) == null
+                                             .allMatch(step ->    steps.get(step) == null
                                                                || steps.get(step).status() == succeeded))
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toUnmodifiableList());
@@ -310,7 +310,7 @@ public class Run {
                                      && entry.getKey().alwaysRun()
                                      && entry.getKey().prerequisites().stream()
                                              .filter(Step::alwaysRun)
-                                             .allMatch(step -> steps.get(step) == null
+                                             .allMatch(step ->    steps.get(step) == null
                                                                || steps.get(step).status() != unfinished))
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toUnmodifiableList());

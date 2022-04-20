@@ -486,7 +486,7 @@ public class DeploymentStatus {
                     if (   job.type().isProduction() && job.type().isDeployment()
                         && allJobs.successOn(productionJob.versions()).type(testType).isEmpty()
                         && testJobs.keySet().stream()
-                                   .noneMatch(test ->    test.type() == testType
+                                   .noneMatch(test ->    test.type().equals(testType)
                                                       && testJobs.get(test).stream().anyMatch(testJob -> testJob.versions().equals(productionJob.versions())))) {
                         JobId testJob = firstDeclaredOrElseImplicitTest(testType);
                         testJobs.merge(testJob,

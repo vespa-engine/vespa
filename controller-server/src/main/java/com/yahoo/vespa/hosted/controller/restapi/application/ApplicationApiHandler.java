@@ -708,7 +708,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                         propertyEquals(request, "application", ApplicationName::from, notification.source().application()) &&
                         propertyEquals(request, "instance", InstanceName::from, notification.source().instance()) &&
                         propertyEquals(request, "zone", ZoneId::from, notification.source().zoneId()) &&
-                        propertyEquals(request, "job", JobType::fromJobName, notification.source().jobType()) &&
+                        propertyEquals(request, "job", job -> JobType.fromJobName(job, controller.zoneRegistry()), notification.source().jobType()) &&
                         propertyEquals(request, "type", Notification.Type::valueOf, Optional.of(notification.type())) &&
                         propertyEquals(request, "level", Notification.Level::valueOf, Optional.of(notification.level())))
                 .forEach(notification -> toSlime(notificationsArray.addObject(), notification, includeTenantFieldInResponse, excludeMessages));
@@ -2694,11 +2694,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return ApplicationId.from(path.get("tenant"), path.get("application"), path.get("instance"));
     }
 
-    private static JobType jobTypeFromPath(Path path) {
-        return JobType.fromJobName(path.get("jobtype"));
+    private JobType jobTypeFromPath(Path path) {
+        return JobType.fromJobName(path.get("jobtype"), controller.zoneRegistry());
     }
 
-    private static RunId runIdFromPath(Path path) {
+    private RunId runIdFromPath(Path path) {
         long number = Long.parseLong(path.get("number"));
         return new RunId(appIdFromPath(path), jobTypeFromPath(path), number);
     }

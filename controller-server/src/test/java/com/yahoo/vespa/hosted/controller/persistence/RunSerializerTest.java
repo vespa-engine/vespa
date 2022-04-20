@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
 
+import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
@@ -58,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 
 public class RunSerializerTest {
 
-    private static final RunSerializer serializer = new RunSerializer();
+    private static final RunSerializer serializer = new RunSerializer(main);
     private static final Path runFile = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/run-status.json");
     private static final RunId id = new RunId(ApplicationId.from("tenant", "application", "default"),
                                               JobType.productionUsEast3,

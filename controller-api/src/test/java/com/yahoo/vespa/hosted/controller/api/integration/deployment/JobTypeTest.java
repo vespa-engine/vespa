@@ -30,8 +30,13 @@ public class JobTypeTest {
             }
         }
 
-        assertEquals(JobType.testUsEast3, JobType.fromJobName("prod.us-east-3.test"));
-        assertEquals(JobType.devAwsUsEast1c, JobType.fromJobName("dev.aws-us-east-1c"));
+        assertEquals(JobType.testUsEast3, JobType.ofSerialized("prod.us-east-3.test"));
+        assertEquals(JobType.devAwsUsEast1c, JobType.ofSerialized("dev.aws-us-east-1c"));
+
+        assertEquals(JobType.fromJobName("production-my-zone", null), JobType.prod("my-zone"));
+        assertEquals(JobType.fromJobName("test-my-zone", null), JobType.test("my-zone"));
+        assertEquals(JobType.fromJobName("dev-my-zone", null), JobType.dev("my-zone"));
+        assertEquals(JobType.fromJobName("perf-my-zone", null), JobType.perf("my-zone"));
 
         assertFalse(JobType.dev("snohetta").isTest());
         assertTrue(JobType.dev("snohetta").isDeployment());

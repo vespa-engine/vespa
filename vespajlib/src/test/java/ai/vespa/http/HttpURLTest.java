@@ -161,6 +161,10 @@ class HttpURLTest {
         assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: '..'",
                      assertThrows(IllegalArgumentException.class,
                                   () -> Path.empty().append("%2E%25252E")).getMessage());
+
+        assertEquals("path segments cannot be \"\", \".\", or \"..\", but got: ''",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> Path.parse("//")).getMessage());
     }
 
     @Test

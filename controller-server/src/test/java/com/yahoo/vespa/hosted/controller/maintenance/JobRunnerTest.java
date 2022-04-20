@@ -86,7 +86,7 @@ public class JobRunnerTest {
     public void multiThreadedExecutionFinishes() {
         DeploymentTester tester = new DeploymentTester();
         JobController jobs = tester.controller().jobController();
-        StepRunner stepRunner = (step, id) -> id.type() == stagingTest && step.get() == startTests? Optional.of(error) : Optional.of(running);
+        StepRunner stepRunner = (step, id) -> id.type().equals(stagingTest) && step.get() == startTests? Optional.of(error) : Optional.of(running);
         Phaser phaser = new Phaser(1);
         JobRunner runner = new JobRunner(tester.controller(), Duration.ofDays(1), phasedExecutor(phaser), stepRunner);
 

@@ -29,7 +29,7 @@ public class JobId {
         if (o == null || getClass() != o.getClass()) return false;
         JobId jobId = (JobId) o;
         return application.equals(jobId.application) &&
-               type == jobId.type;
+               type.equals(jobId.type);
     }
 
     @Override

@@ -107,7 +107,6 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
-    private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionTargetSerializer osVersionTargetSerializer = new OsVersionTargetSerializer(osVersionSerializer);
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
@@ -116,6 +115,9 @@ public class CuratorDb {
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
     private final ApplicationSerializer applicationSerializer;
+    private final RunSerializer runSerializer;
+    private final RetriggerEntrySerializer retriggerEntrySerializer;
+    private final NotificationsSerializer notificationsSerializer;
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -138,6 +140,9 @@ public class CuratorDb {
         this.tryLockTimeout = tryLockTimeout;
         this.lockScheme = Flags.CONTROLLER_LOCK_SCHEME.bindTo(flagSource);
         this.applicationSerializer = new ApplicationSerializer(system);
+        this.runSerializer = new RunSerializer(system);
+        this.retriggerEntrySerializer = new RetriggerEntrySerializer(system);
+        this.notificationsSerializer = new NotificationsSerializer(system);
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */
@@ -683,7 +688,7 @@ public class CuratorDb {
 
     public List<Notification> readNotifications(TenantName tenantName) {
         return readSlime(notificationsPath(tenantName))
-                .map(slime -> NotificationsSerializer.fromSlime(tenantName, slime)).orElseGet(List::of);
+                .map(slime -> notificationsSerializer.fromSlime(tenantName, slime)).orElseGet(List::of);
     }
 
 
@@ -694,7 +699,7 @@ public class CuratorDb {
     }
 
     public void writeNotifications(TenantName tenantName, List<Notification> notifications) {
-        curator.set(notificationsPath(tenantName), asJson(NotificationsSerializer.toSlime(notifications)));
+        curator.set(notificationsPath(tenantName), asJson(notificationsSerializer.toSlime(notifications)));
     }
 
     public void deleteNotifications(TenantName tenantName) {
@@ -715,11 +720,11 @@ public class CuratorDb {
     // -------------- Job Retrigger entries -----------------------------------
 
     public List<RetriggerEntry> readRetriggerEntries() {
-        return readSlime(deploymentRetriggerPath()).map(RetriggerEntrySerializer::fromSlime).orElseGet(List::of);
+        return readSlime(deploymentRetriggerPath()).map(retriggerEntrySerializer::fromSlime).orElseGet(List::of);
     }
 
     public void writeRetriggerEntries(List<RetriggerEntry> retriggerEntries) {
-        curator.set(deploymentRetriggerPath(), asJson(RetriggerEntrySerializer.toSlime(retriggerEntries)));
+        curator.set(deploymentRetriggerPath(), asJson(retriggerEntrySerializer.toSlime(retriggerEntries)));
     }
 
     // -------------- Paths ---------------------------------------------------

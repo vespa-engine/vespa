@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
+import static com.yahoo.config.provision.SystemName.main;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -25,6 +26,7 @@ public class NotificationsSerializerTest {
 
     @Test
     public void serialization_test() throws IOException {
+        NotificationsSerializer serializer = new NotificationsSerializer(main);
         TenantName tenantName = TenantName.from("tenant1");
         List<Notification> notifications = List.of(
                 new Notification(Instant.ofEpochSecond(1234),
@@ -38,7 +40,7 @@ public class NotificationsSerializerTest {
                         NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app1", "instance1"), JobType.systemTest, 12)),
                         List.of("Failed to deploy: Node allocation failure")));
 
-        Slime serialized = NotificationsSerializer.toSlime(notifications);
+        Slime serialized = serializer.toSlime(notifications);
         assertEquals("{\"notifications\":[" +
                 "{" +
                     "\"at\":1234000," +
@@ -53,11 +55,12 @@ public class NotificationsSerializerTest {
                     "\"messages\":[\"Failed to deploy: Node allocation failure\"]," +
                     "\"application\":\"app1\"," +
                     "\"instance\":\"instance1\"," +
-                    "\"jobId\":\"system-test\"," +
+                    "\"jobId\":\"test.us-east-1\"," +
                     "\"runNumber\":12" +
                 "}]}", new String(SlimeUtils.toJsonBytes(serialized)));
 
-        List<Notification> deserialized = NotificationsSerializer.fromSlime(tenantName, serialized);
+        List<Notification> deserialized = serializer.fromSlime(tenantName, serialized);
         assertEquals(notifications, deserialized);
     }
+
 }
