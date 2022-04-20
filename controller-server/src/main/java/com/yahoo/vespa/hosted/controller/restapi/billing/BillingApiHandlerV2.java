@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -178,7 +179,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime tenantUsage(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = untilParameter(requestContext).orElseGet(clock::instant);
+        var untilAt = untilParameter(requestContext).orElseGet(this::startOfDayTomorrowUTC);
         var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var slime = new Slime();
@@ -189,7 +190,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     // --------- ACCOUNTANT API ----------
 
     private Slime accountant(RestApi.RequestContext requestContext) {
-        var untilAt = untilParameter(requestContext).orElseGet(clock::instant);
+        var untilAt = untilParameter(requestContext).orElseGet(this::startOfDayTomorrowUTC);
         var usagePerTenant = billing.createUncommittedBills(untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var response = new Slime();
@@ -326,6 +327,10 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     private Instant startOfDayTodayUTC() {
         return LocalDate.now(clock.withZone(ZoneOffset.UTC)).atStartOfDay(ZoneOffset.UTC).toInstant();
+    }
+
+    private Instant startOfDayTomorrowUTC() {
+        return startOfDayTodayUTC().plus(1, ChronoUnit.DAYS);
     }
 
     private static String getInspectorFieldOrThrow(Inspector inspector, String field) {
