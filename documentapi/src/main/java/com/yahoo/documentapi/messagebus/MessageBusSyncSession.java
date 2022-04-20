@@ -112,7 +112,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
                 Thread.sleep(100);
             }
             if (!result.isSuccess()) {
-                throw new DocumentAccessException(result.getError().toString());
+                throw new DocumentAccessException(result.error().toString());
             }
             return monitor.waitForReply();
         } catch (InterruptedException e) {

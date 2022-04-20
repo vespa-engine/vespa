@@ -10,21 +10,15 @@ import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentOperationParameters;
-import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.Response;
-import com.yahoo.documentapi.Response.Outcome;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
-import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
-import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
+
 import com.yahoo.documentapi.test.AbstractDocumentApiTestCase;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
 import com.yahoo.messagebus.AllPassThrottlePolicy;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
-import com.yahoo.messagebus.Message;
-import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ThrottlePolicy;
 import com.yahoo.messagebus.network.Identity;
 import org.junit.After;
@@ -37,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 

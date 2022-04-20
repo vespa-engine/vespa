@@ -42,7 +42,6 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorResponse;
 import com.yahoo.documentapi.VisitorSession;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
-import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.Trace;
@@ -364,7 +363,7 @@ public class DocumentV1ApiTest {
             assertEquals(expectedUpdate, update);
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
             assertEquals(parameters().withRoute("content"), parameters);
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=true&cluster=content&timeChunk=10", PUT,
                                       "{" +
@@ -415,7 +414,7 @@ public class DocumentV1ApiTest {
             assertEquals(expectedRemove, remove);
             assertEquals(parameters().withRoute("content"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentIdResponse(0, doc2.getId(), "boom", Response.Outcome.ERROR));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid?selection=false&cluster=content", DELETE);
         assertSameJson("{" +
@@ -476,7 +475,7 @@ public class DocumentV1ApiTest {
             assertEquals(doc1.getId(), id);
             assertEquals(parameters().withRoute("content").withFieldSet("go"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, null));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?cluster=content&fieldSet=go&timeout=123");
         assertSameJson("{" +
@@ -490,7 +489,7 @@ public class DocumentV1ApiTest {
             assertEquals(doc1.getId(), id);
             assertEquals(parameters().withFieldSet("music:[document]"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc1));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?");
         assertSameJson("{" +
@@ -507,7 +506,7 @@ public class DocumentV1ApiTest {
             assertEquals(new DocumentId("id:space:music::one/two/three"), id);
             assertEquals(parameters().withFieldSet("music:[document]"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one/two/three");
         assertSameJson("{" +
@@ -528,7 +527,7 @@ public class DocumentV1ApiTest {
                                                     .addChild("Fast Car")
                                                     .addChild("Baby Can I Hold You"));
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc2, trace));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it&tracelevel=9", POST,
                                       "{" +
@@ -565,7 +564,7 @@ public class DocumentV1ApiTest {
             assertEquals(expectedUpdate, update);
             assertEquals(parameters(), parameters);
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, true));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true&timeout=1e1s", PUT,
                                       "{" +
@@ -617,7 +616,7 @@ public class DocumentV1ApiTest {
         // PUT on document which is not found is a 200
         access.session.expect((update, parameters) -> {
             parameters.responseHandler().get().handleResponse(new UpdateResponse(0, false));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/docid/sonny", PUT,
                                       "{" +
@@ -638,7 +637,7 @@ public class DocumentV1ApiTest {
             assertEquals(expectedRemove, remove);
             assertEquals(parameters().withRoute("route"), parameters);
             parameters.responseHandler().get().handleResponse(new DocumentIdResponse(0, doc2.getId()));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?route=route&condition=false", DELETE);
         assertSameJson("{" +
@@ -669,7 +668,7 @@ public class DocumentV1ApiTest {
         access.session.expect((id, parameters) -> {
             assertEquals(clock.instant().plusSeconds(1000), parameters.deadline().get());
             parameters.responseHandler().get().handleResponse(new Response(0, "timeout", Response.Outcome.TIMEOUT));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?timeout=1ks");
         assertSameJson("{" +
@@ -682,7 +681,7 @@ public class DocumentV1ApiTest {
         // INSUFFICIENT_STORAGE is a 507
         access.session.expect((id, parameters) -> {
             parameters.responseHandler().get().handleResponse(new Response(0, "disk full", Response.Outcome.INSUFFICIENT_STORAGE));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", DELETE);
         assertSameJson("{" +
@@ -695,7 +694,7 @@ public class DocumentV1ApiTest {
         // PRECONDITION_FAILED is a 412
         access.session.expect((id, parameters) -> {
             parameters.responseHandler().get().handleResponse(new Response(0, "no dice", Response.Outcome.CONDITION_FAILED));
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", DELETE);
         assertSameJson("{" +
@@ -722,7 +721,7 @@ public class DocumentV1ApiTest {
         assertEquals(405, response.getStatus());
 
         // OVERLOAD is a 429
-        access.session.expect((id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, new Error("overload")));
+        access.session.expect((id, parameters) -> new Result(Result.ResultType.TRANSIENT_ERROR, Result.toError(Result.ResultType.TRANSIENT_ERROR)));
         var response1 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
         var response2 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
         var response3 = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two", POST, "{\"fields\": {}}");
@@ -731,16 +730,16 @@ public class DocumentV1ApiTest {
                        "  \"message\": \"Rejecting execution due to overload: 2 requests already enqueued\"" +
                        "}", response3.readAll());
         assertEquals(429, response3.getStatus());
-        access.session.expect((id, parameters) -> new Result(Result.ResultType.FATAL_ERROR, new Error("error")));
+        access.session.expect((id, parameters) -> new Result(Result.ResultType.FATAL_ERROR, Result.toError(Result.ResultType.FATAL_ERROR)));
         handler.dispatchEnqueued();
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"error\"" +
+                       "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
                        "}", response1.readAll());
         assertEquals(502, response1.getStatus());
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"error\"" +
+                       "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
                        "}", response2.readAll());
         assertEquals(502, response2.getStatus());
 
@@ -748,7 +747,7 @@ public class DocumentV1ApiTest {
         AtomicReference<ResponseHandler> handler = new AtomicReference<>();
         access.session.expect((id, parameters) -> {
             handler.set(parameters.responseHandler().get());
-            return new Result(Result.ResultType.SUCCESS, null);
+            return new Result();
         });
         try {
             var response4 = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?timeout=1ms");
@@ -808,7 +807,7 @@ public class DocumentV1ApiTest {
         CountDownLatch setup = new CountDownLatch(queueFill);
         access.session.expect((id, parameters) -> {
             setup.countDown();
-            return new Result(Result.ResultType.TRANSIENT_ERROR, new Error());
+            return new Result(Result.ResultType.TRANSIENT_ERROR, Result.toError(Result.ResultType.TRANSIENT_ERROR));
         });
         for (int i = 0; i < queueFill; i++) {
             int j = i;

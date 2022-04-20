@@ -26,6 +26,7 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply;
+import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageBus;
@@ -187,7 +188,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
                 return toResult(reqId, session.send(msg));
             }
         } catch (Exception e) {
-            return new Result(Result.ResultType.FATAL_ERROR, new Error(e.getMessage(), e));
+            return new Result(Result.ResultType.FATAL_ERROR, new Error(ErrorCode.FATAL_ERROR, e.toString()));
         }
     }
 
@@ -285,8 +286,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             return new Result(reqId);
         }
         return new Result(
-                messageBusErrorToResultType(mbusResult.getError().getCode()),
-                new Error(mbusResult.getError().getMessage() + " (" + mbusResult.getError().getCode() + ")"));
+                messageBusErrorToResultType(mbusResult.getError().getCode()), mbusResult.getError());
     }
 
     private static Response.Outcome toOutcome(Reply reply) {

@@ -919,7 +919,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return false;
 
         if (result.type() == Result.ResultType.FATAL_ERROR)
-            throw new DispatchException(result.getError());
+            throw new DispatchException(new Throwable(result.error().toString()));
 
         outstanding.incrementAndGet();
         return true;
@@ -1202,7 +1202,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         return false;
 
                     if (result.type() == Result.ResultType.FATAL_ERROR)
-                        onError.accept(result.getError().getMessage());
+                        onError.accept(result.error().getMessage());
                     else
                         outstanding.incrementAndGet();
 
