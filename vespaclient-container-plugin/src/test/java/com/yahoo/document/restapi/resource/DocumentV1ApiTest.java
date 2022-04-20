@@ -734,12 +734,12 @@ public class DocumentV1ApiTest {
         handler.dispatchEnqueued();
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"error\"" +
+                       "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
                        "}", response1.readAll());
         assertEquals(502, response1.getStatus());
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
-                       "  \"message\": \"error\"" +
+                       "  \"message\": \"[FATAL_ERROR @ localhost]: FATAL_ERROR\"" +
                        "}", response2.readAll());
         assertEquals(502, response2.getStatus());
 
