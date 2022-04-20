@@ -62,6 +62,7 @@ vespa_add_library(searchlib_attribute OBJECT
     imported_attribute_vector.cpp
     imported_attribute_vector_factory.cpp
     imported_attribute_vector_read_guard.cpp
+    imported_multi_value_read_view.cpp
     imported_search_context.cpp
     integerbase.cpp
     ipostinglistsearchcontext.cpp
