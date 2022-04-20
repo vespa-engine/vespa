@@ -16,6 +16,8 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -174,6 +176,19 @@ class ContainerFileSystemTest {
         Files.writeString(file.pathOnHost(), "hello"); // Writing through host FS works
     }
 
+    @Test
+    public void permissions() throws IOException {
+        assertPermissions(Files.createDirectory(containerFs.getPath("/dir1")), "rwxr-x---");
+        assertPermissions(Files.createDirectory(containerFs.getPath("/dir2"), permissionsFromString("r-x-w-rw-")), "r-x-w-rw-");
+
+        assertPermissions(Files.createDirectories(containerFs.getPath("/sub/dir/leaf"), permissionsFromString("r-x-w-rw-")), "r-x-w-rw-");
+        assertPermissions(containerFs.getPath("/sub/dir"), "r-x-w-rw-"); // Non-leafs get the same permission as the leaf
+
+        // TODO: Uncomment when JimFS forwards attributes for SecureDirectoryStream::newByteChannel
+//        assertPermissions(Files.createFile(containerFs.getPath("/file1")), "rw-r-----");
+//        assertPermissions(Files.createFile(containerFs.getPath("/file2"), permissionsFromString("r-x-w-rw-")), "r-x-w-rw-");
+    }
+
     private static void assertOwnership(ContainerPath path, int contUid, int contGid, int hostUid, int hostGid) throws IOException {
         assertOwnership(path, contUid, contGid);
         assertOwnership(path.pathOnHost(), hostUid, hostGid);
@@ -183,5 +198,14 @@ class ContainerFileSystemTest {
         Map<String, Object> attrs = Files.readAttributes(path, "unix:*", LinkOption.NOFOLLOW_LINKS);
         assertEquals(uid, attrs.get("uid"));
         assertEquals(gid, attrs.get("gid"));
+    }
+
+    private static void assertPermissions(Path path, String expected) throws IOException {
+        String actual = PosixFilePermissions.toString(Files.getPosixFilePermissions(path));
+        assertEquals(expected, actual);
+    }
+
+    private static FileAttribute<?> permissionsFromString(String permissions) {
+        return PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString(permissions));
     }
 }
