@@ -36,7 +36,7 @@ public class FileDistributionFactory implements AutoCloseable {
     }
 
     public AddFileInterface createFileManager(File applicationDir) {
-        return new ApplicationFileManager(applicationDir, new FileDirectory(getFileReferencesDir()));
+        return new ApplicationFileManager(applicationDir, new FileDirectory(getFileReferencesDir()), configserverConfig.hostedVespa());
     }
 
     protected File getFileReferencesDir() {
