@@ -269,7 +269,7 @@ class ResultBuilder {
         }
 
         private long correctExpressionCountEstimate(long count, int tag) {
-            int actualGroupCount = group.getChildren().size();
+            int actualGroupCount = group.getNumChildren();
             // Use actual group count if estimate differ. If max is present, only use actual group count if less than max.
             // NOTE: If the actual group count is 0, estimate is also 0.
             if (actualGroupCount > 0 && count != actualGroupCount) {
@@ -325,10 +325,11 @@ class ResultBuilder {
 
         void addGroup(com.yahoo.searchlib.aggregation.Group execGroup) {
             GroupBuilder groupBuilder = getOrCreateGroup(execGroup);
-            if (!execGroup.getChildren().isEmpty()) {
-                boolean ranked = execGroup.getChildren().get(0).isRankedByRelevance();
+            if (execGroup.getNumChildren() > 0) {
+                List<com.yahoo.searchlib.aggregation.Group> children = execGroup.getChildren();
+                boolean ranked = children.get(0).isRankedByRelevance();
                 execGroup.sortChildrenByRank();
-                for (com.yahoo.searchlib.aggregation.Group childGroup : execGroup.getChildren()) {
+                for (com.yahoo.searchlib.aggregation.Group childGroup : children) {
                     GroupListBuilder childList = groupBuilder.getOrCreateChildList(childGroup.getTag(), ranked);
                     childList.addGroup(childGroup);
                 }
