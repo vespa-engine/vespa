@@ -1,17 +1,3 @@
-security.provider.1=BC|org.bouncycastle.jce.provider.BouncyCastleProvider
-security.provider.2=SUN
-security.provider.3=SunRsaSign
-security.provider.4=SunEC
-security.provider.5=SunJSSE
-security.provider.6=SunJCE
-security.provider.7=SunJGSS
-security.provider.8=SunSASL
-security.provider.9=XMLDSig
-security.provider.10=SunPCSC
-security.provider.11=JdkLDAP
-security.provider.12=JdkSASL
-security.provider.13=SunPKCS11
-
 securerandom.source=file:/dev/urandom
 networkaddress.cache.ttl=5
 networkaddress.cache.negative.ttl=5
