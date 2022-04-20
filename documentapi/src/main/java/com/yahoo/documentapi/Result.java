@@ -116,7 +116,7 @@ public class Result {
             case TRANSIENT_ERROR:
                 return new Error(ErrorCode.TRANSIENT_ERROR, ResultType.TRANSIENT_ERROR.name());
             case CONDITION_NOT_MET_ERROR:
-                return new Error(ErrorCode.TRANSIENT_ERROR, ResultType.CONDITION_NOT_MET_ERROR.name());
+                return new Error(ErrorCode.FATAL_ERROR, ResultType.CONDITION_NOT_MET_ERROR.name());
             case FATAL_ERROR:
                 return new Error(ErrorCode.FATAL_ERROR, ResultType.FATAL_ERROR.name());
         }
