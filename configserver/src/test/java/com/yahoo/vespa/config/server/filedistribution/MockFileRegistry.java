@@ -23,7 +23,7 @@ public class MockFileRegistry implements FileRegistry {
 
     public MockFileRegistry(File applicationDir, File rootPath) {
         FileDirectory fileDirectory = new FileDirectory(rootPath);
-        this.addFileInterface = new ApplicationFileManager(applicationDir, fileDirectory);
+        this.addFileInterface = new ApplicationFileManager(applicationDir, fileDirectory, false);
     }
 
     public FileReference addFile(String relativePath) {

@@ -26,10 +26,12 @@ public class ApplicationFileManager implements AddFileInterface {
 
     private final File applicationDir;
     private final FileDirectory fileDirectory;
+    private final boolean isHosted;
 
-    ApplicationFileManager(File applicationDir, FileDirectory fileDirectory) {
+    ApplicationFileManager(File applicationDir, FileDirectory fileDirectory, boolean isHosted) {
         this.applicationDir = applicationDir;
         this.fileDirectory = fileDirectory;
+        this.isHosted = isHosted;
     }
 
     @Override
@@ -44,6 +46,7 @@ public class ApplicationFileManager implements AddFileInterface {
 
     @Override
     public FileReference addUri(String uri, Path path) {
+        if (isHosted) throw new IllegalArgumentException("URI type resources are not supported in this Vespa cloud");
         try (TmpDir tmp = new TmpDir()) {
             return addFile(download(uri, tmp.dir, path));
         }
