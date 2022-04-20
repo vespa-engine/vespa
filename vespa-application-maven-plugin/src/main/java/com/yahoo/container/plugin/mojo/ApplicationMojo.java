@@ -59,11 +59,16 @@ public class ApplicationMojo extends AbstractMojo {
         if ( ! applicationDestination.exists())
             return;
 
-        if (vespaversion == null) // Get the build version of the parent project unless specifically set.
-            vespaversion = project.getProperties().getProperty("vespaversion");
+         // Compile version is the build version of the parent project, unless specifically set.
+        MavenProject parent = project;
+        while (parent.getParent() != null) parent = parent.getParent();
+        Version parentVersion = Version.from(parent.getVersion());
+        Version compileVersion = vespaversion == null ? parentVersion : Version.from(vespaversion);
+        if (parentVersion.compareTo(compileVersion) < 0)
+            throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
 
         String metaData = String.format("{\"compileVersion\": \"%s\",\n \"buildTime\": %d}",
-                                        vespaversion,
+                                        compileVersion,
                                         System.currentTimeMillis());
         try {
             Files.write(applicationDestination.toPath().resolve("build-meta.json"),
