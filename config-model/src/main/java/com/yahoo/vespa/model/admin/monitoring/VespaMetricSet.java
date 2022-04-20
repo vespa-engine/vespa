@@ -154,6 +154,10 @@ public class VespaMetricSet {
             addMetric(metrics, "jdisc.thread_pool.unhandled_exceptions", suffixes);
             addMetric(metrics, "jdisc.thread_pool.work_queue.capacity", suffixes);
             addMetric(metrics, "jdisc.thread_pool.work_queue.size", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.rejected_tasks", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.size", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.max_allowed_size", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.active_threads", suffixes);
         }
 
         metrics.add(new Metric("httpapi_latency.max"));

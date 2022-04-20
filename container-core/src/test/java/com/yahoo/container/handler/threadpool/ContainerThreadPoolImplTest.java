@@ -79,8 +79,9 @@ public class ContainerThreadPoolImplTest {
         ThreadPoolExecutor executor = createPool(metrics, 3, 1200);
         assertEquals(3, executor.getMaximumPoolSize());
         assertEquals(1200, executor.getQueue().remainingCapacity());
-        assertEquals(4, metrics.innvocations().size());
+        assertEquals(7, metrics.innvocations().size());
         assertEquals(3L, metrics.innvocations().get("serverThreadPoolSize").val);
+        assertEquals(3L, metrics.innvocations().get("jdisc.thread_pool.max_allowed_size").val);
         assertEquals(0L, metrics.innvocations().get("serverActiveThreads").val);
         assertEquals(1200L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
         assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
@@ -91,8 +92,9 @@ public class ContainerThreadPoolImplTest {
         ThreadPoolExecutor executor = createPool(metrics, 0, 0);
         assertEquals(CPUS*4, executor.getMaximumPoolSize());
         assertEquals(0, executor.getQueue().remainingCapacity());
-        assertEquals(4, metrics.innvocations().size());
+        assertEquals(7, metrics.innvocations().size());
         assertEquals(64L, metrics.innvocations().get("serverThreadPoolSize").val);
+        assertEquals(64L, metrics.innvocations().get("jdisc.thread_pool.max_allowed_size").val);
         assertEquals(0L, metrics.innvocations().get("serverActiveThreads").val);
         assertEquals(64L, metrics.innvocations().get("jdisc.thread_pool.work_queue.capacity").val);
         assertEquals(0L, metrics.innvocations().get("jdisc.thread_pool.work_queue.size").val);
