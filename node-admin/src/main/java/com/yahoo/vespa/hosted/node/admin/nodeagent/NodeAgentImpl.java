@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.servicedump.VespaServiceDum
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -141,7 +142,8 @@ public class NodeAgentImpl implements NodeAgent {
 
         // TODO: Remove after this has rolled out everywhere
         int[] stats = new int[]{0, 0, 0};
-        FileFinder.files(initialContext.paths().underVespaHome("")).forEachPath(path -> {
+        ContainerPath vespaHome = initialContext.paths().underVespaHome("");
+        FileFinder.files(initialContext.paths().of("/")).forEachPath(path -> {
             UnixPath unixPath = new UnixPath(path);
 
             String permissions = unixPath.getPermissions();
@@ -150,12 +152,12 @@ public class NodeAgentImpl implements NodeAgent {
                 stats[0]++;
             }
 
-            if (unixPath.getOwnerId() != initialContext.users().vespa().uid()) {
+            if (path.startsWith(vespaHome) && unixPath.getOwnerId() != initialContext.users().vespa().uid()) {
                 unixPath.setOwnerId(initialContext.users().vespa().uid());
                 stats[1]++;
             }
 
-            if (unixPath.getGroupId() != initialContext.users().vespa().gid()) {
+            if (path.startsWith(vespaHome) && unixPath.getGroupId() != initialContext.users().vespa().gid()) {
                 unixPath.setGroupId(initialContext.users().vespa().gid());
                 stats[2]++;
             }
