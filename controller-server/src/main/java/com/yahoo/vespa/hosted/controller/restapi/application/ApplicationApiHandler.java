@@ -1102,6 +1102,12 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         Slime slime = new Slime();
         Cursor nodesArray = slime.setObject().setArray("nodes");
         for (Node node : nodes) {
+            Optional<Instant> downAt = node.history().stream()
+                    .filter(event -> "down".equals(event.name()))
+                    .map(Node.Event::at)
+                    .findFirst();
+            boolean isUp = downAt.isEmpty() || node.history().stream()
+                    .anyMatch(event -> "up".equals(event.name()) && event.at().isAfter(downAt.get()));
             Cursor nodeObject = nodesArray.addObject();
             nodeObject.setString("hostname", node.hostname().value());
             nodeObject.setString("state", valueOf(node.state()));
@@ -1112,7 +1118,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             toSlime(node.resources(), nodeObject);
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
-            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.name())));
+            nodeObject.setBool("down", !isUp);
             nodeObject.setBool("retired", node.retired() || node.wantToRetire());
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());
