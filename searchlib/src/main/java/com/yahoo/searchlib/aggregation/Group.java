@@ -229,14 +229,9 @@ public class Group extends Identifiable {
         return this;
     }
 
-    /** Returns immutable list of child groups to this. */
+    /** Returns the list of child groups to this. */
     public List<Group> getChildren() {
         return List.copyOf(children);
-    }
-
-    /** Returns number of children groups */
-    public int getNumChildren() {
-        return children.size();
     }
 
     /**
