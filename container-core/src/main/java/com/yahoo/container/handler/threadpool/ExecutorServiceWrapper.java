@@ -43,9 +43,6 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
         this.queueCapacity = threadPoolIsOnlyQ
                 ? wrapped.getMaximumPoolSize()
                 : maxQueueCapacity;
-
-        metric.reportThreadPoolSize(wrapped.getPoolSize());
-        metric.reportActiveThreads(wrapped.getActiveCount());
         reportMetrics();
         metricReporter = new Thread(this::reportMetricsRegularly);
         metricReporter.setName(name + "-threadpool-metric-reporter");
@@ -55,6 +52,7 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
     private void reportMetrics() {
         int activeThreads = wrapped.getActiveCount();
         metric.reportThreadPoolSize(wrapped.getPoolSize());
+        metric.reportMaxAllowedThreadPoolSize(wrapped.getMaximumPoolSize());
         metric.reportActiveThreads(activeThreads);
         int queueSize = threadPoolIsOnlyQ ? activeThreads : wrapped.getQueue().size();
         metric.reportWorkQueueSize(queueSize);
@@ -81,7 +79,6 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
 
     @Override
     public void shutdown() {
-        super.shutdown();
         synchronized (closed) {
             closed.set(true);
             closed.notify();
@@ -89,6 +86,7 @@ class ExecutorServiceWrapper extends ForwardingExecutorService {
         try {
             metricReporter.join();
         } catch (InterruptedException e) {}
+        super.shutdown();
     }
 
     /**
