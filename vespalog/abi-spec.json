@@ -15,6 +15,18 @@
     ],
     "fields": []
   },
+  "com.yahoo.log.InitializeLog": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static void init()"
+    ],
+    "fields": []
+  },
   "com.yahoo.log.InvalidLogFormatException": {
     "superClass": "java.lang.Exception",
     "interfaces": [],
