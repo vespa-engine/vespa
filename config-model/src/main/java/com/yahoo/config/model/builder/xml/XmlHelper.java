@@ -3,12 +3,14 @@ package com.yahoo.config.model.builder.xml;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import java.util.logging.Level;
 import com.yahoo.text.XML;
+import com.yahoo.yolean.Exceptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -19,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -74,9 +77,15 @@ public final class XmlHelper {
     }
 
     public static Document getDocument(Reader reader) {
+        return getDocument(reader, "unknown source");
+    }
+
+    public static Document getDocument(Reader reader, String source) {
         Document doc;
         try {
-            doc = getDocumentBuilder().parse(new InputSource(reader));
+            InputSource inputSource = new InputSource(reader);
+            inputSource.setPublicId(source);
+            doc = getDocumentBuilder().parse(inputSource);
         } catch (SAXException | IOException e) {
             throw new IllegalArgumentException(e);
         }
@@ -121,6 +130,7 @@ public final class XmlHelper {
     public static synchronized DocumentBuilder getDocumentBuilder() {
         try {
             DocumentBuilder docBuilder = factory.newDocumentBuilder();
+            docBuilder.setErrorHandler(new CustomErrorHandler(log));
             log.log(Level.FINE, "XML parser now operational!");
             return docBuilder;
         } catch (ParserConfigurationException e) {
@@ -144,4 +154,34 @@ public final class XmlHelper {
         if (child.getFirstChild() == null) return Optional.empty();
         return Optional.ofNullable(child.getFirstChild().getNodeValue());
     }
+
+    /** Error handler which will output name of source for warnings and errors */
+    private static class CustomErrorHandler implements ErrorHandler {
+
+        private final Logger logger;
+
+        CustomErrorHandler(Logger logger) {
+            super();
+            this.logger = logger;
+        }
+
+        public void warning(SAXParseException e) {
+            logger.log(Level.WARNING, message(e));
+        }
+
+        public void error(SAXParseException e) {
+            throw new IllegalArgumentException(message(e));
+        }
+
+        public void fatalError(SAXParseException e) { throw new IllegalArgumentException(message(e)); }
+
+        private String message(SAXParseException e) {
+            String sourceId = e.getPublicId() == null ? "" : e.getPublicId();
+            return "Invalid XML" + (sourceId.isEmpty() ? " (unknown source)" : " in " + sourceId) +
+                    ": " + Exceptions.toMessageString(e) +
+                    " [" + e.getLineNumber() + ":" + e.getColumnNumber() + "]";
+        }
+
+    }
+
 }

@@ -8,12 +8,13 @@ import com.yahoo.text.XML;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.io.Reader;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -63,12 +64,7 @@ public class Hosts {
      */
     public static Hosts readFrom(Reader hostsFile) {
         List<Host> hosts = new ArrayList<>();
-        Document doc;
-        try {
-            doc = XmlHelper.getDocumentBuilder().parse(new InputSource(hostsFile));
-        } catch (SAXException | IOException e) {
-            throw new IllegalArgumentException(e);
-        }
+        Document doc = XmlHelper.getDocument(hostsFile);
         for (Element hostE : XML.getChildren(doc.getDocumentElement(), "host")) {
             String name = hostE.getAttribute("name");
             if (name.equals("")) {

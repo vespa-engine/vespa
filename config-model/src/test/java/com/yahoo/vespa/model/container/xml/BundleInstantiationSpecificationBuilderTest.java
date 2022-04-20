@@ -8,12 +8,8 @@ import com.yahoo.search.grouping.GroupingValidator;
 import com.yahoo.vespa.model.container.PlatformBundles;
 import org.junit.Test;
 import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.StringReader;
 
 import static org.junit.Assert.assertEquals;
 
@@ -25,34 +21,31 @@ import static org.junit.Assert.assertEquals;
 public class BundleInstantiationSpecificationBuilderTest {
 
     @Test
-    public void bundle_is_not_replaced_for_user_defined_class() throws IOException, SAXException {
+    public void bundle_is_not_replaced_for_user_defined_class() {
         final String userDefinedClass = "my own class that will also be set as bundle";
         verifyExpectedBundle(userDefinedClass, null, userDefinedClass);
     }
 
     @Test
-    public void bundle_is_replaced_for_internal_class() throws IOException, SAXException {
+    public void bundle_is_replaced_for_internal_class() {
         String internalClass = GroupingValidator.class.getName();
         verifyExpectedBundle(internalClass, null, PlatformBundles.searchAndDocprocBundle);
     }
 
     @Test
-    public void bundle_is_not_replaced_for_internal_class_with_explicitly_set_bundle()
-            throws IOException, SAXException {
+    public void bundle_is_not_replaced_for_internal_class_with_explicitly_set_bundle() {
         String internalClass = GroupingValidator.class.getName();
         String explicitBundle = "my-own-implementation";
         verifyExpectedBundle(internalClass, explicitBundle, explicitBundle);
     }
 
-    private static void verifyExpectedBundle(String className, String explicitBundle, String expectedBundle)
-            throws IOException, SAXException {
+    private static void verifyExpectedBundle(String className, String explicitBundle, String expectedBundle) {
         String xml = "<component id=\"_\" class=\"" + className + "\"";
         if (explicitBundle != null) {
             xml += " bundle=\"" + explicitBundle + "\"";
         }
         xml += " />";
-        InputStream xmlStream = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
-        Element component = XmlHelper.getDocumentBuilder().parse(xmlStream).getDocumentElement();
+        Element component = XmlHelper.getDocument(new StringReader(xml)).getDocumentElement();
 
         BundleInstantiationSpecification spec = BundleInstantiationSpecificationBuilder.build(component);
         assertEquals(ComponentSpecification.fromString(expectedBundle), spec.bundle);

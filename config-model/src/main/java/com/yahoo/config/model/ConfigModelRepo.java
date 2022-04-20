@@ -4,14 +4,29 @@ package com.yahoo.config.model;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
 import com.yahoo.config.model.builder.xml.XmlHelper;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.graph.ModelGraphBuilder;
 import com.yahoo.config.model.graph.ModelNode;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.provision.HostsXmlProvisioner;
+import com.yahoo.path.Path;
+import com.yahoo.text.XML;
+import com.yahoo.vespa.model.VespaModel;
+import com.yahoo.vespa.model.builder.VespaModelBuilder;
+import com.yahoo.vespa.model.clients.Clients;
+import com.yahoo.vespa.model.content.Content;
+import com.yahoo.vespa.model.routing.Routing;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.io.Serializable;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,23 +37,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.logging.Level;
-import com.yahoo.path.Path;
-import com.yahoo.text.XML;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.builder.VespaModelBuilder;
-import com.yahoo.vespa.model.clients.Clients;
-import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.routing.Routing;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.io.Serializable;
-import java.io.StringReader;
 import java.util.logging.Logger;
 
 /**
@@ -91,7 +89,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
         builder.postProc(deployState.getDeployLogger(), root, this);
     }
 
-    private Element getServicesFromApp(ApplicationPackage applicationPackage) throws IOException, SAXException {
+    private Element getServicesFromApp(ApplicationPackage applicationPackage) throws IOException {
         try (Reader servicesFile = applicationPackage.getServices()) {
             return getServicesFromReader(servicesFile);
         }
@@ -188,8 +186,8 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
         return permanentServices;
     }
 
-    private Element getServicesFromReader(Reader reader) throws IOException, SAXException {
-        Document doc = XmlHelper.getDocumentBuilder().parse(new InputSource(reader));
+    private Element getServicesFromReader(Reader reader) {
+        Document doc = XmlHelper.getDocument(reader);
         return doc.getDocumentElement();
     }
 
@@ -274,10 +272,10 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     }
 
     // TODO: Doctoring on the XML is the wrong level for this. We should be able to mark a model as default instead   -Jon
-    private static Element getImplicitAdmin(DeployState deployState) throws IOException, SAXException {
+    private static Element getImplicitAdmin(DeployState deployState) {
         String defaultAdminElement = deployState.isHosted() ? getImplicitAdminV4() : getImplicitAdminV2();
         log.log(Level.FINE, () -> "No <admin> defined, using " + defaultAdminElement);
-        return XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(defaultAdminElement))).getDocumentElement();
+        return XmlHelper.getDocument(new StringReader(defaultAdminElement)).getDocumentElement();
     }
 
     private static String getImplicitAdminV2() {
