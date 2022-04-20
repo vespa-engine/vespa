@@ -160,6 +160,7 @@ public class VespaMetricSet {
             addMetric(metrics, "jdisc.thread_pool.active_threads", suffixes);
 
             addMetric(metrics, "jdisc.http.jetty.threadpool.thread.max", suffixes);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.min", suffixes);
             addMetric(metrics, "jdisc.http.jetty.threadpool.thread.reserved", suffixes);
             addMetric(metrics, "jdisc.http.jetty.threadpool.thread.busy", suffixes);
             addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", suffixes);
