@@ -18,6 +18,7 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "down": false,
   "history": [
     {
       "event": "provisioned",

@@ -15,6 +15,7 @@
   "preferToRetire": false,
   "wantToDeprovision": true,
   "wantToRebuild": false,
+  "down": false,
   "history": [
     {
       "event": "provisioned",
