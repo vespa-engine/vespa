@@ -22,15 +22,13 @@ import com.yahoo.messagebus.Error;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageHandler;
-import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.RPCMessageBus;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Phaser;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Mock-up destination used for testing.
@@ -39,7 +37,7 @@ import java.util.concurrent.Phaser;
  */
 public class Destination implements MessageHandler {
 
-    final Phaser phaser = new Phaser(1);
+    final AtomicBoolean discard = new AtomicBoolean();
 
     private final DestinationSession session;
     private final DocumentAccess access;
@@ -61,8 +59,11 @@ public class Destination implements MessageHandler {
     }
 
     public void handleMessage(Message msg) {
+        if (discard.get()) {
+            msg.discard();
+            return;
+        }
 
-        phaser.arriveAndAwaitAdvance();
         Reply reply = ((DocumentMessage)msg).createReply();
         try {
             switch (msg.getType()) {

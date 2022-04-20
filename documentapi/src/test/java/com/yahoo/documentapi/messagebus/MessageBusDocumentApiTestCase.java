@@ -95,7 +95,7 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
         DocumentType type = access().getDocumentTypeManager().getDocumentType("music");
         Document doc1 = new Document(type, new DocumentId("id:ns:music::1"));
 
-        destination.phaser.register();
+        destination.discard.set(true);
         assertTrue(session.put(new DocumentPut(doc1),
                                DocumentOperationParameters.parameters()
                                                           .withResponseHandler(result -> {
@@ -106,7 +106,6 @@ public class MessageBusDocumentApiTestCase extends AbstractDocumentApiTestCase {
                           .isSuccess());
         assertTrue(latch.await(60, TimeUnit.SECONDS));
         assertEquals(Response.Outcome.TIMEOUT, response.get().outcome());
-        destination.phaser.arriveAndDeregister();
         session.destroy();
     }
 
