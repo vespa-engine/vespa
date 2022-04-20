@@ -282,6 +282,8 @@ public class ComparisonNode implements ExpressionNode {
             return getAsNumber(((NumericFieldValue)value).getNumber());
         } else if (value instanceof BoolFieldValue) {
             return ((BoolFieldValue)value).getBoolean() ? 1 : 0;
+        } else if (value instanceof Boolean) {
+            return (Boolean)value ? 1 : 0;
         } else {
             return Double.NaN; //new IllegalStateException("Term '" + value + "' (" + value.getClass() + ") does not evaluate to a number.");
         }

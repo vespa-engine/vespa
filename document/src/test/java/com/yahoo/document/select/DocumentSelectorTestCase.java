@@ -507,6 +507,16 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("14.3 == null", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("null = 0", documents.get(0)));
 
+        // Boolean literals in comparisons
+        assertEquals(Result.TRUE, evaluate("true = true", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("true == true", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("true == false", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("false == false", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("true == 1", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("true == 0", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("false == 1", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("false == 0", documents.get(0)));
+
         // Field values
         assertEquals(Result.TRUE, evaluate("test.hint = 24", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("test.hint = 24", documents.get(1)));
@@ -748,12 +758,19 @@ public class DocumentSelectorTestCase {
     @Test
     public void boolean_fields_can_be_used_for_equality_comparisons() throws ParseException {
         var documents = createDocs();
-        assertEquals(Result.TRUE, evaluate("test.truth == 1", documents.get(8))); // has explicit field set to true
-        assertEquals(Result.FALSE, evaluate("test.truth == 1", documents.get(9))); // has explicit field set to false
+        // Doc 8 has bool field set explicitly to true, doc 9 has field explicitly set to false
+        assertEquals(Result.TRUE, evaluate("test.truth == 1", documents.get(8)));
+        assertEquals(Result.TRUE, evaluate("test.truth == true", documents.get(8)));
+        assertEquals(Result.FALSE, evaluate("test.truth == 1", documents.get(9)));
+        assertEquals(Result.FALSE, evaluate("test.truth == true", documents.get(9)));
         assertEquals(Result.TRUE, evaluate("test.truth == 0", documents.get(9)));
+        assertEquals(Result.TRUE, evaluate("test.truth == false", documents.get(9)));
         // FIXME very un-intuitive behavior when nulls are implicitly returned:
-        assertEquals(Result.FALSE, evaluate("test.truth == 1", documents.get(0))); // Does not have field set in document
-        assertEquals(Result.FALSE, evaluate("test.truth == 0", documents.get(0))); // Does not have field set in document
+        // Doc 1 does not have the bool field set, but the implicit null value is neither true nor false
+        assertEquals(Result.FALSE, evaluate("test.truth == 1", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.truth == true", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.truth == 0", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.truth == false", documents.get(0)));
     }
 
     @Test
