@@ -2,9 +2,11 @@
 
 #include "imported_attribute_vector_read_guard.h"
 #include "imported_attribute_vector.h"
+#include "imported_multi_value_read_view.h"
 #include "imported_search_context.h"
 #include "reference_attribute.h"
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/vespalib/util/stash.h>
 
 namespace search::attribute {
 
@@ -120,7 +122,7 @@ const tensor::ITensorAttribute *ImportedAttributeVectorReadGuard::asTensorAttrib
 }
 
 const attribute::IMultiValueAttribute* ImportedAttributeVectorReadGuard::as_multi_value_attribute() const {
-    return nullptr;
+    return this;
 }
 
 BasicType::Type ImportedAttributeVectorReadGuard::getBasicType() const {
@@ -154,6 +156,117 @@ uint32_t ImportedAttributeVectorReadGuard::getCommittedDocIdLimit() const {
 bool ImportedAttributeVectorReadGuard::isImported() const
 {
     return true;
+}
+
+template <typename MultiValueType>
+const IMultiValueReadView<MultiValueType>*
+ImportedAttributeVectorReadGuard::make_read_view_helper(Tag<MultiValueType> tag, vespalib::Stash &stash) const
+{
+    auto target_mv_attr = _target_attribute.as_multi_value_attribute();
+    if (target_mv_attr == nullptr) {
+        return nullptr;
+    }
+    auto target_read_view = target_mv_attr->make_read_view(tag, stash);
+    if (target_read_view == nullptr) {
+        return nullptr;
+    }
+    return &stash.create<ImportedMultiValueReadView<MultiValueType>>(_targetLids, target_read_view);
+}
+
+const IArrayReadView<int8_t>*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayTag<int8_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IArrayReadView<int16_t>*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayTag<int16_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IArrayReadView<int32_t>*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayTag<int32_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IArrayReadView<int64_t>*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayTag<int64_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IArrayReadView<float>*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayTag<float> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IArrayReadView<double>*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayTag<double> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IArrayReadView<const char*>*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayTag<const char*> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetReadView<int8_t>*
+ImportedAttributeVectorReadGuard::make_read_view(WeightedSetTag<int8_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetReadView<int16_t>*
+ImportedAttributeVectorReadGuard::make_read_view(WeightedSetTag<int16_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetReadView<int32_t>*
+ImportedAttributeVectorReadGuard::make_read_view(WeightedSetTag<int32_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetReadView<int64_t>*
+ImportedAttributeVectorReadGuard::make_read_view(WeightedSetTag<int64_t> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetReadView<float>*
+ImportedAttributeVectorReadGuard::make_read_view(WeightedSetTag<float> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetReadView<double>*
+ImportedAttributeVectorReadGuard:: make_read_view(WeightedSetTag<double> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetReadView<const char*>*
+ImportedAttributeVectorReadGuard::make_read_view(WeightedSetTag<const char*> tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IArrayEnumReadView*
+ImportedAttributeVectorReadGuard::make_read_view(ArrayEnumTag tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
+}
+
+const IWeightedSetEnumReadView*
+ImportedAttributeVectorReadGuard::make_read_view(WeightedSetEnumTag tag, vespalib::Stash& stash) const
+{
+    return make_read_view_helper(tag, stash);
 }
 
 bool ImportedAttributeVectorReadGuard::isUndefined(DocId doc) const {
