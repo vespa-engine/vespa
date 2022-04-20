@@ -14,6 +14,7 @@ private:
     using ThreadExecutor = vespalib::ThreadExecutor;
     ThreadExecutor              & _warmup;
     ThreadExecutor              & _shared;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
     vespalib::InvokeServiceImpl   _invokeService;
     Transport                     _transport;
     storage::spi::dummy::DummyBucketExecutor _bucket_executor;
@@ -25,7 +26,7 @@ public:
     ~MockSharedThreadingService() override;
     ThreadExecutor& warmup() override { return _warmup; }
     ThreadExecutor& shared() override { return _shared; }
-    vespalib::ISequencedTaskExecutor* field_writer() override { return nullptr; }
+    vespalib::ISequencedTaskExecutor* field_writer() override { return _field_writer.get(); }
     vespalib::InvokeService & invokeService() override { return _invokeService; }
     FNET_Transport & transport() override { return _transport.transport(); }
     storage::spi::BucketExecutor& bucket_executor() override { return _bucket_executor; }

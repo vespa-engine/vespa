@@ -138,7 +138,7 @@ indexing.optimize enum {LATENCY, THROUGHPUT, ADAPTIVE} default=THROUGHPUT restar
 
 ## Maximum number of pending operations for each of the internal
 ## indexing threads.  Only used when visibility delay is zero.
-indexing.tasklimit int default=1000
+indexing.tasklimit int default=-1000
 
 ## Deprecated and ignored, will soon go away
 indexing.semiunboundtasklimit int default = 1000
@@ -514,14 +514,14 @@ feeding.concurrency double default = 0.2 restart
 ##   DOCUMENT_DB: Use a shared executor for index field inverter, index field writer, and attribute field writer among all document dbs.
 ##
 ## TODO: Remove this when a shared executor is the default.
-feeding.shared_field_writer_executor enum {NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB} default = NONE restart
+feeding.shared_field_writer_executor enum {NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB} default = DOCUMENT_DB restart
 
 ## Maximum number of pending tasks for the master thread in each document db.
 ##
 ## This limit is only considered when executing tasks for handling external feed operations.
 ## In that case the calling thread (persistence thread) is blocked until the master thread has capacity to handle more tasks.
 ## When this limit is set to 0 it is ignored.
-feeding.master_task_limit int default = 1000
+feeding.master_task_limit int default = 0
 
 ## Adjustment to resource limit when determining if maintenance jobs can run.
 ##
@@ -550,7 +550,7 @@ forward_issues bool default = true
 
 ## Chooses the throttling policy used to control the window size
 ## of the SharedOperationThrottler component used by the transaction log replay feed state.
-replay_throttling_policy.type enum { UNLIMITED, DYNAMIC } default=UNLIMITED
+replay_throttling_policy.type enum { UNLIMITED, DYNAMIC } default=DYNAMIC
 ## Only used if replay_throttling_policy.type == DYNAMIC:
 replay_throttling_policy.min_window_size int default=100
 replay_throttling_policy.max_window_size int default=10000
