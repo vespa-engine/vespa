@@ -48,6 +48,10 @@ vespa_add_library(searchlib_attribute OBJECT
     enumstore.cpp
     enumerated_multi_value_read_view.cpp
     extendableattributes.cpp
+    extendable_numeric_array_multi_value_read_view.cpp
+    extendable_numeric_weighted_set_multi_value_read_view.cpp
+    extendable_string_array_multi_value_read_view.cpp
+    extendable_string_weighted_set_multi_value_read_view.cpp
     fixedsourceselector.cpp
     flagattribute.cpp
     floatbase.cpp
