@@ -46,7 +46,6 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final ContentCluster cluster;
     private final int reponseNumThreads;
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
-    private final StorFilestorConfig.Async_operation_throttler.Type.Enum asyncOperationThrottlerType;
     private final double persistenceThrottlingWsDecrementFactor;
     private final double persistenceThrottlingWsBackoff;
     private final int persistenceThrottingWindowSize;
@@ -62,20 +61,11 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         }
     }
 
-    private static StorFilestorConfig.Async_operation_throttler.Type.Enum toAsyncOperationThrottlerType(String throttlerType) {
-        try {
-            return StorFilestorConfig.Async_operation_throttler.Type.Enum.valueOf(throttlerType);
-        } catch (Throwable t) {
-            return StorFilestorConfig.Async_operation_throttler.Type.UNLIMITED;
-        }
-    }
-
     public FileStorProducer(ModelContext.FeatureFlags featureFlags, ContentCluster parent, Integer numThreads) {
         this.numThreads = numThreads;
         this.cluster = parent;
         this.reponseNumThreads = featureFlags.defaultNumResponseThreads();
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
-        this.asyncOperationThrottlerType = toAsyncOperationThrottlerType(featureFlags.persistenceAsyncThrottling());
         this.persistenceThrottlingWsDecrementFactor = featureFlags.persistenceThrottlingWsDecrementFactor();
         this.persistenceThrottlingWsBackoff = featureFlags.persistenceThrottlingWsBackoff();
         this.persistenceThrottingWindowSize = featureFlags.persistenceThrottlingWindowSize();
@@ -93,13 +83,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.num_response_threads(reponseNumThreads);
         builder.response_sequencer_type(responseSequencerType);
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
-        // TODO remove deprecated throttler type config
-        builder.async_operation_throttler_type((asyncOperationThrottlerType == StorFilestorConfig.Async_operation_throttler.Type.DYNAMIC)
-                                               ? StorFilestorConfig.Async_operation_throttler_type.Enum.DYNAMIC
-                                               : StorFilestorConfig.Async_operation_throttler_type.Enum.UNLIMITED);
-
         var throttleBuilder = new StorFilestorConfig.Async_operation_throttler.Builder();
-        throttleBuilder.type(asyncOperationThrottlerType);
         throttleBuilder.window_size_decrement_factor(persistenceThrottlingWsDecrementFactor);
         throttleBuilder.window_size_backoff(persistenceThrottlingWsBackoff);
         if (persistenceThrottingWindowSize > 0) {
