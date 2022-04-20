@@ -50,7 +50,7 @@ public class OnnxModelProbe {
             }
 
         } catch (IllegalArgumentException | IOException | InterruptedException e) {
-            e.printStackTrace(System.err);
+            System.err.println(e.getMessage());
         }
 
         return outputType;
@@ -148,7 +148,8 @@ public class OnnxModelProbe {
 
         int returnCode = process.waitFor();
         if (returnCode != 0) {
-            throw new IllegalArgumentException("Error from '" + binary + "'. Return code: " + returnCode + ". Output:\n" + output);
+            throw new IllegalArgumentException("Error from '" + binary + "'. Return code: " + returnCode + ". " +
+                                               "Output: '" + output + "'");
         }
         return output.toString();
     }
