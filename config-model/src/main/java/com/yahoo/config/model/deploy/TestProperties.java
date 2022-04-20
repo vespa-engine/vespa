@@ -42,9 +42,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String sequencerType = "THROUGHPUT";
-    private int feedTaskLimit = 1000;
-    private int feedMasterTaskLimit = 1000;
-    private String sharedFieldWriterExecutor = "NONE";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
     private int responseNumThreads = 2;
@@ -70,14 +67,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
     private boolean failDeploymentWithInvalidJvmOptions = false;
-    private String persistenceAsyncThrottling = "UNLIMITED";
     private String mergeThrottlingPolicy = "STATIC";
     private double persistenceThrottlingWsDecrementFactor = 1.2;
     private double persistenceThrottlingWsBackoff = 0.95;
     private int persistenceThrottlingWindowSize = -1;
     private double persistenceThrottlingWsResizeRate = 3.0;
     private boolean persistenceThrottlingOfMergeFeedOps = true;
-    private boolean inhibitDefaultMergesWhenGlobalMergesPending = false;
     private boolean useV8GeoPositions = false;
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = false;
@@ -96,9 +91,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) { return jvmGCOptions; }
     @Override public String feedSequencerType() { return sequencerType; }
-    @Override public int feedTaskLimit() { return feedTaskLimit; }
-    @Override public int feedMasterTaskLimit() { return feedMasterTaskLimit; }
-    @Override public String sharedFieldWriterExecutor() { return sharedFieldWriterExecutor; }
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return firstTimeDeployment; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
@@ -131,14 +123,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
-    @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
     @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
     @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
     @Override public int persistenceThrottlingWindowSize() { return persistenceThrottlingWindowSize; }
     @Override public double persistenceThrottlingWsResizeRate() { return persistenceThrottlingWsResizeRate; }
     @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
-    @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
@@ -175,18 +165,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setFeedSequencerType(String type) {
         sequencerType = type;
-        return this;
-    }
-    public TestProperties setFeedTaskLimit(int value) {
-        feedTaskLimit = value;
-        return this;
-    }
-    public TestProperties setFeedMasterTaskLimit(int value) {
-        feedMasterTaskLimit = value;
-        return this;
-    }
-    public TestProperties setSharedFieldWriterExecutor(String value) {
-        sharedFieldWriterExecutor = value;
         return this;
     }
     public TestProperties setResponseSequencerType(String type) {
@@ -326,11 +304,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setPersistenceAsyncThrottling(String type) {
-        this.persistenceAsyncThrottling = type;
-        return this;
-    }
-
     public TestProperties setMergeThrottlingPolicy(String policy) {
         this.mergeThrottlingPolicy = policy;
         return this;
@@ -358,11 +331,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setPersistenceThrottlingOfMergeFeedOps(boolean throttleOps) {
         this.persistenceThrottlingOfMergeFeedOps = throttleOps;
-        return this;
-    }
-
-    public TestProperties inhibitDefaultMergesWhenGlobalMergesPending(boolean value) {
-        this.inhibitDefaultMergesWhenGlobalMergesPending = value;
         return this;
     }
 

@@ -298,4 +298,4 @@ use_unordered_merge_chaining bool default=true
 ## cluster state bundle indicates that global merges are pending in the cluster, i.e.
 ## one or more nodes is in maintenance mode in the default bucket space but marked up in
 ## the global bucket space.
-inhibit_default_merges_when_global_merges_pending bool default=false
+inhibit_default_merges_when_global_merges_pending bool default=true

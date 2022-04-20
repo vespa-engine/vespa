@@ -847,59 +847,6 @@ public class ContentBuilderTest extends DomBuilderTest {
 
     }
 
-    @Test
-    public void feed_task_limit_is_controlled_by_feature_flag() {
-        assertEquals(1000, resolveFeedTaskLimitConfigWithFeatureFlag(null));
-        assertEquals(2000, resolveFeedTaskLimitConfigWithFeatureFlag(2000));
-    }
-
-    private int resolveFeedTaskLimitConfigWithFeatureFlag(Integer value) {
-        var props = new TestProperties();
-        if (value != null) {
-            props.setFeedTaskLimit(value);
-        }
-        return resolveProtonConfig(props, singleNodeContentXml()).indexing().tasklimit();
-    }
-
-    @Test
-    public void feed_master_task_limit_is_controlled_by_feature_flag() {
-        assertEquals(1000, resolveFeedMasterTaskLimitConfigWithFeatureFlag(null));
-        assertEquals(2000, resolveFeedMasterTaskLimitConfigWithFeatureFlag(2000));
-    }
-
-    private int resolveFeedMasterTaskLimitConfigWithFeatureFlag(Integer value) {
-        var props = new TestProperties();
-        if (value != null) {
-            props.setFeedMasterTaskLimit(value);
-        }
-        return resolveProtonConfig(props, singleNodeContentXml()).feeding().master_task_limit();
-    }
-
-    @Test
-    public void shared_field_writer_executor_is_controlled_by_feature_flag() {
-
-        assertEquals(Shared_field_writer_executor.Enum.NONE,
-                resolveSharedFieldWriterExecutorConfigWithFeatureFlag(null));
-        assertEquals(Shared_field_writer_executor.Enum.NONE,
-                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("NONE"));
-        assertEquals(Shared_field_writer_executor.Enum.INDEX,
-                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("INDEX"));
-        assertEquals(Shared_field_writer_executor.Enum.INDEX_AND_ATTRIBUTE,
-                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("INDEX_AND_ATTRIBUTE"));
-        assertEquals(Shared_field_writer_executor.Enum.DOCUMENT_DB,
-                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("DOCUMENT_DB"));
-        assertEquals(Shared_field_writer_executor.Enum.NONE,
-                resolveSharedFieldWriterExecutorConfigWithFeatureFlag("invalid"));
-    }
-
-    private ProtonConfig.Feeding.Shared_field_writer_executor.Enum resolveSharedFieldWriterExecutorConfigWithFeatureFlag(String value) {
-        var props = new TestProperties();
-        if (value != null) {
-            props.setSharedFieldWriterExecutor(value);
-        }
-        return resolveProtonConfig(props, singleNodeContentXml()).feeding().shared_field_writer_executor();
-    }
-
     private void verifyThatFeatureFlagControlsVisibilityDelayDefault(Double xmlOverride, double expected) {
         String hostedXml = xmlWithVisibilityDelay(xmlOverride);
         var config = resolveProtonConfig(new TestProperties(), hostedXml);
