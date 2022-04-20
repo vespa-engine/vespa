@@ -70,7 +70,7 @@ public class ApplicationMojo extends AbstractMojo {
 
         boolean hasVespaParent = false;
         Artifact parentArtifact = current.getParentArtifact();
-        if (parentArtifact != null && parentArtifact.getGroupId().startsWith("com.yahoo.vespa")) {
+        if (parentArtifact != null && (parentArtifact.getGroupId().startsWith("com.yahoo.vespa.") || parentArtifact.getGroupId().startsWith("ai.vespa."))) {
             hasVespaParent = true;
             Version parentVersion = Version.from(parentArtifact.getVersion());
             if (parentVersion.compareTo(compileVersion) < 0)
