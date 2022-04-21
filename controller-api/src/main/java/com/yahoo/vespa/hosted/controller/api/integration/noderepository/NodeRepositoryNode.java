@@ -85,6 +85,8 @@ public class NodeRepositoryNode {
     private Boolean wantToDeprovision;
     @JsonProperty("wantToRebuild")
     private Boolean wantToRebuild;
+    @JsonProperty("down")
+    private Boolean down;
     @JsonProperty("cost")
     private Integer cost;
     @JsonProperty("history")
@@ -318,6 +320,14 @@ public class NodeRepositoryNode {
         this.wantToRebuild = wantToRebuild;
     }
 
+    public Boolean getDown() {
+        return down;
+    }
+
+    public void setDown(Boolean down) {
+        this.down = down;
+    }
+
     public Integer getCost() {
         return cost;
     }
@@ -465,6 +475,7 @@ public class NodeRepositoryNode {
                ", wantToRetire=" + wantToRetire +
                ", wantToDeprovision=" + wantToDeprovision +
                ", wantToRebuild=" + wantToRebuild +
+               ", down=" + down +
                ", cost=" + cost +
                ", history=" + history +
                ", orchestratorStatus='" + orchestratorStatus + '\'' +
