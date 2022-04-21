@@ -763,14 +763,8 @@ DocumentDB::getNewestFlushedSerial()
 std::unique_ptr<SearchReply>
 DocumentDB::match(const SearchRequest &req, vespalib::ThreadBundle &threadBundle) const
 {
-    // Ignore input searchhandler. Use readysubdb's searchhandler instead.
     ISearchHandler::SP view(_subDBs.getReadySubDB()->getSearchView());
-    try {
-        return view->match(req, threadBundle);
-    } catch (const std::exception & e) {
-        LOG(warning, "match failed for document type '%s' with exception: %s", getName().c_str(), e.what());
-        throw e;
-    }
+    return view->match(req, threadBundle);
 }
 
 std::unique_ptr<DocsumReply>

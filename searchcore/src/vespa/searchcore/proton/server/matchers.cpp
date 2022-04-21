@@ -4,26 +4,31 @@
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/matching/ranking_expressions.h>
 #include <vespa/searchcore/proton/matching/onnx_models.h>
+#include <vespa/vespalib/util/issue.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
 
 using matching::RankingExpressions;
 using matching::OnnxModels;
+using matching::Matcher;
+using matching::MatchingStats;
+using namespace vespalib::make_string_short;
 
 Matchers::Matchers(const vespalib::Clock &clock,
                    matching::QueryLimiter &queryLimiter,
                    const matching::IConstantValueRepo &constantValueRepo)
     : _rpmap(),
-      _fallback(new matching::Matcher(search::index::Schema(), search::fef::Properties(),
-                                      clock, queryLimiter, constantValueRepo, RankingExpressions(), OnnxModels(), -1)),
+      _fallback(std::make_shared<Matcher>(search::index::Schema(), search::fef::Properties(), clock, queryLimiter,
+                                          constantValueRepo, RankingExpressions(), OnnxModels(), -1)),
       _default()
 { }
 
 Matchers::~Matchers() = default;
 
 void
-Matchers::add(const vespalib::string &name, std::shared_ptr<matching::Matcher> matcher)
+Matchers::add(const vespalib::string &name, std::shared_ptr<Matcher> matcher)
 {
     if ((name == "default") || ! _default) {
         _default = matcher;
@@ -31,30 +36,38 @@ Matchers::add(const vespalib::string &name, std::shared_ptr<matching::Matcher> m
     _rpmap[name] = std::move(matcher);
 }
 
-matching::MatchingStats
+MatchingStats
 Matchers::getStats() const
 {
-    matching::MatchingStats stats;
+    MatchingStats stats;
     for (const auto & entry : _rpmap) {
         stats.add(entry.second->getStats());
     }
     return stats;
 }
 
-matching::MatchingStats
+MatchingStats
 Matchers::getStats(const vespalib::string &name) const
 {
     auto it = _rpmap.find(name);
-    return it != _rpmap.end() ? it->second->getStats() :
-        matching::MatchingStats();
+    return it != _rpmap.end() ? it->second->getStats() : MatchingStats();
 }
 
-matching::Matcher::SP
+std::shared_ptr<Matcher>
 Matchers::lookup(const vespalib::string &name) const
 {
     Map::const_iterator found(_rpmap.find(name));
-    return (found != _rpmap.end()) ? found->second : _default;
-    //TODO add warning log message when not found, may want to use "_fallback" in most cases here
+    if (found == _rpmap.end()) {
+        if (_default) {
+            // TODO Report as issue on Vespa 8
+            // vespalib::Issue::report(fmt("Failed to find rank-profile '%s'. Falling back to 'default'", name.c_str()));
+            return _default;
+        } else {
+            vespalib::Issue::report(fmt("Failed to find rank-profile '%s'. Most likely a configuration issue.", name.c_str()));
+            return _fallback;
+        }
+    }
+    return found->second;
 }
 
 vespalib::string
