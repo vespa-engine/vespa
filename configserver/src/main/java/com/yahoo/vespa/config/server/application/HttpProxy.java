@@ -17,14 +17,11 @@ import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -63,7 +60,7 @@ public class HttpProxy {
                                .orElseThrow(() -> new NotFoundException("Failed to find HTTP state port"));
 
         HttpURL url = HttpURL.create(Scheme.http, DomainName.of(host.getHostname()), port.getPort(), path, query);
-        HttpResponse response = fetcher.get(new Params(2000), // 2_000 ms read timeout
+        HttpResponse response = fetcher.get(new Params(29_000), // 29 sec (30 sec on controller)
                                             url.asURI());
         return forwardedUrl == null ? response : new UrlRewritingProxyResponse(response, url, forwardedUrl);
     }
