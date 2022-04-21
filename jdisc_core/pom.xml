@@ -248,6 +248,8 @@
                                 <argument>${project.build.directory}/dependency/jcl-over-slf4j.jar</argument>
                                 <argument>${project.build.directory}/dependency/log4j-over-slf4j.jar</argument>
                                 <argument>${project.build.directory}/dependency/config-lib.jar</argument>
+                                <argument>${project.build.directory}/dependency/defaults.jar</argument>
+                                <argument>${project.build.directory}/dependency/vespalog.jar</argument>
                                 <argument>${project.build.directory}/dependency/yolean.jar</argument>
                                 <argument>${project.build.directory}/dependency/jaxb-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/jaxb-core.jar</argument>
