@@ -607,7 +607,7 @@ rm -rf %{buildroot}
 
 %if 0%{?installdir:1}
 cp -r %{installdir} %{buildroot}
-%if 0%{?source_base:1}
+%if 0%{?source_base:1} && ! (0%{?amzn2} || 0%{?el7})
 find %{buildroot} -iname '*.so' -print0 | xargs --no-run-if-empty -0 -n1 /usr/lib/rpm/debugedit -b %{source_base} -d %{_builddir}/%{name}-%{version}
 %endif
 %else
