@@ -150,12 +150,12 @@ public class DatabaseHandlerTest {
         // Ensure database is connected to ZooKeeper
         assertTrue(handler.doNextZooKeeperTask(databaseContext));
 
-        // Verify saveWantedStates() is invoked once
+        // Verify ZooKeeperDatabase::storeWantedStates is invoked once
         verify(fixture.mockDatabase, times(0)).storeWantedStates(any());
         assertTrue(handler.saveWantedStates(databaseContext));
         verify(fixture.mockDatabase, times(1)).storeWantedStates(wantedStatesArgument.capture());
 
-        // Verify saveWantedStates() only saves states for existing nodes
+        // Verify ZooKeeperDatabase::storeWantedStates only saves states for existing nodes
         assertEquals(expectedWantedStates, wantedStatesArgument.getValue());
     }
 }
