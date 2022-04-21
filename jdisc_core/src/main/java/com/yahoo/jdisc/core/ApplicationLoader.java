@@ -16,7 +16,7 @@ import com.yahoo.jdisc.application.OsgiHeader;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
-import com.yahoo.log.InitializeLog;
+import com.yahoo.log.impl.InitializeLog;
 import com.yahoo.log.LogSetup;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
