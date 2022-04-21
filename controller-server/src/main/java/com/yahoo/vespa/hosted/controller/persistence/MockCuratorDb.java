@@ -5,8 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
-
 import java.time.Duration;
 
 /**
@@ -34,7 +32,7 @@ public class MockCuratorDb extends CuratorDb {
     }
 
     public MockCuratorDb(MockCurator curator, SystemName system) {
-        super(curator, Duration.ofMillis(100), new InMemoryFlagSource(), system);
+        super(curator, Duration.ofMillis(100), system);
         this.curator = curator;
     }
 
