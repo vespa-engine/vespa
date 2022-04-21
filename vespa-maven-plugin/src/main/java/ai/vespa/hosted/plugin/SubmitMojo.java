@@ -6,8 +6,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.nio.file.Paths;
-import java.util.Optional;
-import java.util.OptionalLong;
 
 /**
  * Submits a Vespa application package and corresponding test jars to the hosted Vespa API.
@@ -41,6 +39,12 @@ public class SubmitMojo extends AbstractVespaMojo {
     @Parameter(property = "projectId")
     private String projectId;
 
+    @Parameter(property = "risk")
+    private String risk;
+
+    @Parameter(property = "description")
+    private String description;
+
     @Override
     public void doExecute() {
         applicationZip = firstNonBlank(applicationZip, projectPathOf("target", "application.zip")).orElseThrow();
@@ -48,7 +52,8 @@ public class SubmitMojo extends AbstractVespaMojo {
         Submission submission = new Submission(optionalOf(repository), optionalOf(branch), optionalOf(commit),
                                                optionalOf(sourceUrl), optionalOf(authorEmail),
                                                Paths.get(applicationZip), Paths.get(applicationTestZip),
-                                               optionalOf(projectId, Long::parseLong));
+                                               optionalOf(projectId, Long::parseLong), optionalOf(risk, Integer::parseInt),
+                                               optionalOf(description));
 
         getLog().info(controller.submit(submission, id.tenant(), id.application()));
     }
