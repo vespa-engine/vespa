@@ -20,10 +20,13 @@ public class Submission {
     private final Path applicationZip;
     private final Path applicationTestZip;
     private final Optional<Long> projectId;
+    private final Optional<Integer> risk;
+    private final Optional<String> description;
 
     public Submission(Optional<String> repository, Optional<String> branch, Optional<String> commit,
                       Optional<String> sourceUrl, Optional<String> authorEmail,
-                      Path applicationZip, Path applicationTestZip, Optional<Long> projectId) {
+                      Path applicationZip, Path applicationTestZip, Optional<Long> projectId,
+                      Optional<Integer> risk, Optional<String> description) {
         this.repository = repository;
         this.branch = branch;
         this.commit = commit;
@@ -32,6 +35,8 @@ public class Submission {
         this.applicationZip = applicationZip;
         this.applicationTestZip = applicationTestZip;
         this.projectId = projectId;
+        this.risk = risk;
+        this.description = description;
     }
 
     public Optional<String> repository() { return repository; }
@@ -42,5 +47,7 @@ public class Submission {
     public Path applicationZip() { return applicationZip; }
     public Path applicationTestZip() { return applicationTestZip; }
     public Optional<Long> projectId() { return projectId; }
+    public Optional<Integer> risk() { return risk; }
+    public Optional<String> description() { return description; }
 
 }
