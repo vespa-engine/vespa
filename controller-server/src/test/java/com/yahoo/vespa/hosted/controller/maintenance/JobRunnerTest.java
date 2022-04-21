@@ -413,6 +413,7 @@ public class JobRunnerTest {
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.nodeAllocationFailure).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.endpointCertificateTimeout).get().intValue());
         assertEquals(1, metric.getMetric(context::equals, JobMetrics.testFailure).get().intValue());
+        assertEquals(1, metric.getMetric(context::equals, JobMetrics.noTests).get().intValue());
     }
 
     private void start(JobController jobs, ApplicationId id, JobType type) {

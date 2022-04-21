@@ -418,6 +418,8 @@ public abstract class ControllerHttpClient {
         submission.sourceUrl().ifPresent(url -> rootObject.setString("sourceUrl", url));
         submission.authorEmail().ifPresent(email -> rootObject.setString("authorEmail", email));
         submission.projectId().ifPresent(projectId -> rootObject.setLong("projectId", projectId));
+        submission.risk().ifPresent(risk -> rootObject.setLong("risk", risk));
+        submission.description().ifPresent(description -> rootObject.setString("description", description));
         return toJson(slime);
     }
 

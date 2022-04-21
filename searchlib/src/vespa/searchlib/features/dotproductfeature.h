@@ -65,11 +65,14 @@ public:
     bool empty() const { return _vector.empty(); }
 };
 
+template <typename T>
+using NumericVectorBaseT = VectorBase<T, T, feature_t>;
+
 /**
  * Represents a vector where the dimensions are integers.
  **/
 template<typename T>
-class IntegerVectorT : public VectorBase<T, T, feature_t> {
+class IntegerVectorT : public NumericVectorBaseT<T> {
 public:
     void insert(vespalib::stringref label, vespalib::stringref value) {
         this->_vector.emplace_back(util::strToNum<T>(label), util::strToNum<feature_t>(value));
@@ -82,10 +85,12 @@ extern template class IntegerVectorT<int64_t>;
 
 using IntegerVector = IntegerVectorT<int64_t>;
 
+using StringVectorBase = VectorBase<vespalib::string, const char*, feature_t, ConstCharComparator>;
+
 /**
  * Represents a vector where the dimensions are string values.
  **/
-class StringVector : public VectorBase<vespalib::string, const char *, feature_t, ConstCharComparator> {
+class StringVector : public StringVectorBase {
 public:
     StringVector();
     StringVector(StringVector &&) = default;
@@ -121,7 +126,7 @@ template <typename BaseType>
 class DotProductExecutorBase : public fef::FeatureExecutor {
 public:
     using AT = multivalue::WeightedValue<BaseType>;
-    using V  = VectorBase<BaseType, BaseType, feature_t>;
+    using V  = std::conditional_t<std::is_same_v<BaseType,const char*>,StringVectorBase,NumericVectorBaseT<BaseType>>;
 private:
     const V                                    & _queryVector;
     const typename V::HashMap::const_iterator    _end;
@@ -147,25 +152,6 @@ public:
     DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, const V & queryVector);
     DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView * weighted_set_read_view, std::unique_ptr<V> queryVector);
     ~DotProductByWeightedSetReadViewExecutor();
-};
-
-
-/**
- * Implements the executor for the dotproduct feature.
- */
-template <typename Vector, typename Buffer>
-class DotProductExecutorByCopy final : public fef::FeatureExecutor {
-private:
-    const attribute::IAttributeVector *            _attribute;
-    const Vector &                                 _queryVector;
-    const typename Vector::HashMap::const_iterator _end;
-    Buffer                                         _buffer;
-    std::unique_ptr<Vector>                        _backing;
-public:
-    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, const Vector & queryVector);
-    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, std::unique_ptr<Vector> queryVector);
-    ~DotProductExecutorByCopy() override;
-    void execute(uint32_t docId) override;
 };
 
 }

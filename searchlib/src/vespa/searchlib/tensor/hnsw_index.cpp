@@ -157,6 +157,7 @@ HnswIndex::shrink_if_needed(uint32_t docid, uint32_t level)
     uint32_t max_links = max_links_for_level(level);
     if (old_links.size() > max_links) {
         HnswCandidateVector neighbors;
+        neighbors.reserve(old_links.size());
         for (uint32_t neighbor_docid : old_links) {
             double dist = calc_distance(docid, neighbor_docid);
             neighbors.emplace_back(neighbor_docid, dist);

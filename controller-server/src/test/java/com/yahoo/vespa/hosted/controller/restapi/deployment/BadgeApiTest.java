@@ -44,11 +44,15 @@ public class BadgeApiTest extends ControllerContainerTest {
                    .runJob(JobType.productionApSoutheast1)
                    .failDeployment(JobType.testApSoutheast1);
         application.submit(applicationPackage)
-                   .runJob(JobType.systemTest)
+                   .failTests(JobType.systemTest, true)
                    .runJob(JobType.stagingTest);
         for (int i = 0; i < 31; i++)
-            application.failDeployment(JobType.productionUsWest1);
+            if ((i & 1) == 0)
+                application.failDeployment(JobType.productionUsWest1);
+            else
+                application.triggerJobs().abortJob(JobType.productionUsWest1);
         application.triggerJobs();
+        tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), JobType.systemTest, "reason");
         tester.controller().applications().deploymentTrigger().reTrigger(application.instanceId(), JobType.testEuWest1, "reason");
 
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default"),

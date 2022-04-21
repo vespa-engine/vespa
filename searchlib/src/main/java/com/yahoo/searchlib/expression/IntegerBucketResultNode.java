@@ -81,11 +81,11 @@ public class IntegerBucketResultNode extends BucketResultNode {
             return (classId - rhs.getClassId());
         }
         IntegerBucketResultNode b = (IntegerBucketResultNode)rhs;
-        long diff = from - b.from;
-        if (diff == 0) {
-            diff = to - b.to;
-        }
-        return ((diff == 0) ? 0 : ((diff < 0) ? -1 : 1));
+        if (from < b.from) return -1;
+        if (from > b.from) return 1;
+        if (to < b.to) return -1;
+        if (to > b.to) return 1;
+        return 0;
     }
 
     @Override
