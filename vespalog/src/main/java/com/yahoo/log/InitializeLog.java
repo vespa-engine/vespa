@@ -7,7 +7,7 @@ package com.yahoo.log;
  */
 public class InitializeLog {
     static {
-        LogSetup.initVespaLogging("Container");
+        LogSetup.initVespaLogging("unused-default");
     }
 
     /**
@@ -15,6 +15,5 @@ public class InitializeLog {
      * Calling this methods forces this class to be loaded,
      * which runs the static block.
      */
-    @SuppressWarnings("UnusedDeclaration")
     public static void init() { }
 }
