@@ -7,7 +7,6 @@ import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -254,6 +253,14 @@ public class JobController {
                        .filter(run -> ! run.isRedeployment())
                        .map(Run::start)
                        .collect(toUnmodifiableList());
+    }
+
+    /** Returns when given deployment last started deploying, falling back to time of deployment if it cannot be determined from job runs */
+    public Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
+        return jobStarts(new JobId(instanceId, JobType.from(controller.system(),
+                                                            deployment.zone()).get())).stream()
+                                                                                      .findFirst()
+                                                                                      .orElseGet(deployment::at);
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */

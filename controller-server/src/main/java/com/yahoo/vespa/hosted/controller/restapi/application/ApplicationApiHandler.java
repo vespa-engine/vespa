@@ -1621,7 +1621,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         response.setString("version", deployment.version().toFullString());
         response.setString("revision", application.revisions().get(deployment.revision()).stringId()); // TODO jonmv or freva:  ƪ(`▿▿▿▿´ƪ)
         response.setLong("build", deployment.revision().number());
-        Instant lastDeploymentStart = lastDeploymentStart(deploymentId.applicationId(), deployment);
+        Instant lastDeploymentStart = controller.jobController().lastDeploymentStart(deploymentId.applicationId(), deployment);
         response.setLong("deployTimeEpochMs", lastDeploymentStart.toEpochMilli());
         controller.zoneRegistry().getDeploymentTimeToLive(deploymentId.zoneId())
                   .ifPresent(deploymentTimeToLive -> response.setLong("expiryTimeEpochMs", lastDeploymentStart.plus(deploymentTimeToLive).toEpochMilli()));
@@ -1679,11 +1679,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metricsObject.setDouble("queryLatencyMillis", metrics.queryLatencyMillis());
         metricsObject.setDouble("writeLatencyMillis", metrics.writeLatencyMillis());
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
-    }
-
-    private Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
-        return controller.jobController().jobStarts(new JobId(instanceId, JobType.from(controller.system(), deployment.zone()).get()))
-                         .stream().findFirst().orElse(deployment.at());
     }
 
     private void toSlime(RotationState state, Cursor object) {
@@ -2468,7 +2463,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                 .flatMap(application -> application.instances().values().stream())
                                                 .flatMap(instance -> instance.deployments().values().stream()
                                                                              .filter(deployment -> deployment.zone().environment() == Environment.dev)
-                                                                             .map(deployment -> lastDeploymentStart(instance.id(), deployment)))
+                                                                             .map(deployment -> controller.jobController().lastDeploymentStart(instance.id(), deployment)))
                                                 .max(Comparator.naturalOrder())
                                                 .or(() -> applications.stream()
                                                                       .flatMap(application -> application.instances().values().stream())

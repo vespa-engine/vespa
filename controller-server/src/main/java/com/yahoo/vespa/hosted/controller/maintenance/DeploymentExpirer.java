@@ -61,9 +61,8 @@ public class DeploymentExpirer extends ControllerMaintainer {
                                        .map(type -> new JobId(instance, type));
         if (jobId.isEmpty()) return false;
 
-        return controller().jobController().jobStarts(jobId.get()).stream().findFirst()
-                           .map(start -> start.plus(ttl.get()).isBefore(controller().clock().instant()))
-                           .orElse(false);
+        return controller().jobController().lastDeploymentStart(instance, deployment)
+                           .plus(ttl.get()).isBefore(controller().clock().instant());
     }
 
 }
