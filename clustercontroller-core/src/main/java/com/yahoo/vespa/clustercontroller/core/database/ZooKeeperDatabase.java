@@ -141,7 +141,7 @@ public class ZooKeeperDatabase extends Database {
         createNode(paths.wantedStates(), new byte[0]);
         createNode(paths.startTimestamps(), new byte[0]);
         createNode(paths.latestVersion(), Integer.valueOf(0).toString().getBytes(utf8));
-        createNode(paths.publishedStateBundle(), new byte[0]); // TODO dedupe string constants
+        createNode(paths.publishedStateBundle(), new byte[0]);
         byte[] val = String.valueOf(context.id().index()).getBytes(utf8);
         deleteNodeIfExists(paths.indexOfMe());
         context.log(log, Level.INFO, "Creating ephemeral master vote node with vote to self.");
