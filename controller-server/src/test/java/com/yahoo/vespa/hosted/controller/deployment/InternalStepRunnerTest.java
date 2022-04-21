@@ -128,22 +128,11 @@ public class InternalStepRunnerTest {
     }
 
     @Test
-    // TODO jonmv: Change to only wait for restarts, and remove triggering of restarts from runner.
     public void restartsServicesAndWaitsForRestartAndReboot() {
         RunId id = app.newRun(JobType.productionUsCentral1);
         ZoneId zone = id.type().zone(system());
         HostName host = tester.configServer().hostFor(instanceId, zone);
 
-        tester.configServer().setConfigChangeActions(new ConfigChangeActions(List.of(new RestartAction("cluster",
-                                                                                                       "container",
-                                                                                                       "search",
-                                                                                                       List.of(new ServiceInfo("queries",
-                                                                                                                               "search",
-                                                                                                                               "config",
-                                                                                                                               host.value())),
-                                                                                                       List.of("Restart it!"))),
-                                                                             List.of(),
-                                                                             List.of()));
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.deployReal));
 

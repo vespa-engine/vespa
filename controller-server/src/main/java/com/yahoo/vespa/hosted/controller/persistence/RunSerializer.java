@@ -356,7 +356,6 @@ class RunSerializer {
     static RunStatus runStatusOf(String status) {
         switch (status) {
             case "running"                    : return running;
-            case "outOfCapacity"              : return nodeAllocationFailure;  // TODO: Remove after March 2022
             case "nodeAllocationFailure"      : return nodeAllocationFailure;
             case "endpointCertificateTimeout" : return endpointCertificateTimeout;
             case "deploymentFailed"           : return deploymentFailed;
