@@ -105,6 +105,7 @@ public:
     const BufferState &bufferState(EntryRef ref) const;
 
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }
+    bool has_held_buffers() const noexcept { return _store.has_held_buffers(); }
 
     static ArrayStoreConfig optimizedConfigForHugePage(size_t maxSmallArraySize,
                                                        size_t hugePageSize,

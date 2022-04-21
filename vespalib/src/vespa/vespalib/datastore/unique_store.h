@@ -67,7 +67,7 @@ public:
     Allocator& get_allocator() { return _allocator; }
     const Allocator& get_allocator() const { return _allocator; }
     IUniqueStoreDictionary& get_dictionary() { return *_dict; }
-    inline const DataStoreType& get_data_store() const { return _allocator.get_data_store(); }
+    inline const DataStoreType& get_data_store() const noexcept { return _allocator.get_data_store(); }
 
     // Pass on hold list management to underlying store
     void transferHoldLists(generation_t generation);

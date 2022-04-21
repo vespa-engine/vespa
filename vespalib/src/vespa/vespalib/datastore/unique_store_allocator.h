@@ -43,8 +43,8 @@ public:
     const EntryType& get(EntryRef ref) const {
         return get_wrapped(ref).value();
     }
-    DataStoreType& get_data_store() { return _store; }
-    const DataStoreType& get_data_store() const { return _store; }
+    DataStoreType& get_data_store() noexcept { return _store; }
+    const DataStoreType& get_data_store() const noexcept { return _store; }
 };
 
 }
