@@ -403,8 +403,34 @@ public class DeploymentContext {
         return runJob(type, instanceId);
     }
 
+    /** Runs the job, failing tests with noTests status, or with regular testFailure. */
+    public DeploymentContext failTests(JobType type, boolean noTests) {
+        if ( ! type.isTest()) throw new IllegalArgumentException(type + " does not run tests");
+        var job = new JobId(instanceId, type);
+        triggerJobs();
+        doDeploy(job);
+        if (job.type().isDeployment()) {
+            doUpgrade(job);
+            doConverge(job);
+            if (job.type().environment().isManuallyDeployed())
+                return this;
+        }
+
+        RunId id = currentRun(job).id();
+        ZoneId zone = zone(job);
+
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
+        tester.cloud().set(noTests ? Status.NO_TESTS : Status.FAILURE);
+        runner.advance(currentRun(job));
+        assertTrue(jobs.run(id).get().hasEnded());
+        assertEquals(noTests, jobs.run(id).get().hasSucceeded());
+        assertTrue(configServer().nodeRepository().list(zone, NodeFilter.all().applications(TesterId.of(instanceId).id())).isEmpty());
+
+        return this;
+    }
+
     /** Pulls the ready job trigger, and then runs the whole of job for the given instance, successfully. */
-    public DeploymentContext runJob(JobType type, ApplicationId instance) {
+    private DeploymentContext runJob(JobType type, ApplicationId instance) {
         var job = new JobId(instance, type);
         triggerJobs();
         doDeploy(job);
