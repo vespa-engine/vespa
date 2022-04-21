@@ -1,4 +1,6 @@
-package com.yahoo.log;
+package com.yahoo.log.impl;
+
+import com.yahoo.log.LogSetup;
 
 /**
  * Sets up Vespa logging. Call a setup method to set up this.

@@ -42,7 +42,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Register;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
-import com.yahoo.log.InitializeLog;
+import com.yahoo.log.impl.InitializeLog;
 import com.yahoo.messagebus.network.rpc.SlobrokConfigSubscriber;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigKey;
