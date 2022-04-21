@@ -23,6 +23,7 @@ import com.yahoo.vespa.athenz.client.zms.bindings.ResponseListEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.RoleEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ServiceEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ServiceListResponseEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.StatisticsEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.TenancyRequestEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.utils.AthenzIdentities;
@@ -406,6 +407,17 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
                 .setEntity(entity)
                 .build();
         execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public QuotaUsage getQuotaUsage() {
+        var uri = zmsUrl.resolve(String.format("domain/%s/quota", identity.getDomainName()));
+        var quotaEntity = execute(RequestBuilder.get(uri).build(), response -> readEntity(response, StatisticsEntity.class));
+
+        uri = zmsUrl.resolve(String.format("domain/%s/stats", identity.getDomainName()));
+        var usageEntity = execute(RequestBuilder.get(uri).build(), response -> readEntity(response, StatisticsEntity.class));
+
+        return QuotaUsage.calculateUsage(usageEntity, quotaEntity);
     }
 
     public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {
