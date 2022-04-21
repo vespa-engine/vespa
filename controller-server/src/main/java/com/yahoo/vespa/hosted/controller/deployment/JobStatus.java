@@ -90,7 +90,7 @@ public class JobStatus {
 
     static Optional<Run> lastSuccess(NavigableMap<RunId, Run> runs) {
         return runs.descendingMap().values().stream()
-                   .filter(run -> run.hasEnded() && ! run.hasFailed())
+                   .filter(Run::hasSucceeded)
                    .findFirst();
     }
 
