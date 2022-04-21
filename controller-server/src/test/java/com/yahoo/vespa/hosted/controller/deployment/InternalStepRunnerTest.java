@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -47,6 +48,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
@@ -55,6 +58,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.app
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTester.instanceId;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
@@ -62,6 +66,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -266,6 +271,27 @@ public class InternalStepRunnerTest {
         tester.runner().run();
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installReal));
         assertEquals(succeeded, tester.jobs().last(app.instanceId(), JobType.systemTest).get().stepStatuses().get(Step.installTester));
+    }
+
+    @Test
+    public void noTestsThenErrorIsError() {
+        RunId id = app.startSystemTestTests();
+        Run run = tester.jobs().run(id).get();
+        run = run.with(noTests, new LockedStep(() -> { }, Step.endTests));
+        assertFalse(run.hasFailed());
+        run = run.with(RunStatus.error, new LockedStep(() -> { }, Step.deactivateReal));
+        assertTrue(run.hasFailed());
+        assertEquals(RunStatus.error, run.status());
+    }
+
+    @Test
+    public void noTestsThenSuccessIsNoTests() {
+        RunId id = app.startSystemTestTests();
+        tester.cloud().set(Status.NO_TESTS);
+        tester.runner().run();
+        assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        Run run = tester.jobs().run(id).get();
+        assertEquals(noTests, run.status());
     }
 
     @Test

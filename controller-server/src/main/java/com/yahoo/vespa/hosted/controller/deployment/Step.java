@@ -113,6 +113,7 @@ public enum Step {
                 case success : throw new AssertionError("Unexpected run status '" + status + "'!");
                 case reset   :
                 case aborted : return unfinished;
+                case noTests :
                 case running : return succeeded;
                 default      : return failed;
             }
