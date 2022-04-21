@@ -360,6 +360,7 @@ public class SearchHandler extends LoggingRequestHandler {
                                          .setQueryProfile(queryProfile)
                                          .setEmbedders(embedders)
                                          .setZoneInfo(zoneInfo)
+                                         .setSchemaInfo(executionFactory.schemaInfo())
                                          .build();
 
         boolean benchmarking = VespaHeaders.benchmarkOutput(request);

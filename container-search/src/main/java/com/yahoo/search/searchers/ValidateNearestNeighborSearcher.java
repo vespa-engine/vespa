@@ -2,8 +2,6 @@
 
 package com.yahoo.search.searchers;
 
-import com.yahoo.api.annotations.Beta;
-
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NearestNeighborItem;
 import com.yahoo.prelude.query.ToolBox;
@@ -38,7 +36,7 @@ public class ValidateNearestNeighborSearcher extends Searcher {
     public ValidateNearestNeighborSearcher(AttributesConfig attributesConfig) {
         for (AttributesConfig.Attribute a : attributesConfig.attribute()) {
             if (! validAttributes.containsKey(a.name())) {
-                validAttributes.put(a.name(), new ArrayList<TensorType>());
+                validAttributes.put(a.name(), new ArrayList<>());
             }
             if (a.datatype() == AttributesConfig.Attribute.Datatype.TENSOR) {
                 TensorType tt = TensorType.fromSpec(a.tensortype());

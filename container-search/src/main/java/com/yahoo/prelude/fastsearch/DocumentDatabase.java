@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import com.yahoo.search.config.RankProfile;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
@@ -10,7 +11,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Representation of a back-end document database.
+ * Representation of a document database realizing a schema in a content cluster.
  *
  * @author geirst
  */
@@ -33,7 +34,7 @@ public class DocumentDatabase {
     public DocumentDatabase(String name, DocsumDefinitionSet docsumDefinitionSet, Collection<RankProfile> rankProfiles) {
         this.name = name;
         this.docsumDefSet = docsumDefinitionSet;
-        this.rankProfiles = Map.copyOf(rankProfiles.stream().collect(Collectors.toMap(RankProfile::getName, p -> p)));
+        this.rankProfiles = Map.copyOf(rankProfiles.stream().collect(Collectors.toMap(RankProfile::name, p -> p)));
     }
 
     public String getName() {
@@ -49,13 +50,15 @@ public class DocumentDatabase {
 
     private static Collection<RankProfile> toRankProfiles(Collection<DocumentdbInfoConfig.Documentdb.Rankprofile> rankProfileConfigList) {
         List<RankProfile> rankProfiles = new ArrayList<>();
-        for (DocumentdbInfoConfig.Documentdb.Rankprofile c : rankProfileConfigList)
-            rankProfiles.add(new RankProfile(c.name(), c.hasSummaryFeatures(), c.hasRankFeatures(), inputs(c)));
+        for (var profileConfig : rankProfileConfigList) {
+            var builder = new RankProfile.Builder(profileConfig.name());
+            builder.setHasSummaryFeatures(profileConfig.hasSummaryFeatures());
+            builder.setHasRankFeatures(profileConfig.hasRankFeatures());
+            for (var inputConfig : profileConfig.input())
+                builder.addInput(inputConfig.name(), TensorType.fromSpec(inputConfig.type()));
+            rankProfiles.add(builder.build());
+        }
         return rankProfiles;
-    }
-
-    private static Map<String, TensorType> inputs(DocumentdbInfoConfig.Documentdb.Rankprofile c) {
-        return c.input().stream().collect(Collectors.toMap(i -> i.name(), i -> TensorType.fromSpec(i.type())));
     }
 
 }

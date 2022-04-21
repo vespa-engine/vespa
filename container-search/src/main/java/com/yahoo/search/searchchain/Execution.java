@@ -16,6 +16,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.cluster.PingableSearcher;
+import com.yahoo.search.config.SchemaInfo;
 import com.yahoo.search.rendering.Renderer;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
@@ -78,6 +79,8 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         private IndexFacts indexFacts = null;
 
+        private SchemaInfo schemaInfo = SchemaInfo.empty();
+
         /** The current set of special tokens */
         private SpecialTokenRegistry tokenRegistry = null;
 
@@ -116,7 +119,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * This context is never attached to an execution but is used to carry state into
          * another context.
          */
-        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
+        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts, SchemaInfo schemaInfo,
                        SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics,
                        Executor executor) {
             owner = null;
@@ -125,50 +128,67 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             // obviously, the most complete constructor.
             this.searchChainRegistry = searchChainRegistry;
             this.indexFacts = indexFacts;
+            this.schemaInfo = Objects.requireNonNull(schemaInfo);
             this.tokenRegistry = tokenRegistry;
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
             this.executor = Objects.requireNonNull(executor, "The executor cannot be null");
         }
 
+        /** @deprecated pass schemaInfo */
+        @Deprecated
+        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
+                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics,
+                       Executor executor) {
+            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, Runnable::run);
+        }
+
         /** @deprecated pass an executor */
         @Deprecated // TODO: Remove on Vespa 8
         public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
                        SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics) {
-            this(searchChainRegistry, indexFacts, tokenRegistry, rendererRegistry, linguistics, Runnable::run);
+            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, Runnable::run);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub() {
-            return createContextStub(null, null, null);
+            return createContextStub(null, null, SchemaInfo.empty(), null);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry) {
-            return createContextStub(searchChainRegistry, null, null);
+            return createContextStub(searchChainRegistry, null, SchemaInfo.empty(), null);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(IndexFacts indexFacts) {
-            return createContextStub(null, indexFacts, null);
+            return createContextStub(null, indexFacts, SchemaInfo.empty(), null);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts) {
-            return createContextStub(searchChainRegistry, indexFacts, null);
+            return createContextStub(searchChainRegistry, indexFacts, SchemaInfo.empty(), null);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(IndexFacts indexFacts, Linguistics linguistics) {
-            return createContextStub(null, indexFacts, linguistics);
+            return createContextStub(null, indexFacts, SchemaInfo.empty(), linguistics);
+        }
+
+        public static Context createContextStub(SearchChainRegistry searchChainRegistry,
+                                                IndexFacts indexFacts,
+                                                Linguistics linguistics) {
+            return createContextStub(searchChainRegistry, indexFacts, SchemaInfo.empty(), linguistics);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry,
                                                 IndexFacts indexFacts,
+                                                SchemaInfo schemaInfo,
                                                 Linguistics linguistics) {
             return new Context(searchChainRegistry != null ? searchChainRegistry : new SearchChainRegistry(),
                                indexFacts != null ? indexFacts : new IndexFacts(),
+                               schemaInfo,
                                null,
                                new RendererRegistry(Runnable::run),
                                linguistics != null ? linguistics : new SimpleLinguistics(),
@@ -188,6 +208,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             breakdown = sourceContext.breakdown;
             if (indexFacts == null)
                 indexFacts = sourceContext.indexFacts;
+            schemaInfo = sourceContext.schemaInfo;
             if (tokenRegistry == null)
                 tokenRegistry = sourceContext.tokenRegistry;
             if (searchChainRegistry == null)
@@ -207,6 +228,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         void fill(Context other) {
             searchChainRegistry = other.searchChainRegistry;
             indexFacts = other.indexFacts;
+            schemaInfo = other.schemaInfo;
             tokenRegistry = other.tokenRegistry;
             rendererRegistry = other.rendererRegistry;
             detailedDiagnostics = other.detailedDiagnostics;
@@ -219,18 +241,20 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             // equals() needs to be cheap, that's yet another reason we can only
             // allow immutables and frozen objects in the context
             return other.indexFacts == indexFacts
-                    && other.rendererRegistry == rendererRegistry
-                    && other.tokenRegistry == tokenRegistry
-                    && other.searchChainRegistry == searchChainRegistry
-                    && other.detailedDiagnostics == detailedDiagnostics
-                    && other.breakdown == breakdown
-                    && other.linguistics == linguistics
-                    && other.executor == executor;
+                   && other.schemaInfo == schemaInfo
+                   && other.rendererRegistry == rendererRegistry
+                   && other.tokenRegistry == tokenRegistry
+                   && other.searchChainRegistry == searchChainRegistry
+                   && other.detailedDiagnostics == detailedDiagnostics
+                   && other.breakdown == breakdown
+                   && other.linguistics == linguistics
+                   && other.executor == executor;
         }
 
         @Override
         public int hashCode() {
             return java.util.Objects.hash(indexFacts,
+                                          schemaInfo,
                                           rendererRegistry, tokenRegistry, searchChainRegistry,
                                           detailedDiagnostics, breakdown,
                                           linguistics,
@@ -293,28 +317,25 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.indexFacts = indexFacts;
         }
 
+        /** Returns information about the schemas specified in this application. This is never null. */
+        public SchemaInfo schemaInfo() { return schemaInfo; }
+
         /**
          * Returns the search chain registry to use with this execution. This is
          * a snapshot taken at creation of this execution, use
          * Context.shallowCopy() to get a correctly instantiated Context if
          * making a custom Context instance.
          */
-        public SearchChainRegistry searchChainRegistry() {
-            return searchChainRegistry;
-        }
+        public SearchChainRegistry searchChainRegistry() { return searchChainRegistry; }
 
         /**
          * Returns the template registry to use with this execution. This is
          * a snapshot taken at creation of this execution.
          */
-        public RendererRegistry rendererRegistry() {
-            return rendererRegistry;
-        }
+        public RendererRegistry rendererRegistry() { return rendererRegistry; }
 
         /** Returns the current set of special strings for the query tokenizer */
-        public SpecialTokenRegistry getTokenRegistry() {
-            return tokenRegistry;
-        }
+        public SpecialTokenRegistry getTokenRegistry() { return tokenRegistry; }
 
         /**
          * Wrapping the incoming special token registry and then setting the
@@ -324,13 +345,9 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          *
          * @param tokenRegistry a new registry for overriding behavior of following searchers
          */
-        public void setTokenRegistry(SpecialTokenRegistry tokenRegistry) {
-            this.tokenRegistry = tokenRegistry;
-        }
+        public void setTokenRegistry(SpecialTokenRegistry tokenRegistry) { this.tokenRegistry = tokenRegistry; }
 
-        public void setDetailedDiagnostics(boolean breakdown) {
-            this.detailedDiagnostics = breakdown;
-        }
+        public void setDetailedDiagnostics(boolean breakdown) { this.detailedDiagnostics = breakdown; }
 
         /**
          * The container has some internal diagnostics mechanisms which may be
@@ -342,9 +359,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          * @return whether components exposing different level of diagnostics
          *         should go for the most detailed level
          */
-        public boolean getDetailedDiagnostics() {
-            return detailedDiagnostics;
-        }
+        public boolean getDetailedDiagnostics() { return detailedDiagnostics; }
 
         /**
          * If too many queries time out, the search handler will assume the
@@ -352,27 +367,17 @@ public class Execution extends com.yahoo.processing.execution.Execution {
          *
          * @return whether the system is assumed to be in a breakdown state
          */
-        public boolean getBreakdown() {
-            return breakdown;
-        }
+        public boolean getBreakdown() { return breakdown; }
 
-        public void setBreakdown(boolean breakdown) {
-            this.breakdown = breakdown;
-        }
+        public void setBreakdown(boolean breakdown) { this.breakdown = breakdown; }
 
         /**
          * Returns the {@link Linguistics} object assigned to this Context. This object provides access to all the
          * linguistic-related APIs, and comes pre-configured with the Execution given.
-         *
-         * @return The current Linguistics.
          */
-        public Linguistics getLinguistics() {
-            return linguistics;
-        }
+        public Linguistics getLinguistics() { return linguistics; }
 
-        public void setLinguistics(Linguistics linguistics) {
-            this.linguistics = linguistics;
-        }
+        public void setLinguistics(Linguistics linguistics) { this.linguistics = linguistics; }
 
         /**
          * Returns the executor that should be used to execute tasks as part of this execution.
@@ -474,15 +479,10 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      * to ensure only searchChain or searcher is null (and because it's long and
      * cumbersome).
      *
-     * @param searchChain
-     *            the search chain to execute, must be null if searcher is set
-     * @param context
-     *            execution context for the search
-     * @param searcherIndex
-     *            index of the first searcher to invoke, see
-     *            Execution(Execution)
-     * @throws IllegalArgumentException
-     *             if searchChain is null
+     * @param searchChain the search chain to execute, must be null if searcher is set
+     * @param context execution context for the search
+     * @param searcherIndex index of the first searcher to invoke, see Execution(Execution)
+     * @throws IllegalArgumentException if searchChain is null
      */
     @SuppressWarnings("unchecked")
     private Execution(Chain<? extends Processor> searchChain, Context context, int searcherIndex) {
@@ -493,7 +493,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         super(searchChain, searcherIndex, context.createChildTrace(), context.createChildEnvironment());
         this.context.fill(context);
         contextCache = new Context[searchChain.components().size()];
-        entryIndex=searcherIndex;
+        entryIndex = searcherIndex;
         timer = new TimeTracker(searchChain, searcherIndex);
     }
 

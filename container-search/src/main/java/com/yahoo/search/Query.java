@@ -13,6 +13,7 @@ import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.config.SchemaInfo;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 import com.yahoo.search.federation.FederationSearcher;
@@ -45,6 +46,7 @@ import com.yahoo.search.query.properties.QueryProperties;
 import com.yahoo.search.query.properties.QueryPropertyAliases;
 import com.yahoo.search.query.properties.RankProfileInputProperties;
 import com.yahoo.search.query.properties.RequestContextProperties;
+import com.yahoo.search.query.ranking.RankFeatures;
 import com.yahoo.search.yql.NullItemException;
 import com.yahoo.search.yql.VespaSerializer;
 import com.yahoo.search.yql.YqlParser;
@@ -177,7 +179,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** The ranking requested in this query */
     private Ranking ranking = new Ranking(this);
 
-    /** The query query and/or query program declaration */
+    /** The query and/or query program declaration */
     private Model model = new Model(this);
 
     /** How results of this query should be presented */
@@ -212,6 +214,8 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType = new QueryProfileType("native");
         argumentType.setBuiltin(true);
 
+        // Note: Order here matters as fields are set in this order, and rank feature conversion depends
+        //       on other fields already being set (see RankProfileInputProperties)
         argumentType.addField(new FieldDescription(OFFSET.toString(), "integer", "offset start"));
         argumentType.addField(new FieldDescription(HITS.toString(), "integer", "hits count"));
         argumentType.addField(new FieldDescription(QUERY_PROFILE.toString(), "string"));
@@ -223,11 +227,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));
         argumentType.addField(new FieldDescription(FederationSearcher.SOURCENAME.toString(),"string"));
         argumentType.addField(new FieldDescription(FederationSearcher.PROVIDERNAME.toString(),"string"));
-        argumentType.addField(new FieldDescription(Presentation.PRESENTATION, new QueryProfileFieldType(Presentation.getArgumentType())));
-        argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
         argumentType.addField(new FieldDescription(Model.MODEL, new QueryProfileFieldType(Model.getArgumentType())));
         argumentType.addField(new FieldDescription(Select.SELECT, new QueryProfileFieldType(Select.getArgumentType())));
         argumentType.addField(new FieldDescription(Dispatcher.DISPATCH, new QueryProfileFieldType(Dispatcher.getArgumentType())));
+        argumentType.addField(new FieldDescription(Ranking.RANKING, new QueryProfileFieldType(Ranking.getArgumentType())));
+        argumentType.addField(new FieldDescription(Presentation.PRESENTATION, new QueryProfileFieldType(Presentation.getArgumentType())));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
@@ -259,9 +263,9 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static void addNativeQueryProfileTypesTo(QueryProfileTypeRegistry registry) {
         // Add modifiable copies to allow query profile types in this to add to these
         registry.register(Query.getArgumentType().unfrozen());
-        registry.register(Ranking.getArgumentType().unfrozen());
         registry.register(Model.getArgumentType().unfrozen());
         registry.register(Select.getArgumentType().unfrozen());
+        registry.register(Ranking.getArgumentType().unfrozen());
         registry.register(Presentation.getArgumentType().unfrozen());
         registry.register(DefaultProperties.argumentType.unfrozen());
     }
@@ -271,7 +275,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             ImmutableList.copyOf(namesUnder(CompoundName.empty, Query.getArgumentType()));
 
     private static List<CompoundName> namesUnder(CompoundName prefix, QueryProfileType type) {
-        if ( type == null) return Collections.emptyList(); // Names not known statically
+        if (type == null) return Collections.emptyList(); // Names not known statically
         List<CompoundName> names = new ArrayList<>();
         for (Map.Entry<String, FieldDescription> field : type.fields().entrySet()) {
             if (field.getValue().getType() instanceof QueryProfileFieldType) {
@@ -339,7 +343,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public Query(HttpRequest request, Map<String, String> requestMap, CompiledQueryProfile queryProfile) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile, Embedder.throwsOnUse.asMap(), ZoneInfo.defaultInfo());
+        init(requestMap, queryProfile, Embedder.throwsOnUse.asMap(), ZoneInfo.defaultInfo(), SchemaInfo.empty());
     }
 
     // TODO: Deprecate most constructors above here
@@ -349,23 +353,26 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
              builder.getRequestMap(),
              builder.getQueryProfile(),
              builder.getEmbedders(),
-             builder.getZoneInfo());
+             builder.getZoneInfo(),
+             builder.getSchemaInfo());
     }
 
     private Query(HttpRequest request,
                   Map<String, String> requestMap,
                   CompiledQueryProfile queryProfile,
                   Map<String, Embedder> embedders,
-                  ZoneInfo zoneInfo) {
+                  ZoneInfo zoneInfo,
+                  SchemaInfo schemaInfo) {
         super(new QueryPropertyAliases(propertyAliases));
         this.httpRequest = request;
-        init(requestMap, queryProfile, embedders, zoneInfo);
+        init(requestMap, queryProfile, embedders, zoneInfo, schemaInfo);
     }
 
     private void init(Map<String, String> requestMap,
                       CompiledQueryProfile queryProfile,
                       Map<String, Embedder> embedders,
-                      ZoneInfo zoneInfo) {
+                      ZoneInfo zoneInfo,
+                      SchemaInfo schemaInfo) {
         startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile
@@ -374,7 +381,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             setPropertiesFromRequestMap(requestMap, properties(), true);
 
             // Create the full chain
-            properties().chain(new RankProfileInputProperties(this))
+            properties().chain(new RankProfileInputProperties(schemaInfo, this, embedders))
                         .chain(new QueryProperties(this, queryProfile.getRegistry(), embedders))
                         .chain(new ModelObjectMap())
                         .chain(new RequestContextProperties(requestMap, zoneInfo))
@@ -394,7 +401,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
         else { // bypass these complications if there is no query profile to get values from and validate against
             properties().
-                    chain(new RankProfileInputProperties(this)).
+                    chain(new RankProfileInputProperties(schemaInfo, this, embedders)).
                     chain(new QueryProperties(this, CompiledQueryProfileRegistry.empty, embedders)).
                     chain(new PropertyMap()).
                     chain(new DefaultProperties());
@@ -459,32 +466,17 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
     }
 
-    private static final List<CompoundName> fieldsToSetFirst = List.of(CompoundName.from("ranking.profile"),
-                                                                       CompoundName.from("model.sources"),
-                                                                       CompoundName.from("model.restrict"));
-
     /** Calls properties.set on all entries in requestMap */
     private void setPropertiesFromRequestMap(Map<String, String> requestMap, Properties properties, boolean ignoreSelect) {
-        // Set these first because they contain type information in inputs which impacts other values set
-        for (var fieldName : fieldsToSetFirst)
-            lookupIn(requestMap, fieldName).ifPresent(value -> properties.set(fieldName, value));
-
         for (var entry : requestMap.entrySet()) {
             if (ignoreSelect && entry.getKey().equals(Select.SELECT)) continue;
+            if (RankFeatures.isFeatureName(entry.getKey())) continue; // Set these last
             properties.set(entry.getKey(), entry.getValue(), requestMap);
         }
-    }
-
-    private Optional<String> lookupIn(Map<String, String> requestMap, CompoundName fieldName) {
-        String value = requestMap.get(fieldName.toString());
-        if (value != null) return Optional.of(value);
-        FieldDescription field = argumentType.getField(fieldName);
-        for (String alias : field.getAliases()) {
-            value = requestMap.get(alias);
-            if (value != null)
-                return Optional.of(value);
+        for (var entry : requestMap.entrySet()) {
+            if ( ! RankFeatures.isFeatureName(entry.getKey())) continue;
+            properties.set(entry.getKey(), entry.getValue(), requestMap);
         }
-        return Optional.empty();
     }
 
     /** Returns the properties of this query. The properties are modifiable */
@@ -1156,6 +1148,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         private CompiledQueryProfile queryProfile = null;
         private Map<String, Embedder> embedders = Embedder.throwsOnUse.asMap();
         private ZoneInfo zoneInfo = ZoneInfo.defaultInfo();
+        private SchemaInfo schemaInfo = SchemaInfo.empty();
 
         public Builder setRequest(String query) {
             request = HttpRequest.createTestRequest(query, com.yahoo.jdisc.http.HttpRequest.Method.GET);
@@ -1217,6 +1210,13 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
 
         public ZoneInfo getZoneInfo() { return zoneInfo; }
+
+        public Builder setSchemaInfo(SchemaInfo schemaInfo) {
+            this.schemaInfo = schemaInfo;
+            return this;
+        }
+
+        public SchemaInfo getSchemaInfo() { return schemaInfo; }
 
         /** Creates a new query from this builder. No properties are required to before calling this. */
         public Query build() { return new Query(this); }

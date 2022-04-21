@@ -43,56 +43,42 @@ public class Properties implements Cloneable {
         return chained.getInstance(propertyClass);
     }
 
-    /**
-     * Lists all properties of this with no context, by delegating to listProperties("")
-     */
+    /** Lists all properties of this with no context, by delegating to listProperties(""). */
     public final Map<String, Object> listProperties() {
         return listProperties(CompoundName.empty);
     }
 
-    /**
-     * Returns a snapshot of all properties of this - same as listProperties("",context)
-     */
+    /** Returns a snapshot of all properties of this - same as listProperties("", context). */
     public final Map<String, Object> listProperties(Map<String, String> context) {
         return listProperties(CompoundName.empty, context, this);
     }
 
-    /**
-     * Returns a snapshot of all properties by calling listProperties(path,null)
-     */
+    /** Returns a snapshot of all properties by calling listProperties(path, null). */
     public final Map<String, Object> listProperties(CompoundName path) {
         return listProperties(path, null, this);
     }
 
-    /**
-     * Returns a snapshot of all properties by calling listProperties(path,null)
-     */
+    /** Returns a snapshot of all properties by calling listProperties(path, null). */
     public final Map<String, Object> listProperties(String path) {
         return listProperties(new CompoundName(path), null, this);
     }
 
-    /**
-     * Returns a snapshot of all properties by calling listProperties(path,null)
-     */
+    /** Returns a snapshot of all properties by calling listProperties(path, null). */
     public final Map<String, Object> listProperties(CompoundName path, Map<String, String> context) {
         return listProperties(path, context, this);
     }
 
-    /**
-     * Returns a snapshot of all properties by calling listProperties(path,null)
-     */
+    /** Returns a snapshot of all properties by calling listProperties(path, null). */
     public final Map<String, Object> listProperties(String path, Map<String, String> context) {
         return listProperties(new CompoundName(path), context, this);
     }
 
     /**
      * Returns a snapshot of all properties of this having a given path prefix
-     * <p>
-     * Some sources of properties may not be list-able (e.g those using reflection)
-     * and will not be included in this snapshot.
+     * Some sources of properties may not be list-able and will not be included in this snapshot.
      *
-     *
-     * @param path         the prefix (up to a ".") of the properties to return, or null or the empty string to return all properties
+     * @param path         the prefix (up to a ".") of the properties to return, or null or the empty string
+     *                     to return all properties
      * @param context      the context used to resolve the properties, or null if none
      * @param substitution the properties which will be used to do string substitution in the values added to the map
      */
@@ -107,10 +93,7 @@ public class Properties implements Cloneable {
 
     /**
      * Returns a snapshot of all properties of this having a given path prefix
-     * <p>
-     * Some sources of properties may not be list-able (e.g those using reflection)
-     * and will not be included in this snapshot.
-     *
+     * Some sources of properties may not be list-able and will not be included in this snapshot.
      *
      * @param path         the prefix (up to a ".") of the properties to return, or null or the empty string to return all properties
      * @param context      the context used to resolve the properties, or null if none
@@ -133,7 +116,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Gets a named value which (if necessary) is resolved using a property context
+     * Gets a named value which (if necessary) is resolved using a property context.
      *
      * @param name         the name of the property to return
      * @param context      the variant resolution context, or null if none
@@ -143,30 +126,22 @@ public class Properties implements Cloneable {
         return get(new CompoundName(name), context, substitution);
     }
 
-    /**
-     * Gets a named value from the first chained instance which has one by calling get(name,context,this)
-     */
+    /** Gets a named value from the first chained instance which has one by calling get(name,context,this). */
     public final Object get(CompoundName name, Map<String, String> context) {
         return get(name, context, this);
     }
 
-    /**
-     * Gets a named value from the first chained instance which has one by calling get(name,context,this)
-     */
+    /** Gets a named value from the first chained instance which has one by calling get(name,context,this). */
     public final Object get(String name, Map<String, String> context) {
         return get(new CompoundName(name), context, this);
     }
 
-    /**
-     * Gets a named value from the first chained instance which has one by calling get(name,null,this)
-     */
+    /** Gets a named value from the first chained instance which has one by calling get(name,null,this). */
     public final Object get(CompoundName name) {
         return get(name, null, this);
     }
 
-    /**
-     * Gets a named value from the first chained instance which has one by calling get(name,null,this)
-     */
+    /** Gets a named value from the first chained instance which has one by calling get(name,null,this). */
     public final Object get(String name) {
         return get(new CompoundName(name), null, this);
     }
@@ -174,9 +149,8 @@ public class Properties implements Cloneable {
     /**
      * Gets a named value from the first chained instance which has one,
      * or the default value if no value is set, or if the first value encountered is explicitly set to null.
-     * <p>
-     * This default implementation simply forwards to the chained instance, or returns the default if none
      *
+     * This default implementation simply forwards to the chained instance, or returns the default if none.
      *
      * @param name         the name of the property to return
      * @param defaultValue the default value returned if the value returned is null
@@ -190,8 +164,8 @@ public class Properties implements Cloneable {
     /**
      * Gets a named value from the first chained instance which has one,
      * or the default value if no value is set, or if the first value encountered is explicitly set to null.
-     * <p>
-     * This default implementation simply forwards to the chained instance, or returns the default if none
+     *
+     * This default implementation simply forwards to the chained instance, or returns the default if none.
      *
      * @param name         the name of the property to return
      * @param defaultValue the default value returned if the value returned is null
@@ -202,7 +176,7 @@ public class Properties implements Cloneable {
 
     /**
      * Sets a value to the first chained instance which accepts it.
-     * <p>
+     *
      * This default implementation forwards to the chained instance or throws
      * a RuntimeException if there is not chained instance.
      *
@@ -219,7 +193,7 @@ public class Properties implements Cloneable {
 
     /**
      * Sets a value to the first chained instance which accepts it.
-     * <p>
+     *
      * This default implementation forwards to the chained instance or throws
      * a RuntimeException if there is not chained instance.
      *
@@ -233,7 +207,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Sets a value to the first chained instance which accepts it by calling set(name,value,null).
+     * Sets a value to the first chained instance which accepts it by calling set(name, value, null).
      *
      * @param name    the name of the property
      * @param value   the value to set. Setting a property to null clears it.
@@ -244,7 +218,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Sets a value to the first chained instance which accepts it by calling set(name,value,null).
+     * Sets a value to the first chained instance which accepts it by calling set(name, value, null).
      *
      * @param name    the name of the property
      * @param value   the value to set. Setting a property to null clears it.
@@ -364,7 +338,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns this property as a string
+     * Returns this property as a string.
      *
      * @return this property as a string, or null if the property is null
      */
@@ -373,7 +347,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns this property as a string
+     * Returns this property as a string.
      *
      * @return this property as a string, or null if the property is null
      */
@@ -382,7 +356,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns this property as a string
+     * Returns this property as a string.
      *
      * @param key          the property key
      * @param defaultValue the value to return if this property is null
@@ -393,7 +367,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns this property as a string
+     * Returns this property as a string.
      *
      * @param key          the property key
      * @param defaultValue the value to return if this property is null
@@ -409,7 +383,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as an Integer
+     * Returns a property as an Integer.
      *
      * @return the integer value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but
@@ -420,7 +394,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as an Integer
+     * Returns a property as an Integer.
      *
      * @return the integer value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but
@@ -431,7 +405,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as an Integer
+     * Returns a property as an Integer.
      *
      * @param name         the property name
      * @param defaultValue the value to return if this property is null
@@ -444,7 +418,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as an Integer
+     * Returns a property as an Integer.
      *
      * @param name         the property name
      * @param defaultValue the value to return if this property is null
@@ -475,7 +449,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Long
+     * Returns a property as a Long.
      *
      * @return the long value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but have a value which
@@ -486,7 +460,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Long
+     * Returns a property as a Long.
      *
      * @return the long value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but have a value which
@@ -497,7 +471,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Long
+     * Returns a property as a Long.
      *
      * @param name         the property name
      * @param defaultValue the value to return if this property is null
@@ -510,7 +484,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Long
+     * Returns a property as a Long.
      *
      * @param name         the property name
      * @param defaultValue the value to return if this property is null
@@ -541,7 +515,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Double
+     * Returns a property as a Double.
      *
      * @return the double value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but have a value which
@@ -552,7 +526,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Double
+     * Returns a property as a Double.
      *
      * @return the double value of the name, or null if the property is null
      * @throws NumberFormatException if the given parameter exists but have a value which
@@ -563,7 +537,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Double
+     * Returns a property as a Double.
      *
      * @param name         the property name
      * @param defaultValue the value to return if this property is null
@@ -576,7 +550,7 @@ public class Properties implements Cloneable {
     }
 
     /**
-     * Returns a property as a Double
+     * Returns a property as a Double.
      *
      * @param name         the property name
      * @param defaultValue the value to return if this property is null
@@ -626,7 +600,7 @@ public class Properties implements Cloneable {
         return cloneHelper.cloneMap(map);
     }
 
-    /** Clones this object if it is clonable, and the clone is public. Returns null if not */
+    /** Clones this object if it is clonable, and the clone is public. Returns null if not. */
     public static Object clone(Object object) {
         return cloneHelper.clone(object);
     }

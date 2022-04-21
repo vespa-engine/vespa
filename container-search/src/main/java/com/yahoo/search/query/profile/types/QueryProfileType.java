@@ -12,6 +12,7 @@ import com.yahoo.search.query.profile.QueryProfile;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +49,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
     }
 
     public QueryProfileType(ComponentId id) {
-        this(id, new HashMap<>(), new ArrayList<>());
+        this(id, new LinkedHashMap<>(), new ArrayList<>());
     }
 
     private QueryProfileType(ComponentId id, Map<String, FieldDescription> fields, List<QueryProfileType> inherited) {
@@ -61,7 +62,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
     private QueryProfileType(ComponentId id, Map<String, FieldDescription> fields, List<QueryProfileType> inherited,
                             boolean strict, boolean matchAsPath, boolean builtin, Map<String,String> aliases) {
-        this(id, new HashMap<>(fields), new ArrayList<>(inherited));
+        this(id, new LinkedHashMap<>(fields), new ArrayList<>(inherited));
         this.strict = strict;
         this.matchAsPath = matchAsPath;
         this.builtin = builtin;
@@ -79,7 +80,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
         }
 
         // Unfreeze nested query profile references
-        Map<String, FieldDescription> unfrozenFields = new HashMap<>();
+        Map<String, FieldDescription> unfrozenFields = new LinkedHashMap<>();
         for (Map.Entry<String, FieldDescription> field : fields.entrySet()) {
             FieldDescription unfrozenFieldValue = field.getValue();
             if (field.getValue().getType() instanceof QueryProfileFieldType) {
@@ -196,8 +197,8 @@ public class QueryProfileType extends FreezableSimpleComponent {
      * Default: true (so all non-declared fields returns true)
      */
     public boolean isOverridable(String fieldName) {
-        FieldDescription field=getField(fieldName);
-        if (field==null) return true;
+        FieldDescription field = getField(fieldName);
+        if (field == null) return true;
         return field.isOverridable();
     }
 
@@ -208,8 +209,8 @@ public class QueryProfileType extends FreezableSimpleComponent {
      *         null if no types are legal (i.e if the name is not legal)
      */
     public Class<?> getValueClass(String name) {
-        FieldDescription fieldDescription=getField(name);
-        if (fieldDescription==null) {
+        FieldDescription fieldDescription = getField(name);
+        if (fieldDescription == null) {
             if (strict)
                 return null; // Undefined -> Not legal
             else
@@ -335,7 +336,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
         // found in registry but not already added in *this* type (getField also checks parents): extend it
         if (type != null && ! fields.containsKey(name)) {
             type = new QueryProfileType(registry.createAnonymousId(type.getIdString()),
-                                        new HashMap<>(),
+                                        new LinkedHashMap<>(),
                                         List.of(type));
         }
 
@@ -368,7 +369,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
         if (inherited().size() == 0) return Collections.unmodifiableMap(fields);
 
         // Collapse inherited
-        Map<String, FieldDescription> allFields = new HashMap<>();
+        Map<String, FieldDescription> allFields = new LinkedHashMap<>();
         for (QueryProfileType inheritedType : inherited)
             allFields.putAll(inheritedType.fields());
         allFields.putAll(fields);

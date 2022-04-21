@@ -14,8 +14,8 @@ import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.PingableSearcher;
+import com.yahoo.search.config.RankProfile;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
-import com.yahoo.search.result.ErrorHit;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 /**
  * Superclass for backend searchers.
  *
- * @author  baldersheim
+ * @author baldersheim
  */
 public abstract class VespaBackEndSearcher extends PingableSearcher {
 

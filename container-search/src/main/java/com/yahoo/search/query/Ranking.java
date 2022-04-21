@@ -52,18 +52,14 @@ public class Ranking implements Cloneable {
     public static final String FEATURES = "features";
     public static final String PROPERTIES = "properties";
 
-    /** For internal use only. */
-    public static Optional<String> lookupRankProfileIn(Map<String, String> properties) {
-        return Optional.ofNullable(Optional.ofNullable(properties.get(RANKING + "." + PROFILE))
-                                           .orElse(properties.get("ranking")));
-    }
-
     static {
         argumentType = new QueryProfileType(RANKING);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
+        // Note: Order here matters as fields are set in this order, and rank feature conversion depends
+        //       on other fields already being set (see RankProfileInputProperties)
+        argumentType.addField(new FieldDescription(PROFILE, "string", "ranking"));
         argumentType.addField(new FieldDescription(LOCATION, "string", "location"));
-        argumentType.addField(new FieldDescription(PROFILE, "string", "ranking")); // Alias repeated in lookupRankProfileIn
         argumentType.addField(new FieldDescription(SORTING, "string", "sorting sortspec"));
         argumentType.addField(new FieldDescription(LIST_FEATURES, "string", RANKFEATURES.toString()));
         argumentType.addField(new FieldDescription(FRESHNESS, "string", "datetime"));
@@ -73,7 +69,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(Matching.getArgumentType())));
-        argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature"));
+        argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature")); // Repeated at the end of RankFeatures
         argumentType.addField(new FieldDescription(PROPERTIES, "query-profile", "rankproperty"));
         argumentType.freeze();
         argumentTypeName = new CompoundName(argumentType.getId().getName());
