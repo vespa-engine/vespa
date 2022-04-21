@@ -134,7 +134,7 @@ public class DatabaseHandlerTest {
     }
 
     @Test
-    public void save_wanted_state_sheds_orphaned_states() throws Exception {
+    public void save_wanted_state_of_configured_nodes() throws Exception {
         var fixture = new Fixture();
         DatabaseHandler handler = fixture.createHandler();
         DatabaseHandler.DatabaseContext databaseContext = fixture.createMockContext();
