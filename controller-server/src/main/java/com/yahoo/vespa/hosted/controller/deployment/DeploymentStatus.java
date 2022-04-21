@@ -321,7 +321,7 @@ public class DeploymentStatus {
                                            .type(type).asList().stream()
                                            .flatMap(status -> RunList.from(status)
                                                                         .on(versions)
-                                                                        .status(RunStatus.success)
+                                                                        .matching(Run::hasSucceeded)
                                                                         .asList().stream()
                                                                         .map(Run::start))
                                            .min(naturalOrder());
@@ -860,7 +860,7 @@ public class DeploymentStatus {
                     Optional<Instant> end = Optional.empty();
                     for (Run run : job.runs().descendingMap().values()) {
                         if (run.versions().targetsMatch(change)) {
-                            if (run.status() == RunStatus.success) end = run.end();
+                            if (run.hasSucceeded()) end = run.end();
                         }
                         else if (dependent.equals(job())) // If strict completion, consider only last time this change was deployed.
                             break;
@@ -887,7 +887,7 @@ public class DeploymentStatus {
                     Optional<Instant> deployedAt = status.jobSteps().get(prodId).completedAt(change, Optional.of(prodId));
                     return (dependent.equals(job()) ? job.lastTriggered().filter(run -> deployedAt.map(at -> ! run.start().isBefore(at)).orElse(false)).stream()
                                                     : job.runs().values().stream())
-                            .filter(run -> run.status() == RunStatus.success)
+                            .filter(Run::hasSucceeded)
                             .filter(run -> run.versions().targetsMatch(change))
                             .flatMap(run -> run.end().stream()).findFirst();
                 }
@@ -907,7 +907,7 @@ public class DeploymentStatus {
                                                                                                                          status.systemVersion)))
                                                             .orElseGet(() ->    (change.platform().isEmpty()    || change.platform().get().equals(run.versions().targetPlatform()))
                                                                              && (change.revision().isEmpty() || change.revision().get().equals(run.versions().targetRevision()))))
-                                  .status(RunStatus.success)
+                                  .matching(Run::hasSucceeded)
                                   .asList().stream()
                                   .map(run -> run.end().get())
                                   .max(naturalOrder());

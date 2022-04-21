@@ -400,7 +400,7 @@ public class JobController {
                 locked(id.application(), id.type(), runs -> {
                     runs.put(run.id(), finishedRun);
                     long last = id.number();
-                    long successes = runs.values().stream().filter(old -> old.status() == RunStatus.success).count();
+                    long successes = runs.values().stream().filter(Run::hasSucceeded).count();
                     var oldEntries = runs.entrySet().iterator();
                     for (var old = oldEntries.next();
                             old.getKey().number() <= last - historyLength
@@ -409,7 +409,7 @@ public class JobController {
 
                         // Make sure we keep the last success and the first failing
                         if (     successes == 1
-                            &&   old.getValue().status() == RunStatus.success
+                            &&   old.getValue().hasSucceeded()
                             && ! old.getValue().start().isBefore(controller.clock().instant().minus(maxHistoryAge))) {
                             oldEntries.next();
                             continue;

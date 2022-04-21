@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -80,8 +81,9 @@ public class Run {
 
         EnumMap<Step, StepInfo> steps = new EnumMap<>(this.steps);
         steps.put(step.get(), stepInfo.with(Step.Status.of(status)));
-        return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, this.status == running ? status : this.status,
-                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+        RunStatus newStatus = hasFailed() || status == running ? this.status : status;
+        return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, newStatus, lastTestRecord,
+                       lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     /** Returns a new Run with a new start time*/
@@ -210,13 +212,15 @@ public class Run {
 
     /** Returns whether the run has failed, and should switch to its run-always steps. */
     public boolean hasFailed() {
-        return status != running && status != success;
+        return status != running && status != success && status != noTests;
     }
 
     /** Returns whether the run has ended, i.e., has become inactive, and can no longer be updated. */
     public boolean hasEnded() {
         return end.isPresent();
     }
+
+    public boolean hasSucceeded() { return hasEnded() && ! hasFailed(); }
 
     /** Returns the target, and possibly source, versions for this run. */
     public Versions versions() {

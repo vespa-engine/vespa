@@ -287,7 +287,7 @@ public class ApplicationController {
             if (oldest == null || version.isBefore(oldest))
                 oldest = version;
 
-            if (run.status() == RunStatus.success)
+            if (run.hasSucceeded())
                 return Optional.of(oldest);
         }
         // If no successful run was found, ask the node repository in the relevant zone.

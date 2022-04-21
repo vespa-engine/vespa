@@ -26,6 +26,9 @@ public enum RunStatus {
     /** The verification tests failed. */
     testFailure,
 
+    /** No tests, for a test job. */
+    noTests,
+
     /** An unexpected error occurred. */
     error,
 

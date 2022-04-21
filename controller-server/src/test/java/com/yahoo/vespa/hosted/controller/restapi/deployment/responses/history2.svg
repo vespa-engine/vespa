@@ -33,9 +33,15 @@
         <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
         <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
     </linearGradient>
+    <linearGradient id='run-on-warning' x1='40%' x2='80%' y2='0%'>
+        <stop offset='0' stop-color='#ab83ff' />
+        <stop offset='1' stop-color='#bd890b' />
+        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
+        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
+    </linearGradient>
     <linearGradient id='run-on-success' x1='40%' x2='80%' y2='0%'>
         <stop offset='0' stop-color='#ab83ff' />
-        <stop offset='1' stop-color='#00f244' />
+        <stop offset='1' stop-color='#00f844' />
         <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
         <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
     </linearGradient>
@@ -44,103 +50,103 @@
     </clipPath>
     <g clip-path='url(#rounded)'>
         <rect x='653.26809109179' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='646.1879570885093' rx='3' width='13.080134003280707' height='20' fill='#00f244'/>
+        <rect x='646.1879570885093' rx='3' width='13.080134003280707' height='20' fill='#00f844'/>
         <rect x='646.1879570885093' rx='3' width='13.080134003280707' height='20' fill='url(#shade)'/>
         <rect x='646.4043039211865' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='639.1078230852286' rx='3' width='13.296480835957981' height='20' fill='#bf103c'/>
         <rect x='639.1078230852286' rx='3' width='13.296480835957981' height='20' fill='url(#shade)'/>
         <rect x='639.3307808029524' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='631.8113422492706' rx='3' width='13.519438553681752' height='20' fill='#bf103c'/>
+        <rect x='631.8113422492706' rx='3' width='13.519438553681752' height='20' fill='#bd890b'/>
         <rect x='631.8113422492706' rx='3' width='13.519438553681752' height='20' fill='url(#shade)'/>
         <rect x='632.0411128600877' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='624.2919036955889' rx='3' width='13.749209164498811' height='20' fill='#bf103c'/>
         <rect x='624.2919036955889' rx='3' width='13.749209164498811' height='20' fill='url(#shade)'/>
         <rect x='624.5286953802824' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='616.5426945310901' rx='3' width='13.986000849192376' height='20' fill='#bf103c'/>
+        <rect x='616.5426945310901' rx='3' width='13.986000849192376' height='20' fill='#bd890b'/>
         <rect x='616.5426945310901' rx='3' width='13.986000849192376' height='20' fill='url(#shade)'/>
         <rect x='616.7867218317995' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='608.5566936818977' rx='3' width='14.230028149901685' height='20' fill='#bf103c'/>
         <rect x='608.5566936818977' rx='3' width='14.230028149901685' height='20' fill='url(#shade)'/>
         <rect x='608.8081776965013' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='600.326665531996' rx='3' width='14.48151216450522' height='20' fill='#bf103c'/>
+        <rect x='600.326665531996' rx='3' width='14.48151216450522' height='20' fill='#bd890b'/>
         <rect x='600.326665531996' rx='3' width='14.48151216450522' height='20' fill='url(#shade)'/>
         <rect x='600.5858341144344' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='591.8451533674908' rx='3' width='14.740680746943664' height='20' fill='#bf103c'/>
         <rect x='591.8451533674908' rx='3' width='14.740680746943664' height='20' fill='url(#shade)'/>
         <rect x='592.1122413342111' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='583.1044726205471' rx='3' width='15.007768713664104' height='20' fill='#bf103c'/>
+        <rect x='583.1044726205471' rx='3' width='15.007768713664104' height='20' fill='#bd890b'/>
         <rect x='583.1044726205471' rx='3' width='15.007768713664104' height='20' fill='url(#shade)'/>
         <rect x='583.3797219632555' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='574.096703906883' rx='3' width='15.283018056372542' height='20' fill='#bf103c'/>
         <rect x='574.096703906883' rx='3' width='15.283018056372542' height='20' fill='url(#shade)'/>
         <rect x='574.380364011798' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='564.8136858505105' rx='3' width='15.566678161287442' height='20' fill='#bf103c'/>
+        <rect x='564.8136858505105' rx='3' width='15.566678161287442' height='20' fill='#bd890b'/>
         <rect x='564.8136858505105' rx='3' width='15.566678161287442' height='20' fill='url(#shade)'/>
         <rect x='565.1060137243161' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='555.2470076892231' rx='3' width='15.859006035092985' height='20' fill='#bf103c'/>
         <rect x='555.2470076892231' rx='3' width='15.859006035092985' height='20' fill='url(#shade)'/>
         <rect x='555.5482681919269' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='545.3880016541301' rx='3' width='16.16026653779677' height='20' fill='#bf103c'/>
+        <rect x='545.3880016541301' rx='3' width='16.16026653779677' height='20' fill='#bd890b'/>
         <rect x='545.3880016541301' rx='3' width='16.16026653779677' height='20' fill='url(#shade)'/>
         <rect x='545.6984677390362' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='535.2277351163333' rx='3' width='16.470732622702883' height='20' fill='#bf103c'/>
         <rect x='535.2277351163333' rx='3' width='16.470732622702883' height='20' fill='url(#shade)'/>
         <rect x='535.5476880773482' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='524.7570024936304' rx='3' width='16.790685583717845' height='20' fill='#bf103c'/>
+        <rect x='524.7570024936304' rx='3' width='16.790685583717845' height='20' fill='#bd890b'/>
         <rect x='524.7570024936304' rx='3' width='16.790685583717845' height='20' fill='url(#shade)'/>
         <rect x='525.0867322201259' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='513.9663169099125' rx='3' width='17.12041531021341' height='20' fill='#bf103c'/>
         <rect x='513.9663169099125' rx='3' width='17.12041531021341' height='20' fill='url(#shade)'/>
         <rect x='514.3061221493763' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='502.84590159969906' rx='3' width='17.460220549677203' height='20' fill='#bf103c'/>
+        <rect x='502.84590159969906' rx='3' width='17.460220549677203' height='20' fill='#bd890b'/>
         <rect x='502.84590159969906' rx='3' width='17.460220549677203' height='20' fill='url(#shade)'/>
         <rect x='503.196090228411' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='491.38568105002184' rx='3' width='17.810409178389147' height='20' fill='#bf103c'/>
         <rect x='491.38568105002184' rx='3' width='17.810409178389147' height='20' fill='url(#shade)'/>
         <rect x='491.7465703520016' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='479.5752718716327' rx='3' width='18.171298480368904' height='20' fill='#bf103c'/>
+        <rect x='479.5752718716327' rx='3' width='18.171298480368904' height='20' fill='#bd890b'/>
         <rect x='479.5752718716327' rx='3' width='18.171298480368904' height='20' fill='url(#shade)'/>
         <rect x='479.9471888261109' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='467.40397339126383' rx='3' width='18.543215434847077' height='20' fill='#bf103c'/>
         <rect x='467.40397339126383' rx='3' width='18.543215434847077' height='20' fill='url(#shade)'/>
         <rect x='467.7872549689374' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='454.86075795641676' rx='3' width='18.92649701252067' height='20' fill='#bf103c'/>
+        <rect x='454.86075795641676' rx='3' width='18.92649701252067' height='20' fill='#bd890b'/>
         <rect x='454.86075795641676' rx='3' width='18.92649701252067' height='20' fill='url(#shade)'/>
         <rect x='455.25575142475725' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='441.9342609438961' rx='3' width='19.32149048086113' height='20' fill='#bf103c'/>
         <rect x='441.9342609438961' rx='3' width='19.32149048086113' height='20' fill='url(#shade)'/>
         <rect x='442.3413241817867' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='428.61277046303496' rx='3' width='19.728553718751726' height='20' fill='#bf103c'/>
+        <rect x='428.61277046303496' rx='3' width='19.728553718751726' height='20' fill='#bd890b'/>
         <rect x='428.61277046303496' rx='3' width='19.728553718751726' height='20' fill='url(#shade)'/>
         <rect x='429.03227228502243' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='414.8842167442832' rx='3' width='20.148055540739207' height='20' fill='#bf103c'/>
         <rect x='414.8842167442832' rx='3' width='20.148055540739207' height='20' fill='url(#shade)'/>
         <rect x='415.31653723473755' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='400.736161203544' rx='3' width='20.58037603119359' height='20' fill='#bf103c'/>
+        <rect x='400.736161203544' rx='3' width='20.58037603119359' height='20' fill='#bd890b'/>
         <rect x='400.736161203544' rx='3' width='20.58037603119359' height='20' fill='url(#shade)'/>
         <rect x='401.1816920610293' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='386.1557851723504' rx='3' width='21.025906888678875' height='20' fill='#bf103c'/>
         <rect x='386.1557851723504' rx='3' width='21.025906888678875' height='20' fill='url(#shade)'/>
         <rect x='386.61493006451815' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='371.12987828367153' rx='3' width='21.485051780846597' height='20' fill='#bf103c'/>
+        <rect x='371.12987828367153' rx='3' width='21.485051780846597' height='20' fill='#bd890b'/>
         <rect x='371.12987828367153' rx='3' width='21.485051780846597' height='20' fill='url(#shade)'/>
         <rect x='371.60305321299876' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='355.6448265028249' rx='3' width='21.958226710173836' height='20' fill='#bf103c'/>
         <rect x='355.6448265028249' rx='3' width='21.958226710173836' height='20' fill='url(#shade)'/>
         <rect x='356.13246018352817' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='339.68659979265107' rx='3' width='22.445860390877083' height='20' fill='#bf103c'/>
+        <rect x='339.68659979265107' rx='3' width='22.445860390877083' height='20' fill='#bd890b'/>
         <rect x='339.68659979265107' rx='3' width='22.445860390877083' height='20' fill='url(#shade)'/>
         <rect x='340.18913403911733' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='323.24073940177396' rx='3' width='22.948394637343355' height='20' fill='#bf103c'/>
         <rect x='323.24073940177396' rx='3' width='22.948394637343355' height='20' fill='url(#shade)'/>
         <rect x='323.7586295288612' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='306.2923447644306' rx='3' width='23.466284764430597' height='20' fill='#bf103c'/>
+        <rect x='306.2923447644306' rx='3' width='23.466284764430597' height='20' fill='#bd890b'/>
         <rect x='306.2923447644306' rx='3' width='23.466284764430597' height='20' fill='url(#shade)'/>
         <rect x='306.82606' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='288.82606' rx='3' width='24.0' height='20' fill='#bf103c'/>
         <rect x='288.82606' rx='3' width='24.0' height='20' fill='url(#shade)'/>
         <rect x='288.82606' rx='3' width='8' height='20' fill='url(#shadow)'/>
-        <rect x='163.18729000000002' rx='3' width='131.63876999999997' height='20' fill='#00f244'/>
+        <rect x='163.18729000000002' rx='3' width='131.63876999999997' height='20' fill='#00f844'/>
         <rect x='163.18729000000002' rx='3' width='131.63876999999997' height='20' fill='url(#shade)'/>
         <rect width='169.18729000000002' height='20' fill='#404040'/>
         <rect x='-6.0' rx='3' width='175.18729000000002' height='20' fill='url(#shade)'/>
