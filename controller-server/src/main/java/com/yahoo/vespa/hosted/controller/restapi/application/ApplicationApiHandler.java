@@ -1678,11 +1678,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         metrics.instant().ifPresent(instant -> metricsObject.setLong("lastUpdated", instant.toEpochMilli()));
     }
 
-    private Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
-        return controller.jobController().jobStarts(new JobId(instanceId, JobType.deploymentTo(deployment.zone())))
-                         .stream().findFirst().orElse(deployment.at());
-    }
-
     private void toSlime(RotationState state, Cursor object) {
         Cursor bcpStatus = object.setObject("bcpStatus");
         bcpStatus.setString("rotationStatus", rotationStateString(state));

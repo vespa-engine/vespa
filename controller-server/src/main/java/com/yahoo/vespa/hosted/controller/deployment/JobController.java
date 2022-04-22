@@ -257,10 +257,9 @@ public class JobController {
 
     /** Returns when given deployment last started deploying, falling back to time of deployment if it cannot be determined from job runs */
     public Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
-        return jobStarts(new JobId(instanceId, JobType.from(controller.system(),
-                                                            deployment.zone()).get())).stream()
-                                                                                      .findFirst()
-                                                                                      .orElseGet(deployment::at);
+        return jobStarts(new JobId(instanceId, JobType.deploymentTo(deployment.zone()))).stream()
+                                                                                        .findFirst()
+                                                                                        .orElseGet(deployment::at);
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */
