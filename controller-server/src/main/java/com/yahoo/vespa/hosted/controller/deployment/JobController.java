@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
-import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.security.cert.X509Certificate;
@@ -51,6 +50,7 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -587,7 +587,7 @@ public class JobController {
 
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             controller.applications().applicationStore().putDev(deploymentId, version.id(), applicationPackage.zippedContent(), diff);
-            Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, lastRun, id));
+            Version targetPlatform = platform.orElseGet(() -> findTargetPlatform(applicationPackage, deploymentId, application.get().get(id.instance())));
             controller.applications().store(application.withRevisions(revisions -> revisions.with(version)));
             start(id,
                   type,
@@ -617,24 +617,27 @@ public class JobController {
                       .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
     }
 
-    private Version findTargetPlatform(ApplicationPackage applicationPackage, Optional<Run> lastRun, ApplicationId id) {
+    private Version findTargetPlatform(ApplicationPackage applicationPackage, DeploymentId id, Optional<Instance> instance) {
         Optional<Integer> major = applicationPackage.deploymentSpec().majorVersion();
         if (major.isPresent())
             return controller.applications().lastCompatibleVersion(major.get())
                              .orElseThrow(() -> new IllegalArgumentException("major " + major.get() + " specified in deployment.xml, " +
                                                                              "but no version on this major was found"));
 
-        // Prefer previous platform if possible.
-        VersionStatus versionStatus = controller.readVersionStatus();
-        VersionCompatibility compatibility = controller.applications().versionCompatibility(id);
-        Optional<Version> target = lastRun.map(run -> run.versions().targetPlatform()).filter(versionStatus::isActive);
-        if (target.isPresent() && compatibility.accept(target.get(), applicationPackage.compileVersion().orElse(target.get())))
-            return target.get();
+        VersionCompatibility compatibility = controller.applications().versionCompatibility(id.applicationId());
 
-        // Otherwise, use newest, compatible version.
-        for (VespaVersion platform : reversed(versionStatus.deployableVersions()))
-            if (compatibility.accept(platform.versionNumber(), applicationPackage.compileVersion().orElse(platform.versionNumber())))
-                return platform.versionNumber();
+        // Prefer previous platform if possible. Candidates are all deployable, ascending, with existing version appended; then reversed.
+        List<Version> versions = controller.readVersionStatus().deployableVersions().stream()
+                                           .map(VespaVersion::versionNumber)
+                                           .collect(toList());
+        instance.map(Instance::deployments)
+                .map(deployments -> deployments.get(id.zoneId()))
+                .map(Deployment::version)
+                .ifPresent(versions::add);
+
+        for (Version target : reversed(versions))
+            if (applicationPackage.compileVersion().isEmpty() || compatibility.accept(target, applicationPackage.compileVersion().get()))
+                return target;
 
         throw new IllegalArgumentException("no suitable platform version found" +
                                            applicationPackage.compileVersion()
