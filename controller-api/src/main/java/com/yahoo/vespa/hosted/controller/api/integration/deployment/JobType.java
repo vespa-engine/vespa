@@ -17,6 +17,8 @@ import static com.yahoo.config.provision.Environment.perf;
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
+import static java.util.Comparator.naturalOrder;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Specification for a deployment and/or test job to run: what zone, and whether it is a production test.
@@ -135,7 +137,8 @@ public final class JobType implements Comparable<JobType> {
         return zones.zones().controllerUpgraded().zones().stream()
                     .flatMap(zone -> zone.getEnvironment().isProduction() ? Stream.of(deploymentTo(zone.getId()), productionTestOf(zone.getId()))
                                                                           : Stream.of(deploymentTo(zone.getId())))
-                    .collect(Collectors.toUnmodifiableList());
+                    .sorted(naturalOrder())
+                    .collect(toUnmodifiableList());
     }
 
     /** A serialized form of this: {@code &lt;environment&gt;.&lt;region&gt;[.test]}; the inverse of {@link #ofSerialized(String)} */
@@ -180,13 +183,12 @@ public final class JobType implements Comparable<JobType> {
         return zone.environment();
     }
 
-    private static final Comparator<JobType> comparator = Comparator.comparing(JobType::environment)
-                                                                    .thenComparing(JobType::isDeployment)
-                                                                    .thenComparing(JobType::jobName);
-
     @Override
     public int compareTo(JobType other) {
-        return comparator.compare(this, other);
+        int result;
+        if (0 != (result = environment().compareTo(other.environment()))) return -result;
+        if (0 != (result = zone.region().compareTo(other.zone.region()))) return result;
+        return Boolean.compare(isProductionTest, other.isProductionTest);
     }
 
     @Override
