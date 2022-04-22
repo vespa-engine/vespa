@@ -751,7 +751,7 @@ private:
                 }
                 throw IllegalArgumentException("no progress");
             }
-            LOG(info, "retry complex types, %zd missing", _needed_idx_set.size());
+            LOG(debug, "retry complex types, %zd missing", _needed_idx_set.size());
         }
     }
 
@@ -872,7 +872,7 @@ private:
             if (! succ) {
                 throw IllegalArgumentException("duplicate type idx");
             }
-            LOG(info, "ensure indexes: add %d", idx);
+            LOG(spam, "ensure indexes: add %d", idx);
         }
         void check(int idx) {
             if (! _set.contains(idx)) {
@@ -885,7 +885,7 @@ private:
     void findNeeded() {
         EnsureIndexes idx_set;
         for (const auto & docT : _input) {
-            LOG(info, "doc %s", docT.name.c_str());
+            LOG(debug, "doc %s", docT.name.c_str());
             idx_set.add(docT.idx);
             for (const auto & structT : docT.structtype) {
                 idx_set.add(structT.idx);
@@ -984,7 +984,7 @@ public:
 ApplyNewDoctypeConfig::~ApplyNewDoctypeConfig() = default;
 
 void configureDocTypes(const DocumenttypesConfig::DoctypeVector &t, DocumentTypeMap &type_map) {
-    LOG(info, "applying new doc type config");
+    LOG(debug, "applying new doc type config");
     ApplyNewDoctypeConfig(t, type_map);
 }
 
