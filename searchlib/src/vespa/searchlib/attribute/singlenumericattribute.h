@@ -93,11 +93,6 @@ public:
         (void) doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
-        (void) sz;
-        v[0] = getFast(doc);
-        return 1;
-    }
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         (void) sz;
         v[0] = static_cast<largeint_t>(getFast(doc));
@@ -112,10 +107,6 @@ public:
         (void) sz;
         e[0] = getEnum(doc);
         return 1;
-    }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
-        (void) doc; (void) v; (void) sz;
-        return 0;
     }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         (void) sz;
