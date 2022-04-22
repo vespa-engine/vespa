@@ -905,7 +905,7 @@ public class DeploymentStatus {
                                                                                                                          status.application,
                                                                                                                          Optional.of(deployment),
                                                                                                                          status.systemVersion)))
-                                                            .orElseGet(() ->    (change.platform().isEmpty()    || change.platform().get().equals(run.versions().targetPlatform()))
+                                                            .orElseGet(() ->    (change.platform().isEmpty() || change.platform().get().equals(run.versions().targetPlatform()))
                                                                              && (change.revision().isEmpty() || change.revision().get().equals(run.versions().targetRevision()))))
                                   .matching(Run::hasSucceeded)
                                   .asList().stream()

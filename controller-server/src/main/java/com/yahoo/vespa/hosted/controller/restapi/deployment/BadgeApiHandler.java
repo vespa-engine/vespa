@@ -135,7 +135,7 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Key key = (Key) o;
-            return historyLength == key.historyLength && id.equals(key.id) && type.equals(key.type);
+            return historyLength == key.historyLength && id.equals(key.id) && Objects.equals(type, key.type);
         }
 
         @Override
