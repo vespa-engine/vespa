@@ -83,5 +83,7 @@ public interface ZmsClient extends AutoCloseable {
 
     AthenzRoleInformation getFullRoleInformation(AthenzRole role);
 
+    QuotaUsage getQuotaUsage();
+
     void close();
 }

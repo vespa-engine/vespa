@@ -8,6 +8,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.user.UserManagement;
 
 import java.time.Duration;
@@ -36,7 +37,7 @@ public class ControllerMaintenance extends AbstractComponent {
 
     @Inject
     @SuppressWarnings("unused") // instantiated by Dependency Injection
-    public ControllerMaintenance(Controller controller, Metric metric, UserManagement userManagement) {
+    public ControllerMaintenance(Controller controller, Metric metric, UserManagement userManagement, AthenzClientFactory athenzClientFactory) {
         Intervals intervals = new Intervals(controller.system());
         upgrader = new Upgrader(controller, intervals.defaultInterval);
         maintainers.add(upgrader);
@@ -44,7 +45,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new DeploymentExpirer(controller, intervals.defaultInterval));
         maintainers.add(new DeploymentUpgrader(controller, intervals.defaultInterval));
         maintainers.add(new DeploymentIssueReporter(controller, controller.serviceRegistry().deploymentIssues(), intervals.defaultInterval));
-        maintainers.add(new MetricsReporter(controller, metric));
+        maintainers.add(new MetricsReporter(controller, metric, athenzClientFactory.createZmsClient()));
         maintainers.add(new OutstandingChangeDeployer(controller, intervals.outstandingChangeDeployer));
         maintainers.add(new VersionStatusUpdater(controller, intervals.versionStatusUpdater));
         maintainers.add(new ReadyJobsTrigger(controller, intervals.readyJobsTrigger));
