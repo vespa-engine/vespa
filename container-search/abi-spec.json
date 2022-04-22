@@ -6635,11 +6635,13 @@
     ],
     "methods": [
       "public void <init>()",
-      "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)"
+      "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
+      "public static void requireNotPresentIn(java.util.Map)"
     ],
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName MAX_OFFSET",
       "public static final com.yahoo.processing.request.CompoundName MAX_HITS",
+      "public static final com.yahoo.processing.request.CompoundName MAX_QUERY_ITEMS",
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
   },
