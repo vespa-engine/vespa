@@ -21,9 +21,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy.canary;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentIssueReporter.maxFailureAge;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentIssueReporter.maxInactivity;
 import static com.yahoo.vespa.hosted.controller.maintenance.DeploymentIssueReporter.upgradeGracePeriod;

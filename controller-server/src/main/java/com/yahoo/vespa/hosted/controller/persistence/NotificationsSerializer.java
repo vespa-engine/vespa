@@ -44,12 +44,6 @@ public class NotificationsSerializer {
     private static final String jobTypeField = "jobId";
     private static final String runNumberField = "runNumber";
 
-    private final SystemName system;
-
-    NotificationsSerializer(SystemName system) {
-        this.system = system;
-    }
-
     public Slime toSlime(List<Notification> notifications) {
         Slime slime = new Slime();
         Cursor notificationsArray = slime.setObject().setArray(notificationsFieldName);
@@ -66,7 +60,7 @@ public class NotificationsSerializer {
             notification.source().instance().ifPresent(instance -> notificationObject.setString(instanceField, instance.value()));
             notification.source().zoneId().ifPresent(zoneId -> notificationObject.setString(zoneField, zoneId.value()));
             notification.source().clusterId().ifPresent(clusterId -> notificationObject.setString(clusterIdField, clusterId.value()));
-            notification.source().jobType().ifPresent(jobType -> notificationObject.setString(jobTypeField, jobType.serialized(system)));
+            notification.source().jobType().ifPresent(jobType -> notificationObject.setString(jobTypeField, jobType.serialized()));
             notification.source().runNumber().ifPresent(runNumber -> notificationObject.setLong(runNumberField, runNumber));
         }
 
@@ -90,7 +84,7 @@ public class NotificationsSerializer {
                         SlimeUtils.optionalString(inspector.field(instanceField)).map(InstanceName::from),
                         SlimeUtils.optionalString(inspector.field(zoneField)).map(ZoneId::from),
                         SlimeUtils.optionalString(inspector.field(clusterIdField)).map(ClusterSpec.Id::from),
-                        SlimeUtils.optionalString(inspector.field(jobTypeField)).map(JobType::fromJobName),
+                        SlimeUtils.optionalString(inspector.field(jobTypeField)).map(jobName -> JobType.ofSerialized(jobName)),
                         SlimeUtils.optionalLong(inspector.field(runNumberField))),
                 SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).collect(Collectors.toUnmodifiableList()));
     }

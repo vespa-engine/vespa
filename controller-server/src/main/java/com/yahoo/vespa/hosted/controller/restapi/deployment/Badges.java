@@ -144,7 +144,7 @@ public class Badges {
         return badge(sections, texts, x);
     }
 
-    static String overviewBadge(ApplicationId id, JobList jobs, SystemName system) {
+    static String overviewBadge(ApplicationId id, JobList jobs) {
         // Put production tests right after their deployments, for a more compact rendering.
         List<Run> runs = new ArrayList<>(jobs.lastTriggered().asList());
         boolean anyTest = false;
@@ -153,7 +153,7 @@ public class Badges {
             if (run.id().type().isProduction() && run.id().type().isTest()) {
                 anyTest = true;
                 int j = i;
-                while ( ! runs.get(j - 1).id().type().zone(system).equals(run.id().type().zone(system)))
+                while ( ! runs.get(j - 1).id().type().zone().equals(run.id().type().zone()))
                     runs.set(j, runs.get(--j));
                 runs.set(j, run);
             }

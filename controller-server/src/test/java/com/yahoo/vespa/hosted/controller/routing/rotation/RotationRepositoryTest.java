@@ -5,7 +5,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
@@ -115,7 +114,7 @@ public class RotationRepositoryTest {
         // We're now out of rotations and next deployment fails
         var application3 = tester.newDeploymentContext("tenant3", "app3", "default");
         application3.submit(applicationPackage)
-                    .runJobExpectingFailure(JobType.systemTest, Optional.of("out of rotations"));
+                    .runJobExpectingFailure(DeploymentContext.systemTest, Optional.of("out of rotations"));
     }
 
     @Test
@@ -124,7 +123,7 @@ public class RotationRepositoryTest {
                 .globalServiceId("foo")
                 .region("us-east-3")
                 .build();
-        application.submit(applicationPackage).runJobExpectingFailure(JobType.systemTest, Optional.of("less than 2 prod zones are defined"));
+        application.submit(applicationPackage).runJobExpectingFailure(DeploymentContext.systemTest, Optional.of("less than 2 prod zones are defined"));
     }
 
     @Test

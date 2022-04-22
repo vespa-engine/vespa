@@ -15,9 +15,9 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;

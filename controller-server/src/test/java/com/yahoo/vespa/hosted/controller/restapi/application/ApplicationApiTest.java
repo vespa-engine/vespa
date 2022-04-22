@@ -41,7 +41,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationActio
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
@@ -52,6 +51,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
@@ -258,7 +258,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"message\":\"Deployment started in run 1 of production-us-east-3 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
-        app1.runJob(JobType.productionUsEast3);
+        app1.runJob(DeploymentContext.productionUsEast3);
         tester.controller().applications().deactivate(app1.instanceId(), ZoneId.from("prod", "us-east-3"));
 
         // POST (deploy) an application to start a manual deployment to dev
@@ -266,13 +266,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
-        app1.runJob(JobType.devUsEast1);
+        app1.runJob(DeploymentContext.devUsEast1);
 
         // POST (deploy) a job to restart a manual deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1", POST)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Triggered dev-us-east-1 for tenant1.application1.instance1\"}");
-        app1.runJob(JobType.devUsEast1);
+        app1.runJob(DeploymentContext.devUsEast1);
 
         // GET dev application package
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1/package", GET)
@@ -331,7 +331,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(createApplicationSubmissionData(applicationPackageInstance1, 123)),
                               "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
-        app1.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsCentral1);
+        app1.runJob(DeploymentContext.systemTest).runJob(DeploymentContext.stagingTest).runJob(DeploymentContext.productionUsCentral1);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .withoutAthenzIdentity()
@@ -367,7 +367,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{ \"skipTests\": true, \"skipRevision\": true, \"skipUpgrade\": true }")
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1, without revision and platform upgrade\"}");
-        app2.runJob(JobType.productionUsWest1);
+        app2.runJob(DeploymentContext.productionUsWest1);
 
         // POST a re-triggering to force a production job to start with previous parameters
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/job/production-us-west-1", POST)
@@ -729,11 +729,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Setup for test config tests
         tester.controller().jobController().deploy(ApplicationId.from("tenant1", "application1", "default"),
-                                                   JobType.productionUsCentral1,
+                                                   DeploymentContext.productionUsCentral1,
                                                    Optional.empty(),
                                                    applicationPackageDefault);
         tester.controller().jobController().deploy(ApplicationId.from("tenant1", "application1", "my-user"),
-                                                   JobType.devUsEast1,
+                                                   DeploymentContext.devUsEast1,
                                                    Optional.empty(),
                                                    applicationPackageDefault);
 
@@ -1092,7 +1092,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext("tenant1", "application1", "instance1");
         app.submit(applicationPackage).deploy();
-        tester.controller().jobController().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.controller().jobController().deploy(app.instanceId(), DeploymentContext.devUsEast1, Optional.empty(), applicationPackage);
 
         assertEquals(Set.of(ZoneId.from("prod.us-west-1"), ZoneId.from("prod.us-east-3"), ZoneId.from("prod.eu-west-1"), ZoneId.from("dev.us-east-1")),
                 app.instance().deployments().keySet());
@@ -1616,7 +1616,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         assertEquals(1, activeGrants.size());
 
         // Adding grant should trigger job
-        app.assertRunning(JobType.productionUsWest1);
+        app.assertRunning(DeploymentContext.productionUsWest1);
 
         // DELETE removes access
         String disallowedResponse = grantResponse
@@ -1628,7 +1628,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         );
 
         // Revoking access should trigger job
-        app.assertRunning(JobType.productionUsWest1);
+        app.assertRunning(DeploymentContext.productionUsWest1);
 
         // Should be no available grant
         activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
@@ -1836,7 +1836,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 Notification.Level.warning,
                 "Something something deprecated...");
         tester.controller().notificationsDb().setNotification(
-                NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), JobType.systemTest, 12)),
+                NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), DeploymentContext.systemTest, 12)),
                 Notification.Type.deployment,
                 Notification.Level.error,
                 "Failed to deploy: Node allocation failure");

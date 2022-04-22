@@ -6,12 +6,10 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.JobProfile;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
@@ -20,16 +18,12 @@ import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
 
 import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
@@ -59,10 +53,10 @@ import static org.junit.Assert.assertTrue;
 
 public class RunSerializerTest {
 
-    private static final RunSerializer serializer = new RunSerializer(main);
+    private static final RunSerializer serializer = new RunSerializer();
     private static final Path runFile = Paths.get("src/test/java/com/yahoo/vespa/hosted/controller/persistence/testdata/run-status.json");
     private static final RunId id = new RunId(ApplicationId.from("tenant", "application", "default"),
-                                              JobType.productionUsEast3,
+                                              DeploymentContext.productionUsEast3,
                                               112358);
     private static final Instant start = Instant.parse("2007-12-03T10:15:30.00Z");
 

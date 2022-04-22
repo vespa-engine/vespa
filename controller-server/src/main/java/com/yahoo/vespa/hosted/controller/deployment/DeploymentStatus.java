@@ -12,7 +12,6 @@ import com.yahoo.config.application.api.DeploymentSpec.UpgradeRollout;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -20,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationV
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 
@@ -45,8 +45,6 @@ import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.nex
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
@@ -69,17 +67,19 @@ public class DeploymentStatus {
 
     private final Application application;
     private final JobList allJobs;
-    private final SystemName system;
+    private final JobType systemTest;
+    private final JobType stagingTest;
     private final Version systemVersion;
     private final Function<InstanceName, VersionCompatibility> versionCompatibility;
     private final Instant now;
     private final Map<JobId, StepStatus> jobSteps;
     private final List<StepStatus> allSteps;
 
-    public DeploymentStatus(Application application, Function<JobId, JobStatus> allJobs, SystemName system,
+    public DeploymentStatus(Application application, Function<JobId, JobStatus> allJobs, ZoneRegistry zones,
                             Version systemVersion, Function<InstanceName, VersionCompatibility> versionCompatibility, Instant now) {
         this.application = requireNonNull(application);
-        this.system = requireNonNull(system);
+        this.systemTest = JobType.systemTest(zones);
+        this.stagingTest = JobType.stagingTest(zones);
         this.systemVersion = requireNonNull(systemVersion);
         this.versionCompatibility = versionCompatibility;
         this.now = requireNonNull(now);
@@ -244,7 +244,7 @@ public class DeploymentStatus {
 
     public Optional<Deployment> deploymentFor(JobId job) {
         return Optional.ofNullable(application.require(job.application().instance())
-                                              .deployments().get(job.type().zone(system)));
+                                              .deployments().get(job.type().zone()));
     }
 
     /**
@@ -388,7 +388,7 @@ public class DeploymentStatus {
 
         // For a dual change, where both targets remain, we determine what to run by looking at when the two parts became ready:
         // for deployments, we look at dependencies; for production tests, this may be overridden by what is already deployed.
-        JobId deployment = new JobId(job.application(), JobType.from(system, job.type().zone(system)).get());
+        JobId deployment = new JobId(job.application(), JobType.deploymentTo(job.type().zone()));
         UpgradeRollout rollout = application.deploymentSpec().requireInstance(job.application().instance()).upgradeRollout();
         if (job.type().isTest()) {
             Optional<Instant> platformDeployedAt = jobSteps.get(deployment).completedAt(change.withoutApplication(), Optional.of(deployment));
@@ -556,23 +556,20 @@ public class DeploymentStatus {
             JobId jobId;
             StepStatus stepStatus;
             if (step.concerns(test) || step.concerns(staging)) {
-                jobType = JobType.from(system, ((DeclaredZone) step).environment(), null)
-                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
+                jobType = step.concerns(test) ? systemTest : stagingTest;
                 jobId = new JobId(application.id().instance(instance), jobType);
                 stepStatus = JobStepStatus.ofTestDeployment((DeclaredZone) step, List.of(), this, jobs.apply(jobId), true);
                 previous = new ArrayList<>(previous);
                 previous.add(stepStatus);
             }
             else if (step.isTest()) {
-                jobType = JobType.testFrom(system, ((DeclaredTest) step).region())
-                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
+                jobType = JobType.test(((DeclaredTest) step).region());
                 jobId = new JobId(application.id().instance(instance), jobType);
                 stepStatus = JobStepStatus.ofProductionTest((DeclaredTest) step, previous, this, jobs.apply(jobId));
                 previous = List.of(stepStatus);
             }
             else if (step.concerns(prod)) {
-                jobType = JobType.from(system, ((DeclaredZone) step).environment(), ((DeclaredZone) step).region().get())
-                                 .orElseThrow(() -> new IllegalStateException(application + " specifies " + step + ", but this has no job in " + system));
+                jobType = JobType.prod(((DeclaredZone) step).region().get());
                 jobId = new JobId(application.id().instance(instance), jobType);
                 stepStatus = JobStepStatus.ofProductionDeployment((DeclaredZone) step, previous, this, jobs.apply(jobId));
                 previous = List.of(stepStatus);
@@ -872,7 +869,7 @@ public class DeploymentStatus {
 
         private static JobStepStatus ofProductionTest(DeclaredTest step, List<StepStatus> dependencies,
                                                       DeploymentStatus status, JobStatus job) {
-            JobId prodId = new JobId(job.id().application(), JobType.from(status.system, job.id().type().zone(status.system)).get());
+            JobId prodId = new JobId(job.id().application(), JobType.deploymentTo(job.id().type().zone()));
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
                 Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {

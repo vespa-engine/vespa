@@ -24,12 +24,6 @@ public class RetriggerEntrySerializer {
     private static final String JOB_TYPE_KEY = "jobType";
     private static final String MIN_REQUIRED_RUN_ID_KEY = "minimumRunId";
 
-    private final SystemName system;
-
-    public RetriggerEntrySerializer(SystemName system) {
-        this.system = system;
-    }
-
     public List<RetriggerEntry> fromSlime(Slime slime) {
         return SlimeUtils.entriesStream(slime.get().field("entries"))
                 .map(this::deserializeEntry)
@@ -48,14 +42,14 @@ public class RetriggerEntrySerializer {
         Cursor root = array.addObject();
         Cursor jobid = root.setObject(JOB_ID_KEY);
         jobid.setString(APPLICATION_ID_KEY, entry.jobId().application().serializedForm());
-        jobid.setString(JOB_TYPE_KEY, entry.jobId().type().serialized(system));
+        jobid.setString(JOB_TYPE_KEY, entry.jobId().type().serialized());
         root.setLong(MIN_REQUIRED_RUN_ID_KEY, entry.requiredRun());
     }
 
     private RetriggerEntry deserializeEntry(Inspector inspector) {
         Inspector jobid = inspector.field(JOB_ID_KEY);
         ApplicationId applicationId = ApplicationId.fromSerializedForm(require(jobid, APPLICATION_ID_KEY).asString());
-        JobType jobType = JobType.fromJobName(require(jobid, JOB_TYPE_KEY).asString());
+        JobType jobType = JobType.ofSerialized(require(jobid, JOB_TYPE_KEY).asString());
         long minRequiredRunId = require(inspector, MIN_REQUIRED_RUN_ID_KEY).asLong();
         return new RetriggerEntry(new JobId(applicationId, jobType), minRequiredRunId);
     }

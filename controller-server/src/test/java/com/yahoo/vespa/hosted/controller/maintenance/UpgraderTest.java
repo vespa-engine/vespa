@@ -28,12 +28,12 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PIN;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;

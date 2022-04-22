@@ -1,10 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
-import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -18,20 +15,8 @@ public class JobTypeTest {
 
     @Test
     public void test() {
-        for (JobType type : JobType.values()) {
-            if (type.isProduction()) {
-                boolean match = false;
-                for (JobType other : JobType.values())
-                    match |=    type != other
-                             && type.isTest() == other.isDeployment()
-                             && type.zones.equals(other.zones);
-
-                assertTrue(type + " should have matching job", match);
-            }
-        }
-
-        assertEquals(JobType.testUsEast3, JobType.ofSerialized("prod.us-east-3.test"));
-        assertEquals(JobType.devAwsUsEast1c, JobType.ofSerialized("dev.aws-us-east-1c"));
+        assertEquals(JobType.test("us-east-3"), JobType.ofSerialized("prod.us-east-3.test"));
+        assertEquals(JobType.dev("aws-us-east-1c"), JobType.ofSerialized("dev.aws-us-east-1c"));
 
         assertEquals(JobType.fromJobName("production-my-zone", null), JobType.prod("my-zone"));
         assertEquals(JobType.fromJobName("test-my-zone", null), JobType.test("my-zone"));

@@ -3,12 +3,10 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -43,8 +41,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;

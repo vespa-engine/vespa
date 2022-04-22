@@ -6,9 +6,9 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
@@ -48,7 +48,7 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         // Deploy application without any declared jobs on the oldest version.
         var oldAppWithoutDeployment = deploymentTester.newDeploymentContext("tenant4", "application4", "default");
-        oldAppWithoutDeployment.submit().failDeployment(JobType.systemTest);
+        oldAppWithoutDeployment.submit().failDeployment(DeploymentContext.systemTest);
         oldAppWithoutDeployment.submit(emptyPackage);
 
         // System upgrades to 5.0 for the other applications.
@@ -61,8 +61,8 @@ public class DeploymentApiTest extends ControllerContainerTest {
         var otherProductionApp = deploymentTester.newDeploymentContext("tenant2", "application2", "i2");
         var appWithoutDeployments = deploymentTester.newDeploymentContext("tenant3", "application3", "default");
         failingApp.submit(applicationPackage).deploy();
-        productionApp.submit(multiInstancePackage).runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
-        otherProductionApp.runJob(JobType.productionUsWest1);
+        productionApp.submit(multiInstancePackage).runJob(DeploymentContext.systemTest).runJob(DeploymentContext.stagingTest).runJob(DeploymentContext.productionUsWest1);
+        otherProductionApp.runJob(DeploymentContext.productionUsWest1);
 
         // Deploy once so that job information is stored, then remove the deployment by submitting an empty deployment spec.
         appWithoutDeployments.submit(applicationPackage).deploy();
@@ -75,13 +75,13 @@ public class DeploymentApiTest extends ControllerContainerTest {
         // Applications upgrade, 1/2 succeed
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
-        productionApp.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsWest1);
-        failingApp.failDeployment(JobType.systemTest).failDeployment(JobType.stagingTest);
+        productionApp.runJob(DeploymentContext.systemTest).runJob(DeploymentContext.stagingTest).runJob(DeploymentContext.productionUsWest1);
+        failingApp.failDeployment(DeploymentContext.systemTest).failDeployment(DeploymentContext.stagingTest);
         deploymentTester.upgrader().maintain();
         deploymentTester.triggerJobs();
 
         // Application fails application change
-        productionApp.submit(multiInstancePackage).failDeployment(JobType.systemTest);
+        productionApp.submit(multiInstancePackage).failDeployment(DeploymentContext.systemTest);
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller())));
         tester.assertResponse(operatorRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));

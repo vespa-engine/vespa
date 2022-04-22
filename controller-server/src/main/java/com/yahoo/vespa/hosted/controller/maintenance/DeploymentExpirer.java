@@ -57,10 +57,6 @@ public class DeploymentExpirer extends ControllerMaintainer {
         Optional<Duration> ttl = controller().zoneRegistry().getDeploymentTimeToLive(deployment.zone());
         if (ttl.isEmpty()) return false;
 
-        Optional<JobId> jobId = JobType.from(controller().system(), deployment.zone())
-                                       .map(type -> new JobId(instance, type));
-        if (jobId.isEmpty()) return false;
-
         return controller().jobController().lastDeploymentStart(instance, deployment)
                            .plus(ttl.get()).isBefore(controller().clock().instant());
     }

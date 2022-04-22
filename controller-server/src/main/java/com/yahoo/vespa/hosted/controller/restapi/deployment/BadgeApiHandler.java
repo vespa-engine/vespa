@@ -81,9 +81,7 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
                               () -> {
                                   DeploymentStatus status = controller.jobController().deploymentStatus(controller.applications().requireApplication(TenantAndApplicationId.from(id)));
                                   Predicate<JobStatus> isDeclaredJob = job -> status.jobSteps().get(job.id()) != null && status.jobSteps().get(job.id()).isDeclared();
-                                  return Badges.overviewBadge(id,
-                                                              status.jobs().instance(id.instance()).matching(isDeclaredJob),
-                                                              controller.system());
+                                  return Badges.overviewBadge(id, status.jobs().instance(id.instance()).matching(isDeclaredJob));
                               });
     }
 

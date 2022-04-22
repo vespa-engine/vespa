@@ -169,7 +169,7 @@ public class JobController {
             if ( ! run.hasStep(copyVespaLogs))
                 return run;
 
-            ZoneId zone = id.type().zone(controller.system());
+            ZoneId zone = id.type().zone();
             Optional<Deployment> deployment = Optional.ofNullable(controller.applications().requireInstance(id.application())
                                                                             .deployments().get(zone));
             if (deployment.isEmpty() || deployment.get().at().isBefore(run.start()))
@@ -197,7 +197,7 @@ public class JobController {
             if (step.isEmpty())
                 return run;
 
-            List<LogEntry> entries = cloud.getLog(new DeploymentId(id.tester().id(), id.type().zone(controller.system())),
+            List<LogEntry> entries = cloud.getLog(new DeploymentId(id.tester().id(), id.type().zone()),
                                                   run.lastTestLogEntry());
             if (entries.isEmpty())
                 return run;
@@ -209,7 +209,7 @@ public class JobController {
 
     public void updateTestReport(RunId id) {
         locked(id, run -> {
-            Optional<TestReport> report = cloud.getTestReport(new DeploymentId(id.tester().id(), id.type().zone(controller.system())));
+            Optional<TestReport> report = cloud.getTestReport(new DeploymentId(id.tester().id(), id.type().zone()));
             if (report.isEmpty()) {
                 return run;
             }
@@ -257,10 +257,9 @@ public class JobController {
 
     /** Returns when given deployment last started deploying, falling back to time of deployment if it cannot be determined from job runs */
     public Instant lastDeploymentStart(ApplicationId instanceId, Deployment deployment) {
-        return jobStarts(new JobId(instanceId, JobType.from(controller.system(),
-                                                            deployment.zone()).get())).stream()
-                                                                                      .findFirst()
-                                                                                      .orElseGet(deployment::at);
+        return jobStarts(new JobId(instanceId, JobType.deploymentTo(deployment.zone()))).stream()
+                                                                                        .findFirst()
+                                                                                        .orElseGet(deployment::at);
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */
@@ -353,7 +352,7 @@ public class JobController {
     private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
         return new DeploymentStatus(application,
                                     this::jobStatus,
-                                    controller.system(),
+                                    controller.zoneRegistry(),
                                     systemVersion,
                                     instance -> controller.applications().versionCompatibility(application.id().instance(instance)),
                                     controller.clock().instant());
@@ -526,7 +525,7 @@ public class JobController {
                             controller.applications().store(application.withRevisions(revisions -> revisions.withoutOlderThan(oldestRevision)));
                         }
                         else {
-                            controller.applications().applicationStore().pruneDevDiffs(new DeploymentId(run.id().application(), run.id().job().type().zone(controller.system())), oldestRevision.number());
+                            controller.applications().applicationStore().pruneDevDiffs(new DeploymentId(run.id().application(), run.id().job().type().zone()), oldestRevision.number());
                             controller.applications().store(application.withRevisions(revisions -> revisions.withoutOlderThan(oldestRevision, run.id().job())));
                         }
                     });
@@ -566,6 +565,9 @@ public class JobController {
 
     /** Stores the given package and starts a deployment of it, after aborting any such ongoing deployment.*/
     public void deploy(ApplicationId id, JobType type, Optional<Version> platform, ApplicationPackage applicationPackage, boolean dryRun) {
+        if ( ! controller.zoneRegistry().hasZone(type.zone()))
+            throw new IllegalArgumentException(type.zone() + " is not present in this system");
+
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
             if ( ! application.get().instances().containsKey(id.instance()))
                 application = controller.applications().withNewInstance(application, id);
@@ -573,7 +575,7 @@ public class JobController {
             controller.applications().store(application);
         });
 
-        DeploymentId deploymentId = new DeploymentId(id, type.zone(controller.system()));
+        DeploymentId deploymentId = new DeploymentId(id, type.zone());
         Optional<Run> lastRun = last(id, type);
         lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
 
@@ -686,7 +688,7 @@ public class JobController {
     }
 
     public void deactivateTester(TesterId id, JobType type) {
-        controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone(controller.system())));
+        controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), type.zone()));
     }
 
     /** Locks all runs and modifies the list of historic runs for the given application and job type. */

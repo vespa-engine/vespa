@@ -797,14 +797,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse devApplicationPackage(ApplicationId id, JobType type) {
-        ZoneId zone = type.zone(controller.system());
+        ZoneId zone = type.zone();
         RevisionId revision = controller.jobController().last(id, type).get().versions().targetRevision();
         byte[] applicationPackage = controller.applications().applicationStore().get(new DeploymentId(id, zone), revision);
         return new ZipResponse(id.toFullString() + "." + zone.value() + ".zip", applicationPackage);
     }
 
     private HttpResponse devApplicationPackageDiff(RunId runId) {
-        DeploymentId deploymentId = new DeploymentId(runId.application(), runId.job().type().zone(controller.system()));
+        DeploymentId deploymentId = new DeploymentId(runId.application(), runId.job().type().zone());
         return controller.applications().applicationStore().getDevDiff(deploymentId, runId.number())
                 .map(ByteArrayResponse::new)
                 .orElseThrow(() -> new NotExistsException("No application package diff found for " + runId));
@@ -1393,7 +1393,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = deploymentSpec.instance(instance.name())
-                                                     .map(spec -> new DeploymentSteps(spec, controller::system))
+                                                     .map(spec -> new DeploymentSteps(spec, controller.zoneRegistry()))
                                                      .map(steps -> steps.sortedDeployments(instance.deployments().values()))
                                                      .orElse(List.copyOf(instance.deployments().values()));
 
@@ -1481,7 +1481,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         // Deployments sorted according to deployment spec
         List<Deployment> deployments =
                 application.deploymentSpec().instance(instance.name())
-                           .map(spec -> new DeploymentSteps(spec, controller::system))
+                           .map(spec -> new DeploymentSteps(spec, controller.zoneRegistry()))
                            .map(steps -> steps.sortedDeployments(instance.deployments().values()))
                            .orElse(List.copyOf(instance.deployments().values()));
         Cursor instancesArray = object.setArray("instances");
@@ -1523,7 +1523,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                       controller.jobController().active(instance.id()).stream()
                                 .map(run -> run.id().job())
                                 .filter(job -> job.type().environment().isManuallyDeployed()))
-              .map(job -> job.type().zone(controller.system()))
+              .map(job -> job.type().zone())
               .filter(zone -> ! instance.deployments().containsKey(zone))
               .forEach(zone -> {
                   Cursor deploymentObject = instancesArray.addObject();
@@ -1635,9 +1635,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
             if (!deployment.zone().environment().isManuallyDeployed()) {
                 DeploymentStatus status = controller.jobController().deploymentStatus(application);
-                JobType.from(controller.system(), deployment.zone())
-                        .map(type -> new JobId(instance.id(), type))
-                        .map(status.jobSteps()::get)
+                JobId jobId = new JobId(instance.id(), JobType.deploymentTo(deployment.zone()));
+                Optional.ofNullable(status.jobSteps().get(jobId))
                         .ifPresent(stepStatus -> {
                             JobControllerApiHandlerHelper.toSlime(response.setObject("applicationVersion"), application.revisions().get(deployment.revision()));
                             if ( ! status.jobsToRun().containsKey(stepStatus.job().get()))
@@ -1647,9 +1646,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                             else response.setString("status", "running");
                         });
             } else {
-                var deploymentRun = JobType.from(controller.system(), deploymentId.zoneId())
-                        .flatMap(jobType -> controller.jobController().last(deploymentId.applicationId(), jobType));
-
+                var deploymentRun = controller.jobController().last(deploymentId.applicationId(), JobType.deploymentTo(deploymentId.zoneId()));
                 deploymentRun.ifPresent(run -> {
                     response.setString("status", run.hasEnded() ? "complete" : "running");
                 });
@@ -2066,7 +2063,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP));
         controller.applications().verifyApplicationIdentityConfiguration(id.tenant(),
                                                                          Optional.of(id.instance()),
-                                                                         Optional.of(type.zone(controller.system())),
+                                                                         Optional.of(type.zone()),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 
@@ -2179,7 +2176,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                       .flatMap(instance -> instance.productionDeployments().keySet().stream())
                                                       .map(zone -> new DeploymentId(prodInstanceId, zone))
                                                       .collect(Collectors.toCollection(HashSet::new));
-        ZoneId testedZone = type.zone(controller.system());
+        ZoneId testedZone = type.zone();
 
         // If a production job is specified, the production deployment of the orchestrated instance is the relevant one,
         // as user instances should not exist in prod.

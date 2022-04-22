@@ -111,7 +111,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/{*}")) {
             zone = Optional.of(ZoneId.from(path.get("environment"), path.get("region")));
         } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobname}")) {
-            zone = Optional.of(JobType.fromJobName(path.get("jobname"), zones).zone(systemName));
+            zone = Optional.of(JobType.fromJobName(path.get("jobname"), zones).zone());
         } else {
             zone = Optional.empty();
         }

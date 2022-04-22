@@ -1,20 +1,20 @@
 {
   "application": "tenant:application:default",
-  "zone": "test.aws-us-east-1c",
+  "zone": "test.us-east-1",
   "system": "publiccd",
   "isCI": true,
   "endpoints": {
-    "test.aws-us-east-1c": [
+    "test.us-east-1": [
       "https://ai.default.default.global.vespa.oath.cloud/"
     ]
   },
   "zoneEndpoints": {
-    "test.aws-us-east-1c": {
+    "test.us-east-1": {
       "ai": "https://ai.default.default.global.vespa.oath.cloud/"
     }
   },
   "clusters": {
-    "test.aws-us-east-1c": [
+    "test.us-east-1": [
       "facts"
     ]
   }

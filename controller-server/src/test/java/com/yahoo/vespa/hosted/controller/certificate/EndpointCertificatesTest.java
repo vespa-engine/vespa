@@ -146,10 +146,10 @@ public class EndpointCertificatesTest {
                 "*.default.default.g.vespa-app.cloud",
                 "default.default.aws-us-east-1a.z.vespa-app.cloud",
                 "*.default.default.aws-us-east-1a.z.vespa-app.cloud",
-                "default.default.aws-us-east-1c.test.z.vespa-app.cloud",
-                "*.default.default.aws-us-east-1c.test.z.vespa-app.cloud",
-                "default.default.aws-us-east-1c.staging.z.vespa-app.cloud",
-                "*.default.default.aws-us-east-1c.staging.z.vespa-app.cloud"
+                "default.default.us-east-1.test.z.vespa-app.cloud",
+                "*.default.default.us-east-1.test.z.vespa-app.cloud",
+                "default.default.us-east-3.staging.z.vespa-app.cloud",
+                "*.default.default.us-east-3.staging.z.vespa-app.cloud"
         );
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, DeploymentSpec.empty);
         assertTrue(endpointCertificateMetadata.isPresent());
@@ -261,10 +261,10 @@ public class EndpointCertificatesTest {
                 "*.a1.t1.aws-us-east-1c.r.vespa-app.cloud",
                 "a1.t1.aws-us-east-1c.z.vespa-app.cloud",
                 "*.a1.t1.aws-us-east-1c.z.vespa-app.cloud",
-                "a1.t1.aws-us-east-1c.test.z.vespa-app.cloud",
-                "*.a1.t1.aws-us-east-1c.test.z.vespa-app.cloud",
-                "a1.t1.aws-us-east-1c.staging.z.vespa-app.cloud",
-                "*.a1.t1.aws-us-east-1c.staging.z.vespa-app.cloud"
+                "a1.t1.us-east-1.test.z.vespa-app.cloud",
+                "*.a1.t1.us-east-1.test.z.vespa-app.cloud",
+                "a1.t1.us-east-3.staging.z.vespa-app.cloud",
+                "*.a1.t1.us-east-3.staging.z.vespa-app.cloud"
         );
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone1, applicationPackage.deploymentSpec());
         assertTrue(endpointCertificateMetadata.isPresent());
