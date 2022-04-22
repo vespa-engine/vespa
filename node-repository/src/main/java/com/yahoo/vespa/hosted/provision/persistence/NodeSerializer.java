@@ -522,7 +522,7 @@ public class NodeSerializer {
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
             case "Rebalancer" : return Agent.Rebalancer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
-            case "RetiringUpgrader" : return Agent.RetiringUpgrader;
+            case "RetiringUpgrader" : return Agent.RetiringOsUpgrader;
             case "RebuildingOsUpgrader" : return Agent.RebuildingOsUpgrader;
             case "SpareCapacityMaintainer": return Agent.SpareCapacityMaintainer;
             case "SwitchRebalancer": return Agent.SwitchRebalancer;
@@ -545,7 +545,7 @@ public class NodeSerializer {
             case ProvisionedExpirer : return "ProvisionedExpirer";
             case Rebalancer : return "Rebalancer";
             case ReservationExpirer : return "ReservationExpirer";
-            case RetiringUpgrader: return "RetiringUpgrader";
+            case RetiringOsUpgrader: return "RetiringUpgrader";
             case RebuildingOsUpgrader: return "RebuildingOsUpgrader";
             case SpareCapacityMaintainer: return "SpareCapacityMaintainer";
             case SwitchRebalancer: return "SwitchRebalancer";
