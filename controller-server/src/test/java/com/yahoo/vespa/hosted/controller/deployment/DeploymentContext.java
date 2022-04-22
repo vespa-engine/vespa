@@ -438,14 +438,13 @@ public class DeploymentContext {
         }
 
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
         tester.cloud().set(noTests ? Status.NO_TESTS : Status.FAILURE);
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasEnded());
         assertEquals(noTests, jobs.run(id).get().hasSucceeded());
-        assertTrue(configServer().nodeRepository().list(zone, NodeFilter.all().applications(TesterId.of(instanceId).id())).isEmpty());
+        assertTrue(configServer().nodeRepository().list(job.type().zone(), NodeFilter.all().applications(TesterId.of(instanceId).id())).isEmpty());
 
         return this;
     }
