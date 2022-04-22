@@ -4,12 +4,8 @@
 #include "valuefeature.h"
 #include "weighted_set_parser.hpp"
 #include "array_parser.hpp"
+#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multienumattribute.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -294,108 +290,6 @@ SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t d
     return vespalib::ConstArrayRef(_scratch.data(), i);
 }
 
-template <typename A>
-DotProductByCopyExecutor<A>::DotProductByCopyExecutor(const A * attribute, const V & queryVector) :
-    DotProductExecutor<A>(attribute, queryVector),
-    _copy(static_cast<size_t>(attribute->getMaxValueCount()))
-{
-}
-
-template <typename A>
-DotProductByCopyExecutor<A>::~DotProductByCopyExecutor() = default;
-
-template <typename A>
-vespalib::ConstArrayRef<typename A::BaseType>
-DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
-{
-    size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    if (count > _copy.size()) {
-        _copy.resize(count);
-        count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    }
-    return vespalib::ConstArrayRef(_copy.data(), count);
-}
-
-template <typename A>
-SparseDotProductByCopyExecutor<A>::SparseDotProductByCopyExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes) :
-    SparseDotProductExecutorBase<typename A::BaseType>(queryVector, queryIndexes),
-    _attribute(attribute),
-    _copy(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()))
-{
-}
-
-template <typename A>
-SparseDotProductByCopyExecutor<A>::~SparseDotProductByCopyExecutor() = default;
-
-template <typename A>
-vespalib::ConstArrayRef<typename A::BaseType>
-SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId)
-{
-    size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    if (count > _copy.size()) {
-        _copy.resize(count);
-        count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    }
-    size_t i(0);
-    for (const IV & iv(this->_queryIndexes); (i < iv.size()) && (iv[i] < count); i++) {
-        _copy[i] = _copy[iv[i]];
-    }
-    return vespalib::ConstArrayRef(_copy.data(), i);
-}
-
-template <typename BaseType>
-DotProductByContentFillExecutor<BaseType>::DotProductByContentFillExecutor(
-        const attribute::IAttributeVector * attribute,
-        const V & queryVector)
-    : DotProductExecutorBase<BaseType>(queryVector),
-      _attribute(attribute),
-      _filler()
-{
-    _filler.allocate(attribute->getMaxValueCount());
-}
-
-template <typename BaseType>
-DotProductByContentFillExecutor<BaseType>::~DotProductByContentFillExecutor() = default;
-
-template <typename BaseType>
-vespalib::ConstArrayRef<BaseType>
-DotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid) {
-    _filler.fill(*_attribute, docid);
-    return vespalib::ConstArrayRef(_filler.data(), _filler.size());
-}
-
-template <typename BaseType>
-SparseDotProductByContentFillExecutor<BaseType>::SparseDotProductByContentFillExecutor(
-        const attribute::IAttributeVector * attribute,
-        const V & queryVector,
-        const IV & queryIndexes)
-    : DotProductExecutorBase<BaseType>(queryVector),
-      _attribute(attribute),
-      _queryIndexes(queryIndexes),
-      _filler()
-{
-    _filler.allocate(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()));
-}
-
-template <typename BaseType>
-SparseDotProductByContentFillExecutor<BaseType>::~SparseDotProductByContentFillExecutor() = default;
-
-template <typename BaseType>
-vespalib::ConstArrayRef<BaseType>
-SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid)
-{
-    _filler.fill(*_attribute, docid);
-
-    const size_t count = _filler.size();
-    BaseType * data = _filler.data();
-    size_t i = 0;
-    for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < count); ++i) {
-        data[i] = data[_queryIndexes[i]];
-    }
-
-    return vespalib::ConstArrayRef(data, i);
-}
-
 }
 
 namespace {
@@ -480,6 +374,7 @@ template ArrayParam<int64_t>::ArrayParam(const Property & prop);
 #ifdef __clang__
 template ArrayParam<int64_t>::~ArrayParam();
 #endif
+template struct ArrayParam<int32_t>;
 template struct ArrayParam<double>;
 template struct ArrayParam<float>;
 
@@ -500,91 +395,44 @@ make_multi_value_read_view(const IAttributeVector& attribute, vespalib::Stash& s
     return nullptr;
 }
 
-// Precondition: attribute->isImported() == false
-template <typename A>
+template <typename T>
 FeatureExecutor &
 createForDirectArrayImpl(const IAttributeVector * attribute,
-                         const std::vector<typename A::BaseType> & values,
+                         const std::vector<T> & values,
                          const std::vector<uint32_t> & indexes,
                          vespalib::Stash & stash)
 {
     if (values.empty()) {
         return stash.create<SingleZeroValueExecutor>();
     }
-    const A * iattr = dynamic_cast<const A *>(attribute);
-    using T = typename A::BaseType;
-    using VT = T;
-    auto array_read_view = make_multi_value_read_view<VT>(*attribute, stash);
-    if (indexes.empty()) {
-        if (array_read_view != nullptr) {
+    auto array_read_view = make_multi_value_read_view<T>(*attribute, stash);
+    if (array_read_view != nullptr) {
+        if (indexes.empty()) {
             return stash.create<dotproduct::array::DotProductByArrayReadViewExecutor<T>>(array_read_view, values);
         } else {
-            return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(iattr, values);
-        }
-    } else {
-        if (array_read_view != nullptr) {
             return stash.create<dotproduct::array::SparseDotProductByArrayReadViewExecutor<T>>(array_read_view, values, indexes);
-        } else {
-            return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(iattr, values, indexes);
         }
     }
     return stash.create<SingleZeroValueExecutor>();
 }
 
-template <typename BaseType>
-FeatureExecutor &
-createForImportedArrayImpl(const IAttributeVector * attribute,
-                           const std::vector<BaseType> & values,
-                           const std::vector<uint32_t> & indexes,
-                           vespalib::Stash & stash) {
-    if (values.empty()) {
-        return stash.create<SingleZeroValueExecutor>();
-    }
-    if (indexes.empty()) {
-        using ExecutorType = dotproduct::array::DotProductByContentFillExecutor<BaseType>;
-        return stash.create<ExecutorType>(attribute, values);
-    } else {
-        using ExecutorType = dotproduct::array::SparseDotProductByContentFillExecutor<BaseType>;
-        return stash.create<ExecutorType>(attribute, values, indexes);
-    }
-}
-
-template <typename BaseType>
-FeatureExecutor&
-createForImportedArray(const IAttributeVector * attribute,
-                       const Property & prop,
-                       vespalib::Stash & stash) {
-    std::vector<BaseType> values;
-    std::vector<uint32_t> indexes;
-    parseVectors(prop, values, indexes);
-    return createForImportedArrayImpl<BaseType>(attribute, values, indexes, stash);
-}
-
-template <typename BaseType>
-FeatureExecutor&
-createForImportedArray(const IAttributeVector * attribute,
-                       const ArrayParam<BaseType> & arguments,
-                       vespalib::Stash & stash) {
-    return createForImportedArrayImpl<BaseType>(attribute, arguments.values, arguments.indexes, stash);
-}
-
-template <typename A>
+template <typename T>
 FeatureExecutor &
 createForDirectArray(const IAttributeVector * attribute,
                      const Property & prop,
                      vespalib::Stash & stash) {
-    std::vector<typename A::BaseType> values;
+    std::vector<T> values;
     std::vector<uint32_t> indexes;
     parseVectors(prop, values, indexes);
-    return createForDirectArrayImpl<A>(attribute, values, indexes, stash);
+    return createForDirectArrayImpl<T>(attribute, values, indexes, stash);
 }
 
-template <typename A>
+template <typename T>
 FeatureExecutor &
 createForDirectArray(const IAttributeVector * attribute,
-                     const ArrayParam<typename A::BaseType> & arguments,
+                     const ArrayParam<T> & arguments,
                      vespalib::Stash & stash) {
-    return createForDirectArrayImpl<A>(attribute, arguments.values, arguments.indexes, stash);
+    return createForDirectArrayImpl<T>(attribute, arguments.values, arguments.indexes, stash);
 }
 
 template<typename T>
@@ -656,33 +504,19 @@ FeatureExecutor &
 createFromObject(const IAttributeVector * attribute, const fef::Anything & object, vespalib::Stash &stash)
 {
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
-        if (!attribute->isImported()) {
-            switch (attribute->getBasicType()) {
-                case BasicType::INT8:
-                    return createForDirectArray<IntegerAttributeTemplate<int8_t>>(attribute, dynamic_cast<const ArrayParam<int8_t> &>(object), stash);
-                case BasicType::INT32:
-                    return createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
-                case BasicType::INT64:
-                    return createForDirectArray<IntegerAttributeTemplate<int64_t>>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
-                case BasicType::FLOAT:
-                    return createForDirectArray<FloatingPointAttributeTemplate<float>>(attribute, dynamic_cast<const ArrayParam<float> &>(object), stash);
-                case BasicType::DOUBLE:
-                    return createForDirectArray<FloatingPointAttributeTemplate<double>>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
-                default:
-                    break;
-            }
-        } else {
-            switch (attribute->getBasicType()) {
-                case BasicType::INT8:
-                case BasicType::INT32:
-                case BasicType::INT64:
-                    return createForImportedArray<int64_t>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
-                case BasicType::FLOAT:
-                case BasicType::DOUBLE:
-                    return createForImportedArray<double>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
-                default:
-                    break;
-            }
+        switch (attribute->getBasicType()) {
+            case BasicType::INT8:
+                return createForDirectArray<int8_t>(attribute, dynamic_cast<const ArrayParam<int8_t> &>(object), stash);
+            case BasicType::INT32:
+                return createForDirectArray<int32_t>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
+            case BasicType::INT64:
+                return createForDirectArray<int64_t>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
+            case BasicType::FLOAT:
+                return createForDirectArray<float>(attribute, dynamic_cast<const ArrayParam<float> &>(object), stash);
+            case BasicType::DOUBLE:
+                return createForDirectArray<double>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
+            default:
+                break;
         }
     } else if (attribute->getCollectionType() == attribute::CollectionType::WSET) {
         using namespace dotproduct::wset;
@@ -727,37 +561,19 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
 
 FeatureExecutor *
 createTypedArrayExecutor(const IAttributeVector * attribute, const Property & prop, vespalib::Stash & stash) {
-    if (!attribute->isImported()) {
-        switch (attribute->getBasicType()) {
-            case BasicType::INT8:
-                return &createForDirectArray<IntegerAttributeTemplate<int8_t>>(attribute, prop, stash);
-            case BasicType::INT32:
-                return &createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, prop, stash);
-            case BasicType::INT64:
-                return &createForDirectArray<IntegerAttributeTemplate<int64_t>>(attribute, prop, stash);
-            case BasicType::FLOAT:
-                return &createForDirectArray<FloatingPointAttributeTemplate<float>>(attribute, prop, stash);
-            case BasicType::DOUBLE:
-                return &createForDirectArray<FloatingPointAttributeTemplate<double>>(attribute, prop, stash);
-            default:
-                break;
-        }
-    } else {
-        // When using AttributeContent, integers are always extracted as largeint_t and
-        // floats always as double. This means that we cannot allow type specializations
-        // on int32_t or float, or reinterpreting type casts will end up pointing at
-        // data that is not of the correct size. Which would be Bad(tm).
-        switch (attribute->getBasicType()) {
-            case BasicType::INT8:
-            case BasicType::INT32:
-            case BasicType::INT64:
-                return &createForImportedArray<IAttributeVector::largeint_t>(attribute, prop, stash);
-            case BasicType::FLOAT:
-            case BasicType::DOUBLE:
-                return &createForImportedArray<double>(attribute, prop, stash);
-            default:
-                break;
-        }
+    switch (attribute->getBasicType()) {
+        case BasicType::INT8:
+            return &createForDirectArray<int8_t>(attribute, prop, stash);
+        case BasicType::INT32:
+            return &createForDirectArray<int32_t>(attribute, prop, stash);
+        case BasicType::INT64:
+            return &createForDirectArray<int64_t>(attribute, prop, stash);
+        case BasicType::FLOAT:
+            return &createForDirectArray<float>(attribute, prop, stash);
+        case BasicType::DOUBLE:
+            return &createForDirectArray<double>(attribute, prop, stash);
+        default:
+            break;
     }
     return nullptr;
 }
@@ -836,35 +652,19 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
 
 fef::Anything::UP
 attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
-    if (!attribute.isImported()) {
-        switch (attribute.getBasicType()) {
-            case BasicType::INT8:
-                return std::make_unique<ArrayParam<int8_t>>(prop);
-            case BasicType::INT32:
-                return std::make_unique<ArrayParam<int32_t>>(prop);
-            case BasicType::INT64:
-                return std::make_unique<ArrayParam<int64_t>>(prop);
-            case BasicType::FLOAT:
-                return std::make_unique<ArrayParam<float>>(prop);
-            case BasicType::DOUBLE:
-                return std::make_unique<ArrayParam<double>>(prop);
-            default:
-                break;
-        }
-    } else {
-        // See rationale in createTypedArrayExecutor() as to why we promote < 64 bit types
-        // to their full-width equivalent when dealing with imported attributes.
-        switch (attribute.getBasicType()) {
-            case BasicType::INT8:
-            case BasicType::INT32:
-            case BasicType::INT64:
-                return std::make_unique<ArrayParam<int64_t>>(prop);
-            case BasicType::FLOAT:
-            case BasicType::DOUBLE:
-                return std::make_unique<ArrayParam<double>>(prop);
-            default:
-                break;
-        }
+    switch (attribute.getBasicType()) {
+        case BasicType::INT8:
+            return std::make_unique<ArrayParam<int8_t>>(prop);
+        case BasicType::INT32:
+            return std::make_unique<ArrayParam<int32_t>>(prop);
+        case BasicType::INT64:
+            return std::make_unique<ArrayParam<int64_t>>(prop);
+        case BasicType::FLOAT:
+            return std::make_unique<ArrayParam<float>>(prop);
+        case BasicType::DOUBLE:
+            return std::make_unique<ArrayParam<double>>(prop);
+        default:
+            break;
     }
     return std::unique_ptr<fef::Anything>();
 }
