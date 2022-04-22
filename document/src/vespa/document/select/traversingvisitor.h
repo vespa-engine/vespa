@@ -24,6 +24,7 @@ public:
     void visitFloatValueNode(const FloatValueNode &) override;
     void visitVariableValueNode(const VariableValueNode &) override;
     void visitIntegerValueNode(const IntegerValueNode &) override;
+    void visitBoolValueNode(const BoolValueNode &) override;
     void visitCurrentTimeValueNode(const CurrentTimeValueNode &) override;
     void visitStringValueNode(const StringValueNode &) override;
     void visitNullValueNode(const NullValueNode &) override;

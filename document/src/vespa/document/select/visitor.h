@@ -27,6 +27,7 @@ class InvalidConstant;
 class FieldValueNode;
 class FloatValueNode;
 class IntegerValueNode;
+class BoolValueNode;
 class CurrentTimeValueNode;
 class StringValueNode;
 class NullValueNode;
@@ -35,7 +36,7 @@ class VariableValueNode;
 
 class Visitor {
 public:
-    virtual ~Visitor() {}
+    virtual ~Visitor() = default;
 
     virtual void visitAndBranch(const And &) = 0;
     virtual void visitComparison(const Compare &) = 0;
@@ -51,6 +52,7 @@ public:
     virtual void visitFloatValueNode(const FloatValueNode &) = 0;
     virtual void visitVariableValueNode(const VariableValueNode &) = 0;
     virtual void visitIntegerValueNode(const IntegerValueNode &) = 0;
+    virtual void visitBoolValueNode(const BoolValueNode&) = 0;
     virtual void visitCurrentTimeValueNode(const CurrentTimeValueNode &) = 0;
     virtual void visitStringValueNode(const StringValueNode &) = 0;
     virtual void visitNullValueNode(const NullValueNode &) = 0;

@@ -115,11 +115,28 @@ IntegerValueNode::print(std::ostream& out, bool verbose,
     if (hadParentheses()) out << ')';
 }
 
+void
+BoolValueNode::visit(Visitor& visitor) const
+{
+    visitor.visitBoolValueNode(*this);
+}
+
+void
+BoolValueNode::print(std::ostream& out,
+                     [[maybe_unused]] bool verbose,
+                     [[maybe_unused]] const std::string& indent) const
+{
+    if (hadParentheses()) out << '(';
+    out << bool_value_str();
+    if (hadParentheses()) out << ')';
+}
+
+
 int64_t
 CurrentTimeValueNode::getValue() const
 {
     struct timeval mytime;
-    gettimeofday(&mytime, 0);
+    gettimeofday(&mytime, nullptr);
     return mytime.tv_sec;
 }
 

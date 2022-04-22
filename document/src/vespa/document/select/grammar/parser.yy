@@ -75,7 +75,7 @@
 %token <string_val>  ID USER GROUP SCHEME NAMESPACE SPECIFIC BUCKET GID TYPE
 
 %type <string_val> ident mangled_ident
-%type <abstract_node> bool_
+%type <value_node> bool_
  /* TODO 'leaf' is a bad name for something that isn't a leaf... */
 %type <abstract_node> expression comparison logical_expr leaf doc_type
 %type <string_val> id_arg
@@ -190,8 +190,8 @@ null_
     ;
 
 bool_
-    : TRUE   { $$ = new Constant(true); }
-    | FALSE  { $$ = new Constant(false); }
+    : TRUE   { $$ = new BoolValueNode(true); }
+    | FALSE  { $$ = new BoolValueNode(false); }
     ;
 
 number
@@ -287,6 +287,7 @@ field_spec
 
 value
     : null_      { $$ = $1; }
+    | bool_      { $$ = $1; }
     | string     { $$ = $1; }
     | id_spec    { $$ = $1; }
     | variable   { $$ = $1; }
@@ -328,10 +329,9 @@ comparison
     ;
 
 leaf
-    : bool_      { $$ = $1; }
-    | comparison { $$ = $1; }
+    : comparison { $$ = $1; }
     | doc_type   { $$ = $1; }
-    | arith_expr { /* Actually field_spec, see comment below..! */
+    | arith_expr { /* Actually bool_ or field_spec, see comment below..! */
           // Grammar-wise, we _do not_ accept arbitrary arith_exprs at this level. But the
           // selection grammar as it stands is otherwise ambiguous with LR(1) parsing.
           // More specifically, if we used field_spec instead of arith_expr here, the parser
@@ -343,15 +343,21 @@ leaf
           // conflict goes away. We can then do a sneaky "run-time" type check to ensure we only
           // get the expected node from the rule.
           // It's not pretty, but it avoids an undefined grammar (which is much less pretty!).
+          // The same goes for boolean constants, which may be used both as higher-level (non-value)
+          // nodes or as value nodes to compare against.
           auto node = steal<ValueNode>($1);
-          if (dynamic_cast<FieldValueNode*>(node.get()) == nullptr) {
-              throw syntax_error(@$, "expected field spec, doctype, bool or comparison");
+          if (auto* as_bool = dynamic_cast<BoolValueNode*>(node.get())) {
+              $$ = new Constant(as_bool->bool_value()); // Replace single bool node subtree with constant.
+          } else {
+              if (dynamic_cast<FieldValueNode*>(node.get()) == nullptr) {
+                  throw syntax_error(@$, "expected field spec, doctype, bool or comparison");
+              }
+              // Implicit rewrite to non-null comparison node
+              $$ = new Compare(std::move(node),
+                               FunctionOperator::NE,
+                               std::make_unique<NullValueNode>(),
+                               bucket_id_factory);
           }
-          // Implicit rewrite to non-null comparison node
-          $$ = new Compare(std::move(node),
-                           FunctionOperator::NE,
-                           std::make_unique<NullValueNode>(),
-                           bucket_id_factory);
       }
     ;
 

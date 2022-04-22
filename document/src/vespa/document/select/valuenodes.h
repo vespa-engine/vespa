@@ -28,7 +28,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new InvalidValueNode(_name));
+        return wrapParens(std::make_unique<InvalidValueNode>(_name));
     }
 };
 
@@ -46,7 +46,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new NullValueNode());
+        return wrapParens(std::make_unique<NullValueNode>());
     }
 };
 
@@ -66,7 +66,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new StringValueNode(_value));
+        return wrapParens(std::make_unique<StringValueNode>(_value));
     }
 };
 
@@ -88,7 +88,28 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new IntegerValueNode(_value, _isBucketValue));
+        return wrapParens(std::make_unique<IntegerValueNode>(_value, _isBucketValue));
+    }
+};
+
+// Inherit from IntegerValueNode to be implicitly treated as an integer value by
+// all code that does not explicitly know (or care) about bool values.
+class BoolValueNode : public IntegerValueNode {
+public:
+    explicit BoolValueNode(bool value) : IntegerValueNode(value, false) {}
+
+    [[nodiscard]] bool bool_value() const noexcept {
+        return bool(getValue());
+    }
+    [[nodiscard]] const char* bool_value_str() const noexcept {
+        return bool_value() ? "true" : "false";
+    }
+
+    void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+    void visit(Visitor& visitor) const override;
+
+    std::unique_ptr<ValueNode> clone() const override {
+        return wrapParens(std::make_unique<BoolValueNode>(bool_value()));
     }
 };
 
@@ -105,7 +126,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new CurrentTimeValueNode);
+        return wrapParens(std::make_unique<CurrentTimeValueNode>());
     }
 };
 
@@ -123,7 +144,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new VariableValueNode(_value));
+        return wrapParens(std::make_unique<VariableValueNode>(_value));
     }
 };
 
@@ -131,7 +152,7 @@ class FloatValueNode : public ValueNode
 {
     double _value;
 public:
-    FloatValueNode(double val) : _value(val) {}
+    explicit FloatValueNode(double val) : _value(val) {}
 
     double getValue() const { return _value; }
 
@@ -143,7 +164,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new FloatValueNode(_value));
+        return wrapParens(std::make_unique<FloatValueNode>(_value));
     }
 };
 
@@ -172,7 +193,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new FieldValueNode(_doctype, _fieldExpression));
+        return wrapParens(std::make_unique<FieldValueNode>(_doctype, _fieldExpression));
     }
 
     static vespalib::string extractFieldName(const vespalib::string & fieldExpression);
@@ -229,10 +250,10 @@ private:
 
     ValueNode::UP clone() const override {
         if (_left_expr) {
-            return wrapParens(new FieldExprNode(std::unique_ptr<FieldExprNode>(
+            return wrapParens(std::make_unique<FieldExprNode>(std::unique_ptr<FieldExprNode>(
                     static_cast<FieldExprNode*>(_left_expr->clone().release())), _right_expr));
         } else {
-            return wrapParens(new FieldExprNode(_right_expr));
+            return wrapParens(std::make_unique<FieldExprNode>(_right_expr));
         }
     }
 };
@@ -261,7 +282,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new IdValueNode(_bucketIdFactory, _id, _typestring, _widthBits, _divisionBits));
+        return wrapParens(std::make_unique<IdValueNode>(_bucketIdFactory, _id, _typestring, _widthBits, _divisionBits));
     }
 
     int getWidthBits() const { return _widthBits; }
@@ -298,7 +319,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new FunctionValueNode(_funcname, _source->clone()));
+        return wrapParens(std::make_unique<FunctionValueNode>(_funcname, _source->clone()));
     }
 
     const ValueNode& getChild() const { return *_source; }
@@ -339,9 +360,7 @@ public:
     void visit(Visitor& visitor) const override;
 
     ValueNode::UP clone() const override {
-        return wrapParens(new ArithmeticValueNode(_left->clone(),
-                                                  getOperatorName(),
-                                                  _right->clone()));
+        return wrapParens(std::make_unique<ArithmeticValueNode>(_left->clone(), getOperatorName(), _right->clone()));
     }
 
     const ValueNode& getLeft() const { return *_left; }
