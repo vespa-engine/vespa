@@ -60,6 +60,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -114,7 +116,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * @return an Application package instance
      */
     public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
-        return new Builder(appDir).preprocessedDir(new File(appDir, preprocessed))
+        return new Builder(appDir).preprocessedDir(applicationFile(appDir, preprocessed))
                                   .includeSourceFiles(includeSourceFiles)
                                   .build();
     }
@@ -156,7 +158,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         this.appDir = appDir;
         this.preprocessedDir = preprocessedDir;
         appSubDirs = new AppSubDirs(appDir);
-        configDefsDir = new File(appDir, CONFIG_DEFINITIONS_DIR);
+        configDefsDir = applicationFile(appDir, CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
         this.metaData = metaData;
         transformerFactory = TransformerFactory.newInstance();
@@ -178,7 +180,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationFile getFile(Path path) {
-        File file = (path.isRoot() ? appDir : new File(appDir, path.getRelative()));
+        File file = (path.isRoot() ? appDir : applicationFile(appDir, path.getRelative()));
         return new FilesApplicationFile(path, file);
     }
 
@@ -190,7 +192,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private List<NamedReader> getFiles(Path relativePath, String namePrefix, String suffix, boolean recurse) {
         try {
             List<NamedReader> readers=new ArrayList<>();
-            File dir = new File(appDir, relativePath.getRelative());
+            File dir = applicationFile(appDir, relativePath);
             if ( ! dir.isDirectory()) return readers;
 
             File[] files = dir.listFiles();
@@ -242,7 +244,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private File getHostsFile() {
-        return new File(appDir, HOSTS);
+        return applicationFile(appDir, HOSTS);
     }
 
     @Override
@@ -251,7 +253,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private File getServicesFile() {
-        return new File(appDir, SERVICES);
+        return applicationFile(appDir, SERVICES);
     }
 
     @Override
@@ -430,11 +432,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     static List<File> getSearchDefinitionFiles(File appDir) {
         List<File> schemaFiles = new ArrayList<>();
 
-        File sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
+        File sdDir = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
         if (sdDir.isDirectory())
             schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
 
-        sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
+        sdDir = applicationFile(appDir, SCHEMAS_DIR.getRelative());
         if (sdDir.isDirectory())
             schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
 
@@ -447,17 +449,17 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     // Only for use by deploy processor
     public static List<Component> getComponents(File appDir) {
-        List<Component> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
-            components.add(new Component(bundle, new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath())));
-        }
-        return components;
+        return components(appDir, Component::new);
     }
 
     private static List<ComponentInfo> getComponentsInfo(File appDir) {
-        List<ComponentInfo> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
-            components.add(new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath()));
+        return components(appDir, (__, info) -> info);
+    }
+
+    private static <T> List<T> components(File appDir, BiFunction<Bundle, ComponentInfo, T> toValue) {
+        List<T> components = new ArrayList<>();
+        for (Bundle bundle : Bundle.getBundles(applicationFile(appDir, COMPONENT_DIR))) {
+            components.add(toValue.apply(bundle, new ComponentInfo(Path.fromString(COMPONENT_DIR).append(bundle.getFile().getName()).getRelative())));
         }
         return components;
     }
@@ -492,7 +494,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                                                                       "",
                                                                       0L,
                                                                       0L);
-        File metaFile = new File(appDir, META_FILE_NAME);
+        File metaFile = applicationFile(appDir, META_FILE_NAME);
         if ( ! metaFile.exists()) {
             return defaultMetaData;
         }
@@ -550,18 +552,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
 
         Path path = Path.fromString(name);
-        File sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
-        File expressionFile = new File(sdDir, path.getRelative());
+        File expressionFile = applicationFile(appDir, SCHEMAS_DIR.append(path));
         if ( ! expressionFile.exists()) {
-            sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
-            expressionFile = new File(sdDir, path.getRelative());
+            expressionFile = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.append(path));
         }
         return expressionFile;
     }
 
     @Override
     public File getFileReference(Path pathRelativeToAppDir) {
-        return new File(appDir, pathRelativeToAppDir.getRelative());
+        return applicationFile(appDir, pathRelativeToAppDir.getRelative());
     }
 
     @Override
@@ -579,7 +579,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public void writeMetaData() throws IOException {
-        File metaFile = new File(appDir, META_FILE_NAME);
+        File metaFile = applicationFile(appDir, META_FILE_NAME);
         IOUtils.writeFile(metaFile, metaData.asJsonBytes());
     }
 
@@ -604,13 +604,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
-        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
-                                                                                         ! name.equals(SERVICES) &&
-                                                                                         ! name.equals(HOSTS) &&
-                                                                                         ! name.equals(CONFIG_DEFINITIONS_DIR));
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1,
+                              (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
         File servicesFile = validateServicesFile();
-        preprocessXML(new File(preprocessedDir, SERVICES), servicesFile, zone);
-        preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
+        preprocessXML(applicationFile(preprocessedDir, SERVICES), servicesFile, zone);
+        preprocessXML(applicationFile(preprocessedDir, HOSTS), getHostsFile(), zone);
         FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
@@ -733,10 +731,22 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
 
         public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, preprocessed)),
+            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(applicationFile(appDir, preprocessed)),
                                                metaData.orElse(readMetaData(appDir)), includeSourceFiles);
         }
 
+    }
+
+    static File applicationFile(File parent, String path) {
+        return applicationFile(parent, Path.fromString(path));
+    }
+
+    static File applicationFile(File parent, Path path) {
+        File file = new File(parent, path.getRelative());
+        if ( ! file.getAbsolutePath().startsWith(parent.getAbsolutePath()))
+            throw new IllegalArgumentException(file + " is not a child of " + parent);
+
+        return file;
     }
 
 }
