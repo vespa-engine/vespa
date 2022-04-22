@@ -16,6 +16,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import static com.yahoo.config.model.application.provider.FilesApplicationPackage.applicationFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -129,9 +130,16 @@ public class FilesApplicationPackageTest {
 
     @Test
     public void testApplicationFile() {
+        applicationFile(new File("foo"), "");
+        applicationFile(new File("foo"), "bar");
+        applicationFile(new File(new File(""), ""), "");
+        assertEquals("/ is not a child of ",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> applicationFile(new File(""), ""))
+                             .getMessage());
         assertEquals("'..' is not allowed in path",
                      assertThrows(IllegalArgumentException.class,
-                                  () -> FilesApplicationPackage.applicationFile(new File("foo"), ".."))
+                                  () -> applicationFile(new File("foo"), ".."))
                              .getMessage());
     }
 
