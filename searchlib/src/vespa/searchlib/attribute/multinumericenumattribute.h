@@ -101,8 +101,8 @@ public:
     }
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<T>* make_read_view(attribute::IMultiValueAttribute::Tag<T>, vespalib::Stash& stash) const override;
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<T>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<T>>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const override;
 
 private:
     using AttributeReader = PrimitiveReader<typename B::LoadedValueType>;

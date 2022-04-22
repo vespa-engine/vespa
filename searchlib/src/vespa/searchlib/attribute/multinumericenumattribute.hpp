@@ -116,15 +116,15 @@ MultiValueNumericEnumAttribute<B, M>::onLoad(vespalib::Executor *)
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueReadView<typename B::BaseClass::BaseType>*
-MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const
+const attribute::IArrayReadView<typename B::BaseClass::BaseType>*
+MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::ArrayTag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::EnumeratedMultiValueReadView<T, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueReadView<multivalue::WeightedValue<typename B::BaseClass::BaseType>>*
-MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<typename B::BaseClass::BaseType>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<typename B::BaseClass::BaseType>*
+MultiValueNumericEnumAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<typename B::BaseClass::BaseType>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<T>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }

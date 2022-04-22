@@ -82,8 +82,8 @@ public:
     const IMultiValueAttribute* as_multi_value_attribute() const override;
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<ValueType>* make_read_view(attribute::IMultiValueAttribute::Tag<ValueType>, vespalib::Stash& stash) const override;
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<ValueType>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<ValueType>>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<ValueType>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<ValueType>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<ValueType>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<ValueType>, vespalib::Stash& stash) const override;
 };
 
 } // namespace search
