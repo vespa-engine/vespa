@@ -44,6 +44,7 @@ public class LocalProviderSpec {
                             com.yahoo.prelude.searcher.ValidatePredicateSearcher.class,
                             com.yahoo.search.searchers.ValidateNearestNeighborSearcher.class,
                             com.yahoo.search.searchers.ValidateMatchPhaseSearcher.class,
+                            com.yahoo.search.searchers.ValidateFuzzySearcher.class,
                             com.yahoo.search.yql.FieldFiller.class,
                             com.yahoo.search.searchers.InputCheckingSearcher.class,
                             com.yahoo.search.searchers.ContainerLatencySearcher.class);

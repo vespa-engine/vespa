@@ -28,14 +28,10 @@ public class FuzzyItem extends TermItem {
     }
 
     public void setMaxEditDistance(int maxEditDistance) {
-        if (maxEditDistance < 0)
-            throw new IllegalArgumentException("Can not use negative maxEditDistance " + maxEditDistance);
         this.maxEditDistance = maxEditDistance;
     }
 
     public void setPrefixLength(int prefixLength) {
-        if (prefixLength < 0)
-            throw new IllegalArgumentException("Can not use negative prefixLength " + prefixLength);
         this.prefixLength = prefixLength;
     }
 
