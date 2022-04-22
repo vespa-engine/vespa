@@ -8268,6 +8268,18 @@
       "public static final com.yahoo.processing.request.CompoundName dryRunKey"
     ]
   },
+  "com.yahoo.search.searchers.ValidateFuzzySearcher": {
+    "superClass": "com.yahoo.search.Searcher",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.vespa.config.search.AttributesConfig)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.searchers.ValidateMatchPhaseSearcher": {
     "superClass": "com.yahoo.search.Searcher",
     "interfaces": [],
