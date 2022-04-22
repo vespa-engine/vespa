@@ -129,7 +129,7 @@ public class ClusterStateGenerator {
         final ClusterState workingState = ClusterState.emptyState();
         final Map<Node, NodeStateReason> nodeStateReasons = new HashMap<>();
 
-        for (final NodeInfo nodeInfo : cluster.getNodeInfo()) {
+        for (final NodeInfo nodeInfo : cluster.getNodeInfos()) {
             final NodeState nodeState = computeEffectiveNodeState(nodeInfo, params, nodeStateReasons);
             workingState.setNodeState(nodeInfo.getNode(), nodeState);
         }

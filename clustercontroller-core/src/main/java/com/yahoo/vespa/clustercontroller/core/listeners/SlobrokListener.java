@@ -4,9 +4,9 @@ package com.yahoo.vespa.clustercontroller.core.listeners;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 
 /**
- * Listeners for new nodes detected.
+ * Implemented by classes that wants to be notified of Slobrok events.
  */
-public interface NodeAddedOrRemovedListener {
+public interface SlobrokListener {
     void handleNewNode(NodeInfo node);
     void handleMissingNode(NodeInfo node);
     void handleNewRpcAddress(NodeInfo node);

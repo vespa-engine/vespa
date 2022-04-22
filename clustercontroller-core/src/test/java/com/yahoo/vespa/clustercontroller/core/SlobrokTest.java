@@ -99,7 +99,7 @@ public class SlobrokTest extends FleetControllerTest {
     private boolean clusterAvailable() {
         boolean ok = true;
         ContentCluster cluster = fleetController.getCluster();
-        for (NodeInfo info : cluster.getNodeInfo()) {
+        for (NodeInfo info : cluster.getNodeInfos()) {
             if (info.getConnectionAttemptCount() > 0) ok = false;
             if (info.getLatestNodeStateRequestTime() == null) ok = false;
         }
@@ -107,7 +107,7 @@ public class SlobrokTest extends FleetControllerTest {
     }
     private void assertClusterAvailable() {
         ContentCluster cluster = fleetController.getCluster();
-        for (NodeInfo info : cluster.getNodeInfo()) {
+        for (NodeInfo info : cluster.getNodeInfos()) {
             assertEquals("Node " + info + " connection attempts.", 0, info.getConnectionAttemptCount());
             assertTrue("Node " + info + " has no last request time.", info.getLatestNodeStateRequestTime() != 0);
         }

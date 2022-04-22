@@ -2,11 +2,12 @@
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vespa.clustercontroller.core.*;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 public class ClusterControllerMock implements RemoteClusterControllerTaskScheduler {
     public RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
@@ -40,16 +41,21 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
                 return fleetControllerMaster;
             }
         };
-        context.nodeStateOrHostInfoChangeHandler = new NodeStateOrHostInfoChangeHandler() {
+        context.nodeListener = new NodeListener() {
 
             @Override
             public void handleNewNodeState(NodeInfo currentInfo, NodeState newState) {
-                events.append("newNodeState(").append(currentInfo.getNode()).append(": ").append(newState).append("\n");
+                events.append("newNodeState(").append(currentInfo.getNode()).append(": ").append(newState).append('\n');
             }
 
             @Override
             public void handleNewWantedNodeState(NodeInfo node, NodeState newState) {
-                events.append("newWantedNodeState(").append(node.getNode()).append(": ").append(newState).append("\n");
+                events.append("newWantedNodeState(").append(node.getNode()).append(": ").append(newState).append('\n');
+            }
+
+            @Override
+            public void handleRemovedNode(Node node) {
+                events.append("handleRemovedNode(").append(node).append(")\n");
             }
 
             @Override
@@ -59,7 +65,7 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
             }
 
         };
-        context.nodeAddedOrRemovedListener = new NodeAddedOrRemovedListener() {
+        context.slobrokListener = new SlobrokListener() {
 
             @Override
             public void handleNewNode(NodeInfo node) {
@@ -68,12 +74,12 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
 
             @Override
             public void handleMissingNode(NodeInfo node) {
-                events.append("newMissingNode(").append(node.getNode()).append("\n");
+                events.append("newMissingNode(").append(node.getNode()).append('\n');
             }
 
             @Override
             public void handleNewRpcAddress(NodeInfo node) {
-                events.append("newRpcAddress(").append(node.getNode()).append("\n");
+                events.append("newRpcAddress(").append(node.getNode()).append('\n');
             }
 
             @Override

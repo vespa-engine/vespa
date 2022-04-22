@@ -2,8 +2,8 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 import java.time.Instant;
 import java.util.Optional;
@@ -15,8 +15,8 @@ public abstract class RemoteClusterControllerTask {
         public ClusterState currentConsolidatedState;
         public ClusterStateBundle publishedClusterStateBundle;
         public MasterInterface masterInfo;
-        public NodeStateOrHostInfoChangeHandler nodeStateOrHostInfoChangeHandler;
-        public NodeAddedOrRemovedListener nodeAddedOrRemovedListener;
+        public NodeListener nodeListener;
+        public SlobrokListener slobrokListener;
     }
 
     private final Object monitor = new Object();

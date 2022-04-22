@@ -10,6 +10,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.HtmlTable;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
@@ -42,7 +43,7 @@ public class ContentCluster {
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
         this.distribution = distribution;
-        setNodes(configuredNodes);
+        setNodes(configuredNodes, new NodeListener() {});
     }
 
     // TODO move out, this doesn't belong in a domain model class
@@ -104,14 +105,14 @@ public class ContentCluster {
 
     public void setDistribution(Distribution distribution) {
         this.distribution = distribution;
-        for (NodeInfo info : clusterInfo.getAllNodeInfo()) {
+        for (NodeInfo info : clusterInfo.getAllNodeInfos()) {
             info.setGroup(distribution);
         }
     }
 
     /** Sets the configured nodes of this cluster */
-    public final void setNodes(Collection<ConfiguredNode> configuredNodes) {
-        clusterInfo.setNodes(configuredNodes, this, distribution);
+    public final void setNodes(Collection<ConfiguredNode> configuredNodes, NodeListener nodeListener) {
+        clusterInfo.setNodes(configuredNodes, this, distribution, nodeListener);
     }
 
     public void setStartTimestamp(Node n, long startTimestamp) {
@@ -128,7 +129,7 @@ public class ContentCluster {
     }
 
     public void clearStates() {
-        for (NodeInfo info : clusterInfo.getAllNodeInfo()) {
+        for (NodeInfo info : clusterInfo.getAllNodeInfos()) {
             info.setReportedState(null, 0);
         }
     }
@@ -145,8 +146,8 @@ public class ContentCluster {
         return clusterInfo.getConfiguredNodes();
     }
 
-    public Collection<NodeInfo> getNodeInfo() {
-        return Collections.unmodifiableCollection(clusterInfo.getAllNodeInfo());
+    public Collection<NodeInfo> getNodeInfos() {
+        return Collections.unmodifiableCollection(clusterInfo.getAllNodeInfos());
     }
 
     public ClusterInfo clusterInfo() { return clusterInfo; }
@@ -158,7 +159,7 @@ public class ContentCluster {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("ContentCluster(").append(clusterName).append(") {");
-        for (NodeInfo node : clusterInfo.getAllNodeInfo()) {
+        for (NodeInfo node : clusterInfo.getAllNodeInfos()) {
             sb.append("\n  ").append(node);
         }
         sb.append("\n}");
@@ -197,14 +198,14 @@ public class ContentCluster {
         switch (state) {
             case MAINTENANCE:  // Orchestrator's ALLOWED_TO_BE_DOWN
             case DOWN:  // Orchestrator's PERMANENTLY_DOWN
-                return clusterInfo.getStorageNodeInfo().stream()
-                        .filter(storageNodeInfo -> {
+                return clusterInfo.getStorageNodeInfos().stream()
+                                  .filter(storageNodeInfo -> {
                             NodeState userWantedState = storageNodeInfo.getUserWantedState();
                             return userWantedState.getState() == state &&
                                     Objects.equals(userWantedState.getDescription(), ORCHESTRATOR_RESERVED_DESCRIPTION);
                         })
-                        .map(NodeInfo::getNodeIndex)
-                        .collect(Collectors.toList());
+                                  .map(NodeInfo::getNodeIndex)
+                                  .collect(Collectors.toList());
             default:
                 // Note: There is no trace left if the Orchestrator set the state to UP, so that's handled
                 // like any other state:

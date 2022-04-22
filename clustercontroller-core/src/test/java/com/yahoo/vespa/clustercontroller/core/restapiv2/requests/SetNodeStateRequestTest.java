@@ -10,7 +10,7 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.NodeInfo;
 import com.yahoo.vespa.clustercontroller.core.NodeStateChangeChecker;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SetResponse;
@@ -38,7 +38,7 @@ public class SetNodeStateRequestTest {
     private final UnitState unitState = mock(UnitState.class);
     private final int NODE_INDEX = 2;
     private final Node storageNode = new Node(NodeType.STORAGE, NODE_INDEX);
-    private final NodeStateOrHostInfoChangeHandler stateListener = mock(NodeStateOrHostInfoChangeHandler.class);
+    private final NodeListener stateListener = mock(NodeListener.class);
     private final ClusterState currentClusterState = mock(ClusterState.class);
     private boolean inMasterMoratorium = false;
     private boolean probe = false;

@@ -7,20 +7,19 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-
-import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
-import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import org.junit.Test;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import static com.yahoo.vespa.clustercontroller.core.matchers.EventForNode.eventForNode;
+import static com.yahoo.vespa.clustercontroller.core.matchers.NodeEventWithDescription.nodeEventWithDescription;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsCollectionContaining.hasItem;
 import static org.junit.Assert.assertEquals;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -179,7 +178,7 @@ public class GroupAutoTakedownTest {
 
         // However, once grace period expires the group should be taken down.
         fixture.timer.advanceTime(1001);
-        NodeStateOrHostInfoChangeHandler changeListener = mock(NodeStateOrHostInfoChangeHandler.class);
+        NodeListener changeListener = mock(NodeListener.class);
         fixture.nodeStateChangeHandler.watchTimers(
                 fixture.cluster, fixture.annotatedGeneratedClusterState().getClusterState(), changeListener);
 
@@ -253,7 +252,7 @@ public class GroupAutoTakedownTest {
         nodes.add(new ConfiguredNode(5, true));
         // TODO this should ideally also set the retired flag in the distribution
         // config, but only the ConfiguredNodes are actually looked at currently.
-        fixture.cluster.setNodes(nodes);
+        fixture.cluster.setNodes(nodes, new NodeListener() {});
 
         assertEquals("distributor:6 storage:6 .4.s:d .5.s:r",
                 stateAfterStorageTransition(fixture, 5, State.UP));
