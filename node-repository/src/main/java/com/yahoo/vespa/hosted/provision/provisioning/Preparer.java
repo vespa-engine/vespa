@@ -34,10 +34,9 @@ class Preparer {
     }
 
     /** Prepare all required resources for the given application and cluster */
-    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups,
-                              boolean reuseIndexes) {
+    public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
         try {
-            var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups, reuseIndexes);
+            var nodes = prepareNodes(application, cluster, requestedNodes, wantedGroups);
             prepareLoadBalancer(application, cluster, requestedNodes);
             return nodes;
         }
@@ -57,13 +56,13 @@ class Preparer {
      // but it may not change the set of active nodes, as the active nodes must stay in sync with the
      // active config model which is changed on activate
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                    int wantedGroups, boolean reuseIndexes) {
+                                    int wantedGroups) {
         NodesAndHosts<LockedNodeList> allNodesAndHosts = groupPreparer.createNodesAndHostUnlocked();
         NodeList appNodes = allNodesAndHosts.nodes().owner(application);
         List<Node> surplusNodes = findNodesInRemovableGroups(appNodes, cluster, wantedGroups);
 
         List<Integer> usedIndices = appNodes.cluster(cluster.id()).mapToList(node -> node.allocation().get().membership().index());
-        NodeIndices indices = new NodeIndices(usedIndices, reuseIndexes || ! cluster.type().isContent());
+        NodeIndices indices = new NodeIndices(usedIndices);
         List<Node> acceptedNodes = new ArrayList<>();
 
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {

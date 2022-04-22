@@ -10,39 +10,11 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author jonmv
  */
-public class NodeIncidesTest {
+public class NodeIndicesTest {
 
     @Test
-    public void testNonCompactIndices() {
-        NodeIndices indices = new NodeIndices(List.of(1, 3, 4), false);
-        assertEquals(5, indices.probeNext());
-        assertEquals(6, indices.probeNext());
-
-        indices.resetProbe();
-        assertEquals(5, indices.probeNext());
-        assertEquals(6, indices.probeNext());
-
-        indices.commitProbe();
-        assertEquals(7, indices.probeNext());
-        assertEquals(8, indices.probeNext());
-
-        indices.resetProbe();
-        assertEquals(7, indices.next());
-        assertEquals(8, indices.next());
-
-        assertEquals(9, indices.probeNext());
-        try {
-            indices.next();
-        }
-        catch (IllegalStateException e) {
-            assertEquals("Must commit ongoing probe before calling 'next'", e.getMessage());
-        }
-    }
-
-
-    @Test
-    public void testCompactIndices() {
-        NodeIndices indices = new NodeIndices(List.of(1, 3, 4), true);
+    public void testNodeIndices() {
+        NodeIndices indices = new NodeIndices(List.of(1, 3, 4));
         assertEquals(0, indices.probeNext());
         assertEquals(2, indices.probeNext());
         assertEquals(5, indices.probeNext());

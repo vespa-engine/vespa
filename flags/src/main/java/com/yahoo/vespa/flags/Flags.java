@@ -369,13 +369,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REUSE_NODE_INDEXES = defineFeatureFlag(
-            "reuse-node-indexes", true,
-            List.of("bratseth"), "2022-02-25", "2022-04-25",
-            "Whether we should reuse earlier indexes when allocating new nodes",
-            "Takes effect immediately",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER = defineFeatureFlag(
             "merge-grouping-result-in-search-invoker", false,
             List.of("bjorncs", "baldersheim"), "2022-02-23", "2022-08-01",

@@ -114,10 +114,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
             resources = getNodeResources(cluster, requested.minResources().nodeResources(), application);
             nodeSpec = NodeSpec.from(requested.type());
         }
-        var reuseIndexes = Flags.REUSE_NODE_INDEXES.bindTo(nodeRepository.flagSource())
-                                                   .with(FetchVector.Dimension.ZONE_ID, zone.systemLocalValue())
-                                                   .value();
-        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups, reuseIndexes), resources);
+        return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
 
     private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
