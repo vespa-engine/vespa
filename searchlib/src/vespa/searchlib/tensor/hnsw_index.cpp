@@ -555,7 +555,7 @@ HnswIndex::compact_link_arrays(CompactionSpec compaction_spec, const CompactionS
 bool
 HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_strategy)
 {
-    if (_compaction_spec.level_arrays().compact()) {
+    if (!_graph.nodes.has_held_buffers() && _compaction_spec.level_arrays().compact()) {
         compact_level_arrays(_compaction_spec.level_arrays(), compaction_strategy);
         return true;
     }
@@ -565,7 +565,7 @@ HnswIndex::consider_compact_level_arrays(const CompactionStrategy& compaction_st
 bool
 HnswIndex::consider_compact_link_arrays(const CompactionStrategy& compaction_strategy)
 {
-    if (_compaction_spec.link_arrays().compact()) {
+    if (!_graph.links.has_held_buffers() && _compaction_spec.link_arrays().compact()) {
         compact_link_arrays(_compaction_spec.link_arrays(), compaction_strategy);
         return true;
     }

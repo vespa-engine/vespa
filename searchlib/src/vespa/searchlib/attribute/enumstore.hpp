@@ -226,7 +226,7 @@ template <typename EntryT>
 std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryT>::consider_compact_values(const CompactionStrategy& compaction_strategy)
 {
-    if (_compaction_spec.get_values().compact()) {
+    if (!_store.get_data_store().has_held_buffers() && _compaction_spec.get_values().compact()) {
         return compact_worst_values(_compaction_spec.get_values(), compaction_strategy);
     }
     return std::unique_ptr<IEnumStore::EnumIndexRemapper>();

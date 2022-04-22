@@ -50,6 +50,13 @@ MultiValueMapping<EntryT,RefT>::compactWorst(CompactionSpec compaction_spec, con
 }
 
 template <typename EntryT, typename RefT>
+bool
+MultiValueMapping<EntryT,RefT>::has_held_buffers() const noexcept
+{
+    return _store.has_held_buffers();
+}
+
+template <typename EntryT, typename RefT>
 vespalib::MemoryUsage
 MultiValueMapping<EntryT,RefT>::getArrayStoreMemoryUsage() const
 {

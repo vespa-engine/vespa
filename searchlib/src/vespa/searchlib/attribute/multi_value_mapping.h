@@ -55,7 +55,10 @@ public:
     void doneLoadFromMultiValue() { _store.setInitializing(false); }
 
     void compactWorst(CompactionSpec compactionSpec, const CompactionStrategy& compaction_strategy) override;
+private:
+    virtual bool has_held_buffers() const noexcept override;
 
+public:
     vespalib::AddressSpace getAddressSpaceUsage() const override;
     vespalib::MemoryUsage getArrayStoreMemoryUsage() const override;
     bool has_free_lists_enabled() const { return _store.has_free_lists_enabled(); }

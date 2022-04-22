@@ -89,7 +89,7 @@ MultiValueMappingBase::updateStat(const CompactionStrategy& compaction_strategy)
 bool
 MultiValueMappingBase::considerCompact(const CompactionStrategy &compactionStrategy)
 {
-     if (_compaction_spec.compact()) {
+    if (!has_held_buffers() && _compaction_spec.compact()) {
         compactWorst(_compaction_spec, compactionStrategy);
         return true;
     }
