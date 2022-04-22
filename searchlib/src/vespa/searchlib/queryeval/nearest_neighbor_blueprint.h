@@ -41,10 +41,11 @@ private:
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
     Algorithm _algorithm;
     std::shared_ptr<const GlobalFilter> _global_filter;
+    bool _global_filter_set;
     std::optional<uint32_t> _global_filter_hits;
     std::optional<double> _global_filter_hit_ratio;
 
-    void perform_top_k();
+    void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index);
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              const tensor::ITensorAttribute& attr_tensor,
@@ -60,7 +61,6 @@ public:
     const vespalib::eval::Value& get_query_tensor() const { return *_query_tensor; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
     void set_global_filter(const GlobalFilter &global_filter) override;
-    bool may_approximate() const { return _approximate; }
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _distance_threshold; }
 
