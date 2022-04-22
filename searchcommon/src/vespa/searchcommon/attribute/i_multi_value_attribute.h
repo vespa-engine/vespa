@@ -18,15 +18,15 @@ namespace search::attribute {
 class IMultiValueAttribute {
 public:
     template<typename MultiValueType>
-    class Tag {};
+    class MultiValueTag {};
 
     template<typename T>
-    using ArrayTag = Tag<T>;
+    using ArrayTag = MultiValueTag<T>;
 
     using ArrayEnumTag = ArrayTag<vespalib::datastore::AtomicEntryRef>;
 
     template<typename T>
-    using WeightedSetTag = Tag<search::multivalue::WeightedValue<T>>;
+    using WeightedSetTag = MultiValueTag<search::multivalue::WeightedValue<T>>;
 
     using WeightedSetEnumTag = WeightedSetTag<vespalib::datastore::AtomicEntryRef>;
 

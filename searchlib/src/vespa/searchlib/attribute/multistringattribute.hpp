@@ -50,15 +50,15 @@ MultiValueStringAttributeT<B, M>::getSearch(QueryTermSimpleUP qTerm,
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueReadView<const char*>*
-MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<const char*>, vespalib::Stash& stash) const
+const attribute::IArrayReadView<const char*>*
+MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::EnumeratedMultiValueReadView<const char*, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>*
-MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<const char*>*
+MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<const char*>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }

@@ -89,7 +89,7 @@ public:
     bool isImported() const override;
     bool isUndefined(DocId doc) const override;
     template <typename MultiValueType>
-    const IMultiValueReadView<MultiValueType>* make_read_view_helper(Tag<MultiValueType> tag, vespalib::Stash& stash) const;
+    const IMultiValueReadView<MultiValueType>* make_read_view_helper(MultiValueTag<MultiValueType> tag, vespalib::Stash& stash) const;
     const IArrayReadView<int8_t>* make_read_view(ArrayTag<int8_t> tag, vespalib::Stash& stash) const override;
     const IArrayReadView<int16_t>* make_read_view(ArrayTag<int16_t> tag, vespalib::Stash& stash) const override;
     const IArrayReadView<int32_t>* make_read_view(ArrayTag<int32_t> tag, vespalib::Stash& stash) const override;

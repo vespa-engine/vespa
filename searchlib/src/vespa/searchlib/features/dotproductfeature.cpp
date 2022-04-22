@@ -390,7 +390,7 @@ make_multi_value_read_view(const IAttributeVector& attribute, vespalib::Stash& s
 {
     auto multi_value_attribute = attribute.as_multi_value_attribute();
     if (multi_value_attribute != nullptr) {
-        return multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<AT>(), stash);
+        return multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::MultiValueTag<AT>(), stash);
     }
     return nullptr;
 }

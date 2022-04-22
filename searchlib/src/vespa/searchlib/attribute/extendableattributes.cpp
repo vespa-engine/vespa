@@ -54,15 +54,15 @@ MultiExtAttribute<T>::as_multi_value_attribute() const
 }
 
 template <typename T>
-const attribute::IMultiValueReadView<T>*
-MultiExtAttribute<T>::make_read_view(attribute::IMultiValueAttribute::Tag<T>, vespalib::Stash& stash) const
+const attribute::IArrayReadView<T>*
+MultiExtAttribute<T>::make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::ExtendableNumericArrayMultiValueReadView<T, T>>(this->_data, this->_idx);
 }
 
 template <typename T>
-const attribute::IMultiValueReadView<multivalue::WeightedValue<T>>*
-MultiExtAttribute<T>::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<T>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<T>*
+MultiExtAttribute<T>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::ExtendableNumericArrayMultiValueReadView<multivalue::WeightedValue<T>, T>>(this->_data, this->_idx);
 }
@@ -110,14 +110,14 @@ MultiStringExtAttribute::as_multi_value_attribute() const
     return this;
 }
 
-const attribute::IMultiValueReadView<const char*>*
-MultiStringExtAttribute::make_read_view(attribute::IMultiValueAttribute::Tag<const char*>, vespalib::Stash& stash) const
+const attribute::IArrayReadView<const char*>*
+MultiStringExtAttribute::make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::ExtendableStringArrayMultiValueReadView<const char*>>(this->_buffer, this->_offsets, this->_idx);
 }
 
-const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>*
-MultiStringExtAttribute::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<const char*>*
+MultiStringExtAttribute::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::ExtendableStringArrayMultiValueReadView<multivalue::WeightedValue<const char*>>>(this->_buffer, this->_offsets, this->_idx);
 }
@@ -150,8 +150,8 @@ WeightedSetIntegerExtAttribute::get(DocId doc, AttributeVector::WeightedInt * v,
     return valueCount;
 }
 
-const attribute::IMultiValueReadView<multivalue::WeightedValue<int64_t>>*
-WeightedSetIntegerExtAttribute::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<int64_t>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<int64_t>*
+WeightedSetIntegerExtAttribute::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<int64_t>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::ExtendableNumericWeightedSetMultiValueReadView<multivalue::WeightedValue<int64_t>, int64_t>>(this->_data, this->_idx, this->get_weights());
 }
@@ -182,8 +182,8 @@ WeightedSetFloatExtAttribute::get(DocId doc, AttributeVector::WeightedFloat * v,
     return valueCount;
 }
 
-const attribute::IMultiValueReadView<multivalue::WeightedValue<double>>*
-WeightedSetFloatExtAttribute::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<double>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<double>*
+WeightedSetFloatExtAttribute::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<double>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::ExtendableNumericWeightedSetMultiValueReadView<multivalue::WeightedValue<double>, double>>(this->_data, this->_idx, this->get_weights());
 }
@@ -216,8 +216,8 @@ WeightedSetStringExtAttribute::get(DocId doc, AttributeVector::WeightedConstChar
     return getAllHelper(doc, v, sz);
 }
 
-const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>*
-WeightedSetStringExtAttribute::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<const char*>*
+WeightedSetStringExtAttribute::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const
 {
     return &stash.create<attribute::ExtendableStringWeightedSetMultiValueReadView<multivalue::WeightedValue<const char*>>>(this->_buffer, this->_offsets, this->_idx, this->get_weights());
 }
