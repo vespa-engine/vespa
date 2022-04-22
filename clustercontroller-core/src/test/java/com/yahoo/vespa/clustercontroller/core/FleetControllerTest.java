@@ -84,7 +84,7 @@ public abstract class FleetControllerTest implements Waiter {
 
     static {
         LogSetup.initVespaLogging("fleetcontroller");
-        timeoutS = 120;
+        timeoutS = 30;
         timeoutMS = timeoutS * 1000;
     }
 
