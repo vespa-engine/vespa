@@ -18,6 +18,7 @@ import java.nio.file.Files;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -124,6 +125,14 @@ public class FilesApplicationPackageTest {
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("services.xml in application package is empty"));
         }
+    }
+
+    @Test
+    public void testApplicationFile() {
+        assertEquals("'..' is not allowed in path",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> FilesApplicationPackage.applicationFile(new File("foo"), ".."))
+                             .getMessage());
     }
 
 }
