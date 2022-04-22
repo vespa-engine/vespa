@@ -651,6 +651,11 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
+                <artifactId>maven-archiver</artifactId>
+                <version>${maven-archiver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
                 <version>${maven-core.version}</version>
             </dependency>
@@ -940,6 +945,7 @@
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
         <jna.version>5.9.0</jna.version>
         <junit.version>5.8.1</junit.version>
+        <maven-archiver.version>3.5.2</maven-archiver.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <maven-bundle-plugin.version>5.1.2</maven-bundle-plugin.version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
