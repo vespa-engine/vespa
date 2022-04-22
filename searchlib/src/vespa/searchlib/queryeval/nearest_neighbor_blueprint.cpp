@@ -125,19 +125,13 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
     _global_filter = global_filter.shared_from_this();
     _global_filter_set = true;
     auto nns_index = _attr_tensor.nearest_neighbor_index();
-    LOG(debug, "set_global_filter with: %s / %s / %s",
-        (_approximate ? "approximate" : "exact"),
-        (nns_index ? "nns_index" : "no_index"),
-        (_global_filter->has_filter() ? "has_filter" : "no_filter"));
     if (_approximate && nns_index) {
         uint32_t est_hits = _attr_tensor.get_num_docs();
         if (_global_filter->has_filter()) {
             uint32_t max_hits = _global_filter->filter()->countTrueBits();
-            LOG(debug, "set_global_filter getNumDocs: %u / max_hits %u", est_hits, max_hits);
             double max_hit_ratio = static_cast<double>(max_hits) / est_hits;
             if (max_hit_ratio < _global_filter_lower_limit) {
                 _algorithm = Algorithm::BRUTE_FORCE_FALLBACK;
-                LOG(debug, "too many hits filtered out, using brute force implementation");
             } else {
                 est_hits = std::min(est_hits, max_hits);
             }
@@ -148,7 +142,6 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
             est_hits = std::min(est_hits, _target_num_hits);
             setEstimate(HitEstimate(est_hits, false));
             perform_top_k(nns_index);
-            LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
         }
     }
 }
