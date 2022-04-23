@@ -50,7 +50,7 @@ TEST("require that nice value is tracked per thread") {
     for (int i = 0; i < 5; ++i) {
         threads.push_back(run_with_init([my_barrier = &barrier, i]
                                         {
-                                            nice(i);
+                                            [[maybe_unused]] auto nice_result = nice(i);
                                             (*my_barrier)();
                                             EXPECT_EQUAL(nice(0), i);
                                         }));
