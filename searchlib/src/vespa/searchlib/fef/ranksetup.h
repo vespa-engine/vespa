@@ -74,7 +74,6 @@ private:
     bool                     _softTimeoutEnabled;
     double                   _softTimeoutTailCost;
     double                   _softTimeoutFactor;
-    double                   _nearest_neighbor_brute_force_limit;
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
     MutateOperation          _mutateOnMatch;
