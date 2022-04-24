@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
@@ -197,6 +198,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public URI dashboardUrl(ApplicationId id) {
         return URI.create("https://dashboard.tld/" + id);
+    }
+
+    @Override
+    public URI dashboardUrl(TenantName tenantName, ApplicationName applicationName) {
+        return URI.create("https://dashboard.tld/" + tenantName + "/" + applicationName);
     }
 
     @Override
