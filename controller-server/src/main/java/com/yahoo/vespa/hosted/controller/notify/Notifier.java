@@ -102,7 +102,7 @@ public class Notifier {
                 .append(String.join("\n", n.messages()))
                 .append("\n")
                 .append(url(source).toString());
-        return new Mail(recipients, subject.toString(), body.toString());
+        return new Mail(recipients, subject, body.toString());
     }
 
     private String applicationIdSource(NotificationSource source) {
