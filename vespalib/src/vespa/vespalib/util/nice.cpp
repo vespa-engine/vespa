@@ -15,7 +15,7 @@ void set_nice_value(double how_nice) {
         int now = nice(0);
         int max = 19;
         int max_inc = (max - now);
-        nice(std::min(max_inc, int(how_nice * (max_inc + 1))));
+        [[maybe_unused]] auto nice_result = nice(std::min(max_inc, int(how_nice * (max_inc + 1))));
 #endif
     }
 }
