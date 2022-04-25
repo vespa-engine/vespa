@@ -7,11 +7,9 @@ search args {
         }
         field t1 type tensor<float>(x{}) {
             indexing: attribute | summary
-            attribute: fast-search
         }
         field t2 type tensor<float>(x{}) {
             indexing: attribute | summary
-            attribute: fast-rank
         }
     }
 

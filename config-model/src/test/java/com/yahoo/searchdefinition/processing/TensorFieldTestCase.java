@@ -128,6 +128,14 @@ public class TensorFieldTestCase {
                 "field t1 type tensor(x{},y{},z[4]) { indexing: attribute \n attribute: fast-search }", "t1").isFastSearch());
     }
 
+    @Test
+    public void tensors_with_at_least_one_mapped_dimension_can_be_fast_rank() throws ParseException {
+        assertTrue(getAttributeFromSd(
+                "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank }", "t1").isFastRank());
+        assertTrue(getAttributeFromSd(
+                "field t1 type tensor(x{},y{},z[4]) { indexing: attribute \n attribute: fast-rank }", "t1").isFastRank());
+    }
+
     private static String getSd(String field) {
         return joinLines("search test {",
                 "  document test {",

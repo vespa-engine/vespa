@@ -4,11 +4,9 @@ search test {
     document test {
         field i1 type int {
             indexing: attribute | summary
-            attribute: fast-search
         }
         field t1 type tensor<float>(x{}) {
             indexing: attribute | summary
-            attribute: fast-rank
         }
         field t2 type tensor<float>(x{}) {
             indexing: attribute | summary

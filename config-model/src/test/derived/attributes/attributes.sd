@@ -102,6 +102,11 @@ search attributes {
       rank: filter
     }
 
+    field a13 type tensor(x{}) {
+      indexing: attribute
+      attribute: fast-rank
+    }
+
   }
 
   field a7_arr type array<string> {
