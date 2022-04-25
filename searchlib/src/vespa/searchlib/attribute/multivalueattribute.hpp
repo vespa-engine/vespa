@@ -300,8 +300,8 @@ MultiValueAttribute<B, M>::as_multi_value_attribute() const
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueReadView<multivalue::ValueType_t<M>>*
-MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<ValueType>, vespalib::Stash& stash) const
+const attribute::IArrayReadView<multivalue::ValueType_t<M>>*
+MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::ArrayTag<ValueType>, vespalib::Stash& stash) const
 {
     if constexpr (std::is_same_v<MultiValueType, ValueType>) {
         return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));
@@ -311,8 +311,8 @@ MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<V
 }
 
 template <typename B, typename M>
-const attribute::IMultiValueReadView<multivalue::WeightedValue<multivalue::ValueType_t<M>>>*
-MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<ValueType>>, vespalib::Stash& stash) const
+const attribute::IWeightedSetReadView<multivalue::ValueType_t<M>>*
+MultiValueAttribute<B, M>::make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<ValueType>, vespalib::Stash& stash) const
 {
     if constexpr (std::is_same_v<MultiValueType, multivalue::WeightedValue<ValueType>>) {
         return &stash.create<attribute::RawMultiValueReadView<MultiValueType>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()));

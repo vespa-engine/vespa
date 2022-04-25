@@ -144,10 +144,9 @@ template<typename BaseType, typename V>
 FeatureExecutor &
 selectTypedExecutor(const IAttributeVector *attribute, V && vector, vespalib::Stash &stash) {
     if (!attribute->isImported()) {
-        using VT = BaseType;
         auto multi_value_attribute = attribute->as_multi_value_attribute();
         if (multi_value_attribute != nullptr) {
-            auto array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<VT>(), stash);
+            auto array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::ArrayTag<BaseType>(), stash);
             if (array_read_view != nullptr) {
                 return stash.create<RawExecutor<BaseType>>(array_read_view, std::forward<V>(vector));
             }

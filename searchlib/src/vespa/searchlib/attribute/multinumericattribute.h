@@ -91,9 +91,6 @@ public:
         (void) doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
     }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
@@ -124,9 +121,6 @@ public:
             e[i] = E(std::numeric_limits<uint32_t>::max()); // does not have enum
         }
         return available;
-    }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override{
-        return getWeightedHelper<Weighted, T>(doc, v, sz);
     }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);

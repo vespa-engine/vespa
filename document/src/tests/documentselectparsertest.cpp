@@ -637,6 +637,16 @@ TEST_F(DocumentSelectParserTest, operators_1)
     PARSE("14.3 == null", *_doc[0], False);
     PARSE("null = 0", *_doc[0], False);
 
+    // Boolean literals in comparisons
+    PARSE("true = true", *_doc[0], True);
+    PARSE("true == true", *_doc[0], True);
+    PARSE("true == false", *_doc[0], False);
+    PARSE("false == false", *_doc[0], True);
+    PARSE("true == 1", *_doc[0], True);
+    PARSE("true == 0", *_doc[0], False);
+    PARSE("false == 1", *_doc[0], False);
+    PARSE("false == 0", *_doc[0], True);
+
     // Field values
     PARSE("testdoctype1.headerval = 24", *_doc[0], True);
     PARSE("testdoctype1.headerval = 24", *_doc[1], False);
@@ -925,12 +935,19 @@ TEST_F(DocumentSelectParserTest, operators_9)
 
 TEST_F(DocumentSelectParserTest, can_use_boolean_fields_in_expressions) {
     createDocs();
-    PARSE("testdoctype1.boolfield == 1", *_doc[11], True); // has explicit field set to true
-    PARSE("testdoctype1.boolfield == 1", *_doc[12], False); // has explicit field set to false
+    // Doc 11 has bool field set explicitly to true, doc 12 has field explicitly set to false
+    PARSE("testdoctype1.boolfield == 1", *_doc[11], True);
+    PARSE("testdoctype1.boolfield == true", *_doc[11], True);
+    PARSE("testdoctype1.boolfield == 1", *_doc[12], False);
+    PARSE("testdoctype1.boolfield == true", *_doc[12], False);
     PARSE("testdoctype1.boolfield == 0", *_doc[12], True);
+    PARSE("testdoctype1.boolfield == false", *_doc[12], True);
     // FIXME very un-intuitive behavior when nulls are implicitly returned:
-    PARSE("testdoctype1.boolfield == 1", *_doc[1], False); // Does not have field set in document
-    PARSE("testdoctype1.boolfield == 0", *_doc[1], False); // Does not have field set in document
+    // Doc 1 does not have the bool field set, but the implicit null value is neither true nor false
+    PARSE("testdoctype1.boolfield == 1", *_doc[1], False);
+    PARSE("testdoctype1.boolfield == true", *_doc[1], False);
+    PARSE("testdoctype1.boolfield == 0", *_doc[1], False);
+    PARSE("testdoctype1.boolfield == false", *_doc[1], False);
 }
 
 namespace {
@@ -989,6 +1006,7 @@ namespace {
         void visitFloatValueNode(const select::FloatValueNode &) override {}
         void visitVariableValueNode(const select::VariableValueNode &) override {}
         void visitIntegerValueNode(const select::IntegerValueNode &) override {}
+        void visitBoolValueNode(const select::BoolValueNode &) override {}
         void visitCurrentTimeValueNode(const select::CurrentTimeValueNode &) override {}
         void visitStringValueNode(const select::StringValueNode &) override {}
         void visitNullValueNode(const select::NullValueNode &) override {}
@@ -1392,6 +1410,9 @@ public:
     void visitIntegerValueNode(const select::IntegerValueNode& node) override {
         data << node.getValue();
     }
+    void visitBoolValueNode(const select::BoolValueNode& node) override {
+        data << node.bool_value_str();
+    }
     void visitCurrentTimeValueNode(const select::CurrentTimeValueNode&) override {}
     void visitStringValueNode(const select::StringValueNode& str) override {
         data << '"' << str.getValue() << '"';
@@ -1489,6 +1510,17 @@ TEST_F(DocumentSelectParserTest, test_ambiguous_field_spec_expression_is_handled
     EXPECT_EQ("(!= (FIELD testdoctype1 foo) null)"s, parse_to_tree("(testdoctype1.foo)"));
     EXPECT_EQ("(AND (!= (FIELD testdoctype1 foo) null) (!= (FIELD testdoctype1 bar) null))"s,
                          parse_to_tree("(testdoctype1.foo) AND (testdoctype1.bar)"));
+}
+
+TEST_F(DocumentSelectParserTest, test_ambiguous_bool_expression_is_handled_correctly)
+{
+    createDocs();
+    using namespace std::string_literals;
+    // Bools both as high level Nodes and low level ValueNodes
+    EXPECT_EQ("(OR (AND true false) (== (FIELD testdoctype1 myfield) true))"s,
+              parse_to_tree("true and false or testdoctype1.myfield == true"));
+    EXPECT_EQ("(!= true false)"s, parse_to_tree("true != false"));
+    EXPECT_EQ("(!= true false)"s, parse_to_tree("(true) != (false)"));
 }
 
 TEST_F(DocumentSelectParserTest, special_tokens_are_allowed_as_freestanding_identifier_names) {

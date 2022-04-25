@@ -9,6 +9,7 @@
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <type_traits>
 #include <vespa/log/log.h>
 LOG_SETUP("multilevelsort_test");
 
@@ -61,8 +62,8 @@ private:
     template<typename T>
     void fill(FloatingPointAttribute *attr, uint32_t size, uint32_t unique = 0);
     void fill(StringAttribute *attr, uint32_t size, const std::vector<std::string> &values);
-    template<typename T, typename V>
-    int compareTemplate(T *vector, uint32_t a, uint32_t b);
+    template <typename V>
+    int compareTemplate(AttributeVector *vector, uint32_t a, uint32_t b);
     int compare(AttributeVector *vector, AttrType type, uint32_t a, uint32_t b);
     void sortAndCheck(const std::vector<Spec> &spec, uint32_t num,
                       uint32_t unique, const std::vector<std::string> &strValues);
@@ -138,14 +139,23 @@ MultilevelSortTest::fill(StringAttribute *attr, uint32_t size, const std::vector
     }
 }
 
-template<typename T, typename V>
+template <typename V>
+V get_helper(AttributeVector *vector, uint32_t doc_id) {
+    if constexpr (std::is_floating_point_v<V>) {
+        return vector->getFloat(doc_id);
+    } else {
+        return vector->getInt(doc_id);
+    }
+}
+
+template <typename V>
 int
-MultilevelSortTest::compareTemplate(T *vector, uint32_t a, uint32_t b)
+MultilevelSortTest::compareTemplate(AttributeVector *vector, uint32_t a, uint32_t b)
 {
     V va;
     V vb;
-    vector->getAll(a, &va, 1);
-    vector->getAll(b, &vb, 1);
+    va = get_helper<V>(vector, a);
+    vb = get_helper<V>(vector, b);
     if (va == vb) {
         return 0;
     } else if (va < vb) {
@@ -158,17 +168,17 @@ int
 MultilevelSortTest::compare(AttributeVector *vector, AttrType type, uint32_t a, uint32_t b)
 {
     if (type == INT8) {
-        return compareTemplate<Int8, int8_t>(static_cast<Int8*>(vector), a, b);
+        return compareTemplate<int8_t>(vector, a, b);
     } else if (type == INT16) {
-        return compareTemplate<Int16, int16_t>(static_cast<Int16*>(vector), a, b);
+        return compareTemplate<int16_t>(vector, a, b);
     } else if (type == INT32) {
-        return compareTemplate<Int32, int32_t>(static_cast<Int32*>(vector), a, b);
+        return compareTemplate<int32_t>(vector, a, b);
     } else if (type == INT64) {
-        return compareTemplate<Int64, int64_t>(static_cast<Int64*>(vector), a, b);
+        return compareTemplate<int64_t>(vector, a, b);
     } else if (type == FLOAT) {
-        return compareTemplate<Float, float>(static_cast<Float*>(vector), a, b);
+        return compareTemplate<float>(vector, a, b);
     } else if (type == DOUBLE) {
-        return compareTemplate<Double, double>(static_cast<Double*>(vector), a, b);
+        return compareTemplate<double>(vector, a, b);
     } else if (type == STRING) {
         StringAttribute *vString = static_cast<StringAttribute*>(vector);
         const char *va = vString->get(a);

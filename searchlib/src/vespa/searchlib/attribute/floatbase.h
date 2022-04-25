@@ -50,8 +50,6 @@ class  FloatingPointAttributeTemplate : public FloatingPointAttribute
 {
 public:
     using Weighted = WeightedType<T>;
-    virtual uint32_t getAll(DocId doc, T * v, uint32_t sz) const = 0;
-    virtual uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const = 0;
 protected:
     using EnumEntryType = T;
     using LoadedNumericValueT = attribute::LoadedNumericValue<T>;

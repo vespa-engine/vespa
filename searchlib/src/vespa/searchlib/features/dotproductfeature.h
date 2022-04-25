@@ -65,11 +65,14 @@ public:
     bool empty() const { return _vector.empty(); }
 };
 
+template <typename T>
+using NumericVectorBaseT = VectorBase<T, T, feature_t>;
+
 /**
  * Represents a vector where the dimensions are integers.
  **/
 template<typename T>
-class IntegerVectorT : public VectorBase<T, T, feature_t> {
+class IntegerVectorT : public NumericVectorBaseT<T> {
 public:
     void insert(vespalib::stringref label, vespalib::stringref value) {
         this->_vector.emplace_back(util::strToNum<T>(label), util::strToNum<feature_t>(value));
@@ -82,10 +85,12 @@ extern template class IntegerVectorT<int64_t>;
 
 using IntegerVector = IntegerVectorT<int64_t>;
 
+using StringVectorBase = VectorBase<vespalib::string, const char*, feature_t, ConstCharComparator>;
+
 /**
  * Represents a vector where the dimensions are string values.
  **/
-class StringVector : public VectorBase<vespalib::string, const char *, feature_t, ConstCharComparator> {
+class StringVector : public StringVectorBase {
 public:
     StringVector();
     StringVector(StringVector &&) = default;
@@ -121,7 +126,7 @@ template <typename BaseType>
 class DotProductExecutorBase : public fef::FeatureExecutor {
 public:
     using AT = multivalue::WeightedValue<BaseType>;
-    using V  = VectorBase<BaseType, BaseType, feature_t>;
+    using V  = std::conditional_t<std::is_same_v<BaseType,const char*>,StringVectorBase,NumericVectorBaseT<BaseType>>;
 private:
     const V                                    & _queryVector;
     const typename V::HashMap::const_iterator    _end;
@@ -147,25 +152,6 @@ public:
     DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, const V & queryVector);
     DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView * weighted_set_read_view, std::unique_ptr<V> queryVector);
     ~DotProductByWeightedSetReadViewExecutor();
-};
-
-
-/**
- * Implements the executor for the dotproduct feature.
- */
-template <typename Vector, typename Buffer>
-class DotProductExecutorByCopy final : public fef::FeatureExecutor {
-private:
-    const attribute::IAttributeVector *            _attribute;
-    const Vector &                                 _queryVector;
-    const typename Vector::HashMap::const_iterator _end;
-    Buffer                                         _buffer;
-    std::unique_ptr<Vector>                        _backing;
-public:
-    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, const Vector & queryVector);
-    DotProductExecutorByCopy(const attribute::IAttributeVector * attribute, std::unique_ptr<Vector> queryVector);
-    ~DotProductExecutorByCopy() override;
-    void execute(uint32_t docId) override;
 };
 
 }
@@ -222,43 +208,6 @@ public:
     ~DotProductExecutor();
 };
 
-template <typename A>
-class DotProductByCopyExecutor : public DotProductExecutor<A> {
-public:
-    typedef typename DotProductExecutor<A>::V V;
-    DotProductByCopyExecutor(const A * attribute, const V & queryVector);
-    ~DotProductByCopyExecutor();
-private:
-    vespalib::ConstArrayRef<typename A::BaseType> getAttributeValues(uint32_t docid) final override;
-    std::vector<typename A::BaseType> _copy;
-};
-
-/**
- * Dot product executor which uses AttributeContent for the specified base value type
- * to extract array elements from a given attribute vector. Used for "synthetic"
- * attribute vectors such as imported attributes, where we cannot directly access
- * the memory of the underlying attribute store.
- *
- * Some caveats:
- *   - 64 bit value type width is enforced, so 32-bit value types will not benefit
- *     from extra SIMD register capacity.
- *   - Additional overhead caused by call indirection and copy step.
- */
-template <typename BaseType>
-class DotProductByContentFillExecutor : public DotProductExecutorBase<BaseType> {
-public:
-    using V  = typename DotProductExecutorBase<BaseType>::V;
-    using ValueFiller = attribute::AttributeContent<BaseType>;
-
-    DotProductByContentFillExecutor(const attribute::IAttributeVector * attribute, const V & queryVector);
-    ~DotProductByContentFillExecutor();
-private:
-    vespalib::ConstArrayRef<BaseType> getAttributeValues(uint32_t docid) final override;
-
-    const attribute::IAttributeVector* _attribute;
-    ValueFiller _filler;
-};
-
 template <typename BaseType>
 class SparseDotProductExecutorBase : public DotProductExecutorBase<BaseType> {
 public:
@@ -284,42 +233,6 @@ public:
 private:
     vespalib::ConstArrayRef<BaseType> getAttributeValues(uint32_t docid) override;
     const ArrayReadView* _array_read_view;
-};
-
-template <typename A>
-class SparseDotProductByCopyExecutor : public SparseDotProductExecutorBase<typename A::BaseType> {
-public:
-    typedef std::vector<uint32_t> IV;
-    typedef typename SparseDotProductExecutorBase<typename A::BaseType>::V V;
-    SparseDotProductByCopyExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes);
-    ~SparseDotProductByCopyExecutor();
-private:
-    vespalib::ConstArrayRef<typename A::BaseType> getAttributeValues(uint32_t docid) final override;
-    const A*                          _attribute;
-    std::vector<typename A::BaseType> _copy;
-};
-
-/**
- * Dot product executor which uses AttributeContent for fetching values. See
- * DotProductByContentFillExecutor for a more in-depth description and caveats.
- */
-template <typename BaseType>
-class SparseDotProductByContentFillExecutor : public DotProductExecutorBase<BaseType> {
-public:
-    using IV = std::vector<uint32_t>;
-    using V  = typename DotProductExecutorBase<BaseType>::V;
-    using ValueFiller = attribute::AttributeContent<BaseType>;
-
-    SparseDotProductByContentFillExecutor(const attribute::IAttributeVector * attribute,
-                                          const V & queryVector,
-                                          const IV & queryIndexes);
-    ~SparseDotProductByContentFillExecutor() override;
-private:
-    vespalib::ConstArrayRef<BaseType> getAttributeValues(uint32_t docid) final override;
-
-    const attribute::IAttributeVector* _attribute;
-    IV          _queryIndexes;
-    ValueFiller _filler;
 };
 
 }

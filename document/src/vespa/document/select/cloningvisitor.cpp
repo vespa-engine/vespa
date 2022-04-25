@@ -10,30 +10,6 @@
 
 namespace document::select {
 
-const int CloningVisitor::OrPriority;
-const int CloningVisitor::AndPriority;
-const int CloningVisitor::NotPriority;
-const int CloningVisitor::ComparePriority;
-const int CloningVisitor::AddPriority;
-const int CloningVisitor::SubPriority;
-const int CloningVisitor::MulPriority;
-const int CloningVisitor::DivPriority;
-const int CloningVisitor::ModPriority;
-const int CloningVisitor::DocumentTypePriority;
-const int CloningVisitor::FieldValuePriority;
-const int CloningVisitor::InvalidConstPriority;
-const int CloningVisitor::InvalidValPriority;
-const int CloningVisitor::ConstPriority;
-const int CloningVisitor::FuncPriority;
-const int CloningVisitor::VariablePriority;
-const int CloningVisitor::FloatPriority;
-const int CloningVisitor::IntegerPriority;
-const int CloningVisitor::CurrentTimePriority;
-const int CloningVisitor::StringPriority;
-const int CloningVisitor::NullValPriority;
-const int CloningVisitor::IdPriority;
-const int CloningVisitor::SearchColPriority;
-
 CloningVisitor::CloningVisitor()
     : _node(),
       _valueNode(),
@@ -63,7 +39,7 @@ CloningVisitor::visitAndBranch(const And &expr)
     setNodeParentheses(priority);
     std::unique_ptr<Node> rhs(std::move(_node));
     _priority = priority;
-    _node.reset(new And(std::move(lhs), std::move(rhs), "and"));
+    _node = std::make_unique<And>(std::move(lhs), std::move(rhs), "and");
 };
 
 
@@ -83,7 +59,7 @@ CloningVisitor::visitOrBranch(const Or &expr)
     setNodeParentheses(priority);
     std::unique_ptr<Node> rhs(std::move(_node));
     _priority = priority;
-    _node.reset(new Or(std::move(lhs), std::move(rhs), "or"));
+    _node = std::make_unique<Or>(std::move(lhs), std::move(rhs), "or");
 };
 
 
@@ -96,7 +72,7 @@ CloningVisitor::visitNotBranch(const Not &expr)
     _resultSet.calcNot();
     std::unique_ptr<Node> child(std::move(_node));
     _priority = priority;
-    _node.reset(new Not(std::move(child), "not"));
+    _node = std::make_unique<Not>(std::move(child), "not");
 };
 
 
@@ -116,10 +92,7 @@ CloningVisitor::visitComparison(const Compare &expr)
     const Operator &op(expr.getOperator());
     _priority = priority;
     _resultSet.fill(); // should be less if const
-    _node.reset(new Compare(std::move(lhs),
-                            op,
-                            std::move(rhs),
-                            expr.getBucketIdFactory()));
+    _node = std::make_unique<Compare>(std::move(lhs), op, std::move(rhs), expr.getBucketIdFactory());
 };
 
 
@@ -149,7 +122,7 @@ CloningVisitor::visitFunctionValueNode(const FunctionValueNode &expr)
     setValueNodeParentheses(priority);
     std::unique_ptr<ValueNode> child(std::move(_valueNode));
     _priority = priority;
-    _valueNode.reset(new FunctionValueNode(expr.getFunctionName(), std::move(child)));
+    _valueNode = std::make_unique<FunctionValueNode>(expr.getFunctionName(), std::move(child));
 };
 
 
@@ -160,7 +133,7 @@ CloningVisitor::visitConstant(const Constant &expr)
     _priority = ConstPriority;
     bool val = expr.getConstantValue();
     _resultSet.add(val ? Result::True : Result::False);
-    _node.reset(new Constant(val));
+    _node = std::make_unique<Constant>(val);
 }
 
 
@@ -171,7 +144,7 @@ CloningVisitor::visitInvalidConstant(const InvalidConstant &expr)
     _constVal = true;
     _priority = InvalidConstPriority;
     _resultSet.add(Result::Invalid);
-    _node.reset(new InvalidConstant("invalid"));
+    _node = std::make_unique<InvalidConstant>("invalid");
 }
 
 
@@ -218,7 +191,7 @@ CloningVisitor::visitFloatValueNode(const FloatValueNode &expr)
 void
 CloningVisitor::visitVariableValueNode(const VariableValueNode &expr)
 {
-    _valueNode.reset(new VariableValueNode(expr.getVariableName()));
+    _valueNode = std::make_unique<VariableValueNode>(expr.getVariableName());
     _priority = VariablePriority;
 }
 
@@ -229,6 +202,15 @@ CloningVisitor::visitIntegerValueNode(const IntegerValueNode &expr)
     _constVal = true;
     _valueNode = expr.clone();
     _priority = IntegerPriority;
+}
+
+
+void
+CloningVisitor::visitBoolValueNode(const BoolValueNode &expr)
+{
+    _constVal = true;
+    _valueNode = expr.clone();
+    _priority = BoolPriority;
 }
 
 

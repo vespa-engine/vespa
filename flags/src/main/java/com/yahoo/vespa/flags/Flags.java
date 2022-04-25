@@ -369,20 +369,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REUSE_NODE_INDEXES = defineFeatureFlag(
-            "reuse-node-indexes", true,
-            List.of("bratseth"), "2022-02-25", "2022-04-25",
-            "Whether we should reuse earlier indexes when allocating new nodes",
-            "Takes effect immediately",
-            ZONE_ID);
-
-    public static final UnboundBooleanFlag ALLOW_NO_TESTS = defineFeatureFlag(
-            "allow-no-tests", false,
-            List.of("jonmv"), "2022-02-28", "2022-06-25",
-            "Whether test jobs without any tests run are acceptable",
-            "Takes effect immediately",
-            TENANT_ID);
-
     public static final UnboundBooleanFlag MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER = defineFeatureFlag(
             "merge-grouping-result-in-search-invoker", false,
             List.of("bjorncs", "baldersheim"), "2022-02-23", "2022-08-01",

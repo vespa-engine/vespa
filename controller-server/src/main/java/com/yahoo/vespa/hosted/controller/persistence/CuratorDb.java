@@ -107,10 +107,10 @@ public class CuratorDb {
     private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
-    private final ApplicationSerializer applicationSerializer;
-    private final RunSerializer runSerializer;
-    private final RetriggerEntrySerializer retriggerEntrySerializer;
-    private final NotificationsSerializer notificationsSerializer;
+    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
+    private final RunSerializer runSerializer = new RunSerializer();
+    private final RetriggerEntrySerializer retriggerEntrySerializer = new RetriggerEntrySerializer();
+    private final NotificationsSerializer notificationsSerializer = new NotificationsSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
@@ -130,10 +130,6 @@ public class CuratorDb {
     CuratorDb(Curator curator, Duration tryLockTimeout, SystemName system) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
-        this.applicationSerializer = new ApplicationSerializer(system);
-        this.runSerializer = new RunSerializer(system);
-        this.retriggerEntrySerializer = new RetriggerEntrySerializer(system);
-        this.notificationsSerializer = new NotificationsSerializer(system);
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */

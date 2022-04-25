@@ -24,7 +24,7 @@ public class MasterDataGatherer {
         return Integer.parseInt(nodeName.substring(lastSlash + 1));
     }
 
-    private final String zooKeeperRoot; // The root path in zookeeper, typically /vespa/fleetcontroller/<clustername>/
+    private final ZooKeeperPaths paths;
     private Map<Integer, Integer> masterData = new TreeMap<>(); // The master state last reported to the fleetcontroller
     private final Map<Integer, Integer> nextMasterData = new TreeMap<>(); // Temporary master state while gathering new info from zookeeper
     private final AsyncCallback.ChildrenCallback childListener = new DirCallback(); // Dir change listener
@@ -46,7 +46,7 @@ public class MasterDataGatherer {
             switch (watchedEvent.getType()) {
                 case NodeChildrenChanged: // Fleetcontrollers have either connected or disconnected to ZooKeeper
                     log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": A change occurred in the list of registered fleetcontrollers. Requesting new information");
-                    session.getChildren(zooKeeperRoot + "indexes", this, childListener, null);
+                    session.getChildren(paths.indexesRoot(), this, childListener, null);
                     break;
                 case NodeDataChanged: // A fleetcontroller has changed what node it is voting for
                     log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Altered data in node " + watchedEvent.getPath() + ". Requesting new vote");
@@ -54,7 +54,7 @@ public class MasterDataGatherer {
                     synchronized (nextMasterData) {
                         nextMasterData.put(index, null);
                     }
-                    session.getData(zooKeeperRoot + "indexes/" + index, this, nodeListener, null);
+                    session.getData(paths.indexOf(index), this, nodeListener, null);
                     break;
                 case NodeCreated: // How can this happen? Can one leave watches on non-existing nodes?
                     log.log(Level.WARNING, "Fleetcontroller " + nodeIndex + ": Got unexpected ZooKeeper event NodeCreated");
@@ -85,8 +85,8 @@ public class MasterDataGatherer {
                     int index = Integer.parseInt(node);
                     nextMasterData.put(index, null);
                     log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Attempting to fetch data in node '"
-                            + zooKeeperRoot + index + "' to see vote");
-                    session.getData(zooKeeperRoot + "indexes/" + index, changeWatcher, nodeListener, null);
+                                              + paths.indexOf(index) + "' to see vote");
+                    session.getData(paths.indexOf(index), changeWatcher, nodeListener, null);
                     // Invocation of cycleCompleted() for fully accumulated election state will happen
                     // as soon as all getData calls have been processed.
                 }
@@ -146,8 +146,8 @@ public class MasterDataGatherer {
     }
 
     /** Constructor setting up the various needed members, and initializing the first data fetch to start things up */
-    public MasterDataGatherer(ZooKeeper session, String zooKeeperRoot, Database.DatabaseListener listener, int nodeIndex) {
-        this.zooKeeperRoot = zooKeeperRoot;
+    public MasterDataGatherer(ZooKeeper session, ZooKeeperPaths paths, Database.DatabaseListener listener, int nodeIndex) {
+        this.paths = paths;
         this.session = session;
         this.listener = listener;
         this.nodeIndex = nodeIndex;
@@ -161,7 +161,7 @@ public class MasterDataGatherer {
         synchronized (nextMasterData) {
             masterData = new TreeMap<>();
             nextMasterData.clear();
-            session.getChildren(zooKeeperRoot + "indexes", changeWatcher, childListener, null);
+            session.getChildren(paths.indexesRoot(), changeWatcher, childListener, null);
         }
     }
 

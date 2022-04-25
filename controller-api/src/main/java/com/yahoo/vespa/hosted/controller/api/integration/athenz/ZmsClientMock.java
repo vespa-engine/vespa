@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.api.AthenzRole;
 import com.yahoo.vespa.athenz.api.AthenzRoleInformation;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
+import com.yahoo.vespa.athenz.client.zms.QuotaUsage;
 import com.yahoo.vespa.athenz.client.zms.RoleAction;
 import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
@@ -259,6 +260,11 @@ public class ZmsClientMock implements ZmsClient {
     @Override
     public AthenzRoleInformation getFullRoleInformation(AthenzRole role) {
         return new AthenzRoleInformation(role.domain(), role.roleName(), true, true, Optional.empty(), List.of());
+    }
+
+    @Override
+    public QuotaUsage getQuotaUsage() {
+        return new QuotaUsage(0.1, 0.2, 0.3, 0.4, 0.5);
     }
 
     @Override

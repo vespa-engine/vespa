@@ -6,11 +6,11 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
@@ -24,14 +24,14 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode.INVALID_APPLICATION_PACKAGE;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devAwsUsEast2a;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.testUsCentral1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devAwsUsEast2a;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.testUsCentral1;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.applicationPackage;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
@@ -89,9 +89,9 @@ public class JobControllerApiHandlerHelperTest {
         tester.clock().advance(Duration.ofHours(4).plusSeconds(1));
         tester.runner().run();
         assertEquals(installationFailed, tester.jobs().last(app.instanceId(), productionUsWest1).get().status());
-        assertEquals(revision2, app.deployment(productionUsCentral1.zone(tester.controller().system())).revision());
-        assertEquals(revision1, app.deployment(productionUsEast3.zone(tester.controller().system())).revision());
-        assertEquals(revision2, app.deployment(productionUsWest1.zone(tester.controller().system())).revision());
+        assertEquals(revision2, app.deployment(productionUsCentral1.zone()).revision());
+        assertEquals(revision1, app.deployment(productionUsEast3.zone()).revision());
+        assertEquals(revision2, app.deployment(productionUsWest1.zone()).revision());
 
         tester.clock().advance(Duration.ofMillis(1000));
 
@@ -104,7 +104,7 @@ public class JobControllerApiHandlerHelperTest {
         assertEquals(running, tester.jobs().last(app.instanceId(), stagingTest).get().status());
 
         // Staging deployment expires and the job fails, and is immediately retried.
-        tester.controller().applications().deactivate(app.instanceId(), stagingTest.zone(tester.controller().system()));
+        tester.controller().applications().deactivate(app.instanceId(), stagingTest.zone());
         tester.runner().run();
         assertEquals(installationFailed, tester.jobs().last(app.instanceId(), stagingTest).get().status());
 
@@ -113,7 +113,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.triggerJobs();
         tester.runner().run();
         assertEquals(running, tester.jobs().last(app.instanceId(), stagingTest).get().status());
-        tester.controller().applications().deactivate(app.instanceId(), stagingTest.zone(tester.controller().system()));
+        tester.controller().applications().deactivate(app.instanceId(), stagingTest.zone());
         tester.runner().run();
         assertEquals(installationFailed, tester.jobs().last(app.instanceId(), stagingTest).get().status());
 
@@ -149,8 +149,8 @@ public class JobControllerApiHandlerHelperTest {
         var app = tester.newDeploymentContext();
         tester.clock().setInstant(Instant.EPOCH);
 
-        ZoneId zone = JobType.devUsEast1.zone(tester.controller().system());
-        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
+        ZoneId zone = DeploymentContext.devUsEast1.zone();
+        tester.jobs().deploy(app.instanceId(), DeploymentContext.devUsEast1, Optional.empty(), applicationPackage());
         tester.configServer().setLogStream(() -> "1554970337.935104\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n");
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), null), "dev-us-east-1-log-first-part.json");
 
@@ -159,7 +159,7 @@ public class JobControllerApiHandlerHelperTest {
         tester.runner().run();
         assertResponse(JobControllerApiHandlerHelper.runDetailsResponse(tester.jobs(), tester.jobs().last(app.instanceId(), devUsEast1).get().id(), "8"), "dev-us-east-1-log-second-part.json");
 
-        tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
+        tester.jobs().deploy(app.instanceId(), DeploymentContext.devUsEast1, Optional.empty(), applicationPackage());
         assertResponse(JobControllerApiHandlerHelper.jobTypeResponse(tester.controller(), app.instanceId(), URI.create("https://some.url:43/root")), "dev-overview.json");
     }
 

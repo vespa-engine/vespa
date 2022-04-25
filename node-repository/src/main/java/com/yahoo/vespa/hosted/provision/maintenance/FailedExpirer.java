@@ -6,6 +6,7 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -66,45 +67,49 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        List<Node> remainingNodes = new ArrayList<>(nodeRepository.nodes().list(Node.State.failed)
-                                                                  .nodeType(NodeType.tenant, NodeType.host)
-                                                                  .asList());
+        NodeList allNodes = nodeRepository.nodes().list();
+        List<Node> remainingNodes = new ArrayList<>(allNodes.state(Node.State.failed)
+                                                            .nodeType(NodeType.tenant, NodeType.host)
+                                                            .asList());
 
-        recycleIf(remainingNodes, node -> node.allocation().isEmpty());
-        recycleIf(remainingNodes, node ->
-                !node.allocation().get().membership().cluster().isStateful() &&
-                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)));
-        recycleIf(remainingNodes, node ->
-                node.allocation().get().membership().cluster().isStateful() &&
-                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statefulExpiry)));
+        recycleIf(remainingNodes,
+                  node -> node.allocation().isEmpty(),
+                  allNodes);
+        recycleIf(remainingNodes,
+                  node -> !node.allocation().get().membership().cluster().isStateful() &&
+                          node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
+                  allNodes);
+        recycleIf(remainingNodes,
+                  node -> node.allocation().get().membership().cluster().isStateful() &&
+                          node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statefulExpiry)),
+                  allNodes);
         return 1.0;
     }
 
     /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */
-    private void recycleIf(List<Node> nodes, Predicate<Node> recycleCondition) {
-        List<Node> nodesToRecycle = nodes.stream().filter(recycleCondition).collect(Collectors.toList());
-        nodes.removeAll(nodesToRecycle);
-        recycle(nodesToRecycle);
+    private void recycleIf(List<Node> failedNodes, Predicate<Node> recycleCondition, NodeList allNodes) {
+        List<Node> nodesToRecycle = failedNodes.stream().filter(recycleCondition).collect(Collectors.toList());
+        failedNodes.removeAll(nodesToRecycle);
+        recycle(nodesToRecycle, allNodes);
     }
 
     /** Move eligible nodes to dirty or parked. This may be a subset of the given nodes */
-    private void recycle(List<Node> nodes) {
+    private void recycle(List<Node> nodes, NodeList allNodes) {
         List<Node> nodesToRecycle = new ArrayList<>();
         for (Node candidate : nodes) {
-            if (broken(candidate)) {
+            if (broken(candidate, allNodes)) {
                 List<String> unparkedChildren = !candidate.type().isHost() ? List.of() :
-                                                nodeRepository.nodes().list()
-                                                              .childrenOf(candidate)
-                                                              .not().state(Node.State.parked)
-                                                              .mapToList(Node::hostname);
+                                                allNodes.childrenOf(candidate)
+                                                        .not().state(Node.State.parked)
+                                                        .mapToList(Node::hostname);
 
                 if (unparkedChildren.isEmpty()) {
                     nodeRepository.nodes().park(candidate.hostname(), false, Agent.FailedExpirer,
                                                 "Parked by FailedExpirer due to hardware issue or high fail count");
                 } else {
                     log.info(String.format("Expired failed node %s with hardware issue was not parked because of " +
-                                           "unparked children: %s", candidate.hostname(),
-                                           String.join(", ", unparkedChildren)));
+                                           "unparked children: %s",
+                                           candidate.hostname(), String.join(", ", unparkedChildren)));
                 }
             } else {
                 nodesToRecycle.add(candidate);
@@ -114,8 +119,8 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
     }
 
     /** Returns whether node is broken and cannot be recycled */
-    private boolean broken(Node node) {
-        return NodeFailer.hasHardwareIssue(node, nodeRepository) ||
+    private boolean broken(Node node, NodeList allNodes) {
+        return NodeFailer.hasHardwareIssue(node, allNodes) ||
                (node.type().isHost() && node.status().failCount() >= maxAllowedFailures);
     }
 

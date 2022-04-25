@@ -37,7 +37,7 @@ public class ZooKeeperDatabaseTest {
             closeDatabaseIfOpen();
             var id = new FleetControllerId(clusterFixture.cluster.getName(), nodeIndex);
             var context = new TestFleetControllerContext(id);
-            zkDatabase = new ZooKeeperDatabase(context, clusterFixture.cluster(), nodeIndex, zkServer.getAddress(),
+            zkDatabase = new ZooKeeperDatabase(context, zkServer.getAddress(),
                                                (int)sessionTimeout.toMillis(), mockListener);
         }
 

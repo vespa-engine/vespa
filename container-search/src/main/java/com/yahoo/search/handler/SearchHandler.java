@@ -580,11 +580,7 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
     private Result validateQuery(Query query) {
-        if (query.getHttpRequest().getProperty(DefaultProperties.MAX_HITS.toString()) != null)
-            throw new RuntimeException(DefaultProperties.MAX_HITS + " must be specified in a query profile.");
-
-        if (query.getHttpRequest().getProperty(DefaultProperties.MAX_OFFSET.toString()) != null)
-            throw new RuntimeException(DefaultProperties.MAX_OFFSET + " must be specified in a query profile.");
+        DefaultProperties.requireNotPresentIn(query.getHttpRequest().propertyMap());
 
         int maxHits = query.properties().getInteger(DefaultProperties.MAX_HITS);
         int maxOffset = query.properties().getInteger(DefaultProperties.MAX_OFFSET);

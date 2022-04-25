@@ -344,7 +344,7 @@ struct MultiValueExecutorCreator {
     bool handle(vespalib::Stash &stash, const IAttributeVector *attribute) {
         auto multi_value_attribute = attribute->as_multi_value_attribute();
         if (multi_value_attribute != nullptr) {
-            _array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::Tag<typename T::BaseType>(), stash);
+            _array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::ArrayTag<typename T::BaseType>(), stash);
         }
         return _array_read_view != nullptr;
     }

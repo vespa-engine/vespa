@@ -10,8 +10,11 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.ZmsClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
@@ -37,9 +40,9 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -50,6 +53,7 @@ import static org.junit.Assert.assertTrue;
 public class MetricsReporterTest {
 
     private final MetricsMock metrics = new MetricsMock();
+    private final ZmsClientMock zmsClient = new ZmsClientMock(new AthenzDbMock(), AthenzIdentities.from("mock.identity"));
 
     @Test
     public void audit_log_metric() {
@@ -553,6 +557,19 @@ public class MetricsReporterTest {
         assertEquals("Upgrade is overdue measure relative to window 3", Duration.ofHours(34).plusMinutes(30), metric.get());
     }
 
+    @Test
+    public void zms_quota_metrics() {
+        var tester = new ControllerTester();
+        var reporter = createReporter(tester.controller());
+        reporter.maintain();
+
+        assertEquals(0.1, metrics.getMetric(d -> "subdomains".equals(d.get("resourceType")), MetricsReporter.ZMS_QUOTA_USAGE).get());
+        assertEquals(0.2, metrics.getMetric(d -> "roles".equals(d.get("resourceType")), MetricsReporter.ZMS_QUOTA_USAGE).get());
+        assertEquals(0.3, metrics.getMetric(d -> "policies".equals(d.get("resourceType")), MetricsReporter.ZMS_QUOTA_USAGE).get());
+        assertEquals(0.4, metrics.getMetric(d -> "services".equals(d.get("resourceType")), MetricsReporter.ZMS_QUOTA_USAGE).get());
+        assertEquals(0.5, metrics.getMetric(d -> "groups".equals(d.get("resourceType")), MetricsReporter.ZMS_QUOTA_USAGE).get());
+    }
+
     private void assertNodeCount(String metric, int n, Version version) {
         long nodeCount = metrics.getMetric((dimensions) -> version.toFullString().equals(dimensions.get("currentVersion")), metric)
                                 .stream()
@@ -656,7 +673,7 @@ public class MetricsReporterTest {
     }
 
     private MetricsReporter createReporter(Controller controller) {
-        return new MetricsReporter(controller, metrics);
+        return new MetricsReporter(controller, metrics, zmsClient);
     }
 
     private static String appDimension(ApplicationId id) {

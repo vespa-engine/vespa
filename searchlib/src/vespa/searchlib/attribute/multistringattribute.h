@@ -107,8 +107,8 @@ public:
     getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::Tag<const char*>, vespalib::Stash& stash) const override;
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const override;
 };
 
 

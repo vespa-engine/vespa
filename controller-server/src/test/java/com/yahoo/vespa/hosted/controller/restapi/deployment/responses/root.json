@@ -353,21 +353,21 @@
   "jobs": [
     "system-test",
     "staging-test",
-    "production-aws-us-east-1a",
-    "test-aws-us-east-1a",
     "production-ap-northeast-1",
     "test-ap-northeast-1",
     "production-ap-northeast-2",
     "test-ap-northeast-2",
     "production-ap-southeast-1",
     "test-ap-southeast-1",
+    "production-aws-us-east-1a",
+    "test-aws-us-east-1a",
+    "production-eu-west-1",
+    "test-eu-west-1",
+    "production-us-central-1",
+    "test-us-central-1",
     "production-us-east-3",
     "test-us-east-3",
     "production-us-west-1",
-    "test-us-west-1",
-    "production-us-central-1",
-    "test-us-central-1",
-    "production-eu-west-1",
-    "test-eu-west-1"
+    "test-us-west-1"
   ]
 }

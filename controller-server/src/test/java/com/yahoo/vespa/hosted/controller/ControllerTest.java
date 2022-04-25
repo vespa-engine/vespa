@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
@@ -61,11 +60,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -172,7 +170,7 @@ public class ControllerTest {
                          e.getMessage());
         }
         assertNotNull("Zone was not removed",
-                      context.instance().deployments().get(productionUsWest1.zone(main)));
+                      context.instance().deployments().get(productionUsWest1.zone()));
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
@@ -182,7 +180,7 @@ public class ControllerTest {
                 .build();
         context.submit(applicationPackage);
         assertNull("Zone was removed",
-                   context.instance().deployments().get(productionUsWest1.zone(main)));
+                   context.instance().deployments().get(productionUsWest1.zone()));
         assertNull("Deployment job was removed", context.instanceJobs().get(productionUsWest1));
 
         // Submission has stored application meta.
@@ -203,7 +201,7 @@ public class ControllerTest {
                                 .get(tester.clock().instant()));
 
         assertNull(tester.controllerTester().serviceRegistry().applicationStore()
-                         .getMeta(context.deploymentIdIn(productionUsWest1.zone(main))));
+                         .getMeta(context.deploymentIdIn(productionUsWest1.zone())));
     }
 
     @Test
@@ -875,6 +873,8 @@ public class ControllerTest {
     @Test
     public void testDeployWithGlobalEndpointsInMultipleClouds() {
         tester.controllerTester().zoneRegistry().setZones(
+                ZoneApiMock.fromId("test.us-west-1"),
+                ZoneApiMock.fromId("staging.us-west-1"),
                 ZoneApiMock.fromId("prod.us-west-1"),
                 ZoneApiMock.newBuilder().with(CloudName.from("aws")).withId("prod.aws-us-east-1").build()
         );

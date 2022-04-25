@@ -1294,7 +1294,7 @@ public class StateChangeTest extends FleetControllerTest {
             NodeState newNodeState = new NodeState(NodeType.STORAGE, State.MAINTENANCE);
             NodeInfo nodeInfo = ctx.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
             nodeInfo.setWantedState(newNodeState);
-            ctx.nodeStateOrHostInfoChangeHandler.handleNewWantedNodeState(nodeInfo, newNodeState);
+            ctx.nodeListener.handleNewWantedNodeState(nodeInfo, newNodeState);
             invoked = true;
         }
     }
@@ -1312,7 +1312,7 @@ public class StateChangeTest extends FleetControllerTest {
             NodeState newNodeState = new NodeState(NodeType.STORAGE, State.DOWN);
             NodeInfo nodeInfo = ctx.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
             nodeInfo.setWantedState(newNodeState);
-            ctx.nodeStateOrHostInfoChangeHandler.handleNewWantedNodeState(nodeInfo, newNodeState);
+            ctx.nodeListener.handleNewWantedNodeState(nodeInfo, newNodeState);
             invoked = true;
         }
     }

@@ -97,6 +97,12 @@ TraversingVisitor::visitIntegerValueNode(const IntegerValueNode &)
 
 
 void
+TraversingVisitor::visitBoolValueNode(const BoolValueNode &)
+{
+}
+
+
+void
 TraversingVisitor::visitCurrentTimeValueNode(const CurrentTimeValueNode &)
 {
 }

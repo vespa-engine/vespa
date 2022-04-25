@@ -9,7 +9,7 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 import com.yahoo.vespa.clustercontroller.core.mocks.TestEventLog;
 import com.yahoo.vespa.clustercontroller.core.testutils.LogFormatter;
 import org.junit.Before;
@@ -34,7 +34,7 @@ public class StateChangeHandlerTest {
         int maxPrematureCrashes = 3;
     }
 
-    private static class TestNodeStateOrHostInfoChangeHandler implements NodeStateOrHostInfoChangeHandler {
+    private static class TestNodeListener implements NodeListener {
 
         LinkedList<String> events = new LinkedList<>();
 
@@ -46,6 +46,11 @@ public class StateChangeHandlerTest {
         @Override
         public void handleNewWantedNodeState(NodeInfo node, NodeState newState) {
             events.add(node + " - " + newState);
+        }
+
+        @Override
+        public void handleRemovedNode(Node node) {
+            events.add("removed: " + node);
         }
 
         @Override
@@ -68,7 +73,7 @@ public class StateChangeHandlerTest {
     private Config config;
     private ContentCluster cluster;
     private StateChangeHandler nodeStateChangeHandler;
-    private TestNodeStateOrHostInfoChangeHandler nodeStateUpdateListener;
+    private TestNodeListener nodeStateUpdateListener;
     private final ClusterStateGenerator.Params params = new ClusterStateGenerator.Params();
 
     @Before
@@ -88,7 +93,7 @@ public class StateChangeHandlerTest {
                 .maxPrematureCrashes(config.maxPrematureCrashes)
                 .transitionTimes(5000)
                 .cluster(cluster);
-        nodeStateUpdateListener = new TestNodeStateOrHostInfoChangeHandler();
+        nodeStateUpdateListener = new TestNodeListener();
     }
 
     private ClusterState currentClusterState() {

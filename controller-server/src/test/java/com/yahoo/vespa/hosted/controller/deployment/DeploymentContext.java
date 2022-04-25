@@ -21,13 +21,13 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -76,6 +76,28 @@ import static org.junit.Assert.assertTrue;
  * @author jonmv
  */
 public class DeploymentContext {
+
+    public static final JobType systemTest             = JobType.deploymentTo(ZoneId.from("test", "us-east-1"));
+    public static final JobType stagingTest            = JobType.deploymentTo(ZoneId.from("staging", "us-east-3"));
+    public static final JobType productionUsEast3      = JobType.prod("us-east-3");
+    public static final JobType testUsEast3            = JobType.test("us-east-3");
+    public static final JobType productionUsWest1      = JobType.prod("us-west-1");
+    public static final JobType testUsWest1            = JobType.test("us-west-1");
+    public static final JobType productionUsCentral1   = JobType.prod("us-central-1");
+    public static final JobType testUsCentral1         = JobType.test("us-central-1");
+    public static final JobType productionApNortheast1 = JobType.prod("ap-northeast-1");
+    public static final JobType testApNortheast1       = JobType.test("ap-northeast-1");
+    public static final JobType productionApNortheast2 = JobType.prod("ap-northeast-2");
+    public static final JobType testApNortheast2       = JobType.test("ap-northeast-2");
+    public static final JobType productionApSoutheast1 = JobType.prod("ap-southeast-1");
+    public static final JobType testApSoutheast1       = JobType.test("ap-southeast-1");
+    public static final JobType productionEuWest1      = JobType.prod("eu-west-1");
+    public static final JobType testEuWest1            = JobType.test("eu-west-1");
+    public static final JobType productionAwsUsEast1a  = JobType.prod("aws-us-east-1a");
+    public static final JobType testAwsUsEast1a        = JobType.test("aws-us-east-1a");
+    public static final JobType devUsEast1             = JobType.dev("us-east-1");
+    public static final JobType devAwsUsEast2a         = JobType.dev("aws-us-east-2a");
+    public static final JobType perfUsEast3            = JobType.perf("us-east-3");
 
     private final AtomicLong salt = new AtomicLong();
 
@@ -197,10 +219,10 @@ public class DeploymentContext {
                                                                     .allMatch(deployment -> deployment.version().equals(version))));
 
         for (var spec : application().deploymentSpec().instances())
-            for (JobType type : new DeploymentSteps(spec, tester.controller()::system).productionJobs())
+            for (JobType type : new DeploymentSteps(spec, tester.controller().zoneRegistry()).productionJobs())
                 assertTrue(tester.configServer().nodeRepository()
-                                 .list(type.zone(tester.controller().system()),
-                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream() // TODO jonmv: support more
+                                 .list(type.zone(),
+                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream()
                                  .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(instance().change().hasTargets());
@@ -394,7 +416,7 @@ public class DeploymentContext {
 
     /** Runs a deployment of the given package to the given manually deployable zone. */
     public DeploymentContext runJob(ZoneId zone, ApplicationPackage applicationPackage) {
-        return runJob(JobType.from(tester.controller().system(), zone).get(), applicationPackage, null);
+        return runJob(JobType.deploymentTo(zone), applicationPackage, null);
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job in the instance of this, successfully. */
@@ -402,8 +424,33 @@ public class DeploymentContext {
         return runJob(type, instanceId);
     }
 
+    /** Runs the job, failing tests with noTests status, or with regular testFailure. */
+    public DeploymentContext failTests(JobType type, boolean noTests) {
+        if ( ! type.isTest()) throw new IllegalArgumentException(type + " does not run tests");
+        var job = new JobId(instanceId, type);
+        triggerJobs();
+        doDeploy(job);
+        if (job.type().isDeployment()) {
+            doUpgrade(job);
+            doConverge(job);
+            if (job.type().environment().isManuallyDeployed())
+                return this;
+        }
+
+        RunId id = currentRun(job).id();
+
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
+        tester.cloud().set(noTests ? Status.NO_TESTS : Status.FAILURE);
+        runner.advance(currentRun(job));
+        assertTrue(jobs.run(id).get().hasEnded());
+        assertEquals(noTests, jobs.run(id).get().hasSucceeded());
+        assertTrue(configServer().nodeRepository().list(job.type().zone(), NodeFilter.all().applications(TesterId.of(instanceId).id())).isEmpty());
+
+        return this;
+    }
+
     /** Pulls the ready job trigger, and then runs the whole of job for the given instance, successfully. */
-    public DeploymentContext runJob(JobType type, ApplicationId instance) {
+    private DeploymentContext runJob(JobType type, ApplicationId instance) {
         var job = new JobId(instance, type);
         triggerJobs();
         doDeploy(job);
@@ -470,8 +517,8 @@ public class DeploymentContext {
         tester.readyJobsTrigger().maintain();
 
         if (type.isProduction()) {
-            runJob(JobType.systemTest);
-            runJob(JobType.stagingTest);
+            runJob(systemTest);
+            runJob(stagingTest);
             tester.readyJobsTrigger().maintain();
         }
 
@@ -484,8 +531,8 @@ public class DeploymentContext {
 
     /** Start tests in system test stage */
     public RunId startSystemTestTests() {
-        var id = newRun(JobType.systemTest);
-        var testZone = JobType.systemTest.zone(tester.controller().system());
+        var id = newRun(systemTest);
+        var testZone = systemTest.zone();
         runner.run();
         if ( ! deferDnsUpdates)
             flushDnsUpdates();
@@ -510,7 +557,7 @@ public class DeploymentContext {
     /** Deploys tester and real app, and completes tester and initial staging installation first if needed. */
     private void doDeploy(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         // First step is always a deployment.
@@ -522,7 +569,7 @@ public class DeploymentContext {
         if (job.type().isTest())
             doInstallTester(job);
 
-        if (job.type().equals(JobType.stagingTest)) { // Do the initial deployment and installation of the real application.
+        if (job.type().equals(stagingTest)) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
             tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
             configServer().convergeServices(id.application(), zone);
@@ -544,7 +591,7 @@ public class DeploymentContext {
     /** Upgrades nodes to target version. */
     private void doUpgrade(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
@@ -565,7 +612,7 @@ public class DeploymentContext {
     /** Lets nodes converge on new application version. */
     private void doConverge(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
         configServer().convergeServices(id.application(), zone);
@@ -581,7 +628,7 @@ public class DeploymentContext {
     /** Installs tester and starts tests. */
     private void doInstallTester(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), tester.configServer().application(id.tester().id(), zone).get().version().get());
@@ -596,7 +643,7 @@ public class DeploymentContext {
     /** Completes tests with success. */
     private void doTests(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
 
         // All installation is complete and endpoints are ready, so tests may begin.
         if (job.type().isDeployment())
@@ -616,10 +663,6 @@ public class DeploymentContext {
 
     private JobId jobId(JobType type) {
         return new JobId(instanceId, type);
-    }
-
-    private ZoneId zone(JobId job) {
-        return job.type().zone(tester.controller().system());
     }
 
     private ConfigServerMock configServer() {

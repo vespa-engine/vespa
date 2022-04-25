@@ -77,9 +77,6 @@ public:
         }
         return valueCount;
     }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
-    }
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
     }
@@ -96,9 +93,6 @@ public:
         }
         return valueCount;
     }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
-        return getWeightedHelper<Weighted, T>(doc, v, sz);
-    }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);
     }
@@ -107,8 +101,8 @@ public:
     }
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<T>* make_read_view(attribute::IMultiValueAttribute::Tag<T>, vespalib::Stash& stash) const override;
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<T>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<T>>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const override;
 
 private:
     using AttributeReader = PrimitiveReader<typename B::LoadedValueType>;

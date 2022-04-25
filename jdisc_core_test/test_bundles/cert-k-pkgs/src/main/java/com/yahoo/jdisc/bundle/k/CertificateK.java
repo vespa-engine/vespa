@@ -4,7 +4,7 @@ package com.yahoo.jdisc.bundle.k;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings({ "UnusedDeclaration", "deprecation" })
+@SuppressWarnings({ "UnusedDeclaration", "deprecation", "removal" })
 public class CertificateK {
 
     private final com.google.common.annotations.Beta beta = null;
@@ -37,6 +37,7 @@ public class CertificateK {
     private final com.yahoo.yolean.trace.TraceNode traceNode = null;
     private final com.sun.security.auth.LdapPrincipal principal = null;
     private final com.sun.security.auth.module.JndiLoginModule jndiLoginModule = null;
+    private final java.security.cert.Certificate certificate = null;
     private final javax.accessibility.Accessible accessible = null;
     private final javax.annotation.PostConstruct postConstruct = null;
     private final javax.annotation.processing.FilerException filerException = null;
@@ -82,7 +83,7 @@ public class CertificateK {
     private final javax.security.auth.login.AccountException accountException = null;
     private final javax.security.auth.spi.LoginModule loginModule = null;
     private final javax.security.auth.x500.X500Principal x500Principal = null;
-    private final javax.security.cert.Certificate certificate = null;
+    private final javax.security.cert.Certificate deprecatedCertificate = null;
     private final javax.security.sasl.AuthorizeCallback authorizeCallback = null;
     private final javax.sound.midi.ControllerEventListener controllerEventListener = null;
     private final javax.sound.midi.spi.MidiDeviceProvider midiDeviceProvider = null;

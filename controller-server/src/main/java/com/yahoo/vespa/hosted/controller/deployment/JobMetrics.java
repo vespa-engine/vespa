@@ -21,6 +21,7 @@ public class JobMetrics {
     public static final String deploymentFailure = "deployment.deploymentFailure";
     public static final String convergenceFailure = "deployment.convergenceFailure";
     public static final String testFailure = "deployment.testFailure";
+    public static final String noTests = "deployment.noTests";
     public static final String error = "deployment.error";
     public static final String abort = "deployment.abort";
     public static final String success = "deployment.success";
@@ -46,7 +47,7 @@ public class JobMetrics {
                       "tenantName", id.application().tenant().value(),
                       "app", id.application().application().value() + "." + id.application().instance().value(),
                       "test", Boolean.toString(id.type().isTest()),
-                      "zone", id.type().zone(system.get()).value());
+                      "zone", id.type().zone().value());
     }
 
     static String valueOf(RunStatus status) {
@@ -56,6 +57,7 @@ public class JobMetrics {
             case deploymentFailed: return deploymentFailure;
             case installationFailed: return convergenceFailure;
             case testFailure: return testFailure;
+            case noTests: return noTests;
             case error: return error;
             case aborted: return abort;
             case success: return success;

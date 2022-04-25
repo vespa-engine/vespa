@@ -35,6 +35,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentF
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -97,12 +98,6 @@ class RunSerializer {
     private static final String isDryRunField = "isDryRun";
     private static final String reasonField = "reason";
 
-    private final SystemName system;
-
-    RunSerializer(SystemName system) {
-        this.system = system;
-    }
-
     Run runFromSlime(Slime slime) {
         return runFromSlime(slime.get());
     }
@@ -131,7 +126,7 @@ class RunSerializer {
             steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), startTime));
         });
         RunId id = new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
-                                 JobType.fromJobName(runObject.field(jobTypeField).asString()),
+                             JobType.ofSerialized(runObject.field(jobTypeField).asString()),
                                  runObject.field(numberField).asLong());
         return new Run(id,
                        steps,
@@ -211,7 +206,7 @@ class RunSerializer {
 
     private void toSlime(Run run, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
-        runObject.setString(jobTypeField, run.id().type().serialized(system));
+        runObject.setString(jobTypeField, run.id().type().serialized());
         runObject.setBool(isRedeploymentField, run.isRedeployment());
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());
@@ -342,6 +337,7 @@ class RunSerializer {
             case deploymentFailed           : return "deploymentFailed";
             case installationFailed         : return "installationFailed";
             case testFailure                : return "testFailure";
+            case noTests                    : return "noTests";
             case error                      : return "error";
             case success                    : return "success";
             case aborted                    : return "aborted";
@@ -354,11 +350,11 @@ class RunSerializer {
     static RunStatus runStatusOf(String status) {
         switch (status) {
             case "running"                    : return running;
-            case "outOfCapacity"              : return nodeAllocationFailure;  // TODO: Remove after March 2022
             case "nodeAllocationFailure"      : return nodeAllocationFailure;
             case "endpointCertificateTimeout" : return endpointCertificateTimeout;
             case "deploymentFailed"           : return deploymentFailed;
             case "installationFailed"         : return installationFailed;
+            case "noTests"                    : return noTests;
             case "testFailure"                : return testFailure;
             case "error"                      : return error;
             case "success"                    : return success;

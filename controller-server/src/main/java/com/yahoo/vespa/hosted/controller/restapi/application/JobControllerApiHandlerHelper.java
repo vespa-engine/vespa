@@ -341,7 +341,7 @@ class JobControllerApiHandlerHelper {
                                                                      "/job/" + job.type().jobName()).normalize();
                 stepObject.setString("url", baseUriForJob.toString());
                 stepObject.setString("environment", job.type().environment().value());
-                stepObject.setString("region", job.type().zone(controller.system()).value());
+                stepObject.setString("region", job.type().zone().value());
 
                 if (job.type().isProduction() && job.type().isDeployment()) {
                     status.deploymentFor(job).ifPresent(deployment -> {

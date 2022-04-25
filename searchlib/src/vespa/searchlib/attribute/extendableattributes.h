@@ -151,8 +151,8 @@ public:
     const attribute::IMultiValueAttribute* as_multi_value_attribute() const override;
 
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<T>* make_read_view(attribute::IMultiValueAttribute::Tag<T>, vespalib::Stash& stash) const override;
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<T>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<T>>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const override;
 };
 
 template <typename T>
@@ -185,8 +185,8 @@ public:
     void onAddDocs(DocId ) override { }
     const attribute::IMultiValueAttribute* as_multi_value_attribute() const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::Tag<const char*>, vespalib::Stash& stash) const override;
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const override;
+    const attribute::IArrayReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<const char*>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const override;
 };
 
 
@@ -229,7 +229,7 @@ public:
     bool add(int64_t v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedInt * v, uint32_t sz) const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<int64_t>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<int64_t>>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<int64_t>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<int64_t>, vespalib::Stash& stash) const override;
 };
 
 class WeightedSetFloatExtAttribute
@@ -248,7 +248,7 @@ public:
     bool add(double v, int32_t w = 1) override;
     uint32_t get(DocId doc, AttributeVector::WeightedFloat * v, uint32_t sz) const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<double>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<double>>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<double>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<double>, vespalib::Stash& stash) const override;
 };
 
 class WeightedSetStringExtAttribute
@@ -276,7 +276,7 @@ public:
     uint32_t get(DocId doc, AttributeVector::WeightedString * v, uint32_t sz) const override;
     uint32_t get(DocId doc, AttributeVector::WeightedConstChar * v, uint32_t sz) const override;
     // Implements attribute::IMultiValueAttribute
-    const attribute::IMultiValueReadView<multivalue::WeightedValue<const char*>>* make_read_view(attribute::IMultiValueAttribute::Tag<multivalue::WeightedValue<const char*>>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<const char*>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<const char*>, vespalib::Stash& stash) const override;
 };
 
 }  // namespace search

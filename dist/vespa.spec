@@ -538,7 +538,11 @@ nearest neighbor search used for low-level benchmarking.
 
 %prep
 %if 0%{?installdir:1}
+%if 0%{?source_base:1}
+%setup -q
+%else
 %setup -c -D -T
+%endif
 %else
 %setup -q
 %if ( 0%{?el8} || 0%{?fc34} ) && %{_vespa_llvm_version} < 13
@@ -603,6 +607,9 @@ rm -rf %{buildroot}
 
 %if 0%{?installdir:1}
 cp -r %{installdir} %{buildroot}
+%if 0%{?source_base:1} && ! (0%{?amzn2} || 0%{?el7})
+find %{buildroot} -iname '*.so' -print0 | xargs --no-run-if-empty -0 -n1 /usr/lib/rpm/debugedit -b %{source_base} -d %{_builddir}/%{name}-%{version}
+%endif
 %else
 make install DESTDIR=%{buildroot}
 cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa

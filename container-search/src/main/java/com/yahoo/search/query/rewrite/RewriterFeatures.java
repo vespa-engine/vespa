@@ -68,7 +68,7 @@ public class RewriterFeatures {
             oldRoot.equals(origQueryItem)) {
             PhraseItem phrase = convertAndToPhrase((AndItem)oldRoot);
 
-            if(!keepOriginalQuery) {
+            if (!keepOriginalQuery) {
                 qTree.setRoot(phrase);
             } else {
                 OrItem newRoot = new OrItem();
@@ -145,12 +145,12 @@ public class RewriterFeatures {
         }
 
         StringTokenizer rewrite_list = new StringTokenizer(rewrites, "\t");
-        Item rI = null;
+        Item rI;
 
         // Convert matching string to query tree item
         Item matchingStrItem = convertStringToQTree(query, matchingStr);
         PhraseItem matchingStrPhraseItem = null;
-        if(matchingStrItem instanceof AndItem) {
+        if (matchingStrItem instanceof AndItem) {
             matchingStrPhraseItem = convertAndToPhrase(((AndItem)matchingStrItem));
         }
 
@@ -166,30 +166,32 @@ public class RewriterFeatures {
         // - matchingStr: (AND aa bb)
         // - for this case, should use getNonOverlappingMatches instead
         OrItem newRoot;
-        if(oldRoot instanceof OrItem) {
-            if(((OrItem)oldRoot).getItemIndex(matchingStrItem)==-1) {
+        if (oldRoot instanceof OrItem) {
+            if (((OrItem)oldRoot).getItemIndex(matchingStrItem)==-1) {
                 RewriterUtils.log(logger, query, "Whole query matching is used, skipping rewrite");
                 return query;
             }
             newRoot = (OrItem)oldRoot;
-        } else if(oldRoot.equals(matchingStrItem) || oldRoot.equals(matchingStrPhraseItem)) {
+        }
+        else if(oldRoot.equals(matchingStrItem) || oldRoot.equals(matchingStrPhraseItem)) {
             newRoot = new OrItem();
             newRoot.addItem(oldRoot);
-        } else {
+        }
+        else {
             RewriterUtils.log(logger, query, "Whole query matching is used, skipping rewrite");
             return query;
         }
         int numRewrites = 0;
-        while(rewrite_list.hasMoreTokens() &&
-              (maxNumRewrites==0 || numRewrites < maxNumRewrites)) {
+        while (rewrite_list.hasMoreTokens() && (maxNumRewrites == 0 || numRewrites < maxNumRewrites)) {
             rI = convertStringToQTree(query, rewrite_list.nextToken());
-            if(addUnitToRewrites && rI instanceof AndItem) {
+            if (addUnitToRewrites && rI instanceof AndItem) {
                 rI = convertAndToPhrase((AndItem)rI);
             }
-            if(newRoot.getItemIndex(rI)==-1) {
+            if(newRoot.getItemIndex(rI) == -1) {
                 newRoot.addItem(rI);
                 numRewrites++;
-            } else {
+            }
+            else {
                 RewriterUtils.log(logger, query, "Rewrite already exist, skipping");
             }
         }
@@ -229,19 +231,19 @@ public class RewriterFeatures {
                                                                                Query query)
                                                                                throws RuntimeException {
         RewriterUtils.log(logger, query, "Retrieving longest non-overlapping full phrase matches");
-        if(phraseMatcher==null)
+        if (phraseMatcher == null)
             return null;
 
         Item root = query.getModel().getQueryTree().getRoot();
         List<PhraseMatcher.Phrase> matches = phraseMatcher.matchPhrases(root);
-        if (matches==null || matches.isEmpty())
+        if (matches == null || matches.isEmpty())
             return null;
 
         Set<PhraseMatcher.Phrase> resultMatches = new HashSet<>();
         ListIterator<Phrase> matchesIter = matches.listIterator();
 
         // Iterate through all matches
-        while(matchesIter.hasNext()) {
+        while (matchesIter.hasNext()) {
             PhraseMatcher.Phrase phrase = matchesIter.next();
             RewriterUtils.log(logger, query, "Working on phrase: " + phrase);
             CompositeItem currOwner = phrase.getOwner();
@@ -250,11 +252,11 @@ public class RewriterFeatures {
             // If phrase is not an AND item, only keep those that are single word
             // in order to eliminate cases such as (new RANK york) from being treated
             // as match if only new york but not new or york is in the dictionary
-            if((currOwner!=null &&
+            if((currOwner != null &&
                 ((phrase.isComplete() && currOwner instanceof AndItem) ||
-                 (phrase.getLength()==1 && currOwner instanceof OrItem) ||
-                 (phrase.getLength()==1 && currOwner instanceof RankItem && phrase.getStartIndex()==0))) ||
-               (currOwner==null && phrase.getLength()==1)) {
+                 (phrase.getLength() == 1 && currOwner instanceof OrItem) ||
+                 (phrase.getLength() == 1 && currOwner instanceof RankItem && phrase.getStartIndex() == 0))) ||
+               (currOwner == null && phrase.getLength() == 1)) {
                resultMatches.add(phrase);
                RewriterUtils.log(logger, query, "Keeping phrase: " + phrase);
             }
@@ -298,12 +300,12 @@ public class RewriterFeatures {
                                                                                   Query query)
                                                                                   throws RuntimeException {
         RewriterUtils.log(logger, query, "Retrieving longest non-overlapping partial phrase matches");
-        if(phraseMatcher==null)
+        if (phraseMatcher == null)
             return null;
 
         Item root = query.getModel().getQueryTree().getRoot();
         List<PhraseMatcher.Phrase> matches = phraseMatcher.matchPhrases(root);
-        if (matches==null || matches.isEmpty())
+        if (matches == null || matches.isEmpty())
             return null;
 
         Set<PhraseMatcher.Phrase> resultMatches = new HashSet<>();
@@ -312,14 +314,14 @@ public class RewriterFeatures {
         ListIterator<PhraseMatcher.Phrase> matchesIter = matches.listIterator();
 
         // Iterate through all matches
-        while(matchesIter.hasNext()) {
+        while (matchesIter.hasNext()) {
             PhraseMatcher.Phrase phrase = matchesIter.next();
             RewriterUtils.log(logger, query, "Working on phrase: " + phrase);
             CompositeItem currOwner = phrase.getOwner();
 
             // Check if previous is AND item and this phrase is in a different item
             // If so, work on the previous set to eliminate overlapping matches
-            if(!phrasesInSubTree.isEmpty() && currOwner!=null &&
+            if (!phrasesInSubTree.isEmpty() && currOwner!=null &&
                prevOwner!=null && !currOwner.equals(prevOwner)) {
                 RewriterUtils.log(logger, query, "Previous phrase is in different AND item");
                 List<PhraseMatcher.Phrase> subTreeMatches
@@ -333,13 +335,13 @@ public class RewriterFeatures {
             }
 
             // Check if this is an AND item
-            if(currOwner!=null && currOwner instanceof AndItem) {
+            if (currOwner instanceof AndItem) {
                 phrasesInSubTree.add(phrase);
-            // If phrase is not an AND item, only keep those that are single word
-            // in order to eliminate cases such as (new RANK york) from being treated
-            // as match if only new york but not new or york is in the dictionary
-            } else if (phrase.getLength()==1 &&
-                       !(currOwner!=null && currOwner instanceof RankItem && phrase.getStartIndex()!=0)) {
+                // If phrase is not an AND item, only keep those that are single word
+                // in order to eliminate cases such as (new RANK york) from being treated
+                // as match if only new york but not new or york is in the dictionary
+            }
+            else if (phrase.getLength() == 1 && !(currOwner instanceof RankItem && phrase.getStartIndex() != 0)) {
                 resultMatches.add(phrase);
             }
 
@@ -476,7 +478,7 @@ public class RewriterFeatures {
                                       boolean removeOriginal, boolean addUnitToRewrites)
                                       throws RuntimeException {
 
-        if(matches==null) {
+        if(matches == null) {
             RewriterUtils.log(logger, query, "No expansions to be added");
             return query;
         }
@@ -494,7 +496,7 @@ public class RewriterFeatures {
 
             // Retrieve expansion phrases
             String expansionStr = match.getData();
-            if(expansionStr.equalsIgnoreCase("n/a") && expandIndex==null) {
+            if (expansionStr.equalsIgnoreCase("n/a") && expandIndex == null) {
                 continue;
             }
             StringTokenizer expansions = new StringTokenizer(expansionStr,"\t");
@@ -509,17 +511,17 @@ public class RewriterFeatures {
                   (maxNumRewrites==0 || numRewrites < maxNumRewrites)) {
        	        String expansion = expansions.nextToken();
                 RewriterUtils.log(logger, query, "Working on expansion: " + expansion);
-                if(expansion.equalsIgnoreCase("n/a")) {
+                if (expansion.equalsIgnoreCase("n/a")) {
                     expansion = matchStr;
                 }
                 // (AND expansion) or "expansion"
                 Item expansionItem = convertStringToQTree(query, expansion);
-                if(addUnitToRewrites && expansionItem instanceof AndItem) {
+                if (addUnitToRewrites && expansionItem instanceof AndItem) {
                    expansionItem = convertAndToPhrase((AndItem)expansionItem);
                 }
                 expansionGrp.addItem(expansionItem);
 
-                if(expandIndex!=null) {
+                if (expandIndex!=null) {
                     // indexName:expansion
                     WordItem expansionIndexItem = new WordItem(expansion, expandIndex);
                     expansionGrp.addItem(expansionIndexItem);
@@ -528,19 +530,19 @@ public class RewriterFeatures {
                 RewriterUtils.log(logger, query, "Adding expansion: " + expansion);
             }
 
-            if(!removeOriginal) {
+            if (!removeOriginal) {
                 //(AND original)
                 Item matchItem = convertStringToQTree(query, matchStr);
-                if(expansionGrp.getItemIndex(matchItem)==-1) {
+                if (expansionGrp.getItemIndex(matchItem)==-1) {
                     expansionGrp.addItem(matchItem);
                 }
             }
 
             parent = match.getOwner();
             int matchIndex = match.getStartIndex();
-            if(parent!=null) {
+            if (parent!=null) {
                 // Remove matching phrase from original query
-                for(int i=0; i<match.getLength(); i++) {
+                for (int i=0; i<match.getLength(); i++) {
                     parent.removeItem(matchIndex);
                 }
                 // Adding back expansions
@@ -554,11 +556,11 @@ public class RewriterFeatures {
         }
 
         // Not root single item
-        if(parent!=null) {
+        if (parent != null) {
             // Cleaning up the query after rewrite to remove redundant tags
             // e.g. (AND (OR (AND a b) c)) => (OR (AND a b) c)
             String cleanupError = QueryCanonicalizer.canonicalize(qTree);
-            if(cleanupError!=null) {
+            if (cleanupError!=null) {
                 RewriterUtils.error(logger, query, "Error canonicalizing query tree");
                 throw new RuntimeException("Error canonicalizing query tree");
             }
@@ -595,7 +597,7 @@ public class RewriterFeatures {
      */
     static Item convertStringToQTree(Query query, String stringToParse) {
         RewriterUtils.log(logger, query, "Converting string [" + stringToParse + "] to query tree");
-        if(stringToParse==null) {
+        if (stringToParse == null) {
             return new NullItem();
         }
         Model model = query.getModel();
@@ -621,7 +623,7 @@ public class RewriterFeatures {
         Iterator<Item> subItems = andItem.getItemIterator();
         while(subItems.hasNext()) {
             Item curr = (subItems.next());
-            if(curr instanceof IntItem) {
+            if (curr instanceof IntItem) {
                 WordItem numItem = new WordItem(((IntItem)curr).stringValue());
                 result.addItem(numItem);
             } else {
@@ -639,7 +641,7 @@ public class RewriterFeatures {
      */
     private static class PhraseLength implements Comparator<PhraseMatcher.Phrase> {
         public int compare(PhraseMatcher.Phrase phrase1, PhraseMatcher.Phrase phrase2) {
-            if((phrase2.getLength()>phrase1.getLength()) ||
+            if ((phrase2.getLength()>phrase1.getLength()) ||
                (phrase2.getLength()==phrase1.getLength() &&
                 phrase2.getStartIndex()<=phrase1.getStartIndex())) {
                 return 1;
@@ -648,4 +650,5 @@ public class RewriterFeatures {
             }
         }
     }
+
 }

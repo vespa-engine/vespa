@@ -79,7 +79,6 @@ private:
     typedef typename B::WeightedFloat WeightedFloat;
     BaseType get(DocId doc)        const override { return getHelper(doc, 0); }
     EnumHandle getEnum(DocId doc)  const override { return getEnumHelper(doc, 0); }
-    uint32_t getAll(DocId doc, BaseType * v, uint32_t sz) const override { return getAllHelper<BaseType, BaseType>(doc, v, sz); }
     uint32_t get(DocId doc, EnumHandle * e, uint32_t sz) const override { return getAllEnumHelper(doc, e, sz); }
 
     uint32_t getValueCount(DocId doc) const override { return getValueCountHelper(doc); }
@@ -125,7 +124,6 @@ private:
     }
 
     uint32_t get(DocId doc, WeightedEnum * v, uint32_t sz)  const override { return getAllEnumHelper(doc, v, sz); }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz)   const override { return getAllHelper<Weighted, BaseType>(doc, v, sz); }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz)   const override { return getAllHelper<WeightedInt, largeint_t>(doc, v, sz); }
     uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override { return getAllHelper<WeightedFloat, double>(doc, v, sz); }
 };

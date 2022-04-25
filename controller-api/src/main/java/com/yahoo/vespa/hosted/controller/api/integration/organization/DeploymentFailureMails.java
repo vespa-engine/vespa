@@ -75,8 +75,7 @@ public class DeploymentFailureMails {
             return "System test";
         if (type.isStagingTest())
             return "Staging test";
-        return (type.isDeployment() ? "Deployment to " : "Verification test of ") +
-               type.zone(registry.system()).region();
+        return (type.isDeployment() ? "Deployment to " : "Verification test of ") + type.zone().region();
     }
 
 }

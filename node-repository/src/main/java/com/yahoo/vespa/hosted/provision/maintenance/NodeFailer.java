@@ -164,7 +164,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         for (Node node : activeNodes) {
             if (allSuspended(node, activeNodes)) {
-                Node host = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
+                Node host = node.parentHostname().flatMap(parent -> activeNodes.node(parent)).orElse(node);
                 if (host.type().isHost()) {
                     List<String> failureReports = reasonsToFailHost(host);
                     if ( ! failureReports.isEmpty()) {
@@ -188,8 +188,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     /** Returns whether node has any kind of hardware issue */
-    static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
-        Node host = node.parentHostname().flatMap(parent -> nodeRepository.nodes().node(parent)).orElse(node);
+    static boolean hasHardwareIssue(Node node, NodeList allNodes) {
+        Node host = node.parentHostname().flatMap(parent -> allNodes.node(parent)).orElse(node);
         return reasonsToFailHost(host).size() > 0;
     }
 
@@ -207,10 +207,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private boolean allSuspended(Node node, NodeList activeNodes) {
         if (!nodeRepository().nodes().suspended(node)) return false;
         if (node.parentHostname().isPresent()) return true; // optimization
-        return activeNodes.stream()
-                .filter(childNode -> childNode.parentHostname().isPresent() &&
-                        childNode.parentHostname().get().equals(node.hostname()))
-                .allMatch(nodeRepository().nodes()::suspended);
+        return activeNodes.childrenOf(node.hostname()).stream().allMatch(nodeRepository().nodes()::suspended);
     }
 
     /**

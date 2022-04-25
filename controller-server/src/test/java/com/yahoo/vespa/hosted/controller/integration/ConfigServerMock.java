@@ -98,17 +98,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     private Version lastPrepareVersion = null;
     private Consumer<ApplicationId> prepareException = null;
-    private ConfigChangeActions configChangeActions = null;
     private Supplier<String> log = () -> "INFO - All good";
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
         bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.notController());
-    }
-
-    /** Sets the ConfigChangeActions that will be returned on next deployment. */
-    public void setConfigChangeActions(ConfigChangeActions configChangeActions) {
-        this.configChangeActions = configChangeActions;
     }
 
     /** Assigns a reserved tenant node to the given deployment, with initial versions. */
@@ -428,10 +422,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
             PrepareResponse prepareResponse = new PrepareResponse();
             prepareResponse.message = "foo";
-            prepareResponse.configChangeActions = configChangeActions != null
-                    ? configChangeActions
-                    : new ConfigChangeActions(List.of(), List.of(), List.of());
-            setConfigChangeActions(null);
+            prepareResponse.configChangeActions = new ConfigChangeActions(List.of(), List.of(), List.of());
             prepareResponse.tenant = new TenantId("tenant");
             prepareResponse.log = warnings.getOrDefault(id, Collections.emptyList());
             return prepareResponse;

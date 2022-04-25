@@ -6635,11 +6635,13 @@
     ],
     "methods": [
       "public void <init>()",
-      "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)"
+      "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
+      "public static void requireNotPresentIn(java.util.Map)"
     ],
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName MAX_OFFSET",
       "public static final com.yahoo.processing.request.CompoundName MAX_HITS",
+      "public static final com.yahoo.processing.request.CompoundName MAX_QUERY_ITEMS",
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
   },
@@ -8267,6 +8269,18 @@
       "public static final com.yahoo.processing.request.CompoundName idDimensionKey",
       "public static final com.yahoo.processing.request.CompoundName dryRunKey"
     ]
+  },
+  "com.yahoo.search.searchers.ValidateFuzzySearcher": {
+    "superClass": "com.yahoo.search.Searcher",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.vespa.config.search.AttributesConfig)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields": []
   },
   "com.yahoo.search.searchers.ValidateMatchPhaseSearcher": {
     "superClass": "com.yahoo.search.Searcher",

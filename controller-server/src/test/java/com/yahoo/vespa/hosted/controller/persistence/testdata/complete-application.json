@@ -294,7 +294,7 @@
       "deploymentJobs": {
         "jobStatus": [
           {
-            "jobType": "staging-test",
+            "jobType": "staging.zone",
             "pausedUntil": 321
           }
         ]

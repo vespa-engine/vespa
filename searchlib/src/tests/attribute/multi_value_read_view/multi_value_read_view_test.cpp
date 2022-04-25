@@ -214,7 +214,7 @@ MultiValueReadViewTest::check_values_helper(const IAttributeVector &attr, const 
     vespalib::Stash stash;
     auto mv_attr = attr.as_multi_value_attribute();
     EXPECT_NE(nullptr, mv_attr);
-    auto read_view = mv_attr->make_read_view(IMultiValueAttribute::Tag<MultiValueType>(), stash);
+    auto read_view = mv_attr->make_read_view(IMultiValueAttribute::MultiValueTag<MultiValueType>(), stash);
     EXPECT_NE(nullptr, read_view);
     bool is_imported = attr.isImported();
     auto values = read_view->get_values(is_imported ? 4 : 1);

@@ -160,7 +160,7 @@ bool ImportedAttributeVectorReadGuard::isImported() const
 
 template <typename MultiValueType>
 const IMultiValueReadView<MultiValueType>*
-ImportedAttributeVectorReadGuard::make_read_view_helper(Tag<MultiValueType> tag, vespalib::Stash &stash) const
+ImportedAttributeVectorReadGuard::make_read_view_helper(MultiValueTag<MultiValueType> tag, vespalib::Stash &stash) const
 {
     auto target_mv_attr = _target_attribute.as_multi_value_attribute();
     if (target_mv_attr == nullptr) {
