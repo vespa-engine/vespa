@@ -316,20 +316,13 @@ class JobControllerApiHandlerHelper {
                     Cursor latestApplicationObject = latestVersionsObject.setObject("application");
                     toSlime(latestApplicationObject.setObject("application"), latestApplication);
                     latestApplicationObject.setLong("at", latestApplication.buildTime().orElse(Instant.EPOCH).toEpochMilli());
-                    latestApplicationObject.setBool("upgrade", change.revision().map(latestApplication.id()::compareTo).orElse(1) > 0 && deployments.isEmpty()
+                    latestApplicationObject.setBool("upgrade",    change.revision().map(latestApplication.id()::compareTo).orElse(1) > 0 && deployments.isEmpty()
                                                                || deployments.stream().anyMatch(deployment -> deployment.revision().compareTo(latestApplication.id()) < 0));
 
                     Cursor availableArray = latestApplicationObject.setArray("available");
-                    for (ApplicationVersion available : availableApplications) {
-                        if (   deployments.stream().anyMatch(deployment -> deployment.revision().compareTo(available.id()) > 0)
-                            || deployments.stream().noneMatch(deployment -> deployment.revision().compareTo(available.id()) < 0) && ! deployments.isEmpty()
-                            || status.hasCompleted(stepStatus.instance(), Change.of(available.id()))
-                            || change.revision().map(available.id()::compareTo).orElse(1) <= 0)
-                            break;
-
+                    for (ApplicationVersion available : availableApplications)
                         toSlime(availableArray.addObject().setObject("application"), available);
-                    }
-                    change.revision().ifPresent(revision -> toSlime(availableArray.addObject().setObject("application"), application.revisions().get(revision)));
+
                     toSlime(latestApplicationObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksRevisions));
                 }
             }
