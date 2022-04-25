@@ -137,16 +137,16 @@ public:
 };
 
 /**
- * Implements the executor for fetching values from a single or array attribute vector
+ * Implements the executor for fetching values from an array attribute vector
  */
 template <typename BaseType>
-class MultiAttributeExecutor final : public fef::FeatureExecutor {
+class ArrayAttributeExecutor final : public fef::FeatureExecutor {
 private:
     using ArrayReadView = attribute::IArrayReadView<BaseType>;
     const ArrayReadView* _array_read_view;
     uint32_t  _idx;
 public:
-    MultiAttributeExecutor(const ArrayReadView* array_read_view, uint32_t idx) : _array_read_view(array_read_view), _idx(idx) { }
+    ArrayAttributeExecutor(const ArrayReadView* array_read_view, uint32_t idx) : _array_read_view(array_read_view), _idx(idx) { }
     void execute(uint32_t docId) override;
     void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
@@ -239,7 +239,7 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
 
 template <typename BaseType>
 void
-MultiAttributeExecutor<BaseType>::execute(uint32_t docId)
+ArrayAttributeExecutor<BaseType>::execute(uint32_t docId)
 {
     auto values = _array_read_view->get_values(docId);
     auto o = outputs().get_bound();
@@ -330,10 +330,10 @@ private:
 };
 
 template <typename T>
-struct MultiValueExecutorCreator {
+struct ArrayExecutorCreator {
     using ArrayReadView = attribute::IArrayReadView<typename T::BaseType>;
-    using ExecType = MultiAttributeExecutor<typename T::BaseType>;
-    MultiValueExecutorCreator() : _array_read_view(nullptr) {}
+    using ExecType = ArrayAttributeExecutor<typename T::BaseType>;
+    ArrayExecutorCreator() : _array_read_view(nullptr) {}
     bool handle(vespalib::Stash &stash, const IAttributeVector *attribute) {
         auto multi_value_attribute = attribute->as_multi_value_attribute();
         if (multi_value_attribute != nullptr) {
@@ -414,19 +414,19 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
             return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
         } else if (attribute->isIntegerType()) {
             if (basicType == BasicType::INT32) {
-                MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
+                ArrayExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
                 if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else if (basicType == BasicType::INT64) {
-                MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
+                ArrayExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
                 if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
         } else { // FLOAT
             if (basicType == BasicType::DOUBLE) {
-                MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
+                ArrayExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
                 if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else {
-                MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
+                ArrayExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
                 if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
