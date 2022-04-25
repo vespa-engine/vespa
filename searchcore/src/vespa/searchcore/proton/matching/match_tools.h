@@ -114,7 +114,7 @@ public:
                       const vespalib::Doom & softDoom,
                       ISearchContext &searchContext,
                       search::attribute::IAttributeContext &attributeContext,
-                      search::engine::Trace & trace,
+                      search::engine::Trace & root_trace,
                       vespalib::stringref queryStack,
                       const vespalib::string &location,
                       const ViewResolver &viewResolver,
