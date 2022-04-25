@@ -66,7 +66,11 @@
       <artifactId>snappy-java</artifactId>
       <scope>compile</scope>
     </dependency>
-
+    <dependency>
+      <!-- Needed by zookeeper, which only has an optional dependency. -->
+      <groupId>com.github.spotbugs</groupId>
+      <artifactId>spotbugs-annotations</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
