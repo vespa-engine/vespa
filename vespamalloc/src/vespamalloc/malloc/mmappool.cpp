@@ -2,6 +2,7 @@
 #include "mmappool.h"
 #include "common.h"
 #include <sys/mman.h>
+#include <algorithm>
 #include <unistd.h>
 
 namespace vespamalloc {

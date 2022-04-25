@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/payload_converter.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP("payload_converter");
