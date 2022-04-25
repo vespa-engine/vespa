@@ -66,7 +66,7 @@ public class Lock implements Mutex {
         }
         catch (Exception e) {
             threadLockStats.releaseFailed();
-            throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
+            throw new RuntimeException("Exception releasing lock '" + lockPath + "'", e);
         }
     }
 
