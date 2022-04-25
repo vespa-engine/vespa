@@ -29,7 +29,7 @@ public class Applications {
             try (Mutex lock = db.lock(id)) {
                 get(id).ifPresent(application -> put(application, lock));
             } catch (ApplicationLockException e) {
-                throw new ApplicationLockException(e.getMessage());  // No need for stack trace here
+                throw new ApplicationLockException(e);  // No need for stack trace here
             }
         }
     }
