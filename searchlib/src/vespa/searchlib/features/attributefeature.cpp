@@ -213,7 +213,6 @@ private:
     attribute::BasicType::Type _attrType;
     BT   _buffer; // used when fetching values and weights from the attribute
     T    _key;    // the key to find a weight for
-    bool _useKey;
 
 public:
     /**
@@ -221,9 +220,8 @@ public:
      *
      * @param attribue The attribute vector to use.
      * @param key      The key to find a corresponding weight for.
-     * @param useKey   Whether we should consider the key.
      */
-    WeightedSetAttributeExecutor(const attribute::IAttributeVector * attribute, T key, bool useKey);
+    WeightedSetAttributeExecutor(const attribute::IAttributeVector * attribute, T key);
     void execute(uint32_t docId) override;
 };
 
@@ -282,13 +280,12 @@ AttributeExecutor<T>::execute(uint32_t docId)
 
 
 template <typename BT, typename T>
-WeightedSetAttributeExecutor<BT, T>::WeightedSetAttributeExecutor(const IAttributeVector * attribute, T key, bool useKey) :
-    fef::FeatureExecutor(),
-    _attribute(attribute),
-    _attrType(attribute->getBasicType()),
-    _buffer(),
-    _key(key),
-    _useKey(useKey)
+WeightedSetAttributeExecutor<BT, T>::WeightedSetAttributeExecutor(const IAttributeVector * attribute, T key)
+    : fef::FeatureExecutor(),
+      _attribute(attribute),
+      _attrType(attribute->getBasicType()),
+      _buffer(),
+      _key(key)
 {
 }
 
@@ -300,18 +297,14 @@ WeightedSetAttributeExecutor<BT, T>::execute(uint32_t docId)
     feature_t weight = 0.0f;
     feature_t contains = 0.0f;
     feature_t count = 0.0f;
-    if (_useKey) {
-        _buffer.fill(*_attribute, docId);
-        for (uint32_t i = 0; i < _buffer.size(); ++i) {
-            if (equals(_buffer[i].getValue(), _key)) {
-                value = considerUndefined(_key, _attrType);
-                weight = static_cast<feature_t>(_buffer[i].getWeight());
-                contains = 1.0f;
-                break;
-            }
+    _buffer.fill(*_attribute, docId);
+    for (uint32_t i = 0; i < _buffer.size(); ++i) {
+        if (equals(_buffer[i].getValue(), _key)) {
+            value = considerUndefined(_key, _attrType);
+            weight = static_cast<feature_t>(_buffer[i].getWeight());
+            contains = 1.0f;
+            break;
         }
-    } else {
-        count = _attribute->getValueCount(docId);
     }
     outputs().set_number(0, value);    // value
     outputs().set_number(1, weight);   // weight
@@ -370,11 +363,11 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
-                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>>(attribute, extraParam, useKey);
+                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>>(attribute, extraParam);
             } else if (attribute->isIntegerType()) {
-                return stash.create<WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>>(attribute, util::strToNum<int64_t>(extraParam), useKey);
+                return stash.create<WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>>(attribute, util::strToNum<int64_t>(extraParam));
             } else { // FLOAT
-                return stash.create<WeightedSetAttributeExecutor<WeightedFloatContent, double>>(attribute, util::strToNum<double>(extraParam), useKey);
+                return stash.create<WeightedSetAttributeExecutor<WeightedFloatContent, double>>(attribute, util::strToNum<double>(extraParam));
             }
         } else {
             return stash.create<CountOnlyAttributeExecutor>(*attribute);
