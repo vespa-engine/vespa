@@ -36,7 +36,7 @@ compileJava {
 }
 
 group 'ai.vespa'
-version '1.1.4' // Also update pom.xml version if this is changed
+version '1.1.5' // Also update pom.xml version if this is changed
 
 sourceCompatibility = 11
 
