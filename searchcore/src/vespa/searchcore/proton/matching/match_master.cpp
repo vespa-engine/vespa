@@ -109,7 +109,7 @@ MatchMaster::match(search::engine::Trace & trace,
     double match_time_s = 0.0;
     std::unique_ptr<vespalib::slime::Inserter> inserter;
     if (trace.shouldTrace(4)) {
-        inserter = std::make_unique<vespalib::slime::ArrayInserter>(trace.createCursor("match_threads").setArray("threads"));
+        inserter = std::make_unique<vespalib::slime::ArrayInserter>(trace.createCursor("query_execution").setArray("threads"));
     }
     for (size_t i = 0; i < threadState.size(); ++i) {
         const MatchThread & matchThread = *threadState[i];
