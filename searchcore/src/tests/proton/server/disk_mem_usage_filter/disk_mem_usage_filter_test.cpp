@@ -18,12 +18,7 @@ struct DiskMemUsageFilterTest : public ::testing::Test
     DiskMemUsageFilterTest()
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0)))
     {
-        _filter.setDiskUsedSize(20);
-        _filter.setMemoryStats(vespalib::ProcessMemoryStats(297,
-                                                            298,
-                                                            299,
-                                                            300,
-                                                            42));
+        _filter.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 299, 300, 42), 20);
     }
 
     void testWrite(const vespalib::string &exp) {
@@ -41,16 +36,12 @@ struct DiskMemUsageFilterTest : public ::testing::Test
     }
 
     void triggerDiskLimit() {
-        _filter.setDiskUsedSize(90);
+        _filter.set_resource_usage(_filter.get_transient_resource_usage(), _filter.getMemoryStats(), 90);
     }
 
     void triggerMemoryLimit()
     {
-        _filter.setMemoryStats(vespalib::ProcessMemoryStats(897,
-                                                            898,
-                                                            899,
-                                                            900,
-                                                            43));
+        _filter.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 899, 900, 43), _filter.getDiskUsedSize());
     }
 };
 
@@ -123,7 +114,7 @@ TEST_F(DiskMemUsageFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
 
 TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_disk_usage_tracked_in_usage_state_and_metrics)
 {
-    _filter.set_transient_resource_usage({15, 0});
+    _filter.set_resource_usage({15, 0}, _filter.getMemoryStats(), _filter.getDiskUsedSize());
     EXPECT_DOUBLE_EQ(0.15, _filter.usageState().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.15, _filter.get_metrics().transient_disk_usage());
     EXPECT_DOUBLE_EQ(0.05, _filter.usageState().non_transient_disk_usage());
@@ -132,7 +123,7 @@ TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_disk_usage_tracked_in
 
 TEST_F(DiskMemUsageFilterTest, transient_and_non_transient_memory_usage_tracked_in_usage_state_and_metrics)
 {
-    _filter.set_transient_resource_usage({0, 100});
+    _filter.set_resource_usage({0, 100}, _filter.getMemoryStats(), _filter.getDiskUsedSize());
     EXPECT_DOUBLE_EQ(0.1, _filter.usageState().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.1, _filter.get_metrics().transient_memory_usage());
     EXPECT_DOUBLE_EQ(0.2, _filter.usageState().non_transient_memory_usage());
