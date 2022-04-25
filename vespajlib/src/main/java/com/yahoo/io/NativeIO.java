@@ -10,10 +10,6 @@ import java.io.SyncFailedException;
 import java.lang.reflect.Field;
 import java.util.logging.Logger;
 
-import com.sun.jna.LastErrorException;
-import com.sun.jna.Native;
-import com.sun.jna.Platform;
-
 /**
  * Provides functionality only possible through native C library.
  */
@@ -31,17 +27,14 @@ public class NativeIO {
             boolean initComplete = false;
             boolean disabled = true;
             Field field = null;
-            Throwable exception = null;
+            Throwable exception = NativeC.init();
             try {
-                if (Platform.isLinux()) {
+                if (exception == null) {
                     disabled = System.getenv().containsKey(DISABLE_NATIVE_IO);
                     if (!disabled) {
-                        Native.register(Platform.C_LIBRARY_NAME);
                         field = getField(FileDescriptor.class, "fd");
                         initComplete = true;
                     }
-                } else {
-                    exception = new RuntimeException("Platform is unsúpported. Only supported on linux.");
                 }
             } catch (Throwable throwable) {
                 exception = throwable;
@@ -67,8 +60,6 @@ public class NativeIO {
             }
         }
     }
-
-    private static native int posix_fadvise(int fd, long offset, long len, int flag) throws LastErrorException;
 
     public NativeIO() {
         if ( ! fdField.isInitialized()) {
@@ -96,7 +87,7 @@ public class NativeIO {
             }
         }
         if (valid()) {
-            posix_fadvise(fdField.getNativeFD(fd), offset, len, POSIX_FADV_DONTNEED);
+            NativeC.posix_fadvise(fdField.getNativeFD(fd), offset, len, POSIX_FADV_DONTNEED);
         }
     }
     /**
