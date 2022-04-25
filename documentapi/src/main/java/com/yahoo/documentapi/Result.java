@@ -79,7 +79,11 @@ public class Result {
      * @deprecated Will be removed on Vespa 8
      */
     @Deprecated(forRemoval = true, since="7")
-    public java.lang.Error getError() { return new java.lang.Error(error.getMessage()); }
+    public java.lang.Error getError() {
+        return error != null
+                ? new java.lang.Error(error.getMessage())
+                : null;
+    }
 
     public Error error() { return error; }
 
