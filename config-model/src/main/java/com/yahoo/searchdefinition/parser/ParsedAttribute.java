@@ -17,6 +17,7 @@ class ParsedAttribute extends ParsedBlock {
     private boolean enableBitVectors = false;
     private boolean enableOnlyBitVector = false;
     private boolean enableFastAccess = false;
+    private boolean enableFastRank = false;
     private boolean enableFastSearch = false;
     private boolean enableHuge = false;
     private boolean enableMutable = false;
@@ -35,6 +36,7 @@ class ParsedAttribute extends ParsedBlock {
     boolean getEnableBitVectors() { return this.enableBitVectors; }
     boolean getEnableOnlyBitVector() { return this.enableOnlyBitVector; }
     boolean getFastAccess() { return this.enableFastAccess; }
+    boolean getFastRank() { return this.enableFastRank; }
     boolean getFastSearch() { return this.enableFastSearch; }
     boolean getHuge() { return this.enableHuge; }
     boolean getMutable() { return this.enableMutable; }
@@ -59,6 +61,7 @@ class ParsedAttribute extends ParsedBlock {
     void setEnableBitVectors(boolean value) { this.enableBitVectors = value; }
     void setEnableOnlyBitVector(boolean value) { this.enableOnlyBitVector = value; }
     void setFastAccess(boolean value) { this.enableFastAccess = true; }
+    void setFastRank(boolean value) { this.enableFastRank = true; }
     void setFastSearch(boolean value) { this.enableFastSearch = true; }
     void setHuge(boolean value) { this.enableHuge = true; }
     void setMutable(boolean value) { this.enableMutable = true; }
