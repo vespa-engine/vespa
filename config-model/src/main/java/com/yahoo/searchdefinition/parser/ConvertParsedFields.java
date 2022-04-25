@@ -79,6 +79,9 @@ public class ConvertParsedFields {
         attribute.setHuge(parsed.getHuge());
         attribute.setPaged(parsed.getPaged());
         attribute.setFastSearch(parsed.getFastSearch());
+        if (parsed.getFastRank()) {
+            attribute.setFastRank(parsed.getFastRank());
+        }
         attribute.setFastAccess(parsed.getFastAccess());
         attribute.setMutable(parsed.getMutable());
         attribute.setEnableBitVectors(parsed.getEnableBitVectors());

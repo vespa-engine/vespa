@@ -25,6 +25,7 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.tensor.TensorType;
 
 import java.io.Serializable;
+import java.util.function.Supplier;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -52,6 +53,7 @@ public final class Attribute implements Cloneable, Serializable {
     private boolean enableBitVectors = false;
     private boolean enableOnlyBitVector = false;
 
+    private boolean fastRank = false;
     private boolean fastSearch = false;
     private boolean fastAccess = false;
     private boolean huge = false;
@@ -195,6 +197,7 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean isEnabledBitVectors()    { return enableBitVectors; }
     public boolean isEnabledOnlyBitVector() { return enableOnlyBitVector; }
     public boolean isFastSearch()           { return fastSearch; }
+    public boolean isFastRank()            {  return fastRank; }
     public boolean isFastAccess()           { return fastAccess; }
     public boolean isHuge()                 { return huge; }
     public boolean isPaged()                { return paged; }
@@ -228,9 +231,20 @@ public final class Attribute implements Cloneable, Serializable {
     public void setPrefetch(Boolean prefetch)                    { this.prefetch = prefetch; }
     public void setEnableBitVectors(boolean enableBitVectors)    { this.enableBitVectors = enableBitVectors; }
     public void setEnableOnlyBitVector(boolean enableOnlyBitVector) { this.enableOnlyBitVector = enableOnlyBitVector; }
+    public void setFastRank(boolean value) {
+        Supplier<IllegalArgumentException> badGen = () -> new IllegalArgumentException("fast-rank is only valid for tensor attributes, invalid for: "+this);
+        var tt = tensorType.orElseThrow(badGen);
+        for (var dim : tt.dimensions()) {
+            if (dim.isMapped()) {
+                this.fastRank = value;
+                return;
+            }
+        }
+        throw badGen.get();
+    }
     public void setFastSearch(boolean fastSearch)                { this.fastSearch = fastSearch; }
     public void setHuge(boolean huge)                            { this.huge = huge; }
-    public void setPaged(boolean paged)                  { this.paged = paged; }
+    public void setPaged(boolean paged)                          { this.paged = paged; }
     public void setFastAccess(boolean fastAccess)                { this.fastAccess = fastAccess; }
     public void setPosition(boolean position)                    { this.isPosition = position; }
     public void setMutable(boolean mutable)                      { this.mutable = mutable; }
