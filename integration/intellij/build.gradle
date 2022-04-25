@@ -64,7 +64,9 @@ patchPluginXml {
   untilBuild = '213.*'
   // in changeNotes you can add a description of the changes in this version (would appear in the plugin page in preferences\plugins)
     changeNotes = """
-      <em>Support for inputs in rank profiles.</em>"""
+      Support for inputs in rank profiles.
+      Correct parsing of lambda expressions.
+    """
 }
 
 test {

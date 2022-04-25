@@ -111,8 +111,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
 RankingExpression ::= LiteralTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
-                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr |
-                      SliceExpr
+                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr | SliceExpr | LambdaExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
@@ -152,6 +151,8 @@ LiteralTensorExpr ::= TensorType ':' '{' TensorValue ( ',' TensorValue )* '}'
 TensorValue ::= CellAddress ':' RankingExpression
 
 CellAddress ::= Label | FullTensorAddress
+
+LambdaExp ::= FunctionCallExpr ParenthesisedExpr
 
 //-------------------------
 //-- Rank Profile rules ---
