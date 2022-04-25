@@ -24,7 +24,12 @@
           "upgrade": true,
           "available": [
             {
-              "platform": "7.1.0"
+              "platform": "7.1.0",
+              "upgrade": true
+            },
+            {
+              "platform": "6.1.0",
+              "upgrade": false
             }
           ],
           "blockers": [

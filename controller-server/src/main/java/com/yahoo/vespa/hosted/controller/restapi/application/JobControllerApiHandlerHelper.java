@@ -298,16 +298,18 @@ class JobControllerApiHandlerHelper {
                                                             || deployments.stream().anyMatch(deployment -> deployment.version().isBefore(latestPlatform.versionNumber())));
 
                     Cursor availableArray = latestPlatformObject.setArray("available");
+                    boolean isUpgrade = true;
                     for (VespaVersion available : availablePlatforms) {
                         if (   deployments.stream().anyMatch(deployment -> deployment.version().isAfter(available.versionNumber()))
                             || deployments.stream().noneMatch(deployment -> deployment.version().isBefore(available.versionNumber())) && ! deployments.isEmpty()
                             || status.hasCompleted(stepStatus.instance(), Change.of(available.versionNumber()))
-                            || change.platform().map(available.versionNumber()::compareTo).orElse(1) <= 0)
-                            break;
+                            || change.platform().map(available.versionNumber()::compareTo).orElse(1) < 0)
+                            isUpgrade = false;
 
-                        availableArray.addObject().setString("platform", available.versionNumber().toFullString());
+                        Cursor platformObject = availableArray.addObject();
+                        platformObject.setString("platform", available.versionNumber().toFullString());
+                        platformObject.setBool("upgrade", isUpgrade || change.platform().map(available.versionNumber()::equals).orElse(false));
                     }
-                    change.platform().ifPresent(version -> availableArray.addObject().setString("platform", version.toFullString()));
                     toSlime(latestPlatformObject.setArray("blockers"), blockers.stream().filter(ChangeBlocker::blocksVersions));
                 }
                 List<ApplicationVersion> availableApplications = new ArrayList<>(application.revisions().deployable(false));
