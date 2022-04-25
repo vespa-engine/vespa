@@ -15,6 +15,7 @@ import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -71,11 +72,11 @@ public class ProxyServer implements Runnable {
         }
     }
 
-    RawConfig resolveConfig(JRTServerConfigRequest req) {
+    Optional<RawConfig> resolveConfig(JRTServerConfigRequest req) {
         // Calling getConfig() will either return with an answer immediately or
         // create a background thread that retrieves config from the server and
-        // calls updateSubscribers when new config is returned from the config source.
-        // In the last case the method below will return null.
+        // calls updateSubscribers when new config is returned from the config server.
+        // In the last case the method below will return empty.
         return configClient.getConfig(RawConfig.createFromServerRequest(req), req);
     }
 

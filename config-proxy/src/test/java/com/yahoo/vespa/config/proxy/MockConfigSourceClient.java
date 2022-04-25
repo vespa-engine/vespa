@@ -7,6 +7,7 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Mock client that always returns with config immediately
@@ -24,10 +25,10 @@ public class MockConfigSourceClient implements ConfigSourceClient{
     }
 
     @Override
-    public RawConfig getConfig(RawConfig input, JRTServerConfigRequest request) {
-        final RawConfig config = getConfig(input.getKey());
+    public Optional<RawConfig> getConfig(RawConfig input, JRTServerConfigRequest request) {
+        RawConfig config = getConfig(input.getKey());
         memoryCache.update(config);
-        return config;
+        return Optional.of(config);
     }
 
     private RawConfig getConfig(ConfigKey<?> configKey) {

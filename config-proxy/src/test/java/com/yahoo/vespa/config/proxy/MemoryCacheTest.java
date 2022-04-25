@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -84,14 +83,12 @@ public class MemoryCacheTest {
         assertTrue(cache.containsKey(cacheKey));
         assertTrue(cache.containsKey(cacheKey2));
 
-        RawConfig response = cache.get(cacheKey);
-        assertNotNull(response);
+        RawConfig response = cache.get(cacheKey).orElseThrow();
         assertEquals(defName, response.getName());
         assertEquals(payload.toString(), response.getPayload().toString());
         assertEquals(generation, response.getGeneration());
 
-        response = cache.get(cacheKey2);
-        assertNotNull(response);
+        response = cache.get(cacheKey2).orElseThrow();
         assertEquals(defName2, response.getName());
         assertEquals(payload2.toString(), response.getPayload().toString());
         assertEquals(generation, response.getGeneration());
@@ -108,14 +105,12 @@ public class MemoryCacheTest {
         assertEquals(2, cache.size());
         assertTrue(cache.containsKey(cacheKey));
 
-        RawConfig response = cache.get(cacheKey);
-        assertNotNull(response);
+        RawConfig response = cache.get(cacheKey).orElseThrow();
         assertEquals(defName, response.getName());
         assertEquals(payload.getData(), response.getPayload().getData());
         assertEquals(generation, response.getGeneration());
 
-        response = cache.get(cacheKeyDifferentMd5);
-        assertNotNull(response);
+        response = cache.get(cacheKeyDifferentMd5).orElseThrow();
         assertEquals(defName, response.getName());
         assertEquals(payloadDifferentMd5.getData(), response.getPayload().getData());
         assertEquals(generation, response.getGeneration());

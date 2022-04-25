@@ -5,6 +5,7 @@ import com.yahoo.vespa.config.RawConfig;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * A client to a config source, which could be an RPC config server or some other backing for
@@ -14,7 +15,7 @@ import java.util.List;
  */
 interface ConfigSourceClient {
 
-    RawConfig getConfig(RawConfig input, JRTServerConfigRequest request);
+    Optional<RawConfig> getConfig(RawConfig input, JRTServerConfigRequest request);
 
     void shutdown();
 
