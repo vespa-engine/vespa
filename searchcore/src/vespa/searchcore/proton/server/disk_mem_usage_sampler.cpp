@@ -50,7 +50,7 @@ void
 DiskMemUsageSampler::sampleAndReportUsage()
 {
     TransientResourceUsage transientUsage = sample_transient_resource_usage();
-    /* It is important that transient memory is reported first. This prevents
+    /* It is important that transient resource usage is sampled first. This prevents
      * a false positive where we report a too high disk or memory usage causing
      * either feed blocked, or an alert due to metric spike.
      * A false negative is less of a problem, as it will only be a short drop in the metric,
