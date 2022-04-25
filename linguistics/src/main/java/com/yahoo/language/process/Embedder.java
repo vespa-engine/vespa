@@ -67,7 +67,7 @@ public interface Embedder {
 
         /** Sets the language of the text, or UNKNOWN to use language independent embedding */
         public Context setLanguage(Language language) {
-            this.language = language;
+            this.language = language != null ? language : Language.UNKNOWN;
             return this;
         }
 

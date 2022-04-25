@@ -41,7 +41,7 @@ public class VisitorParameters extends Parameters {
     private VisitorControlHandler controlHandler;
     private Map<String, byte []> libraryParameters = new TreeMap<>();
     private Route visitRoute = null;
-    private float weight = 1;
+    private final float weight = 1;
     private long maxFirstPassHits = -1;
     private long maxTotalHits = -1;
     private int maxBucketsPerVisitor = 1;

@@ -3193,7 +3193,8 @@
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()",
-      "public java.lang.String getLowerCasedName()"
+      "public java.lang.String getLowerCasedName()",
+      "public static com.yahoo.processing.request.CompoundName from(java.lang.String)"
     ],
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName empty"

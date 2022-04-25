@@ -11,7 +11,9 @@ import com.yahoo.messagebus.ThrottlePolicy;
  * @author bratseth
  */
 public class Parameters {
+
     ThrottlePolicy throttlePolicy;
+
     public void setThrottlePolicy(ThrottlePolicy throttlePolicy) {
         this.throttlePolicy = throttlePolicy;
     }
@@ -19,4 +21,5 @@ public class Parameters {
     public ThrottlePolicy getThrottlePolicy() {
         return throttlePolicy;
     }
+
 }

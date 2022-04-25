@@ -24,9 +24,9 @@ public final class IndexModel {
 
     private static final Logger log = Logger.getLogger(IndexModel.class.getName());
 
-    private Map<String, List<String>> masterClusters;
-    private Map<String, SearchDefinition> searchDefinitions;
-    private SearchDefinition unionSearchDefinition;
+    private final Map<String, List<String>> masterClusters;
+    private final Map<String, SearchDefinition> searchDefinitions;
+    private final SearchDefinition unionSearchDefinition;
 
     /** Create an index model for a single search definition */
     public IndexModel(SearchDefinition searchDefinition) {
@@ -83,7 +83,6 @@ public final class IndexModel {
         return clusters;
     }
 
-    @SuppressWarnings("deprecation")
     private static Map<String, SearchDefinition> toSearchDefinitions(IndexInfoConfig c) {
         Map<String, SearchDefinition> searchDefinitions = new HashMap<>();
 

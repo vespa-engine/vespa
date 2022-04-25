@@ -323,11 +323,11 @@ public class IndexFacts {
 
         private Session(Collection<String> sources, Collection<String> restrict) {
             // Assumption: Search definition name equals document name.
-            documentTypes = ImmutableList.copyOf(resolveDocumentTypes(sources, restrict, searchDefinitions.keySet()));
+            documentTypes = List.copyOf(resolveDocumentTypes(sources, restrict, searchDefinitions.keySet()));
         }
 
         private Session(Collection<String> sources, Collection<String> restrict, Set<String> candidateDocumentTypes) {
-            documentTypes = ImmutableList.copyOf(resolveDocumentTypes(sources, restrict, candidateDocumentTypes));
+            documentTypes = List.copyOf(resolveDocumentTypes(sources, restrict, candidateDocumentTypes));
         }
 
         /**

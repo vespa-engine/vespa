@@ -16,9 +16,11 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.language.process.SpecialTokenRegistry;
+import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfo;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 
@@ -39,24 +41,17 @@ public class ExecutionFactory extends AbstractComponent {
 
     private final SearchChainRegistry searchChainRegistry;
     private final IndexFacts indexFacts;
+    private final SchemaInfo schemaInfo;
     private final SpecialTokenRegistry specialTokens;
     private final Linguistics linguistics;
     private final ThreadPoolExecutor renderingExecutor;
     private final RendererRegistry rendererRegistry;
     private final Executor executor;
 
-    private static ThreadPoolExecutor createRenderingExecutor() {
-        int threadCount = Runtime.getRuntime().availableProcessors();
-        ThreadPoolExecutor executor = new ThreadPoolExecutor(threadCount, threadCount, 1L, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<>(),
-                ThreadFactoryFactory.getThreadFactory("common-rendering"));
-        executor.prestartAllCoreThreads();
-        return executor;
-    }
-
     @Inject
     public ExecutionFactory(ChainsConfig chainsConfig,
                             IndexInfoConfig indexInfo,
+                            DocumentdbInfoConfig documentdbInfo,
                             QrSearchersConfig clusters,
                             ComponentRegistry<Searcher> searchers,
                             SpecialtokensConfig specialTokens,
@@ -65,11 +60,25 @@ public class ExecutionFactory extends AbstractComponent {
                             Executor executor) {
         this.searchChainRegistry = createSearchChainRegistry(searchers, chainsConfig);
         this.indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters)).freeze();
+        this.schemaInfo = new SchemaInfo(indexInfo, documentdbInfo, clusters);
         this.specialTokens = new SpecialTokenRegistry(specialTokens);
         this.linguistics = linguistics;
         this.renderingExecutor = createRenderingExecutor();
         this.rendererRegistry = new RendererRegistry(renderers.allComponents(), renderingExecutor);
         this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
+    }
+
+    /** @deprecated pass documentDbInfo */
+    @Deprecated
+    public ExecutionFactory(ChainsConfig chainsConfig,
+                            IndexInfoConfig indexInfo,
+                            QrSearchersConfig clusters,
+                            ComponentRegistry<Searcher> searchers,
+                            SpecialtokensConfig specialTokens,
+                            Linguistics linguistics,
+                            ComponentRegistry<Renderer> renderers,
+                            Executor executor) {
+        this(chainsConfig, indexInfo, new DocumentdbInfoConfig.Builder().build(), clusters, searchers, specialTokens, linguistics, renderers, executor);
     }
 
     /** @deprecated pass the container threadpool */
@@ -81,10 +90,11 @@ public class ExecutionFactory extends AbstractComponent {
                             SpecialtokensConfig specialTokens,
                             Linguistics linguistics,
                             ComponentRegistry<Renderer> renderers) {
-        this(chainsConfig, indexInfo, clusters, searchers, specialTokens, linguistics, renderers, null);
+        this(chainsConfig, indexInfo, new DocumentdbInfoConfig.Builder().build(), clusters, searchers, specialTokens, linguistics, renderers, null);
     }
 
-    private SearchChainRegistry createSearchChainRegistry(ComponentRegistry<Searcher> searchers, ChainsConfig chainsConfig) {
+    private SearchChainRegistry createSearchChainRegistry(ComponentRegistry<Searcher> searchers,
+                                                          ChainsConfig chainsConfig) {
         SearchChainRegistry searchChainRegistry = new SearchChainRegistry(searchers);
         ChainsModel chainsModel = ChainsModelBuilder.buildFromConfig(chainsConfig);
         ChainsConfigurer.prepareChainRegistry(searchChainRegistry, chainsModel, searchers);
@@ -98,7 +108,7 @@ public class ExecutionFactory extends AbstractComponent {
      */
     public Execution newExecution(Chain<? extends Searcher> searchChain) {
         return new Execution(searchChain,
-                             new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics, executor));
+                             new Execution.Context(searchChainRegistry, indexFacts, schemaInfo, specialTokens, rendererRegistry, linguistics, executor));
     }
 
     /**
@@ -107,7 +117,7 @@ public class ExecutionFactory extends AbstractComponent {
      */
     public Execution newExecution(String searchChainId) {
         return new Execution(searchChainRegistry().getChain(searchChainId),
-                             new Execution.Context(searchChainRegistry, indexFacts, specialTokens, rendererRegistry, linguistics, executor));
+                             new Execution.Context(searchChainRegistry, indexFacts, schemaInfo, specialTokens, rendererRegistry, linguistics, executor));
     }
 
     /** Returns the search chain registry used by this */
@@ -115,6 +125,8 @@ public class ExecutionFactory extends AbstractComponent {
 
     /** Returns the renderers known to this */
     public RendererRegistry rendererRegistry() { return rendererRegistry; }
+
+    public SchemaInfo schemaInfo() { return schemaInfo; }
 
     @Override
     public void deconstruct() {
@@ -132,12 +144,22 @@ public class ExecutionFactory extends AbstractComponent {
     public static ExecutionFactory empty() {
         return new ExecutionFactory(new ChainsConfig.Builder().build(),
                                     new IndexInfoConfig.Builder().build(),
+                                    new DocumentdbInfoConfig.Builder().build(),
                                     new QrSearchersConfig.Builder().build(),
                                     new ComponentRegistry<>(),
                                     new SpecialtokensConfig.Builder().build(),
                                     new SimpleLinguistics(),
                                     new ComponentRegistry<>(),
                                     null);
+    }
+
+    private static ThreadPoolExecutor createRenderingExecutor() {
+        int threadCount = Runtime.getRuntime().availableProcessors();
+        ThreadPoolExecutor executor = new ThreadPoolExecutor(threadCount, threadCount, 1L, TimeUnit.SECONDS,
+                                                             new LinkedBlockingQueue<>(),
+                                                             ThreadFactoryFactory.getThreadFactory("common-rendering"));
+        executor.prestartAllCoreThreads();
+        return executor;
     }
 
 }

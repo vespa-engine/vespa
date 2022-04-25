@@ -285,4 +285,6 @@ public final class CompoundName {
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
     }
 
+    public static CompoundName from(String name) { return new CompoundName(name); }
+
 }
