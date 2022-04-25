@@ -93,6 +93,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -471,8 +472,10 @@ public class ApplicationController {
             RevisionId revision = run.versions().sourceRevision().filter(__ -> deploySourceVersions).orElse(run.versions().targetRevision());
             ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(deployment, revision));
 
+            AtomicReference<RevisionId> lastRevision = new AtomicReference<>();
             try (Mutex lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
+                application.get().revisions().last().map(ApplicationVersion::id).ifPresent(lastRevision::set);
                 Instance instance = application.get().require(job.application().instance());
 
                 if (   ! applicationPackage.trustedCertificates().isEmpty()
@@ -492,22 +495,25 @@ public class ApplicationController {
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
 
             // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
-            // the source since it's the same application, so it should have the same warnings
-            NotificationSource source = zone.environment().isManuallyDeployed() ?
-                    NotificationSource.from(deployment) : NotificationSource.from(applicationId);
-
-            @SuppressWarnings("deprecation")
-            List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
-                    .map(logs -> logs.stream()
-                            .filter(log -> log.applicationPackage)
-                            .filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue())
-                            .map(log -> log.message)
-                            .sorted()
-                            .distinct()
-                            .collect(Collectors.toList()))
-                    .orElseGet(List::of);
-            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
-            else controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
+            // the source since it's the same application, so it should have the same warnings.
+            // These notifications are only updated when the last submitted revision is deployed here.
+            NotificationSource source = zone.environment().isManuallyDeployed()
+                                        ? NotificationSource.from(deployment)
+                                        : revision.equals(lastRevision.get()) ? NotificationSource.from(applicationId) : null;
+            if (source != null) {
+                @SuppressWarnings("deprecation")
+                List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
+                                                .map(logs -> logs.stream()
+                                                                 .filter(log -> log.applicationPackage)
+                                                                 .filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue())
+                                                                 .map(log -> log.message)
+                                                                 .sorted()
+                                                                 .distinct()
+                                                                 .collect(Collectors.toList()))
+                                                .orElseGet(List::of);
+                if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
+                else controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
+            }
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
