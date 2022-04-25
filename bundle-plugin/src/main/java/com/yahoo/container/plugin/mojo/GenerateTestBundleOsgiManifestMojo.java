@@ -15,8 +15,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 
 import java.io.File;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.yahoo.container.plugin.bundle.AnalyzeBundle.exportedPackagesAggregated;
@@ -46,7 +48,9 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
 
             List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(providedJars);
 
-            PackageTally projectPackages = getProjectMainAndTestClassesTally();
+            List<ClassFileMetaData> analyzedClasses = getProjectMainAndTestClasses();
+
+            PackageTally projectPackages = PackageTally.fromAnalyzedClassFiles(analyzedClasses);
 
             PackageTally jarArtifactsToInclude = definedPackages(artifactSet.getJarArtifactsToInclude());
 
@@ -57,7 +61,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
                     exportsByPackageName(exportedPackagesFromProvidedJars));
 
             Map<String, String> manifestContent = generateManifestContent(artifactSet.getJarArtifactsToInclude(), calculatedImports, includedPackages);
-            addAdditionalManifestProperties(manifestContent);
+            addAdditionalManifestProperties(manifestContent, referencedTestCategories(analyzedClasses));
             createManifestFile(outputDirectory(project), manifestContent);
 
         } catch (Exception e) {
@@ -65,19 +69,31 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
         }
     }
 
-    private void addAdditionalManifestProperties(Map<String, String> manifestContent) {
+    private void addAdditionalManifestProperties(Map<String, String> manifestContent, List<String> referencedTestCategories) {
         manifestContent.put("X-JDisc-Test-Bundle-Version", "1.0");
+        manifestContent.put("X-JDisc-Test-Bundle-Categories", String.join(",", referencedTestCategories));
     }
 
-    private PackageTally getProjectMainAndTestClassesTally() {
-        List<ClassFileMetaData> analyzedClasses =
-                Stream.concat(
-                        allDescendantFiles(new File(project.getBuild().getOutputDirectory())),
-                        allDescendantFiles(new File(project.getBuild().getTestOutputDirectory())))
-                        .filter(file -> file.getName().endsWith(".class"))
-                        .map(classFile -> Analyze.analyzeClass(classFile, null))
-                        .collect(toList());
-        return PackageTally.fromAnalyzedClassFiles(analyzedClasses);
+    private List<ClassFileMetaData> getProjectMainAndTestClasses() {
+        return Stream.concat(allDescendantFiles(new File(project.getBuild().getOutputDirectory())),
+                             allDescendantFiles(new File(project.getBuild().getTestOutputDirectory())))
+                     .filter(file -> file.getName().endsWith(".class"))
+                     .map(classFile -> Analyze.analyzeClass(classFile, null))
+                     .collect(toList());
+    }
+
+    private static List<String> referencedTestCategories(List<ClassFileMetaData> analyzedClasses) {
+        Set<String> referencedClasses = new HashSet<>();
+        for (ClassFileMetaData data : analyzedClasses)
+            referencedClasses.addAll(data.getReferencedClasses());
+
+        return Stream.of("ai.vespa.hosted.cd.SystemTest",
+                         "ai.vespa.hosted.cd.StagingSetup",
+                         "ai.vespa.hosted.cd.StagingTest",
+                         "ai.vespa.hosted.cd.ProductionTest")
+                     .filter(referencedClasses::contains)
+                     .map(name -> name.substring(19))
+                     .collect(toList());
     }
 
 }
