@@ -6,6 +6,7 @@
 #include <memory>
 
 namespace search::attribute { class IAttributeVector; }
+namespace vespalib { class Stash; }
 namespace vespalib::slime { struct Cursor; }
 
 namespace search::docsummary {
@@ -20,16 +21,13 @@ class AttributeFieldWriter
 {
 protected:
     const vespalib::Memory                     _fieldName;
-    const search::attribute::IAttributeVector &_attr;
-    size_t                                     _size;
-    AttributeFieldWriter(vespalib::Memory fieldName,
-                         const search::attribute::IAttributeVector &attr);
+    AttributeFieldWriter(vespalib::Memory fieldName);
 public:
     virtual ~AttributeFieldWriter();
-    virtual void fetch(uint32_t docId) = 0;
+    virtual uint32_t fetch(uint32_t docId) = 0;
     virtual void print(uint32_t idx, vespalib::slime::Cursor &cursor) = 0;
-    static std::unique_ptr<AttributeFieldWriter> create(vespalib::Memory fieldName, const search::attribute::IAttributeVector &attr, bool keep_empty_strings = false);
-    uint32_t size() const { return _size; }
+    // Create a new attribute field writer which is owned by stash
+    static AttributeFieldWriter& create(vespalib::Memory fieldName, const search::attribute::IAttributeVector& attr, vespalib::Stash& stash, bool keep_empty_strings = false);
 };
 
 }

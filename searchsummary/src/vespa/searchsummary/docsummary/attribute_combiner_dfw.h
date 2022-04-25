@@ -10,6 +10,8 @@ class MatchingElementsFields;
 }
 namespace search::attribute { class IAttributeContext; }
 
+namespace vespalib { class Stash; }
+
 namespace search::docsummary {
 
 class DocsumFieldWriterState;
@@ -29,7 +31,7 @@ protected:
     AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements,
                          std::shared_ptr<MatchingElementsFields> matching_elems_fields);
 protected:
-    virtual std::unique_ptr<DocsumFieldWriterState> allocFieldWriterState(search::attribute::IAttributeContext &context, const MatchingElements* matching_elements) = 0;
+    virtual DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext &context, vespalib::Stash& stash, const MatchingElements* matching_elements) = 0;
 public:
     ~AttributeCombinerDFW() override;
     bool IsGenerated() const override;

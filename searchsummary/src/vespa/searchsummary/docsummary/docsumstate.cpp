@@ -32,6 +32,7 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _dynteaser(),
       _attrCtx(),
       _attributes(),
+      _stash(),
       _fieldWriterStates(),
       _parsedLocations(),
       _summaryFeatures(nullptr),

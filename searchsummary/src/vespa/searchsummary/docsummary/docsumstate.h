@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <vespa/vespalib/util/stash.h>
 
 namespace juniper {
     class Config;
@@ -73,7 +74,11 @@ public:
 
     std::unique_ptr<search::attribute::IAttributeContext> _attrCtx;
     std::vector<const search::attribute::IAttributeVector *> _attributes;
-    std::vector<std::unique_ptr<DocsumFieldWriterState>> _fieldWriterStates;
+private:
+    vespalib::Stash _stash;
+public:
+    // DocsumFieldWriterState instances are owned by _stash
+    std::vector<DocsumFieldWriterState*> _fieldWriterStates;
 
     // used by AbsDistanceDFW
     std::vector<search::common::GeoLocationSpec> _parsedLocations;
@@ -97,6 +102,7 @@ public:
 
     const MatchingElements &get_matching_elements(const MatchingElementsFields &matching_elems_fields);
     vespalib::JSONStringer & jsonStringer();
+    vespalib::Stash& get_stash() noexcept { return _stash; }
 private:
     // Only used by rank/summary features, so make it lazy
     std::unique_ptr<vespalib::JSONStringer>   _jsonStringer;
