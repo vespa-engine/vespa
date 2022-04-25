@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.collect.Sets;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
@@ -38,6 +39,10 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.Notification.Level;
+import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
@@ -1101,6 +1106,27 @@ public class ControllerTest {
             assertEquals("Endpoint with ID 'default' in instance 'dev' clashes with endpoint 'dev' in instance 'default'",
                          e.getMessage());
         }
+    }
+
+    @Test
+    public void testTestPackageWarnings() {
+        String deploymentXml = "<deployment version='1.0'>\n" +
+                               "  <prod>\n" +
+                               "    <region>us-west-1</region>\n" +
+                               "  </prod>\n" +
+                               "</deployment>\n";
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
+        byte[] testPackage = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0]));
+        var app = tester.newDeploymentContext();
+        tester.jobs().submit(app.application().id(), Optional.empty(), Optional.empty(), Optional.empty(), 1,
+                             applicationPackage, testPackage, Optional.empty(), 0);
+        assertEquals(List.of(new Notification(tester.clock().instant(),
+                                              Type.testPackage,
+                                              Level.warning,
+                                              NotificationSource.from(app.application().id()),
+                                              List.of("test package has staging tests, so it should also include staging setup",
+                                                      "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"))),
+                     tester.controller().notificationsDb().listNotifications(NotificationSource.from(app.application().id()), true));
     }
 
     @Test

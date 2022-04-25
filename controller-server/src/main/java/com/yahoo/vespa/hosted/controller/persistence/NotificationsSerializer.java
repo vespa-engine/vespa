@@ -92,6 +92,7 @@ public class NotificationsSerializer {
     private static String asString(Notification.Type type) {
         switch (type) {
             case applicationPackage: return "applicationPackage";
+            case testPackage: return "testPackage";
             case deployment: return "deployment";
             case feedBlock: return "feedBlock";
             case reindex: return "reindex";
@@ -102,6 +103,7 @@ public class NotificationsSerializer {
     private static Notification.Type typeFrom(Inspector field) {
         switch (field.asString()) {
             case "applicationPackage": return Notification.Type.applicationPackage;
+            case "testPackage": return Notification.Type.testPackage;
             case "deployment": return Notification.Type.deployment;
             case "feedBlock": return Notification.Type.feedBlock;
             case "reindex": return Notification.Type.reindex;

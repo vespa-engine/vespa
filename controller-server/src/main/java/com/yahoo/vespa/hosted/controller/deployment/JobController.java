@@ -28,6 +28,11 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackageDiff;
+import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.TestSummary;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -488,6 +493,16 @@ public class JobController {
             application = application.withProjectId(projectId == -1 ? OptionalLong.empty() : OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
             application = withPrunedPackages(application);
+
+            TestSummary testSummary = TestPackage.validateTests(applicationPackage.deploymentSpec(), testPackageBytes);
+            if (testSummary.problems().isEmpty())
+                controller.notificationsDb().removeNotification(NotificationSource.from(id),
+                                                                Type.testPackage);
+            else
+                controller.notificationsDb().setNotification(NotificationSource.from(id),
+                                                             Type.testPackage,
+                                                             Notification.Level.warning,
+                                                             testSummary.problems());
 
             applications.storeWithUpdatedConfig(application, applicationPackage);
             applications.deploymentTrigger().triggerNewRevision(id);

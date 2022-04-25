@@ -13,9 +13,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ConfigChangeActions;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RestartAction;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -27,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
@@ -35,6 +33,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,8 +46,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Supplier;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.error;
 import static com.yahoo.vespa.hosted.controller.api.integration.LogEntry.Type.info;
@@ -63,6 +60,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.success;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -555,63 +553,5 @@ public class InternalStepRunnerTest {
                                            "3554970337.947777\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
                                            "3554970337.947820\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstdout\tinfo\tERROR: Bundle canary-application [71] Unable to get module class path. (java.lang.NullPointerException)\n" +
                                            "3554970337.947845\t17491290-v6-1.ostk.bm2.prod.ne1.yahoo.com\t5480\tcontainer\tstderr\twarning\tjava.lang.NullPointerException\\n\\tat org.apache.felix.framework.BundleRevisionImpl.calculateContentPath(BundleRevisionImpl.java:438)\\n\\tat org.apache.felix.framework.BundleRevisionImpl.initializeContentPath(BundleRevisionImpl.java:371)";
-
-    @Test
-    public void generates_correct_tester_flavor() {
-        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
-                                                     "    <instance id='first'>\n" +
-                                                     "        <test tester-flavor=\"d-6-16-100\" />\n" +
-                                                     "        <prod>\n" +
-                                                     "            <region active=\"true\">us-west-1</region>\n" +
-                                                     "            <test>us-west-1</test>\n" +
-                                                     "        </prod>\n" +
-                                                     "    </instance>\n" +
-                                                     "    <instance id='second'>\n" +
-                                                     "        <test />\n" +
-                                                     "        <staging />\n" +
-                                                     "        <prod tester-flavor=\"d-6-16-100\">\n" +
-                                                     "            <parallel>\n" +
-                                                     "                <region active=\"true\">us-east-3</region>\n" +
-                                                     "                <region active=\"true\">us-central-1</region>\n" +
-                                                     "            </parallel>\n" +
-                                                     "            <region active=\"true\">us-west-1</region>\n" +
-                                                     "            <test>us-west-1</test>\n" +
-                                                     "        </prod>\n" +
-                                                     "    </instance>\n" +
-                                                     "</deployment>\n");
-
-        NodeResources firstResources = InternalStepRunner.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("first"));
-        assertEquals(InternalStepRunner.DEFAULT_TESTER_RESOURCES, firstResources);
-
-        NodeResources secondResources = InternalStepRunner.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("second"));
-        assertEquals(6, secondResources.vcpu(), 1e-9);
-        assertEquals(16, secondResources.memoryGb(), 1e-9);
-        assertEquals(100, secondResources.diskGb(), 1e-9);
-    }
-
-    @Test
-    public void generates_correct_services_xml() {
-        generates_correct_services_xml("test_runner_services.xml-cd");
-    }
-
-    private void generates_correct_services_xml(String filenameExpectedOutput) {
-        ControllerConfig.Steprunner.Testerapp config = new ControllerConfig.Steprunner.Testerapp.Builder().build();
-        assertFile(filenameExpectedOutput,
-                new String(InternalStepRunner.servicesXml(
-                        true,
-                        false,
-                        new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local),
-                        config)));
-    }
-
-    private void assertFile(String resourceName, String actualContent) {
-        try {
-            Path path = Paths.get("src/test/resources/").resolve(resourceName);
-            String expectedContent = new String(Files.readAllBytes(path));
-            assertEquals(expectedContent, actualContent);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
 
 }
