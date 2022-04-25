@@ -5,7 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
-
+import java.lang.management.BufferPoolMXBean;
+import java.lang.management.ManagementFactory;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,9 +24,13 @@ import java.util.TimerTask;
  */
 public class MetricUpdater extends AbstractComponent {
 
-    private static final String FREE_MEMORY_BYTES = "mem.heap.free";
-    private static final String USED_MEMORY_BYTES = "mem.heap.used";
-    private static final String TOTAL_MEMORY_BYTES = "mem.heap.total";
+    private static final String HEAP_FREE_MEMORY_BYTES = "mem.heap.free";
+    private static final String HEAP_USED_MEMORY_BYTES = "mem.heap.used";
+    private static final String HEAP_TOTAL_MEMORY_BYTES = "mem.heap.total";
+    private static final String DIRECT_FREE_MEMORY_BYTES = "mem.direct.free";
+    private static final String DIRECT_USED_MEMORY_BYTES = "mem.direct.used";
+    private static final String DIRECT_TOTAL_MEMORY_BYTES = "mem.direct.total";
+    private static final String DIRECT_COUNT = "mem.direct.count";
     private static final String MEMORY_MAPPINGS_COUNT = "jdisc.memory_mappings";
     private static final String OPEN_FILE_DESCRIPTORS = "jdisc.open_file_descriptors";
 
@@ -96,16 +101,32 @@ public class MetricUpdater extends AbstractComponent {
             this.jrtMetrics = new JrtMetrics(metric);
         }
 
+        private void directMemoryUsed() {
+            long count = 0;
+            long used = 0;
+            long total = 0;
+            for (BufferPoolMXBean pool : ManagementFactory.getPlatformMXBeans(BufferPoolMXBean.class)) {
+                count += pool.getCount();
+                used += pool.getMemoryUsed();
+                total += pool.getTotalCapacity();
+            }
+            metric.set(DIRECT_FREE_MEMORY_BYTES, total - used, null);
+            metric.set(DIRECT_USED_MEMORY_BYTES, used, null);
+            metric.set(DIRECT_TOTAL_MEMORY_BYTES, total, null);
+            metric.set(DIRECT_COUNT, count, null);
+        }
+
         @Override
         public void run() {
             long freeMemory = runtime.freeMemory();
             long totalMemory = runtime.totalMemory();
             long usedMemory = totalMemory - freeMemory;
-            metric.set(FREE_MEMORY_BYTES, freeMemory, null);
-            metric.set(USED_MEMORY_BYTES, usedMemory, null);
-            metric.set(TOTAL_MEMORY_BYTES, totalMemory, null);
+            metric.set(HEAP_FREE_MEMORY_BYTES, freeMemory, null);
+            metric.set(HEAP_USED_MEMORY_BYTES, usedMemory, null);
+            metric.set(HEAP_TOTAL_MEMORY_BYTES, totalMemory, null);
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
+            directMemoryUsed();
 
             containerWatchdogMetrics.emitMetrics(metric);
             garbageCollectionMetrics.emitMetrics(metric);

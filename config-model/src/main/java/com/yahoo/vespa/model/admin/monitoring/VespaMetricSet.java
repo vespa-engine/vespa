@@ -191,6 +191,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("mem.heap.used.max"));
         metrics.add(new Metric("jdisc.memory_mappings.max"));
         metrics.add(new Metric("jdisc.open_file_descriptors.max"));
+        metrics.add(new Metric("mem.direct.total.average"));
+        metrics.add(new Metric("mem.direct.free.average"));
+        metrics.add(new Metric("mem.direct.used.average"));
+        metrics.add(new Metric("mem.direct.used.max"));
+        metrics.add(new Metric("mem.direct.count.max"));
 
         metrics.add(new Metric("jdisc.gc.count.average"));
         metrics.add(new Metric("jdisc.gc.count.max"));
