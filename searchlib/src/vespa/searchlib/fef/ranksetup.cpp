@@ -65,7 +65,6 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _softTimeoutEnabled(false),
       _softTimeoutTailCost(0.1),
       _softTimeoutFactor(0.5),
-      _nearest_neighbor_brute_force_limit(0.05),
       _global_filter_lower_limit(0.0),
       _global_filter_upper_limit(1.0),
       _mutateOnMatch(),
