@@ -163,7 +163,11 @@ BuildRequires: vespa-onnxruntime-devel = 1.11.0
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %if 0%{?fc34}
 BuildRequires: protobuf-devel
+%if 0%{?amzn2022}
+BuildRequires: llvm-devel >= 13.0.0
+%else
 BuildRequires: llvm-devel >= 12.0.0
+%endif
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -210,7 +214,7 @@ BuildRequires: vespa-openblas-devel = 0.3.18
 %else
 BuildRequires: openblas-devel
 %endif
-%if 0%{?el9}
+%if 0%{?amzn2022} || 0%{?el9}
 BuildRequires: vespa-re2-devel = 20210801
 %define _use_vespa_re2 1
 %else
@@ -259,7 +263,7 @@ Requires: perl-IO-Socket-IP
 Requires: perl-JSON
 Requires: perl-libwww-perl
 Requires: perl-LWP-Protocol-https
-%if ! 0%{?el9}
+%if ! 0%{?amzn2022} && ! 0%{?el9}
 Requires: perl-Net-INET6Glue
 %endif
 Requires: perl-Pod-Usage
@@ -315,7 +319,11 @@ Requires: gtest
 %if 0%{?fedora}
 Requires: gtest
 %if 0%{?fc34}
+%if 0%{?amzn2022}
+%define _vespa_llvm_version 13
+%else
 %define _vespa_llvm_version 12
+%endif
 %endif
 %if 0%{?fc35}
 %define _vespa_llvm_version 13
@@ -389,7 +397,7 @@ Requires: vespa-openblas = 0.3.18
 %else
 Requires: openblas-serial
 %endif
-%if 0%{?amzn2} ||  0%{?el9}
+%if 0%{?amzn2} || 0%{?amzn2022} || 0%{?el9}
 Requires: vespa-re2 = 20210801
 %else
 Requires: re2
@@ -438,7 +446,11 @@ Requires: protobuf
 %if 0%{?fedora}
 Requires: protobuf
 %if 0%{?fc34}
+%if 0%{?amzn2022}
+Requires: llvm-libs >= 13.0.0
+%else
 Requires: llvm-libs >= 12.0.0
+%endif
 %endif
 %if 0%{?fc35}
 Requires: llvm-libs >= 13.0.0
