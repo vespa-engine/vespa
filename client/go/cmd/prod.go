@@ -141,11 +141,6 @@ $ vespa prod submit`,
 			if !pkg.HasDeployment() {
 				return errHint(fmt.Errorf("no deployment.xml found"), "Try creating one with vespa prod init")
 			}
-			if pkg.TestPath == "" {
-				return errHint(fmt.Errorf("no tests found"),
-					"The application must be a Java maven project, or include basic HTTP tests under src/test/application/",
-					"See https://cloud.vespa.ai/en/getting-to-production")
-			}
 			if err := verifyTests(cli, pkg); err != nil {
 				return err
 			}
