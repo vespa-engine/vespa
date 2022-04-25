@@ -383,13 +383,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag CONTROLLER_LOCK_SCHEME = defineStringFlag(
-            "controller-lock-scheme", "NEW",
-            List.of("hmusum"), "2022-04-07", "2022-05-07",
-            "Lock scheme to application-related controller locks (valid values: OLD, BOTH, NEW)",
-            "Takes effect immediately",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag USE_ZSTD_IN_FILE_DISTRIBUTION = defineFeatureFlag(
             "use-zstd-in-file-distribution", false,
             List.of("hmusum"), "2022-04-07", "2022-05-07",
