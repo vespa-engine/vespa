@@ -124,7 +124,12 @@ PeerCredentials creds_with_cn(vespalib::stringref cn) {
 
 bool verify(AuthorizedPeers authorized_peers, const PeerCredentials& peer_creds) {
     auto verifier = create_verify_callback_from(std::move(authorized_peers));
-    return verifier->verify(peer_creds);
+    return verifier->verify(peer_creds).success();
+}
+
+AssumedRoles verify_roles(AuthorizedPeers authorized_peers, const PeerCredentials& peer_creds) {
+    auto verifier = create_verify_callback_from(std::move(authorized_peers));
+    return verifier->verify(peer_creds).steal_assumed_roles();
 }
 
 TEST("Default-constructed AuthorizedPeers does not allow all authenticated peers") {
@@ -135,6 +140,16 @@ TEST("Specially constructed set of policies allows all authenticated peers") {
     auto allow_all = AuthorizedPeers::allow_all_authenticated();
     EXPECT_TRUE(allow_all.allows_all_authenticated());
     EXPECT_TRUE(verify(allow_all, creds_with_dns_sans({{"anything.goes"}})));
+}
+
+TEST("specially constructed set of policies returns wildcard role set") {
+    auto allow_all = AuthorizedPeers::allow_all_authenticated();
+    EXPECT_EQUAL(verify_roles(allow_all, creds_with_dns_sans({{"anything.goes"}})), AssumedRoles::make_wildcard_role());
+}
+
+TEST("policy without explicit role set implicitly returns wildcard role set") {
+    auto authorized = authorized_peers({policy_with({required_san_dns("yolo.swag")})});
+    EXPECT_EQUAL(verify_roles(authorized, creds_with_dns_sans({{"yolo.swag"}})), AssumedRoles::make_wildcard_role());
 }
 
 TEST("Non-empty policies do not allow all authenticated peers") {
@@ -231,10 +246,11 @@ struct MultiPolicyMatchFixture {
 };
 
 MultiPolicyMatchFixture::MultiPolicyMatchFixture()
-    : authorized(authorized_peers({policy_with({required_san_dns("hello.world")}),
-                                   policy_with({required_san_dns("foo.bar")}),
-                                   policy_with({required_san_dns("zoid.berg")}),
-                                   policy_with({required_san_uri("zoid://be.rg/")})}))
+    : authorized(authorized_peers({policy_with({required_san_dns("hello.world")},   assumed_roles({"r1"})),
+                                   policy_with({required_san_dns("foo.bar")},       assumed_roles({"r2"})),
+                                   policy_with({required_san_dns("zoid.berg")},     assumed_roles({"r2", "r3"})),
+                                   policy_with({required_san_dns("secret.sauce")},  AssumedRoles::make_wildcard_role()),
+                                   policy_with({required_san_uri("zoid://be.rg/")}, assumed_roles({"r4"}))}))
 {}
 
 MultiPolicyMatchFixture::~MultiPolicyMatchFixture() = default;
@@ -246,12 +262,32 @@ TEST_F("peer verifies if it matches at least 1 policy of multiple", MultiPolicyM
     EXPECT_TRUE(verify(f.authorized, creds_with_uri_sans({{"zoid://be.rg/"}})));
 }
 
+TEST_F("role set is returned for single matched policy", MultiPolicyMatchFixture) {
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"hello.world"}})),   assumed_roles({"r1"}));
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"foo.bar"}})),       assumed_roles({"r2"}));
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"zoid.berg"}})),     assumed_roles({"r2", "r3"}));
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"secret.sauce"}})),  AssumedRoles::make_wildcard_role());
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_uri_sans({{"zoid://be.rg/"}})), assumed_roles({"r4"}));
+}
+
 TEST_F("peer verifies if it matches multiple policies", MultiPolicyMatchFixture) {
     EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"hello.world"}, {"zoid.berg"}})));
 }
 
+TEST_F("union role set is returned if multiple policies match", MultiPolicyMatchFixture) {
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"zoid.berg"}})),
+                 assumed_roles({"r1", "r2", "r3"}));
+    // Wildcard role is tracked as a distinct role string
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"secret.sauce"}})),
+                 assumed_roles({"r1", "r2", "*"}));
+}
+
 TEST_F("peer must match at least 1 of multiple policies", MultiPolicyMatchFixture) {
     EXPECT_FALSE(verify(f.authorized, creds_with_dns_sans({{"does.not.exist"}})));
+}
+
+TEST_F("empty role set is returned if no policies match", MultiPolicyMatchFixture) {
+    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"does.not.exist"}})), AssumedRoles::make_empty());
 }
 
 TEST("CN requirement without glob pattern is matched as exact string") {

@@ -18,6 +18,10 @@ struct PeerCredentials {
     std::vector<vespalib::string> uri_sans;
 
     PeerCredentials();
+    PeerCredentials(const PeerCredentials&);
+    PeerCredentials& operator=(const PeerCredentials&);
+    PeerCredentials(PeerCredentials&&) noexcept;
+    PeerCredentials& operator=(PeerCredentials&&) noexcept;
     ~PeerCredentials();
 };
 

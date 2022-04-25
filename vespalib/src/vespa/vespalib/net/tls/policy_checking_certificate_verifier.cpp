@@ -61,7 +61,7 @@ public:
 
     ~PolicyConfiguredCertificateVerifier() override;
 
-    bool verify(const PeerCredentials& peer_creds) const override;
+    AuthorizationResult verify(const PeerCredentials& peer_creds) const override;
 };
 
 PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept
@@ -69,16 +69,21 @@ PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(Authori
 
 PolicyConfiguredCertificateVerifier::~PolicyConfiguredCertificateVerifier() = default;
 
-bool PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_creds) const {
+AuthorizationResult PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_creds) const {
     if (_authorized_peers.allows_all_authenticated()) {
-        return true;
+        return AuthorizationResult::make_authorized_for_all_roles();
     }
+    AssumedRolesBuilder roles_builder;
     for (const auto& policy : _authorized_peers.peer_policies()) {
         if (matches_all_policy_requirements(peer_creds, policy)) {
-            return true;
+            roles_builder.add_union(policy.assumed_roles());
         }
     }
-    return false;
+    if (!roles_builder.empty()) {
+        return AuthorizationResult::make_authorized_for_roles(roles_builder.build_with_move());
+    } else {
+        return AuthorizationResult::make_not_authorized();
+    }
 }
 
 std::shared_ptr<CertificateVerificationCallback> create_verify_callback_from(AuthorizedPeers authorized_peers) {

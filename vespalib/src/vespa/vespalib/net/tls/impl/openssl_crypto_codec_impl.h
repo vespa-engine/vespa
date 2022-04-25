@@ -4,8 +4,10 @@
 #include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/net/tls/transport_security_options.h>
+#include <vespa/vespalib/net/tls/assumed_roles.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
+#include <vespa/vespalib/net/tls/peer_credentials.h>
+#include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <memory>
 #include <optional>
 
@@ -55,6 +57,8 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
     Mode           _mode;
     std::optional<DeferredHandshakeParams> _deferred_handshake_params;
     std::optional<HandshakeResult>         _deferred_handshake_result;
+    PeerCredentials _peer_credentials;
+    AssumedRoles    _assumed_roles;
 public:
     ~OpenSslCryptoCodecImpl() override;
 
@@ -95,6 +99,14 @@ public:
                         char* plaintext, size_t plaintext_size) noexcept override;
     EncodeResult half_close(char* ciphertext, size_t ciphertext_size) noexcept override;
 
+    [[nodiscard]] const PeerCredentials& peer_credentials() const noexcept override {
+        return _peer_credentials;
+    }
+
+    [[nodiscard]] const AssumedRoles& assumed_roles() const noexcept override {
+        return _assumed_roles;
+    }
+
     const SocketAddress& peer_address() const noexcept { return _peer_address; }
     /*
      * If a client has sent a SNI extension field as part of the handshake,
@@ -102,6 +114,15 @@ public:
      * call this for codecs in server mode.
      */
     std::optional<vespalib::string> client_provided_sni_extension() const;
+
+    // Only used by code bridging OpenSSL certificate verification callbacks and
+    // evaluation of custom authorization rules.
+    void set_peer_credentials(PeerCredentials peer_credentials) {
+        _peer_credentials = std::move(peer_credentials);
+    }
+    void set_assumed_roles(AssumedRoles assumed_roles) {
+        _assumed_roles = std::move(assumed_roles);
+    }
 private:
     OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx,
                            const SocketSpec& peer_spec,
