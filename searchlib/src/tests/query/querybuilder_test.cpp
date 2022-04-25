@@ -138,13 +138,29 @@ template <class Term>
 bool checkTerm(const Term *term, const typename Term::Type &t, const string &f,
                int32_t i, Weight w, bool ranked = true,
                bool use_position_data = true) {
-    return EXPECT_TRUE(term != 0) &&
-        (EXPECT_TRUE(compareTerms(t, term->getTerm())) &
-         EXPECT_EQUAL(f, term->getView()) &
-         EXPECT_EQUAL(i, term->getId()) &
-         EXPECT_EQUAL(w.percent(), term->getWeight().percent()) &
-         EXPECT_EQUAL(ranked, term->isRanked()) &
-         EXPECT_EQUAL(use_position_data, term->usePositionData()));
+    if (!EXPECT_TRUE(term != nullptr)) {
+        return false;
+    }
+    bool result = true;
+    if (!EXPECT_TRUE(compareTerms(t, term->getTerm()))) {
+        result = false;
+    }
+    if (!EXPECT_EQUAL(f, term->getView())) {
+        result = false;
+    }
+    if (!EXPECT_EQUAL(i, term->getId())) {
+        result = false;
+    }
+    if (!EXPECT_EQUAL(w.percent(), term->getWeight().percent())) {
+        result = false;
+    }
+    if (!EXPECT_EQUAL(ranked, term->isRanked())) {
+        result = false;
+    }
+    if (!EXPECT_EQUAL(use_position_data, term->usePositionData())) {
+        result = false;
+    }
+    return result;
 }
 
 template <class NodeType>
