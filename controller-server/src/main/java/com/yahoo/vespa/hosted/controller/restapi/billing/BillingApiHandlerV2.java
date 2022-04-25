@@ -31,6 +31,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
+import java.time.chrono.ChronoZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
@@ -179,7 +180,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime tenantUsage(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = untilParameter(requestContext).orElseGet(this::startOfDayTomorrowUTC);
+        var untilAt = untilParameter(requestContext);
         var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var slime = new Slime();
@@ -190,7 +191,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     // --------- ACCOUNTANT API ----------
 
     private Slime accountant(RestApi.RequestContext requestContext) {
-        var untilAt = untilParameter(requestContext).orElseGet(this::startOfDayTomorrowUTC);
+        var untilAt = untilParameter(requestContext);
         var usagePerTenant = billing.createUncommittedBills(untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var response = new Slime();
@@ -211,7 +212,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime previewBill(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = untilParameter(requestContext).orElseGet(this::startOfDayTodayUTC);
+        var untilAt = untilParameter(requestContext);
 
         var usage = billing.createUncommittedBill(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
@@ -319,10 +320,13 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     // ---------- END INVOICE RENDERING ----------
 
-    private Optional<Instant> untilParameter(RestApi.RequestContext ctx) {
+    private Instant untilParameter(RestApi.RequestContext ctx) {
         return ctx.queryParameters().getString("until")
                 .map(LocalDate::parse)
-                .map(date -> date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant());
+                .map(date -> date.plusDays(1))
+                .map(date -> date.atStartOfDay(ZoneOffset.UTC))
+                .map(ChronoZonedDateTime::toInstant)
+                .orElseGet(this::startOfDayTomorrowUTC);
     }
 
     private Instant startOfDayTodayUTC() {
