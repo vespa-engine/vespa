@@ -9,6 +9,8 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/util/stash.h>
+#include <algorithm>
 #include <cassert>
 
 using search::attribute::IAttributeContext;
@@ -24,16 +26,19 @@ vespalib::Memory valueName("value");
 
 class StructMapAttributeFieldWriterState : public DocsumFieldWriterState
 {
-    std::unique_ptr<AttributeFieldWriter> _keyWriter;
-    std::vector<std::unique_ptr<AttributeFieldWriter>> _valueWriters;
-    const vespalib::string&                            _field_name; 
-    const MatchingElements* const                      _matching_elements;
+    // AttributeFieldWriter instance is owned by stash passed to constructor
+    AttributeFieldWriter*              _keyWriter;
+    // AttributeFieldWriter instances are owned by stash passed to constructor
+    std::vector<AttributeFieldWriter*> _valueWriters;
+    const vespalib::string&            _field_name;
+    const MatchingElements* const      _matching_elements;
 
 public:
     StructMapAttributeFieldWriterState(const vespalib::string &keyAttributeName,
                                        const std::vector<vespalib::string> &valueFieldNames,
                                        const std::vector<vespalib::string> &valueAttributeNames,
                                        IAttributeContext &context,
+                                       vespalib::Stash& stash,
                                        const vespalib::string &field_name,
                                        const MatchingElements* matching_elements);
     ~StructMapAttributeFieldWriterState() override;
@@ -45,24 +50,25 @@ StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const ves
                                                                        const std::vector<vespalib::string> &valueFieldNames,
                                                                        const std::vector<vespalib::string> &valueAttributeNames,
                                                                        IAttributeContext &context,
-                                                                       const vespalib::string& field_name, 
+                                                                       vespalib::Stash& stash,
+                                                                       const vespalib::string& field_name,
                                                                        const MatchingElements *matching_elements)
     : DocsumFieldWriterState(),
-      _keyWriter(),
+      _keyWriter(nullptr),
       _valueWriters(),
       _field_name(field_name),
       _matching_elements(matching_elements)
 {
     const IAttributeVector *attr = context.getAttribute(keyAttributeName);
     if (attr != nullptr) {
-        _keyWriter = AttributeFieldWriter::create(keyName, *attr, true);
+        _keyWriter = &AttributeFieldWriter::create(keyName, *attr, stash, true);
     }
     size_t fields = valueFieldNames.size();
     _valueWriters.reserve(fields);
     for (uint32_t field = 0; field < fields; ++field) {
         attr = context.getAttribute(valueAttributeNames[field]);
         if (attr != nullptr) {
-            _valueWriters.emplace_back(AttributeFieldWriter::create(valueFieldNames[field], *attr));
+            _valueWriters.emplace_back(&AttributeFieldWriter::create(valueFieldNames[field], *attr, stash));
         }
     }
 }
@@ -87,16 +93,10 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 {
     uint32_t elems = 0;
     if (_keyWriter) {
-        _keyWriter->fetch(docId);
-        if (elems < _keyWriter->size()) {
-            elems = _keyWriter->size();
-        }
+        elems = _keyWriter->fetch(docId);
     }
     for (auto &valueWriter : _valueWriters) {
-        valueWriter->fetch(docId);
-        if (elems < valueWriter->size()) {
-            elems = valueWriter->size();
-        }
+        elems = std::max(elems, valueWriter->fetch(docId));
     }
     if (elems == 0) {
         return;
@@ -137,10 +137,10 @@ StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const vespalib::str
 
 StructMapAttributeCombinerDFW::~StructMapAttributeCombinerDFW() = default;
 
-std::unique_ptr<DocsumFieldWriterState>
-StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, const MatchingElements* matching_elements)
+DocsumFieldWriterState*
+StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, vespalib::Stash& stash, const MatchingElements* matching_elements)
 {
-    return std::make_unique<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, _fieldName, matching_elements);
+    return &stash.create<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, stash, _fieldName, matching_elements);
 }
 
 }

@@ -57,13 +57,13 @@ AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeContex
 void
 AttributeCombinerDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespalib::slime::Inserter &target)
 {
-    auto &fieldWriterState = state->_fieldWriterStates[_stateIndex];
+    auto& fieldWriterState = state->_fieldWriterStates[_stateIndex];
     if (!fieldWriterState) {
         const MatchingElements *matching_elements = nullptr;
         if (_filter_elements) {
             matching_elements = &state->get_matching_elements(*_matching_elems_fields);
         }
-        fieldWriterState = allocFieldWriterState(*state->_attrCtx, matching_elements);
+        fieldWriterState = allocFieldWriterState(*state->_attrCtx, state->get_stash(), matching_elements);
     }
     fieldWriterState->insertField(docid, target);
 }
