@@ -58,7 +58,7 @@ DiskMemUsageSampler::sampleAndReportUsage()
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
     uint64_t diskUsage = sampleDiskUsage();
-    _filter.set_resource_usage(transientDiskUsage, memoryStats, diskUsage);
+    _filter.set_resource_usage(transientUsage, memoryStats, diskUsage);
 }
 
 namespace {
