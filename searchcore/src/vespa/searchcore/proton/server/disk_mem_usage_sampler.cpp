@@ -49,7 +49,7 @@ DiskMemUsageSampler::setConfig(const Config &config)
 void
 DiskMemUsageSampler::sampleAndReportUsage()
 {
-    TransientResourceUsage transientDiskUsage = sample_transient_resource_usage();
+    TransientResourceUsage transientUsage = sample_transient_resource_usage();
     /* It is important that transient memory is reported first. This prevents
      * a false positive where we report a too high disk or memory usage causing
      * either feed blocked, or an alert due to metric spike.
