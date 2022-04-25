@@ -180,26 +180,11 @@ DiskMemUsageFilter::DiskMemUsageFilter(const HwInfo &hwInfo)
 DiskMemUsageFilter::~DiskMemUsageFilter() = default;
 
 void
-DiskMemUsageFilter::setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in)
-{
-    Guard guard(_lock);
-    _memoryStats = memoryStats_in;
-    recalcState(guard);
-}
-
-void
-DiskMemUsageFilter::setDiskUsedSize(uint64_t diskUsedSizeBytes)
-{
-    Guard guard(_lock);
-    _diskUsedSizeBytes = diskUsedSizeBytes;
-    recalcState(guard);
-}
-
-void
-DiskMemUsageFilter::set_transient_resource_usage(const TransientResourceUsage& transient_usage)
-{
+DiskMemUsageFilter::set_resource_usage(const TransientResourceUsage& transient_usage, vespalib::ProcessMemoryStats memoryStats, uint64_t diskUsedSizeBytes) {
     Guard guard(_lock);
     _transient_usage = transient_usage;
+    _memoryStats = memoryStats;
+    _diskUsedSizeBytes = diskUsedSizeBytes;
     recalcState(guard);
 }
 
