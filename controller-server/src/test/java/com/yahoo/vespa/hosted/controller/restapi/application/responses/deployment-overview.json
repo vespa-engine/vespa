@@ -24,7 +24,8 @@
           "upgrade": true,
           "available": [
             {
-              "platform": "6.1.0"
+              "platform": "6.1.0",
+              "upgrade": true
             }
           ],
           "blockers": [ ]
@@ -555,7 +556,8 @@
           "upgrade": true,
           "available": [
             {
-              "platform": "6.1.0"
+              "platform": "6.1.0",
+              "upgrade": true
             }
           ],
           "blockers": [ ]
