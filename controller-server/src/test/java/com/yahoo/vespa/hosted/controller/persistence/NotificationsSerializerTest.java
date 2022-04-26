@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
-import static com.yahoo.config.provision.SystemName.main;
 import static org.junit.Assert.assertEquals;
 
 /**
