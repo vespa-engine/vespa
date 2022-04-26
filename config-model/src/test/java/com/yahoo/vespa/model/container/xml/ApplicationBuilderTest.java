@@ -16,7 +16,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static com.yahoo.test.Matchers.hasItemWithMethod;
 import static com.yahoo.vespa.model.container.search.ContainerSearch.QUERY_PROFILE_REGISTRY_CLASS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -120,7 +120,7 @@ public class ApplicationBuilderTest extends ContainerModelBuilderTestBase {
     public void cluster_with_only_search_gets_qrserver_as_service_name() {
         createClusterWithOnlyDefaultChains();
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
-        assertEquals(QRSERVER.serviceName, cluster.getContainers().get(0).getServiceName());
+        assertEquals(CONTAINER.serviceName, cluster.getContainers().get(0).getServiceName());
     }
 
     @Test
