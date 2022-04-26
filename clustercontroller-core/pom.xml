@@ -125,7 +125,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <forkCount>4</forkCount>
-                    <rerunFailingTestsCount>3</rerunFailingTestsCount>
+                    <rerunFailingTestsCount>5</rerunFailingTestsCount>
                 </configuration>
             </plugin>
         </plugins>
