@@ -59,6 +59,8 @@ public:
         }
         _writer = AttributeDFWFactory::create(_attrs.mgr(), field_name, filter_elements, _matching_elems_fields);
         _writer->setIndex(0);
+        EXPECT_TRUE(_writer->setFieldWriterStateIndex(0));
+        _state._fieldWriterStates.resize(1);
         _field_name = field_name;
         _state._attributes.resize(1);
         _state._attributes[0] = _state._attrCtx->getAttribute(field_name);
@@ -77,6 +79,7 @@ public:
         _callback.clear();
         _callback.add_matching_elements(docid, _field_name, matching_elems);
         _state._matching_elements = std::unique_ptr<MatchingElements>();
+        _state._fieldWriterStates[0] = nullptr; // Force new state to pick up changed matching elements
         expect_field(exp_slime_as_json, docid);
     }
 };
