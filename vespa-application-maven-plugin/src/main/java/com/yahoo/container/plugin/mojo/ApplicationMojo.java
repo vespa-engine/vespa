@@ -79,11 +79,11 @@ public class ApplicationMojo extends AbstractMojo {
         String metaData = String.format("{\n" +
                                         "  \"compileVersion\": \"%s\",\n" +
                                         "  \"buildTime\": %d,\n" +
-                                        "  \"parentVersion\": \"%s\"\n" +
+                                        "  \"parentVersion\": %s\n" +
                                         "}",
                                         compileVersion,
                                         System.currentTimeMillis(),
-                                        parentVersion);
+                                        parentVersion == null ? null : "\"" + parentVersion + "\"");
         try {
             Files.write(applicationDestination.toPath().resolve("build-meta.json"),
                         metaData.getBytes(StandardCharsets.UTF_8));
