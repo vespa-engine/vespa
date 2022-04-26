@@ -10,8 +10,6 @@
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 
-namespace search::engine { class Trace; }
-
 namespace proton::matching {
 
 class ViewResolver;
@@ -95,8 +93,7 @@ public:
     void optimize();
     void fetchPostings();
 
-    void handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit,
-                              search::engine::Trace& trace);
+    void handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit);
 
     /**
      * Calculates and handles the global filter if needed by the blueprint tree.
@@ -112,8 +109,7 @@ public:
      * @return whether the global filter was set on the blueprint.
      */
     static bool handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
-                                     double global_filter_lower_limit, double global_filter_upper_limit,
-                                     search::engine::Trace* trace);
+                                     double global_filter_lower_limit, double global_filter_upper_limit);
 
     void freeze();
 

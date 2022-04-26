@@ -1,16 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "query.h"
 #include "blueprintbuilder.h"
 #include "matchdatareservevisitor.h"
-#include "query.h"
 #include "resolveviewvisitor.h"
-#include "sameelementmodifier.h"
 #include "termdataextractor.h"
+#include "sameelementmodifier.h"
 #include "unpacking_iterators_optimizer.h"
 #include <vespa/document/datatype/positiondatatype.h>
-#include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
-#include <vespa/searchlib/engine/trace.h>
+#include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/util/issue.h>
@@ -28,19 +27,19 @@ using search::fef::IIndexEnvironment;
 using search::fef::ITermData;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
-using search::query::LocationTerm;
 using search::query::Node;
 using search::query::QueryTreeCreator;
 using search::query::Weight;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndNotBlueprint;
+using search::queryeval::RankBlueprint;
+using search::queryeval::IntermediateBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
-using search::queryeval::IntermediateBlueprint;
-using search::queryeval::RankBlueprint;
 using search::queryeval::SearchIterator;
-using vespalib::Issue;
+using search::query::LocationTerm;
 using vespalib::string;
+using vespalib::Issue;
 using std::vector;
 
 namespace proton::matching {
@@ -245,14 +244,12 @@ Query::fetchPostings()
 }
 
 void
-Query::handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit,
-                            search::engine::Trace& trace)
+Query::handle_global_filter(uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit)
 {
-    if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit, &trace)) {
+    if (!handle_global_filter(*_blueprint, docid_limit, global_filter_lower_limit, global_filter_upper_limit)) {
         return;
     }
     // optimized order may change after accounting for global filter:
-    trace.addEvent(5, "Optimize query execution plan to account for global filter");
     _blueprint = Blueprint::optimize(std::move(_blueprint));
     LOG(debug, "blueprint after handle_global_filter:\n%s\n", _blueprint->asString().c_str());
     // strictness may change if optimized order changed:
@@ -260,9 +257,7 @@ Query::handle_global_filter(uint32_t docid_limit, double global_filter_lower_lim
 }
 
 bool
-Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
-                            double global_filter_lower_limit, double global_filter_upper_limit,
-                            search::engine::Trace* trace)
+Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit, double global_filter_lower_limit, double global_filter_upper_limit)
 {
     using search::queryeval::GlobalFilter;
     double estimated_hit_ratio = blueprint.getState().hit_ratio(docid_limit);
@@ -270,37 +265,24 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
         return false;
     }
 
+    LOG(debug, "docid_limit=%d, estimated_hit_ratio=%1.2f, global_filter_lower_limit=%1.2f, global_filter_upper_limit=%1.2f",
+        docid_limit, estimated_hit_ratio, global_filter_lower_limit, global_filter_upper_limit);
     if (estimated_hit_ratio < global_filter_lower_limit) {
-        if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(5, vespalib::make_string("Skip calculate global filter (estimated_hit_ratio (%f) < lower_limit (%f))",
-                                                     estimated_hit_ratio, global_filter_lower_limit));
-        }
         return false;
     }
 
-    std::shared_ptr<GlobalFilter> global_filter;
     if (estimated_hit_ratio <= global_filter_upper_limit) {
-        if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(5, vespalib::make_string("Calculate global filter (estimated_hit_ratio (%f) <= upper_limit (%f))",
-                                                     estimated_hit_ratio, global_filter_upper_limit));
-        }
         auto constraint = Blueprint::FilterConstraint::UPPER_BOUND;
         bool strict = true;
         auto filter_iterator = blueprint.createFilterSearch(strict, constraint);
         filter_iterator->initRange(1, docid_limit);
         auto white_list = filter_iterator->get_hits(1);
-        global_filter = GlobalFilter::create(std::move(white_list));
+        auto global_filter = GlobalFilter::create(std::move(white_list));
+        blueprint.set_global_filter(*global_filter);
     } else {
-        if (trace && trace->shouldTrace(5)) {
-            trace->addEvent(5, vespalib::make_string("Create match all global filter (estimated_hit_ratio (%f) > upper_limit (%f))",
-                                                     estimated_hit_ratio, global_filter_upper_limit));
-        }
-        global_filter = GlobalFilter::create();
+        auto no_filter = GlobalFilter::create();
+        blueprint.set_global_filter(*no_filter);
     }
-    if (trace) {
-        trace->addEvent(5, "Handle global filter in query execution plan");
-    }
-    blueprint.set_global_filter(*global_filter);
     return true;
 }
 
