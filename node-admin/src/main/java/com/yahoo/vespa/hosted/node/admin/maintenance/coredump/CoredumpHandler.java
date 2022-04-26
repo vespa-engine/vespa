@@ -55,7 +55,6 @@ public class CoredumpHandler {
     private final CoredumpReporter coredumpReporter;
     private final String crashPatchInContainer;
     private final Path doneCoredumpsPath;
-    private final int operatorGroupId;
     private final Metrics metrics;
     private final Clock clock;
     private final Supplier<String> coredumpIdSupplier;
@@ -63,23 +62,21 @@ public class CoredumpHandler {
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
      * @param doneCoredumpsPath path on host where processed core dumps are stored
-     * @param operatorGroupId group ID of the group that will be set as the owner of the processed coredump
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           String crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics) {
+                           String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics) {
         this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-                operatorGroupId, metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
+                metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
     }
 
     CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                    String crashPathInContainer, Path doneCoredumpsPath, int operatorGroupId, Metrics metrics,
+                    String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
                     Clock clock, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
         this.doneCoredumpsPath = doneCoredumpsPath;
-        this.operatorGroupId = operatorGroupId;
         this.metrics = metrics;
         this.clock = clock;
         this.coredumpIdSupplier = coredumpIdSupplier;
@@ -199,7 +196,6 @@ public class CoredumpHandler {
                 .add(LZ4_PATH, "-f", coreFile.pathOnHost().toString(), compressedCoreFile.pathOnHost().toString())
                 .setTimeout(Duration.ofMinutes(30))
                 .execute();
-        new UnixPath(compressedCoreFile.pathOnHost()).setGroupId(operatorGroupId).setPermissions("rw-r-----");
         Files.delete(coreFile);
 
         Path newCoredumpDirectory = doneCoredumpsPath.resolve(context.containerName().asString());
