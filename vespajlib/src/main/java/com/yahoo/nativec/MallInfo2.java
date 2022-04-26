@@ -2,8 +2,8 @@ package com.yahoo.nativec;
 
 import com.sun.jna.Structure;
 
-public class MallInfo2 extends NativeC {
-    private final static Throwable initException = loadLibrary();
+public class MallInfo2 {
+    private final static Throwable initException = NativeC.loadLibrary(MallInfo2.class);
     public static Throwable init() {
         return initException;
     }

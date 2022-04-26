@@ -4,10 +4,10 @@ import com.sun.jna.Native;
 import com.sun.jna.Platform;
 
 class NativeC {
-    protected static Throwable loadLibrary() {
+    static Throwable loadLibrary(Class<?> cls) {
         if (Platform.isLinux()) {
             try {
-                Native.register(Platform.C_LIBRARY_NAME);
+                Native.register(cls, Platform.C_LIBRARY_NAME);
             } catch (Throwable e) {
                 return e;
             }
