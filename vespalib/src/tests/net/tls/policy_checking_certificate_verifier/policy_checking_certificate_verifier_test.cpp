@@ -308,6 +308,64 @@ TEST("CN requirement can include glob wildcards") {
     EXPECT_FALSE(verify(authorized, creds_with_cn("world")));
 }
 
+TEST("AssumedRoles by default contains no roles") {
+    AssumedRoles roles;
+    EXPECT_TRUE(roles.empty());
+    EXPECT_FALSE(roles.can_assume_role("foo"));
+    auto empty = AssumedRoles::make_empty();
+    EXPECT_EQUAL(roles, empty);
+}
+
+TEST("AssumedRoles can be constructed with an explicit set of roles") {
+    auto roles = AssumedRoles::make_for_roles({"foo", "bar"});
+    EXPECT_TRUE(roles.can_assume_role("foo"));
+    EXPECT_TRUE(roles.can_assume_role("bar"));
+    EXPECT_FALSE(roles.can_assume_role("baz"));
+}
+
+TEST("AssumedRoles wildcard role can assume any role") {
+    auto roles = AssumedRoles::make_wildcard_role();
+    EXPECT_TRUE(roles.can_assume_role("foo"));
+    EXPECT_TRUE(roles.can_assume_role("bar"));
+}
+
+TEST("AssumedRolesBuilder builds union set of added roles") {
+    AssumedRolesBuilder builder;
+    builder.add_union(AssumedRoles::make_for_roles({"hello", "world"}));
+    builder.add_union(AssumedRoles::make_for_roles({"hello", "moon"}));
+    builder.add_union(AssumedRoles::make_for_roles({"goodbye", "moon"}));
+    auto roles = builder.build_with_move();
+    EXPECT_EQUAL(roles, AssumedRoles::make_for_roles({"hello", "goodbye", "moon", "world"}));
+}
+
+TEST("AuthorizationResult is not authorized by default") {
+    AuthorizationResult result;
+    EXPECT_FALSE(result.success());
+    EXPECT_TRUE(result.assumed_roles().empty());
+}
+
+TEST("AuthorizationResult can be explicitly created as not authorzed") {
+    auto result = AuthorizationResult::make_not_authorized();
+    EXPECT_FALSE(result.success());
+    EXPECT_TRUE(result.assumed_roles().empty());
+}
+
+TEST("AuthorizationResult can be pre-authorized for all roles") {
+    auto result = AuthorizationResult::make_authorized_for_all_roles();
+    EXPECT_TRUE(result.success());
+    EXPECT_FALSE(result.assumed_roles().empty());
+    EXPECT_TRUE(result.assumed_roles().can_assume_role("foo"));
+}
+
+TEST("AuthorizationResult can be pre-authorized for an explicit set of roles") {
+    auto result = AuthorizationResult::make_authorized_for_roles(AssumedRoles::make_for_roles({"elden", "ring"}));
+    EXPECT_TRUE(result.success());
+    EXPECT_FALSE(result.assumed_roles().empty());
+    EXPECT_TRUE(result.assumed_roles().can_assume_role("elden"));
+    EXPECT_TRUE(result.assumed_roles().can_assume_role("ring"));
+    EXPECT_FALSE(result.assumed_roles().can_assume_role("O you don't have the right"));
+}
+
 // TODO test CN _and_ SAN
 
 TEST_MAIN() { TEST_RUN_ALL(); }
