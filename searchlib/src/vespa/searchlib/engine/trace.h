@@ -85,7 +85,6 @@ public:
     vespalib::string toString() const;
     bool hasTrace() const { return static_cast<bool>(_trace); }
     Cursor & getRoot() const { return root(); }
-    Cursor & getTraces() const { return traces(); }
     vespalib::Slime & getSlime() const { return slime(); }
     bool shouldTrace(uint32_t level) const { return level <= _level; }
     uint32_t getLevel() const { return _level; }

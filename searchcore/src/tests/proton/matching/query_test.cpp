@@ -1138,19 +1138,19 @@ Test::global_filter_is_calculated_and_handled()
     uint32_t docid_limit = 10;
     { // global filter is not wanted
         GlobalFilterBlueprint bp(result, false);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0, 1, nullptr);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0, 1);
         EXPECT_FALSE(res);
         EXPECT_FALSE(bp.filter);
     }
     { // estimated_hit_ratio < global_filter_lower_limit
         GlobalFilterBlueprint bp(result, true);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0.31, 1, nullptr);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0.31, 1);
         EXPECT_FALSE(res);
         EXPECT_FALSE(bp.filter);
     }
     { // estimated_hit_ratio <= global_filter_upper_limit
         GlobalFilterBlueprint bp(result, true);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.3, nullptr);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.3);
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
         EXPECT_TRUE(bp.filter->has_filter());
@@ -1163,7 +1163,7 @@ Test::global_filter_is_calculated_and_handled()
     }
     { // estimated_hit_ratio > global_filter_upper_limit
         GlobalFilterBlueprint bp(result, true);
-        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.29, nullptr);
+        auto res = Query::handle_global_filter(bp, docid_limit, 0, 0.29);
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
         EXPECT_FALSE(bp.filter->has_filter());

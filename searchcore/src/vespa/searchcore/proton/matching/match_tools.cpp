@@ -3,15 +3,12 @@
 #include "match_tools.h"
 #include "querynodes.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
-#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
-#include <vespa/searchlib/attribute/attribute_operation.h>
-#include <vespa/searchlib/attribute/diversity.h>
-#include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
-#include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/data/slime/inject.h>
-#include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/searchlib/engine/trace.h>
+#include <vespa/searchlib/attribute/diversity.h>
+#include <vespa/searchlib/attribute/attribute_operation.h>
+#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
@@ -170,7 +167,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const vespalib::Doom       & doom,
                   ISearchContext             & searchContext,
                   IAttributeContext          & attributeContext,
-                  search::engine::Trace      & root_trace,
+                  search::engine::Trace      & trace,
                   vespalib::stringref          queryStack,
                   const vespalib::string     & location,
                   const ViewResolver         & viewResolver,
@@ -191,35 +188,34 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
       _diversityParams(),
       _valid(false)
 {
-    search::engine::Trace trace(root_trace.getRelativeTime(), root_trace.getLevel());
-    trace.addEvent(4, "Start query setup");
+    trace.addEvent(4, "MTF: Start");
     _query.setWhiteListBlueprint(metaStore.createWhiteListBlueprint());
-    trace.addEvent(5, "Deserialize and build query tree");
+    trace.addEvent(5, "MTF: Build query");
     _valid = _query.buildTree(queryStack, location, viewResolver, indexEnv,
                               rankSetup.split_unpacking_iterators(),
                               rankSetup.delay_unpacking_iterators());
     if (_valid) {
         _query.extractTerms(_queryEnv.terms());
         _query.extractLocations(_queryEnv.locations());
-        trace.addEvent(5, "Build query execution plan");
+        trace.addEvent(5, "MTF: reserve handles");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
-        trace.addEvent(5, "Optimize query execution plan");
         _query.optimize();
-        trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
+        trace.addEvent(4, "MTF: Fetch Postings");
         _query.fetchPostings();
         if (is_search) {
+            trace.addEvent(5, "MTF: Handle Global Filters");
             double lower_limit = GlobalFilterLowerLimit::lookup(rankProperties, rankSetup.get_global_filter_lower_limit());
             double upper_limit = GlobalFilterUpperLimit::lookup(rankProperties, rankSetup.get_global_filter_upper_limit());
-            _query.handle_global_filter(searchContext.getDocIdLimit(), lower_limit, upper_limit, trace);
+            _query.handle_global_filter(searchContext.getDocIdLimit(), lower_limit, upper_limit);
         }
         _query.freeze();
-        trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
+        trace.addEvent(5, "MTF: prepareSharedState");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
         _diversityParams = extractDiversityParams(_rankSetup, rankProperties);
         DegradationParams degradationParams = extractDegradationParams(_rankSetup, rankProperties);
 
         if (degradationParams.enabled()) {
-            trace.addEvent(5, "Setup match phase limiter");
+            trace.addEvent(5, "MTF: Build MatchPhaseLimiter");
             _match_limiter = std::make_unique<MatchPhaseLimiter>(metaStore.getCommittedDocIdLimit(), searchContext.getAttributes(),
                                                                  _requestContext, degradationParams, _diversityParams);
         }
@@ -227,11 +223,7 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
     if ( ! _match_limiter) {
         _match_limiter = std::make_unique<NoMatchPhaseLimiter>();
     }
-    trace.addEvent(4, "Complete query setup");
-    if (root_trace.shouldTrace(4)) {
-        vespalib::slime::ObjectInserter inserter(root_trace.createCursor("query_setup"), "traces");
-        vespalib::slime::inject(trace.getTraces(), inserter);
-    }
+    trace.addEvent(4, "MTF: Complete");
 }
 
 MatchToolsFactory::~MatchToolsFactory() = default;
