@@ -64,33 +64,33 @@ public class LockStats {
     }
 
     /** Must be invoked only after the first and non-reentry acquisition of the lock. */
-    void notifyOfThreadHoldingLock(Thread currentThread, String lockPath, long sequenceNumber,
-                                   Map<Long, Long> reentriesByThreadId) {
+    void notifyOfThreadHoldingLock(Thread currentThread, String lockPath, String lockId,
+                                   long sequenceNumber, Map<Long, Long> reentriesByThreadId) {
         Thread oldThread = lockPathsHeld.put(lockPath, currentThread);
         if (oldThread != null) {
             getLockMetrics(lockPath).incrementAcquireWithoutReleaseCount();
             logger.warning("Thread " + currentThread.getName() + " reports it has the lock on " +
                            lockPath + ", but thread " + oldThread.getName() +
-                           " has not reported it released the lock. #" + sequenceNumber +
+                           " has not reported it released the lock. " + lockId + "#" + sequenceNumber +
                            ", reentries by thread ID = " + reentriesByThreadId);
         }
     }
 
     /** Must be invoked only before the last and non-reentry release of the lock. */
-    void notifyOfThreadReleasingLock(Thread currentThread, String lockPath, long sequenceNumber,
-                                     Map<Long, Long> reentriesByThreadId) {
+    void notifyOfThreadReleasingLock(Thread currentThread, String lockPath, String lockId,
+                                     long sequenceNumber, Map<Long, Long> reentriesByThreadId) {
         Thread oldThread = lockPathsHeld.remove(lockPath);
         if (oldThread == null) {
             getLockMetrics(lockPath).incrementNakedReleaseCount();
             logger.warning("Thread " + currentThread.getName() + " is releasing the lock " + lockPath +
-                           ", but nobody owns that lock. #" + sequenceNumber + ", reentries by thread ID = " +
-                           reentriesByThreadId);
+                           ", but nobody owns that lock. " + lockId + "#" + sequenceNumber +
+                           ", reentries by thread ID = " + reentriesByThreadId);
         } else if (oldThread != currentThread) {
             getLockMetrics(lockPath).incrementForeignReleaseCount();
             logger.warning("Thread " + currentThread.getName() +
                            " is releasing the lock " + lockPath + ", but it was owned by thread " +
-                           oldThread.getName() + ". #" + sequenceNumber + ", reentries by thread ID = " +
-                           reentriesByThreadId);
+                           oldThread.getName() + ". " + lockId + "#" + sequenceNumber +
+                           ", reentries by thread ID = " + reentriesByThreadId);
         }
     }
 

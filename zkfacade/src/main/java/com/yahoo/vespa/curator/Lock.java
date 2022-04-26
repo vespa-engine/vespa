@@ -12,7 +12,6 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 
 /**
  * A cluster-wide re-entrant mutex which is released on (the last symmetric) close.
@@ -63,8 +62,13 @@ public class Lock implements Mutex {
         invoke(+1L, threadLockStats::lockAcquired);
     }
 
+    @FunctionalInterface
+    private interface TriConsumer {
+        void accept(String lockId, long reentryCountDiff, Map<Long, Long> reentriesByThreadId);
+    }
+
     // TODO(hakon): Remove once debugging is unnecessary
-    private void invoke(long reentryCountDiff, BiConsumer<Long, Map<Long, Long>> consumer) {
+    private void invoke(long reentryCountDiff, TriConsumer consumer) {
         long threadId = Thread.currentThread().getId();
         final long sequenceNumber;
         final Map<Long, Long> reentriesByThreadIdCopy;
@@ -82,7 +86,8 @@ public class Lock implements Mutex {
             reentriesByThreadIdCopy = Map.copyOf(reentriesByThreadId);
         }
 
-        consumer.accept(sequenceNumber, reentriesByThreadIdCopy);
+        String lockId = Integer.toHexString(System.identityHashCode(this));
+        consumer.accept(lockId, sequenceNumber, reentriesByThreadIdCopy);
     }
 
     @Override
