@@ -9,7 +9,10 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 /**
  * A cluster-wide re-entrant mutex which is released on (the last symmetric) close.
@@ -20,6 +23,10 @@ import java.util.concurrent.TimeUnit;
  * @author bratseth
  */
 public class Lock implements Mutex {
+
+    private final Object monitor = new Object();
+    private long nextSequenceNumber = 0;
+    private final Map<Long, Long> reentriesByThreadId = new HashMap<>();
 
     private final InterProcessLock mutex;
     private final String lockPath;
@@ -52,14 +59,37 @@ public class Lock implements Mutex {
             throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
                     " to acquire lock '" + lockPath + "'");
         }
-        threadLockStats.lockAcquired();
+
+        invoke(+1L, threadLockStats::lockAcquired);
+    }
+
+    // TODO(hakon): Remove once debugging is unnecessary
+    private void invoke(long reentryCountDiff, BiConsumer<Long, Map<Long, Long>> consumer) {
+        long threadId = Thread.currentThread().getId();
+        final long sequenceNumber;
+        final Map<Long, Long> reentriesByThreadIdCopy;
+        synchronized (monitor) {
+            sequenceNumber = nextSequenceNumber++;
+            reentriesByThreadId.merge(threadId, reentryCountDiff, (oldValue, argumentValue) -> {
+                long sum = oldValue + argumentValue /* == reentryCountDiff */;
+                if (sum == 0) {
+                    // Remove from map
+                    return null;
+                } else {
+                    return sum;
+                }
+            });
+            reentriesByThreadIdCopy = Map.copyOf(reentriesByThreadId);
+        }
+
+        consumer.accept(sequenceNumber, reentriesByThreadIdCopy);
     }
 
     @Override
     public void close() {
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         // Update metrics now before release() to avoid double-counting time in locked state.
-        threadLockStats.preRelease();
+        invoke(-1L, threadLockStats::preRelease);
         try {
             mutex.release();
             threadLockStats.postRelease();
@@ -72,6 +102,10 @@ public class Lock implements Mutex {
 
     protected String lockPath() { return lockPath; }
 
+    @Override
+    public String toString() {
+        return "Lock{" + lockPath + "}";
+    }
 }
 
 
