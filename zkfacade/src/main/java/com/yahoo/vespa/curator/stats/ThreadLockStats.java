@@ -6,6 +6,7 @@ import com.yahoo.vespa.curator.Lock;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -97,7 +98,7 @@ public class ThreadLockStats {
     }
 
     /** Mutable method (see class doc) */
-    public void lockAcquired() {
+    public void lockAcquired(String lockId, long sequenceNumber, Map<Long, Long> reentriesByThreadId) {
         withLastLockAttempt(lockAttempt -> {
             // Note on the order of lockAcquired() vs notifyOfThreadHoldingLock(): When the latter is
             // invoked, other threads may query e.g. isAcquired() on the lockAttempt, which would
@@ -105,19 +106,21 @@ public class ThreadLockStats {
             // but seems better to ensure LockAttempt is updated first.
             lockAttempt.lockAcquired();
 
-            if (!lockAttempt.getReentry()) {
-                LockStats.getGlobal().notifyOfThreadHoldingLock(thread, lockAttempt.getLockPath());
+            if (!lockAttempt.isReentry()) {
+                LockStats.getGlobal().notifyOfThreadHoldingLock(thread, lockAttempt.getLockPath(),
+                                                                lockId, sequenceNumber, reentriesByThreadId);
             }
         });
     }
 
     /** Mutable method (see class doc) */
-    public void preRelease() {
+    public void preRelease(String lockId, long sequenceNumber, Map<Long, Long> reentriesByThreadId) {
         withLastLockAttempt(lockAttempt -> {
             // Note on the order of these two statement: Same concerns apply here as in lockAcquired().
 
-            if (!lockAttempt.getReentry()) {
-                LockStats.getGlobal().notifyOfThreadReleasingLock(thread, lockAttempt.getLockPath());
+            if (!lockAttempt.isReentry()) {
+                LockStats.getGlobal().notifyOfThreadReleasingLock(thread, lockAttempt.getLockPath(),
+                                                                  lockId, sequenceNumber, reentriesByThreadId);
             }
 
             lockAttempt.preRelease();

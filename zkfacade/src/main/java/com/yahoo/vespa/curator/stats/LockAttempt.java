@@ -66,7 +66,7 @@ public class LockAttempt {
     public String getLockPath() { return lockPath; }
     public Instant getTimeAcquiredWasInvoked() { return callAcquireInstant; }
     public Duration getAcquireTimeout() { return timeout; }
-    public boolean getReentry() { return reentry; }
+    public boolean isReentry() { return reentry; }
     public LockState getLockState() { return lockState; }
     public Optional<Instant> getTimeLockWasAcquired() { return lockAcquiredInstant; }
     public boolean isAcquiring() { return lockAcquiredInstant.isEmpty(); }

@@ -438,8 +438,15 @@ public class JobController {
             });
         }
         finally {
-            for (Mutex lock : locks)
-                lock.close();
+            for (Mutex lock : locks) {
+                try {
+                    lock.close();
+                } catch (Throwable t) {
+                    log.log(WARNING, "Failed to close the lock " + lock + ": the lock may or may not " +
+                                     "have been released in ZooKeeper, and if not this controller " +
+                                     "must be restarted to release the lock", t);
+                }
+            }
         }
     }
 
