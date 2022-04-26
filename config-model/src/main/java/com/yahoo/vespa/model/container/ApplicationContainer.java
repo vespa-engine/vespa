@@ -38,7 +38,7 @@ public final class ApplicationContainer extends Container implements
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
         this.enableServerOcspStapling = deployState.featureFlags().enableServerOcspStapling();
-        this.useQrserverServiceName = deployState.featureFlags().useQrserverServiceName();
+        this.useQrserverServiceName = false;
 
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
