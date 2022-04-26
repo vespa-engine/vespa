@@ -66,9 +66,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
         if (! documentDb.getDocsumDefinitionSet().hasDocsum(summaryClass)) {
-            // TODO Vespa 8:
-            // throw new IllegalArgumentException("invalid summary="+summaryClass);
-            log.fine("invalid presentation.summary="+summaryClass);
+            throw new IllegalArgumentException("invalid presentation.summary=" + summaryClass);
         }
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
 
