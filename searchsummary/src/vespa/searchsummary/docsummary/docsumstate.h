@@ -92,7 +92,7 @@ public:
     // used by RankFeaturesDFW
     FeatureSet::SP _rankFeatures;
 
-    // Used by AttributeCombinerDFW when filtering is enabled
+    // Used by AttributeCombinerDFW and MultiAttrDFW when filtering is enabled
     std::unique_ptr<search::MatchingElements> _matching_elements;
 
     GetDocsumsState(const GetDocsumsState &) = delete;
