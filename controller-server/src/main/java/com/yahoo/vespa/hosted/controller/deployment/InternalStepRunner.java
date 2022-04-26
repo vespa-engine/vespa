@@ -910,21 +910,6 @@ public class InternalStepRunner implements StepRunner {
         return testPackage.asApplicationPackage();
     }
 
-    private void appendAndStoreCertificate(ZipBuilder zipBuilder, RunId id) {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
-        X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
-        X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair,
-                                                                         subject,
-                                                                         controller.clock().instant(),
-                                                                         controller.clock().instant().plus(timeouts.testerCertificate()),
-                                                                         SignatureAlgorithm.SHA512_WITH_RSA,
-                                                                         BigInteger.valueOf(1))
-                                                            .build();
-        controller.jobController().storeTesterCertificate(id, certificate);
-        zipBuilder.add("artifacts/key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
-        zipBuilder.add("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
-    }
-
     private DeploymentId getTesterDeploymentId(RunId runId) {
         ZoneId zoneId = runId.type().zone();
         return new DeploymentId(runId.tester().id(), zoneId);
