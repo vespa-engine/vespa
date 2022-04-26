@@ -20,6 +20,7 @@ public class ConcurrentResourcePool<T> implements Iterable<T> {
 
     /** @deprecated Use {@link ConcurrentResourcePool(Supplier)} instead */
     @Deprecated(forRemoval = true, since = "7")
+    @SuppressWarnings("removal")
     public ConcurrentResourcePool(ResourceFactory<T> factory) {
         this.factory = factory.asSupplier();
     }
