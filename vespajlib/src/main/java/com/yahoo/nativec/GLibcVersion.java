@@ -10,9 +10,9 @@ public class GLibcVersion {
     private final int minor;
     public GLibcVersion() {
         version = gnu_get_libc_version();
-        String [] parts = version.split(".");
+        String [] parts = version.split("\\.");
         major = parts.length > 0 ? Integer.valueOf(parts[0]) : -1;
-        minor = parts.length > 0 ? Integer.valueOf(parts[1]) : -1;
+        minor = parts.length > 1 ? Integer.valueOf(parts[1]) : -1;
     }
     private native static String gnu_get_libc_version();
     public String version() { return version; }
