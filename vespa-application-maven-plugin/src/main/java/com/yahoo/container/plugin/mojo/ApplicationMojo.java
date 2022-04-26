@@ -68,18 +68,19 @@ public class ApplicationMojo extends AbstractMojo {
         while (current.getParent() != null && current.getParent().getParentArtifact() != null)
             current = current.getParent();
 
-        Version parentVersion = null;
+        boolean hasVespaParent = false;
         Artifact parentArtifact = current.getParentArtifact();
         if (parentArtifact != null && (parentArtifact.getGroupId().startsWith("com.yahoo.vespa.") || parentArtifact.getGroupId().startsWith("ai.vespa."))) {
-            parentVersion = Version.from(parentArtifact.getVersion());
+            hasVespaParent = true;
+            Version parentVersion = Version.from(parentArtifact.getVersion());
             if (parentVersion.compareTo(compileVersion) < 0)
                 throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
         }
 
-        String metaData = String.format("{\n  \"compileVersion\": \"%s\",\n  \"buildTime\": %d,\n  \"parentVersion\":  %s\n}",
+        String metaData = String.format("{\n  \"compileVersion\": \"%s\",\n  \"buildTime\": %d,\n  \"hasVespaParent\":  %b\n}",
                                         compileVersion,
                                         System.currentTimeMillis(),
-                                        parentVersion);
+                                        hasVespaParent);
         try {
             Files.write(applicationDestination.toPath().resolve("build-meta.json"),
                         metaData.getBytes(StandardCharsets.UTF_8));
