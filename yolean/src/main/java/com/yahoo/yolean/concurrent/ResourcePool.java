@@ -20,6 +20,7 @@ public final class ResourcePool<T> implements Iterable<T> {
 
     /** @deprecated Use {@link ResourcePool( Supplier )} instead */
     @Deprecated(forRemoval = true, since = "7")
+    @SuppressWarnings("removal")
     public ResourcePool(ResourceFactory<T> factory) {
         this(factory.asSupplier());
     }
