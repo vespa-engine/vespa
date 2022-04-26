@@ -22,4 +22,5 @@ public class GenerateSourcesMojoTest {
         System.out.println("defaultConfigGenVersion = " + actual);
         assertEquals(expected, actual);
     }
+
 }
