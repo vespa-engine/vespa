@@ -106,16 +106,19 @@ public class Notifier {
     }
 
     private URI url(NotificationSource source) {
-        if (source.application().isPresent() && source.instance().isPresent()) {
-            if (source.jobType().isPresent() && source.runNumber().isPresent()) {
-                return zoneRegistry.dashboardUrl(
-                        new RunId(ApplicationId.from(source.tenant(),
-                                source.application().get(),
-                                source.instance().get()),
-                                source.jobType().get(),
-                                source.runNumber().getAsLong()));
+        if (source.application().isPresent()) {
+            if (source.instance().isPresent()) {
+                if (source.jobType().isPresent() && source.runNumber().isPresent()) {
+                    return zoneRegistry.dashboardUrl(
+                            new RunId(ApplicationId.from(source.tenant(),
+                                    source.application().get(),
+                                    source.instance().get()),
+                                    source.jobType().get(),
+                                    source.runNumber().getAsLong()));
+                }
+                return zoneRegistry.dashboardUrl(ApplicationId.from(source.tenant(), source.application().get(), source.instance().get()));
             }
-            return zoneRegistry.dashboardUrl(ApplicationId.from(source.tenant(), source.application().get(), source.instance().get()));
+            return zoneRegistry.dashboardUrl(source.tenant(), source.application().get());
         }
         return zoneRegistry.dashboardUrl(source.tenant());
     }
