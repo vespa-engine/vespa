@@ -95,14 +95,22 @@ public class Notifier {
 
     private Mail mailOf(Notification n, Collection<String> recipients) {
         var source = n.source();
-        var subject = Text.format("[%s] %s Vespa Notification for %s - %s", n.level().toString().toUpperCase(), n.type().name(), source.tenant(), source.application());
+        var subject = Text.format("[%s] %s Vespa Notification for %s", n.level().toString().toUpperCase(), n.type().name(), applicationIdSource(source));
         var body = new StringBuilder();
         body.append("Source: ").append(n.source().toString()).append("\n")
                 .append("\n")
                 .append(String.join("\n", n.messages()))
                 .append("\n")
                 .append(url(source).toString());
-        return new Mail(recipients, subject.toString(), body.toString());
+        return new Mail(recipients, subject, body.toString());
+    }
+
+    private String applicationIdSource(NotificationSource source) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(source.tenant().value());
+        source.application().ifPresent(applicationName -> sb.append(".").append(applicationName.value()));
+        source.instance().ifPresent(instanceName -> sb.append(".").append(instanceName.value()));
+        return sb.toString();
     }
 
     private URI url(NotificationSource source) {
