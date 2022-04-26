@@ -66,9 +66,9 @@ public class ApplicationPackage {
 
     private static final String trustedCertificatesFile = "security/clients.pem";
     private static final String buildMetaFile = "build-meta.json";
-    private static final String deploymentFile = "deployment.xml";
+    static final String deploymentFile = "deployment.xml";
     private static final String validationOverridesFile = "validation-overrides.xml";
-    private static final String servicesFile = "services.xml";
+    static final String servicesFile = "services.xml";
 
     private final String contentHash;
     private final String bundleHash;
@@ -212,7 +212,7 @@ public class ApplicationPackage {
                                                   entry -> entry.getValue().get())));
     }
 
-    static byte[] filesZip(Map<String, byte[]> files) {
+    public static byte[] filesZip(Map<String, byte[]> files) {
         try (ZipBuilder zipBuilder = new ZipBuilder(files.values().stream().mapToInt(bytes -> bytes.length).sum() + 512)) {
             files.forEach(zipBuilder::add);
             zipBuilder.close();

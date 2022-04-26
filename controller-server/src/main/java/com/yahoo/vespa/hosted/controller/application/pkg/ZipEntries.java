@@ -13,6 +13,8 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -35,19 +37,28 @@ public class ZipEntries {
 
     /** Copies the zipped content from in to out, adding/overwriting an entry with the given name and content. */
     public static void transferAndWrite(OutputStream out, InputStream in, String name, byte[] content) {
+        transferAndWrite(out, in, Map.of(name, content));
+    }
+
+    /** Copies the zipped content from in to out, adding/overwriting/removing (on {@code null}) entries as specified. */
+    public static void transferAndWrite(OutputStream out, InputStream in, Map<String, byte[]> entries) {
         try (ZipOutputStream zipOut = new ZipOutputStream(out);
              ZipInputStream zipIn = new ZipInputStream(in)) {
             for (ZipEntry entry = zipIn.getNextEntry(); entry != null; entry = zipIn.getNextEntry()) {
-                if (entry.getName().equals(name))
+                if (entries.containsKey(entry.getName()))
                     continue;
 
                 zipOut.putNextEntry(new ZipEntry(entry.getName()));
                 zipIn.transferTo(zipOut);
                 zipOut.closeEntry();
             }
-            zipOut.putNextEntry(new ZipEntry(name));
-            zipOut.write(content);
-            zipOut.closeEntry();
+            for (Entry<String, byte[]> entry : entries.entrySet()) {
+                if (entry.getValue() != null) {
+                    zipOut.putNextEntry(new ZipEntry(entry.getKey()));
+                    zipOut.write(entry.getValue());
+                    zipOut.closeEntry();
+                }
+            }
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -74,6 +85,10 @@ public class ZipEntries {
             }
         }
         return new ZipEntries(entries);
+    }
+
+    public static byte[] readFile(byte[] zip, String name, int maxEntrySizeInBytes) {
+        return from(zip, name::equals, maxEntrySizeInBytes, true).asList().get(0).contentOrThrow();
     }
 
     public List<ZipEntryWithContent> asList() { return entries; }

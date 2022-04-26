@@ -66,10 +66,13 @@ public class Notification {
     }
 
     public enum Type {
-        /** Related to contents of application package, e.g. usage of deprecated features/syntax */
+        /** Related to contents of application package, e.g., usage of deprecated features/syntax */
         applicationPackage,
 
-        /** Related to deployment of application, e.g. system test failure, node allocation failure, internal errors, etc. */
+        /** Related to contents of application test package, e.g., mismatch between deployment spec and provided tests */
+        testPackage,
+
+        /** Related to deployment of application, e.g., system test failure, node allocation failure, internal errors, etc. */
         deployment,
 
         /** Application cluster is (near) external feed blocked */

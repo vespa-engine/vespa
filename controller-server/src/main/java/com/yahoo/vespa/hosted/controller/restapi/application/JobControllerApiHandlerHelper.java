@@ -225,6 +225,7 @@ class JobControllerApiHandlerHelper {
             case aborted:                    return "aborted";
             case error:                      return "error";
             case testFailure:                return "testFailure";
+            case noTests:                    return "noTests";
             case endpointCertificateTimeout: return "endpointCertificateTimeout";
             case nodeAllocationFailure:      return "nodeAllocationFailure";
             case installationFailed:         return "installationFailed";

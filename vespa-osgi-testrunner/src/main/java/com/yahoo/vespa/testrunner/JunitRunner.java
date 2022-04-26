@@ -153,7 +153,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         try {
             var jsonDescriptor = IOUtils.readAll(resource.openStream(), Charset.defaultCharset()).trim();
             testDescriptor = TestDescriptor.fromJsonString(jsonDescriptor);
-            logger.info( "Test classes in bundle :" + testDescriptor.toString());
+            logger.info("Test classes in bundle: " + testDescriptor);
             return Optional.of(testDescriptor);
         } catch (IOException e) {
             return Optional.empty();
