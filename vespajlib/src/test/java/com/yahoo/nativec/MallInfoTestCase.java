@@ -10,7 +10,10 @@ public class MallInfoTestCase {
     @Test
     public void requireThatMallInfo2IsDetected() {
         if (Platform.isLinux()) {
-            assertNull(MallInfo2.init());
+            GLibcVersion version = new GLibcVersion();
+            if ((version.major() >= 3) || ((version.major() == 2) && (version.minor() >= 33))) {
+                assertNull(MallInfo2.init());
+            }
         } else {
             assertEquals("Platform is unsúpported. Only supported on linux.", MallInfo2.init().getMessage());
         }
