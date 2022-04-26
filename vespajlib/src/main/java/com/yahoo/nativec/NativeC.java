@@ -1,12 +1,10 @@
-package com.yahoo.io;
+package com.yahoo.nativec;
 
-import com.sun.jna.LastErrorException;
 import com.sun.jna.Native;
 import com.sun.jna.Platform;
 
 class NativeC {
-    private final static Throwable initException = loadLibrary();
-    private static Throwable loadLibrary() {
+    protected static Throwable loadLibrary() {
         if (Platform.isLinux()) {
             try {
                 Native.register(Platform.C_LIBRARY_NAME);
@@ -18,8 +16,5 @@ class NativeC {
         }
         return null;
     }
-    static Throwable init() {
-        return initException;
-    }
-    static native int posix_fadvise(int fd, long offset, long len, int flag) throws LastErrorException;
+
 }

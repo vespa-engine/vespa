@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.io;
 
+import com.yahoo.nativec.PosixFAdvise;
+
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -16,7 +18,6 @@ import java.util.logging.Logger;
 public class NativeIO {
     private static final Logger logger = Logger.getLogger(NativeIO.class.getName());
     private static final String DISABLE_NATIVE_IO = "DISABLE_NATIVE_IO";
-    private static final int POSIX_FADV_DONTNEED = 4; // See /usr/include/linux/fadvise.h
     private static final InitResult fdField = new InitResult();
     private static class InitResult {
         private final boolean initialized;
@@ -27,7 +28,7 @@ public class NativeIO {
             boolean initComplete = false;
             boolean disabled = true;
             Field field = null;
-            Throwable exception = NativeC.init();
+            Throwable exception = PosixFAdvise.init();
             try {
                 if (exception == null) {
                     disabled = System.getenv().containsKey(DISABLE_NATIVE_IO);
@@ -66,7 +67,7 @@ public class NativeIO {
             if (fdField.isEnabled()) {
                 logger.warning("Native IO not possible due to " + getError().getMessage());
             } else {
-                logger.info("Native IO has been disable explicit via system property " + DISABLE_NATIVE_IO);
+                logger.info("Native IO has been disabled explicit via system property " + DISABLE_NATIVE_IO);
             }
         }
     }
@@ -87,7 +88,7 @@ public class NativeIO {
             }
         }
         if (valid()) {
-            NativeC.posix_fadvise(fdField.getNativeFD(fd), offset, len, POSIX_FADV_DONTNEED);
+            PosixFAdvise.posix_fadvise(fdField.getNativeFD(fd), offset, len, PosixFAdvise.POSIX_FADV_DONTNEED);
         }
     }
     /**
