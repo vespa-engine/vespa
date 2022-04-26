@@ -7,8 +7,9 @@ public class MallInfo {
     public static Throwable init() {
         return initException;
     }
-    // Equivalent JNA mapping
-    private static class MallInfoStruct extends Structure {
+
+    @Structure.FieldOrder({"arena", "ordblks", "smblks", "hblks", "hblkhd", "usmblks", "fsmblks", "uordblks", "fordblks", "keepcost"})
+    public static class MallInfoStruct extends Structure {
         public static class ByValue extends MallInfoStruct implements Structure.ByValue { }
         public int arena;     /* Non-mmapped space allocated (bytes) */
         public int ordblks;   /* Number of free chunks */
