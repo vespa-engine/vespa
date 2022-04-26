@@ -172,7 +172,7 @@ public class DocumentProtocol implements Protocol {
      */
     public static final int ERROR_BUCKET_DELETED = ErrorCode.APP_TRANSIENT_ERROR + 1012;
 
-    /** Storage node received a timestamp that is stale. Likely clock skew. */
+    /** Content node received a timestamp that is stale. Likely clock skew. */
     public static final int ERROR_STALE_TIMESTAMP = ErrorCode.APP_TRANSIENT_ERROR + 1013;
 
     /** The given node have gotten a critical error and have suspended itself. */
@@ -291,7 +291,6 @@ public class DocumentProtocol implements Protocol {
         putRoutingPolicyFactory("MessageType", new RoutingPolicyFactories.MessageTypePolicyFactory(configId, policiesConfig));
         putRoutingPolicyFactory("RoundRobin", new RoutingPolicyFactories.RoundRobinPolicyFactory());
         putRoutingPolicyFactory("LoadBalancer", new RoutingPolicyFactories.LoadBalancerPolicyFactory());
-        putRoutingPolicyFactory("Storage", new RoutingPolicyFactories.ContentPolicyFactory(distributionConfig));
         putRoutingPolicyFactory("SubsetService", new RoutingPolicyFactories.SubsetServicePolicyFactory());
 
         // Prepare version specifications to use when adding routable factories.
