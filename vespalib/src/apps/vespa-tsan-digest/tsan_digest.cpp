@@ -7,6 +7,7 @@
 #include <cassert>
 #include <vector>
 #include <map>
+#include <set>
 #include <memory>
 #include <algorithm>
 #include <unistd.h>
@@ -18,7 +19,7 @@ constexpr auto npos = vespalib::string::npos;
 
 //-----------------------------------------------------------------------------
 
-size_t trace_limit = 7;
+size_t trace_limit = 9;
 
 //-----------------------------------------------------------------------------
 
@@ -44,6 +45,33 @@ uint64_t get_hash(const std::vector<vespalib::string> &list) {
 
 //-----------------------------------------------------------------------------
 
+class FrameHist {
+private:
+    std::map<vespalib::string,size_t> _hist;
+public:
+    void add(const vespalib::string &value, size_t weight) {
+        _hist[value] += weight;
+    }
+    void dump(FILE *dst) {
+        std::vector<std::pair<vespalib::string,size_t>> entries;
+        for (const auto &entry: _hist) {
+            entries.push_back(entry);
+        }
+        std::sort(entries.begin(), entries.end(), [](const auto &a, const auto &b){
+                if (a.second != b.second) {
+                    return (a.second > b.second);
+                }
+                return (a.first < b.first);
+            });
+        fprintf(dst, "  top rated frames:\n");
+        for (size_t i = 0; i < entries.size() && i < trace_limit; ++i) {
+            fprintf(dst, "%s -- score: %zu\n", entries[i].first.c_str(), entries[i].second);
+        }
+    }
+};
+
+//-----------------------------------------------------------------------------
+
 class StackTrace {
 private:
     vespalib::string _heading;
@@ -57,6 +85,11 @@ public:
     }
     void done() { _hash = get_hash(_frames); }
     uint64_t hash() const { return _hash; }
+    void update(FrameHist &hist, size_t weight) const {
+        for (const auto &frame: _frames) {
+            hist.add(frame, weight);
+        }
+    }
     void dump(FILE *dst) const {
         fprintf(dst, "%s\n", _heading.c_str());
         for (const auto &frame: _frames) {
@@ -124,8 +157,9 @@ void dump_delimiter(FILE *dst) {
 
 struct Report {
     using UP = std::unique_ptr<Report>;
-    virtual vespalib::string make_key() const = 0;
-    virtual void add(Report::UP report) = 0;
+    using SP = std::shared_ptr<Report>;
+    virtual std::vector<vespalib::string> make_keys() const = 0;
+    virtual void merge(const Report &report) = 0;
     virtual size_t count() const = 0;
     virtual void dump(FILE *dst) const = 0;
     virtual ~Report() {}
@@ -134,16 +168,15 @@ struct Report {
 class RawReport : public Report {
 private:
     std::vector<vespalib::string> _lines;
+    size_t _count;
 public:
     RawReport(const std::vector<vespalib::string> &lines)
-      : _lines(lines) {}
-    vespalib::string make_key() const override {
-        return fmt("raw:%zu", get_hash(_lines));
+      : _lines(lines), _count(1) {}
+    std::vector<vespalib::string> make_keys() const override {
+        return {fmt("raw:%zu", get_hash(_lines))};
     }
-    void add(Report::UP) override {
-        fprintf(stderr, "WARNING: hash collision for raw report\n");
-    }
-    size_t count() const override { return 1; }
+    void merge(const Report &) override { ++_count; }
+    size_t count() const override { return _count; }
     void dump(FILE *dst) const override {
         for (const auto &line: _lines) {
             fprintf(dst, "%s\n", line.c_str());            
@@ -153,49 +186,97 @@ public:
 
 class RaceReport : public Report {
 private:
-    StackTrace _trace1;
-    StackTrace _trace2;
-    size_t _total;
-    size_t _inverted;
+    struct Node {
+        StackTrace trace;
+        size_t count;
+    };
+    std::vector<Node> _nodes;
+    size_t _count;
+
+    void add(const Node &node) {
+        for (Node &dst: _nodes) {
+            if (dst.trace.hash() == node.trace.hash()) {
+                dst.count += node.count;
+                return;
+            }
+        }
+        _nodes.push_back(node);
+    }
 
 public:
-    RaceReport(const StackTrace &trace1, const StackTrace &trace2)
-      : _trace1(trace1), _trace2(trace2), _total(1), _inverted(0) {}
+    RaceReport(const StackTrace &a, const StackTrace &b)
+      : _nodes({{a, 1}, {b, 1}}), _count(1) {}
 
-    vespalib::string make_key() const override {
-        if (_trace2.hash() < _trace1.hash()) {
-            return fmt("race:%zu,%zu", _trace2.hash(), _trace1.hash());
+    std::vector<vespalib::string> make_keys() const override {
+        std::vector<vespalib::string> result;
+        for (const auto &node: _nodes) {
+            result.push_back(fmt("race:%zu", node.trace.hash()));
         }
-        return fmt("race:%zu,%zu", _trace1.hash(), _trace2.hash());
+        return result;
     }
-    void add(Report::UP report) override {
+    void merge(const Report &report) override {
         // should have correct type due to key prefix
-        const RaceReport &rhs = dynamic_cast<RaceReport&>(*report);
-        ++_total;
-        if (_trace1.hash() != rhs._trace1.hash()) {
-            ++_inverted;
+        const auto &rhs = dynamic_cast<const RaceReport &>(report);
+        _count += rhs._count;
+        for (const auto &node: rhs._nodes) {
+            add(node);
         }
     }
-    size_t count() const override { return _total; }
+    size_t count() const override { return _count; }
     void dump(FILE *dst) const override {
-        fprintf(dst, "WARNING: ThreadSanitizer: data race\n");
-        _trace1.dump(dst);
-        _trace2.dump(dst);
-        fprintf(dst, "INFO: total: %zu (inverted: %zu)\n", _total, _inverted);
+        std::vector<const Node *> list;
+        for (const auto &node: _nodes) {
+            list.push_back(&node);
+        }
+        std::sort(list.begin(), list.end(),
+                  [](const auto *a, const auto *b) {
+                      return (a->count > b->count);
+                  });
+        fprintf(dst, "WARNING: data race cluster with %zu conflicts between %zu traces\n", _count, list.size());
+        FrameHist frame_hist;
+        for (const auto *node: list) {
+            node->trace.update(frame_hist, node->count);
+            node->trace.dump(dst);
+        }
+        frame_hist.dump(dst);
     }
 };
 
 //-----------------------------------------------------------------------------
 
+using ReportMap = std::map<vespalib::string,Report::SP>;
+using MapPos = ReportMap::const_iterator;
+
 size_t total_reports = 0;
-std::map<vespalib::string,Report::UP> reports;
+ReportMap report_map;
+FrameHist race_frame_hist;
 
 void handle_report(std::unique_ptr<Report> report) {
     ++total_reports;
-    auto [pos, first] = reports.try_emplace(report->make_key(), std::move(report));
-    if (!first) {
-        assert(report && "should still be valid");
-        pos->second->add(std::move(report));
+    auto keys = report->make_keys();
+    std::vector<Report::SP> found;
+    for (const auto &key: keys) {
+        auto pos = report_map.find(key);
+        if (pos != report_map.end()) {
+            found.push_back(pos->second);
+        }
+    }
+    if (found.empty()) {
+        Report::SP my_report = std::move(report);
+        for (const auto &key: keys) {
+            report_map[key] = my_report;
+        }
+    } else {
+        for (size_t i = 1; i < found.size(); ++i) {
+            if (found[0].get() != found[i].get()) {
+                found[0]->merge(*found[i]);
+            }
+        }
+        found[0]->merge(*report);
+        keys = found[0]->make_keys();
+        for (const auto &key: keys) {
+            report_map[key] = found[0];
+        }
     }
 }
 
@@ -204,6 +285,8 @@ void make_report(const std::vector<vespalib::string> &lines) {
     if (type == ReportType::RACE) {
         auto traces = extract_traces(lines, 2);
         if (traces.size() == 2) {
+            traces[0].update(race_frame_hist, 1);
+            traces[1].update(race_frame_hist, 1);
             return handle_report(std::make_unique<RaceReport>(traces[0], traces[1]));
         }
     }
@@ -249,13 +332,15 @@ void read_input() {
 }
 
 void write_output() {
-    std::vector<Report*> list;
-    list.reserve(reports.size());
-    for (const auto &[key, value]: reports) {
-        list.push_back(value.get());
+    std::set<const Report *> seen;
+    std::vector<const Report *> list;
+    for (const auto &[key, value]: report_map) {
+        if (seen.insert(value.get()).second) {
+            list.push_back(value.get());
+        }
     }
     std::sort(list.begin(), list.end(),
-              [](const auto &a, const auto &b) {
+              [](const auto *a, const auto *b) {
                   return (a->count() > b->count());
               });
     for (const auto *report: list) {
@@ -263,7 +348,8 @@ void write_output() {
         report->dump(stdout);
         dump_delimiter(stdout);
     }
-    fprintf(stderr, "%zu reports in, %zu reports out\n", total_reports, reports.size());
+    fprintf(stderr, "%zu reports in, %zu reports out\n", total_reports, list.size());
+    race_frame_hist.dump(stderr);
 }
 
 int main(int, char **) {
