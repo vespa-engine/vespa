@@ -7,7 +7,6 @@ import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -427,8 +426,15 @@ public class JobController {
             });
         }
         finally {
-            for (Mutex lock : locks)
-                lock.close();
+            for (Mutex lock : locks) {
+                try {
+                    lock.close();
+                } catch (Throwable t) {
+                    log.log(WARNING, "Failed to close the lock " + lock + ": the lock may or may not " +
+                                     "have been released in ZooKeeper, and if not this controller " +
+                                     "must be restarted to release the lock", t);
+                }
+            }
         }
     }
 
