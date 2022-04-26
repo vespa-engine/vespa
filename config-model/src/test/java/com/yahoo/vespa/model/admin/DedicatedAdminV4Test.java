@@ -28,7 +28,7 @@ import java.util.stream.IntStream;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.LOGSERVER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.config.model.api.container.ContainerServiceType.QRSERVER;
+import static com.yahoo.config.model.api.container.ContainerServiceType.CONTAINER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -132,13 +132,13 @@ public class DedicatedAdminV4Test {
 
         // 4 slobroks, 2 per cluster where possible
         assertHostContainsServices(model, "hosts/myhost0", "slobrok", "logd", "logserver",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost1", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost2", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
         assertHostContainsServices(model, "hosts/myhost3", "slobrok", "logd",
-                                   METRICS_PROXY_CONTAINER.serviceName, QRSERVER.serviceName);
+                                   METRICS_PROXY_CONTAINER.serviceName, CONTAINER.serviceName);
     }
 
     @Test
