@@ -6,7 +6,7 @@ import java.util.function.Supplier;
 /**
  * @author baldersheim
  */
-// TODO: Deprecate
+@Deprecated(forRemoval = true, since = "7")
 public abstract class ResourceFactory<T> {
 
     public abstract T create();

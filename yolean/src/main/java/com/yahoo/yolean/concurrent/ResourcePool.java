@@ -4,6 +4,7 @@ package com.yahoo.yolean.concurrent;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.function.Supplier;
 
 /**
  * <p>This implements a simple stack based resource pool. If you are out of resources new are allocated from the
@@ -15,17 +16,23 @@ import java.util.Iterator;
 public final class ResourcePool<T> implements Iterable<T> {
 
     private final Deque<T> pool = new ArrayDeque<>();
-    private final ResourceFactory<T> factory;
+    private final Supplier<T> factory;
 
+    /** @deprecated Use {@link ResourcePool( Supplier )} instead */
+    @Deprecated(forRemoval = true, since = "7")
     public ResourcePool(ResourceFactory<T> factory) {
+        this(factory.asSupplier());
+    }
+
+    public ResourcePool(Supplier<T> factory) {
         this.factory = factory;
     }
 
-    public final T alloc() {
-        return pool.isEmpty() ? factory.create() : pool.pop();
+    public T alloc() {
+        return pool.isEmpty() ? factory.get() : pool.pop();
     }
 
-    public final void free(T e) {
+    public void free(T e) {
         pool.push(e);
     }
 
