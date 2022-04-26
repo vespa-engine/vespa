@@ -51,23 +51,6 @@ public abstract class DocumentAccess {
     private final ConfigSubscriber documentTypeConfigSubscriber;
 
     /**
-     * This is a convenience method to return a document access object with
-     * all default parameter values. The client that calls this method is also
-     * responsible for shutting the object down when done. If an error occurred
-     * while attempting to create such an object, this method will throw an
-     * exception.
-     *
-     * @deprecated DocumentAccess may be injected in containers — otherwise use {@link #createForNonContainer()}.
-     *
-     * @return a running document access object with all default configuration
-     */
-    @Deprecated(since = "7")
-    public static DocumentAccess createDefault() {
-        return new MessageBusDocumentAccess();
-    }
-
-
-    /**
      * This is a convenience method to return a document access object when running
      * outside of a Vespa application container, with all default parameter values.
      * The client that calls this method is also responsible for shutting the object
