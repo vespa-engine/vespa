@@ -1,1 +1,0 @@
-Can't use storage policy with only slobrok in 5.0 and hierarchical grouping
