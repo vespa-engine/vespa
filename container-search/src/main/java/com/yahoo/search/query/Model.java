@@ -10,7 +10,7 @@ import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
-import com.yahoo.search.config.SchemaInfo;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;

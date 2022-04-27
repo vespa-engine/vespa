@@ -2,7 +2,7 @@
 package com.yahoo.search.query.profile.types;
 
 import com.yahoo.processing.request.Properties;
-import com.yahoo.search.config.internal.TensorConverter;
+import com.yahoo.search.schema.internal.TensorConverter;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.SubstituteString;
 import com.yahoo.tensor.Tensor;

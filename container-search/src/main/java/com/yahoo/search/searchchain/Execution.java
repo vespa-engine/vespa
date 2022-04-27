@@ -16,8 +16,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.cluster.PingableSearcher;
-import com.yahoo.search.config.SchemaInfo;
-import com.yahoo.search.rendering.Renderer;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
 import java.util.Objects;
@@ -140,7 +139,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
                        SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics,
                        Executor executor) {
-            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, Runnable::run);
+            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, executor);
         }
 
         /** @deprecated pass an executor */

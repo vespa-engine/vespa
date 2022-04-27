@@ -203,15 +203,14 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
 
     @Override
     public final boolean cascadeConfig(ConfigInstance.Builder builder) {
-        boolean found=false;
+        boolean found = false;
         if (parent != null)
             found = parent.cascadeConfig(builder);
 
         boolean foundHere = builder.dispatchGetConfig(this);
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, "cascadeconfig in " + this + ", getting config " +
-                    builder.getClass().getDeclaringClass().getName() + " for config id '" + configId + "' found here=" + foundHere);
-        }
+        log.log(Level.FINE, () -> "cascadeconfig in " + this + ", getting config " +
+                                  builder.getClass().getDeclaringClass().getName() + " for config id '" + configId +
+                                  "' found here=" + foundHere);
         found = found || foundHere;
         return found;
     }

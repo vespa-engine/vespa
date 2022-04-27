@@ -1,11 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.config;
+package com.yahoo.search.schema;
 
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.Query;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.yolean.Exceptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,36 +89,36 @@ public class SchemaInfoTester {
     static SchemaInfo createSchemaInfoFromConfig() {
         var indexInfoConfig = new IndexInfoConfig.Builder();
 
-        var rankProfileCommon = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
+        var rankProfileCommon = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileCommon.name("commonProfile");
-        rankProfileCommon.input(new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
-        rankProfileCommon.input(new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder().name("query(myTensor2)").type("tensor(x[2],y[2])"));
-        rankProfileCommon.input(new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder().name("query(myTensor3)").type("tensor(x[2],y[2])"));
-        rankProfileCommon.input(new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder().name("query(myTensor4)").type("tensor<float>(x[5])"));
+        rankProfileCommon.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
+        rankProfileCommon.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor2)").type("tensor(x[2],y[2])"));
+        rankProfileCommon.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor3)").type("tensor(x[2],y[2])"));
+        rankProfileCommon.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor4)").type("tensor<float>(x[5])"));
 
-        var documentDbInfoInfoConfig = new DocumentdbInfoConfig.Builder();
+        var schemaInfoInfoConfig = new SchemaInfoConfig.Builder();
 
-        var documentDbA = new DocumentdbInfoConfig.Documentdb.Builder();
-        documentDbA.name("a");
-        documentDbA.rankprofile(rankProfileCommon);
-        var rankProfileInconsistentA = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
+        var schemaA = new SchemaInfoConfig.Schema.Builder();
+        schemaA.name("a");
+        schemaA.rankprofile(rankProfileCommon);
+        var rankProfileInconsistentA = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileInconsistentA.name("inconsistent");
-        rankProfileInconsistentA.input(new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
-        documentDbA.rankprofile(rankProfileInconsistentA);
-        documentDbInfoInfoConfig.documentdb(documentDbA);
+        rankProfileInconsistentA.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
+        schemaA.rankprofile(rankProfileInconsistentA);
+        schemaInfoInfoConfig.schema(schemaA);
 
-        var documentDbB = new DocumentdbInfoConfig.Documentdb.Builder();
-        documentDbB.name("b");
-        documentDbB.rankprofile(rankProfileCommon);
-        var rankProfileInconsistentB = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
+        var schemaB = new SchemaInfoConfig.Schema.Builder();
+        schemaB.name("b");
+        schemaB.rankprofile(rankProfileCommon);
+        var rankProfileInconsistentB = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileInconsistentB.name("inconsistent");
-        rankProfileInconsistentB.input(new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(x[10])"));
-        documentDbB.rankprofile(rankProfileInconsistentB);
-        var rankProfileBOnly = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
+        rankProfileInconsistentB.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(x[10])"));
+        schemaB.rankprofile(rankProfileInconsistentB);
+        var rankProfileBOnly = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileBOnly.name("bOnly");
-        rankProfileBOnly.input(new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
-        documentDbB.rankprofile(rankProfileBOnly);
-        documentDbInfoInfoConfig.documentdb(documentDbB);
+        rankProfileBOnly.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
+        schemaB.rankprofile(rankProfileBOnly);
+        schemaInfoInfoConfig.schema(schemaB);
 
         var qrSearchersConfig = new QrSearchersConfig.Builder();
         var clusterAB = new QrSearchersConfig.Searchcluster.Builder();
@@ -127,7 +130,7 @@ public class SchemaInfoTester {
         clusterA.searchdef("a");
         qrSearchersConfig.searchcluster(clusterA);
 
-        return new SchemaInfo(indexInfoConfig.build(), documentDbInfoInfoConfig.build(), qrSearchersConfig.build());
+        return new SchemaInfo(indexInfoConfig.build(), schemaInfoInfoConfig.build(), qrSearchersConfig.build());
     }
 
 }

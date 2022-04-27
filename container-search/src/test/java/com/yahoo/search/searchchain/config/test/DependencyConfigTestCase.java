@@ -42,7 +42,7 @@ public class DependencyConfigTestCase {
     }
 
     @AfterClass
-    public static void removeComponentsConfig() throws IOException {
+    public static void removeComponentsConfig() {
         new File(root + "/components.cfg").delete();
         tearDown();
     }

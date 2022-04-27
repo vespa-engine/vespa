@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.search.test;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -344,12 +345,71 @@ public class DocumentDatabaseTestCase {
         }
     }
 
+    /** Schema-info should contain all schemas, independent of clusters. */
+    @Test
+    public void requireThatSchemaInfoIsAvailable() {
+        List<String> schemas = Arrays.asList("type1", "type2");
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(schemas, "index"),
+                                                            ApplicationPackageUtils.generateSchemas(schemas)).create();
+        assertSchemaInfo("container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher", model);
+        assertSchemaInfo("container", model);
+    }
+
+    private void assertSchemaInfo(String configId, VespaModel model) {
+        { // schema-info config
+            SchemaInfoConfig dcfg = model.getConfig(SchemaInfoConfig.class, configId);
+            assertEquals(2, dcfg.schema().size());
+
+            { // type1
+                SchemaInfoConfig.Schema schema = dcfg.schema(0);
+                assertEquals("type1", schema.name());
+
+                assertEquals(7, schema.rankprofile().size());
+                assertRankProfile(schema, 0, "default", false, false);
+                assertRankProfile(schema, 1, "unranked", false, false);
+                assertRankProfile(schema, 2, "staticrank", false, false);
+                assertRankProfile(schema, 3, "summaryfeatures", true, false);
+                assertRankProfile(schema, 4, "inheritedsummaryfeatures", true, false);
+                assertRankProfile(schema, 5, "rankfeatures", false, true);
+                var inputs = assertRankProfile(schema, 6, "inputs", false, false);
+
+                assertEquals(2, inputs.input().size());
+                assertEquals("query(foo)", inputs.input(0).name());
+                assertEquals("tensor<float>(x[10])", inputs.input(0).type());
+                assertEquals("query(bar)", inputs.input(1).name());
+                assertEquals("tensor(key{},x[1000])", inputs.input(1).type());
+
+                // assertEquals(2, schema.summaryclass().size());
+                // assertEquals("default", schema.summaryclass(0).name());
+                // assertEquals("attributeprefetch", schema.summaryclass(1).name());
+                // assertSummaryField(schema, 0, 0, "f1", "longstring", true);
+                // assertSummaryField(schema, 0, 1, "f2", "integer", false);
+            }
+            { // type2
+                SchemaInfoConfig.Schema schema = dcfg.schema(1);
+                assertEquals("type2", schema.name());
+            }
+        }
+    }
+
     private DocumentdbInfoConfig.Documentdb.Rankprofile assertRankProfile(DocumentdbInfoConfig.Documentdb db,
                                                                           int index,
                                                                           String name,
                                                                           boolean hasSummaryFeatures,
                                                                           boolean hasRankFeatures) {
         DocumentdbInfoConfig.Documentdb.Rankprofile rankProfile = db.rankprofile(index);
+        assertEquals(name, rankProfile.name());
+        assertEquals(hasSummaryFeatures, rankProfile.hasSummaryFeatures());
+        assertEquals(hasRankFeatures, rankProfile.hasRankFeatures());
+        return rankProfile;
+    }
+
+    private SchemaInfoConfig.Schema.Rankprofile assertRankProfile(SchemaInfoConfig.Schema schema,
+                                                                          int index,
+                                                                          String name,
+                                                                          boolean hasSummaryFeatures,
+                                                                          boolean hasRankFeatures) {
+        SchemaInfoConfig.Schema.Rankprofile rankProfile = schema.rankprofile(index);
         assertEquals(name, rankProfile.name());
         assertEquals(hasSummaryFeatures, rankProfile.hasSummaryFeatures());
         assertEquals(hasRankFeatures, rankProfile.hasRankFeatures());

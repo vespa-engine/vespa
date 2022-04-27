@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.config;
+package com.yahoo.search.schema;
 
 import com.yahoo.api.annotations.Beta;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.Query;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
 import java.util.HashSet;
@@ -44,11 +44,10 @@ public class SchemaInfo {
     /** The schemas contained in each content cluster indexed by cluster name */
     private final Map<String, List<String>> clusters;
 
-    @Inject
     public SchemaInfo(IndexInfoConfig indexInfo, // will be used in the future
-                      DocumentdbInfoConfig documentdbInfoConfig,
+                      SchemaInfoConfig schemaInfoConfig,
                       QrSearchersConfig qrSearchersConfig) {
-        this(SchemaInfoConfigurer.toSchemas(documentdbInfoConfig), SchemaInfoConfigurer.toClusters(qrSearchersConfig));
+        this(SchemaInfoConfigurer.toSchemas(schemaInfoConfig), SchemaInfoConfigurer.toClusters(qrSearchersConfig));
     }
 
     public SchemaInfo(List<Schema> schemas, Map<String, List<String>> clusters) {

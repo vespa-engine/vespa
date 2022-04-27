@@ -643,7 +643,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         return configModelRepo.getClients();
     }
 
-    /** Returns all search clusters, both in Search and Content */
     public List<SearchCluster> getSearchClusters() {
         return Content.getSearchClusters(configModelRepo());
     }

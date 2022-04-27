@@ -155,6 +155,7 @@ public class SearchChainConfigurerTestCase {
         copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
         copyFile(testDir + "qr-searchers.cfg", cfgDir +  "/qr-searchers.cfg");
         copyFile(testDir + "index-info.cfg", cfgDir +  "/index-info.cfg");
+        copyFile(testDir + "schema-info.cfg", cfgDir +  "/schema-info.cfg");
         copyFile(testDir + "specialtokens.cfg", cfgDir +  "/specialtokens.cfg");
         copyFile(testDir + "three-searchers.cfg", cfgDir +  "/chains.cfg");
         copyFile(testDir + "container-http.cfg", cfgDir +  "/container-http.cfg");
@@ -208,6 +209,7 @@ public class SearchChainConfigurerTestCase {
         copyFile(testDir + "qr-search.cfg", cfgDir +  "/qr-search.cfg");
         copyFile(testDir + "qr-searchers.cfg", cfgDir +  "/qr-searchers.cfg");
         copyFile(testDir + "index-info.cfg", cfgDir +  "/index-info.cfg");
+        copyFile(testDir + "schema-info.cfg", cfgDir +  "/schema-info.cfg");
         copyFile(testDir + "specialtokens.cfg", cfgDir +  "/specialtokens.cfg");
         copyFile(testDir + "chainsConfigUpdate_1.cfg", cfgDir +  "/chains.cfg");
         copyFile(testDir + "container-http.cfg", cfgDir +  "/container-http.cfg");
