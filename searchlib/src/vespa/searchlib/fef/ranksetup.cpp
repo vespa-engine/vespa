@@ -65,7 +65,6 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _softTimeoutEnabled(false),
       _softTimeoutTailCost(0.1),
       _softTimeoutFactor(0.5),
-      _nearest_neighbor_brute_force_limit(0.05),
       _global_filter_lower_limit(0.0),
       _global_filter_upper_limit(1.0),
       _mutateOnMatch(),
@@ -120,7 +119,6 @@ RankSetup::configure()
     setSoftTimeoutEnabled(softtimeout::Enabled::lookup(_indexEnv.getProperties()));
     setSoftTimeoutTailCost(softtimeout::TailCost::lookup(_indexEnv.getProperties()));
     setSoftTimeoutFactor(softtimeout::Factor::lookup(_indexEnv.getProperties()));
-    set_nearest_neighbor_brute_force_limit(matching::NearestNeighborBruteForceLimit::lookup(_indexEnv.getProperties()));
     set_global_filter_lower_limit(matching::GlobalFilterLowerLimit::lookup(_indexEnv.getProperties()));
     set_global_filter_upper_limit(matching::GlobalFilterUpperLimit::lookup(_indexEnv.getProperties()));
     _mutateOnMatch._attribute = mutate::on_match::Attribute::lookup(_indexEnv.getProperties());

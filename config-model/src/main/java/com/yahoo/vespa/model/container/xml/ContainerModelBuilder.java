@@ -1066,10 +1066,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // TODO: Remove this method and use the loadbalancerName directly
         return Optional.ofNullable(loadbalancerName)
                 .orElseGet(
-                        () -> HostName.from(configServerSpecs.stream()
-                                                    .findFirst()
-                                                    .map(ConfigServerSpec::getHostName)
-                                                    .orElse("unknown") // Currently unable to test this, hence the unknown
+                        () -> HostName.of(configServerSpecs.stream()
+                                                           .findFirst()
+                                                           .map(ConfigServerSpec::getHostName)
+                                                           .orElse("unknown") // Currently unable to test this, hence the unknown
                         ));
     }
 
@@ -1184,7 +1184,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             String message = "Invalid or misplaced JVM options in services.xml: " +
                     String.join(",", invalidOptions) + "." +
                     " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
-            if (failDeploymentWithInvalidJvmOptions)
+            if (failDeploymentWithInvalidJvmOptions && isHosted)
                 throw new IllegalArgumentException(message);
             else
                 logger.logApplicationPackage(WARNING, message);
@@ -1250,7 +1250,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             String message = "Invalid or misplaced JVM GC options in services.xml: " +
                     String.join(",", options) + "." +
                     " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
-            if (failDeploymentWithInvalidJvmOptions)
+            if (failDeploymentWithInvalidJvmOptions && isHosted)
                 throw new IllegalArgumentException(message);
             else
                 logger.logApplicationPackage(WARNING, message);

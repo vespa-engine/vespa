@@ -689,9 +689,7 @@ public class ProvisioningTester {
         }
 
         private FlagSource defaultFlagSource() {
-            var flagSource = new InMemoryFlagSource();
-            flagSource.withBooleanFlag(Flags.REUSE_NODE_INDEXES.id(), true);
-            return flagSource;
+            return new InMemoryFlagSource();
         }
 
         public ProvisioningTester build() {

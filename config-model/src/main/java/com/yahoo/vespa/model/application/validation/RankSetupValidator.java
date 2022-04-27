@@ -22,11 +22,10 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
+import com.yahoo.vespa.model.search.SearchCluster;
 import com.yahoo.yolean.Exceptions;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -64,7 +63,6 @@ public class RankSetupValidator extends Validator {
                                                deployState.getProperties().applicationId().toFullString() +
                                                ".")
                     .toFile();
-
             for (SearchCluster cluster : model.getSearchClusters()) {
                 // Skipping rank expression checking for streaming clusters, not implemented yet
                 if (cluster.isStreaming()) continue;
@@ -72,16 +70,15 @@ public class RankSetupValidator extends Validator {
                 IndexedSearchCluster sc = (IndexedSearchCluster) cluster;
                 String clusterDir = cfgDir.getAbsolutePath() + "/" + sc.getClusterName() + "/";
                 for (DocumentDatabase docDb : sc.getDocumentDbs()) {
-                    final String name = docDb.getDerivedConfiguration().getSchema().getName();
-                    String searchDir = clusterDir + name + "/";
-                    writeConfigs(searchDir, docDb);
-                    writeExtraVerifyRanksetupConfig(searchDir, docDb);
-                    if (!validate("dir:" + searchDir, sc, name, deployState.getDeployLogger(), cfgDir)) {
+                    String schemaName = docDb.getDerivedConfiguration().getSchema().getName();
+                    String schemaDir = clusterDir + schemaName + "/";
+                    writeConfigs(schemaDir, docDb);
+                    writeExtraVerifyRankSetupConfig(schemaDir, docDb);
+                    if (!validate("dir:" + schemaDir, sc, schemaName, deployState.getDeployLogger(), cfgDir)) {
                         return;
                     }
                 }
             }
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -90,13 +87,13 @@ public class RankSetupValidator extends Validator {
         }
     }
 
-    private boolean validate(String configId, SearchCluster searchCluster, String sdName, DeployLogger deployLogger, File tempDir) {
+    private boolean validate(String configId, SearchCluster searchCluster, String schema, DeployLogger deployLogger, File tempDir) {
         Instant start = Instant.now();
         try {
-            log.log(Level.FINE, () -> String.format("Validating schema '%s' for %s with config id %s", sdName, searchCluster, configId));
-            boolean ret = execValidate(configId, searchCluster, sdName, deployLogger);
+            log.log(Level.FINE, () -> String.format("Validating schema '%s' for cluster %s with config id %s", schema, searchCluster, configId));
+            boolean ret = execValidate(configId, searchCluster, schema, deployLogger);
             if (!ret) {
-                // Give up, don't say same error msg repeatedly
+                // Give up, don't log same error msg repeatedly
                 deleteTempDir(tempDir);
             }
             log.log(Level.FINE, () -> String.format("Validation took %s ms", Duration.between(start, Instant.now()).toMillis()));
@@ -141,7 +138,7 @@ public class RankSetupValidator extends Validator {
         writeConfig(dir, ImportedFieldsConfig.getDefName() + ".cfg", ifcb.build());
     }
 
-    private void writeExtraVerifyRanksetupConfig(List<String> config, Collection<? extends DistributableResource> resources) {
+    private void writeExtraVerifyRankSetupConfig(List<String> config, Collection<? extends DistributableResource> resources) {
         for (DistributableResource model : resources) {
             String modelPath = getFileRepositoryPath(model.getFilePath().getName(), model.getFileReference());
             int index = config.size() / 2;
@@ -151,12 +148,12 @@ public class RankSetupValidator extends Validator {
         }
     }
 
-    private void writeExtraVerifyRanksetupConfig(String dir, DocumentDatabase db) throws IOException {
+    private void writeExtraVerifyRankSetupConfig(String dir, DocumentDatabase db) throws IOException {
         List<String> config = new ArrayList<>();
 
         // Assist verify-ranksetup in finding the actual ONNX model files
-        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSchema().onnxModels().asMap().values());
-        writeExtraVerifyRanksetupConfig(config, db.getDerivedConfiguration().getSchema().rankExpressionFiles().asMap().values());
+        writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getSchema().onnxModels().asMap().values());
+        writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getSchema().rankExpressionFiles().asMap().values());
 
         String configContent = config.isEmpty() ? "" : StringUtilities.implodeMultiline(config);
         IOUtils.writeFile(dir + "verify-ranksetup.cfg", configContent, false);
@@ -173,12 +170,13 @@ public class RankSetupValidator extends Validator {
     }
 
     private boolean execValidate(String configId, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        String job = String.format("%s %s", binaryName, configId);
-        ProcessExecuter executer = new ProcessExecuter(true);
+        String command = String.format("%s %s", binaryName, configId);
         try {
-            Pair<Integer, String> ret = executer.exec(job);
-            if (ret.getFirst() != 0) {
-                validateFail(ret.getSecond(), sc, sdName, deployLogger);
+            Pair<Integer, String> ret = new ProcessExecuter(true).exec(command);
+            Integer exitCode = ret.getFirst();
+            String output = ret.getSecond();
+            if (exitCode != 0) {
+                validateFail(output, exitCode, sc, sdName, deployLogger);
             }
         } catch (IOException e) {
             validateWarn(e, deployLogger);
@@ -194,23 +192,32 @@ public class RankSetupValidator extends Validator {
         deployLogger.logApplicationPackage(Level.WARNING, msg);
     }
 
-    private void validateFail(String output, SearchCluster sc, String sdName, DeployLogger deployLogger) {
-        StringBuilder errMsg = new StringBuilder("Error in rank setup in schema '").append(sdName)
+    private void validateFail(String output, int exitCode, SearchCluster sc, String sdName, DeployLogger deployLogger) {
+        StringBuilder message = new StringBuilder("Error in rank setup in schema '").append(sdName)
                 .append("' for content cluster '").append(sc.getClusterName()).append("'.").append(" Details:\n");
-        for (String line : output.split("\n")) {
-            // Remove debug lines from start script
-            if (line.startsWith("debug\t")) continue;
-            try {
-                LogMessage logMessage = LogMessage.parseNativeFormat(line);
-                errMsg.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
-            } catch (InvalidLogFormatException e) {
-                errMsg.append(line).append("\n");
+        if (output.isEmpty()) {
+            message.append("Verifying rank setup failed and got no output from stderr and stdout from '")
+                  .append(binaryName)
+                  .append("' (exit code: ")
+                  .append(exitCode)
+                  .append("). This could be due to full disk, out of memory etc.");
+        } else {
+            for (String line : output.split("\n")) {
+                // Remove debug lines from start script
+                if (line.startsWith("debug\t")) continue;
+                try {
+                    LogMessage logMessage = LogMessage.parseNativeFormat(line);
+                    message.append(logMessage.getLevel()).append(": ").append(logMessage.getPayload()).append("\n");
+                } catch (InvalidLogFormatException e) {
+                    message.append(line).append("\n");
+                }
             }
         }
+
         if (ignoreValidationErrors) {
-            deployLogger.log(Level.WARNING, errMsg.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
+            deployLogger.log(Level.WARNING, message.append("(Continuing since ignoreValidationErrors flag is set.)").toString());
         } else {
-            throw new IllegalArgumentException(errMsg.toString());
+            throw new IllegalArgumentException(message.toString());
         }
     }
 

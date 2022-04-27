@@ -117,13 +117,21 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class FuzzyTerm : public QueryNodeMixin<FuzzyTerm, StringBase>
-{
+class FuzzyTerm : public QueryNodeMixin<FuzzyTerm, StringBase> {
+private:
+    uint32_t _maxEditDistance;
+    uint32_t _prefixLength;
 public:
     FuzzyTerm(const Type &term, vespalib::stringref view,
-               int32_t id, Weight weight)
-            : QueryNodeMixinType(term, view, id, weight)
+               int32_t id, Weight weight, uint32_t maxEditDistance, uint32_t prefixLength)
+            : QueryNodeMixinType(term, view, id, weight),
+              _maxEditDistance(maxEditDistance),
+              _prefixLength(prefixLength)
     {}
+
+    uint32_t getMaxEditDistance() const { return _maxEditDistance; }
+    uint32_t getPrefixLength() const { return _prefixLength; }
+
     virtual ~FuzzyTerm() = 0;
 };
 

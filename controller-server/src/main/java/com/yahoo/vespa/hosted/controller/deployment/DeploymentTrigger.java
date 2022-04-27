@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.text.Text;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -72,22 +74,7 @@ public class DeploymentTrigger {
     }
 
     public DeploymentSteps steps(DeploymentInstanceSpec spec) {
-        return new DeploymentSteps(spec, controller::system);
-    }
-
-    public void notifyOfSubmission(TenantAndApplicationId id, ApplicationVersion version, long projectId) {
-        if (applications().getApplication(id).isEmpty()) {
-            log.log(Level.WARNING, "Ignoring submission from project '" + projectId +
-                                      "': Unknown application '" + id + "'");
-            return;
-        }
-
-        applications().lockApplicationOrThrow(id, application -> {
-            application = application.withProjectId(OptionalLong.of(projectId));
-            application = application.withNewSubmission(version);
-            applications().store(application);
-        });
-        triggerNewRevision(id);
+        return new DeploymentSteps(spec, controller.zoneRegistry());
     }
 
     /**
@@ -100,11 +87,11 @@ public class DeploymentTrigger {
             DeploymentStatus status = jobs.deploymentStatus(application.get());
             for (InstanceName instanceName : application.get().deploymentSpec().instanceNames()) {
                 Change outstanding = outstandingChange(status, instanceName);
-                if (   outstanding.hasTargets()
+                if (outstanding.hasTargets()
                     && status.instanceSteps().get(instanceName)
                              .readyAt(outstanding)
                              .map(readyAt -> ! readyAt.isAfter(clock.instant())).orElse(false)
-                    && acceptNewApplicationVersion(status, instanceName, outstanding.application().get())) {
+                    && acceptNewRevision(status, instanceName, outstanding.revision().get())) {
                     application = application.with(instanceName,
                                                    instance -> withRemainingChange(instance, outstanding.onTopOf(instance.change()), status));
                 }
@@ -116,7 +103,9 @@ public class DeploymentTrigger {
     /** Returns any outstanding change for the given instance, coupled with any necessary platform upgrade. */
     private Change outstandingChange(DeploymentStatus status, InstanceName instance) {
         Change outstanding = status.outstandingChange(instance);
-        Optional<Version> compileVersion = outstanding.application().flatMap(ApplicationVersion::compileVersion);
+        Optional<Version> compileVersion = outstanding.revision()
+                                                      .map(status.application().revisions()::get)
+                                                      .flatMap(ApplicationVersion::compileVersion);
 
         // If the outstanding revision requires a certain platform for compatibility, add that here.
         VersionCompatibility compatibility = applications().versionCompatibility(status.application().id().instance(instance));
@@ -246,7 +235,7 @@ public class DeploymentTrigger {
 
         DeploymentStatus status = jobs.deploymentStatus(application);
         Change change = instance.change();
-        if ( ! upgradeRevision && change.application().isPresent()) change = change.withoutApplication();
+        if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
         Versions versions = Versions.from(change, application, status.deploymentFor(job), controller.readSystemVersion());
         DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
@@ -267,24 +256,23 @@ public class DeploymentTrigger {
     private List<JobId> forceTriggerManualJob(JobId job, String reason) {
         Run last = jobs.last(job).orElseThrow(() -> new IllegalArgumentException(job + " has never been run"));
         Versions target = new Versions(controller.readSystemVersion(),
-                                       last.versions().targetApplication(),
+                                       last.versions().targetRevision(),
                                        Optional.of(last.versions().targetPlatform()),
-                                       Optional.of(last.versions().targetApplication()));
+                                       Optional.of(last.versions().targetRevision()));
         jobs.start(job.application(), job.type(), target, true, Optional.of(reason));
         return List.of(job);
     }
 
     /** Retrigger job. If the job is already running, it will be canceled, and retrigger enqueued. */
     public Optional<JobId> reTriggerOrAddToQueue(DeploymentId deployment, String reason) {
-        JobType jobType = JobType.from(controller.system(), deployment.zoneId())
-                .orElseThrow(() -> new IllegalArgumentException(Text.format("No job to trigger for (system/zone): %s/%s", controller.system().value(), deployment.zoneId().value())));
+        JobType jobType = JobType.deploymentTo(deployment.zoneId());
         Optional<Run> existingRun = controller.jobController().active(deployment.applicationId()).stream()
                 .filter(run -> run.id().type().equals(jobType))
                 .findFirst();
 
         if (existingRun.isPresent()) {
             Run run = existingRun.get();
-            try (Lock lock = controller.curator().lockDeploymentRetriggerQueue()) {
+            try (Mutex lock = controller.curator().lockDeploymentRetriggerQueue()) {
                 List<RetriggerEntry> retriggerEntries = controller.curator().readRetriggerEntries();
                 List<RetriggerEntry> newList = new ArrayList<>(retriggerEntries);
                 RetriggerEntry requiredEntry = new RetriggerEntry(new JobId(deployment.applicationId(), jobType), run.id().number() + 1);
@@ -366,7 +354,7 @@ public class DeploymentTrigger {
     /** Returns the set of all jobs which have changes to propagate from the upstream steps. */
     private List<Job> computeReadyJobs() {
         return jobs.deploymentStatuses(ApplicationList.from(applications().readable())
-                                                      .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated.
+                                                      .withProjectId() // Need to keep this, as we have applications with deployment spec that shouldn't be orchestrated. // Maybe not any longer?
                                                       .withDeploymentSpec())
                    .withChanges()
                    .asList().stream()
@@ -397,7 +385,7 @@ public class DeploymentTrigger {
     /** Returns whether the application is healthy in all other production zones. */
     private boolean isUnhealthyInAnotherZone(Application application, JobId job) {
         for (Deployment deployment : application.require(job.application().instance()).productionDeployments().values()) {
-            if (   ! deployment.zone().equals(job.type().zone(controller.system()))
+            if (   ! deployment.zone().equals(job.type().zone())
                 && ! controller.applications().isHealthy(new DeploymentId(job.application(), deployment.zone())))
                 return true;
         }
@@ -426,9 +414,7 @@ public class DeploymentTrigger {
         boolean blocked = status.jobs().get(job).get().isRunning();
 
         if ( ! job.type().isTest()) {
-            Optional<JobStatus> productionTest = JobType.testFrom(controller.system(), job.type().zone(controller.system()).region())
-                                                        .map(type -> new JobId(job.application(), type))
-                                                        .flatMap(status.jobs()::get);
+            Optional<JobStatus> productionTest = status.jobs().get(new JobId(job.application(), JobType.productionTestOf(job.type().zone())));
             if (productionTest.isPresent()) {
                 abortIfOutdated(status, jobs, productionTest.get().id());
                 // Production deployments are also blocked by their declared tests, if the next versions to run
@@ -445,16 +431,16 @@ public class DeploymentTrigger {
 
     // ---------- Change management o_O ----------
 
-    private boolean acceptNewApplicationVersion(DeploymentStatus status, InstanceName instance, ApplicationVersion version) {
+    private boolean acceptNewRevision(DeploymentStatus status, InstanceName instance, RevisionId revision) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
-        boolean isChangingRevision = status.application().require(instance).change().application().isPresent();
+        boolean isChangingRevision = status.application().require(instance).change().revision().isPresent();
         DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
-        Predicate<ApplicationVersion> versionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next
-                                                      ? failing -> status.application().require(instance).change().application().get().compareTo(failing) == 0
-                                                      : failing -> version.compareTo(failing) > 0;
+        Predicate<RevisionId> revisionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next
+                                               ? failing -> status.application().require(instance).change().revision().get().compareTo(failing) == 0
+                                               : failing -> revision.compareTo(failing) > 0;
         switch (spec.revisionChange()) {
             case whenClear:   return ! isChangingRevision;
-            case whenFailing: return ! isChangingRevision || status.hasFailures(versionFilter);
+            case whenFailing: return ! isChangingRevision || status.hasFailures(revisionFilter);
             case always:      return true;
             default:          throw new IllegalStateException("Unknown revision upgrade policy");
         }
@@ -464,18 +450,15 @@ public class DeploymentTrigger {
         Change remaining = change;
         if (status.hasCompleted(instance.name(), change.withoutApplication()))
             remaining = remaining.withoutPlatform();
-        if (status.hasCompleted(instance.name(), change.withoutPlatform())) {
+        if (status.hasCompleted(instance.name(), change.withoutPlatform()))
             remaining = remaining.withoutApplication();
-            if (change.application().isPresent())
-                instance = instance.withLatestDeployed(change.application().get());
-        }
         return instance.withChange(remaining);
     }
 
     // ---------- Version and job helpers ----------
 
     private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, Instant availableSince) {
-        return new Job(instance, versions, jobType, availableSince, jobStatus.isNodeAllocationFailure(), instance.change().application().isPresent());
+        return new Job(instance, versions, jobType, availableSince, jobStatus.isNodeAllocationFailure(), instance.change().revision().isPresent());
     }
 
     // ---------- Data containers ----------
@@ -510,7 +493,7 @@ public class DeploymentTrigger {
         public String toString() {
             return jobType + " for " + instanceId +
                    " on (" + versions.targetPlatform() + versions.sourcePlatform().map(version -> " <-- " + version).orElse("") +
-                   ", " + versions.targetApplication().id()  + versions.sourceApplication().map(version -> " <-- " + version.id()).orElse("") +
+                   ", " + versions.targetRevision() + versions.sourceRevision().map(version -> " <-- " + version).orElse("") +
                    "), ready since " + availableSince;
         }
 

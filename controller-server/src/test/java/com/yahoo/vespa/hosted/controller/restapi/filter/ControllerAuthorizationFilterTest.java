@@ -66,8 +66,7 @@ public class ControllerAuthorizationFilterTest {
 
     @Test
     public void unprivilegedInPublic() {
-        ControllerTester tester = new ControllerTester();
-        tester.zoneRegistry().setSystemName(SystemName.Public);
+        ControllerTester tester = new ControllerTester(SystemName.Public);
         SecurityContext securityContext = new SecurityContext(() -> "user", Set.of(Role.everyone()));
 
         ControllerAuthorizationFilter filter = createFilter(tester);

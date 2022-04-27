@@ -18,7 +18,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-t-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -33,7 +33,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-t-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -48,7 +48,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-t-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -63,7 +63,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-t-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -78,7 +78,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "host-tenant:application:default-t-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-t-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -95,7 +95,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
+        "message": "Deploying platform version 6.1 and application build 1 ..."
       },
       {
         "at": 0,
@@ -117,7 +117,7 @@
       {
         "at": 0,
         "type": "info",
-        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -142,7 +142,7 @@
       {
         "at": 0,
         "type": "debug",
-        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -167,7 +167,7 @@
       {
         "at": 0,
         "type": "debug",
-        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -192,7 +192,7 @@
       {
         "at": 0,
         "type": "debug",
-        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -217,7 +217,7 @@
       {
         "at": 0,
         "type": "debug",
-        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -242,7 +242,7 @@
       {
         "at": 0,
         "type": "debug",
-        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,
@@ -267,7 +267,7 @@
       {
         "at": 0,
         "type": "debug",
-        "message": "host-tenant:application:default-test.us-east-1: unorchestrated"
+        "message": "host-tenant.application.default-test.us-east-1: unorchestrated"
       },
       {
         "at": 0,

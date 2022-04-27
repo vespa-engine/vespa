@@ -31,8 +31,9 @@ public:
     void
     writeValues(vespalib::ConstArrayRef<MultiValueT> values) {
         for (const MultiValueT &valueRef : values) {
-            typename MultiValueT::ValueType value(valueRef);
-            _datWriter->write(&value, sizeof(typename MultiValueT::ValueType));
+            using ValueType = multivalue::ValueType_t<MultiValueT>;
+            ValueType value(valueRef);
+            _datWriter->write(&value, sizeof(ValueType));
         }
     }
 };
@@ -63,7 +64,7 @@ MultiValueNumericAttributeSaver<MultiValueT>::
 onSave(IAttributeSaveTarget &saveTarget)
 {
     CountWriter countWriter(saveTarget);
-    WeightWriter<MultiValueType::_hasWeight> weightWriter(saveTarget);
+    WeightWriter<multivalue::is_WeightedValue_v<MultiValueType>> weightWriter(saveTarget);
     DatWriter datWriter(saveTarget);
 
     for (uint32_t docId = 0; docId < _frozenIndices.size(); ++docId) {
@@ -76,12 +77,12 @@ onSave(IAttributeSaveTarget &saveTarget)
     return true;
 }
 
-template class MultiValueNumericAttributeSaver<multivalue::Value<int8_t>>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int16_t>>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int32_t>>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<int64_t>>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<float>>;
-template class MultiValueNumericAttributeSaver<multivalue::Value<double>>;
+template class MultiValueNumericAttributeSaver<int8_t>;
+template class MultiValueNumericAttributeSaver<int16_t>;
+template class MultiValueNumericAttributeSaver<int32_t>;
+template class MultiValueNumericAttributeSaver<int64_t>;
+template class MultiValueNumericAttributeSaver<float>;
+template class MultiValueNumericAttributeSaver<double>;
 template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int8_t>>;
 template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int16_t>>;
 template class MultiValueNumericAttributeSaver<multivalue::WeightedValue<int32_t>>;

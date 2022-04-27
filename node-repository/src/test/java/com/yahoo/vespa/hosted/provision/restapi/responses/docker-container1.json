@@ -33,7 +33,25 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "down": false,
   "history": [
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "activated",
+      "at": 123,
+      "agent": "application"
+    }
+  ],
+  "log": [
+    {
+      "event": "reserved",
+      "at": 123,
+      "agent": "application"
+    },
     {
       "event": "reserved",
       "at": 123,

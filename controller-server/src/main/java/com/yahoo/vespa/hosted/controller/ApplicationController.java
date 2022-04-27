@@ -13,6 +13,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.log.LogLevel;
 import com.yahoo.text.Text;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -27,7 +28,6 @@ import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -41,6 +41,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationS
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -58,6 +60,7 @@ import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
+import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -82,6 +85,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -89,6 +93,8 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -160,12 +166,13 @@ public class ApplicationController {
                     for (InstanceName instance : application.get().deploymentSpec().instanceNames())
                         if ( ! application.get().instances().containsKey(instance))
                             application = withNewInstance(application, id.instance(instance));
+
                     store(application);
                 });
                 count++;
             }
             log.log(Level.INFO, Text.format("Wrote %d applications in %s", count,
-                                              Duration.between(start, clock.instant())));
+                                            Duration.between(start, clock.instant())));
         });
     }
 
@@ -175,7 +182,6 @@ public class ApplicationController {
     }
 
     /** Returns the instance with the given id, or null if it is not present */
-    // TODO jonmv: remove or inline
     public Optional<Instance> getInstance(ApplicationId id) {
         return getApplication(TenantAndApplicationId.from(id)).flatMap(application -> application.get(id.instance()));
     }
@@ -283,7 +289,7 @@ public class ApplicationController {
             if (oldest == null || version.isBefore(oldest))
                 oldest = version;
 
-            if (run.status() == RunStatus.success)
+            if (run.hasSucceeded())
                 return Optional.of(oldest);
         }
         // If no successful run was found, ask the node repository in the relevant zone.
@@ -292,7 +298,7 @@ public class ApplicationController {
 
     /** Reads the oldest installed platform for the given application and zone from the node repo of that zone. */
     private Optional<Version> oldestInstalledPlatform(JobId job) {
-        return configServer.nodeRepository().list(job.type().zone(controller.system()),
+        return configServer.nodeRepository().list(job.type().zone(),
                                                   NodeFilter.all()
                                                             .applications(job.application())
                                                             .states(active, reserved))
@@ -399,7 +405,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException if the application already exists
      */
     public Application createApplication(TenantAndApplicationId id, Credentials credentials) {
-        try (Lock lock = lock(id)) {
+        try (Mutex lock = lock(id)) {
             if (getApplication(id).isPresent())
                 throw new IllegalArgumentException("Could not create '" + id + "': Application already exists");
             if (getApplication(dashToUnderscore(id)).isPresent()) // VESPA-1945
@@ -450,10 +456,10 @@ public class ApplicationController {
             throw new IllegalArgumentException("'" + job.application() + "' is a tester application!");
 
         TenantAndApplicationId applicationId = TenantAndApplicationId.from(job.application());
-        ZoneId zone = job.type().zone(controller.system());
+        ZoneId zone = job.type().zone();
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
-        try (Lock deploymentLock = lockForDeployment(job.application(), zone)) {
+        try (Mutex deploymentLock = lockForDeployment(job.application(), zone)) {
             Set<ContainerEndpoint> containerEndpoints;
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
 
@@ -464,11 +470,13 @@ public class ApplicationController {
                 throw new IllegalStateException("No deployment expected for " + job + " now, as no job is running");
 
             Version platform = run.versions().sourcePlatform().filter(__ -> deploySourceVersions).orElse(run.versions().targetPlatform());
-            ApplicationVersion revision = run.versions().sourceApplication().filter(__ -> deploySourceVersions).orElse(run.versions().targetApplication());
+            RevisionId revision = run.versions().sourceRevision().filter(__ -> deploySourceVersions).orElse(run.versions().targetRevision());
             ApplicationPackage applicationPackage = new ApplicationPackage(applicationStore.get(deployment, revision));
 
-            try (Lock lock = lock(applicationId)) {
+            AtomicReference<RevisionId> lastRevision = new AtomicReference<>();
+            try (Mutex lock = lock(applicationId)) {
                 LockedApplication application = new LockedApplication(requireApplication(applicationId), lock);
+                application.get().revisions().last().map(ApplicationVersion::id).ifPresent(lastRevision::set);
                 Instance instance = application.get().require(job.application().instance());
 
                 if (   ! applicationPackage.trustedCertificates().isEmpty()
@@ -488,22 +496,25 @@ public class ApplicationController {
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
 
             // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
-            // the source since it's the same application, so it should have the same warnings
-            NotificationSource source = zone.environment().isManuallyDeployed() ?
-                    NotificationSource.from(deployment) : NotificationSource.from(applicationId);
-
-            @SuppressWarnings("deprecation")
-            List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
-                    .map(logs -> logs.stream()
-                            .filter(log -> log.applicationPackage)
-                            .filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue())
-                            .map(log -> log.message)
-                            .sorted()
-                            .distinct()
-                            .collect(Collectors.toList()))
-                    .orElseGet(List::of);
-            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
-            else controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
+            // the source since it's the same application, so it should have the same warnings.
+            // These notifications are only updated when the last submitted revision is deployed here.
+            NotificationSource source = zone.environment().isManuallyDeployed()
+                                        ? NotificationSource.from(deployment)
+                                        : revision.equals(lastRevision.get()) ? NotificationSource.from(applicationId) : null;
+            if (source != null) {
+                @SuppressWarnings("deprecation")
+                List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
+                                                .map(logs -> logs.stream()
+                                                                 .filter(log -> log.applicationPackage)
+                                                                 .filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue())
+                                                                 .map(log -> log.message)
+                                                                 .sorted()
+                                                                 .distinct()
+                                                                 .collect(Collectors.toList()))
+                                                .orElseGet(List::of);
+                if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
+                else controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
+            }
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
@@ -538,24 +549,11 @@ public class ApplicationController {
         controller.jobController().deploymentStatus(application.get());
 
         for (Notification notification : controller.notificationsDb().listNotifications(NotificationSource.from(application.get().id()), true)) {
-            if ( ! notification.source().instance().map(declaredInstances::contains).orElse(false))
+            if ( ! notification.source().instance().map(declaredInstances::contains).orElse(true))
                 controller.notificationsDb().removeNotifications(notification.source());
             if (notification.source().instance().isPresent() &&
                     ! notification.source().zoneId().map(application.get().require(notification.source().instance().get()).deployments()::containsKey).orElse(false))
                 controller.notificationsDb().removeNotifications(notification.source());
-        }
-
-        ApplicationVersion oldestDeployedVersion = application.get().oldestDeployedApplication()
-                                                              .orElse(ApplicationVersion.unknown);
-
-        List<ApplicationVersion> olderVersions = application.get().versions().stream()
-                                                            .filter(version -> version.compareTo(oldestDeployedVersion) < 0)
-                                                            .sorted()
-                                                            .collect(Collectors.toList());
-
-        // Remove any version not deployed anywhere - but keep one
-        for (ApplicationVersion version : olderVersions) {
-            application = application.withoutVersion(version);
         }
 
         store(application);
@@ -629,7 +627,7 @@ public class ApplicationController {
                                                            deploymentQuota, tenantSecretStores, operatorCertificates,
                                                            dryRun));
 
-            return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
+            return new ActivateResult(new com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
         } finally {
             // Even if prepare fails, routing configuration may need to be updated
@@ -697,7 +695,6 @@ public class ApplicationController {
             }
 
             applicationStore.removeAll(id.tenant(), id.application());
-            applicationStore.removeAllTesters(id.tenant(), id.application());
             applicationStore.putMetaTombstone(id.tenant(), id.application(), clock.instant());
 
             credentials.ifPresent(creds -> accessControl.deleteApplication(id, creds));
@@ -753,7 +750,7 @@ public class ApplicationController {
      * @param action Function which acts on the locked application.
      */
     public void lockApplicationIfPresent(TenantAndApplicationId applicationId, Consumer<LockedApplication> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Mutex lock = lock(applicationId)) {
             getApplication(applicationId).map(application -> new LockedApplication(application, lock)).ifPresent(action);
         }
     }
@@ -766,7 +763,7 @@ public class ApplicationController {
      * @throws IllegalArgumentException when application does not exist.
      */
     public void lockApplicationOrThrow(TenantAndApplicationId applicationId, Consumer<LockedApplication> action) {
-        try (Lock lock = lock(applicationId)) {
+        try (Mutex lock = lock(applicationId)) {
             action.accept(new LockedApplication(requireApplication(applicationId), lock));
         }
     }
@@ -839,14 +836,14 @@ public class ApplicationController {
      * Any operation which stores an application need to first acquire this lock, then read, modify
      * and store the application, and finally release (close) the lock.
      */
-    Lock lock(TenantAndApplicationId application) {
+    Mutex lock(TenantAndApplicationId application) {
         return curator.lock(application);
     }
 
     /**
      * Returns a lock which provides exclusive rights to deploying this application to the given zone.
      */
-    private Lock lockForDeployment(ApplicationId application, ZoneId zone) {
+    private Mutex lockForDeployment(ApplicationId application, ZoneId zone) {
         return curator.lockForDeployment(application, zone);
     }
 

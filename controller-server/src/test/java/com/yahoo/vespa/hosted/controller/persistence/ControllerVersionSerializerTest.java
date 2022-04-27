@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import org.junit.Test;
 
 import java.time.Instant;

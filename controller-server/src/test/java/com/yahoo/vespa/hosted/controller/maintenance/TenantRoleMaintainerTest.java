@@ -5,9 +5,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
@@ -35,11 +35,11 @@ public class TenantRoleMaintainerTest {
                 .build();
 
         // Deploy dev apps
-        devAppTenant1.runJob(JobType.devUsEast1, appPackage);
-        devAppTenant2.runJob(JobType.devUsEast1, appPackage);
+        devAppTenant1.runJob(DeploymentContext.devUsEast1, appPackage);
+        devAppTenant2.runJob(DeploymentContext.devUsEast1, appPackage);
 
         // Deploy perf apps
-        perfAppTenant1.runJob(JobType.perfUsEast3, appPackage);
+        perfAppTenant1.runJob(DeploymentContext.perfUsEast3, appPackage);
 
         // Deploy prod
         prodAppTenant2.submit(appPackage).deploy();

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.zone;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
@@ -81,7 +82,13 @@ public interface ZoneRegistry {
     /** Returns a URL where an informative dashboard can be found. */
     URI dashboardUrl();
 
+    /** Returns a URL which displays information about the given tenant. */
+    URI dashboardUrl(TenantName id);
+
     /** Returns a URL which displays information about the given application. */
+    URI dashboardUrl(TenantName tenantName, ApplicationName applicationName);
+
+    /** Returns a URL which displays information about the given application instance. */
     URI dashboardUrl(ApplicationId id);
 
     /** Returns a URL which displays information about the given job run. */

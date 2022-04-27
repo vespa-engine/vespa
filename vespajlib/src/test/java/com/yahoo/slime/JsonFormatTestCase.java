@@ -156,13 +156,13 @@ public class JsonFormatTestCase {
         c.setData("f", data);
         verifyEncoding(slime, "{\"a\":null,\"b\":true,\"c\":42,\"d\":3.5,\"e\":\"string\",\"f\":\"0x64617461\"}");
         String expected = "{\n"
-                        + " \"a\": null,\n"
-                        + " \"b\": true,\n"
-                        + " \"c\": 42,\n"
-                        + " \"d\": 3.5,\n"
-                        + " \"e\": \"string\",\n"
-                        + " \"f\": \"0x64617461\"\n"
-                        + "}\n";
+                          + "  \"a\": null,\n"
+                          + "  \"b\": true,\n"
+                          + "  \"c\": 42,\n"
+                          + "  \"d\": 3.5,\n"
+                          + "  \"e\": \"string\",\n"
+                          + "  \"f\": \"0x64617461\"\n"
+                          + "}\n";
         verifyEncoding(slime, expected, false);
     }
 
@@ -184,13 +184,13 @@ public class JsonFormatTestCase {
         System.out.println("test decoding and encoding a json string yields the same string");
         verifyEncodeDecode("{\"bar\":10,\"foo\":[20,{\"answer\":42}]}", true);
         String expected = "{\n"
-                + " \"a\": null,\n"
-                + " \"b\": true,\n"
-                + " \"c\": 42,\n"
-                + " \"d\": 3.5,\n"
-                + " \"e\": \"string\",\n"
-                + " \"f\": \"0x64617461\"\n"
-                + "}\n";
+                          + "  \"a\": null,\n"
+                          + "  \"b\": true,\n"
+                          + "  \"c\": 42,\n"
+                          + "  \"d\": 3.5,\n"
+                          + "  \"e\": \"string\",\n"
+                          + "  \"f\": \"0x64617461\"\n"
+                          + "}\n";
         verifyEncodeDecode(expected, false);
     }
 
@@ -206,7 +206,7 @@ public class JsonFormatTestCase {
     @Test
     public void testDecodeEncodeUtf8() {
         final String json = "{\n" +
-                " \"rules\": \"# Use unicode equivalents in java source:\\n" +
+                "  \"rules\": \"# Use unicode equivalents in java source:\\n" +
                 "        #\\n" +
                 "        #   佳:\u4f73\"\n" +
                 "}\n";

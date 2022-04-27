@@ -6,6 +6,7 @@ import com.yahoo.search.query.Properties;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,26 +18,30 @@ public final class DefaultProperties extends Properties  {
 
     public static final CompoundName MAX_OFFSET = new CompoundName("maxOffset");
     public static final CompoundName MAX_HITS = new CompoundName("maxHits");
+    public static final CompoundName MAX_QUERY_ITEMS = new CompoundName("maxQueryItems");
 
     public static final QueryProfileType argumentType = new QueryProfileType("DefaultProperties");
 
+    private static final List<CompoundName> properties = List.of(MAX_OFFSET, MAX_HITS, MAX_QUERY_ITEMS);
+
     static {
         argumentType.setBuiltin(true);
-
-        argumentType.addField(new FieldDescription(MAX_OFFSET.toString(), "integer"));
-        argumentType.addField(new FieldDescription(MAX_HITS.toString(), "integer"));
-
+        properties.forEach(property -> argumentType.addField(new FieldDescription(property.toString(), "integer")));
         argumentType.freeze();
     }
 
     @Override
     public Object get(CompoundName name, Map<String, String> context, com.yahoo.processing.request.Properties substitution) {
-        if (MAX_OFFSET.equals(name)) {
-            return 1000;
-        } else if (MAX_HITS.equals(name)) {
-            return 400;
-        } else {
-            return super.get(name, context, substitution);
+        if (name.equals(MAX_OFFSET)) return 1000;
+        if (name.equals(MAX_HITS)) return 400;
+        if (name.equals(MAX_QUERY_ITEMS)) return 10000;
+        return super.get(name, context, substitution);
+    }
+
+    public static void requireNotPresentIn(Map<String, String> map) {
+        for (var property : properties) {
+            if (map.containsKey(property.toString()))
+                throw new IllegalArgumentException(property + " must be specified in a query profile.");
         }
     }
 

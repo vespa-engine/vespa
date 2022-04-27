@@ -9,7 +9,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.container.http.filter.FilterChainRepository;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilter;
 import com.yahoo.jdisc.http.filter.SecurityRequestFilterChain;
-import com.yahoo.test.json.JsonTestHelper;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -17,20 +17,19 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactoryMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
-import org.junit.ComparisonFailure;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * Provides testing of JSON container responses
@@ -38,6 +37,8 @@ import static org.junit.Assert.assertEquals;
  * @author bratseth
  */
 public class ContainerTester {
+
+    private static final boolean writeResponses = false;
 
     private final JDisc container;
     private final String responseFilePath;
@@ -97,33 +98,30 @@ public class ContainerTester {
     private void assertResponse(Request request, File responseFile, int expectedStatusCode, boolean removeWhitespace, boolean compareJson) {
         String expectedResponse = readTestFile(responseFile.toString());
         expectedResponse = include(expectedResponse);
-        if (removeWhitespace) expectedResponse = expectedResponse.replaceAll("(\"[^\"]*\")|\\s*", "$1"); // Remove whitespace
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
         String responseString;
         try {
             responseString = response.getBodyAsString();
-        } catch (CharacterCodingException e) {
+        }
+        catch (CharacterCodingException e) {
             throw new UncheckedIOException(e);
         }
-        if (expectedResponse.contains("(ignore)")) {
-            // Convert expected response to a literal pattern and replace any ignored field with a pattern that matches
-            // until the first stop character
-            String stopCharacters = "[^,:\\\\[\\\\]{}]";
-            String expectedResponsePattern = Pattern.quote(expectedResponse)
-                    .replaceAll("\"?\\(ignore\\)\"?", "\\\\E" +
-                            stopCharacters + "*\\\\Q");
-            if (!Pattern.matches(expectedResponsePattern, responseString)) {
-                throw new ComparisonFailure(responseFile + " (with ignored fields)",
-                                            expectedResponsePattern, responseString);
+        try {
+            if (responseFile.toString().endsWith(".json")) {
+                byte[] expected = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(expectedResponse).get(), false);
+                byte[] actual = SlimeUtils.toJsonBytes(SlimeUtils.jsonToSlimeOrThrow(responseString).get(), false);
+                if (writeResponses) writeTestFile(responseFile.toString(), actual);
+                else assertEquals(new String(expected, UTF_8), new String(actual, UTF_8));
             }
-        } else {
-            if (compareJson) {
-                JsonTestHelper.assertJsonEquals(expectedResponse, responseString);
-            } else {
-                assertEquals(responseFile.toString(), expectedResponse, responseString);
+            else { // Not JSON? Let's do a verbatim comparison, then ...
+                if (writeResponses) writeTestFile(responseFile.toString(), responseString.getBytes(UTF_8));
+                else assertEquals(expectedResponse, responseString);
             }
+        }
+        catch (IOException e) {
+            fail("failed writing JSON: " + e);
         }
         assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
@@ -142,7 +140,7 @@ public class ContainerTester {
 
     public void assertResponse(Supplier<Request> request, String expectedResponse, int expectedStatusCode) {
         assertResponse(request,
-                       (response) -> assertEquals(expectedResponse, new String(response.getBody(), StandardCharsets.UTF_8)),
+                       (response) -> assertEquals(expectedResponse, new String(response.getBody(), UTF_8)),
                        expectedStatusCode);
     }
 
@@ -191,6 +189,14 @@ public class ContainerTester {
         String postFix = rest.substring(filenameEnd + 1);
         postFix = include(postFix);
         return prefix + includedContent + postFix;
+    }
+
+    private void writeTestFile(String name, byte[] content) {
+        try {
+            Files.write(Paths.get(responseFilePath, name), content);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private String readTestFile(String name) {

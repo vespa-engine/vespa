@@ -4,8 +4,11 @@ package com.yahoo.vespa.hosted.controller.integration;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
@@ -46,6 +49,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
 
+import java.time.Instant;
+
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
  *
@@ -54,11 +59,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestC
 public class ServiceRegistryMock extends AbstractComponent implements ServiceRegistry {
 
     private final ManualClock clock = new ManualClock();
+    private final ControllerVersion controllerVersion;
     private final ZoneRegistryMock zoneRegistryMock;
     private final ConfigServerMock configServerMock;
     private final MemoryNameService memoryNameService = new MemoryNameService();
     private final MockMailer mockMailer = new MockMailer();
-    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
+    private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock(clock);
     private final EndpointCertificateValidatorMock endpointCertificateValidatorMock = new EndpointCertificateValidatorMock();
     private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
@@ -91,6 +97,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         this.zoneRegistryMock = new ZoneRegistryMock(system);
         this.configServerMock = new ConfigServerMock(zoneRegistryMock);
         this.mockTesterCloud = new MockTesterCloud(nameService());
+        this.clock.setInstant(Instant.ofEpochSecond(1600000000));
+        this.controllerVersion = new ControllerVersion(Version.fromString("6.1.0"), "badb01", clock.instant());
     }
 
     @Inject
@@ -110,6 +118,16 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ManualClock clock() {
         return clock;
+    }
+
+    @Override
+    public ControllerVersion controllerVersion() {
+        return controllerVersion;
+    }
+
+    @Override
+    public HostName getHostname() {
+        return HostName.of("test-controller");
     }
 
     @Override

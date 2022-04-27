@@ -54,10 +54,6 @@ protected:
     }
 
 public:
-    uint32_t getRawValues(DocId doc, const WType * & values) const final override {
-        return get(doc, values);
-    }
-
     MultiValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c =
                                AttributeVector::Config(AttributeVector::BasicType::fromType(T()),
                                                        attribute::CollectionType::ARRAY));
@@ -81,22 +77,19 @@ public:
     //-------------------------------------------------------------------------
     T get(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
-        return ((values.size() > 0) ? values[0].value() : T());
+        return ((values.size() > 0) ? multivalue::get_value(values[0]) : T());
     }
     largeint_t getInt(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
-        return static_cast<largeint_t>((values.size() > 0) ? values[0].value() : T());
+        return static_cast<largeint_t>((values.size() > 0) ? multivalue::get_value(values[0]) : T());
     }
     double getFloat(DocId doc) const override {
         MultiValueArrayRef values(this->_mvMapping.get(doc));
-        return static_cast<double>((values.size() > 0) ? values[0].value() : T());
+        return static_cast<double>((values.size() > 0) ? multivalue::get_value(values[0]) : T());
     }
     EnumHandle getEnum(DocId doc) const override {
         (void) doc;
         return std::numeric_limits<uint32_t>::max(); // does not have enum
-    }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
     }
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
@@ -109,7 +102,7 @@ public:
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
         uint32_t ret = handle.size();
         for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
-            buffer[i] = static_cast<BufferType>(handle[i].value());
+            buffer[i] = static_cast<BufferType>(multivalue::get_value(handle[i]));
         }
         return ret;
     }
@@ -129,9 +122,6 @@ public:
         }
         return available;
     }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override{
-        return getWeightedHelper<Weighted, T>(doc, v, sz);
-    }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);
     }
@@ -143,8 +133,8 @@ public:
         MultiValueArrayRef handle(this->_mvMapping.get(doc));
         uint32_t ret = handle.size();
         for(size_t i(0), m(std::min(sz, ret)); i < m; i++) {
-            buffer[i] = WeightedType(static_cast<ValueType>(handle[i].value()),
-                                     handle[i].weight());
+            buffer[i] = WeightedType(static_cast<ValueType>(multivalue::get_value(handle[i])),
+                                     multivalue::get_weight(handle[i]));
         }
         return ret;
     }

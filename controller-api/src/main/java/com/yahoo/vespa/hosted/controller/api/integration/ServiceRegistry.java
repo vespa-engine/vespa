@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration;
 
+import com.yahoo.config.provision.HostName;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEventFetcher;
@@ -46,6 +48,10 @@ public interface ServiceRegistry {
     ConfigServer configServer();
 
     default Clock clock() { return Clock.systemUTC(); }
+
+    default ControllerVersion controllerVersion() { return ControllerVersion.CURRENT; }
+
+    default HostName getHostname() { return HostName.of(com.yahoo.net.HostName.getLocalhost()); }
 
     NameService nameService();
 

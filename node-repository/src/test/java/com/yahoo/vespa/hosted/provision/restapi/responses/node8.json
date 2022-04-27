@@ -16,7 +16,15 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "down": false,
   "history": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "operator"
+    }
+  ],
+  "log": [
     {
       "event": "provisioned",
       "at": 123,

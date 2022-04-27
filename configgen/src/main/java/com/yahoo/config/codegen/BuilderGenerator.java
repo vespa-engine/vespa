@@ -204,7 +204,7 @@ public class BuilderGenerator {
         }
 
         private static String privateLeafNodeSetter(LeafCNode n) {
-            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n)) || "UrlReference".equals(builderType(n))) {
+            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n))) {
                 return "";
             } else {
                 return "\n\n" + //
@@ -247,7 +247,7 @@ public class BuilderGenerator {
         }
 
         private static String privateLeafMapSetter(CNode n) {
-            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n)) || "UrlReference".equals(builderType(n))) {
+            if ("String".equals(builderType(n)) || "FileReference".equals(builderType(n))) {
                 return "";
             } else {
                 return "\n\n" + //
@@ -269,10 +269,15 @@ public class BuilderGenerator {
                     : "";
 
             String bType = builderType(n);
-            String stringSetter = "String".equals(bType) || "FileReference".equals(bType)  || "UrlReference".equals(bType) ? ""
-                    : String.format("\nprivate Builder %s(String %svalue) {\n" + //
-                            "  return %s(%s.valueOf(%svalue));\n" + //
-                            "}", name, INTERNAL_PREFIX, name, boxedDataType(n), INTERNAL_PREFIX);
+            String stringSetter = "";
+            if ( ! "String".equals(bType) &&  ! "FileReference".equals(bType)) {
+                String type = boxedDataType(n);
+                if ("UrlReference".equals(bType))
+                    type = bType;
+                stringSetter = String.format("\nprivate Builder %s(String %svalue) {\n" + //
+                        "  return %s(%s.valueOf(%svalue));\n" + //
+                        "}", name, INTERNAL_PREFIX, name, type, INTERNAL_PREFIX);
+            }
 
             String getNullGuard = bType.equals(boxedBuilderType(n)) ? String.format(
                     "\nif (%svalue == null) throw new IllegalArgumentException(\"Null value is not allowed.\");", INTERNAL_PREFIX) : "";

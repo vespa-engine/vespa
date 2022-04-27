@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
@@ -322,7 +321,7 @@ public class RoutingPoliciesTest {
 
     @Test
     public void zone_routing_policies_without_dns_update() {
-        var tester = new RoutingPoliciesTester(new DeploymentTester(), SystemName.main, false);
+        var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
@@ -410,10 +409,7 @@ public class RoutingPoliciesTest {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         context.submit(applicationPackage).deploy();
         var zone = ZoneId.from("dev", "us-east-1");
-        var zoneApi = ZoneApiMock.from(zone.environment(), zone.region());
-        tester.controllerTester().serviceRegistry().zoneRegistry()
-              .setZones(zoneApi)
-              .exclusiveRoutingIn(zoneApi);
+        tester.controllerTester().setRoutingMethod(List.of(zone), RoutingMethod.exclusive);
         var prodRecords = Set.of("app1.tenant1.us-central-1.vespa.oath.cloud", "app1.tenant1.us-west-1.vespa.oath.cloud");
         assertEquals(prodRecords, tester.recordNames());
 
@@ -453,7 +449,7 @@ public class RoutingPoliciesTest {
         tester.controllerTester().configServer().removeLoadBalancers(context.instanceId(), zone1);
 
         // Load balancer for the same application is provisioned again, but with a different hostname
-        var newHostname = HostName.from("new-hostname");
+        var newHostname = HostName.of("new-hostname");
         var loadBalancer = new LoadBalancer("LB-0-Z-" + zone1.value(),
                                             context.instanceId(),
                                             ClusterSpec.Id.from("c0"),
@@ -624,7 +620,7 @@ public class RoutingPoliciesTest {
 
         // Application starts deployment
         context = context.submit(applicationPackage);
-        for (var testJob : List.of(JobType.systemTest, JobType.stagingTest)) {
+        for (var testJob : List.of(DeploymentContext.systemTest, DeploymentContext.stagingTest)) {
             context = context.runJob(testJob);
             // Since runJob implicitly tears down the deployment and immediately deletes DNS records associated with the
             // deployment, we consume only one DNS update at a time here
@@ -708,7 +704,7 @@ public class RoutingPoliciesTest {
 
         List<Record> records = tester.controllerTester().nameService().findRecords(Record.Type.CNAME, name);
         assertEquals(1, records.size());
-        assertEquals(RecordData.from("lb-0--hosted-vespa:zone-config-servers:default--prod.us-west-1."),
+        assertEquals(RecordData.from("lb-0--hosted-vespa.zone-config-servers.default--prod.us-west-1."),
                      records.get(0).data());
     }
 
@@ -859,10 +855,10 @@ public class RoutingPoliciesTest {
         for (int i = 0; i < count; i++) {
             HostName lbHostname;
             if (shared) {
-                lbHostname = HostName.from("shared-lb--" + zone.value());
+                lbHostname = HostName.of("shared-lb--" + zone.value());
             } else {
-                lbHostname = HostName.from("lb-" + i + "--" + application.serializedForm() +
-                                           "--" + zone.value());
+                lbHostname = HostName.of("lb-" + i + "--" + application.toFullString() +
+                                         "--" + zone.value());
             }
             loadBalancers.add(
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),
@@ -879,8 +875,8 @@ public class RoutingPoliciesTest {
         var sharedRegion = RegionName.from("aws-us-east-1c");
         return List.of(ZoneId.from(Environment.prod, sharedRegion),
                        ZoneId.from(Environment.prod, RegionName.from("aws-eu-west-1a")),
-                       ZoneId.from(Environment.staging, sharedRegion),
-                       ZoneId.from(Environment.test, sharedRegion));
+                       ZoneId.from(Environment.staging, RegionName.from("us-east-3")),
+                       ZoneId.from(Environment.test, RegionName.from("us-east-1")));
     }
 
     private static class RoutingPoliciesTester {
@@ -892,23 +888,21 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPoliciesTester(SystemName system) {
-            this(new DeploymentTester(system.isPublic()
-                                              ? new ControllerTester(new RotationsConfig.Builder().build(), system)
-                                              : new ControllerTester()),
-                 system,
+            this(new DeploymentTester(system.isPublic() ? new ControllerTester(new RotationsConfig.Builder().build(), system)
+                                                        : new ControllerTester(system)),
                  true);
         }
 
-        public RoutingPoliciesTester(DeploymentTester tester, SystemName system, boolean exclusiveRouting) {
+        public RoutingPoliciesTester(DeploymentTester tester, boolean exclusiveRouting) {
             this.tester = tester;
             List<ZoneId> zones;
-            if (system.isPublic()) {
+            if (tester.controller().system().isPublic()) {
                 zones = publicZones();
             } else {
                 zones = new ArrayList<>(tester.controllerTester().zoneRegistry().zones().all().ids()); // Default zones
                 zones.add(zone4); // Missing from default ZoneRegistryMock zones
             }
-            tester.controllerTester().setZones(zones, system);
+            tester.controllerTester().setZones(zones);
             if (exclusiveRouting) {
                 tester.controllerTester().setRoutingMethod(zones, RoutingMethod.exclusive);
             }
@@ -985,7 +979,7 @@ public class RoutingPoliciesTest {
             deploymentsByDnsName.forEach((dnsName, deployments) -> {
                 Set<String> weightedTargets = deployments.stream()
                                                            .map(d -> "weighted/lb-" + loadBalancerId + "--" +
-                                                                     d.applicationId().serializedForm() + "--" + d.zoneId().value() +
+                                                                     d.applicationId().toFullString() + "--" + d.zoneId().value() +
                                                                      "/dns-zone-1/" + d.zoneId().value() + "/" + deploymentWeights.get(d))
                                                            .collect(Collectors.toSet());
                 assertEquals(dnsName + " has expected targets", weightedTargets, aliasDataOf(dnsName));
@@ -1009,7 +1003,7 @@ public class RoutingPoliciesTest {
             zonesByRegionEndpoint.forEach((regionEndpoint, zonesInRegion) -> {
                 Set<String> weightedTargets = zonesInRegion.stream()
                                                            .map(z -> "weighted/lb-" + loadBalancerId + "--" +
-                                                                     instance.serializedForm() + "--" + z.value() +
+                                                                     instance.toFullString() + "--" + z.value() +
                                                                      "/dns-zone-1/" + z.value() + "/" + zoneWeights.get(z))
                                                            .collect(Collectors.toSet());
                 assertEquals("Region endpoint " + regionEndpoint + " points to load balancer",

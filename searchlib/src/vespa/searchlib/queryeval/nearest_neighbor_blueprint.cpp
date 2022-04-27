@@ -51,13 +51,30 @@ struct ConvertCellsSelector
     }
 };
 
+vespalib::string
+to_string(NearestNeighborBlueprint::Algorithm algorithm)
+{
+    using NNBA = NearestNeighborBlueprint::Algorithm;
+    switch (algorithm) {
+        case NNBA::BRUTE_FORCE: return "brute force";
+        case NNBA::BRUTE_FORCE_FALLBACK: return "brute force fallback";
+        case NNBA::INDEX_TOP_K: return "index top k";
+        case NNBA::INDEX_TOP_K_WITH_FILTER: return "index top k using global filter";
+    }
+    return "unknown";
+}
+
 } // namespace <unnamed>
 
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::ITensorAttribute& attr_tensor,
                                                    std::unique_ptr<Value> query_tensor,
-                                                   uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits,
-                                                   double distance_threshold, double brute_force_limit)
+                                                   uint32_t target_num_hits,
+                                                   bool approximate,
+                                                   uint32_t explore_additional_hits,
+                                                   double distance_threshold,
+                                                   double global_filter_lower_limit,
+                                                   double global_filter_upper_limit)
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(std::move(query_tensor)),
@@ -65,11 +82,14 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _approximate(approximate),
       _explore_additional_hits(explore_additional_hits),
       _distance_threshold(std::numeric_limits<double>::max()),
-      _brute_force_limit(brute_force_limit),
+      _global_filter_lower_limit(global_filter_lower_limit),
+      _global_filter_upper_limit(global_filter_upper_limit),
       _fallback_dist_fun(),
       _distance_heap(target_num_hits),
       _found_hits(),
+      _algorithm(Algorithm::BRUTE_FORCE),
       _global_filter(GlobalFilter::create()),
+      _global_filter_set(false),
       _global_filter_hits(),
       _global_filter_hit_ratio()
 {
@@ -103,48 +123,41 @@ void
 NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
 {
     _global_filter = global_filter.shared_from_this();
+    _global_filter_set = true;
     auto nns_index = _attr_tensor.nearest_neighbor_index();
-    LOG(debug, "set_global_filter with: %s / %s / %s",
-        (_approximate ? "approximate" : "exact"),
-        (nns_index ? "nns_index" : "no_index"),
-        (_global_filter->has_filter() ? "has_filter" : "no_filter"));
     if (_approximate && nns_index) {
         uint32_t est_hits = _attr_tensor.get_num_docs();
         if (_global_filter->has_filter()) {
             uint32_t max_hits = _global_filter->filter()->countTrueBits();
-            LOG(debug, "set_global_filter getNumDocs: %u / max_hits %u", est_hits, max_hits);
             double max_hit_ratio = static_cast<double>(max_hits) / est_hits;
-            if (max_hit_ratio < _brute_force_limit) {
-                _approximate = false;
-                LOG(debug, "too many hits filtered out, using brute force implementation");
+            if (max_hit_ratio < _global_filter_lower_limit) {
+                _algorithm = Algorithm::BRUTE_FORCE_FALLBACK;
             } else {
                 est_hits = std::min(est_hits, max_hits);
             }
             _global_filter_hits = max_hits;
             _global_filter_hit_ratio = max_hit_ratio;
         }
-        if (_approximate) {
+        if (_algorithm != Algorithm::BRUTE_FORCE_FALLBACK) {
             est_hits = std::min(est_hits, _target_num_hits);
             setEstimate(HitEstimate(est_hits, false));
-            perform_top_k();
-            LOG(debug, "perform_top_k found %zu hits", _found_hits.size());
+            perform_top_k(nns_index);
         }
     }
 }
 
 void
-NearestNeighborBlueprint::perform_top_k()
+NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
 {
-    auto nns_index = _attr_tensor.nearest_neighbor_index();
-    if (_approximate && nns_index) {
-        auto lhs = _query_tensor->cells();
-        uint32_t k = _target_num_hits;
-        if (_global_filter->has_filter()) {
-            auto filter = _global_filter->filter();
-            _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits, _distance_threshold);
-        } else {
-            _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits, _distance_threshold);
-        }
+    auto lhs = _query_tensor->cells();
+    uint32_t k = _target_num_hits;
+    if (_global_filter->has_filter()) {
+        auto filter = _global_filter->filter();
+        _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits, _distance_threshold);
+        _algorithm = Algorithm::INDEX_TOP_K_WITH_FILTER;
+    } else {
+        _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits, _distance_threshold);
+        _algorithm = Algorithm::INDEX_TOP_K;
     }
 }
 
@@ -169,13 +182,17 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.visitString("query_tensor", _query_tensor->type().to_spec());
     visitor.visitInt("target_num_hits", _target_num_hits);
     visitor.visitInt("explore_additional_hits", _explore_additional_hits);
-    visitor.visitBool("approximate", _approximate);
+    visitor.visitBool("wanted_approximate", _approximate);
     visitor.visitBool("has_index", _attr_tensor.nearest_neighbor_index());
-    visitor.visitInt("top_k_found_hits", _found_hits.size());
+    visitor.visitString("algorithm", to_string(_algorithm));
+    visitor.visitInt("top_k_hits", _found_hits.size());
 
     visitor.openStruct("global_filter", "GlobalFilter");
-    visitor.visitBool("exists", (_global_filter && _global_filter->has_filter()));
-    visitor.visitFloat("brute_force_limit", _brute_force_limit);
+    visitor.visitBool("wanted", getState().want_global_filter());
+    visitor.visitBool("set", _global_filter_set);
+    visitor.visitBool("calculated", _global_filter->has_filter());
+    visitor.visitFloat("lower_limit", _global_filter_lower_limit);
+    visitor.visitFloat("upper_limit", _global_filter_upper_limit);
     if (_global_filter_hits.has_value()) {
         visitor.visitInt("hits", _global_filter_hits.value());
     }
@@ -189,6 +206,13 @@ bool
 NearestNeighborBlueprint::always_needs_unpack() const
 {
     return true;
+}
+
+std::ostream&
+operator<<(std::ostream& out, NearestNeighborBlueprint::Algorithm algorithm)
+{
+    out << to_string(algorithm);
+    return out;
 }
 
 }

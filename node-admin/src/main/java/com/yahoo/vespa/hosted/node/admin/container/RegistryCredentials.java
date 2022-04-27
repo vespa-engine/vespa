@@ -10,16 +10,14 @@ import java.util.Objects;
  */
 public class RegistryCredentials {
 
-    public static final RegistryCredentials none = new RegistryCredentials("", "", "");
+    public static final RegistryCredentials none = new RegistryCredentials("", "");
 
     private final String username;
     private final String password;
-    private final String registryAddress;
 
-    public RegistryCredentials(String username, String password, String registryAddress) {
+    public RegistryCredentials(String username, String password) {
         this.username = Objects.requireNonNull(username);
         this.password = Objects.requireNonNull(password);
-        this.registryAddress = Objects.requireNonNull(registryAddress);
     }
 
     public String username() {
@@ -30,28 +28,23 @@ public class RegistryCredentials {
         return password;
     }
 
-    public String registryAddress() {
-        return registryAddress;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         RegistryCredentials that = (RegistryCredentials) o;
         return username.equals(that.username) &&
-               password.equals(that.password) &&
-               registryAddress.equals(that.registryAddress);
+               password.equals(that.password);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(username, password, registryAddress);
+        return Objects.hash(username, password);
     }
 
     @Override
     public String toString() {
-        return "registry credentials for " + registryAddress + " [username=" + username + ",password=" + password + "]";
+        return "registry credentials [username=" + username + ",password=<hidden>]";
     }
 
 }

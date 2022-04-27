@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.controller.api.application.v4;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.InstanceInformation;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.EnvironmentId;
-import com.yahoo.vespa.hosted.controller.api.identifiers.Hostname;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.RegionId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
@@ -51,7 +51,7 @@ public interface EnvironmentResource {
                    @PathParam("environmentId") EnvironmentId environmentId,
                    @PathParam("regionId") RegionId regionId,
                    @PathParam("instanceId") InstanceId instanceId,
-                   @QueryParam("hostname") Hostname hostname);
+                   @QueryParam("hostname") HostName hostname);
 
     @GET
     @Path("{environmentId}/region/{regionId}/instance/{instanceId}")
@@ -69,9 +69,6 @@ public interface EnvironmentResource {
                                    @PathParam("regionId") RegionId regionId,
                                    @PathParam("instanceId") InstanceId instanceId,
                                    @QueryParam("timeout") long timeoutInSeconds);
-
-    @Path("{environmentId}/region/{regionId}/instance/{instanceId}/service")
-    ServiceViewResource service();
 
     @PUT
     @Path("{environmentId}/region/{regionId}/instance/{instanceId}/global-rotation/override")

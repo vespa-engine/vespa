@@ -1,0 +1,157 @@
+package com.yahoo.vespa.hosted.controller.application.pkg;
+
+import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.TestSummary;
+import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.Map;
+import java.util.jar.JarOutputStream;
+import java.util.zip.ZipEntry;
+
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.production;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.staging_setup;
+import static com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Suite.system;
+import static com.yahoo.vespa.hosted.controller.application.pkg.TestPackage.validateTests;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertEquals;
+
+/**
+ * @author jonmv
+ */
+public class TestPackageTest {
+
+    static byte[] testsJar(String... suites) throws IOException {
+        String manifest = "Manifest-Version: 1.0\n" +
+                          "Created-By: vespa container maven plugin\n" +
+                          "Build-Jdk-Spec: 17\n" +
+                          "Bundle-ManifestVersion: 2\n" +
+                          "Bundle-SymbolicName: canary-application-test\n" +
+                          "Bundle-Version: 1.0.1\n" +
+                          "Bundle-Name: Test & verification application for Vespa\n" +
+                          "X-JDisc-Test-Bundle-Version: 1.0\n" +
+                          "Bundle-Vendor: Yahoo!\n" +
+                          "Bundle-ClassPath: .,dependencies/fest-assert-1.4.jar,dependencies/fest-u\n" +
+                          " til-1.1.6.jar\n" +
+                          "Import-Package: ai.vespa.feed.client;version=\"[1.0.0,2)\",ai.vespa.hosted\n" +
+                          " .cd;version=\"[1.0.0,2)\",com.yahoo.config;version=\"[1.0.0,2)\",com.yahoo.\n" +
+                          " container.jdisc;version=\"[1.0.0,2)\",com.yahoo.jdisc.http;version=\"[1.0.\n" +
+                          " 0,2)\",com.yahoo.slime;version=\"[1.0.0,2)\",java.awt.image;version=\"[0.0.\n" +
+                          " 0,1)\",java.awt;version=\"[0.0.0,1)\",java.beans;version=\"[0.0.0,1)\",java.\n" +
+                          " io;version=\"[0.0.0,1)\",java.lang.annotation;version=\"[0.0.0,1)\",java.la\n" +
+                          " ng.reflect;version=\"[0.0.0,1)\",java.lang;version=\"[0.0.0,1)\",java.math;\n" +
+                          " version=\"[0.0.0,1)\",java.net.http;version=\"[0.0.0,1)\",java.net;version=\n" +
+                          " \"[0.0.0,1)\",java.nio.file;version=\"[0.0.0,1)\",java.security;version=\"[0\n" +
+                          " .0.0,1)\",java.text;version=\"[0.0.0,1)\",java.time.temporal;version=\"[0.0\n" +
+                          " .0,1)\",java.time;version=\"[0.0.0,1)\",java.util.concurrent;version=\"[0.0\n" +
+                          " .0,1)\",java.util.function;version=\"[0.0.0,1)\",java.util.stream;version=\n" +
+                          " \"[0.0.0,1)\",java.util;version=\"[0.0.0,1)\",javax.imageio;version=\"[0.0.0\n" +
+                          " ,1)\",org.junit.jupiter.api;version=\"[5.8.1,6)\"\n" +
+                          "X-JDisc-Test-Bundle-Categories: " + String.join(",", suites) + "\n" +
+                          "\n";
+
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (JarOutputStream out = new JarOutputStream(buffer)) {
+            write("META-INF/MANIFEST.MF", manifest, out);
+            write("dependencies/foo.jar", "bar", out);
+            write("META-INF/maven/ai.vespa.test/app/pom.xml", "<project />", out);
+            write("ai/vespa/test/Test.class", "baz", out);
+        }
+        return buffer.toByteArray();
+    }
+
+    static void write(String name, String content, JarOutputStream out) throws IOException {
+        out.putNextEntry(new ZipEntry(name));
+        out.write(content.getBytes(UTF_8));
+        out.closeEntry();
+    }
+
+    @Test
+    public void testBundleValidation() throws IOException {
+        byte[] testZip = ApplicationPackage.filesZip(Map.of("components/foo-tests.jar", testsJar("SystemTest", "StagingSetup", "ProductionTest"),
+                                                            "artifacts/key", new byte[0]));
+        TestSummary summary = validateTests(List.of(system), testZip);
+
+        assertEquals(List.of(system, staging_setup, production), summary.suites());
+        assertEquals(List.of("test package contains 'artifacts/key'; this conflicts with credentials used to run tests in Vespa Cloud",
+                             "test package has staging setup, so it should also include staging tests",
+                             "test package has production tests, but no production tests are declared in deployment.xml",
+                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                     summary.problems());
+    }
+
+    @Test
+    public void testFatTestsValidation() {
+        byte[] testZip = ApplicationPackage.filesZip(Map.of("artifacts/foo-tests.jar", new byte[0]));
+        TestSummary summary = validateTests(List.of(staging, production), testZip);
+
+        assertEquals(List.of(staging, production), summary.suites());
+        assertEquals(List.of("test package has staging tests, so it should also include staging setup",
+                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                     summary.problems());
+    }
+
+    @Test
+    public void testBasicTestsValidation() {
+        byte[] testZip = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0],
+                                                            "tests/staging-setup/foo.json", new byte[0]));
+        TestSummary summary = validateTests(List.of(system, production), testZip);
+        assertEquals(List.of(staging_setup, staging), summary.suites());
+        assertEquals(List.of("test package has no system tests, but <test /> is declared in deployment.xml",
+                             "test package has no production tests, but production tests are declared in deployment.xml",
+                             "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"),
+                     summary.problems());
+    }
+
+    @Test
+    public void generates_correct_tester_flavor() {
+        DeploymentSpec spec = DeploymentSpec.fromXml("<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
+                                                     "    <instance id='first'>\n" +
+                                                     "        <test tester-flavor=\"d-6-16-100\" />\n" +
+                                                     "        <prod>\n" +
+                                                     "            <region active=\"true\">us-west-1</region>\n" +
+                                                     "            <test>us-west-1</test>\n" +
+                                                     "        </prod>\n" +
+                                                     "    </instance>\n" +
+                                                     "    <instance id='second'>\n" +
+                                                     "        <test />\n" +
+                                                     "        <staging />\n" +
+                                                     "        <prod tester-flavor=\"d-6-16-100\">\n" +
+                                                     "            <parallel>\n" +
+                                                     "                <region active=\"true\">us-east-3</region>\n" +
+                                                     "                <region active=\"true\">us-central-1</region>\n" +
+                                                     "            </parallel>\n" +
+                                                     "            <region active=\"true\">us-west-1</region>\n" +
+                                                     "            <test>us-west-1</test>\n" +
+                                                     "        </prod>\n" +
+                                                     "    </instance>\n" +
+                                                     "</deployment>\n");
+
+        NodeResources firstResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("first"));
+        assertEquals(TestPackage.DEFAULT_TESTER_RESOURCES, firstResources);
+
+        NodeResources secondResources = TestPackage.testerResourcesFor(ZoneId.from("prod", "us-west-1"), spec.requireInstance("second"));
+        assertEquals(6, secondResources.vcpu(), 1e-9);
+        assertEquals(16, secondResources.memoryGb(), 1e-9);
+        assertEquals(100, secondResources.diskGb(), 1e-9);
+    }
+
+    @Test
+    public void generates_correct_services_xml() throws IOException {
+        assertEquals(Files.readString(Paths.get("src/test/resources/test_runner_services.xml-cd")),
+                     new String(TestPackage.servicesXml(true,
+                                                        false,
+                                                        new NodeResources(2, 12, 75, 1, NodeResources.DiskSpeed.fast, NodeResources.StorageType.local),
+                                                        new ControllerConfig.Steprunner.Testerapp.Builder().build()),
+                                UTF_8));
+    }
+
+}

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
@@ -10,10 +11,9 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.deployment.ConvergenceSummary;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
@@ -28,7 +28,6 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.NavigableMap;
 import java.util.Optional;
-import java.util.OptionalLong;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
@@ -36,6 +35,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentF
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.endpointCertificateTimeout;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -74,7 +74,6 @@ class RunSerializer {
     //          - REMOVING FIELDS: Stop reading the field first. Stop writing it on a later version.
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
-    // TODO: Remove "steps" when there are no traces of it in the controllers
     private static final String stepsField = "steps";
     private static final String stepDetailsField = "stepDetails";
     private static final String startTimeField = "startTime";
@@ -88,17 +87,9 @@ class RunSerializer {
     private static final String versionsField = "versions";
     private static final String isRedeploymentField = "isRedeployment";
     private static final String platformVersionField = "platform";
-    private static final String repositoryField = "repository";
-    private static final String branchField = "branch";
-    private static final String commitField = "commit";
-    private static final String authorEmailField = "authorEmail";
     private static final String deployedDirectlyField = "deployedDirectly";
-    private static final String compileVersionField = "compileVersion";
-    private static final String buildTimeField = "buildTime";
-    private static final String sourceUrlField = "sourceUrl";
     private static final String buildField = "build";
     private static final String sourceField = "source";
-    private static final String bundleHashField = "bundleHash";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
     private static final String noNodesDownSinceField = "noNodesDownSince";
@@ -134,11 +125,12 @@ class RunSerializer {
 
             steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), startTime));
         });
-        return new Run(new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
-                                 JobType.fromJobName(runObject.field(jobTypeField).asString()),
-                                 runObject.field(numberField).asLong()),
+        RunId id = new RunId(ApplicationId.fromSerializedForm(runObject.field(applicationField).asString()),
+                             JobType.ofSerialized(runObject.field(jobTypeField).asString()),
+                                 runObject.field(numberField).asLong());
+        return new Run(id,
                        steps,
-                       versionsFromSlime(runObject.field(versionsField)),
+                       versionsFromSlime(runObject.field(versionsField), id),
                        runObject.field(isRedeploymentField).asBool(),
                        SlimeUtils.instant(runObject.field(startField)),
                        SlimeUtils.optionalInstant(runObject.field(endField)),
@@ -155,40 +147,26 @@ class RunSerializer {
                        SlimeUtils.optionalString(runObject.field(reasonField)));
     }
 
-    private Versions versionsFromSlime(Inspector versionsObject) {
+    private Versions versionsFromSlime(Inspector versionsObject, RunId id) {
         Version targetPlatformVersion = Version.fromString(versionsObject.field(platformVersionField).asString());
-        ApplicationVersion targetApplicationVersion = applicationVersionFrom(versionsObject);
+        RevisionId targetRevision = revisionFrom(versionsObject, id);
 
         Optional<Version> sourcePlatformVersion = versionsObject.field(sourceField).valid()
                 ? Optional.of(Version.fromString(versionsObject.field(sourceField).field(platformVersionField).asString()))
                 : Optional.empty();
-        Optional<ApplicationVersion> sourceApplicationVersion = versionsObject.field(sourceField).valid()
-                ? Optional.of(applicationVersionFrom(versionsObject.field(sourceField)))
+        Optional<RevisionId> sourceRevision = versionsObject.field(sourceField).valid()
+                ? Optional.of(revisionFrom(versionsObject.field(sourceField), id))
                 : Optional.empty();
 
-        return new Versions(targetPlatformVersion, targetApplicationVersion, sourcePlatformVersion, sourceApplicationVersion);
+        return new Versions(targetPlatformVersion, targetRevision, sourcePlatformVersion, sourceRevision);
     }
 
-    private ApplicationVersion applicationVersionFrom(Inspector versionObject) {
-        if ( ! versionObject.field(buildField).valid())
-            return ApplicationVersion.unknown;
-
+    private RevisionId revisionFrom(Inspector versionObject, RunId id) {
         long buildNumber = versionObject.field(buildField).asLong();
-        // TODO jonmv: Remove source revision
-        Optional<SourceRevision> source = Optional.of(new SourceRevision(versionObject.field(repositoryField).asString(),
-                                                                         versionObject.field(branchField).asString(),
-                                                                         versionObject.field(commitField).asString()))
-                                                  .filter(revision -> ! revision.commit().isBlank() && ! revision.repository().isBlank() && ! revision.branch().isBlank());
-        Optional<String> authorEmail = SlimeUtils.optionalString(versionObject.field(authorEmailField));
-        Optional<Version> compileVersion = SlimeUtils.optionalString(versionObject.field(compileVersionField)).map(Version::fromString);
-        Optional<Instant> buildTime = SlimeUtils.optionalInstant(versionObject.field(buildTimeField));
-        Optional<String> sourceUrl = SlimeUtils.optionalString(versionObject.field(sourceUrlField));
-        Optional<String> commit = SlimeUtils.optionalString(versionObject.field(commitField));
-        boolean deployedDirectly = versionObject.field(deployedDirectlyField).asBool();
-        Optional<String> bundleHash = SlimeUtils.optionalString(versionObject.field(bundleHashField));
-
-        return new ApplicationVersion(source, OptionalLong.of(buildNumber), authorEmail,
-                                      compileVersion, buildTime, sourceUrl, commit, deployedDirectly, bundleHash);
+        boolean production =      versionObject.field(deployedDirectlyField).valid() // TODO jonmv: remove after migration
+                             &&   buildNumber > 0
+                             && ! versionObject.field(deployedDirectlyField).asBool();
+        return production ? RevisionId.forProduction(buildNumber) : RevisionId.forDevelopment(buildNumber, id.job());
     }
 
     // Don't change this — introduce a separate array instead.
@@ -228,7 +206,7 @@ class RunSerializer {
 
     private void toSlime(Run run, Cursor runObject) {
         runObject.setString(applicationField, run.id().application().serializedForm());
-        runObject.setString(jobTypeField, run.id().type().jobName());
+        runObject.setString(jobTypeField, run.id().type().serialized());
         runObject.setBool(isRedeploymentField, run.isRedeployment());
         runObject.setLong(numberField, run.id().number());
         runObject.setLong(startField, run.start().toEpochMilli());
@@ -251,10 +229,10 @@ class RunSerializer {
                         stepDetailsObject.setObject(valueOf(step)).setLong(startTimeField, valueOf(startTime))));
 
         Cursor versionsObject = runObject.setObject(versionsField);
-        toSlime(run.versions().targetPlatform(), run.versions().targetApplication(), versionsObject);
+        toSlime(run.versions().targetPlatform(), run.versions().targetRevision(), versionsObject);
         run.versions().sourcePlatform().ifPresent(sourcePlatformVersion -> {
             toSlime(sourcePlatformVersion,
-                    run.versions().sourceApplication()
+                    run.versions().sourceRevision()
                        .orElseThrow(() -> new IllegalArgumentException("Source versions must be both present or absent.")),
                     versionsObject.setObject(sourceField));
         });
@@ -262,19 +240,10 @@ class RunSerializer {
         run.reason().ifPresent(reason -> runObject.setString(reasonField, reason));
     }
 
-    private void toSlime(Version platformVersion, ApplicationVersion applicationVersion, Cursor versionsObject) {
+    private void toSlime(Version platformVersion, RevisionId revsion, Cursor versionsObject) {
         versionsObject.setString(platformVersionField, platformVersion.toString());
-        applicationVersion.buildNumber().ifPresent(number -> versionsObject.setLong(buildField, number));
-        // TODO jonmv: Remove source revision.
-        applicationVersion.source().map(SourceRevision::repository).ifPresent(repository -> versionsObject.setString(repositoryField, repository));
-        applicationVersion.source().map(SourceRevision::branch).ifPresent(branch -> versionsObject.setString(branchField, branch));
-        applicationVersion.source().map(SourceRevision::commit).ifPresent(commit -> versionsObject.setString(commitField, commit));
-        applicationVersion.authorEmail().ifPresent(email -> versionsObject.setString(authorEmailField, email));
-        applicationVersion.compileVersion().ifPresent(version -> versionsObject.setString(compileVersionField, version.toString()));
-        applicationVersion.buildTime().ifPresent(time -> versionsObject.setLong(buildTimeField, time.toEpochMilli()));
-        applicationVersion.sourceUrl().ifPresent(url -> versionsObject.setString(sourceUrlField, url));
-        applicationVersion.commit().ifPresent(commit -> versionsObject.setString(commitField, commit));
-        versionsObject.setBool(deployedDirectlyField, applicationVersion.isDeployedDirectly());
+        versionsObject.setLong(buildField, revsion.number());
+        versionsObject.setBool(deployedDirectlyField, ! revsion.isProduction());
     }
 
     // Don't change this - introduce a separate array with new values if needed.
@@ -368,6 +337,7 @@ class RunSerializer {
             case deploymentFailed           : return "deploymentFailed";
             case installationFailed         : return "installationFailed";
             case testFailure                : return "testFailure";
+            case noTests                    : return "noTests";
             case error                      : return "error";
             case success                    : return "success";
             case aborted                    : return "aborted";
@@ -380,11 +350,11 @@ class RunSerializer {
     static RunStatus runStatusOf(String status) {
         switch (status) {
             case "running"                    : return running;
-            case "outOfCapacity"              : return nodeAllocationFailure;  // TODO: Remove after March 2022
             case "nodeAllocationFailure"      : return nodeAllocationFailure;
             case "endpointCertificateTimeout" : return endpointCertificateTimeout;
             case "deploymentFailed"           : return deploymentFailed;
             case "installationFailed"         : return installationFailed;
+            case "noTests"                    : return noTests;
             case "testFailure"                : return testFailure;
             case "error"                      : return error;
             case "success"                    : return success;

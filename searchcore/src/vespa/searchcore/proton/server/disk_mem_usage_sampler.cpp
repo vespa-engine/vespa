@@ -33,25 +33,32 @@ DiskMemUsageSampler::setConfig(const Config &config)
     _periodicTimer->reset();
     _filter.setConfig(config.filterConfig);
     _sampleInterval = config.sampleInterval;
-    sampleUsage();
+    sampleAndReportUsage();
     _lastSampleTime = vespalib::steady_clock::now();
     vespalib::duration maxInterval = std::min(vespalib::duration(1s), _sampleInterval);
     _periodicTimer->scheduleAtFixedRate(makeLambdaTask([this]() {
                                             if (_filter.acceptWriteOperation() && (vespalib::steady_clock::now() < (_lastSampleTime + _sampleInterval))) {
                                                 return;
                                             }
-                                            sampleUsage();
+                                            sampleAndReportUsage();
                                             _lastSampleTime = vespalib::steady_clock::now();
                                         }),
                                         maxInterval, maxInterval);
 }
 
 void
-DiskMemUsageSampler::sampleUsage()
+DiskMemUsageSampler::sampleAndReportUsage()
 {
-    sampleMemoryUsage();
-    sampleDiskUsage();
-    sample_transient_resource_usage();
+    TransientResourceUsage transientUsage = sample_transient_resource_usage();
+    /* It is important that transient resource usage is sampled first. This prevents
+     * a false positive where we report a too high disk or memory usage causing
+     * either feed blocked, or an alert due to metric spike.
+     * A false negative is less of a problem, as it will only be a short drop in the metric,
+     * and a short period of allowed feed. The latter will be very rare as you are rarely feed blocked anyway.
+     */
+    vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
+    uint64_t diskUsage = sampleDiskUsage();
+    _filter.set_resource_usage(transientUsage, memoryStats, diskUsage);
 }
 
 namespace {
@@ -106,22 +113,22 @@ sampleDiskUsageInDirectory(const fs::path &path)
 
 }
 
-void
+uint64_t
 DiskMemUsageSampler::sampleDiskUsage()
 {
     const auto &disk = _filter.getHwInfo().disk();
-    _filter.setDiskUsedSize(disk.shared() ?
-                            sampleDiskUsageInDirectory(_path) :
-                            sampleDiskUsageOnFileSystem(_path, disk));
+    return disk.shared()
+        ? sampleDiskUsageInDirectory(_path)
+        : sampleDiskUsageOnFileSystem(_path, disk);
 }
 
-void
+vespalib::ProcessMemoryStats
 DiskMemUsageSampler::sampleMemoryUsage()
 {
-    _filter.setMemoryStats(vespalib::ProcessMemoryStats::create());
+    return vespalib::ProcessMemoryStats::create();
 }
 
-void
+TransientResourceUsage
 DiskMemUsageSampler::sample_transient_resource_usage()
 {
     TransientResourceUsage transient_usage;
@@ -131,7 +138,7 @@ DiskMemUsageSampler::sample_transient_resource_usage()
             transient_usage.merge(provider->get_transient_resource_usage());
         }
     }
-    _filter.set_transient_resource_usage(transient_usage);
+    return transient_usage;
 }
 
 void

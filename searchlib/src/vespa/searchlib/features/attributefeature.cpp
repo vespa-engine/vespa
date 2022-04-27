@@ -137,15 +137,16 @@ public:
 };
 
 /**
- * Implements the executor for fetching values from a single or array attribute vector
+ * Implements the executor for fetching values from an array attribute vector
  */
-template <typename T>
-class MultiAttributeExecutor final : public fef::FeatureExecutor {
+template <typename BaseType>
+class ArrayAttributeExecutor final : public fef::FeatureExecutor {
 private:
-    const T & _attribute;
+    using ArrayReadView = attribute::IArrayReadView<BaseType>;
+    const ArrayReadView* _array_read_view;
     uint32_t  _idx;
 public:
-    MultiAttributeExecutor(const T & attribute, uint32_t idx) : _attribute(attribute), _idx(idx) { }
+    ArrayAttributeExecutor(const ArrayReadView* array_read_view, uint32_t idx) : _array_read_view(array_read_view), _idx(idx) { }
     void execute(uint32_t docId) override;
     void handle_bind_outputs(vespalib::ArrayRef<fef::NumberOrObject> outputs_in) override {
         fef::FeatureExecutor::handle_bind_outputs(outputs_in);
@@ -212,7 +213,6 @@ private:
     attribute::BasicType::Type _attrType;
     BT   _buffer; // used when fetching values and weights from the attribute
     T    _key;    // the key to find a weight for
-    bool _useKey;
 
 public:
     /**
@@ -220,9 +220,8 @@ public:
      *
      * @param attribue The attribute vector to use.
      * @param key      The key to find a corresponding weight for.
-     * @param useKey   Whether we should consider the key.
      */
-    WeightedSetAttributeExecutor(const attribute::IAttributeVector * attribute, T key, bool useKey);
+    WeightedSetAttributeExecutor(const attribute::IAttributeVector * attribute, T key);
     void execute(uint32_t docId) override;
 };
 
@@ -238,15 +237,13 @@ SingleAttributeExecutor<T>::execute(uint32_t docId)
                      : util::getAsFeature(v);
 }
 
-template <typename T>
+template <typename BaseType>
 void
-MultiAttributeExecutor<T>::execute(uint32_t docId)
+ArrayAttributeExecutor<BaseType>::execute(uint32_t docId)
 {
-    const multivalue::Value<typename T::BaseType> * values = nullptr;
-    uint32_t numValues = _attribute.getRawValues(docId, values);
-
+    auto values = _array_read_view->get_values(docId);
     auto o = outputs().get_bound();
-    o[0].as_number = __builtin_expect(_idx < numValues, true) ? values[_idx].value() : 0;
+    o[0].as_number = __builtin_expect(_idx < values.size(), true) ? multivalue::get_value(values[_idx]) : 0;
 }
 
 void
@@ -283,13 +280,12 @@ AttributeExecutor<T>::execute(uint32_t docId)
 
 
 template <typename BT, typename T>
-WeightedSetAttributeExecutor<BT, T>::WeightedSetAttributeExecutor(const IAttributeVector * attribute, T key, bool useKey) :
-    fef::FeatureExecutor(),
-    _attribute(attribute),
-    _attrType(attribute->getBasicType()),
-    _buffer(),
-    _key(key),
-    _useKey(useKey)
+WeightedSetAttributeExecutor<BT, T>::WeightedSetAttributeExecutor(const IAttributeVector * attribute, T key)
+    : fef::FeatureExecutor(),
+      _attribute(attribute),
+      _attrType(attribute->getBasicType()),
+      _buffer(),
+      _key(key)
 {
 }
 
@@ -301,18 +297,14 @@ WeightedSetAttributeExecutor<BT, T>::execute(uint32_t docId)
     feature_t weight = 0.0f;
     feature_t contains = 0.0f;
     feature_t count = 0.0f;
-    if (_useKey) {
-        _buffer.fill(*_attribute, docId);
-        for (uint32_t i = 0; i < _buffer.size(); ++i) {
-            if (equals(_buffer[i].getValue(), _key)) {
-                value = considerUndefined(_key, _attrType);
-                weight = static_cast<feature_t>(_buffer[i].getWeight());
-                contains = 1.0f;
-                break;
-            }
+    _buffer.fill(*_attribute, docId);
+    for (uint32_t i = 0; i < _buffer.size(); ++i) {
+        if (equals(_buffer[i].getValue(), _key)) {
+            value = considerUndefined(_key, _attrType);
+            weight = static_cast<feature_t>(_buffer[i].getWeight());
+            contains = 1.0f;
+            break;
         }
-    } else {
-        count = _attribute->getValueCount(docId);
     }
     outputs().set_number(0, value);    // value
     outputs().set_number(1, weight);   // weight
@@ -338,20 +330,22 @@ private:
 };
 
 template <typename T>
-struct MultiValueExecutorCreator {
-    using AttrType = MultiValueNumericAttribute<T, multivalue::Value<typename T::BaseType>>;
-    using PtrType = const AttrType *;
-    using ExecType = MultiAttributeExecutor<AttrType>;
-    MultiValueExecutorCreator() : ptr(nullptr) {}
-    bool handle(const IAttributeVector *attribute) {
-        ptr = dynamic_cast<PtrType>(attribute);
-        return ptr != nullptr;
+struct ArrayExecutorCreator {
+    using ArrayReadView = attribute::IArrayReadView<typename T::BaseType>;
+    using ExecType = ArrayAttributeExecutor<typename T::BaseType>;
+    ArrayExecutorCreator() : _array_read_view(nullptr) {}
+    bool handle(vespalib::Stash &stash, const IAttributeVector *attribute) {
+        auto multi_value_attribute = attribute->as_multi_value_attribute();
+        if (multi_value_attribute != nullptr) {
+            _array_read_view = multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::ArrayTag<typename T::BaseType>(), stash);
+        }
+        return _array_read_view != nullptr;
     }
     fef::FeatureExecutor & create(vespalib::Stash &stash, uint32_t idx) const {
-        return stash.create<ExecType>(*ptr, idx);
+        return stash.create<ExecType>(_array_read_view, idx);
     }
 private:
-    PtrType ptr;
+    const ArrayReadView* _array_read_view;
 };
 
 fef::FeatureExecutor &
@@ -369,11 +363,11 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
         bool useKey = !extraParam.empty();
         if (useKey) {
             if (attribute->isStringType()) {
-                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>>(attribute, extraParam, useKey);
+                return stash.create<WeightedSetAttributeExecutor<WeightedConstCharContent, vespalib::stringref>>(attribute, extraParam);
             } else if (attribute->isIntegerType()) {
-                return stash.create<WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>>(attribute, util::strToNum<int64_t>(extraParam), useKey);
+                return stash.create<WeightedSetAttributeExecutor<WeightedIntegerContent, int64_t>>(attribute, util::strToNum<int64_t>(extraParam));
             } else { // FLOAT
-                return stash.create<WeightedSetAttributeExecutor<WeightedFloatContent, double>>(attribute, util::strToNum<double>(extraParam), useKey);
+                return stash.create<WeightedSetAttributeExecutor<WeightedFloatContent, double>>(attribute, util::strToNum<double>(extraParam));
             }
         } else {
             return stash.create<CountOnlyAttributeExecutor>(*attribute);
@@ -420,20 +414,20 @@ createAttributeExecutor(uint32_t numOutputs, const IAttributeVector *attribute, 
             return stash.create<AttributeExecutor<ConstCharContent>>(attribute, idx);
         } else if (attribute->isIntegerType()) {
             if (basicType == BasicType::INT32) {
-                MultiValueExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                ArrayExecutorCreator<IntegerAttributeTemplate<int32_t>> creator;
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else if (basicType == BasicType::INT64) {
-                MultiValueExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                ArrayExecutorCreator<IntegerAttributeTemplate<int64_t>> creator;
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<IntegerContent>>(attribute, idx);
         } else { // FLOAT
             if (basicType == BasicType::DOUBLE) {
-                MultiValueExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                ArrayExecutorCreator<FloatingPointAttributeTemplate<double>> creator;
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             } else {
-                MultiValueExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
-                if (creator.handle(attribute)) return creator.create(stash, idx);
+                ArrayExecutorCreator<FloatingPointAttributeTemplate<float>> creator;
+                if (creator.handle(stash, attribute)) return creator.create(stash, idx);
             }
             return stash.create<AttributeExecutor<FloatContent>>(attribute, idx);
         }

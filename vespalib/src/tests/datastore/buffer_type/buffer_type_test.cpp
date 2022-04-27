@@ -12,9 +12,9 @@ constexpr uint32_t NUM_ARRAYS_FOR_NEW_BUFFER(0);
 
 struct Setup {
     uint32_t  _minArrays;
-    ElemCount _usedElems;
+    std::atomic<ElemCount> _usedElems;
     ElemCount _neededElems;
-    ElemCount _deadElems;
+    std::atomic<ElemCount> _deadElems;
     uint32_t  _bufferId;
     float     _allocGrowFactor;
     bool      _resizing;
@@ -27,6 +27,7 @@ struct Setup {
           _allocGrowFactor(0.5),
           _resizing(false)
     {}
+    Setup(const Setup& rhs);
     Setup &minArrays(uint32_t value) { _minArrays = value; return *this; }
     Setup &used(size_t value) { _usedElems = value; return *this; }
     Setup &needed(size_t value) { _neededElems = value; return *this; }
@@ -34,6 +35,17 @@ struct Setup {
     Setup &bufferId(uint32_t value) { _bufferId = value; return *this; }
     Setup &resizing(bool value) { _resizing = value; return *this; }
 };
+
+Setup::Setup(const Setup& rhs)
+    : _minArrays(rhs._minArrays),
+      _usedElems(rhs._usedElems.load(std::memory_order_relaxed)),
+      _neededElems(rhs._neededElems),
+      _deadElems(rhs._deadElems.load(std::memory_order_relaxed)),
+      _bufferId(rhs._bufferId),
+      _allocGrowFactor(rhs._allocGrowFactor),
+      _resizing(rhs._resizing)
+{
+}
 
 struct Fixture {
     std::vector<Setup> setups;

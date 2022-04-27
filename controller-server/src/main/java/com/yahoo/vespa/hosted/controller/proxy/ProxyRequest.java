@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.yahoo.container.jdisc.HttpRequest;
-
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.text.Text;
+
 import java.io.InputStream;
 import java.net.URI;
 import java.util.List;

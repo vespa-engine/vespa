@@ -6,7 +6,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneApi;
 
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * @author olaa

@@ -45,6 +45,7 @@ public:
     void visitFloatValueNode(const document::select::FloatValueNode &) override {}
     void visitVariableValueNode(const document::select::VariableValueNode &) override {}
     void visitIntegerValueNode(const document::select::IntegerValueNode &) override {}
+    void visitBoolValueNode(const document::select::BoolValueNode &) override {}
     void visitCurrentTimeValueNode(const document::select::CurrentTimeValueNode &) override {}
     void visitStringValueNode(const document::select::StringValueNode &) override {}
     void visitNullValueNode(const document::select::NullValueNode &) override {}

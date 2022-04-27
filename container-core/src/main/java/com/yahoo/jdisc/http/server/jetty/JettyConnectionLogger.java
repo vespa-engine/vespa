@@ -311,7 +311,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 this.sslSubjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(peerCertificate).stream()
                         .map(SubjectAlternativeName::getValue)
                         .collect(Collectors.toList());
-                this.sslPeerIssuerSubject = peerCertificate.getIssuerDN().getName();
+                this.sslPeerIssuerSubject = peerCertificate.getIssuerX500Principal().getName();
                 this.sslPeerEncodedCertificate = peerCertificate.getEncoded();
             } catch (SSLPeerUnverifiedException | CertificateEncodingException e) {
                 // Throw if peer is not authenticated (e.g when client auth is disabled)

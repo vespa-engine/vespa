@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.Node;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -40,11 +41,11 @@ public class ClusterInfo {
     /** Returns information about the given node id, or null if this node does not exist */
     public NodeInfo getNodeInfo(Node node) { return allNodeInfo.get(node); }
 
-    Collection<DistributorNodeInfo> getDistributorNodeInfo() { return Collections.unmodifiableCollection(distributorNodeInfo.values()); }
+    Collection<DistributorNodeInfo> getDistributorNodeInfos() { return Collections.unmodifiableCollection(distributorNodeInfo.values()); }
 
-    Collection<StorageNodeInfo> getStorageNodeInfo() { return Collections.unmodifiableCollection(storageNodeInfo.values()); }
+    Collection<StorageNodeInfo> getStorageNodeInfos() { return Collections.unmodifiableCollection(storageNodeInfo.values()); }
 
-    Collection<NodeInfo> getAllNodeInfo() { return Collections.unmodifiableCollection(allNodeInfo.values()); }
+    Collection<NodeInfo> getAllNodeInfos() { return Collections.unmodifiableCollection(allNodeInfo.values()); }
 
     /** Returns the configured nodes of this as a read-only map indexed on node index (distribution key) */
     Map<Integer, ConfiguredNode> getConfiguredNodes() { return Collections.unmodifiableMap(nodes); }
@@ -52,15 +53,23 @@ public class ClusterInfo {
     boolean hasConfiguredNode(int index) { return nodes.containsKey(index); }
 
     /** Sets the nodes which belongs to this cluster */
-    void setNodes(Collection<ConfiguredNode> newNodes, ContentCluster owner, Distribution distribution) {
+    void setNodes(Collection<ConfiguredNode> newNodes, ContentCluster owner,
+                  Distribution distribution, NodeListener nodeListener) {
         // Remove info for removed nodes
         Set<ConfiguredNode> newNodesSet = new HashSet<>(newNodes);
         for (ConfiguredNode existingNode : this.nodes.values()) {
             if ( ! newNodesSet.contains(existingNode)) {
-                Node existingStorageNode = storageNodeInfo.remove(existingNode.index()).getNode();
-                Node existingDistributorNode = distributorNodeInfo.remove(existingNode.index()).getNode();
-                allNodeInfo.remove(existingDistributorNode);
-                allNodeInfo.remove(existingStorageNode);
+                {
+                    Node existingStorageNode = storageNodeInfo.remove(existingNode.index()).getNode();
+                    allNodeInfo.remove(existingStorageNode);
+                    nodeListener.handleRemovedNode(existingStorageNode);
+                }
+
+                {
+                    Node existingDistributorNode = distributorNodeInfo.remove(existingNode.index()).getNode();
+                    allNodeInfo.remove(existingDistributorNode);
+                    nodeListener.handleRemovedNode(existingDistributorNode);
+                }
             }
         }
 

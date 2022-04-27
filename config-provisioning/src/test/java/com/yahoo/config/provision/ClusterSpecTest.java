@@ -1,13 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.testing.EqualsTester;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.ClusterSpec.Group;
+import com.yahoo.config.provision.ClusterSpec.Id;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -18,20 +21,14 @@ public class ClusterSpecTest {
 
     @Test
     public void testIdEquals() {
-        new EqualsTester()
-                .addEqualityGroup(ClusterSpec.Id.from("id1"), ClusterSpec.Id.from("id1"))
-                .addEqualityGroup(ClusterSpec.Id.from("id2"))
-                .addEqualityGroup(ClusterSpec.Id.from("id3"))
-                .testEquals();
+        assertEquals(Set.of(Id.from("id1"), Id.from("id2"), Id.from("id3")),
+                     new HashSet<>(List.of(Id.from("id1"), Id.from("id1"), Id.from("id2"), Id.from("id3"))));
     }
 
     @Test
     public void testGroupEquals() {
-        new EqualsTester()
-                .addEqualityGroup(ClusterSpec.Group.from(1), ClusterSpec.Group.from(1))
-                .addEqualityGroup(ClusterSpec.Group.from(2))
-                .addEqualityGroup(ClusterSpec.Group.from(3))
-                .testEquals();
+        assertEquals(Set.of(Group.from(1), Group.from(2), Group.from(3)),
+                     new HashSet<>(List.of(Group.from(1), Group.from(1), Group.from(2), Group.from(3))));
     }
 
     @Test

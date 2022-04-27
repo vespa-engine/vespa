@@ -7,6 +7,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -119,7 +120,7 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
 
     /** Returns the jobs with successful runs matching the given versions — targets only for system test, everything present otherwise. */
     public JobList successOn(Versions versions) {
-        return matching(job -> ! RunList.from(job).status(RunStatus.success).on(versions).isEmpty());
+        return matching(job -> ! RunList.from(job).matching(Run::hasSucceeded).on(versions).isEmpty());
     }
 
     // ----------------------------------- JobRun filtering
@@ -174,8 +175,8 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         }
 
         /** Returns the subset of jobs where the run of the indicated type was on the given version */
-        public JobList on(ApplicationVersion version) {
-            return matching(run -> run.versions().targetApplication().equals(version));
+        public JobList on(RevisionId revision) {
+            return matching(run -> run.versions().targetRevision().equals(revision));
         }
 
         /** Returns the subset of jobs where the run of the indicated type was on the given version */
@@ -196,7 +197,7 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
         if (job.isSuccess()) return false;
         if (job.lastSuccess().isEmpty()) return true; // An application which never succeeded is surely bad.
         if ( ! job.firstFailing().get().versions().targetPlatform().equals(job.lastSuccess().get().versions().targetPlatform())) return false; // Version change may be to blame.
-        return ! job.firstFailing().get().versions().targetApplication().equals(job.lastSuccess().get().versions().targetApplication()); // Return whether there is an application change.
+        return ! job.firstFailing().get().versions().targetRevision().equals(job.lastSuccess().get().versions().targetRevision()); // Return whether there is an application change.
     }
 
 }

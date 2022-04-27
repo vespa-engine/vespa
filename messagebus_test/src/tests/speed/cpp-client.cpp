@@ -9,7 +9,7 @@
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 using namespace mbus;
 using namespace std::chrono_literals;
@@ -84,14 +84,14 @@ Client::handleReply(Reply::UP reply) {
     send();
 }
 
-class App : public FastOS_Application
+class App
 {
 public:
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 int
-App::Main()
+App::main(int, char **)
 {
     auto retryPolicy = std::make_shared<RetryTransientErrorsPolicy>();
     retryPolicy->setBaseDelay(0.1);
@@ -133,10 +133,11 @@ App::Main()
 }
 
 int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     fprintf(stderr, "started '%s'\n", argv[0]);
     fflush(stderr);
     App app;
-    int r = app.Entry(argc, argv);
+    int r = app.main(argc, argv);
     fprintf(stderr, "stopping '%s'\n", argv[0]);
     fflush(stderr);
     return r;

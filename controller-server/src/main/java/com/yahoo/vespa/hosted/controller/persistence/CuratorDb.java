@@ -7,19 +7,18 @@ import com.yahoo.component.Version;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.curator.Lock;
-import com.yahoo.vespa.curator.MultiplePathsLock;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -38,12 +37,10 @@ import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.ZoneRoutingPolicy;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
-import com.yahoo.vespa.hosted.controller.versions.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -103,8 +100,6 @@ public class CuratorDb {
     private final ControllerVersionSerializer controllerVersionSerializer = new ControllerVersionSerializer();
     private final ConfidenceOverrideSerializer confidenceOverrideSerializer = new ConfidenceOverrideSerializer();
     private final TenantSerializer tenantSerializer = new TenantSerializer();
-    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
-    private final RunSerializer runSerializer = new RunSerializer();
     private final OsVersionSerializer osVersionSerializer = new OsVersionSerializer();
     private final OsVersionTargetSerializer osVersionTargetSerializer = new OsVersionTargetSerializer(osVersionSerializer);
     private final OsVersionStatusSerializer osVersionStatusSerializer = new OsVersionStatusSerializer(osVersionSerializer, nodeVersionSerializer);
@@ -112,10 +107,13 @@ public class CuratorDb {
     private final ZoneRoutingPolicySerializer zoneRoutingPolicySerializer = new ZoneRoutingPolicySerializer(routingPolicySerializer);
     private final AuditLogSerializer auditLogSerializer = new AuditLogSerializer();
     private final NameServiceQueueSerializer nameServiceQueueSerializer = new NameServiceQueueSerializer();
+    private final ApplicationSerializer applicationSerializer = new ApplicationSerializer();
+    private final RunSerializer runSerializer = new RunSerializer();
+    private final RetriggerEntrySerializer retriggerEntrySerializer = new RetriggerEntrySerializer();
+    private final NotificationsSerializer notificationsSerializer = new NotificationsSerializer();
 
     private final Curator curator;
     private final Duration tryLockTimeout;
-    private final StringFlag lockScheme;
 
     // For each application id (path), store the ZK node version and its deserialised data - update when version changes.
     // This will grow to keep all applications in memory, but this should be OK
@@ -125,14 +123,13 @@ public class CuratorDb {
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
     @Inject
-    public CuratorDb(Curator curator, FlagSource flagSource) {
-        this(curator, defaultTryLockTimeout, flagSource);
+    public CuratorDb(Curator curator, ServiceRegistry services) {
+        this(curator, defaultTryLockTimeout, services.zoneRegistry().system());
     }
 
-    CuratorDb(Curator curator, Duration tryLockTimeout, FlagSource flagSource) {
+    CuratorDb(Curator curator, Duration tryLockTimeout, SystemName system) {
         this.curator = curator;
         this.tryLockTimeout = tryLockTimeout;
-        this.lockScheme = Flags.CONTROLLER_LOCK_SCHEME.bindTo(flagSource);
     }
 
     /** Returns all hostnames configured to be part of this ZooKeeper cluster */
@@ -145,71 +142,35 @@ public class CuratorDb {
 
     // -------------- Locks ---------------------------------------------------
 
-    public Lock lock(TenantName name) {
+    public Mutex lock(TenantName name) {
         return curator.lock(lockPath(name), defaultLockTimeout.multipliedBy(2));
     }
 
-    public Lock lock(TenantAndApplicationId id) {
-        switch (lockScheme.value()) {
-            case "BOTH":
-                return new MultiplePathsLock(lockPath(id), legacyLockPath(id), defaultLockTimeout.multipliedBy(2), curator);
-            case "OLD":
-                return curator.lock(legacyLockPath(id), defaultLockTimeout.multipliedBy(2));
-            case "NEW":
-                return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
-            default:
-                throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
-        }
+    public Mutex lock(TenantAndApplicationId id) {
+        return curator.lock(lockPath(id), defaultLockTimeout.multipliedBy(2));
     }
 
-    public Lock lockForDeployment(ApplicationId id, ZoneId zone) {
-        switch (lockScheme.value()) {
-            case "BOTH":
-                return new MultiplePathsLock(lockPath(id, zone), legacyLockPath(id, zone), deployLockTimeout, curator);
-            case "OLD":
-                return curator.lock(legacyLockPath(id, zone), deployLockTimeout);
-            case "NEW":
-                return curator.lock(lockPath(id, zone), deployLockTimeout);
-            default:
-                throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
-        }
+    public Mutex lockForDeployment(ApplicationId id, ZoneId zone) {
+        return curator.lock(lockPath(id, zone), deployLockTimeout);
     }
 
-    public Lock lock(ApplicationId id, JobType type) {
-        switch (lockScheme.value()) {
-            case "BOTH":
-                return new MultiplePathsLock(lockPath(id, type), legacyLockPath(id, type), defaultLockTimeout, curator);
-            case "OLD":
-                return curator.lock(legacyLockPath(id, type), defaultLockTimeout);
-            case "NEW":
-                return curator.lock(lockPath(id, type), defaultLockTimeout);
-            default:
-                throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
-        }
+    public Mutex lock(ApplicationId id, JobType type) {
+        return curator.lock(lockPath(id, type), defaultLockTimeout);
     }
 
-    public Lock lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
-        switch (lockScheme.value()) {
-            case "BOTH":
-                return tryLock(lockPath(id, type, step), legacyLockPath(id, type, step));
-            case "OLD":
-                return tryLock(legacyLockPath(id, type, step));
-            case "NEW":
-                return tryLock(lockPath(id, type, step));
-            default:
-        throw new IllegalArgumentException("Unknown lock scheme " + lockScheme.value());
-        }
+    public Mutex lock(ApplicationId id, JobType type, Step step) throws TimeoutException {
+        return tryLock(lockPath(id, type, step));
     }
 
-    public Lock lockRotations() {
+    public Mutex lockRotations() {
         return curator.lock(lockRoot.append("rotations"), defaultLockTimeout);
     }
 
-    public Lock lockConfidenceOverrides() {
+    public Mutex lockConfidenceOverrides() {
         return curator.lock(lockRoot.append("confidenceOverrides"), defaultLockTimeout);
     }
 
-    public Lock lockMaintenanceJob(String jobName) {
+    public Mutex lockMaintenanceJob(String jobName) {
         try {
             return tryLock(lockRoot.append("maintenanceJobLocks").append(jobName));
         } catch (TimeoutException e) {
@@ -217,52 +178,51 @@ public class CuratorDb {
         }
     }
 
-    @SuppressWarnings("unused") // Called by internal code
-    public Lock lockProvisionState(String provisionStateId) {
+    public Mutex lockProvisionState(String provisionStateId) {
         return curator.lock(lockPath(provisionStateId), Duration.ofSeconds(1));
     }
 
-    public Lock lockOsVersions() {
+    public Mutex lockOsVersions() {
         return curator.lock(lockRoot.append("osTargetVersion"), defaultLockTimeout);
     }
 
-    public Lock lockOsVersionStatus() {
+    public Mutex lockOsVersionStatus() {
         return curator.lock(lockRoot.append("osVersionStatus"), defaultLockTimeout);
     }
 
-    public Lock lockRoutingPolicies() {
+    public Mutex lockRoutingPolicies() {
         return curator.lock(lockRoot.append("routingPolicies"), defaultLockTimeout);
     }
 
-    public Lock lockAuditLog() {
+    public Mutex lockAuditLog() {
         return curator.lock(lockRoot.append("auditLog"), defaultLockTimeout);
     }
 
-    public Lock lockNameServiceQueue() {
+    public Mutex lockNameServiceQueue() {
         return curator.lock(lockRoot.append("nameServiceQueue"), defaultLockTimeout);
     }
 
-    public Lock lockMeteringRefreshTime() throws TimeoutException {
+    public Mutex lockMeteringRefreshTime() throws TimeoutException {
         return tryLock(lockRoot.append("meteringRefreshTime"));
     }
 
-    public Lock lockArchiveBuckets(ZoneId zoneId) {
+    public Mutex lockArchiveBuckets(ZoneId zoneId) {
         return curator.lock(lockRoot.append("archiveBuckets").append(zoneId.value()), defaultLockTimeout);
     }
 
-    public Lock lockChangeRequests() {
+    public Mutex lockChangeRequests() {
         return curator.lock(lockRoot.append("changeRequests"), defaultLockTimeout);
     }
 
-    public Lock lockNotifications(TenantName tenantName) {
+    public Mutex lockNotifications(TenantName tenantName) {
         return curator.lock(lockRoot.append("notifications").append(tenantName.value()), defaultLockTimeout);
     }
 
-    public Lock lockSupportAccess(DeploymentId deploymentId) {
+    public Mutex lockSupportAccess(DeploymentId deploymentId) {
         return curator.lock(lockRoot.append("supportAccess").append(deploymentId.dottedString()), defaultLockTimeout);
     }
 
-    public Lock lockDeploymentRetriggerQueue() {
+    public Mutex lockDeploymentRetriggerQueue() {
         return curator.lock(lockRoot.append("deploymentRetriggerQueue"), defaultLockTimeout);
     }
 
@@ -272,22 +232,9 @@ public class CuratorDb {
      *
      * Useful for maintenance jobs, where there is no point in running the jobs back to back.
      */
-    private Lock tryLock(Path path) throws TimeoutException {
+    private Mutex tryLock(Path path) throws TimeoutException {
         try {
             return curator.lock(path, tryLockTimeout);
-        }
-        catch (UncheckedTimeoutException e) {
-            throw new TimeoutException(e.getMessage());
-        }
-    }
-
-    /** Try locking with a low timeout, meaning it is OK to fail lock acquisition.
-     *
-     * Useful for maintenance jobs, where there is no point in running the jobs back to back.
-     */
-    private Lock tryLock(Path path, Path path2) throws TimeoutException {
-        try {
-            return new MultiplePathsLock(path, path2, tryLockTimeout, curator);
         }
         catch (UncheckedTimeoutException e) {
             throw new TimeoutException(e.getMessage());
@@ -383,7 +330,7 @@ public class CuratorDb {
     }
 
     public Optional<Tenant> readTenant(TenantName name) {
-        return readSlime(tenantPath(name)).map(bytes -> tenantSerializer.tenantFrom(bytes));
+        return readSlime(tenantPath(name)).map(tenantSerializer::tenantFrom);
     }
 
     public List<Tenant> readTenants() {
@@ -415,7 +362,7 @@ public class CuratorDb {
                       .map(stat -> cachedApplications.compute(path, (__, old) ->
                               old != null && old.getFirst() == stat.getVersion()
                               ? old
-                              : new Pair<>(stat.getVersion(), read(path, applicationSerializer::fromSlime).get())).getSecond());
+                              : new Pair<>(stat.getVersion(), read(path, bytes -> applicationSerializer.fromSlime(bytes)).get())).getSecond());
     }
 
     public List<Application> readApplications(boolean canFail) {
@@ -676,7 +623,7 @@ public class CuratorDb {
 
     public List<Notification> readNotifications(TenantName tenantName) {
         return readSlime(notificationsPath(tenantName))
-                .map(slime -> NotificationsSerializer.fromSlime(tenantName, slime)).orElseGet(List::of);
+                .map(slime -> notificationsSerializer.fromSlime(tenantName, slime)).orElseGet(List::of);
     }
 
 
@@ -687,7 +634,7 @@ public class CuratorDb {
     }
 
     public void writeNotifications(TenantName tenantName, List<Notification> notifications) {
-        curator.set(notificationsPath(tenantName), asJson(NotificationsSerializer.toSlime(notifications)));
+        curator.set(notificationsPath(tenantName), asJson(notificationsSerializer.toSlime(notifications)));
     }
 
     public void deleteNotifications(TenantName tenantName) {
@@ -708,11 +655,11 @@ public class CuratorDb {
     // -------------- Job Retrigger entries -----------------------------------
 
     public List<RetriggerEntry> readRetriggerEntries() {
-        return readSlime(deploymentRetriggerPath()).map(RetriggerEntrySerializer::fromSlime).orElseGet(List::of);
+        return readSlime(deploymentRetriggerPath()).map(retriggerEntrySerializer::fromSlime).orElseGet(List::of);
     }
 
     public void writeRetriggerEntries(List<RetriggerEntry> retriggerEntries) {
-        curator.set(deploymentRetriggerPath(), asJson(RetriggerEntrySerializer.toSlime(retriggerEntries)));
+        curator.set(deploymentRetriggerPath(), asJson(retriggerEntrySerializer.toSlime(retriggerEntries)));
     }
 
     // -------------- Paths ---------------------------------------------------
@@ -720,32 +667,6 @@ public class CuratorDb {
     private Path lockPath(TenantName tenant) {
         return lockRoot
                 .append(tenant.value());
-    }
-
-    private Path legacyLockPath(TenantAndApplicationId application) {
-        return lockPath(application.tenant())
-                .append(application.application().value());
-    }
-
-    private Path legacyLockPath(ApplicationId instance) {
-        return legacyLockPath(TenantAndApplicationId.from(instance))
-                .append(instance.instance().value());
-    }
-
-    private Path legacyLockPath(ApplicationId instance, ZoneId zone) {
-        return legacyLockPath(instance)
-                .append(zone.environment().value())
-                .append(zone.region().value());
-    }
-
-    private Path legacyLockPath(ApplicationId instance, JobType type) {
-        return legacyLockPath(instance)
-                .append(type.jobName());
-    }
-
-    private Path legacyLockPath(ApplicationId instance, JobType type, Step step) {
-        return legacyLockPath(instance, type)
-                .append(step.name());
     }
 
     private Path lockPath(TenantAndApplicationId application) {

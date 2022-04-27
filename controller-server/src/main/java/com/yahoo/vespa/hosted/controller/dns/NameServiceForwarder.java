@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.dns;
 
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.AliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
@@ -79,7 +80,7 @@ public class NameServiceForwarder {
     }
 
     protected void forward(NameServiceRequest request, NameServiceQueue.Priority priority) {
-        try (Lock lock = db.lockNameServiceQueue()) {
+        try (Mutex lock = db.lockNameServiceQueue()) {
             NameServiceQueue queue = db.readNameServiceQueue();
             var queued = queue.requests().size();
             if (queued >= QUEUE_CAPACITY) {

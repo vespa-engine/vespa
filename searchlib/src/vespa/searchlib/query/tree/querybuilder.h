@@ -222,8 +222,9 @@ create_nearest_neighbor_term(vespalib::stringref query_tensor_name, vespalib::st
 }
 template <class NodeTypes>
 typename NodeTypes::FuzzyTerm *
-createFuzzyTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight) {
-    return new typename NodeTypes::FuzzyTerm(term, view, id, weight);
+createFuzzyTerm(vespalib::stringref term, vespalib::stringref view, int32_t id, Weight weight,
+                uint32_t maxEditDistance, uint32_t prefixLength) {
+    return new typename NodeTypes::FuzzyTerm(term, view, id, weight, maxEditDistance, prefixLength);
 }
 
 
@@ -333,9 +334,10 @@ public:
         adjustWeight(weight);
         return addTerm(createRegExpTerm<NodeTypes>(term, view, id, weight));
     }
-    typename NodeTypes::FuzzyTerm &addFuzzyTerm(stringref term, stringref view, int32_t id, Weight weight) {
+    typename NodeTypes::FuzzyTerm &addFuzzyTerm(stringref term, stringref view, int32_t id, Weight weight,
+                                                uint32_t maxEditDistance, uint32_t prefixLength) {
         adjustWeight(weight);
-        return addTerm(createFuzzyTerm<NodeTypes>(term, view, id, weight));
+        return addTerm(createFuzzyTerm<NodeTypes>(term, view, id, weight, maxEditDistance, prefixLength));
     }
     typename NodeTypes::NearestNeighborTerm &add_nearest_neighbor_term(stringref query_tensor_name, stringref field_name,
                                                                        int32_t id, Weight weight, uint32_t target_num_hits,

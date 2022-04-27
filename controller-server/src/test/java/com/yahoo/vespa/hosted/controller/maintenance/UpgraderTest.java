@@ -5,10 +5,11 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -27,12 +28,12 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.devUsEast1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsCentral1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.devUsEast1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsCentral1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PIN;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
@@ -792,12 +793,12 @@ public class UpgraderTest {
 
         // New application change
         app.submit(applicationPackage("default"));
-        String applicationVersion = app.lastSubmission().get().id();
+        RevisionId revision = app.lastSubmission().get();
 
         // Application change recorded together with ongoing upgrade
         assertTrue("Change contains both upgrade and application change",
                    app.instance().change().platform().get().equals(version) &&
-                   app.instance().change().application().get().id().equals(applicationVersion));
+                   app.instance().change().revision().get().equals(revision));
 
         // Deployment completes
         app.runJob(systemTest).runJob(stagingTest)
@@ -807,7 +808,7 @@ public class UpgraderTest {
 
         for (Deployment deployment : app.instance().deployments().values()) {
             assertEquals(version, deployment.version());
-            assertEquals(applicationVersion, deployment.applicationVersion().id());
+            assertEquals(revision, deployment.revision());
         }
     }
 

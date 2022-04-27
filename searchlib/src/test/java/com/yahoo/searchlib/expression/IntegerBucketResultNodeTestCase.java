@@ -30,4 +30,17 @@ public class IntegerBucketResultNodeTestCase extends ResultNodeTest {
         assertTrue(dumpNode(bucket).contains("to: 10"));
         assertCorrectSerialization(bucket, new IntegerBucketResultNode());
     }
+
+    private IntegerBucketResultNode createNode(long from, long to) {
+        return new IntegerBucketResultNode(from, to);
+    }
+
+    @Test
+    public void testCmp() {
+        assertOrder(createNode(Long.MIN_VALUE, 3), createNode(3, 9), createNode(9, Long.MAX_VALUE));
+        assertOrder(createNode(6, 9), createNode(7, 9), createNode(8, 9));
+        assertOrder(createNode(6, 7), createNode(6, 8), createNode(6, 9));
+        assertOrder(createNode(6, 3), createNode(7, 2), createNode(8, 1));
+        assertTrue(createNode(6, 8).onCmp(new NullResultNode()) != 0);
+    }
 }

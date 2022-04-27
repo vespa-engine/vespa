@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.RetriggerEntry;
 import org.junit.Test;
@@ -34,11 +34,11 @@ public class RetriggerMaintainerTest {
                 .build();
 
         // Deploy app
-        devApp.runJob(JobType.devUsEast1, appPackage);
+        devApp.runJob(DeploymentContext.devUsEast1, appPackage);
         devApp.completeRollout();
 
         // Trigger a run (to simulate a running job)
-        tester.deploymentTrigger().reTrigger(applicationId, JobType.devUsEast1, null);
+        tester.deploymentTrigger().reTrigger(applicationId, DeploymentContext.devUsEast1, null);
 
         // Add a job to the queue
         tester.deploymentTrigger().reTriggerOrAddToQueue(devApp.deploymentIdIn(ZoneId.from("dev", "us-east-1")), null);
@@ -48,7 +48,7 @@ public class RetriggerMaintainerTest {
         assertEquals(1, retriggerEntries.size());
 
         // Adding to queue triggers abort
-        devApp.jobAborted(JobType.devUsEast1);
+        devApp.jobAborted(DeploymentContext.devUsEast1);
         assertEquals(0, tester.jobs().active(applicationId).size());
 
         // The maintainer runs and will actually trigger dev us-east, but keeps the entry in queue to verify it was actually run
@@ -58,7 +58,7 @@ public class RetriggerMaintainerTest {
         assertEquals(1, tester.jobs().active(applicationId).size());
 
         // Run outstanding jobs
-        devApp.runJob(JobType.devUsEast1);
+        devApp.runJob(DeploymentContext.devUsEast1);
         assertEquals(0, tester.jobs().active(applicationId).size());
 
         // Run maintainer again, should find that the job has already run successfully and will remove the entry.

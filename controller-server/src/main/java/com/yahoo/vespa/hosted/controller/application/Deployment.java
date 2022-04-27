@@ -2,8 +2,8 @@
 package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -18,7 +18,7 @@ import java.util.OptionalDouble;
 public class Deployment {
 
     private final ZoneId zone;
-    private final ApplicationVersion applicationVersion;
+    private final RevisionId revision;
     private final Version version;
     private final Instant deployTime;
     private final DeploymentMetrics metrics;
@@ -26,10 +26,10 @@ public class Deployment {
     private final QuotaUsage quota;
     private final OptionalDouble cost;
 
-    public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
+    public Deployment(ZoneId zone, RevisionId revision, Version version, Instant deployTime,
                       DeploymentMetrics metrics,  DeploymentActivity activity, QuotaUsage quota, OptionalDouble cost) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");
-        this.applicationVersion = Objects.requireNonNull(applicationVersion, "applicationVersion cannot be null");
+        this.revision = Objects.requireNonNull(revision, "revision cannot be null");
         this.version = Objects.requireNonNull(version, "version cannot be null");
         this.deployTime = Objects.requireNonNull(deployTime, "deployTime cannot be null");
         this.metrics = Objects.requireNonNull(metrics, "deploymentMetrics cannot be null");
@@ -41,8 +41,8 @@ public class Deployment {
     /** Returns the zone this was deployed to */
     public ZoneId zone() { return zone; }
 
-    /** Returns the deployed application version */
-    public ApplicationVersion applicationVersion() { return applicationVersion; }
+    /** Returns the deployed application revision */
+    public RevisionId revision() { return revision; }
     
     /** Returns the deployed Vespa version */
     public Version version() { return version; }
@@ -65,26 +65,26 @@ public class Deployment {
     public OptionalDouble cost() { return cost; }
 
     public Deployment recordActivityAt(Instant instant) {
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics,
+        return new Deployment(zone, revision, version, deployTime, metrics,
                               activity.recordAt(instant, metrics), quota, cost);
     }
 
     public Deployment withMetrics(DeploymentMetrics metrics) {
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, cost);
+        return new Deployment(zone, revision, version, deployTime, metrics, activity, quota, cost);
     }
 
     public Deployment withQuota(QuotaUsage quota) {
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, cost);
+        return new Deployment(zone, revision, version, deployTime, metrics, activity, quota, cost);
     }
 
     public Deployment withCost(double cost) {
         if (this.cost.isPresent() && Double.compare(this.cost.getAsDouble(), cost) == 0) return this;
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, OptionalDouble.of(cost));
+        return new Deployment(zone, revision, version, deployTime, metrics, activity, quota, OptionalDouble.of(cost));
     }
 
     public Deployment withoutCost() {
         if (cost.isEmpty()) return this;
-        return new Deployment(zone, applicationVersion, version, deployTime, metrics, activity, quota, OptionalDouble.empty());
+        return new Deployment(zone, revision, version, deployTime, metrics, activity, quota, OptionalDouble.empty());
     }
 
     @Override
@@ -93,7 +93,7 @@ public class Deployment {
         if (o == null || getClass() != o.getClass()) return false;
         Deployment that = (Deployment) o;
         return zone.equals(that.zone) &&
-               applicationVersion.equals(that.applicationVersion) &&
+               revision.equals(that.revision) &&
                version.equals(that.version) &&
                deployTime.equals(that.deployTime) &&
                metrics.equals(that.metrics) &&
@@ -104,12 +104,12 @@ public class Deployment {
 
     @Override
     public int hashCode() {
-        return Objects.hash(zone, applicationVersion, version, deployTime, metrics, activity, quota, cost);
+        return Objects.hash(zone, revision, version, deployTime, metrics, activity, quota, cost);
     }
 
     @Override
     public String toString() {
-        return "deployment to " + zone + " of " + applicationVersion + " on version " + version + " at " + deployTime;
+        return "deployment to " + zone + " of " + revision + " on version " + version + " at " + deployTime;
     }
 
 }

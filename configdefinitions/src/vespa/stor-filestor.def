@@ -80,7 +80,7 @@ resource_usage_reporter_noise_level double default=0.001
 ##  - DYNAMIC uses DynamicThrottlePolicy under the hood and will block if the window
 ##    is full (if a blocking throttler API call is invoked).
 ##
-async_operation_throttler.type enum { UNLIMITED, DYNAMIC } default=UNLIMITED
+async_operation_throttler.type enum { UNLIMITED, DYNAMIC } default=DYNAMIC
 ## Internal throttler tuning parameters that only apply when type == DYNAMIC:
 async_operation_throttler.window_size_increment int default=20
 async_operation_throttler.window_size_decrement_factor double default=1.2
@@ -104,7 +104,7 @@ async_operation_throttler.throttle_individual_merge_feed_ops bool default=true
 ##    is full (if a blocking throttler API call is invoked).
 ##
 ## TODO deprecate in favor of the async_operation_throttler struct instead.
-async_operation_throttler_type enum { UNLIMITED, DYNAMIC } default=UNLIMITED
+async_operation_throttler_type enum { UNLIMITED, DYNAMIC } default=DYNAMIC
 
 ## Specifies the extent the throttling window is increased by when the async throttle
 ## policy has decided that more concurrent operations are desirable. Also affects the

@@ -449,4 +449,9 @@ public class VespaSerializerTestCase {
         parseAndConfirm("foo contains fuzzy(\"a\")");
     }
 
+    @Test
+    public void testFuzzyAnnotations() {
+        parseAndConfirm("foo contains ([{maxEditDistance:3,prefixLength:5}]fuzzy(\"a\"))");
+    }
+
 }

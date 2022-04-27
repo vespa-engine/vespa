@@ -359,7 +359,7 @@ public class NodeStateChangeChecker {
         // This method verifies both storage nodes and distributors are up (or retired).
         // The complicated part is making a summary error message.
 
-        for (NodeInfo storageNodeInfo : clusterInfo.getStorageNodeInfo()) {
+        for (NodeInfo storageNodeInfo : clusterInfo.getStorageNodeInfos()) {
             State wantedState = storageNodeInfo.getUserWantedState().getState();
             if (wantedState != State.UP && wantedState != State.RETIRED) {
                 return Result.createDisallowed("Another storage node wants state " +
@@ -373,7 +373,7 @@ public class NodeStateChangeChecker {
             }
         }
 
-        for (NodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfo()) {
+        for (NodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfos()) {
             State wantedState = distributorNodeInfo.getUserWantedState().getState();
             if (wantedState != State.UP && wantedState != State.RETIRED) {
                 return Result.createDisallowed("Another distributor wants state " + wantedState.toString().toUpperCase() +
@@ -418,10 +418,10 @@ public class NodeStateChangeChecker {
      * @param clusterStateVersion the cluster state we expect distributors to have
      */
     private Result checkDistributors(Node node, int clusterStateVersion) {
-        if (clusterInfo.getDistributorNodeInfo().isEmpty()) {
+        if (clusterInfo.getDistributorNodeInfos().isEmpty()) {
             return Result.createDisallowed("Not aware of any distributors, probably not safe to upgrade?");
         }
-        for (DistributorNodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfo()) {
+        for (DistributorNodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfos()) {
             Integer distributorClusterStateVersion = distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull();
             if (distributorClusterStateVersion == null) {
                 return Result.createDisallowed("Distributor node " + distributorNodeInfo.getNodeIndex()

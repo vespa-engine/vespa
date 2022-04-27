@@ -274,6 +274,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
+        @SuppressWarnings("deprecation")
         private void apply(DocumentmanagerConfig config) {
             splitConfig(config);
             setupAnnotationTypesWithoutPayloads(config);
@@ -604,8 +605,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             for (int idx : proxyRefs) {
                 typesByIdx.remove(idx);
             }
-            for (DataType type : typesByIdx.values()) {
-                manager.register(type);
+            for (var docTypeData : inProgressByName.values()) {
+                manager.registerSingleType(docTypeData.docType);
             }
         }
 

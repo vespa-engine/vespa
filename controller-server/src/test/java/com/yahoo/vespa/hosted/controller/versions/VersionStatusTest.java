@@ -2,18 +2,19 @@
 package com.yahoo.vespa.hosted.controller.versions;
 
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
@@ -29,10 +30,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -57,10 +58,11 @@ public class VersionStatusTest {
     @Test
     public void testSystemVersionIsControllerVersionIfConfigServersAreNewer() {
         ControllerTester tester = new ControllerTester();
-        Version largerThanCurrent = new Version(Vtag.currentVersion.getMajor() + 1);
+        Version controllerVersion = tester.controller().readVersionStatus().controllerVersion().get().versionNumber();
+        Version largerThanCurrent = new Version(controllerVersion.getMajor() + 1);
         tester.upgradeSystemApplications(largerThanCurrent);
         VersionStatus versionStatus = VersionStatus.compute(tester.controller());
-        assertEquals(Vtag.currentVersion, versionStatus.systemVersion().get().versionNumber());
+        assertEquals(controllerVersion, versionStatus.systemVersion().get().versionNumber());
     }
 
     @Test
@@ -82,12 +84,13 @@ public class VersionStatusTest {
 
     @Test
     public void testControllerVersionIsVersionOfOldestController() {
-        HostName controller1 = HostName.from("controller-1");
-        HostName controller2 = HostName.from("controller-2");
-        HostName controller3 = HostName.from("controller-3");
+        HostName controller1 = HostName.of("controller-1");
+        HostName controller2 = HostName.of("controller-2");
+        HostName controller3 = HostName.of("controller-3");
         MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
                                                    .map(hostName -> hostName.value() + ":2222")
-                                                   .collect(Collectors.joining(",")));
+                                                   .collect(Collectors.joining(",")),
+                                             SystemName.main);
         ControllerTester tester = new ControllerTester(db);
 
         writeControllerVersion(controller1, Version.fromString("6.2"), db);
@@ -491,12 +494,13 @@ public class VersionStatusTest {
 
     @Test
     public void testCommitDetailsPreservation() {
-        HostName controller1 = HostName.from("controller-1");
-        HostName controller2 = HostName.from("controller-2");
-        HostName controller3 = HostName.from("controller-3");
+        HostName controller1 = HostName.of("controller-1");
+        HostName controller2 = HostName.of("controller-2");
+        HostName controller3 = HostName.of("controller-3");
         MockCuratorDb db = new MockCuratorDb(Stream.of(controller1, controller2, controller3)
                                                    .map(hostName -> hostName.value() + ":2222")
-                                                   .collect(Collectors.joining(",")));
+                                                   .collect(Collectors.joining(",")),
+                                             SystemName.main);
         DeploymentTester tester = new DeploymentTester(new ControllerTester(db));
 
         // Commit details are set for initial version

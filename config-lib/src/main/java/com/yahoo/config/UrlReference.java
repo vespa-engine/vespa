@@ -21,6 +21,10 @@ public final class UrlReference {
         return value;
     }
 
+    public static UrlReference valueOf(String value) {
+        return new UrlReference(value);
+    }
+
     @Override
     public int hashCode() {
         return value.hashCode();

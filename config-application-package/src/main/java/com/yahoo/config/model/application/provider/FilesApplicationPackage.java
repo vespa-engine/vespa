@@ -13,12 +13,12 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
+import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -33,7 +33,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -48,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +60,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,7 +68,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 
 
 /**
- * Application package derived from local files, ie. during deploy.
+ * Application package derived from local files, i.e. during deploy.
  * Construct using {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFile(java.io.File)} or
  * {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFileWithDeployData(java.io.File, DeployData)}.
  *
@@ -114,7 +115,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
      * @return an Application package instance
      */
     public static FilesApplicationPackage fromFile(File appDir, boolean includeSourceFiles) {
-        return new Builder(appDir).preprocessedDir(new File(appDir, preprocessed))
+        return new Builder(appDir).preprocessedDir(applicationFile(appDir, preprocessed))
                                   .includeSourceFiles(includeSourceFiles)
                                   .build();
     }
@@ -156,7 +157,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         this.appDir = appDir;
         this.preprocessedDir = preprocessedDir;
         appSubDirs = new AppSubDirs(appDir);
-        configDefsDir = new File(appDir, CONFIG_DEFINITIONS_DIR);
+        configDefsDir = applicationFile(appDir, CONFIG_DEFINITIONS_DIR);
         addUserIncludeDirs();
         this.metaData = metaData;
         transformerFactory = TransformerFactory.newInstance();
@@ -178,7 +179,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public ApplicationFile getFile(Path path) {
-        File file = (path.isRoot() ? appDir : new File(appDir, path.getRelative()));
+        File file = (path.isRoot() ? appDir : applicationFile(appDir, path.getRelative()));
         return new FilesApplicationFile(path, file);
     }
 
@@ -190,7 +191,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     private List<NamedReader> getFiles(Path relativePath, String namePrefix, String suffix, boolean recurse) {
         try {
             List<NamedReader> readers=new ArrayList<>();
-            File dir = new File(appDir, relativePath.getRelative());
+            File dir = applicationFile(appDir, relativePath);
             if ( ! dir.isDirectory()) return readers;
 
             File[] files = dir.listFiles();
@@ -242,7 +243,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private File getHostsFile() {
-        return new File(appDir, HOSTS);
+        return applicationFile(appDir, HOSTS);
     }
 
     @Override
@@ -251,7 +252,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private File getServicesFile() {
-        return new File(appDir, SERVICES);
+        return applicationFile(appDir, SERVICES);
     }
 
     @Override
@@ -430,11 +431,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     static List<File> getSearchDefinitionFiles(File appDir) {
         List<File> schemaFiles = new ArrayList<>();
 
-        File sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
+        File sdDir = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
         if (sdDir.isDirectory())
             schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
 
-        sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
+        sdDir = applicationFile(appDir, SCHEMAS_DIR.getRelative());
         if (sdDir.isDirectory())
             schemaFiles.addAll(Arrays.asList(sdDir.listFiles((dir, name) -> name.matches(".*\\" + SD_NAME_SUFFIX))));
 
@@ -447,17 +448,17 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     // Only for use by deploy processor
     public static List<Component> getComponents(File appDir) {
-        List<Component> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
-            components.add(new Component(bundle, new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath())));
-        }
-        return components;
+        return components(appDir, Component::new);
     }
 
     private static List<ComponentInfo> getComponentsInfo(File appDir) {
-        List<ComponentInfo> components = new ArrayList<>();
-        for (Bundle bundle : Bundle.getBundles(new File(appDir, COMPONENT_DIR))) {
-            components.add(new ComponentInfo(new File(COMPONENT_DIR, bundle.getFile().getName()).getPath()));
+        return components(appDir, (__, info) -> info);
+    }
+
+    private static <T> List<T> components(File appDir, BiFunction<Bundle, ComponentInfo, T> toValue) {
+        List<T> components = new ArrayList<>();
+        for (Bundle bundle : Bundle.getBundles(applicationFile(appDir, COMPONENT_DIR))) {
+            components.add(toValue.apply(bundle, new ComponentInfo(Path.fromString(COMPONENT_DIR).append(bundle.getFile().getName()).getRelative())));
         }
         return components;
     }
@@ -481,17 +482,18 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     private static ApplicationMetaData readMetaData(File appDir) {
+        String originalAppDir = preprocessed.equals(appDir.getName()) ? appDir.getParentFile().getName() : appDir.getName();
         ApplicationMetaData defaultMetaData = new ApplicationMetaData("n/a",
                                                                       "n/a",
                                                                       0L,
                                                                       false,
                                                                       ApplicationId.from(TenantName.defaultName(),
-                                                                                         ApplicationName.from(appDir.getName()),
+                                                                                         ApplicationName.from(originalAppDir),
                                                                                          InstanceName.defaultName()),
                                                                       "",
                                                                       0L,
                                                                       0L);
-        File metaFile = new File(appDir, META_FILE_NAME);
+        File metaFile = applicationFile(appDir, META_FILE_NAME);
         if ( ! metaFile.exists()) {
             return defaultMetaData;
         }
@@ -549,18 +551,16 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             throw new IllegalArgumentException("Absolute path to ranking expression file is not allowed: " + name);
 
         Path path = Path.fromString(name);
-        File sdDir = new File(appDir, SCHEMAS_DIR.getRelative());
-        File expressionFile = new File(sdDir, path.getRelative());
+        File expressionFile = applicationFile(appDir, SCHEMAS_DIR.append(path));
         if ( ! expressionFile.exists()) {
-            sdDir = new File(appDir, SEARCH_DEFINITIONS_DIR.getRelative());
-            expressionFile = new File(sdDir, path.getRelative());
+            expressionFile = applicationFile(appDir, SEARCH_DEFINITIONS_DIR.append(path));
         }
         return expressionFile;
     }
 
     @Override
     public File getFileReference(Path pathRelativeToAppDir) {
-        return new File(appDir, pathRelativeToAppDir.getRelative());
+        return applicationFile(appDir, pathRelativeToAppDir.getRelative());
     }
 
     @Override
@@ -578,7 +578,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     @Override
     public void writeMetaData() throws IOException {
-        File metaFile = new File(appDir, META_FILE_NAME);
+        File metaFile = applicationFile(appDir, META_FILE_NAME);
         IOUtils.writeFile(metaFile, metaData.asJsonBytes());
     }
 
@@ -603,13 +603,11 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     @Override
     public ApplicationPackage preprocess(Zone zone, DeployLogger logger) throws IOException {
         IOUtils.recursiveDeleteDir(preprocessedDir);
-        IOUtils.copyDirectory(appDir, preprocessedDir, -1, (dir, name) -> ! name.equals(preprocessed) &&
-                                                                                         ! name.equals(SERVICES) &&
-                                                                                         ! name.equals(HOSTS) &&
-                                                                                         ! name.equals(CONFIG_DEFINITIONS_DIR));
+        IOUtils.copyDirectory(appDir, preprocessedDir, -1,
+                              (__, name) -> ! List.of(preprocessed, SERVICES, HOSTS, CONFIG_DEFINITIONS_DIR).contains(name));
         File servicesFile = validateServicesFile();
-        preprocessXML(new File(preprocessedDir, SERVICES), servicesFile, zone);
-        preprocessXML(new File(preprocessedDir, HOSTS), getHostsFile(), zone);
+        preprocessXML(applicationFile(preprocessedDir, SERVICES), servicesFile, zone);
+        preprocessXML(applicationFile(preprocessedDir, HOSTS), getHostsFile(), zone);
         FilesApplicationPackage preprocessed = fromFile(preprocessedDir, includeSourceFiles);
         preprocessed.copyUserDefsIntoApplication();
         return preprocessed;
@@ -732,10 +730,58 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         }
 
         public FilesApplicationPackage build() {
-            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(new File(appDir, preprocessed)),
+            return new FilesApplicationPackage(appDir, preprocessedDir.orElse(applicationFile(appDir, preprocessed)),
                                                metaData.orElse(readMetaData(appDir)), includeSourceFiles);
         }
 
+    }
+
+    static File applicationFile(File parent, String path) {
+        return applicationFile(parent, Path.fromString(path));
+    }
+
+    static File applicationFile(File parent, Path path) {
+        File file = new File(parent, path.getRelative());
+        if ( ! file.getAbsolutePath().startsWith(parent.getAbsolutePath()))
+            throw new IllegalArgumentException(file + " is not a child of " + parent);
+
+        return file;
+    }
+
+    /* Validates that files in application dir and subdirectories have a known extension */
+    public void validateFileExtensions(boolean throwIfInvalid) {
+        // TODO: Define this for all subdirs
+        Map<Path, Set<String>> validFileSuffixes = Map.of(
+                QUERY_PROFILES_DIR, Set.of(".xml"),
+                RULES_DIR, Set.of(".sr"),
+                SCHEMAS_DIR, Set.of(".sd", ".expression"),
+                SEARCH_DEFINITIONS_DIR, Set.of(".sd", ".expression"));
+
+        validFileSuffixes.forEach((key, value) -> {
+            java.nio.file.Path path = appDir.toPath().resolve((key.toFile().toPath()));
+            File dir = path.toFile();
+            if ( ! dir.exists() || ! dir.isDirectory()) return;
+
+            try (var filesInPath = Files.list(path)) {
+                filesInPath.forEach(f -> {
+                    validateFileSuffix(path, f, value, throwIfInvalid);
+                });
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Unable to list files in " + dir, e);
+            }
+        });
+    }
+
+    private void validateFileSuffix(java.nio.file.Path dir, java.nio.file.Path pathToFile, Set<String> allowedSuffixes, boolean throwIfInvalid) {
+        String fileName = pathToFile.toFile().getName();
+        if (allowedSuffixes.stream().noneMatch(fileName::endsWith)) {
+            String message = "File in application package with unknown suffix: " +
+                    appDir.toPath().relativize(dir).resolve(fileName) + " Please delete or move file to another directory.";
+            if (throwIfInvalid)
+                throw new IllegalArgumentException(message);
+            else
+                log.log(Level.INFO, message);
+        }
     }
 
 }

@@ -1,12 +1,12 @@
 [
   {
     "tenant": "tenant1",
-    "application":"application1",
-    "url":"http://localhost:8080/application/v4/tenant/tenant1/application/application1",
+    "application": "application1",
+    "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1",
     "instances": [
       {
-        "instance":"instance1",
-        "url":"http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1"
+        "instance": "instance1",
+        "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1"
       }
     ]
   }

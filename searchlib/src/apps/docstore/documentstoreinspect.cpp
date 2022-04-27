@@ -3,7 +3,7 @@
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -11,20 +11,21 @@
 
 using namespace search;
 
-class DocumentStoreInspectApp : public FastOS_Application
+class DocumentStoreInspectApp
 {
-    void usage();
+    void usage(const char *self);
     int verify(const vespalib::string & directory);
     int dumpIdxFile(const vespalib::string & file);
-    int Main() override;
+public:
+    int main(int argc, char **argv);
 };
 
 
 
 void
-DocumentStoreInspectApp::usage()
+DocumentStoreInspectApp::usage(const char *self)
 {
-    printf("Usage: %s dumpidxfile [--idxfile idxFile]\n", _argv[0]);
+    printf("Usage: %s dumpidxfile [--idxfile idxFile]\n", self);
     fflush(stdout);
 }
 
@@ -64,35 +65,35 @@ int DocumentStoreInspectApp::dumpIdxFile(const vespalib::string & file)
 }
 
 int
-DocumentStoreInspectApp::Main()
+DocumentStoreInspectApp::main(int argc, char **argv)
 {
     vespalib::string cmd;
-    if (_argc >= 2) {
-        cmd = _argv[1];
+    if (argc >= 2) {
+        cmd = argv[1];
         if (cmd == "dumpidxfile") {
             vespalib::string idxfile;
-            if (_argc >= 4) {
-                if (vespalib::string(_argv[2]) == vespalib::string("--idxfile")) {
-                    idxfile = _argv[3];
+            if (argc >= 4) {
+                if (vespalib::string(argv[2]) == vespalib::string("--idxfile")) {
+                    idxfile = argv[3];
                     dumpIdxFile(idxfile);
                 } else {
-                    fprintf(stderr, "Unknown option '%s'.\n", _argv[2]);
-                    usage();
+                    fprintf(stderr, "Unknown option '%s'.\n", argv[2]);
+                    usage(argv[0]);
                     return 1;
                 }
             } else {
                 fprintf(stderr, "Too few arguments\n");
-                usage();
+                usage(argv[0]);
                 return 1;
             }
         } else {
             fprintf(stderr, "Unknown command '%s'.\n", cmd.c_str());
-            usage();
+            usage(argv[0]);
             return 1;
         }
     } else {
         fprintf(stderr, "Too few arguments\n");
-        usage();
+        usage(argv[0]);
         return 1;
     }
     return 0;
@@ -116,4 +117,8 @@ DocumentStoreInspectApp::verify(const vespalib::string & dir)
     return retval;
 }
 
-FASTOS_MAIN(DocumentStoreInspectApp);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    DocumentStoreInspectApp app;
+    return app.main(argc, argv);
+}

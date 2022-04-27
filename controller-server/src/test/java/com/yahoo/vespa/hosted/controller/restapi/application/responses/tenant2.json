@@ -15,9 +15,9 @@
       "bob"
     ]
   ],
-  "applications": [],
+  "applications": [ ],
   "metaData": {
-    "createdAtMillis": "(ignore)",
+    "createdAtMillis": 1600000000000,
     "lastLoginByUserMillis": 1234,
     "lastLoginByAdministratorMillis": 1234
   }

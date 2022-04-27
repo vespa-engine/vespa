@@ -548,7 +548,11 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, boolean, java.lang.String)",
+      "public void <init>(java.lang.String, boolean, java.lang.String, int, int)",
+      "public void setMaxEditDistance(int)",
+      "public void setPrefixLength(int)",
+      "public int getPrefixLength()",
+      "public int getMaxEditDistance()",
       "public void setValue(java.lang.String)",
       "public java.lang.String getRawWord()",
       "public boolean isWords()",
@@ -560,10 +564,13 @@
       "public int getNumWords()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "public java.lang.String toString()",
+      "protected void appendHeadingString(java.lang.StringBuilder)",
       "protected void encodeThis(java.nio.ByteBuffer)"
     ],
-    "fields": []
+    "fields": [
+      "public static int DEFAULT_MAX_EDIT_DISTANCE",
+      "public static int DEFAULT_PREFIX_LENGTH"
+    ]
   },
   "com.yahoo.prelude.query.GeoLocationItem": {
     "superClass": "com.yahoo.prelude.query.TermItem",
@@ -1898,6 +1905,8 @@
       "public java.util.Map getEmbedders()",
       "public com.yahoo.search.Query$Builder setZoneInfo(ai.vespa.cloud.ZoneInfo)",
       "public ai.vespa.cloud.ZoneInfo getZoneInfo()",
+      "public com.yahoo.search.Query$Builder setSchemaInfo(com.yahoo.search.schema.SchemaInfo)",
+      "public com.yahoo.search.schema.SchemaInfo getSchemaInfo()",
       "public com.yahoo.search.Query build()"
     ],
     "fields": []
@@ -4171,8 +4180,7 @@
     ],
     "methods": [
       "public void <init>()",
-      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
-      "public void flatten(com.yahoo.search.result.HitGroup, com.yahoo.search.Result)"
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
     ],
     "fields": []
   },
@@ -5373,7 +5381,6 @@
       "public"
     ],
     "methods": [
-      "public static java.lang.String lookupRankProfileIn(java.util.Map)",
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void <init>(com.yahoo.search.Query)",
       "public boolean hasRankProfile()",
@@ -6560,6 +6567,7 @@
       "public java.lang.Class getValueClass(java.lang.String)",
       "public com.yahoo.search.query.profile.types.QueryProfileType getType(java.lang.String)",
       "public com.yahoo.search.query.profile.types.FieldType getFieldType(com.yahoo.processing.request.CompoundName)",
+      "public com.yahoo.search.query.profile.types.FieldDescription getField(com.yahoo.processing.request.CompoundName)",
       "public com.yahoo.search.query.profile.types.FieldDescription getField(java.lang.String)",
       "public com.yahoo.search.query.profile.types.FieldDescription removeField(java.lang.String)",
       "public void addField(com.yahoo.search.query.profile.types.FieldDescription)",
@@ -6629,11 +6637,13 @@
     ],
     "methods": [
       "public void <init>()",
-      "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)"
+      "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
+      "public static void requireNotPresentIn(java.util.Map)"
     ],
     "fields": [
       "public static final com.yahoo.processing.request.CompoundName MAX_OFFSET",
       "public static final com.yahoo.processing.request.CompoundName MAX_HITS",
+      "public static final com.yahoo.processing.request.CompoundName MAX_QUERY_ITEMS",
       "public static final com.yahoo.search.query.profile.types.QueryProfileType argumentType"
     ]
   },
@@ -6709,7 +6719,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.Query)",
+      "public void <init>(com.yahoo.search.schema.SchemaInfo, com.yahoo.search.Query, java.util.Map)",
+      "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
       "public void requireSettable(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)"
     ],
     "fields": []
@@ -6890,6 +6901,7 @@
       "public com.yahoo.search.query.ranking.RankFeatures clone()",
       "public com.yahoo.search.query.ranking.RankFeatures cloneFor(com.yahoo.search.query.Ranking)",
       "public java.lang.String toString()",
+      "public static boolean isFeatureName(java.lang.String)",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
@@ -7962,6 +7974,93 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.schema.RankProfile$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.RankProfile$Builder setHasSummaryFeatures(boolean)",
+      "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
+      "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.search.schema.RankProfile build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.RankProfile": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String name()",
+      "public boolean hasSummaryFeatures()",
+      "public boolean hasRankFeatures()",
+      "public java.util.Map inputs()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.Schema$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.RankProfile)",
+      "public com.yahoo.search.schema.Schema build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.Schema": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String name()",
+      "public java.util.Map rankProfiles()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.SchemaInfo$Session": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.tensor.TensorType rankProfileInput(java.lang.String, java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.SchemaInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
+      "public void <init>(java.util.List, java.util.Map)",
+      "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
+      "public static com.yahoo.search.schema.SchemaInfo empty()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.searchchain.AsyncExecution": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -7987,6 +8086,7 @@
       "final"
     ],
     "methods": [
+      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.schema.SchemaInfo, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
@@ -7995,6 +8095,7 @@
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",
+      "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.schema.SchemaInfo, com.yahoo.language.Linguistics)",
       "public void populateFrom(com.yahoo.search.searchchain.Execution$Context)",
       "public boolean equals(com.yahoo.search.searchchain.Execution$Context)",
       "public int hashCode()",
@@ -8002,6 +8103,7 @@
       "public com.yahoo.search.searchchain.Execution$Context shallowCopy()",
       "public com.yahoo.prelude.IndexFacts getIndexFacts()",
       "public void setIndexFacts(com.yahoo.prelude.IndexFacts)",
+      "public com.yahoo.search.schema.SchemaInfo schemaInfo()",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",
       "public com.yahoo.search.rendering.RendererRegistry rendererRegistry()",
       "public com.yahoo.language.process.SpecialTokenRegistry getTokenRegistry()",
@@ -8053,12 +8155,14 @@
       "public"
     ],
     "methods": [
+      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
       "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",
       "public com.yahoo.search.rendering.RendererRegistry rendererRegistry()",
+      "public com.yahoo.search.schema.SchemaInfo schemaInfo()",
       "public void deconstruct()",
       "public static com.yahoo.search.searchchain.ExecutionFactory empty()"
     ],
@@ -8261,6 +8365,18 @@
       "public static final com.yahoo.processing.request.CompoundName idDimensionKey",
       "public static final com.yahoo.processing.request.CompoundName dryRunKey"
     ]
+  },
+  "com.yahoo.search.searchers.ValidateFuzzySearcher": {
+    "superClass": "com.yahoo.search.Searcher",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.vespa.config.search.AttributesConfig)",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields": []
   },
   "com.yahoo.search.searchers.ValidateMatchPhaseSearcher": {
     "superClass": "com.yahoo.search.Searcher",

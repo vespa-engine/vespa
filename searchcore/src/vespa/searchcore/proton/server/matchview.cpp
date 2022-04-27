@@ -6,6 +6,7 @@
 #include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.matchview");
@@ -22,8 +23,9 @@ using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using search::queryeval::Searchable;
 using searchcorespi::IndexSearchable;
-using vespalib::make_string;
 using vespalib::ThreadBundle;
+using vespalib::IllegalArgumentException;
+using namespace vespalib::make_string_short;
 
 namespace proton {
 
@@ -50,12 +52,7 @@ MatchView::~MatchView() = default;
 Matcher::SP
 MatchView::getMatcher(const vespalib::string & rankProfile) const
 {
-    Matcher::SP retval = _matchers->lookup(rankProfile);
-    if ( ! retval) {
-        throw std::runtime_error(make_string("Failed locating Matcher for rank profile '%s'", rankProfile.c_str()));
-    }
-    LOG(debug, "Rankprofile = %s has termwise_limit=%f", rankProfile.c_str(), retval->get_termwise_limit());
-    return retval;
+    return _matchers->lookup(rankProfile);
 }
 
 MatchContext::UP

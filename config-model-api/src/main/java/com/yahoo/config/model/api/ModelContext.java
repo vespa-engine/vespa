@@ -74,9 +74,9 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { return "THROUGHPUT"; }
-        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default int feedTaskLimit() { return 1000; }
-        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default int feedMasterTaskLimit() { return 1000; }
-        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default String sharedFieldWriterExecutor() { return "NONE"; }
+        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default int feedTaskLimit() { return -1000; }
+        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default int feedMasterTaskLimit() { return 0; }
+        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default String sharedFieldWriterExecutor() { return "DOCUMENT_DB"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipCommunicationManagerThread() { throw new UnsupportedOperationException("TODO specify default value"); }
@@ -91,7 +91,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { return 100; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double containerShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"geirst"}, removeAfter = "7.541") default boolean enableFeedBlockInDistributor() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return ""; }
@@ -107,20 +106,18 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean failDeploymentWithInvalidJvmOptions() { return false; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean enableServerOcspStapling() { return false; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default String persistenceAsyncThrottling() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"vekterli"}) default String persistenceAsyncThrottling() { return "DYNAMIC"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default String mergeThrottlingPolicy() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsDecrementFactor() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsBackoff() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThrottlingWindowSize() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsResizeRate() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean persistenceThrottlingOfMergeFeedOps() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default boolean inhibitDefaultMergesWhenGlobalMergesPending() { return false; }
+        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default boolean inhibitDefaultMergesWhenGlobalMergesPending() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useQrserverServiceName() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean enableJdiscPreshutdownCommand() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
-        @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}, removeAfter = "7.569") default boolean mergeGroupingResultInSearchInvoker() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.571") default String adminClusterNodeArchitecture() { return adminClusterArchitecture().name(); }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
     }
 

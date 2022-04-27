@@ -41,23 +41,23 @@ public:
 
     using FreeList = vespalib::Array<EntryRef>;
 
-    enum State : uint8_t {
+    enum class State : uint8_t {
         FREE,
         ACTIVE,
         HOLD
     };
 
 private:
-    ElemCount     _usedElems;
-    ElemCount     _allocElems;
-    ElemCount     _deadElems;
-    ElemCount     _holdElems;
+    std::atomic<ElemCount>     _usedElems;
+    std::atomic<ElemCount>     _allocElems;
+    std::atomic<ElemCount>     _deadElems;
+    std::atomic<ElemCount>     _holdElems;
     // Number of bytes that are heap allocated by elements that are stored in this buffer.
     // For simple types this is 0.
-    size_t        _extraUsedBytes;
+    std::atomic<size_t>        _extraUsedBytes;
     // Number of bytes that are heap allocated by elements that are stored in this buffer and is now on hold.
     // For simple types this is 0.
-    size_t        _extraHoldBytes;
+    std::atomic<size_t>        _extraHoldBytes;
     FreeList      _freeList;
     FreeListList *_freeListList;    // non-nullptr if free lists are enabled
 
@@ -65,11 +65,11 @@ private:
     BufferState    *_nextHasFree;
     BufferState    *_prevHasFree;
 
-    BufferTypeBase *_typeHandler;
+    std::atomic<BufferTypeBase*> _typeHandler;
     Alloc           _buffer;
     uint32_t        _arraySize;
     uint16_t        _typeId;
-    State           _state : 8;
+    std::atomic<State> _state;
     bool            _disableElemHoldList : 1;
     bool            _compacting : 1;
 
@@ -140,51 +140,51 @@ public:
         if (isFreeListEmpty()) {
             removeFromFreeListList();
         }
-        _deadElems -= _arraySize;
+        _deadElems.store(getDeadElems() - _arraySize, std::memory_order_relaxed);
         return ret;
     }
 
-    size_t size() const { return _usedElems; }
-    size_t capacity() const { return _allocElems; }
-    size_t remaining() const { return _allocElems - _usedElems; }
+    size_t size() const { return _usedElems.load(std::memory_order_relaxed); }
+    size_t capacity() const { return _allocElems.load(std::memory_order_relaxed); }
+    size_t remaining() const { return capacity() - size(); }
     void pushed_back(size_t numElems) {
         pushed_back(numElems, 0);
     }
     void pushed_back(size_t numElems, size_t extraBytes) {
-        _usedElems += numElems;
-        _extraUsedBytes += extraBytes;
+        _usedElems.store(size() + numElems, std::memory_order_relaxed);
+        _extraUsedBytes.store(getExtraUsedBytes() + extraBytes, std::memory_order_relaxed);
     }
     void cleanHold(void *buffer, size_t offset, ElemCount numElems) {
-        _typeHandler->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraUsedBytes, _extraHoldBytes));
+        getTypeHandler()->cleanHold(buffer, offset, numElems, BufferTypeBase::CleanContext(_extraUsedBytes, _extraHoldBytes));
     }
     void dropBuffer(uint32_t buffer_id, std::atomic<void*>& buffer);
     uint32_t getTypeId() const { return _typeId; }
     uint32_t getArraySize() const { return _arraySize; }
-    size_t getDeadElems() const { return _deadElems; }
-    size_t getHoldElems() const { return _holdElems; }
-    size_t getExtraUsedBytes() const { return _extraUsedBytes; }
-    size_t getExtraHoldBytes() const { return _extraHoldBytes; }
+    size_t getDeadElems() const { return _deadElems.load(std::memory_order_relaxed); }
+    size_t getHoldElems() const { return _holdElems.load(std::memory_order_relaxed); }
+    size_t getExtraUsedBytes() const { return _extraUsedBytes.load(std::memory_order_relaxed); }
+    size_t getExtraHoldBytes() const { return _extraHoldBytes.load(std::memory_order_relaxed); }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
-    uint32_t get_used_arrays() const noexcept { return _usedElems / _arraySize; }
+    uint32_t get_used_arrays() const noexcept { return size() / _arraySize; }
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded, std::atomic<void*>& buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {
-        return ((_state == ACTIVE) && (_typeId == typeId));
+        return (isActive() && (_typeId == typeId));
     }
-    bool isActive() const { return (_state == ACTIVE); }
-    bool isOnHold() const { return (_state == HOLD); }
-    bool isFree() const { return (_state == FREE); }
-    State getState() const { return _state; }
-    const BufferTypeBase *getTypeHandler() const { return _typeHandler; }
-    BufferTypeBase *getTypeHandler() { return _typeHandler; }
+    bool isActive() const { return (getState() == State::ACTIVE); }
+    bool isOnHold() const { return (getState() == State::HOLD); }
+    bool isFree() const { return (getState() == State::FREE); }
+    State getState() const { return _state.load(std::memory_order_relaxed); }
+    const BufferTypeBase *getTypeHandler() const { return _typeHandler.load(std::memory_order_relaxed); }
+    BufferTypeBase *getTypeHandler() { return _typeHandler.load(std::memory_order_relaxed); }
 
-    void incDeadElems(size_t value) { _deadElems += value; }
-    void incHoldElems(size_t value) { _holdElems += value; }
+    void incDeadElems(size_t value) { _deadElems.store(getDeadElems() + value, std::memory_order_relaxed); }
+    void incHoldElems(size_t value) { _holdElems.store(getHoldElems() + value, std::memory_order_relaxed); }
     void decHoldElems(size_t value);
-    void incExtraUsedBytes(size_t value) { _extraUsedBytes += value; }
+    void incExtraUsedBytes(size_t value) { _extraUsedBytes.store(getExtraUsedBytes() + value, std::memory_order_relaxed); }
     void incExtraHoldBytes(size_t value) {
-        _extraHoldBytes += value;
+        _extraHoldBytes.store(getExtraHoldBytes() + value, std::memory_order_relaxed);
     }
 
     bool hasDisabledElemHoldList() const { return _disableElemHoldList; }

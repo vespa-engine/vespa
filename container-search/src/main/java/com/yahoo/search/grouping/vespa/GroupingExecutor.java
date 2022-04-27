@@ -65,7 +65,7 @@ public class GroupingExecutor extends Searcher {
     /**
      * Constructs a new instance of this searcher with the given component id.
      *
-     * @param componentId The identifier to assign to this searcher.
+     * @param componentId the identifier to assign to this searcher
      */
     public GroupingExecutor(ComponentId componentId) {
         super(componentId);

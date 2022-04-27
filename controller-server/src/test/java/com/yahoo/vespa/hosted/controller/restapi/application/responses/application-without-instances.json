@@ -2,11 +2,11 @@
   "tenant": "tenant1",
   "application": "application1",
   "deployments": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/job/",
-  "instances": [],
-  "pemDeployKeys": [],
+  "instances": [ ],
+  "pemDeployKeys": [ ],
   "metrics": {
     "queryServiceQuality": 0.0,
     "writeServiceQuality": 0.0
   },
-  "activity": {}
+  "activity": { }
 }

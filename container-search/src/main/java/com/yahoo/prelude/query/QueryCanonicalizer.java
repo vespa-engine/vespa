@@ -4,6 +4,7 @@ package com.yahoo.prelude.query;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.query.properties.DefaultProperties;
 
 import java.util.HashSet;
 import java.util.ListIterator;
@@ -20,8 +21,6 @@ public class QueryCanonicalizer {
     /** The name of the operation performed by this, for use in search chain ordering */
     public static final String queryCanonicalization = "queryCanonicalization";
 
-    private static final CompoundName MAX_QUERY_ITEMS = new CompoundName("maxQueryItems");
-
     /**
      * Validates this query and carries out possible operations on this query
      * which simplifies it without changing its semantics.
@@ -29,8 +28,8 @@ public class QueryCanonicalizer {
      * @return null if the query is valid, an error message if it is invalid
      */
     public static String canonicalize(Query query) {
-        Integer maxQueryItems = query.properties().getInteger(MAX_QUERY_ITEMS, Integer.MAX_VALUE);
-        return canonicalize(query.getModel().getQueryTree(), maxQueryItems);
+        return canonicalize(query.getModel().getQueryTree(),
+                            query.properties().getInteger(DefaultProperties.MAX_QUERY_ITEMS));
     }
 
     /**
@@ -52,7 +51,8 @@ public class QueryCanonicalizer {
         CanonicalizationResult result = recursivelyCanonicalize(rootItemIterator.next(), rootItemIterator);
         if (query.isEmpty() && ! result.isError()) result = CanonicalizationResult.error("No query");
         int itemCount = query.treeSize();
-        if (itemCount > maxQueryItems) result = CanonicalizationResult.error(String.format("Query tree exceeds allowed item count. Configured limit: %d - Item count: %d", maxQueryItems, itemCount));
+        if (itemCount > maxQueryItems)
+            result = CanonicalizationResult.error(String.format("Query tree exceeds allowed item count. Configured limit: %d - Item count: %d", maxQueryItems, itemCount));
         return result.error().orElse(null); // preserve old API, unfortunately
     }
 

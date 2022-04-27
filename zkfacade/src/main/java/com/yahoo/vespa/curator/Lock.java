@@ -9,7 +9,11 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * A cluster-wide re-entrant mutex which is released on (the last symmetric) close.
@@ -21,17 +25,26 @@ import java.util.concurrent.TimeUnit;
  */
 public class Lock implements Mutex {
 
+    // TODO(hakon): Remove once debugging is done
+    private final Object monitor = new Object();
+    private long nextSequenceNumber = 0;
+    private final Map<Long, Long> reentriesByThreadId = new HashMap<>();
+    private final Instant created = Instant.now();
+    private Curator curator;
+
     private final InterProcessLock mutex;
     private final String lockPath;
 
     public Lock(String lockPath, Curator curator) {
         this(lockPath, curator.createMutex(lockPath));
+        this.curator = curator;
     }
 
     /** Public for testing only */
     public Lock(String lockPath, InterProcessLock mutex) {
         this.lockPath = lockPath;
         this.mutex = mutex;
+        this.curator = null;
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
@@ -52,26 +65,57 @@ public class Lock implements Mutex {
             throw new UncheckedTimeoutException("Timed out after waiting " + timeout +
                     " to acquire lock '" + lockPath + "'");
         }
-        threadLockStats.lockAcquired();
+
+        invoke(+1L, threadLockStats::lockAcquired);
+    }
+
+    // TODO(hakon): Remove once debugging is unnecessary
+    private void invoke(long reentryCountDiff, Consumer<String> consumer) {
+        long threadId = Thread.currentThread().getId();
+        final long sequenceNumber;
+        final Map<Long, Long> reentriesByThreadIdCopy;
+        synchronized (monitor) {
+            sequenceNumber = nextSequenceNumber++;
+            reentriesByThreadId.merge(threadId, reentryCountDiff, (oldValue, argumentValue) -> {
+                long sum = oldValue + argumentValue /* == reentryCountDiff */;
+                if (sum == 0) {
+                    // Remove from map
+                    return null;
+                } else {
+                    return sum;
+                }
+            });
+            reentriesByThreadIdCopy = Map.copyOf(reentriesByThreadId);
+        }
+
+        String debug = "thread " + threadId + " Lock 0x" + Integer.toHexString(System.identityHashCode(this)) +
+                       "@" + created + " Curator 0x" + Integer.toHexString(System.identityHashCode(curator)) +
+                       " lock " + lockPath + " #" + sequenceNumber +
+                       ", reentries by thread ID = " + reentriesByThreadIdCopy;
+        consumer.accept(debug);
     }
 
     @Override
     public void close() {
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         // Update metrics now before release() to avoid double-counting time in locked state.
-        threadLockStats.preRelease();
+        invoke(-1L, threadLockStats::preRelease);
         try {
             mutex.release();
             threadLockStats.postRelease();
         }
         catch (Exception e) {
             threadLockStats.releaseFailed();
-            throw new RuntimeException("Exception releasing lock '" + lockPath + "'");
+            throw new RuntimeException("Exception releasing lock '" + lockPath + "'", e);
         }
     }
 
     protected String lockPath() { return lockPath; }
 
+    @Override
+    public String toString() {
+        return "Lock{" + lockPath + "}";
+    }
 }
 
 

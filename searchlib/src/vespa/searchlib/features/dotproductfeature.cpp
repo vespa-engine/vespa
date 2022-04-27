@@ -4,12 +4,8 @@
 #include "valuefeature.h"
 #include "weighted_set_parser.hpp"
 #include "array_parser.hpp"
+#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchlib/fef/properties.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/imported_attribute_vector_read_guard.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multienumattribute.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -52,49 +48,6 @@ template class VectorBase<uint32_t, uint32_t, double>;
 
 template class IntegerVectorT<int64_t>;
 
-
-template <typename Vector, typename Buffer>
-DotProductExecutorByCopy<Vector, Buffer>::DotProductExecutorByCopy(const IAttributeVector * attribute, const Vector & queryVector) :
-    FeatureExecutor(),
-    _attribute(attribute),
-    _queryVector(queryVector),
-    _end(_queryVector.getDimMap().end()),
-    _buffer(),
-    _backing()
-{
-    _buffer.allocate(_attribute->getMaxValueCount());
-}
-
-template <typename Vector, typename Buffer>
-DotProductExecutorByCopy<Vector, Buffer>::DotProductExecutorByCopy(const IAttributeVector * attribute, std::unique_ptr<Vector> queryVector) :
-    FeatureExecutor(),
-    _attribute(attribute),
-    _queryVector(*queryVector),
-    _end(_queryVector.getDimMap().end()),
-    _buffer(),
-    _backing(std::move(queryVector))
-{
-    _buffer.allocate(_attribute->getMaxValueCount());
-}
-
-template <typename Vector, typename Buffer>
-DotProductExecutorByCopy<Vector, Buffer>::~DotProductExecutorByCopy() = default;
-
-template <typename Vector, typename Buffer>
-void
-DotProductExecutorByCopy<Vector, Buffer>::execute(uint32_t docId)
-{
-    feature_t val = 0;
-    _buffer.fill(*_attribute, docId);
-    for (size_t i = 0; i < _buffer.size(); ++i) {
-        auto itr = _queryVector.getDimMap().find(_buffer[i].getValue());
-        if (itr != _end) {
-            val += _buffer[i].getWeight() * itr->second;
-        }
-    }
-    outputs().set_number(0, val);
-}
-
 StringVector::StringVector() = default;
 StringVector::~StringVector() = default;
 
@@ -112,9 +65,8 @@ DotProductExecutorBase<BaseType>::~DotProductExecutorBase() = default;
 template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     feature_t val = 0;
-    const AT * values(nullptr);
-    uint32_t sz = getAttributeValues(docId, values);
-    for (size_t i = 0; i < sz; ++i) {
+    auto values = getAttributeValues(docId);
+    for (size_t i = 0; i < values.size(); ++i) {
         auto itr = _queryVector.getDimMap().find(values[i].value());
         if (itr != _end) {
             val += values[i].weight() * itr->second;
@@ -123,52 +75,53 @@ void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
     outputs().set_number(0, val);
 }
 
-template <typename A>
-DotProductExecutor<A>::DotProductExecutor(const A * attribute, const V & queryVector) :
-    DotProductExecutorBase<typename A::BaseType>(queryVector),
-    _attribute(attribute),
+template <typename BaseType>
+DotProductByWeightedSetReadViewExecutor<BaseType>::DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, const V & queryVector) :
+    DotProductExecutorBase<BaseType>(queryVector),
+    _weighted_set_read_view(weighted_set_read_view),
     _backing()
 {
 }
 
-template <typename A>
-DotProductExecutor<A>::DotProductExecutor(const A * attribute, std::unique_ptr<V> queryVector) :
-    DotProductExecutorBase<typename A::BaseType>(*queryVector),
-    _attribute(attribute),
+template <typename BaseType>
+DotProductByWeightedSetReadViewExecutor<BaseType>::DotProductByWeightedSetReadViewExecutor(const WeightedSetReadView* weighted_set_read_view, std::unique_ptr<V> queryVector) :
+    DotProductExecutorBase<BaseType>(*queryVector),
+    _weighted_set_read_view(weighted_set_read_view),
     _backing(std::move(queryVector))
 {
 }
 
-template <typename A>
-DotProductExecutor<A>::~DotProductExecutor() = default;
+template <typename BaseType>
+DotProductByWeightedSetReadViewExecutor<BaseType>::~DotProductByWeightedSetReadViewExecutor() = default;
 
-template <typename A>
-size_t
-DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
+template <typename BaseType>
+vespalib::ConstArrayRef<typename DotProductByWeightedSetReadViewExecutor<BaseType>::AT>
+DotProductByWeightedSetReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
 {
-    return _attribute->getRawValues(docId, values);
+    return _weighted_set_read_view->get_values(docId);
 }
 
 namespace {
 
 class DotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
+    using IWeightedSetEnumReadView = attribute::IWeightedSetEnumReadView;
     using V  = VectorBase<EnumHandle, EnumHandle, feature_t>;
 private:
-    const IWeightedIndexVector * _attribute;
+    const IWeightedSetEnumReadView* _weighted_set_enum_read_view;
     const V & _queryVector;
     const typename V::HashMap::const_iterator _end;
     std::unique_ptr<V>     _backing;
 public:
-    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, const V & queryVector);
-    DotProductExecutorByEnum(const IWeightedIndexVector * attribute, std::unique_ptr<V> queryVector);
+    DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, const V & queryVector);
+    DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, std::unique_ptr<V> queryVector);
     ~DotProductExecutorByEnum() override;
     void execute(uint32_t docId) override;
 };
 
-DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, const V & queryVector)
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, const V & queryVector)
     : FeatureExecutor(),
-      _attribute(attribute),
+      _weighted_set_enum_read_view(weighted_set_enum_read_view),
       _queryVector(queryVector),
       _end(_queryVector.getDimMap().end()),
       _backing()
@@ -176,9 +129,9 @@ DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * 
 }
 
 
-DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedIndexVector * attribute, std::unique_ptr<V> queryVector)
+DotProductExecutorByEnum::DotProductExecutorByEnum(const IWeightedSetEnumReadView* weighted_set_enum_read_view, std::unique_ptr<V> queryVector)
     : FeatureExecutor(),
-      _attribute(attribute),
+      _weighted_set_enum_read_view(weighted_set_enum_read_view),
       _queryVector(*queryVector),
       _end(_queryVector.getDimMap().end()),
       _backing(std::move(queryVector))
@@ -190,9 +143,8 @@ DotProductExecutorByEnum::~DotProductExecutorByEnum() = default;
 void
 DotProductExecutorByEnum::execute(uint32_t docId) {
     feature_t val = 0;
-    const IWeightedIndexVector::WeightedIndex *values(nullptr);
-    uint32_t sz = _attribute->getEnumHandles(docId, values);
-    for (size_t i = 0; i < sz; ++i) {
+    auto values = _weighted_set_enum_read_view->get_values(docId);
+    for (size_t i = 0; i < values.size(); ++i) {
         auto itr = _queryVector.getDimMap().find(values[i].value_ref().load_relaxed().ref());
         if (itr != _end) {
             val += values[i].weight() * itr->second;
@@ -203,16 +155,16 @@ DotProductExecutorByEnum::execute(uint32_t docId) {
 
 class SingleDotProductExecutorByEnum final : public fef::FeatureExecutor {
 public:
-    SingleDotProductExecutorByEnum(const IWeightedIndexVector * attribute, EnumHandle key, feature_t value)
-        : _attribute(attribute),
+    using IWeightedSeEnumReadView = attribute::IWeightedSetEnumReadView;
+    SingleDotProductExecutorByEnum(const IWeightedSetEnumReadView * weighted_set_enum_read_view, EnumHandle key, feature_t value)
+        : _weighted_set_enum_read_view(weighted_set_enum_read_view),
           _key(key),
           _value(value)
     {}
 
     void execute(uint32_t docId) override {
-        const IWeightedIndexVector::WeightedIndex *values(nullptr);
-        uint32_t sz = _attribute->getEnumHandles(docId, values);
-        for (size_t i = 0; i < sz; ++i) {
+        auto values = _weighted_set_enum_read_view->get_values(docId);
+        for (size_t i = 0; i < values.size(); ++i) {
             if (values[i].value_ref().load_relaxed().ref() == _key) {
                 outputs().set_number(0, values[i].weight()*_value);
                 return;
@@ -221,24 +173,25 @@ public:
         outputs().set_number(0, 0);
     }
 private:
-    const IWeightedIndexVector * _attribute;
+    const IWeightedSetEnumReadView * _weighted_set_enum_read_view;
     EnumHandle                   _key;
     feature_t                    _value;
 };
 
-template <typename A>
-class SingleDotProductExecutorByValue final : public fef::FeatureExecutor {
+template <typename BaseType>
+class SingleDotProductByWeightedValueExecutor final : public fef::FeatureExecutor {
 public:
-    SingleDotProductExecutorByValue(const A * attribute, typename A::BaseType key, feature_t value)
-        : _attribute(attribute),
+    using WeightedSetReadView = attribute::IWeightedSetReadView<BaseType>;
+    using StoredKeyType = std::conditional_t<std::is_same_v<BaseType,const char*>,vespalib::string,BaseType>;
+    SingleDotProductByWeightedValueExecutor(const WeightedSetReadView * weighted_set_read_view, BaseType key, feature_t value)
+        : _weighted_set_read_view(weighted_set_read_view),
           _key(key),
           _value(value)
     {}
 
     void execute(uint32_t docId) override {
-        const multivalue::WeightedValue<typename A::BaseType> *values(nullptr);
-        uint32_t sz = _attribute->getRawValues(docId, values);
-        for (size_t i = 0; i < sz; ++i) {
+        auto values = _weighted_set_read_view->get_values(docId);
+        for (size_t i = 0; i < values.size(); ++i) {
             if (values[i].value() == _key) {
                 outputs().set_number(0, values[i].weight() * _value);
                 return;
@@ -247,9 +200,9 @@ public:
         outputs().set_number(0, 0);
     }
 private:
-    const A               * _attribute;
-    typename A::BaseType    _key;
-    feature_t               _value;
+    const WeightedSetReadView* _weighted_set_read_view;
+    StoredKeyType              _key;
+    feature_t                  _value;
 };
 
 }
@@ -271,12 +224,27 @@ DotProductExecutorBase<BaseType>::~DotProductExecutorBase() = default;
 
 template <typename BaseType>
 void DotProductExecutorBase<BaseType>::execute(uint32_t docId) {
-    const AT *values(nullptr);
-    size_t count = getAttributeValues(docId, values);
-    size_t commonRange = std::min(count, _queryVector.size());
-    static_assert(std::is_same<typename AT::ValueType, BaseType>::value);
+    auto values = getAttributeValues(docId);
+    size_t commonRange = std::min(values.size(), _queryVector.size());
     outputs().set_number(0, _multiplier.dotProduct(
-            &_queryVector[0], reinterpret_cast<const typename AT::ValueType *>(values), commonRange));
+            &_queryVector[0], values.data(), commonRange));
+}
+
+template <typename BaseType>
+DotProductByArrayReadViewExecutor<BaseType>::DotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector) :
+    DotProductExecutorBase<BaseType>(queryVector),
+    _array_read_view(array_read_view)
+{
+}
+
+template <typename BaseType>
+DotProductByArrayReadViewExecutor<BaseType>::~DotProductByArrayReadViewExecutor() = default;
+
+template <typename BaseType>
+vespalib::ConstArrayRef<BaseType>
+DotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docId)
+{
+    return _array_read_view->get_values(docId);
 }
 
 template <typename A>
@@ -289,159 +257,38 @@ DotProductExecutor<A>::DotProductExecutor(const A * attribute, const V & queryVe
 template <typename A>
 DotProductExecutor<A>::~DotProductExecutor() = default;
 
-template <typename A>
-size_t
-DotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
-{
-    return _attribute->getRawValues(docId, values);
-}
-
-template <typename A>
-SparseDotProductExecutor<A>::SparseDotProductExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes) :
-    DotProductExecutor<A>(attribute, queryVector),
+template <typename BaseType>
+SparseDotProductExecutorBase<BaseType>::SparseDotProductExecutorBase(const V & queryVector, const IV & queryIndexes) :
+    DotProductExecutorBase<BaseType>(queryVector),
     _queryIndexes(queryIndexes),
     _scratch(queryIndexes.size())
 {
 }
 
-template <typename A>
-SparseDotProductExecutor<A>::~SparseDotProductExecutor() = default;
+template <typename BaseType>
+SparseDotProductExecutorBase<BaseType>::~SparseDotProductExecutorBase() = default;
 
-template <typename A>
-size_t
-SparseDotProductExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
+template <typename BaseType>
+SparseDotProductByArrayReadViewExecutor<BaseType>::SparseDotProductByArrayReadViewExecutor(const ArrayReadView* array_read_view, const V & queryVector, const IV & queryIndexes)
+    : SparseDotProductExecutorBase<BaseType>(queryVector, queryIndexes),
+      _array_read_view(array_read_view)
 {
-    const AT *allValues(NULL);
-    size_t count = this->_attribute->getRawValues(docId, allValues);
-    values = &_scratch[0];
+}
+
+template <typename BaseType>
+SparseDotProductByArrayReadViewExecutor<BaseType>::~SparseDotProductByArrayReadViewExecutor() = default;
+
+template <typename BaseType>
+vespalib::ConstArrayRef<BaseType>
+SparseDotProductByArrayReadViewExecutor<BaseType>::getAttributeValues(uint32_t docid)
+{
+    auto allValues = _array_read_view->get_values(docid);
     size_t i(0);
-    for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < count); i++) {
+    for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < allValues.size()); i++) {
         _scratch[i] = allValues[_queryIndexes[i]];
     }
-    return i;
+    return vespalib::ConstArrayRef(_scratch.data(), i);
 }
-
-template <typename A>
-DotProductByCopyExecutor<A>::DotProductByCopyExecutor(const A * attribute, const V & queryVector) :
-    DotProductExecutor<A>(attribute, queryVector),
-    _copy(static_cast<size_t>(attribute->getMaxValueCount()))
-{
-}
-
-template <typename A>
-DotProductByCopyExecutor<A>::~DotProductByCopyExecutor() = default;
-
-template <typename A>
-size_t
-DotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
-{
-    size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    if (count > _copy.size()) {
-        _copy.resize(count);
-        count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    }
-    values = reinterpret_cast<const AT *>(&_copy[0]);
-    return count;
-}
-
-template <typename A>
-SparseDotProductByCopyExecutor<A>::SparseDotProductByCopyExecutor(const A * attribute, const V & queryVector, const IV & queryIndexes) :
-    SparseDotProductExecutor<A>(attribute, queryVector, queryIndexes),
-    _copy(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()))
-{
-}
-
-template <typename A>
-SparseDotProductByCopyExecutor<A>::~SparseDotProductByCopyExecutor() = default;
-
-template <typename A>
-size_t
-SparseDotProductByCopyExecutor<A>::getAttributeValues(uint32_t docId, const AT * & values)
-{
-    size_t count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    if (count > _copy.size()) {
-        _copy.resize(count);
-        count = this->_attribute->getAll(docId, &_copy[0], _copy.size());
-    }
-    size_t i(0);
-    for (const IV & iv(this->_queryIndexes); (i < iv.size()) && (iv[i] < count); i++) {
-        _copy[i] = _copy[iv[i]];
-    }
-    values = reinterpret_cast<const AT *>(&_copy[0]);
-    return i;
-}
-
-template <typename BaseType>
-DotProductByContentFillExecutor<BaseType>::DotProductByContentFillExecutor(
-        const attribute::IAttributeVector * attribute,
-        const V & queryVector)
-    : DotProductExecutorBase<BaseType>(queryVector),
-      _attribute(attribute),
-      _filler()
-{
-    _filler.allocate(attribute->getMaxValueCount());
-}
-
-template <typename BaseType>
-DotProductByContentFillExecutor<BaseType>::~DotProductByContentFillExecutor() = default;
-
-namespace {
-
-template<typename T> struct IsNonWeightedType : std::false_type {};
-template<typename BaseType> struct IsNonWeightedType<multivalue::Value<BaseType>> : std::true_type {};
-
-// Compile-time sanity check for type compatibility of gnarly BaseType <-> multivalue::Value
-// reinterpret_cast used by some getAttributeValues calls.
-template <typename BaseType, typename AttributeValueType, typename FillerValueType>
-constexpr void sanity_check_reinterpret_cast_compatibility() {
-    static_assert(IsNonWeightedType<AttributeValueType>::value);
-    static_assert(sizeof(BaseType) == sizeof(AttributeValueType));
-    static_assert(sizeof(BaseType) == sizeof(FillerValueType));
-    static_assert(std::is_same<BaseType, typename AttributeValueType::ValueType>::value);
-}
-
-}
-
-template <typename BaseType>
-size_t DotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid, const AT * & values) {
-    _filler.fill(*_attribute, docid);
-    sanity_check_reinterpret_cast_compatibility<BaseType, AT, decltype(*_filler.data())>();
-    values = reinterpret_cast<const AT *>(_filler.data());
-    return _filler.size();
-}
-
-template <typename BaseType>
-SparseDotProductByContentFillExecutor<BaseType>::SparseDotProductByContentFillExecutor(
-        const attribute::IAttributeVector * attribute,
-        const V & queryVector,
-        const IV & queryIndexes)
-    : DotProductExecutorBase<BaseType>(queryVector),
-      _attribute(attribute),
-      _queryIndexes(queryIndexes),
-      _filler()
-{
-    _filler.allocate(std::max(static_cast<size_t>(attribute->getMaxValueCount()), queryIndexes.size()));
-}
-
-template <typename BaseType>
-SparseDotProductByContentFillExecutor<BaseType>::~SparseDotProductByContentFillExecutor() = default;
-
-template <typename BaseType>
-size_t SparseDotProductByContentFillExecutor<BaseType>::getAttributeValues(uint32_t docid, const AT * & values) {
-    _filler.fill(*_attribute, docid);
-
-    const size_t count = _filler.size();
-    BaseType * data = _filler.data();
-    size_t i = 0;
-    for (; (i < _queryIndexes.size()) && (_queryIndexes[i] < count); ++i) {
-        data[i] = data[_queryIndexes[i]];
-    }
-
-    sanity_check_reinterpret_cast_compatibility<BaseType, AT, decltype(*_filler.data())>();
-    values = reinterpret_cast<const AT *>(data);
-    return i;
-}
-
 
 }
 
@@ -527,6 +374,7 @@ template ArrayParam<int64_t>::ArrayParam(const Property & prop);
 #ifdef __clang__
 template ArrayParam<int64_t>::~ArrayParam();
 #endif
+template struct ArrayParam<int32_t>;
 template struct ArrayParam<double>;
 template struct ArrayParam<float>;
 
@@ -536,121 +384,55 @@ namespace {
 
 using dotproduct::ArrayParam;
 
-template <typename A, typename B>
-bool supportsGetRawValues(const A & attr) noexcept {
-    try {
-        const B * tmp = nullptr;
-        attr.getRawValues(0, tmp); // Throws if unsupported
-        return true;
-    } catch (const std::runtime_error & e) {
-        (void) e;
-        return false;
+template <typename AT>
+const attribute::IMultiValueReadView<AT>*
+make_multi_value_read_view(const IAttributeVector& attribute, vespalib::Stash& stash)
+{
+    auto multi_value_attribute = attribute.as_multi_value_attribute();
+    if (multi_value_attribute != nullptr) {
+        return multi_value_attribute->make_read_view(attribute::IMultiValueAttribute::MultiValueTag<AT>(), stash);
     }
+    return nullptr;
 }
 
-bool supportsGetEnumHandles(const IWeightedIndexVector * attr) noexcept {
-    if (attr == nullptr) return false;
-    try {
-        const IWeightedIndexVector::WeightedIndex * tmp = nullptr;
-        attr->getEnumHandles(0, tmp); // Throws if unsupported
-        return true;
-    } catch (const std::runtime_error & e) {
-        (void) e;
-        return false;
-    }
-}
-
-
-// Precondition: attribute->isImported() == false
-template <typename A>
+template <typename T>
 FeatureExecutor &
 createForDirectArrayImpl(const IAttributeVector * attribute,
-                         const std::vector<typename A::BaseType> & values,
+                         const std::vector<T> & values,
                          const std::vector<uint32_t> & indexes,
                          vespalib::Stash & stash)
 {
     if (values.empty()) {
         return stash.create<SingleZeroValueExecutor>();
     }
-    const A * iattr = dynamic_cast<const A *>(attribute);
-    using T = typename A::BaseType;
-    using VT = multivalue::Value<T>;
-    if (indexes.empty()) {
-        if (supportsGetRawValues<A,VT>(*iattr)) {
-            using ExactA = MultiValueNumericAttribute<A, VT>;
-
-            auto * exactA = dynamic_cast<const ExactA *>(iattr);
-            if (exactA != nullptr) {
-                return stash.create<dotproduct::array::DotProductExecutor<ExactA>>(exactA, values);
-            }
-            return stash.create<dotproduct::array::DotProductExecutor<A>>(iattr, values);
+    auto array_read_view = make_multi_value_read_view<T>(*attribute, stash);
+    if (array_read_view != nullptr) {
+        if (indexes.empty()) {
+            return stash.create<dotproduct::array::DotProductByArrayReadViewExecutor<T>>(array_read_view, values);
         } else {
-            return stash.create<dotproduct::array::DotProductByCopyExecutor<A>>(iattr, values);
-        }
-    } else {
-        if (supportsGetRawValues<A, VT>(*iattr)) {
-            return stash.create<dotproduct::array::SparseDotProductExecutor<A>>(iattr, values, indexes);
-        } else {
-            return stash.create<dotproduct::array::SparseDotProductByCopyExecutor<A>>(iattr, values, indexes);
+            return stash.create<dotproduct::array::SparseDotProductByArrayReadViewExecutor<T>>(array_read_view, values, indexes);
         }
     }
     return stash.create<SingleZeroValueExecutor>();
 }
 
-template <typename BaseType>
-FeatureExecutor &
-createForImportedArrayImpl(const IAttributeVector * attribute,
-                           const std::vector<BaseType> & values,
-                           const std::vector<uint32_t> & indexes,
-                           vespalib::Stash & stash) {
-    if (values.empty()) {
-        return stash.create<SingleZeroValueExecutor>();
-    }
-    if (indexes.empty()) {
-        using ExecutorType = dotproduct::array::DotProductByContentFillExecutor<BaseType>;
-        return stash.create<ExecutorType>(attribute, values);
-    } else {
-        using ExecutorType = dotproduct::array::SparseDotProductByContentFillExecutor<BaseType>;
-        return stash.create<ExecutorType>(attribute, values, indexes);
-    }
-}
-
-template <typename BaseType>
-FeatureExecutor&
-createForImportedArray(const IAttributeVector * attribute,
-                       const Property & prop,
-                       vespalib::Stash & stash) {
-    std::vector<BaseType> values;
-    std::vector<uint32_t> indexes;
-    parseVectors(prop, values, indexes);
-    return createForImportedArrayImpl<BaseType>(attribute, values, indexes, stash);
-}
-
-template <typename BaseType>
-FeatureExecutor&
-createForImportedArray(const IAttributeVector * attribute,
-                       const ArrayParam<BaseType> & arguments,
-                       vespalib::Stash & stash) {
-    return createForImportedArrayImpl<BaseType>(attribute, arguments.values, arguments.indexes, stash);
-}
-
-template <typename A>
+template <typename T>
 FeatureExecutor &
 createForDirectArray(const IAttributeVector * attribute,
                      const Property & prop,
                      vespalib::Stash & stash) {
-    std::vector<typename A::BaseType> values;
+    std::vector<T> values;
     std::vector<uint32_t> indexes;
     parseVectors(prop, values, indexes);
-    return createForDirectArrayImpl<A>(attribute, values, indexes, stash);
+    return createForDirectArrayImpl<T>(attribute, values, indexes, stash);
 }
 
-template <typename A>
+template <typename T>
 FeatureExecutor &
 createForDirectArray(const IAttributeVector * attribute,
-                     const ArrayParam<typename A::BaseType> & arguments,
+                     const ArrayParam<T> & arguments,
                      vespalib::Stash & stash) {
-    return createForDirectArrayImpl<A>(attribute, arguments.values, arguments.indexes, stash);
+    return createForDirectArrayImpl<T>(attribute, arguments.values, arguments.indexes, stash);
 }
 
 template<typename T>
@@ -674,27 +456,38 @@ std::pair<T, feature_t> extractElem(const std::unique_ptr<dotproduct::wset::Inte
     return extractElem(*v, idx);
 }
 
-template <typename A, typename V>
+size_t extractSize(const dotproduct::wset::StringVector& v) {
+    return v.getVector().size();
+}
+
+std::pair<const char*, feature_t> extractElem(const dotproduct::wset::StringVector& v, size_t idx) {
+    const auto & pair = v.getVector()[idx];
+    return std::pair<const char*, feature_t>(pair.first.c_str(), pair.second);
+}
+
+size_t extractSize(const std::unique_ptr<dotproduct::wset::StringVector>& v) {
+    return extractSize(*v);
+}
+
+std::pair<const char*, feature_t> extractElem(const std::unique_ptr<dotproduct::wset::StringVector>& v, size_t idx) {
+    return extractElem(*v, idx);
+}
+
+template <typename T, typename V>
 FeatureExecutor &
 createForDirectWSetImpl(const IAttributeVector * attribute, V && vector, vespalib::Stash & stash)
 {
     using namespace dotproduct::wset;
-    using T = typename A::BaseType;
-    const A * iattr = dynamic_cast<const A *>(attribute);
     using VT = multivalue::WeightedValue<T>;
-    using ExactA = MultiValueNumericAttribute<A, VT>;
-    if (!attribute->isImported() && (iattr != nullptr) && supportsGetRawValues<A, VT>(*iattr)) {
-        auto * exactA = dynamic_cast<const ExactA *>(iattr);
-        if (exactA != nullptr) {
-            if (extractSize(vector) == 1) {
-                auto elem = extractElem(vector, 0ul);
-                return stash.create<SingleDotProductExecutorByValue<ExactA>>(exactA, elem.first, elem.second);
-            }
-            return stash.create<DotProductExecutor<ExactA>>(exactA, std::forward<V>(vector));
+    auto weighted_set_read_view = make_multi_value_read_view<VT>(*attribute, stash);
+    if (weighted_set_read_view != nullptr) {
+        if (extractSize(vector) == 1) {
+            auto elem = extractElem(vector, 0ul);
+            return stash.create<SingleDotProductByWeightedValueExecutor<T>>(weighted_set_read_view, elem.first, elem.second);
         }
-        return stash.create<DotProductExecutor<A>>(iattr, std::forward<V>(vector));
+        return stash.create<DotProductByWeightedSetReadViewExecutor<T>>(weighted_set_read_view, std::forward<V>(vector));
     }
-    return stash.create<DotProductExecutorByCopy<IntegerVectorT<T>, WeightedIntegerContent>>(attribute, std::forward<V>(vector));
+    return stash.create<SingleZeroValueExecutor>();
 }
 
 template <typename T>
@@ -704,40 +497,26 @@ createForDirectIntegerWSet(const IAttributeVector * attribute, const dotproduct:
     using namespace dotproduct::wset;
     return vector.empty()
            ? stash.create<SingleZeroValueExecutor>()
-           : createForDirectWSetImpl<IntegerAttributeTemplate<T>>(attribute, vector, stash);
+           : createForDirectWSetImpl<T>(attribute, vector, stash);
 }
 
 FeatureExecutor &
 createFromObject(const IAttributeVector * attribute, const fef::Anything & object, vespalib::Stash &stash)
 {
     if (attribute->getCollectionType() == attribute::CollectionType::ARRAY) {
-        if (!attribute->isImported()) {
-            switch (attribute->getBasicType()) {
-                case BasicType::INT8:
-                    return createForDirectArray<IntegerAttributeTemplate<int8_t>>(attribute, dynamic_cast<const ArrayParam<int8_t> &>(object), stash);
-                case BasicType::INT32:
-                    return createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
-                case BasicType::INT64:
-                    return createForDirectArray<IntegerAttributeTemplate<int64_t>>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
-                case BasicType::FLOAT:
-                    return createForDirectArray<FloatingPointAttributeTemplate<float>>(attribute, dynamic_cast<const ArrayParam<float> &>(object), stash);
-                case BasicType::DOUBLE:
-                    return createForDirectArray<FloatingPointAttributeTemplate<double>>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
-                default:
-                    break;
-            }
-        } else {
-            switch (attribute->getBasicType()) {
-                case BasicType::INT8:
-                case BasicType::INT32:
-                case BasicType::INT64:
-                    return createForImportedArray<int64_t>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
-                case BasicType::FLOAT:
-                case BasicType::DOUBLE:
-                    return createForImportedArray<double>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
-                default:
-                    break;
-            }
+        switch (attribute->getBasicType()) {
+            case BasicType::INT8:
+                return createForDirectArray<int8_t>(attribute, dynamic_cast<const ArrayParam<int8_t> &>(object), stash);
+            case BasicType::INT32:
+                return createForDirectArray<int32_t>(attribute, dynamic_cast<const ArrayParam<int32_t> &>(object), stash);
+            case BasicType::INT64:
+                return createForDirectArray<int64_t>(attribute, dynamic_cast<const ArrayParam<int64_t> &>(object), stash);
+            case BasicType::FLOAT:
+                return createForDirectArray<float>(attribute, dynamic_cast<const ArrayParam<float> &>(object), stash);
+            case BasicType::DOUBLE:
+                return createForDirectArray<double>(attribute, dynamic_cast<const ArrayParam<double> &>(object), stash);
+            default:
+                break;
         }
     } else if (attribute->getCollectionType() == attribute::CollectionType::WSET) {
         using namespace dotproduct::wset;
@@ -746,22 +525,22 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
             if (vector.empty()) {
                 return stash.create<SingleZeroValueExecutor>();
             }
-            const auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
-            if (supportsGetEnumHandles(getEnumHandles)) {
+            using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
+            auto* weighted_set_enum_read_view = make_multi_value_read_view<VT>(*attribute, stash);
+            if (weighted_set_enum_read_view != nullptr) {
                 if (vector.getVector().size() == 1) {
                     const auto & elem = vector.getVector()[0];
-                    return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+                    return stash.create<SingleDotProductExecutorByEnum>(weighted_set_enum_read_view, elem.first, elem.second);
                 }
-                return stash.create<DotProductExecutorByEnum>(getEnumHandles, vector);
+                return stash.create<DotProductExecutorByEnum>(weighted_set_enum_read_view, vector);
             }
-            return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, vector);
         } else {
             if (attribute->isStringType()) {
                 const auto & vector = dynamic_cast<const StringVector &>(object);
                 if (vector.empty()) {
                     return stash.create<SingleZeroValueExecutor>();
                 }
-                return stash.create<DotProductExecutorByCopy<StringVector, WeightedConstCharContent>>(attribute, vector);
+                return createForDirectWSetImpl<const char*>(attribute, vector, stash);
             } else if (attribute->isIntegerType()) {
                 if (attribute->getBasicType() == BasicType::INT32) {
                     return createForDirectIntegerWSet<int32_t>(attribute, dynamic_cast<const IntegerVectorT<int32_t> &>(object), stash);
@@ -782,37 +561,19 @@ createFromObject(const IAttributeVector * attribute, const fef::Anything & objec
 
 FeatureExecutor *
 createTypedArrayExecutor(const IAttributeVector * attribute, const Property & prop, vespalib::Stash & stash) {
-    if (!attribute->isImported()) {
-        switch (attribute->getBasicType()) {
-            case BasicType::INT8:
-                return &createForDirectArray<IntegerAttributeTemplate<int8_t>>(attribute, prop, stash);
-            case BasicType::INT32:
-                return &createForDirectArray<IntegerAttributeTemplate<int32_t>>(attribute, prop, stash);
-            case BasicType::INT64:
-                return &createForDirectArray<IntegerAttributeTemplate<int64_t>>(attribute, prop, stash);
-            case BasicType::FLOAT:
-                return &createForDirectArray<FloatingPointAttributeTemplate<float>>(attribute, prop, stash);
-            case BasicType::DOUBLE:
-                return &createForDirectArray<FloatingPointAttributeTemplate<double>>(attribute, prop, stash);
-            default:
-                break;
-        }
-    } else {
-        // When using AttributeContent, integers are always extracted as largeint_t and
-        // floats always as double. This means that we cannot allow type specializations
-        // on int32_t or float, or reinterpreting type casts will end up pointing at
-        // data that is not of the correct size. Which would be Bad(tm).
-        switch (attribute->getBasicType()) {
-            case BasicType::INT8:
-            case BasicType::INT32:
-            case BasicType::INT64:
-                return &createForImportedArray<IAttributeVector::largeint_t>(attribute, prop, stash);
-            case BasicType::FLOAT:
-            case BasicType::DOUBLE:
-                return &createForImportedArray<double>(attribute, prop, stash);
-            default:
-                break;
-        }
+    switch (attribute->getBasicType()) {
+        case BasicType::INT8:
+            return &createForDirectArray<int8_t>(attribute, prop, stash);
+        case BasicType::INT32:
+            return &createForDirectArray<int32_t>(attribute, prop, stash);
+        case BasicType::INT64:
+            return &createForDirectArray<int64_t>(attribute, prop, stash);
+        case BasicType::FLOAT:
+            return &createForDirectArray<float>(attribute, prop, stash);
+        case BasicType::DOUBLE:
+            return &createForDirectArray<double>(attribute, prop, stash);
+        default:
+            break;
     }
     return nullptr;
 }
@@ -827,7 +588,7 @@ createForDirectIntegerWSet(const IAttributeVector * attribute, const Property & 
     vector->syncMap();
     return vector->empty()
            ? stash.create<SingleZeroValueExecutor>()
-           : createForDirectWSetImpl<IntegerAttributeTemplate<T>>(attribute, std::move(vector), stash);
+           : createForDirectWSetImpl<T>(attribute, std::move(vector), stash);
 }
 
 FeatureExecutor &
@@ -840,15 +601,15 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
             return stash.create<SingleZeroValueExecutor>();
         }
         vector->syncMap();
-        auto * getEnumHandles = dynamic_cast<const IWeightedIndexVector *>(attribute);
-        if (supportsGetEnumHandles(getEnumHandles)) {
+        using VT = multivalue::WeightedValue<vespalib::datastore::AtomicEntryRef>;
+        auto* weighted_set_enum_read_view = make_multi_value_read_view<VT>(*attribute, stash);
+        if (weighted_set_enum_read_view != nullptr) {
             if (vector->getVector().size() == 1) {
                 const auto & elem = vector->getVector()[0];
-                return stash.create<SingleDotProductExecutorByEnum>(getEnumHandles, elem.first, elem.second);
+                return stash.create<SingleDotProductExecutorByEnum>(weighted_set_enum_read_view, elem.first, elem.second);
             }
-            return stash.create<DotProductExecutorByEnum>(getEnumHandles, std::move(vector));
+            return stash.create<DotProductExecutorByEnum>(weighted_set_enum_read_view, std::move(vector));
         }
-        return stash.create<DotProductExecutorByCopy<EnumVector, WeightedEnumContent>>(attribute, std::move(vector));
     } else {
         if (attribute->isStringType()) {
             auto vector = std::make_unique<StringVector>();
@@ -857,7 +618,7 @@ createTypedWsetExecutor(const IAttributeVector * attribute, const Property & pro
                 return stash.create<SingleZeroValueExecutor>();
             }
             vector->syncMap();
-            return stash.create<DotProductExecutorByCopy<StringVector, WeightedConstCharContent>>(attribute, std::move(vector));
+            return createForDirectWSetImpl<const char*>(attribute, std::move(vector), stash);
         } else if (attribute->isIntegerType()) {
             if (attribute->getBasicType() == BasicType::INT32) {
                 return createForDirectIntegerWSet<int32_t>(attribute, prop, stash);
@@ -891,35 +652,19 @@ createFromString(const IAttributeVector * attribute, const Property & prop, vesp
 
 fef::Anything::UP
 attemptParseArrayQueryVector(const IAttributeVector & attribute, const Property & prop) {
-    if (!attribute.isImported()) {
-        switch (attribute.getBasicType()) {
-            case BasicType::INT8:
-                return std::make_unique<ArrayParam<int8_t>>(prop);
-            case BasicType::INT32:
-                return std::make_unique<ArrayParam<int32_t>>(prop);
-            case BasicType::INT64:
-                return std::make_unique<ArrayParam<int64_t>>(prop);
-            case BasicType::FLOAT:
-                return std::make_unique<ArrayParam<float>>(prop);
-            case BasicType::DOUBLE:
-                return std::make_unique<ArrayParam<double>>(prop);
-            default:
-                break;
-        }
-    } else {
-        // See rationale in createTypedArrayExecutor() as to why we promote < 64 bit types
-        // to their full-width equivalent when dealing with imported attributes.
-        switch (attribute.getBasicType()) {
-            case BasicType::INT8:
-            case BasicType::INT32:
-            case BasicType::INT64:
-                return std::make_unique<ArrayParam<int64_t>>(prop);
-            case BasicType::FLOAT:
-            case BasicType::DOUBLE:
-                return std::make_unique<ArrayParam<double>>(prop);
-            default:
-                break;
-        }
+    switch (attribute.getBasicType()) {
+        case BasicType::INT8:
+            return std::make_unique<ArrayParam<int8_t>>(prop);
+        case BasicType::INT32:
+            return std::make_unique<ArrayParam<int32_t>>(prop);
+        case BasicType::INT64:
+            return std::make_unique<ArrayParam<int64_t>>(prop);
+        case BasicType::FLOAT:
+            return std::make_unique<ArrayParam<float>>(prop);
+        case BasicType::DOUBLE:
+            return std::make_unique<ArrayParam<double>>(prop);
+        default:
+            break;
     }
     return std::unique_ptr<fef::Anything>();
 }

@@ -1,6 +1,12 @@
 {
   "properties": [
-    {"propertyid": "1234", "property": "foo"},
-    {"propertyid": "4321", "property": "bar"}
+    {
+      "propertyid": "1234",
+      "property": "foo"
+    },
+    {
+      "propertyid": "4321",
+      "property": "bar"
+    }
   ]
 }

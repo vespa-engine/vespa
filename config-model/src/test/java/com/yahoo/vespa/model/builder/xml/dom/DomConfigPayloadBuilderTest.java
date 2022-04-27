@@ -11,11 +11,9 @@ import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
-
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -273,7 +271,7 @@ public class DomConfigPayloadBuilderTest {
     private Element getDocument(Reader xmlReader) {
         Document doc;
         try {
-            doc = XmlHelper.getDocumentBuilder().parse(new InputSource(xmlReader));
+            doc = XmlHelper.getDocument(xmlReader);
         } catch (Exception e) {
             throw new RuntimeException();
         }

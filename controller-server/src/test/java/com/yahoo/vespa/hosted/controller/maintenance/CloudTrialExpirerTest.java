@@ -24,6 +24,7 @@ import static org.junit.Assert.assertTrue;
  * @author ogronnesby
  */
 public class CloudTrialExpirerTest {
+
     private final ControllerTester tester = new ControllerTester(SystemName.PublicCd);
     private final DeploymentTester deploymentTester = new DeploymentTester(tester);
     private final CloudTrialExpirer expirer = new CloudTrialExpirer(tester.controller(), Duration.ofMinutes(5));
@@ -67,9 +68,19 @@ public class CloudTrialExpirerTest {
     @Test
     public void keep_inactive_trial_tenants_with_deployments() {
         registerTenant("with-deployments", "trial", Duration.ofDays(30));
-        registerDeployment("with-deployments", "my-app", "default", "aws-us-east-1c");
+        registerDeployment("with-deployments", "my-app", "default");
         expirer.maintain();
         assertPlan("with-deployments", "trial");
+    }
+
+    @Test
+    public void delete_tenants_with_applications_with_no_deployments() {
+        registerTenant("with-apps", "trial", Duration.ofDays(30));
+        tester.createApplication("with-apps", "app1", "instance1");
+        expirer.maintain();
+        assertPlan("with-apps", "none");
+        expirer.maintain();
+        assertTrue(tester.controller().tenants().get("with-apps").isEmpty());
     }
 
     private void registerTenant(String tenantName, String plan, Duration timeSinceLastLogin) {
@@ -79,17 +90,12 @@ public class CloudTrialExpirerTest {
         tester.controller().tenants().updateLastLogin(name, List.of(LastLoginInfo.UserLevel.user), tester.controller().clock().instant().minus(timeSinceLastLogin));
     }
 
-    private void registerDeployment(String tenantName, String appName, String instanceName, String regionName) {
-        var zone = ZoneApiMock.newBuilder()
-                .withSystem(tester.zoneRegistry().system())
-                .withId("prod." + regionName)
-                .build();
-        tester.zoneRegistry().setZones(zone);
+    private void registerDeployment(String tenantName, String appName, String instanceName) {
         var app = tester.createApplication(tenantName, appName, instanceName);
         var ctx = deploymentTester.newDeploymentContext(tenantName, appName, instanceName);
         var pkg = new ApplicationPackageBuilder()
                 .instances("default")
-                .region(regionName)
+                .region("aws-us-east-1c")
                 .trustDefaultCertificate()
                 .build();
         ctx.submit(pkg).deploy();
@@ -98,4 +104,5 @@ public class CloudTrialExpirerTest {
     private void assertPlan(String tenant, String planId) {
         assertEquals(planId, tester.serviceRegistry().billingController().getPlan(TenantName.from(tenant)).value());
     }
+
 }

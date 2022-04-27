@@ -7,7 +7,7 @@ import java.util.logging.Level;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
+import com.yahoo.vespa.clustercontroller.core.listeners.NodeListener;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -54,10 +54,10 @@ public class NodeStateGatherer {
      * Sends state requests to nodes that does not have one pending and is due
      * for another attempt.
      */
-    public boolean sendMessages(ContentCluster cluster, Communicator communicator, NodeStateOrHostInfoChangeHandler listener) {
+    public boolean sendMessages(ContentCluster cluster, Communicator communicator, NodeListener listener) {
         boolean sentAnyMessages = false;
         long currentTime = timer.getCurrentTimeInMillis();
-        for (NodeInfo info : cluster.getNodeInfo()) {
+        for (NodeInfo info : cluster.getNodeInfos()) {
             Long requestTime = info.getLatestNodeStateRequestTime();
 
             if (requestTime != null && (currentTime - requestTime < nodeStateRequestTimeoutMS)) continue; // pending request
@@ -93,7 +93,7 @@ public class NodeStateGatherer {
     }
 
     /** Reads replies to get node state requests and create events. */
-    public boolean processResponses(NodeStateOrHostInfoChangeHandler listener) {
+    public boolean processResponses(NodeListener listener) {
         boolean processedAnyResponses = false;
         long currentTime = timer.getCurrentTimeInMillis();
         synchronized(monitor) {

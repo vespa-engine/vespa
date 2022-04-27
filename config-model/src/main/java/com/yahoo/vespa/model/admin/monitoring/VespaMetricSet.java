@@ -154,6 +154,17 @@ public class VespaMetricSet {
             addMetric(metrics, "jdisc.thread_pool.unhandled_exceptions", suffixes);
             addMetric(metrics, "jdisc.thread_pool.work_queue.capacity", suffixes);
             addMetric(metrics, "jdisc.thread_pool.work_queue.size", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.rejected_tasks", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.size", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.max_allowed_size", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.active_threads", suffixes);
+
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.max", suffixes);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.min", suffixes);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.reserved", suffixes);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.busy", suffixes);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", suffixes);
+            addMetric(metrics, "jdisc.http.jetty.threadpool.queue.size", suffixes);
         }
 
         metrics.add(new Metric("httpapi_latency.max"));
@@ -180,6 +191,11 @@ public class VespaMetricSet {
         metrics.add(new Metric("mem.heap.used.max"));
         metrics.add(new Metric("jdisc.memory_mappings.max"));
         metrics.add(new Metric("jdisc.open_file_descriptors.max"));
+        metrics.add(new Metric("mem.direct.total.average"));
+        metrics.add(new Metric("mem.direct.free.average"));
+        metrics.add(new Metric("mem.direct.used.average"));
+        metrics.add(new Metric("mem.direct.used.max"));
+        metrics.add(new Metric("mem.direct.count.max"));
 
         metrics.add(new Metric("jdisc.gc.count.average"));
         metrics.add(new Metric("jdisc.gc.count.max"));
@@ -222,12 +238,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.unknown.rate"));
 
         metrics.add(new Metric("jdisc.http.handler.unhandled_exceptions.rate"));
-
-        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.max", List.of("last"));
-        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.reserved", List.of("last"));
-        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.busy", List.of("sum", "count", "min", "max"));
-        addMetric(metrics, "jdisc.http.jetty.threadpool.thread.total", List.of("sum", "count", "min", "max"));
-        addMetric(metrics, "jdisc.http.jetty.threadpool.queue.size", List.of("sum", "count", "min", "max"));
 
         addMetric(metrics, "jdisc.http.filtering.request.handled", List.of("rate"));
         addMetric(metrics, "jdisc.http.filtering.request.unhandled", List.of("rate"));
@@ -855,6 +865,15 @@ public class VespaMetricSet {
         metrics.add(new Metric("vds.distributor.visitor.sum.latency.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("vds.distributor.visitor.sum.ok.rate"));
         metrics.add(new Metric("vds.distributor.visitor.sum.failures.total.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.notready.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.notconnected.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.wrongdistributor.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.safe_time_not_reached.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.storagefailure.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.timeout.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.busy.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.inconsistent_bucket.rate"));
+        metrics.add(new Metric("vds.distributor.visitor.sum.failures.notfound.rate"));
 
         metrics.add(new Metric("vds.distributor.docsstored.average"));
         metrics.add(new Metric("vds.distributor.bytesstored.average"));

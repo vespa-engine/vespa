@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.yahoo.jdisc.http.HttpRequest;
 import ai.vespa.http.HttpURL.Path;
+import com.yahoo.jdisc.http.HttpRequest;
 import org.junit.Test;
 
 import java.net.URI;
@@ -19,9 +19,9 @@ public class ProxyRequestTest {
 
     @Test
     public void testBadUri() {
-        assertThrows("Request path '/path' does not end with proxy path '/zone/v2/'",
-                     IllegalArgumentException.class,
-                     () -> testRequest("http://domain.tld/path", "/zone/v2/"));
+        assertEquals("Request path '/path' does not end with proxy path '/zone/v2/'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> testRequest("http://domain.tld/path", "/zone/v2/")).getMessage());
     }
 
     @Test

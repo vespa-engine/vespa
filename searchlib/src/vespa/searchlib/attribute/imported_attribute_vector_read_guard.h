@@ -5,6 +5,7 @@
 #include "attribute_read_guard.h"
 #include "attributeguard.h"
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/util/arrayref.h>
@@ -27,7 +28,8 @@ class ReferenceAttribute;
  * boundary check is setup during construction.
  */
 class ImportedAttributeVectorReadGuard : public IAttributeVector,
-                                         public AttributeReadGuard
+                                         public AttributeReadGuard,
+                                         public IMultiValueAttribute
 {
 private:
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
@@ -86,6 +88,24 @@ public:
     uint32_t getCommittedDocIdLimit() const override;
     bool isImported() const override;
     bool isUndefined(DocId doc) const override;
+    template <typename MultiValueType>
+    const IMultiValueReadView<MultiValueType>* make_read_view_helper(MultiValueTag<MultiValueType> tag, vespalib::Stash& stash) const;
+    const IArrayReadView<int8_t>* make_read_view(ArrayTag<int8_t> tag, vespalib::Stash& stash) const override;
+    const IArrayReadView<int16_t>* make_read_view(ArrayTag<int16_t> tag, vespalib::Stash& stash) const override;
+    const IArrayReadView<int32_t>* make_read_view(ArrayTag<int32_t> tag, vespalib::Stash& stash) const override;
+    const IArrayReadView<int64_t>* make_read_view(ArrayTag<int64_t> tag, vespalib::Stash& stash) const override;
+    const IArrayReadView<float>* make_read_view(ArrayTag<float> tag, vespalib::Stash& stash) const override;
+    const IArrayReadView<double>* make_read_view(ArrayTag<double> tag, vespalib::Stash& stash) const override;
+    const IArrayReadView<const char*>* make_read_view(ArrayTag<const char*> tag, vespalib::Stash& stash) const override;
+    const IWeightedSetReadView<int8_t>* make_read_view(WeightedSetTag<int8_t> tag, vespalib::Stash& stash) const override;
+    const IWeightedSetReadView<int16_t>* make_read_view(WeightedSetTag<int16_t> tag, vespalib::Stash& stash) const override;
+    const IWeightedSetReadView<int32_t>* make_read_view(WeightedSetTag<int32_t> tag, vespalib::Stash& stash) const override;
+    const IWeightedSetReadView<int64_t>* make_read_view(WeightedSetTag<int64_t> tag, vespalib::Stash& stash) const override;
+    const IWeightedSetReadView<float>* make_read_view(WeightedSetTag<float> tag, vespalib::Stash& stash) const override;
+    const IWeightedSetReadView<double>* make_read_view(WeightedSetTag<double> tag, vespalib::Stash& stash) const override;
+    const IWeightedSetReadView<const char*>* make_read_view(WeightedSetTag<const char*> tag, vespalib::Stash& stash) const override;
+    const IArrayEnumReadView* make_read_view(ArrayEnumTag tag, vespalib::Stash& stash) const override;
+    const IWeightedSetEnumReadView* make_read_view(WeightedSetEnumTag tag, vespalib::Stash& stash) const override;
 
 protected:
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available,

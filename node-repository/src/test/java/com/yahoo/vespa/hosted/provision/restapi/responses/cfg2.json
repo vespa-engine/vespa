@@ -16,9 +16,27 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "down": false,
   "history": [
     {
       "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "readied",
+      "at": 123,
+      "agent": "system"
+    }
+  ],
+  "log": [
+    {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
+      "event": "deallocated",
       "at": 123,
       "agent": "system"
     },

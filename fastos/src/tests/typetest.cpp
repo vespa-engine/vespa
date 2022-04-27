@@ -11,7 +11,6 @@ private:
    {
       TestHeader("Object Sizes (bytes)");
 
-      Progress(true, "FastOS_Application:  %d", sizeof(FastOS_Application));
       Progress(true, "FastOS_DirectoryScan %d", sizeof(FastOS_DirectoryScan));
       Progress(true, "FastOS_File:         %d", sizeof(FastOS_File));
       Progress(true, "FastOS_Runnable      %d", sizeof(FastOS_Runnable));

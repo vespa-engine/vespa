@@ -35,7 +35,7 @@ public class SystemRoutingPolicyMaintainerTest {
         tester.configServer().putLoadBalancers(zone, List.of(new LoadBalancer("lb1",
                                                                               SystemApplication.configServer.id(),
                                                                               ClusterSpec.Id.from("config"),
-                                                                              Optional.of(HostName.from("lb1.example.com")),
+                                                                              Optional.of(HostName.of("lb1.example.com")),
                                                                               LoadBalancer.State.active,
                                                                               Optional.of("dns-zone-1"))));
 

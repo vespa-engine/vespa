@@ -1,0 +1,1 @@
+path '/state/v1/' and query 'foo=bar%3F&forwarded-url=http%3A%2F%2Flocalhost%3A8080%2Fapplication%2Fv4%2Ftenant%2Ftenant1%2Fapplication%2Fapplication1%2Finstance%2Finstance1%2Fenvironment%2Fprod%2Fregion%2Fus-central-1%2Fservice%2Fstoragenode%2Fhost.com%2Fstate%2Fv1%2F'

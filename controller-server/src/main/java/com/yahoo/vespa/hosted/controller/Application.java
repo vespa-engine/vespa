@@ -7,23 +7,22 @@ import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
 import com.yahoo.vespa.hosted.controller.application.ApplicationActivity;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.security.PublicKey;
 import java.time.Instant;
-import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -31,9 +30,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -50,8 +47,7 @@ public class Application {
     private final Instant createdAt;
     private final DeploymentSpec deploymentSpec;
     private final ValidationOverrides validationOverrides;
-    private final Optional<ApplicationVersion> latestVersion;
-    private final SortedSet<ApplicationVersion> versions;
+    private final RevisionHistory revisions;
     private final OptionalLong projectId;
     private final Optional<IssueId> deploymentIssueId;
     private final Optional<IssueId> ownershipIssueId;
@@ -63,16 +59,16 @@ public class Application {
 
     /** Creates an empty application. */
     public Application(TenantAndApplicationId id, Instant now) {
-        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty,
-             Optional.empty(), Optional.empty(), Optional.empty(), OptionalInt.empty(),
-             new ApplicationMetrics(0, 0), Set.of(), OptionalLong.empty(), Optional.empty(), new TreeSet<>(), List.of());
+        this(id, now, DeploymentSpec.empty, ValidationOverrides.empty, Optional.empty(),
+             Optional.empty(), Optional.empty(), OptionalInt.empty(), new ApplicationMetrics(0, 0),
+             Set.of(), OptionalLong.empty(), RevisionHistory.empty(), List.of());
     }
 
     // DO NOT USE! For serialization purposes, only.
     public Application(TenantAndApplicationId id, Instant createdAt, DeploymentSpec deploymentSpec, ValidationOverrides validationOverrides,
                        Optional<IssueId> deploymentIssueId, Optional<IssueId> ownershipIssueId, Optional<User> owner,
                        OptionalInt majorVersion, ApplicationMetrics metrics, Set<PublicKey> deployKeys, OptionalLong projectId,
-                       Optional<ApplicationVersion> latestVersion, SortedSet<ApplicationVersion> versions, Collection<Instance> instances) {
+                       RevisionHistory revisions, Collection<Instance> instances) {
         this.id = Objects.requireNonNull(id, "id cannot be null");
         this.createdAt = Objects.requireNonNull(createdAt, "instant of creation cannot be null");
         this.deploymentSpec = Objects.requireNonNull(deploymentSpec, "deploymentSpec cannot be null");
@@ -84,13 +80,12 @@ public class Application {
         this.metrics = Objects.requireNonNull(metrics, "metrics cannot be null");
         this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
-        this.latestVersion = requireNotUnknown(latestVersion);
-        this.versions = versions;
+        this.revisions = revisions;
         this.instances = instances.stream().collect(
                 Collectors.collectingAndThen(Collectors.toMap(Instance::name,
                                                               Function.identity(),
                                                               (i1, i2) -> {
-                                                                  throw new IllegalArgumentException("Duplicate key " + i1);
+                                                                  throw new IllegalArgumentException("Duplicate instance " + i1.id());
                                                               },
                                                               TreeMap::new),
                                              Collections::unmodifiableMap)
@@ -110,29 +105,8 @@ public class Application {
     /** Returns the project id of this application, if it has any. */
     public OptionalLong projectId() { return projectId; }
 
-    /** Returns the last submitted version of this application. */
-    public Optional<ApplicationVersion> latestVersion() {
-        return versions.isEmpty() ? Optional.empty() : Optional.of(versions.last());
-    }
-
-    /** Returns the currently deployed versions of the application, ordered from oldest to newest. */
-    public SortedSet<ApplicationVersion> versions() {
-        return versions;
-    }
-
-    /** Returns the currently deployed versions of the application */
-    public Collection<ApplicationVersion> deployableVersions(boolean ascending) {
-        Deque<ApplicationVersion> versions = new ArrayDeque<>();
-        String previousHash = "";
-        for (ApplicationVersion version : versions()) {
-            if (version.bundleHash().isEmpty() || ! previousHash.equals(version.bundleHash().get())) {
-                if (ascending) versions.addLast(version);
-                else versions.addFirst(version);
-            }
-            previousHash = version.bundleHash().orElse("");
-        }
-        return versions;
-    }
+    /** Returns the known revisions for this application. */
+    public RevisionHistory revisions() { return revisions; }
 
     /**
      * Returns the last deployed validation overrides of this application,
@@ -212,10 +186,10 @@ public class Application {
     /**
      * Returns the oldest application version this has deployed in a permanent zone (not test or staging).
      */
-    public Optional<ApplicationVersion> oldestDeployedApplication() {
+    public Optional<RevisionId> oldestDeployedRevision() {
         return productionDeployments().values().stream().flatMap(List::stream)
-                                      .map(Deployment::applicationVersion)
-                                      .filter(version -> ! version.isUnknown() && ! version.isDeployedDirectly())
+                                      .map(Deployment::revision)
+                                      .filter(RevisionId::isProduction)
                                       .min(Comparator.naturalOrder());
     }
 
@@ -240,15 +214,6 @@ public class Application {
 
     /** Returns the set of deploy keys for this application. */
     public Set<PublicKey> deployKeys() { return deployKeys; }
-
-    private static Optional<ApplicationVersion> requireNotUnknown(Optional<ApplicationVersion> latestVersion) {
-        Objects.requireNonNull(latestVersion, "latestVersion cannot be null");
-        latestVersion.ifPresent(version -> {
-            if (version.isUnknown())
-                throw new IllegalArgumentException("latestVersion cannot be unknown");
-        });
-        return latestVersion;
-    }
 
     @Override
     public boolean equals(Object o) {

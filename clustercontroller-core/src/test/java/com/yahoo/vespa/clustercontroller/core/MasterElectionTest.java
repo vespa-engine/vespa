@@ -12,7 +12,6 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;
@@ -79,7 +78,6 @@ public class MasterElectionTest extends FleetControllerTest {
         long maxTime = System.currentTimeMillis() + timeoutMS;
         for (FleetController f : fleetControllers) {
             while (f.hasZookeeperConnection()) {
-                timer.advanceTime(1000);
                 try { Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
                 if (System.currentTimeMillis() > maxTime)
                     throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeoutMS + " ms");
@@ -117,14 +115,12 @@ public class MasterElectionTest extends FleetControllerTest {
         super.tearDown();
     }
 
-    /** Ignored for unknown reasons */
     @Test
-    @Ignore
     public void testMasterElection() throws Exception {
         startingTest("MasterElectionTest::testMasterElection");
         log.log(Level.INFO, "STARTING TEST: MasterElectionTest::testMasterElection()");
         FleetControllerOptions options = defaultOptions("mycluster");
-        options.masterZooKeeperCooldownPeriod = 1;
+        options.masterZooKeeperCooldownPeriod = 100;
         setUpFleetController(5, false, options);
         waitForMaster(0);
         log.log(Level.INFO, "SHUTTING DOWN FLEET CONTROLLER 0");
@@ -137,7 +133,7 @@ public class MasterElectionTest extends FleetControllerTest {
         fleetControllers.get(2).shutdown();
 
         // Too few for there to be a master at this point
-        for (int i=0; i<fleetControllers.size(); ++i) {
+        for (int i = 0; i < fleetControllers.size(); ++i) {
             if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
             assertFalse("Fleet controller " + i, fleetControllers.get(i).isMaster());
         }
@@ -163,7 +159,7 @@ public class MasterElectionTest extends FleetControllerTest {
         fleetControllers.get(2).shutdown();
 
         // Too few for there to be a master at this point
-        for (int i=0; i<fleetControllers.size(); ++i) {
+        for (int i = 0; i < fleetControllers.size(); ++i) {
             if (fleetControllers.get(i).isRunning()) waitForCompleteCycle(i);
             assertFalse(fleetControllers.get(i).isMaster());
         }
@@ -172,15 +168,15 @@ public class MasterElectionTest extends FleetControllerTest {
     private void waitForMaster(int master) {
         log.log(Level.INFO, "Entering waitForMaster");
         boolean isOnlyMaster = false;
-        for (int i=0; i < FleetControllerTest.timeoutMS; i+=100) {
+        for (int i = 0; i < FleetControllerTest.timeoutMS; i += 100) {
             if (!fleetControllers.get(master).isMaster()) {
                 log.log(Level.INFO, "Node " + master + " is not master yet, sleeping more");
                 timer.advanceTime(100);
                 waitForCompleteCycle(master);
             } else {
-                log.log(Level.INFO, "Node " + master + " is master. Checking that noone else is master");
+                log.log(Level.INFO, "Node " + master + " is master. Checking that no one else is master");
                 isOnlyMaster = true;
-                for (int j=0; j<fleetControllers.size(); ++j) {
+                for (int j = 0; j < fleetControllers.size(); ++j) {
                     if (j != master && fleetControllers.get(j).isMaster()) {
                         isOnlyMaster = false;
                         log.log(Level.INFO, "Node " + j + " also says it is master.");
@@ -192,7 +188,7 @@ public class MasterElectionTest extends FleetControllerTest {
                 }
             }
                 // Have to wait to get zookeeper communication chance to happen.
-            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
+            try { Thread.sleep(100); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
         }
 
         if (!isOnlyMaster) {
@@ -258,11 +254,9 @@ public class MasterElectionTest extends FleetControllerTest {
 
         zooKeeperServer.shutdown(true);
         waitForCompleteCycles();
-        timer.advanceTime(options.zooKeeperSessionTimeout);
         waitForZookeeperDisconnected();
 
         zooKeeperServer = ZooKeeperTestServer.createWithFixedPort(18342);
-        timer.advanceTime(10 * 1000); // Wait long enough for fleetcontroller wanting to retry zookeeper connection
 
         log.log(Level.INFO, "WAITING FOR 0 TO BE MASTER");
         waitForMaster(0);
@@ -281,11 +275,10 @@ public class MasterElectionTest extends FleetControllerTest {
         log.log(Level.INFO, "STOPPING ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
         zooKeeperServer.shutdown(true);
         waitForCompleteCycles();
-        timer.advanceTime(options.zooKeeperSessionTimeout);
         waitForZookeeperDisconnected();
         // No one can be master if server is unavailable
         log.log(Level.INFO, "Checking master status");
-        for (int i=0; i<fleetControllers.size(); ++i) {
+        for (int i = 0; i < fleetControllers.size(); ++i) {
             assertFalse("Index " + i, fleetControllers.get(i).isMaster());
         }
 
@@ -297,19 +290,16 @@ public class MasterElectionTest extends FleetControllerTest {
             fc.updateOptions(myoptions);
             log.log(Level.INFO, "Should now have sent out new zookeeper server address " + myoptions.zooKeeperServerAddress + " to fleetcontroller " + myoptions.fleetControllerIndex);
         }
-        timer.advanceTime(10 * 1000); // Wait long enough for fleetcontroller wanting to retry zookeeper connection
         waitForMaster(0);
         log.log(Level.INFO, "SHUTTING DOWN");
     }
 
-    /** Ignored for unknown reasons */
     @Test
-    @Ignore
     public void testMasterZooKeeperCooldown() throws Exception {
         startingTest("MasterElectionTest::testMasterZooKeeperCooldown");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
-        setUpFleetController(3, false, options);
+        setUpFleetController(3, true, options);
         waitForMaster(0);
         timer.advanceTime(24 * 3600 * 1000); // A day
         waitForCompleteCycle(1);
@@ -352,14 +342,12 @@ public class MasterElectionTest extends FleetControllerTest {
                 + "' within timeout of " + timeoutMS + " ms");
     }
 
-    /** Ignored for unknown reasons */
     @Test
-    @Ignore
     public void testGetMaster() throws Exception {
         startingTest("MasterElectionTest::testGetMaster");
         FleetControllerOptions options = defaultOptions("mycluster");
         options.masterZooKeeperCooldownPeriod = 3600 * 1000; // An hour
-        setUpFleetController(3, false, options);
+        setUpFleetController(3, true, options);
         waitForMaster(0);
 
         supervisor = new Supervisor(new Transport());

@@ -27,14 +27,14 @@ import static org.junit.Assert.fail;
 public class UniqueGroupingSearcherTestCase {
 
     @Test
-    public void testSkipGroupingBasedDedup() throws Exception {
+    public void testSkipGroupingBasedDedup() {
         Result result = search("?query=foo",
                                new MockResultProvider(0, false));
         assertEquals(0, result.hits().size());
     }
 
     @Test
-    public void testSkipGroupingBasedDedupIfMultiLevelSorting() throws Exception {
+    public void testSkipGroupingBasedDedupIfMultiLevelSorting() {
         Result result = search("?query=foo&unique=fingerprint&sorting=-pubdate%20-[rank]",
                                new MockResultProvider(0, false));
         assertEquals(0, result.hits().size());
@@ -55,14 +55,14 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testGroupingBasedDedupNoGroupingHits() throws Exception {
+    public void testGroupingBasedDedupNoGroupingHits() {
         Result result = search("?query=foo&unique=fingerprint",
                                new MockResultProvider(0, true));
         assertEquals(0, result.hits().size());
     }
 
     @Test
-    public void testGroupingBasedDedupWithEmptyGroupingHitsList() throws Exception {
+    public void testGroupingBasedDedupWithEmptyGroupingHitsList() {
         Result result = search("?query=foo&unique=fingerprint",
                                new MockResultProvider(0, true).addGroupList(new GroupList("fingerprint")));
         assertEquals(0, result.hits().size());
@@ -70,7 +70,7 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testGroupingBasedDedupWithNullGroupingResult() throws Exception {
+    public void testGroupingBasedDedupWithNullGroupingResult() {
         try {
             search("?query=foo&unique=fingerprint",
                    new MockResultProvider(0, false));
@@ -81,7 +81,7 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testGroupingBasedDedupWithGroupingHits() throws Exception {
+    public void testGroupingBasedDedupWithGroupingHits() {
         GroupList fingerprint = new GroupList("fingerprint");
         fingerprint.add(makeHitGroup("1"));
         fingerprint.add(makeHitGroup("2"));
@@ -105,7 +105,7 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testGroupingBasedDedupWithGroupingHitsAndSorting() throws Exception {
+    public void testGroupingBasedDedupWithGroupingHitsAndSorting() {
         GroupList fingerprint = new GroupList("fingerprint");
         fingerprint.add(makeSortingHitGroup("1"));
         fingerprint.add(makeSortingHitGroup("2"));
@@ -130,7 +130,7 @@ public class UniqueGroupingSearcherTestCase {
     }
 
     @Test
-    public void testBuildGroupingExpression() throws Exception {
+    public void testBuildGroupingExpression() {
         assertEquals("all(group(title) max(11) output(count() as(uniqueCount)) each(max(1) each(output(summary())) " +
                      "as(uniqueHits)))",
                      UniqueGroupingSearcher
@@ -212,4 +212,5 @@ public class UniqueGroupingSearcherTestCase {
             return result;
         }
     }
+
 }

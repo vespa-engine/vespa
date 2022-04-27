@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -75,6 +76,7 @@ public class NodeSerializer {
     private static final String idKey = "openStackId";
     private static final String parentHostnameKey = "parentHostname";
     private static final String historyKey = "history";
+    private static final String logKey = "log";
     private static final String instanceKey = "instance"; // legacy name, TODO: change to allocation with backwards compat
     private static final String rebootGenerationKey = "rebootGeneration";
     private static final String currentRebootGenerationKey = "currentRebootGeneration";
@@ -177,7 +179,8 @@ public class NodeSerializer {
         object.setBool(wantToFailKey, node.status().wantToFail());
         object.setBool(wantToRebuildKey, node.status().wantToRebuild());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
-        toSlime(node.history(), object.setArray(historyKey));
+        toSlime(node.history().events(), object.setArray(historyKey));
+        toSlime(node.history().log(), object.setArray(logKey));
         object.setString(nodeTypeKey, toString(node.type()));
         node.status().osVersion().current().ifPresent(version -> object.setString(osVersionKey, version.toString()));
         node.status().osVersion().wanted().ifPresent(version -> object.setString(wantedOsVersionKey, version.toFullString()));
@@ -218,8 +221,8 @@ public class NodeSerializer {
         allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
     }
 
-    private void toSlime(History history, Cursor array) {
-        for (History.Event event : history.events())
+    private void toSlime(Collection<History.Event> events, Cursor array) {
+        for (History.Event event : events)
             toSlime(event, array.addObject());
     }
 
@@ -277,7 +280,7 @@ public class NodeSerializer {
                         statusFromSlime(object),
                         state,
                         allocationFromSlime(flavor.resources(), object.field(instanceKey)),
-                        historyFromSlime(object.field(historyKey)),
+                        historyFromSlime(object),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
                         modelNameFromSlime(object),
@@ -338,14 +341,20 @@ public class NodeSerializer {
                                   InstanceName.from(object.field(instanceIdKey).asString()));
     }
 
-    private History historyFromSlime(Inspector array) {
+    private History historyFromSlime(Inspector object) {
+        return new History(eventsFromSlime(object.field(historyKey)),
+                           eventsFromSlime(object.field(logKey)));
+    }
+
+    private List<History.Event> eventsFromSlime(Inspector array) {
+        if (!array.valid()) return List.of();
         List<History.Event> events = new ArrayList<>();
         array.traverse((ArrayTraverser) (int i, Inspector item) -> {
             History.Event event = eventFromSlime(item);
             if (event != null)
                 events.add(event);
         });
-        return new History(events);
+        return events;
     }
 
     private History.Event eventFromSlime(Inspector object) {
@@ -460,6 +469,7 @@ public class NodeSerializer {
             case "failed" : return History.Event.Type.failed;
             case "deallocated" : return History.Event.Type.deallocated;
             case "down" : return History.Event.Type.down;
+            case "up" : return History.Event.Type.up;
             case "requested" : return History.Event.Type.requested;
             case "resized" : return History.Event.Type.resized;
             case "rebooted" : return History.Event.Type.rebooted;
@@ -486,6 +496,7 @@ public class NodeSerializer {
             case failed : return "failed";
             case deallocated : return "deallocated";
             case down : return "down";
+            case up : return "up";
             case requested: return "requested";
             case resized: return "resized";
             case rebooted: return "rebooted";
@@ -511,7 +522,7 @@ public class NodeSerializer {
             case "ProvisionedExpirer" : return Agent.ProvisionedExpirer;
             case "Rebalancer" : return Agent.Rebalancer;
             case "ReservationExpirer" : return Agent.ReservationExpirer;
-            case "RetiringUpgrader" : return Agent.RetiringUpgrader;
+            case "RetiringUpgrader" : return Agent.RetiringOsUpgrader;
             case "RebuildingOsUpgrader" : return Agent.RebuildingOsUpgrader;
             case "SpareCapacityMaintainer": return Agent.SpareCapacityMaintainer;
             case "SwitchRebalancer": return Agent.SwitchRebalancer;
@@ -534,7 +545,7 @@ public class NodeSerializer {
             case ProvisionedExpirer : return "ProvisionedExpirer";
             case Rebalancer : return "Rebalancer";
             case ReservationExpirer : return "ReservationExpirer";
-            case RetiringUpgrader: return "RetiringUpgrader";
+            case RetiringOsUpgrader: return "RetiringUpgrader";
             case RebuildingOsUpgrader: return "RebuildingOsUpgrader";
             case SpareCapacityMaintainer: return "SpareCapacityMaintainer";
             case SwitchRebalancer: return "SwitchRebalancer";

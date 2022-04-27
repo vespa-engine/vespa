@@ -280,6 +280,8 @@ class QueryNodeConverter : public QueryVisitor {
 
     void visit(FuzzyTerm &node) override {
         createTerm(node, ParseItem::ITEM_FUZZY);
+        appendCompressedPositiveNumber(node.getMaxEditDistance());
+        appendCompressedPositiveNumber(node.getPrefixLength());
     }
 
     void visit(NearestNeighborTerm &node) override {

@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.pig;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataByteArray;
@@ -10,8 +12,6 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@SuppressWarnings("serial")
 public class VespaDocumentOperationTest {
     private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
     private final PrintStream originalOut = System.out;
@@ -50,10 +49,10 @@ public class VespaDocumentOperationTest {
         JsonNode fields = root.path("fields");
 
         // operation put is default
-        assertEquals("id:testapp:metrics::clicks-20160112", root.get("put").getTextValue());
-        assertEquals("testapp", fields.get("application").getTextValue());
-        assertEquals("clicks", fields.get("name").getTextValue());
-        assertEquals(3, fields.get("value").getIntValue());
+        assertEquals("id:testapp:metrics::clicks-20160112", root.get("put").asText());
+        assertEquals("testapp", fields.get("application").asText());
+        assertEquals("clicks", fields.get("name").asText());
+        assertEquals(3, fields.get("value").asInt());
     }
 
 
@@ -64,10 +63,10 @@ public class VespaDocumentOperationTest {
         JsonNode root = m.readTree(json);
         JsonNode fields = root.path("fields");
 
-        assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").getTextValue());
-        assertEquals("testapp", fields.get("application").get("assign").getTextValue());
-        assertEquals("clicks", fields.get("name").get("assign").getTextValue());
-        assertEquals(3, fields.get("value").get("assign").getIntValue());
+        assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").asText());
+        assertEquals("testapp", fields.get("application").get("assign").asText());
+        assertEquals("clicks", fields.get("name").get("assign").asText());
+        assertEquals(3, fields.get("value").get("assign").asInt());
     }
 
     @Test
@@ -77,11 +76,11 @@ public class VespaDocumentOperationTest {
         JsonNode root = m.readTree(json);
         JsonNode fields = root.path("fields");
 
-        assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").getTextValue());
-        assertEquals("clicks < 3", root.get("condition").getTextValue());
-        assertEquals("testapp", fields.get("application").get("assign").getTextValue());
-        assertEquals("clicks", fields.get("name").get("assign").getTextValue());
-        assertEquals(3, fields.get("value").get("assign").getIntValue());
+        assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").asText());
+        assertEquals("clicks < 3", root.get("condition").asText());
+        assertEquals("testapp", fields.get("application").get("assign").asText());
+        assertEquals("clicks", fields.get("name").get("assign").asText());
+        assertEquals(3, fields.get("value").get("assign").asInt());
     }
 
     @Test
@@ -92,11 +91,11 @@ public class VespaDocumentOperationTest {
         JsonNode root = m.readTree(json);
         JsonNode fields = root.path("fields");
 
-        assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").getTextValue());
-        assertTrue(root.get("create").getBooleanValue());
-        assertEquals("testapp", fields.get("application").get("assign").getTextValue());
-        assertEquals("clicks", fields.get("name").get("assign").getTextValue());
-        assertEquals(3, fields.get("value").get("assign").getIntValue());
+        assertEquals("id:testapp:metrics::clicks-20160112", root.get("update").asText());
+        assertTrue(root.get("create").asBoolean());
+        assertEquals("testapp", fields.get("application").get("assign").asText());
+        assertEquals("clicks", fields.get("name").get("assign").asText());
+        assertEquals(3, fields.get("value").get("assign").asInt());
     }
 
 
@@ -185,8 +184,8 @@ public class VespaDocumentOperationTest {
         JsonNode fields = root.get("fields");
         JsonNode value = fields.get("bag{123456}");
         JsonNode assign = value.get("assign");
-        assertEquals("2020", assign.get("year").getTextValue());
-        assertEquals(3, assign.get("month").getIntValue());
+        assertEquals("2020", assign.get("year").asText());
+        assertEquals(3, assign.get("month").asInt());
     }
 
     @Test
@@ -215,16 +214,16 @@ public class VespaDocumentOperationTest {
         JsonNode tensorValue = fields.get("tensor");
         JsonNode add = tensorValue.get("add");
         JsonNode cells = add.get("cells");
-        Iterator<JsonNode> cellsIterator = cells.getElements();
+        Iterator<JsonNode> cellsIterator = cells.iterator();
 
         JsonNode element = cellsIterator.next();
-        assertEquals("label1", element.get("address").get("x").getTextValue());
-        assertEquals("label2", element.get("address").get("y").getTextValue());
-        assertEquals("label4", element.get("address").get("z").getTextValue());
+        assertEquals("label1", element.get("address").get("x").asText());
+        assertEquals("label2", element.get("address").get("y").asText());
+        assertEquals("label4", element.get("address").get("z").asText());
         assertEquals("2.0", element.get("value").toString());
 
         element = cellsIterator.next();
-        assertEquals("label3", element.get("address").get("x").getTextValue());
+        assertEquals("label3", element.get("address").get("x").asText());
         assertEquals("3.0", element.get("value").toString());
     }
 
@@ -255,19 +254,19 @@ public class VespaDocumentOperationTest {
         JsonNode remove = tensorValue.get("remove");
         JsonNode address = remove.get("addresses");
 
-        Iterator<JsonNode> addressIterator = address.getElements();
+        Iterator<JsonNode> addressIterator = address.iterator();
 
         JsonNode element = addressIterator.next();
-        assertEquals("label1", element.get("x").getTextValue());
+        assertEquals("label1", element.get("x").asText());
 
         element = addressIterator.next();
-        assertEquals("label2", element.get("y").getTextValue());
+        assertEquals("label2", element.get("y").asText());
 
         element = addressIterator.next();
-        assertEquals("label4", element.get("z").getTextValue());
+        assertEquals("label4", element.get("z").asText());
 
         element = addressIterator.next();
-        assertEquals("label3", element.get("x").getTextValue());
+        assertEquals("label3", element.get("x").asText());
     }
 
     @Test
@@ -297,7 +296,7 @@ public class VespaDocumentOperationTest {
         JsonNode root = m.readTree(json);
         JsonNode fields = root.get("fields");
 
-        assertEquals("id:testapp:metrics::clicks-20160112", root.get("remove").getTextValue());
+        assertEquals("id:testapp:metrics::clicks-20160112", root.get("remove").asText());
         assertNull(fields);
     }
 
@@ -347,13 +346,13 @@ public class VespaDocumentOperationTest {
         JsonNode fields = root.get("fields");
         JsonNode map = fields.get("map");
 
-        assertEquals("value", map.get("string").getTextValue());
-        assertEquals(3, map.get("int").getIntValue());
-        assertEquals(3.145, map.get("float").getDoubleValue(), 1e-6);
-        assertTrue(map.get("bool").getBooleanValue());
-        assertEquals("dGVzdGRhdGE=", map.get("byte").getTextValue());
+        assertEquals("value", map.get("string").asText());
+        assertEquals(3, map.get("int").asInt());
+        assertEquals(3.145, map.get("float").asDouble(), 1e-6);
+        assertTrue(map.get("bool").asBoolean());
+        assertEquals("dGVzdGRhdGE=", map.get("byte").asText());
 
-        assertEquals("string", map.get("map").get("a").getTextValue());
+        assertEquals("string", map.get("map").get("a").asText());
         for (int i = 0; i < intArray.length; ++i) {
             assertEquals(intArray[i], map.get("map").get("tuple").get(i).asInt());
         }

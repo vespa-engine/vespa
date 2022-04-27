@@ -10,7 +10,7 @@
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1"
     }
   ],
-  "metaData":{
-    "createdAtMillis": "(ignore)"
+  "metaData": {
+    "createdAtMillis": 1600000000000
   }
 }

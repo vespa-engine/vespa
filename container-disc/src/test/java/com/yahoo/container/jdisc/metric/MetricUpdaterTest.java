@@ -20,14 +20,14 @@ import static org.mockito.Mockito.verify;
 public class MetricUpdaterTest {
     
     @Test
-    public void metrics_are_updated_in_scheduler_cycle() throws InterruptedException {
+    public void metrics_are_updated_in_scheduler_cycle() {
         int gcCount = ManagementFactory.getGarbageCollectorMXBeans().size();
 
         Metric metric = mock(Metric.class);
         ContainerWatchdogMetrics containerWatchdogMetrics = mock(ContainerWatchdogMetrics.class);
         new MetricUpdater(new MockScheduler(), metric, containerWatchdogMetrics);
         verify(containerWatchdogMetrics, times(1)).emitMetrics(any());
-        verify(metric, times(5 + 2 * gcCount)).set(anyString(), any(), any());
+        verify(metric, times(9 + 2 * gcCount)).set(anyString(), any(), any());
     }
 
     private static class MockScheduler implements MetricUpdater.Scheduler {

@@ -5,7 +5,7 @@
 #include <vespa/document/repo/document_type_repo_factory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/datatype.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/searchcore/bmcluster/avg_sampler.h>
 #include <vespa/searchcore/bmcluster/bm_cluster.h>
 #include <vespa/searchcore/bmcluster/bm_cluster_controller.h>
@@ -185,15 +185,15 @@ Benchmark::run()
     _cluster->stop();
 }
 
-class App : public FastOS_Application
+class App
 {
     BMParams _bm_params;
 public:
     App();
-    ~App() override;
+    ~App();
     void usage();
-    bool get_options();
-    int Main() override;
+    bool get_options(int argc, char **argv);
+    int main(int argc, char **argv);
 };
 
 App::App()
@@ -239,7 +239,7 @@ App::usage()
 }
 
 bool
-App::get_options()
+App::get_options(int argc, char **argv)
 {
     int c;
     int long_opt_index = 0;
@@ -297,7 +297,7 @@ App::get_options()
         LONGOPT_USE_STORAGE_CHAIN
     };
     optind = 1;
-    while ((c = getopt_long(_argc, _argv, "", long_opts, &long_opt_index)) != -1) {
+    while ((c = getopt_long(argc, argv, "", long_opts, &long_opt_index)) != -1) {
         switch (c) {
         case 0:
             switch(long_opt_index) {
@@ -385,9 +385,9 @@ App::get_options()
 }
 
 int
-App::Main()
+App::main(int argc, char **argv)
 {
-    if (!get_options()) {
+    if (!get_options(argc, argv)) {
         usage();
         return 1;
     }
@@ -397,12 +397,11 @@ App::Main()
     return 0;
 }
 
-int
-main(int argc, char* argv[])
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     DummyFileHeaderContext::setCreator("vespa-feed-bm");
     App app;
-    auto exit_value = app.Entry(argc, argv);
+    auto exit_value = app.main(argc, argv);
     vespalib::rmdir(base_dir, true);
     return exit_value;
 }

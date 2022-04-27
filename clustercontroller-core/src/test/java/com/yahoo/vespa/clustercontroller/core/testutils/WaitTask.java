@@ -25,7 +25,7 @@ public abstract class WaitTask {
         public boolean performWaitTask() {
             boolean didWork = false;
             synchronized (fleetController.getMonitor()) {
-                for (NodeInfo info : fleetController.getCluster().getNodeInfo()) {
+                for (NodeInfo info : fleetController.getCluster().getNodeInfos()) {
                     if (info.getTimeForNextStateRequestAttempt() != 0) didWork = true;
                     info.setNextGetStateAttemptTime(0);
                 }

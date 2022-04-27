@@ -85,6 +85,8 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void setIndex(const string & index_) override { _index = index_; }
     const string & getIndex() const override { return _index; }
+    void setFuzzyMaxEditDistance(uint32_t fuzzyMaxEditDistance) { _fuzzyMaxEditDistance = fuzzyMaxEditDistance; }
+    void setFuzzyPrefixLength(uint32_t fuzzyPrefixLength) { _fuzzyPrefixLength = fuzzyPrefixLength; }
 protected:
     using QueryNodeResultBaseContainer = std::unique_ptr<QueryNodeResultBase>;
     string                       _index;

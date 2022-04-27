@@ -45,7 +45,7 @@ public class StateV1HealthModel implements AutoCloseable {
         Map<ServiceId, HealthEndpoint> endpoints = new HashMap<>();
 
         for (HostInfo hostInfo : application.getModel().getHosts()) {
-            HostName hostname = HostName.from(hostInfo.getHostname());
+            HostName hostname = HostName.of(hostInfo.getHostname());
             for (ServiceInfo serviceInfo : hostInfo.getServices()) {
                 ServiceId serviceId = ApplicationInstanceGenerator.getServiceId(application, serviceInfo);
                 for (PortInfo portInfo : serviceInfo.getPorts()) {

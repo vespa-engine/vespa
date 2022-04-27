@@ -1,11 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.routing;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -152,7 +153,7 @@ public class RoutingPolicies {
     }
 
     /** Update global DNS records for given policies */
-    private void updateGlobalDnsOf(RoutingPolicyList instancePolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
+    private void updateGlobalDnsOf(RoutingPolicyList instancePolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingId, List<RoutingPolicy>> routingTable = instancePolicies.asInstanceRoutingTable();
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
             RoutingId routingId = routeEntry.getKey();
@@ -215,7 +216,7 @@ public class RoutingPolicies {
             }
             var weightedTarget = new WeightedAliasTarget(policy.canonicalName(), policy.dnsZone().get(),
                                                          policy.id().zone(), weight);
-            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(HostName.from(regionEndpoint.dnsName()),
+            endpoints.computeIfAbsent(regionEndpoint, (k) -> new RegionEndpoint(new LatencyAliasTarget(DomainName.of(regionEndpoint.dnsName()),
                                                                                                        policy.dnsZone().get(),
                                                                                                        policy.id().zone())))
                      .zoneTargets()
@@ -225,7 +226,7 @@ public class RoutingPolicies {
     }
 
 
-    private void updateApplicationDnsOf(RoutingPolicyList routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
+    private void updateApplicationDnsOf(RoutingPolicyList routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Mutex lock) {
         // In the context of single deployment (which this is) there is only one routing policy per routing ID. I.e.
         // there is no scenario where more than one deployment within an instance can be a member the same
         // application-level endpoint. However, to allow this in the future the routing table remains
@@ -307,7 +308,7 @@ public class RoutingPolicies {
      *
      * @return the updated policies
      */
-    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Lock lock) {
+    private RoutingPolicyList storePoliciesOf(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingPolicyId, RoutingPolicy> policies = new LinkedHashMap<>(instancePolicies.asMap());
         for (LoadBalancer loadBalancer : allocation.loadBalancers) {
             if (loadBalancer.hostname().isEmpty()) continue;
@@ -343,7 +344,7 @@ public class RoutingPolicies {
      *
      * @return the updated policies
      */
-    private RoutingPolicyList removePoliciesUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Lock lock) {
+    private RoutingPolicyList removePoliciesUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList instancePolicies, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingPolicyId, RoutingPolicy> newPolicies = new LinkedHashMap<>(instancePolicies.asMap());
         Set<RoutingPolicyId> activeIds = allocation.asPolicyIds();
         RoutingPolicyList removable = instancePolicies.deployment(allocation.deployment)
@@ -363,7 +364,7 @@ public class RoutingPolicies {
     }
 
     /** Remove unreferenced instance endpoints from DNS */
-    private void removeGlobalDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, @SuppressWarnings("unused") Lock lock) {
+    private void removeGlobalDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, @SuppressWarnings("unused") Mutex lock) {
         Set<RoutingId> removalCandidates = new HashSet<>(deploymentPolicies.asInstanceRoutingTable().keySet());
         Set<RoutingId> activeRoutingIds = instanceRoutingIds(allocation);
         removalCandidates.removeAll(activeRoutingIds);
@@ -380,7 +381,7 @@ public class RoutingPolicies {
     }
 
     /** Remove unreferenced application endpoints in given allocation from DNS */
-    private void removeApplicationDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, @SuppressWarnings("unused") Lock lock) {
+    private void removeApplicationDnsUnreferencedBy(LoadBalancerAllocation allocation, RoutingPolicyList deploymentPolicies, @SuppressWarnings("unused") Mutex lock) {
         Map<RoutingId, List<RoutingPolicy>> routingTable = deploymentPolicies.asApplicationRoutingTable();
         Set<RoutingId> removalCandidates = new HashSet<>(routingTable.keySet());
         Set<RoutingId> activeRoutingIds = applicationRoutingIds(allocation);

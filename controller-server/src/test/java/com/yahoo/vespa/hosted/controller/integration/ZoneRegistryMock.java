@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
@@ -41,9 +42,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<CloudName, UpgradePolicy> osUpgradePolicies = new HashMap<>();
     private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
     private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
+    private final SystemName system; // Don't even think about making it non-final!   ƪ(`▿▿▿▿´ƪ)
+
+
 
     private List<? extends ZoneApi> zones;
-    private SystemName system;
     private UpgradePolicy upgradePolicy = null;
 
     /**
@@ -53,11 +56,12 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
         if (system.isPublic()) {
-            this.zones = List.of(ZoneApiMock.fromId("test.aws-us-east-1c"),
-                                 ZoneApiMock.fromId("staging.aws-us-east-1c"),
+            this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
+                                 ZoneApiMock.fromId("staging.us-east-3"),
                                  ZoneApiMock.fromId("prod.aws-us-east-1c"),
-                                 ZoneApiMock.fromId("prod.aws-eu-west-1a"));
-            setRoutingMethod(this.zones, RoutingMethod.exclusive);
+                                 ZoneApiMock.fromId("prod.aws-eu-west-1a"),
+                                 ZoneApiMock.fromId("dev.aws-us-east-1c"));
+                    setRoutingMethod(this.zones, RoutingMethod.exclusive);
         } else {
             this.zones = List.of(ZoneApiMock.fromId("test.us-east-1"),
                                  ZoneApiMock.fromId("staging.us-east-3"),
@@ -93,11 +97,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public ZoneRegistryMock setZones(ZoneApi... zone) {
         return setZones(List.of(zone));
-    }
-
-    public ZoneRegistryMock setSystemName(SystemName system) {
-        this.system = system;
-        return this;
     }
 
     public ZoneRegistryMock setUpgradePolicy(UpgradePolicy upgradePolicy) {
@@ -199,6 +198,16 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public URI dashboardUrl(ApplicationId id) {
         return URI.create("https://dashboard.tld/" + id);
+    }
+
+    @Override
+    public URI dashboardUrl(TenantName tenantName, ApplicationName applicationName) {
+        return URI.create("https://dashboard.tld/" + tenantName + "/" + applicationName);
+    }
+
+    @Override
+    public URI dashboardUrl(TenantName tenantName) {
+        return URI.create("https://dashboard.tld/" + tenantName);
     }
 
     @Override

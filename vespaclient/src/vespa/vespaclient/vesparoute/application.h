@@ -5,21 +5,20 @@
 #include "params.h"
 #include <vespa/messagebus/messagebus.h>
 #include <vespa/messagebus/routing/hopblueprint.h>
-#include <vespa/fastos/app.h>
 #include <set>
 namespace vesparoute {
 
 /**
  * Command-line feeder running on document api.
  */
-class Application : public FastOS_Application {
+class Application {
 private:
     std::unique_ptr<MyNetwork>        _net;
     std::unique_ptr<mbus::MessageBus> _mbus;
     Params                          _params;
 
     /** Parses the arguments of this application into the given params object. */
-    bool parseArgs();
+    bool parseArgs(int argc, char **argv);
 
     /** Prints help for this application. */
     void printHelp() const;
@@ -63,7 +62,7 @@ private:
 public:
     Application();
     ~Application();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 }

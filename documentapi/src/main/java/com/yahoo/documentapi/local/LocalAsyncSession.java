@@ -45,8 +45,8 @@ public class LocalAsyncSession implements AsyncSession {
     private final Executor executor = Executors.newCachedThreadPool();
     private final AtomicReference<Phaser> phaser;
 
-    private AtomicLong requestId = new AtomicLong(0);
-    private AtomicReference<Result.ResultType> result = new AtomicReference<>(SUCCESS);
+    private final AtomicLong requestId = new AtomicLong(0);
+    private final AtomicReference<Result.ResultType> result = new AtomicReference<>(SUCCESS);
 
     public LocalAsyncSession(AsyncParameters params, LocalDocumentAccess access) {
         this.handler = params.getResponseHandler();
@@ -163,7 +163,7 @@ public class LocalAsyncSession implements AsyncSession {
     private Result send(Function<Long, Response> responses, DocumentOperationParameters parameters) {
         Result.ResultType resultType = result.get();
         if (resultType != SUCCESS)
-            return new Result(resultType, new Error());
+            return new Result(resultType, Result.toError(resultType));
 
         ResponseHandler responseHandler = parameters.responseHandler().orElse(this::addResponse);
         long req = requestId.incrementAndGet();

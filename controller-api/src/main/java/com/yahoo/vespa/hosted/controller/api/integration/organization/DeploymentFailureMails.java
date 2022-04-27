@@ -71,12 +71,11 @@ public class DeploymentFailureMails {
     }
 
     private String jobToString(JobType type) {
-        if (type == JobType.systemTest)
+        if (type.isSystemTest())
             return "System test";
-        if (type == JobType.stagingTest)
+        if (type.isStagingTest())
             return "Staging test";
-        return (type.isDeployment() ? "Deployment to " : "Verification test of ") +
-               type.zone(registry.system()).region();
+        return (type.isDeployment() ? "Deployment to " : "Verification test of ") + type.zone().region();
     }
 
 }

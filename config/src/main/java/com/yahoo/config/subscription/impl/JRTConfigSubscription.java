@@ -68,7 +68,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return newConfigOrException();
     }
 
-    private JRTClientConfigRequest pollForNewConfig(long timeoutMillis) {
+    private synchronized JRTClientConfigRequest pollForNewConfig(long timeoutMillis) {
         JRTClientConfigRequest response = pollQueue(timeoutMillis);
         // There might be more than one response on the queue, so empty queue by polling with
         // 0 timeout until queue is empty (returned value is null)
@@ -141,7 +141,7 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
         return configInstance;
     }
 
-    // Called by JRTConfigRequester when there is a config with new generation for this subscription
+    // Called by JRTConfigRequester when there is a config response for this subscription
     void updateConfig(JRTClientConfigRequest jrtReq) {
         if ( ! responseQueue.offer(jrtReq))
             setException(new ConfigurationRuntimeException("Failed offering returned request to queue of subscription " + this));

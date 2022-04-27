@@ -3,6 +3,7 @@
 #include "sequencedtaskexecutor.h"
 #include "adaptive_sequenced_executor.h"
 #include "singleexecutor.h"
+#include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -31,8 +32,13 @@ isLazy(const std::vector<std::unique_ptr<vespalib::SyncableThreadExecutor>> & ex
 ssize_t
 find(uint16_t key, const uint16_t values[], size_t numValues) {
     for (size_t i(0); i < numValues; i++) {
-        if (key == values[i]) return i;
-        if (INVALID_KEY == values[i]) return -1;
+        auto value = vespalib::atomic::load_ref_relaxed(values[i]);
+        if (key == value) {
+            return i;
+        }
+        if (INVALID_KEY == value) {
+            return -1;
+        }
     }
     return -1;
 }
@@ -162,7 +168,7 @@ SequencedTaskExecutor::getExecutorIdPerfect(uint64_t componentId) const {
         if (pos < 0) {
             pos = find(INVALID_KEY, _component2IdPerfect.get(), getNumExecutors() * NUM_PERFECT_PER_EXECUTOR);
             if (pos >= 0) {
-                _component2IdPerfect[pos] = key;
+                vespalib::atomic::store_ref_relaxed(_component2IdPerfect[pos], key);
             } else {
                 // There was a race for the last spots
                 return std::optional<ISequencedTaskExecutor::ExecutorId>();
@@ -175,11 +181,11 @@ SequencedTaskExecutor::getExecutorIdPerfect(uint64_t componentId) const {
 ISequencedTaskExecutor::ExecutorId
 SequencedTaskExecutor::getExecutorIdImPerfect(uint64_t componentId) const {
     uint32_t shrunkId = componentId % _component2IdImperfect.size();
-    uint8_t executorId = _component2IdImperfect[shrunkId];
+    uint8_t executorId = vespalib::atomic::load_ref_relaxed(_component2IdImperfect[shrunkId]);
     if (executorId == MAGIC) {
         std::lock_guard guard(_mutex);
-        if (_component2IdImperfect[shrunkId] == MAGIC) {
-            _component2IdImperfect[shrunkId] = _nextId % getNumExecutors();
+        if (vespalib::atomic::load_ref_relaxed(_component2IdImperfect[shrunkId]) == MAGIC) {
+            vespalib::atomic::store_ref_relaxed(_component2IdImperfect[shrunkId], _nextId % getNumExecutors());
             _nextId++;
         }
         executorId = _component2IdImperfect[shrunkId];

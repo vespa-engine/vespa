@@ -6,8 +6,17 @@
     "name": "Joe Developer",
     "email": "dev@domail",
     "nickname": "dev",
-    "verified":false
+    "verified": false
   },
-  "tenants": {},
-  "flags": [{"id":"enable-public-signup-flow","rules":[{"value":false}]}]
+  "tenants": { },
+  "flags": [
+    {
+      "id": "enable-public-signup-flow",
+      "rules": [
+        {
+          "value": false
+        }
+      ]
+    }
+  ]
 }

@@ -58,7 +58,7 @@ public:
         if (indices.size() == 0) {
             return T();
         } else {
-            return this->_enumStore.get_value(indices[0].value_ref().load_acquire());
+            return this->_enumStore.get_value(multivalue::get_value_ref(indices[0]).load_acquire());
         }
     }
     largeint_t getInt(DocId doc) const override {
@@ -73,12 +73,9 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for(uint32_t i = 0, m = std::min(sz, valueCount); i < m; i++) {
-            buffer[i] = static_cast<BufferType>(this->_enumStore.get_value(indices[i].value_ref().load_acquire()));
+            buffer[i] = static_cast<BufferType>(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire()));
         }
         return valueCount;
-    }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
-        return getHelper(doc, v, sz);
     }
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         return getHelper(doc, v, sz);
@@ -92,12 +89,9 @@ public:
         WeightedIndexArrayRef indices(this->_mvMapping.get(doc));
         uint32_t valueCount = indices.size();
         for (uint32_t i = 0, m = std::min(sz, valueCount); i < m; ++i) {
-            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(indices[i].value_ref().load_acquire())), indices[i].weight());
+            buffer[i] = WeightedType(static_cast<ValueType>(this->_enumStore.get_value(multivalue::get_value_ref(indices[i]).load_acquire())), multivalue::get_weight(indices[i]));
         }
         return valueCount;
-    }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
-        return getWeightedHelper<Weighted, T>(doc, v, sz);
     }
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedInt, largeint_t>(doc, v, sz);
@@ -105,6 +99,10 @@ public:
     uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override {
         return getWeightedHelper<WeightedFloat, double>(doc, v, sz);
     }
+
+    // Implements attribute::IMultiValueAttribute
+    const attribute::IArrayReadView<T>* make_read_view(attribute::IMultiValueAttribute::ArrayTag<T>, vespalib::Stash& stash) const override;
+    const attribute::IWeightedSetReadView<T>* make_read_view(attribute::IMultiValueAttribute::WeightedSetTag<T>, vespalib::Stash& stash) const override;
 
 private:
     using AttributeReader = PrimitiveReader<typename B::LoadedValueType>;

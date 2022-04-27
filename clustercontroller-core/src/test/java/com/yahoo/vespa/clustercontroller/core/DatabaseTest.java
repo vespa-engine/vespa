@@ -26,8 +26,6 @@ public class DatabaseTest extends FleetControllerTest {
 
     private static final Logger log = Logger.getLogger(DatabaseTest.class.getName());
 
-    // These tests work in isolation but causes other tests to hang
-    @Ignore
     @Test
     public void testWantedStatesInZooKeeper() throws Exception {
         startingTest("DatabaseTest::testWantedStatesInZooKeeper");
@@ -82,8 +80,6 @@ public class DatabaseTest extends FleetControllerTest {
         assertWantedStates(wantedStates);
     }
 
-    // These tests work in isolation but causes other tests to hang
-    @Ignore
     @Test
     public void testWantedStateOfUnknownNode() throws Exception {
         startingTest("DatabaseTest::testWantedStatesOfUnknownNode");

@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.support.access;
 
-import com.yahoo.vespa.athenz.api.AthenzIdentity;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
-import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.Period;
@@ -37,7 +36,7 @@ public class SupportAccessControl {
     }
 
     public SupportAccess disallow(DeploymentId deployment, String by) {
-        try (Lock lock = controller.curator().lockSupportAccess(deployment)) {
+        try (Mutex lock = controller.curator().lockSupportAccess(deployment)) {
             var now = controller.clock().instant();
             SupportAccess supportAccess = forDeployment(deployment);
             if (supportAccess.currentStatus(now).state() == NOT_ALLOWED) {
@@ -51,7 +50,7 @@ public class SupportAccessControl {
     }
 
     public SupportAccess allow(DeploymentId deployment, Instant until, String by) {
-        try (Lock lock = controller.curator().lockSupportAccess(deployment)) {
+        try (Mutex lock = controller.curator().lockSupportAccess(deployment)) {
             var now = controller.clock().instant();
             if (until.isAfter(now.plus(MAX_SUPPORT_ACCESS_TIME))) {
                 throw new IllegalArgumentException("Support access cannot be allowed for more than 10 days");
@@ -63,7 +62,7 @@ public class SupportAccessControl {
     }
 
     public SupportAccess registerGrant(DeploymentId deployment, String by, X509Certificate certificate) {
-        try (Lock lock = controller.curator().lockSupportAccess(deployment)) {
+        try (Mutex lock = controller.curator().lockSupportAccess(deployment)) {
             var now = controller.clock().instant();
             SupportAccess supportAccess = forDeployment(deployment);
             if (certificate.getNotAfter().toInstant().isBefore(now)) {

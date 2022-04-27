@@ -48,7 +48,7 @@ public class HealthMonitorManagerTest {
     public void infrastructureApplication() {
         ProxyHostApplication proxyHostApplication = new ProxyHostApplication();
         when(duperModel.isSupportedInfraApplication(proxyHostApplication.getApplicationId())).thenReturn(true);
-        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::from).collect(Collectors.toList());
+        List<HostName> hostnames = Stream.of("proxyhost1", "proxyhost2").map(HostName::of).collect(Collectors.toList());
         ApplicationInfo proxyHostApplicationInfo = proxyHostApplication.makeApplicationInfo(hostnames);
 
         manager.applicationActivated(proxyHostApplicationInfo);
@@ -77,7 +77,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.from(hostname))).serviceStatus();
+                infraApplication.configIdFor(HostName.of(hostname))).serviceStatus();
 
         assertEquals(expected, actual);
 
@@ -85,7 +85,7 @@ public class HealthMonitorManagerTest {
                 infraApplication.getApplicationId(),
                 infraApplication.getClusterId(),
                 infraApplication.getServiceType(),
-                infraApplication.configIdFor(HostName.from(hostname)));
+                infraApplication.configIdFor(HostName.of(hostname)));
 
     }
 }

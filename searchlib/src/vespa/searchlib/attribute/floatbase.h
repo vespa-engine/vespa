@@ -50,8 +50,6 @@ class  FloatingPointAttributeTemplate : public FloatingPointAttribute
 {
 public:
     using Weighted = WeightedType<T>;
-    virtual uint32_t getAll(DocId doc, T * v, uint32_t sz) const = 0;
-    virtual uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const = 0;
 protected:
     using EnumEntryType = T;
     using LoadedNumericValueT = attribute::LoadedNumericValue<T>;
@@ -60,8 +58,6 @@ public:
     using BaseType = T;
     using LoadedValueType = T;
     using LoadedVector = SequentialReadModifyWriteInterface<LoadedNumericValueT>;
-    virtual uint32_t getRawValues(DocId doc, const multivalue::Value<T> * & values) const;
-    virtual uint32_t getRawValues(DocId doc, const multivalue::WeightedValue<T> * & values) const;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
     T defaultValue() const { return getConfig().isMutable() ? 0.0 : attribute::getUndefined<T>(); }

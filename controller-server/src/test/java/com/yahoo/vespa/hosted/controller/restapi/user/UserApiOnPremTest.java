@@ -8,7 +8,7 @@ import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.integration.user.User;
+import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Test;
@@ -58,7 +58,7 @@ public class UserApiOnPremTest extends ControllerContainerTest {
                     .forEach(d -> d.admin(AthenzIdentities.from("domain1.bob")));
 
             tester.assertResponse(createUserRequest(user, operator),
-                    new File("user-without-applications.json"));
+                    new File("on-prem-user-without-applications.json"));
 
             tester.assertResponse(createUserRequest(user, tenantAdmin),
                     new File("user-with-applications-athenz.json"));

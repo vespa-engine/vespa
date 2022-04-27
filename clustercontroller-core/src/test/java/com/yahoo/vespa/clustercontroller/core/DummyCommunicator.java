@@ -6,7 +6,7 @@ import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.clustercontroller.core.listeners.NodeAddedOrRemovedListener;
+import com.yahoo.vespa.clustercontroller.core.listeners.SlobrokListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -133,14 +133,14 @@ public class DummyCommunicator implements Communicator, NodeLookup {
     }
 
     @Override
-    public boolean updateCluster(ContentCluster cluster, NodeAddedOrRemovedListener listener) {
+    public boolean updateCluster(ContentCluster cluster, SlobrokListener listener) {
         if (newNodes != null) {
             List<Node> tmp = newNodes;
 
             for (Node node : tmp)
                 cluster.clusterInfo().setRpcAddress(node, "foo");
 
-            for (NodeInfo info : cluster.getNodeInfo()) {
+            for (NodeInfo info : cluster.getNodeInfos()) {
                 if (!tmp.contains(info.getNode())) {
                     info.markRpcAddressOutdated(timer);
                     listener.handleMissingNode(info);

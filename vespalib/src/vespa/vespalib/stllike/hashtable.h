@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <algorithm>
 #include <iterator>
+#include <vector>
 
 namespace vespalib {
 

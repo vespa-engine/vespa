@@ -276,4 +276,5 @@ public class UniqueGroupingSearcher extends Searcher {
                             .setLabel(LABEL_HITS)
                             .addOutput(summaryClass == null ? new SummaryValue() : new SummaryValue(summaryClass))))));
     }
+
 }

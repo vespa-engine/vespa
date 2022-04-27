@@ -26,7 +26,7 @@ using AVSP = AttributeVector::SP;
 
 namespace search {
 
-using TestAttributeBase = MultiValueNumericAttribute< IntegerAttributeTemplate<int32_t>, multivalue::Value<int32_t> >;
+using TestAttributeBase = MultiValueNumericAttribute< IntegerAttributeTemplate<int32_t>, int32_t>;
 
 class TestAttribute : public TestAttributeBase
 {

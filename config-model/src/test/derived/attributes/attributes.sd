@@ -74,7 +74,7 @@ search attributes {
     field b6 type array<long> {
       indexing: summary | attribute
     }
-    field b7 type weightedset<double> {
+    field b7 type weightedset<int> {
       indexing: summary | attribute
     }
 
@@ -100,6 +100,11 @@ search attributes {
     field a12 type int {
       indexing: attribute
       rank: filter
+    }
+
+    field a13 type tensor(x{}) {
+      indexing: attribute
+      attribute: fast-rank
     }
 
   }

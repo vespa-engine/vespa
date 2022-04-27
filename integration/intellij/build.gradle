@@ -36,7 +36,7 @@ compileJava {
 }
 
 group 'ai.vespa'
-version '1.1.4' // Also update pom.xml version if this is changed
+version '1.1.5' // Also update pom.xml version if this is changed
 
 sourceCompatibility = 11
 
@@ -64,7 +64,9 @@ patchPluginXml {
   untilBuild = '213.*'
   // in changeNotes you can add a description of the changes in this version (would appear in the plugin page in preferences\plugins)
     changeNotes = """
-      <em>Support for inputs in rank profiles.</em>"""
+      Support for inputs in rank profiles.
+      Correct parsing of lambda expressions.
+    """
 }
 
 test {

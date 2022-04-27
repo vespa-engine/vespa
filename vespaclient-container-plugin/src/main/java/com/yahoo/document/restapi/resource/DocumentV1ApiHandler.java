@@ -236,7 +236,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                + handlerTimeout.toMillis(),
                                MILLISECONDS);
 
-            Path requestPath = new Path(request.getUri(), __ -> { }); // No segment validation here, as document IDs can be anything.
+            Path requestPath = Path.withoutValidation(request.getUri()); // No segment validation here, as document IDs can be anything.
             for (String path : handlers.keySet())
                 if (requestPath.matches(path)) {
                     Map<Method, Handler> methods = handlers.get(path);
@@ -919,7 +919,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             return false;
 
         if (result.type() == Result.ResultType.FATAL_ERROR)
-            throw new DispatchException(result.getError());
+            throw new DispatchException(new Throwable(result.error().toString()));
 
         outstanding.incrementAndGet();
         return true;
@@ -1202,7 +1202,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                         return false;
 
                     if (result.type() == Result.ResultType.FATAL_ERROR)
-                        onError.accept(result.getError().getMessage());
+                        onError.accept(result.error().getMessage());
                     else
                         outstanding.incrementAndGet();
 

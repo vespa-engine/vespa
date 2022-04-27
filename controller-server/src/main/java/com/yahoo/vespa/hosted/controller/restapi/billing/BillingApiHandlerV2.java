@@ -28,15 +28,12 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import javax.ws.rs.BadRequestException;
 import java.math.BigDecimal;
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 
 /**
  * @author ogronnesby
@@ -182,7 +179,6 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var tenant = tenants.require(tenantName, CloudTenant.class);
         var untilAt = untilParameter(requestContext);
         var usage = billing.createUncommittedBill(tenant.name(), untilAt);
-
         var slime = new Slime();
         usageToSlime(slime.setObject(), usage);
         return slime;
@@ -322,18 +318,13 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     private LocalDate untilParameter(RestApi.RequestContext ctx) {
         return ctx.queryParameters().getString("until")
-                .map(this::parseLocalDate)
+                .map(LocalDate::parse)
+                .map(date -> date.plusDays(1))
                 .orElseGet(this::tomorrow);
     }
 
     private LocalDate tomorrow() {
         return LocalDate.now(clock).plusDays(1);
-    }
-
-    private LocalDate parseLocalDate(String until) {
-        if (until.isEmpty() || until.isBlank())
-            return tomorrow();
-        else return LocalDate.parse(until);
     }
 
     private static String getInspectorFieldOrThrow(Inspector inspector, String field) {

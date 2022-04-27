@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.collect.Sets;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
+import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
@@ -23,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.LatencyAliasTarget;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.Record;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
@@ -36,7 +38,12 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.Notification.Level;
+import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.context.DeploymentRoutingContext;
@@ -59,10 +66,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.config.provision.SystemName.main;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsEast3;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.productionUsWest1;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.stagingTest;
-import static com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType.systemTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsEast3;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.productionUsWest1;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -92,13 +99,13 @@ public class ControllerTest {
         var context = tester.newDeploymentContext();
         context.submit(applicationPackage);
         assertEquals("Application version is known from completion of initial job",
-                     ApplicationVersion.from(DeploymentContext.defaultSourceRevision, 1, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
-                     context.instance().change().application().get());
+                     ApplicationVersion.from(RevisionId.forProduction(1), DeploymentContext.defaultSourceRevision, "a@b", new Version("6.1"), Instant.ofEpochSecond(1)),
+                     context.application().revisions().get(context.instance().change().revision().get()));
         context.runJob(systemTest);
         context.runJob(stagingTest);
 
-        ApplicationVersion applicationVersion = context.instance().change().application().get();
-        assertFalse("Application version has been set during deployment", applicationVersion.isUnknown());
+        RevisionId applicationVersion = context.instance().change().revision().get();
+        assertTrue("Application version has been set during deployment", applicationVersion.isProduction());
 
         tester.triggerJobs();
         // Causes first deployment job to be triggered
@@ -169,7 +176,7 @@ public class ControllerTest {
                          e.getMessage());
         }
         assertNotNull("Zone was not removed",
-                      context.instance().deployments().get(productionUsWest1.zone(main)));
+                      context.instance().deployments().get(productionUsWest1.zone()));
 
         // prod zone removal is allowed with override
         applicationPackage = new ApplicationPackageBuilder()
@@ -179,7 +186,7 @@ public class ControllerTest {
                 .build();
         context.submit(applicationPackage);
         assertNull("Zone was removed",
-                   context.instance().deployments().get(productionUsWest1.zone(main)));
+                   context.instance().deployments().get(productionUsWest1.zone()));
         assertNull("Deployment job was removed", context.instanceJobs().get(productionUsWest1));
 
         // Submission has stored application meta.
@@ -200,7 +207,7 @@ public class ControllerTest {
                                 .get(tester.clock().instant()));
 
         assertNull(tester.controllerTester().serviceRegistry().applicationStore()
-                         .getMeta(context.deploymentIdIn(productionUsWest1.zone(main))));
+                         .getMeta(context.deploymentIdIn(productionUsWest1.zone())));
     }
 
     @Test
@@ -735,7 +742,7 @@ public class ControllerTest {
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version1).build());
         assertEquals(version2, context.deployment(zone).version());
-        assertEquals(Optional.of(version1), context.deployment(zone).applicationVersion().compileVersion());
+        assertEquals(Optional.of(version1), context.application().revisions().get(context.deployment(zone).revision()).compileVersion());
 
         try {
             context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version1).majorVersion(8).build());
@@ -764,11 +771,11 @@ public class ControllerTest {
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version3).majorVersion(8).build());
         assertEquals(version3, context.deployment(zone).version());
-        assertEquals(Optional.of(version3), context.deployment(zone).applicationVersion().compileVersion());
+        assertEquals(Optional.of(version3), context.application().revisions().get(context.deployment(zone).revision()).compileVersion());
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version3).build());
         assertEquals(version3, context.deployment(zone).version());
-        assertEquals(Optional.of(version3), context.deployment(zone).applicationVersion().compileVersion());
+        assertEquals(Optional.of(version3), context.application().revisions().get(context.deployment(zone).revision()).compileVersion());
     }
 
     @Test
@@ -872,6 +879,8 @@ public class ControllerTest {
     @Test
     public void testDeployWithGlobalEndpointsInMultipleClouds() {
         tester.controllerTester().zoneRegistry().setZones(
+                ZoneApiMock.fromId("test.us-west-1"),
+                ZoneApiMock.fromId("staging.us-west-1"),
                 ZoneApiMock.fromId("prod.us-west-1"),
                 ZoneApiMock.newBuilder().with(CloudName.from("aws")).withId("prod.aws-us-east-1").build()
         );
@@ -940,19 +949,19 @@ public class ControllerTest {
                 // The weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                            RecordName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
-                           new WeightedAliasTarget(HostName.from("lb-0--tenant:application:default--prod.us-east-3"),
+                           new WeightedAliasTarget(HostName.of("lb-0--tenant.application.default--prod.us-east-3"),
                                                    "dns-zone-1", ZoneId.from("prod.us-east-3"), 1).pack()),
 
                 // The 'east' global endpoint, pointing to the weighted record for zone 2's region
                 new Record(Record.Type.ALIAS,
                            RecordName.from("east.application.tenant.global.vespa.oath.cloud"),
-                           new LatencyAliasTarget(HostName.from("application.tenant.us-east-3-w.vespa.oath.cloud"),
+                           new LatencyAliasTarget(HostName.of("application.tenant.us-east-3-w.vespa.oath.cloud"),
                                                   "dns-zone-1", ZoneId.from("prod.us-east-3")).pack()),
 
                 // The zone-scoped endpoint pointing to zone 2 with exclusive routing
                 new Record(Record.Type.CNAME,
                            RecordName.from("application.tenant.us-east-3.vespa.oath.cloud"),
-                           RecordData.from("lb-0--tenant:application:default--prod.us-east-3.")));
+                           RecordData.from("lb-0--tenant.application.default--prod.us-east-3.")));
         assertEquals(expectedRecords, List.copyOf(tester.controllerTester().nameService().records()));
     }
 
@@ -1040,7 +1049,7 @@ public class ControllerTest {
 
     @Test
     public void testReadableApplications() {
-        var db = new MockCuratorDb();
+        var db = new MockCuratorDb(tester.controller().system());
         var tester = new DeploymentTester(new ControllerTester(db));
 
         // Create and deploy two applications
@@ -1098,6 +1107,26 @@ public class ControllerTest {
             assertEquals("Endpoint with ID 'default' in instance 'dev' clashes with endpoint 'dev' in instance 'default'",
                          e.getMessage());
         }
+    }
+
+    @Test
+    public void testTestPackageWarnings() {
+        String deploymentXml = "<deployment version='1.0'>\n" +
+                               "  <prod>\n" +
+                               "    <region>us-west-1</region>\n" +
+                               "  </prod>\n" +
+                               "</deployment>\n";
+        ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
+        byte[] testPackage = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0]));
+        var app = tester.newDeploymentContext();
+        tester.jobs().submit(app.application().id(), Submission.basic(applicationPackage, testPackage), 1);
+        assertEquals(List.of(new Notification(tester.clock().instant(),
+                                              Type.testPackage,
+                                              Level.warning,
+                                              NotificationSource.from(app.application().id()),
+                                              List.of("test package has staging tests, so it should also include staging setup",
+                                                      "see https://docs.vespa.ai/en/testing.html for details on how to write system tests for Vespa"))),
+                     tester.controller().notificationsDb().listNotifications(NotificationSource.from(app.application().id()), true));
     }
 
     @Test

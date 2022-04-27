@@ -7,7 +7,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <unistd.h>
 #include <random>
 
@@ -16,40 +16,41 @@ LOG_SETUP("documentstore.benchmark");
 
 using namespace search;
 
-class BenchmarkDataStoreApp : public FastOS_Application
+class BenchmarkDataStoreApp
 {
-    void usage();
+    void usage(const char *self);
     int benchmark(const vespalib::string & directory, size_t numReads, size_t numThreads, size_t perChunk, const vespalib::string & readType);
-    int Main() override;
     void read(size_t numReads, size_t perChunk, const IDataStore * dataStore);
+public:
+    int main(int argc, char **argv);
 };
 
 
 
 void
-BenchmarkDataStoreApp::usage()
+BenchmarkDataStoreApp::usage(const char *self)
 {
-    printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap>\n", _argv[0]);
+    printf("Usage: %s <direcory> <numreads> <numthreads> <objects per read> <normal,directio,mmap>\n", self);
     fflush(stdout);
 }
 
 int
-BenchmarkDataStoreApp::Main()
+BenchmarkDataStoreApp::main(int argc, char **argv)
 {
-    if (_argc >= 2) {
+    if (argc >= 2) {
         size_t numThreads(16);
         size_t numReads(1000000);
         size_t perChunk(1);
         vespalib::string readType("directio");
-        vespalib::string directory(_argv[1]);
-        if (_argc >= 3) {
-            numReads = strtoul(_argv[2], NULL, 0);
-            if (_argc >= 4) {
-                numThreads = strtoul(_argv[3], NULL, 0);
-                if (_argc >= 5) {
-                    perChunk = strtoul(_argv[4], NULL, 0);
-                    if (_argc >= 5) {
-                        readType = _argv[5];
+        vespalib::string directory(argv[1]);
+        if (argc >= 3) {
+            numReads = strtoul(argv[2], NULL, 0);
+            if (argc >= 4) {
+                numThreads = strtoul(argv[3], NULL, 0);
+                if (argc >= 5) {
+                    perChunk = strtoul(argv[4], NULL, 0);
+                    if (argc >= 5) {
+                        readType = argv[5];
                     }
                 }
             }
@@ -57,7 +58,7 @@ BenchmarkDataStoreApp::Main()
         return benchmark(directory, numReads, numThreads, perChunk, readType);
     } else {
         fprintf(stderr, "Too few arguments\n");
-        usage();
+        usage(argv[0]);
         return 1;
     }
     return 0;
@@ -111,4 +112,8 @@ BenchmarkDataStoreApp::benchmark(const vespalib::string & dir, size_t numReads, 
     return retval;
 }
 
-FASTOS_MAIN(BenchmarkDataStoreApp);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    BenchmarkDataStoreApp app;
+    return app.main(argc, argv);
+}

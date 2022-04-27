@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.slime.Cursor;
@@ -43,7 +44,7 @@ public class NotificationsSerializer {
     private static final String jobTypeField = "jobId";
     private static final String runNumberField = "runNumber";
 
-    public static Slime toSlime(List<Notification> notifications) {
+    public Slime toSlime(List<Notification> notifications) {
         Slime slime = new Slime();
         Cursor notificationsArray = slime.setObject().setArray(notificationsFieldName);
 
@@ -59,20 +60,20 @@ public class NotificationsSerializer {
             notification.source().instance().ifPresent(instance -> notificationObject.setString(instanceField, instance.value()));
             notification.source().zoneId().ifPresent(zoneId -> notificationObject.setString(zoneField, zoneId.value()));
             notification.source().clusterId().ifPresent(clusterId -> notificationObject.setString(clusterIdField, clusterId.value()));
-            notification.source().jobType().ifPresent(jobType -> notificationObject.setString(jobTypeField, jobType.jobName()));
+            notification.source().jobType().ifPresent(jobType -> notificationObject.setString(jobTypeField, jobType.serialized()));
             notification.source().runNumber().ifPresent(runNumber -> notificationObject.setLong(runNumberField, runNumber));
         }
 
         return slime;
     }
 
-    public static List<Notification> fromSlime(TenantName tenantName, Slime slime) {
+    public List<Notification> fromSlime(TenantName tenantName, Slime slime) {
         return SlimeUtils.entriesStream(slime.get().field(notificationsFieldName))
                 .map(inspector -> fromInspector(tenantName, inspector))
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    private static Notification fromInspector(TenantName tenantName, Inspector inspector) {
+    private Notification fromInspector(TenantName tenantName, Inspector inspector) {
         return new Notification(
                 SlimeUtils.instant(inspector.field(atFieldName)),
                 typeFrom(inspector.field(typeField)),
@@ -83,7 +84,7 @@ public class NotificationsSerializer {
                         SlimeUtils.optionalString(inspector.field(instanceField)).map(InstanceName::from),
                         SlimeUtils.optionalString(inspector.field(zoneField)).map(ZoneId::from),
                         SlimeUtils.optionalString(inspector.field(clusterIdField)).map(ClusterSpec.Id::from),
-                        SlimeUtils.optionalString(inspector.field(jobTypeField)).map(JobType::fromJobName),
+                        SlimeUtils.optionalString(inspector.field(jobTypeField)).map(jobName -> JobType.ofSerialized(jobName)),
                         SlimeUtils.optionalLong(inspector.field(runNumberField))),
                 SlimeUtils.entriesStream(inspector.field(messagesField)).map(Inspector::asString).collect(Collectors.toUnmodifiableList()));
     }
@@ -91,6 +92,8 @@ public class NotificationsSerializer {
     private static String asString(Notification.Type type) {
         switch (type) {
             case applicationPackage: return "applicationPackage";
+            case submission: return "submission";
+            case testPackage: return "testPackage";
             case deployment: return "deployment";
             case feedBlock: return "feedBlock";
             case reindex: return "reindex";
@@ -101,6 +104,8 @@ public class NotificationsSerializer {
     private static Notification.Type typeFrom(Inspector field) {
         switch (field.asString()) {
             case "applicationPackage": return Notification.Type.applicationPackage;
+            case "submission": return Notification.Type.submission;
+            case "testPackage": return Notification.Type.testPackage;
             case "deployment": return Notification.Type.deployment;
             case "feedBlock": return Notification.Type.feedBlock;
             case "reindex": return Notification.Type.reindex;
@@ -125,4 +130,5 @@ public class NotificationsSerializer {
             default: throw new IllegalArgumentException("Unknown serialized notification level value '" + field.asString() + "'");
         }
     }
+
 }

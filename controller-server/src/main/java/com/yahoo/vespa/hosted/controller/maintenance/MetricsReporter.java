@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -62,17 +63,20 @@ public class MetricsReporter extends ControllerMaintainer {
     public static final String REMAINING_ROTATIONS = "remaining_rotations";
     public static final String NAME_SERVICE_REQUESTS_QUEUED = "dns.queuedRequests";
     public static final String OPERATION_PREFIX = "operation.";
+    public static final String ZMS_QUOTA_USAGE = "zms.quota.usage";
 
     private final Metric metric;
     private final Clock clock;
+    private final ZmsClient zmsClient;
 
     // Keep track of reported node counts for each version
     private final ConcurrentHashMap<NodeCountKey, Long> nodeCounts = new ConcurrentHashMap<>();
 
-    public MetricsReporter(Controller controller, Metric metric) {
+    public MetricsReporter(Controller controller, Metric metric, ZmsClient zmsClient) {
         super(controller, Duration.ofMinutes(1)); // use fixed rate for metrics
         this.metric = metric;
         this.clock = controller.clock();
+        this.zmsClient = zmsClient;
     }
 
     @Override
@@ -85,6 +89,7 @@ public class MetricsReporter extends ControllerMaintainer {
         reportAuditLog();
         reportBrokenSystemVersion(versionStatus);
         reportTenantMetrics();
+        reportZmsQuotaMetrics();
         return 1.0;
     }
 
@@ -167,7 +172,7 @@ public class MetricsReporter extends ControllerMaintainer {
         });
 
         for (Application application : applications.asList())
-            application.latestVersion()
+            application.revisions().last()
                        .flatMap(ApplicationVersion::buildTime)
                        .ifPresent(buildTime -> metric.set(DEPLOYMENT_BUILD_AGE_SECONDS,
                                                           controller().clock().instant().getEpochSecond() - buildTime.getEpochSecond(),
@@ -250,6 +255,20 @@ public class MetricsReporter extends ControllerMaintainer {
             var context = metric.createContext(Map.of("plan", planId));
             metric.set(TENANT_METRIC, count, context);
         });
+    }
+
+    private void reportZmsQuotaMetrics() {
+        var quota = zmsClient.getQuotaUsage();
+        reportZmsQuota("subdomains", quota.getSubdomainUsage());
+        reportZmsQuota("services", quota.getServiceUsage());
+        reportZmsQuota("policies", quota.getPolicyUsage());
+        reportZmsQuota("roles", quota.getRoleUsage());
+        reportZmsQuota("groups", quota.getGroupUsage());
+    }
+
+    private void reportZmsQuota(String resourceType, double usage) {
+        var context = metric.createContext(Map.of("resourceType", resourceType));
+        metric.set(ZMS_QUOTA_USAGE, usage, context);
     }
 
     private Map<NodeVersion, Duration> platformChangeDurations(VersionStatus versionStatus) {

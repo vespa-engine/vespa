@@ -302,10 +302,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     public void archive_uri_test() {
-        new DeploymentTester(new ControllerTester(tester))
-                .newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
-                .submit()
-                .deploy();
+        ControllerTester wrapped = new ControllerTester(tester);
+        wrapped.upgradeSystem(Version.fromString("7.1"));
+        new DeploymentTester(wrapped).newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
+                                     .submit()
+                                     .deploy();
 
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
                 (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
@@ -365,7 +366,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 request("/application/v4/tenant/scoober/application/unique/submit", POST)
                         .data(data)
                         .roles(Set.of(Role.developer(tenantName))),
-                "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         assertTrue(tester.controller().applications().getApplication(TenantAndApplicationId.from(tenantName, application)).isPresent());
     }
@@ -401,7 +402,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 .build();
         new ControllerTester(tester).upgradeSystem(new Version("6.1"));
         tester.controller().jobController().deploy(ApplicationId.from("scoober", "albums", "default"),
-                                                   JobType.productionAwsUsEast1c,
+                                                   JobType.prod("aws-us-east-1c"),
                                                    Optional.empty(),
                                                    applicationPackage);
     }

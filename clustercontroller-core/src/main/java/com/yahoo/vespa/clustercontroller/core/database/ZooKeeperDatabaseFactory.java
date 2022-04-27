@@ -13,8 +13,7 @@ public class ZooKeeperDatabaseFactory implements DatabaseFactory {
 
     @Override
     public Database create(Params params) throws Exception {
-        return new ZooKeeperDatabase(context, params.cluster, params.nodeIndex, params.dbAddress,
-                                     params.dbSessionTimeout, params.listener);
+        return new ZooKeeperDatabase(context, params.dbAddress, params.dbSessionTimeout, params.listener);
     }
 
 }

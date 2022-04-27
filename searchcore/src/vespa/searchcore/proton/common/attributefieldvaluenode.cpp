@@ -103,7 +103,7 @@ AttributeFieldValueNode::traceValue(const Context &context, std::ostream& out) c
 document::select::ValueNode::UP
 AttributeFieldValueNode::clone() const
 {
-    return wrapParens(new AttributeFieldValueNode(getDocType(), getFieldName(), _attr_guard_index));
+    return wrapParens(std::make_unique<AttributeFieldValueNode>(getDocType(), getFieldName(), _attr_guard_index));
 }
 
 } // namespace proton

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
@@ -51,14 +52,18 @@ public class Badges {
         return widthOf(text, 11);
     }
 
-    static String colorOf(Run run, Boolean wasOk) {
+    static String colorOf(Run run, Optional<RunStatus> previous) {
         switch (run.status()) {
-            case running:
-                return wasOk ? "url(#run-on-success)" : "url(#run-on-failure)";
-            case success:
-                return success;
-            default:
-                return failure;
+            case running: switch (previous.orElse(RunStatus.success)) {
+                case success: return "url(#run-on-success)";
+                case aborted:
+                case noTests: return "url(#run-on-warning)";
+                default: return "url(#run-on-failure)";
+            }
+            case success: return success;
+            case aborted:
+            case noTests: return warning;
+            default: return failure;
         }
     }
 
@@ -71,9 +76,10 @@ public class Badges {
     static final double xPad = 6;
     static final double logoSize = 16;
     static final String dark = "#404040";
-    static final String success = "#00f244";
+    static final String success = "#00f844";
     static final String running = "#ab83ff";
     static final String failure = "#bf103c";
+    static final String warning = "#bd890b";
 
     static void addText(List<String> texts, String text, double x, double width) {
         addText(texts, text, x, width, 11);
@@ -116,13 +122,11 @@ public class Badges {
                                .limit(length)
                                .collect(toList());
 
-        boolean isOk = status.lastCompleted().map(run -> run.status() == RunStatus.success).orElse(true);
-
         text = lastTriggered.id().type().jobName();
         textWidth = widthOf(text);
         dx = xPad + textWidth + xPad;
         addShade(sections, x, dx);
-        sections.add("        <rect x='" + (x - 6) + "' rx='3' width='" + (dx + 6) + "' height='20' fill='" + colorOf(lastTriggered, isOk) + "'/>\n");
+        sections.add("        <rect x='" + (x - 6) + "' rx='3' width='" + (dx + 6) + "' height='20' fill='" + colorOf(lastTriggered, status.lastStatus()) + "'/>\n");
         addShadow(sections, x + dx);
         addText(texts, text, x + dx / 2, textWidth);
         x += dx;
@@ -130,7 +134,7 @@ public class Badges {
         dx = xPad * (192.0 / (32 + runs.size())); // Broader sections with shorter history.
         for (Run run : runs) {
             addShade(sections, x, dx);
-            sections.add("        <rect x='" + (x - 6) + "' rx='3' width='" + (dx + 6) + "' height='20' fill='" + colorOf(run, null) + "'/>\n");
+            sections.add("        <rect x='" + (x - 6) + "' rx='3' width='" + (dx + 6) + "' height='20' fill='" + colorOf(run, Optional.empty()) + "'/>\n");
             addShadow(sections, x + dx);
             dx *= Math.pow(0.3, 1.0 / (runs.size() + 8)); // Gradually narrowing sections with age.
             x += dx;
@@ -140,7 +144,7 @@ public class Badges {
         return badge(sections, texts, x);
     }
 
-    static String overviewBadge(ApplicationId id, JobList jobs, SystemName system) {
+    static String overviewBadge(ApplicationId id, JobList jobs) {
         // Put production tests right after their deployments, for a more compact rendering.
         List<Run> runs = new ArrayList<>(jobs.lastTriggered().asList());
         boolean anyTest = false;
@@ -149,7 +153,7 @@ public class Badges {
             if (run.id().type().isProduction() && run.id().type().isTest()) {
                 anyTest = true;
                 int j = i;
-                while ( ! runs.get(j - 1).id().type().zone(system).equals(run.id().type().zone(system)))
+                while ( ! runs.get(j - 1).id().type().zone().equals(run.id().type().zone()))
                     runs.set(j, runs.get(--j));
                 runs.set(j, run);
             }
@@ -179,7 +183,7 @@ public class Badges {
             text = nameOf(run.id().type());
             textWidth = widthOf(text, isTest ? 9 : 11);
             dx = xPad + textWidth + (isTest ? 0 : xPad);
-            boolean wasOk = jobs.get(run.id().job()).flatMap(JobStatus::lastStatus).map(RunStatus.success::equals).orElse(true);
+            Optional<RunStatus> previous = jobs.get(run.id().job()).flatMap(JobStatus::lastStatus);
 
             addText(texts, text, x + (dx - (isTest ? xPad : 0)) / 2, textWidth, isTest ? 9 : 11);
 
@@ -197,10 +201,10 @@ public class Badges {
 
             // Add colored section for job ...
             if (test == null)
-                sections.add("        <rect x='" + (x - 16) + "' rx='3' width='" + (dx + 16) + "' height='20' fill='" + colorOf(run, wasOk) + "'/>\n");
+                sections.add("        <rect x='" + (x - 16) + "' rx='3' width='" + (dx + 16) + "' height='20' fill='" + colorOf(run, previous) + "'/>\n");
             // ... with a slant if a test is next.
             else
-                sections.add("        <polygon points='" + (x - 6) + " 0 " + (x - 6) + " 20 " + (x + dx - 7) + " 20 " + (x + dx + 1) + " 0' fill='" + colorOf(run, wasOk) + "'/>\n");
+                sections.add("        <polygon points='" + (x - 6) + " 0 " + (x - 6) + " 20 " + (x + dx - 7) + " 20 " + (x + dx + 1) + " 0' fill='" + colorOf(run, previous) + "'/>\n");
 
             // Cast a shadow onto the next zone ...
             if (test == null)
@@ -252,6 +256,13 @@ public class Badges {
                "    <linearGradient id='run-on-failure' x1='40%' x2='80%' y2='0%'>\n" +
                "        <stop offset='0' stop-color='" + running + "' />\n" +
                "        <stop offset='1' stop-color='" + failure + "' />\n" +
+               "        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />\n" +
+               "        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />\n" +
+               "    </linearGradient>\n" +
+               // Running color sloshing back and forth on top of the warning color.
+               "    <linearGradient id='run-on-warning' x1='40%' x2='80%' y2='0%'>\n" +
+               "        <stop offset='0' stop-color='" + running + "' />\n" +
+               "        <stop offset='1' stop-color='" + warning + "' />\n" +
                "        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />\n" +
                "        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />\n" +
                "    </linearGradient>\n" +

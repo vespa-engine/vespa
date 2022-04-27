@@ -1,17 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import ai.vespa.http.DomainName;
 import com.yahoo.component.Version;
-import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.AthenzDomain;
-import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -21,10 +18,6 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.text.Text;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -36,11 +29,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.application.ActivateResult;
@@ -48,7 +40,7 @@ import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
-import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
+import com.yahoo.vespa.hosted.controller.application.pkg.TestPackage;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
@@ -89,6 +81,7 @@ import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Nod
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.deploymentFailed;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.error;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.installationFailed;
+import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.noTests;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.nodeAllocationFailure;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.reset;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
@@ -124,13 +117,6 @@ import static java.util.stream.Collectors.toSet;
 public class InternalStepRunner implements StepRunner {
 
     private static final Logger logger = Logger.getLogger(InternalStepRunner.class.getName());
-
-    static final NodeResources DEFAULT_TESTER_RESOURCES =
-            new NodeResources(1, 4, 50, 0.3, NodeResources.DiskSpeed.any);
-    // Must match exactly the advertised resources of an AWS instance type. Also consider that the container
-    // will have ~1.8 GB less memory than equivalent resources in AWS (VESPA-16259).
-    static final NodeResources DEFAULT_TESTER_RESOURCES_AWS =
-            new NodeResources(2, 8, 50, 0.3, NodeResources.DiskSpeed.any);
 
     private final Controller controller;
     private final TestConfigSerializer testConfigSerializer;
@@ -184,15 +170,15 @@ public class InternalStepRunner implements StepRunner {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " +
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
-                   " and application version " +
-                   versions.sourceApplication().orElse(versions.targetApplication()).id() + " ...");
+                   " and application " +
+                   versions.sourceRevision().orElse(versions.targetRevision()) + " ...");
         return deployReal(id, true, logger);
     }
 
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
         Versions versions = controller.jobController().run(id).get().versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
-                   " and application version " + versions.targetApplication().id() + " ...");
+                   " and application " + versions.targetRevision() + " ...");
         return deployReal(id, false, logger);
     }
 
@@ -218,7 +204,7 @@ public class InternalStepRunner implements StepRunner {
         logger.log("Deploying the tester container on platform " + platform + " ...");
         return deploy(() -> controller.applications().deployTester(id.tester(),
                                                                    testerPackage(id),
-                                                                   id.type().zone(controller.system()),
+                                                                   id.type().zone(),
                                                                    platform),
                       controller.jobController().run(id).get()
                                 .stepInfo(deployTester).get()
@@ -315,19 +301,19 @@ public class InternalStepRunner implements StepRunner {
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
 
         Run run = controller.jobController().run(id).get();
-        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone(controller.system())),
+        Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone()),
                                                                                                                Optional.of(platform));
         if (services.isEmpty()) {
             logger.log("Config status not currently available -- will retry.");
             return Optional.empty();
         }
-        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+        List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(),
                                                                                              NodeFilter.all()
                                                                                                        .applications(id.application())
                                                                                                        .states(active));
 
         Set<HostName> parentHostnames = nodes.stream().map(node -> node.parentHostname().get()).collect(toSet());
-        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
+        List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(),
                                                                                                NodeFilter.all()
                                                                                                          .hostnames(parentHostnames));
         boolean firstTick = run.convergenceSummary().isEmpty();
@@ -358,8 +344,8 @@ public class InternalStepRunner implements StepRunner {
         }
         if (summary.converged()) {
             controller.jobController().locked(id, lockedRun -> lockedRun.withSummary(null));
-            if (endpointsAvailable(id.application(), id.type().zone(controller.system()), logger)) {
-                if (containersAreUp(id.application(), id.type().zone(controller.system()), logger)) {
+            if (endpointsAvailable(id.application(), id.type().zone(), logger)) {
+                if (containersAreUp(id.application(), id.type().zone(), logger)) {
                     logger.log("Installation succeeded!");
                     return Optional.of(running);
                 }
@@ -441,7 +427,7 @@ public class InternalStepRunner implements StepRunner {
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
         Run run = controller.jobController().run(id).get();
         Version platform = testerPlatformVersion(id);
-        ZoneId zone = id.type().zone(controller.system());
+        ZoneId zone = id.type().zone();
         ApplicationId testerId = id.tester().id();
 
         Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(testerId, zone),
@@ -512,7 +498,7 @@ public class InternalStepRunner implements StepRunner {
             return false;
         }
         for (var endpoint : endpoints.get(zone)) {
-            HostName endpointName = HostName.from(endpoint.dnsName());
+            DomainName endpointName = DomainName.of(endpoint.dnsName());
             var ipAddress = controller.jobController().cloud().resolveHostName(endpointName);
             if (ipAddress.isEmpty()) {
                 logger.log(INFO, "DNS lookup yielded no IP address for '" + endpointName + "'.");
@@ -533,7 +519,7 @@ public class InternalStepRunner implements StepRunner {
                 var loadBalancerAddress = controller.jobController().cloud().resolveHostName(policy.canonicalName());
                 if ( ! loadBalancerAddress.equals(ipAddress)) {
                     logger.log(INFO, "IP address of CNAME '" + endpointName + "' (" + ipAddress.get() + ") and load balancer '" +
-                                     policy.canonicalName() + "' (" + loadBalancerAddress.orElse("empty") + ") are not equal");
+                                     policy.canonicalName() + "' (" + loadBalancerAddress.orElse(null) + ") are not equal");
                     return false;
                 }
             }
@@ -610,7 +596,7 @@ public class InternalStepRunner implements StepRunner {
                                     .productionDeployments().keySet().stream()
                                     .map(zone -> new DeploymentId(id.application(), zone))
                                     .collect(Collectors.toSet());
-        ZoneId zoneId = id.type().zone(controller.system());
+        ZoneId zoneId = id.type().zone();
         deployments.add(new DeploymentId(id.application(), zoneId));
 
         logger.log("Attempting to find endpoints ...");
@@ -637,6 +623,7 @@ public class InternalStepRunner implements StepRunner {
         return Optional.of(running);
     }
 
+    @SuppressWarnings("fallthrough")
     private Optional<RunStatus> endTests(RunId id, boolean isSetup, DualLogger logger) {
         Optional<Deployment> deployment = deployment(id.application(), id.type());
         if (deployment.isEmpty()) {
@@ -678,12 +665,14 @@ public class InternalStepRunner implements StepRunner {
                 controller.jobController().updateTestReport(id);
                 return Optional.of(error);
             case NO_TESTS:
-                TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
-                logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
-                logger.log(INFO, "The test package must either contain basic HTTP tests under 'tests/<suite-name>/', " +
-                                 "or a Java test bundle under 'components/' with at least one test with the annotation " +
-                                 "for this suite. See docs.vespa.ai/en/testing.html for details.");
-                return Optional.of(allowNoTests(id.application()) ? running : testFailure);
+                if ( ! isSetup) { // TODO: consider changing this Later™
+                    TesterCloud.Suite suite = TesterCloud.Suite.of(id.type(), isSetup);
+                    logger.log(INFO, "No tests were found in the test package, for test suite '" + suite + "'");
+                    logger.log(INFO, "The test package should either contain basic HTTP tests under 'tests/<suite-name>/', " +
+                                     "or a Java test bundle under 'components/' with at least one test with the annotation " +
+                                     "for this suite. See docs.vespa.ai/en/testing.html for details.");
+                    return Optional.of(noTests);
+                }
             case SUCCESS:
                 logger.log("Tests completed successfully.");
                 controller.jobController().updateTestReport(id);
@@ -691,12 +680,6 @@ public class InternalStepRunner implements StepRunner {
             default:
                 throw new IllegalStateException("Unknown status '" + testStatus + "'!");
         }
-    }
-
-    private boolean allowNoTests(ApplicationId appId) {
-        return Flags.ALLOW_NO_TESTS.bindTo(controller.flagSource())
-                                   .with(FetchVector.Dimension.TENANT_ID, appId.tenant().value())
-                                   .value();
     }
 
     private Optional<RunStatus> copyVespaLogs(RunId id, DualLogger logger) {
@@ -726,8 +709,8 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateReal(RunId id, DualLogger logger) {
         try {
-            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
-            controller.applications().deactivate(id.application(), id.type().zone(controller.system()));
+            logger.log("Deactivating deployment of " + id.application() + " in " + id.type().zone() + " ...");
+            controller.applications().deactivate(id.application(), id.type().zone());
             return Optional.of(running);
         }
         catch (RuntimeException e) {
@@ -741,7 +724,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deactivateTester(RunId id, DualLogger logger) {
         try {
-            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone(controller.system()) + " ...");
+            logger.log("Deactivating tester of " + id.application() + " in " + id.type().zone() + " ...");
             controller.jobController().deactivateTester(id.tester(), id.type());
             return Optional.of(running);
         }
@@ -786,14 +769,14 @@ public class InternalStepRunner implements StepRunner {
 
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
         Notifications notifications = application.deploymentSpec().requireInstance(run.id().application().instance()).notifications();
-        boolean newCommit = application.require(run.id().application().instance()).change().application()
-                                    .map(run.versions().targetApplication()::equals)
+        boolean newCommit = application.require(run.id().application().instance()).change().revision()
+                                    .map(run.versions().targetRevision()::equals)
                                     .orElse(false);
         When when = newCommit ? failingCommit : failing;
 
         List<String> recipients = new ArrayList<>(notifications.emailAddressesFor(when));
         if (notifications.emailRolesFor(when).contains(author))
-            run.versions().targetApplication().authorEmail().ifPresent(recipients::add);
+            application.revisions().get(run.versions().targetRevision()).authorEmail().ifPresent(recipients::add);
 
         if (recipients.isEmpty())
             return;
@@ -834,6 +817,10 @@ public class InternalStepRunner implements StepRunner {
             case testFailure:
                 updater.accept("one or more verification tests against the deployment failed. Please review test output in the deployment job log.");
                 return;
+            case noTests:
+                controller.notificationsDb().setNotification(source, Notification.Type.deployment, Notification.Level.warning,
+                                                             "no tests were found for this job type. Please review test output in the deployment job log.");
+                return;
             case error:
             case endpointCertificateTimeout:
                 break;
@@ -848,6 +835,7 @@ public class InternalStepRunner implements StepRunner {
         switch (run.status()) {
             case running:
             case aborted:
+            case noTests:
             case success:
                 return Optional.empty();
             case nodeAllocationFailure:
@@ -860,16 +848,16 @@ public class InternalStepRunner implements StepRunner {
                 return Optional.of(mails.testFailure(run.id(), recipients));
             case error:
             case endpointCertificateTimeout:
-                return Optional.of(mails.systemError(run.id(), recipients));
+                break;
             default:
                 logger.log(WARNING, "Don't know what mail to send for run status '" + run.status() + "'");
-                return Optional.of(mails.systemError(run.id(), recipients));
         }
+        return Optional.of(mails.systemError(run.id(), recipients));
     }
 
     /** Returns the deployment of the real application in the zone of the given job, if it exists. */
     private Optional<Deployment> deployment(ApplicationId id, JobType type) {
-        return Optional.ofNullable(application(id).deployments().get(type.zone(controller.system())));
+        return Optional.ofNullable(application(id).deployments().get(type.zone()));
     }
 
     /** Returns the real application with the given id. */
@@ -904,139 +892,27 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
-        ApplicationVersion version = controller.jobController().run(id).get().versions().targetApplication();
+        RevisionId revision = controller.jobController().run(id).get().versions().targetRevision();
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
-
-        ZoneId zone = id.type().zone(controller.system());
+        byte[] testZip = controller.applications().applicationStore().getTester(id.application().tenant(),
+                                                                                id.application().application(), revision);
         boolean useTesterCertificate = useTesterCertificate(id);
 
-        byte[] servicesXml = servicesXml( ! controller.system().isPublic(),
-                                         useTesterCertificate,
-                                         testerResourcesFor(zone, spec.requireInstance(id.application().instance())),
-                                         controller.controllerConfig().steprunner().testerapp());
-        byte[] testPackage = controller.applications().applicationStore().getTester(id.application().tenant(), id.application().application(), version);
-        byte[] deploymentXml = deploymentXml(id.tester(),
-                                             spec.athenzDomain(),
-                                             spec.requireInstance(id.application().instance()).athenzService(zone.environment(), zone.region()));
+        TestPackage testPackage = new TestPackage(testZip,
+                                                  controller.system().isPublic(),
+                                                  id,
+                                                  controller.controllerConfig().steprunner().testerapp(),
+                                                  spec,
+                                                  useTesterCertificate ? controller.clock().instant() : null,
+                                                  timeouts.testerCertificate());
+        if (useTesterCertificate) controller.jobController().storeTesterCertificate(id, testPackage.certificate());
 
-        try (ZipBuilder zipBuilder = new ZipBuilder(testPackage.length + servicesXml.length + deploymentXml.length + 1000)) {
-            // Copy contents of submitted application-test.zip, and ensure required directories exist within the zip.
-            zipBuilder.add(testPackage);
-            zipBuilder.add("artifacts/.ignore-" + UUID.randomUUID(), new byte[0]);
-            zipBuilder.add("tests/.ignore-" + UUID.randomUUID(), new byte[0]);
-
-            zipBuilder.add("services.xml", servicesXml);
-            zipBuilder.add("deployment.xml", deploymentXml);
-            if (useTesterCertificate)
-                appendAndStoreCertificate(zipBuilder, id);
-
-            zipBuilder.close();
-            return new ApplicationPackage(zipBuilder.toByteArray());
-        }
-    }
-
-    private void appendAndStoreCertificate(ZipBuilder zipBuilder, RunId id) {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA, 2048);
-        X500Principal subject = new X500Principal("CN=" + id.tester().id().toFullString() + "." + id.type() + "." + id.number());
-        X509Certificate certificate = X509CertificateBuilder.fromKeypair(keyPair,
-                                                                         subject,
-                                                                         controller.clock().instant(),
-                                                                         controller.clock().instant().plus(timeouts.testerCertificate()),
-                                                                         SignatureAlgorithm.SHA512_WITH_RSA,
-                                                                         BigInteger.valueOf(1))
-                                                            .build();
-        controller.jobController().storeTesterCertificate(id, certificate);
-        zipBuilder.add("artifacts/key", KeyUtils.toPem(keyPair.getPrivate()).getBytes(UTF_8));
-        zipBuilder.add("artifacts/cert", X509CertificateUtils.toPem(certificate).getBytes(UTF_8));
+        return testPackage.asApplicationPackage();
     }
 
     private DeploymentId getTesterDeploymentId(RunId runId) {
-        ZoneId zoneId = runId.type().zone(controller.system());
+        ZoneId zoneId = runId.type().zone();
         return new DeploymentId(runId.tester().id(), zoneId);
-    }
-
-    static NodeResources testerResourcesFor(ZoneId zone, DeploymentInstanceSpec spec) {
-        NodeResources nodeResources = spec.steps().stream()
-                   .filter(step -> step.concerns(zone.environment()))
-                   .findFirst()
-                   .flatMap(step -> step.zones().get(0).testerFlavor())
-                   .map(NodeResources::fromLegacyName)
-                   .orElse(zone.region().value().contains("aws-") ?
-                           DEFAULT_TESTER_RESOURCES_AWS : DEFAULT_TESTER_RESOURCES);
-        return nodeResources.with(NodeResources.DiskSpeed.any);
-    }
-
-    /** Returns the generated services.xml content for the tester application. */
-    static byte[] servicesXml(boolean systemUsesAthenz, boolean useTesterCertificate,
-                              NodeResources resources, ControllerConfig.Steprunner.Testerapp config) {
-        int jdiscMemoryGb = 2; // 2Gb memory for tester application (excessive?).
-        int jdiscMemoryPct = (int) Math.ceil(100 * jdiscMemoryGb / resources.memoryGb());
-
-        // Of the remaining memory, split 50/50 between Surefire running the tests and the rest
-        int testMemoryMb = (int) (1024 * (resources.memoryGb() - jdiscMemoryGb) / 2);
-
-        String resourceString = Text.format(
-                                              "<resources vcpu=\"%.2f\" memory=\"%.2fGb\" disk=\"%.2fGb\" disk-speed=\"%s\" storage-type=\"%s\"/>",
-                                              resources.vcpu(), resources.memoryGb(), resources.diskGb(), resources.diskSpeed().name(), resources.storageType().name());
-
-        String runtimeProviderClass = config.runtimeProviderClass();
-        String tenantCdBundle = config.tenantCdBundle();
-
-        String servicesXml =
-                "<?xml version='1.0' encoding='UTF-8'?>\n" +
-                "<services xmlns:deploy='vespa' version='1.0'>\n" +
-                "    <container version='1.0' id='tester'>\n" +
-                "\n" +
-                "        <component id=\"com.yahoo.vespa.hosted.testrunner.TestRunner\" bundle=\"vespa-testrunner-components\">\n" +
-                "            <config name=\"com.yahoo.vespa.hosted.testrunner.test-runner\">\n" +
-                "                <artifactsPath>artifacts</artifactsPath>\n" +
-                "                <surefireMemoryMb>" + testMemoryMb + "</surefireMemoryMb>\n" +
-                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
-                "                <useTesterCertificate>" + useTesterCertificate + "</useTesterCertificate>\n" +
-                "            </config>\n" +
-                "        </component>\n" +
-                "\n" +
-                "        <handler id=\"com.yahoo.vespa.testrunner.TestRunnerHandler\" bundle=\"vespa-osgi-testrunner\">\n" +
-                "            <binding>http://*/tester/v1/*</binding>\n" +
-                "        </handler>\n" +
-                "\n" +
-                "        <component id=\"" + runtimeProviderClass + "\" bundle=\"" + tenantCdBundle + "\" />\n" +
-                "\n" +
-                "        <component id=\"com.yahoo.vespa.testrunner.JunitRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
-                "            <config name=\"com.yahoo.vespa.testrunner.junit-test-runner\">\n" +
-                "                <artifactsPath>artifacts</artifactsPath>\n" +
-                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
-                "            </config>\n" +
-                "        </component>\n" +
-                "\n" +
-                "        <component id=\"com.yahoo.vespa.testrunner.VespaCliTestRunner\" bundle=\"vespa-osgi-testrunner\">\n" +
-                "            <config name=\"com.yahoo.vespa.testrunner.vespa-cli-test-runner\">\n" +
-                "                <artifactsPath>artifacts</artifactsPath>\n" +
-                "                <testsPath>tests</testsPath>\n" +
-                "                <useAthenzCredentials>" + systemUsesAthenz + "</useAthenzCredentials>\n" +
-                "            </config>\n" +
-                "        </component>\n" +
-                "\n" +
-                "        <nodes count=\"1\">\n" +
-                "            <jvm allocated-memory=\"" + jdiscMemoryPct + "%\"/>\n" +
-                "            " + resourceString + "\n" +
-                "        </nodes>\n" +
-                "    </container>\n" +
-                "</services>\n";
-
-        return servicesXml.getBytes(UTF_8);
-    }
-
-    /** Returns a dummy deployment xml which sets up the service identity for the tester, if present. */
-    private static byte[] deploymentXml(TesterId id, Optional<AthenzDomain> athenzDomain, Optional<AthenzService> athenzService) {
-        String deploymentSpec =
-                "<?xml version='1.0' encoding='UTF-8'?>\n" +
-                "<deployment version=\"1.0\" " +
-                athenzDomain.map(domain -> "athenz-domain=\"" + domain.value() + "\" ").orElse("") +
-                athenzService.map(service -> "athenz-service=\"" + service.value() + "\" ").orElse("") + ">" +
-                "  <instance id=\"" + id.id().instance().value() + "\" />" +
-                "</deployment>";
-        return deploymentSpec.getBytes(UTF_8);
     }
 
     /** Logger which logs to a {@link JobController}, as well as to the parent class' {@link Logger}. */

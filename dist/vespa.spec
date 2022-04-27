@@ -163,7 +163,11 @@ BuildRequires: vespa-onnxruntime-devel = 1.11.0
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %if 0%{?fc34}
 BuildRequires: protobuf-devel
+%if 0%{?amzn2022}
+BuildRequires: llvm-devel >= 13.0.0
+%else
 BuildRequires: llvm-devel >= 12.0.0
+%endif
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -177,14 +181,14 @@ BuildRequires: gmock-devel
 %endif
 %if 0%{?fc36}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 13.0.1
+BuildRequires: llvm-devel >= 14.0.0
 BuildRequires: boost-devel >= 1.76
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc37}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 13.0.1
+BuildRequires: llvm-devel >= 14.0.0
 BuildRequires: boost-devel >= 1.76
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -210,7 +214,7 @@ BuildRequires: vespa-openblas-devel = 0.3.18
 %else
 BuildRequires: openblas-devel
 %endif
-%if 0%{?el9}
+%if 0%{?amzn2022} || 0%{?el9}
 BuildRequires: vespa-re2-devel = 20210801
 %define _use_vespa_re2 1
 %else
@@ -259,7 +263,7 @@ Requires: perl-IO-Socket-IP
 Requires: perl-JSON
 Requires: perl-libwww-perl
 Requires: perl-LWP-Protocol-https
-%if ! 0%{?el9}
+%if ! 0%{?amzn2022} && ! 0%{?el9}
 Requires: perl-Net-INET6Glue
 %endif
 Requires: perl-Pod-Usage
@@ -315,16 +319,20 @@ Requires: gtest
 %if 0%{?fedora}
 Requires: gtest
 %if 0%{?fc34}
+%if 0%{?amzn2022}
+%define _vespa_llvm_version 13
+%else
 %define _vespa_llvm_version 12
+%endif
 %endif
 %if 0%{?fc35}
 %define _vespa_llvm_version 13
 %endif
 %if 0%{?fc36}
-%define _vespa_llvm_version 13
+%define _vespa_llvm_version 14
 %endif
 %if 0%{?fc37}
-%define _vespa_llvm_version 13
+%define _vespa_llvm_version 14
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
@@ -389,7 +397,7 @@ Requires: vespa-openblas = 0.3.18
 %else
 Requires: openblas-serial
 %endif
-%if 0%{?amzn2} ||  0%{?el9}
+%if 0%{?amzn2} || 0%{?amzn2022} || 0%{?el9}
 Requires: vespa-re2 = 20210801
 %else
 Requires: re2
@@ -438,16 +446,20 @@ Requires: protobuf
 %if 0%{?fedora}
 Requires: protobuf
 %if 0%{?fc34}
+%if 0%{?amzn2022}
+Requires: llvm-libs >= 13.0.0
+%else
 Requires: llvm-libs >= 12.0.0
+%endif
 %endif
 %if 0%{?fc35}
 Requires: llvm-libs >= 13.0.0
 %endif
 %if 0%{?fc36}
-Requires: llvm-libs >= 13.0.1
+Requires: llvm-libs >= 14.0.0
 %endif
 %if 0%{?fc37}
-Requires: llvm-libs >= 13.0.1
+Requires: llvm-libs >= 14.0.0
 %endif
 %endif
 Requires: vespa-onnxruntime = 1.11.0
@@ -538,7 +550,11 @@ nearest neighbor search used for low-level benchmarking.
 
 %prep
 %if 0%{?installdir:1}
+%if 0%{?source_base:1}
+%setup -q
+%else
 %setup -c -D -T
+%endif
 %else
 %setup -q
 %if ( 0%{?el8} || 0%{?fc34} ) && %{_vespa_llvm_version} < 13
@@ -595,7 +611,7 @@ mvn --batch-mode -e -N io.takari:maven:wrapper -Dmaven=3.6.3
        .
 
 make %{_smp_mflags}
-VERSION=%{version} make -C client/go install-all
+VERSION=%{version} CI=true make -C client/go install-all
 %endif
 
 %install
@@ -603,6 +619,9 @@ rm -rf %{buildroot}
 
 %if 0%{?installdir:1}
 cp -r %{installdir} %{buildroot}
+%if 0%{?source_base:1} && ! (0%{?amzn2} || 0%{?el7})
+find %{buildroot} -iname '*.so' -print0 | xargs --no-run-if-empty -0 -n1 /usr/lib/rpm/debugedit -b %{source_base} -d %{_builddir}/%{name}-%{version}
+%endif
 %else
 make install DESTDIR=%{buildroot}
 cp client/go/bin/vespa %{buildroot}%{_prefix}/bin/vespa
@@ -783,6 +802,7 @@ fi
 %dir %{_prefix}/conf
 %dir %{_prefix}/conf/vespa
 %config(noreplace) %{_prefix}/conf/vespa/default-env.txt
+%config(noreplace) %{_prefix}/conf/vespa/java.security.override
 %{_prefix}/jdk
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars

@@ -3,3 +3,4 @@
 package com.yahoo.search.config;
 
 import com.yahoo.osgi.annotation.ExportPackage;
+

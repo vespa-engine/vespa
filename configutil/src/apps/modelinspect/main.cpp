@@ -4,24 +4,24 @@
 #include "lib/modelinspect.h"
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/config/subscription/sourcespec.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-model-inspect");
 
-class Application : public FastOS_Application
+class Application
 {
     ModelInspect::Flags _flags;
     vespalib::string _cfgId;
     vespalib::string _specString;
-    int parseOpts();
+    int parseOpts(int argc, char **argv);
     vespalib::string getSources();
     config::ConfigUri getConfigUri();
 public:
-    void usage();
-    int Main() override;
+    void usage(const char *self);
+    int main(int argc, char **argv);
 
     Application();
     ~Application();
@@ -31,10 +31,10 @@ Application::Application() : _flags(), _cfgId("admin/model"), _specString("") {}
 Application::~Application() { }
 
 int
-Application::parseOpts()
+Application::parseOpts(int argc, char **argv)
 {
     int c = '?';
-    while ((c = getopt(_argc, _argv, "hvut:c:C:")) != -1) {
+    while ((c = getopt(argc, argv, "hvut:c:C:")) != -1) {
         switch (c) {
         case 'v':
             _flags.verbose = true;
@@ -53,9 +53,9 @@ Application::parseOpts()
             _specString = optarg;
             break;
         case 'h':
-            return _argc;
+            return argc;
         default:
-            usage();
+            usage(argv[0]);
             std::_Exit(1);
         }
     }
@@ -89,11 +89,11 @@ Application::getConfigUri()
 }
 
 void
-Application::usage()
+Application::usage(const char *self)
 {
     std::cerr <<
         "vespa-model-inspect version 2.0"                                  << std::endl <<
-        "Usage: " << _argv[0] << " [options] <command> <options>"          << std::endl <<
+        "Usage: " << self << " [options] <command> <options>"              << std::endl <<
         "options: [-u] for URLs, [-v] for verbose"                         << std::endl <<
         "         [-c host] or [-c host:port] to specify server"           << std::endl <<
         "         [-t tag] to filter on a port tag"                        << std::endl <<
@@ -116,23 +116,22 @@ Application::usage()
 }
 
 int
-Application::Main()
+Application::main(int argc, char **argv)
 {
-    int cnt = parseOpts();
-    if (_argc == cnt) {
-        usage();
+    int cnt = parseOpts(argc, argv);
+    if (argc == cnt) {
+        usage(argv[0]);
         return 0;
     }
 
     config::ConfigUri uri = getConfigUri();
     ModelInspect model(_flags, uri, std::cout);
-    return model.action(_argc - cnt, &_argv[cnt]);
+    return model.action(argc - cnt, &argv[cnt]);
 }
 
-int
-main(int argc, char** argv)
-{
+int main(int argc, char** argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     vespa::Defaults::bootstrap(argv[0]);
     Application app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

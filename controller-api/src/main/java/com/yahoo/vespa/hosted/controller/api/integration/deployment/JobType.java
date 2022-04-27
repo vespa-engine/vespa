@@ -3,250 +3,210 @@ package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
+import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.config.provision.SystemName.Public;
-import static com.yahoo.config.provision.SystemName.PublicCd;
-import static com.yahoo.config.provision.SystemName.cd;
-import static com.yahoo.config.provision.SystemName.main;
+import static ai.vespa.validation.Validation.require;
+import static com.yahoo.config.provision.Environment.dev;
+import static com.yahoo.config.provision.Environment.perf;
+import static com.yahoo.config.provision.Environment.prod;
+import static com.yahoo.config.provision.Environment.staging;
+import static com.yahoo.config.provision.Environment.test;
+import static java.util.Comparator.naturalOrder;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
-/** Job types that exist in the build system */
-public enum JobType {
-//     | enum name ------------| job name ------------------| Zone in main system ---------------------------------------| Zone in CD system -------------------------------------------
-    systemTest             ("system-test",
-                            Map.of(main    , ZoneId.from("test", "us-east-1"),
-                                   cd      , ZoneId.from("test", "cd-us-west-1"),
-                                   PublicCd, ZoneId.from("test", "aws-us-east-1c"),
-                                   Public  , ZoneId.from("test", "aws-us-east-1c"))),
-
-    stagingTest            ("staging-test",
-                            Map.of(main    , ZoneId.from("staging", "us-east-3"),
-                                   cd      , ZoneId.from("staging", "cd-us-west-1"),
-                                   PublicCd, ZoneId.from("staging", "aws-us-east-1c"),
-                                   Public  , ZoneId.from("staging", "aws-us-east-1c"))),
-
-    productionUsEast3      ("production-us-east-3",
-                            Map.of(main, ZoneId.from("prod"   , "us-east-3"))),
-
-    testUsEast3            ("test-us-east-3",
-                            Map.of(main, ZoneId.from("prod"   , "us-east-3")), true),
-
-    productionUsWest1      ("production-us-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-west-1"))),
-
-    testUsWest1            ("test-us-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-west-1")), true),
-
-    productionUsCentral1   ("production-us-central-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-central-1"))),
-
-    testUsCentral1         ("test-us-central-1",
-                            Map.of(main, ZoneId.from("prod"   , "us-central-1")), true),
-
-    productionApNortheast1 ("production-ap-northeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-1"))),
-
-    testApNortheast1       ("test-ap-northeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-1")), true),
-
-    productionApNortheast2 ("production-ap-northeast-2",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-2"))),
-
-    testApNortheast2       ("test-ap-northeast-2",
-                            Map.of(main, ZoneId.from("prod"   , "ap-northeast-2")), true),
-
-    productionApSoutheast1 ("production-ap-southeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-southeast-1"))),
-
-    testApSoutheast1       ("test-ap-southeast-1",
-                            Map.of(main, ZoneId.from("prod"   , "ap-southeast-1")), true),
-
-    productionEuWest1      ("production-eu-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "eu-west-1"))),
-
-    testEuWest1            ("test-eu-west-1",
-                            Map.of(main, ZoneId.from("prod"   , "eu-west-1")), true),
-
-    productionAwsUsEast1a  ("production-aws-us-east-1a",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1a"))),
-
-    testAwsUsEast1a        ("test-aws-us-east-1a",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1a")), true),
-
-    productionAwsUsEast1c  ("production-aws-us-east-1c",
-                            Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"),
-                                   Public,   ZoneId.from("prod", "aws-us-east-1c"))),
-
-    testAwsUsEast1c        ("test-aws-us-east-1c",
-                            Map.of(PublicCd, ZoneId.from("prod", "aws-us-east-1c"),
-                                   Public,   ZoneId.from("prod", "aws-us-east-1c")), true),
-
-    productionAwsApNortheast1a  ("production-aws-ap-northeast-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a"))),
-
-    testAwsApNortheast1a   ("test-aws-ap-northeast-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a")), true),
-
-    productionAwsEuWest1a  ("production-aws-eu-west-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-eu-west-1a"))),
-
-    testAwsEuWest1a         ("test-aws-eu-west-1a",
-                            Map.of(Public, ZoneId.from("prod", "aws-eu-west-1a")), true),
-
-    productionAwsUsWest2a  ("production-aws-us-west-2a",
-                            Map.of(main,   ZoneId.from("prod", "aws-us-west-2a"),
-                                   Public, ZoneId.from("prod", "aws-us-west-2a"))),
-
-    testAwsUsWest2a        ("test-aws-us-west-2a",
-                            Map.of(main,   ZoneId.from("prod", "aws-us-west-2a"),
-                                   Public, ZoneId.from("prod", "aws-us-west-2a")), true),
-
-    productionAwsUsEast1b  ("production-aws-us-east-1b",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1b"))),
-
-    testAwsUsEast1b        ("test-aws-us-east-1b",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-east-1b")), true),
-
-    devUsEast1             ("dev-us-east-1",
-                            Map.of(main, ZoneId.from("dev"    , "us-east-1"))),
-
-    devAwsUsEast2a         ("dev-aws-us-east-2a",
-                            Map.of(main, ZoneId.from("dev"    , "aws-us-east-2a"))),
-
-    productionCdAwsUsEast1a("production-cd-aws-us-east-1a",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-aws-us-east-1a"))),
-
-    testCdAwsUsEast1a      ("test-cd-aws-us-east-1a",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-aws-us-east-1a")), true),
-
-    productionCdUsCentral1 ("production-cd-us-central-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-1"))),
-
-    testCdUsCentral1       ("test-cd-us-central-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-1")), true),
-
-    // TODO: Cannot remove production-cd-us-central-2 until we know there are no serialized data in controller referencing it
-    productionCdUsCentral2 ("production-cd-us-central-2",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2"))),
-
-    testCdUsCentral2       ("test-cd-us-central-2",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-central-2")), true),
-
-    productionCdUsEast1    ("production-cd-us-east-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-east-1"))),
-
-    testCdUsEast1          ("test-cd-us-east-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-east-1")), true),
-
-    productionCdUsWest1    ("production-cd-us-west-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1"))),
-
-    testCdUsWest1          ("test-cd-us-west-1",
-                            Map.of(cd  , ZoneId.from("prod"   , "cd-us-west-1")), true),
-
-    devCdUsCentral1        ("dev-cd-us-central-1",
-                            Map.of(cd  , ZoneId.from("dev"    , "cd-us-central-1"))),
-
-    devCdUsWest1           ("dev-cd-us-west-1",
-                            Map.of(cd  , ZoneId.from("dev"    , "cd-us-west-1"))),
-
-    devAwsUsEast1c         ("dev-aws-us-east-1c",
-                            Map.of(Public,   ZoneId.from("dev", "aws-us-east-1c"),
-                                   PublicCd, ZoneId.from("dev", "aws-us-east-1c"))),
-
-    perfAwsUsEast1c         ("perf-aws-us-east-1c",
-                            Map.of(Public,   ZoneId.from("perf", "aws-us-east-1c"))),
-
-    perfUsEast3            ("perf-us-east-3",
-                            Map.of(main, ZoneId.from("perf"   , "us-east-3")));
+/**
+ * Specification for a deployment and/or test job to run: what zone, and whether it is a production test.
+ *
+ * @author jonmv
+ */
+public final class JobType implements Comparable<JobType> {
 
     private final String jobName;
-    final Map<SystemName, ZoneId> zones;
+    private final ZoneId zone;
     private final boolean isProductionTest;
 
-    JobType(String jobName, Map<SystemName, ZoneId> zones, boolean isProductionTest) {
-        if (zones.values().stream().map(ZoneId::environment).distinct().count() > 1)
-            throw new IllegalArgumentException("All zones of a job must be in the same environment");
-
+    private JobType(String jobName, ZoneId zone, boolean isProductionTest) {
         this.jobName = jobName;
-        this.zones = zones;
+        this.zone = zone;
         this.isProductionTest = isProductionTest;
     }
 
-    JobType(String jobName, Map<SystemName, ZoneId> zones) {
-        this(jobName, zones, false);
+    /** A system test in a test zone, or throws if no test zones are present.. */
+    public static JobType systemTest(ZoneRegistry zones) {
+        return testIn(test, zones);
     }
 
-    public String jobName() { return jobName; }
-
-    /** Returns the zone for this job in the given system, or throws if this job does not have a zone */
-    public ZoneId zone(SystemName system) {
-        if ( ! zones.containsKey(system))
-            throw new IllegalArgumentException(this + " does not have any zones in " + system);
-
-        return zones.get(system);
+    /** A staging test in a staging zone, or throws if no staging zones are present. */
+    public static JobType stagingTest(ZoneRegistry zones){
+        return testIn(staging, zones);
     }
 
-    public static List<JobType> allIn(SystemName system) {
-        return Stream.of(values()).filter(job -> job.zones.containsKey(system)).collect(Collectors.toUnmodifiableList());
+    private static JobType testIn(Environment environment, ZoneRegistry zones) {
+        return zones.zones().controllerUpgraded().in(environment).zones().stream().map(zone -> deploymentTo(zone.getId()))
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("no zones in " + environment + " among " + zones.zones().controllerUpgraded().zones()));
+    }
+
+    /** A deployment to the given dev region. */
+    public static JobType dev(RegionName region) {
+        return deploymentTo(ZoneId.from(dev, region));
+    }
+
+    /** A deployment to the given dev region. */
+    public static JobType dev(String region) {
+        return deploymentTo(ZoneId.from("dev", region));
+    }
+
+    /** A deployment to the given perf region. */
+    public static JobType perf(RegionName region) {
+        return deploymentTo(ZoneId.from(perf, region));
+    }
+
+    /** A deployment to the given perf region. */
+    public static JobType perf(String region) {
+        return deploymentTo(ZoneId.from("perf", region));
+    }
+
+    /** A deployment to the given prod region. */
+    public static JobType prod(RegionName region) {
+        return deploymentTo(ZoneId.from(prod, region));
+    }
+
+    /** A deployment to the given prod region. */
+    public static JobType prod(String region) {
+        return deploymentTo(ZoneId.from("prod", region));
+    }
+
+    /** A production test in the given region. */
+    public static JobType test(RegionName region) {
+        return productionTestOf(ZoneId.from(prod, region));
+    }
+
+    /** A production test in the given region. */
+    public static JobType test(String region) {
+        return productionTestOf(ZoneId.from("prod", region));
+    }
+
+    /** A deployment to the given zone; this may be a zone in the {@code test} or {@code staging} environments. */
+    public static JobType deploymentTo(ZoneId zone) {
+        String name;
+        switch (zone.environment()) {
+            case prod: name = "production-" + zone.region().value(); break;
+            case test: name = "system-test"; break;
+            case staging: name = "staging-test"; break;
+            default: name = zone.environment().value() + "-" + zone.region().value();
+        }
+        return new JobType(name, zone, false);
+    }
+
+    /** A production test in the given production zone. */
+    public static JobType productionTestOf(ZoneId zone) {
+        String name = "test-" + require(zone.environment() == prod, zone, "must be prod zone").region().value();
+        return new JobType(name, zone, true);
+    }
+
+    /** Creates a new job type from serialized zone data, and whether it is a production test; the inverse of {@link #serialized()} */
+    public static JobType ofSerialized(String raw) {
+        String[] parts = raw.split("\\.");
+        if (parts.length == 2) return deploymentTo(ZoneId.from(parts[0], parts[1]));
+        if (parts.length == 3 && "test".equals(parts[2])) return productionTestOf(ZoneId.from(parts[0], parts[1]));
+        throw new IllegalArgumentException("illegal serialized job type '" + raw + "'");
+    }
+
+    /** Creates a new job type from a job name, and a zone registry for looking up zones for the special system and staging test types. */
+    public static JobType fromJobName(String jobName, ZoneRegistry zones) {
+        String[] parts = jobName.split("-", 2);
+        if (parts.length != 2) throw new IllegalArgumentException("job names must be 'system-test', 'staging-test', or environment and region parts, separated by '-', but got: " + jobName);
+        switch (parts[0]) {
+            case "system": return systemTest(zones);
+            case "staging": return stagingTest(zones);
+            case "production": return prod(parts[1]);
+            case "test": return test(parts[1]);
+            case "dev": return dev(parts[1]);
+            case "perf": return perf(parts[1]);
+            default: throw new IllegalArgumentException("job names must begin with one of: system, staging, production, test, dev, perf; but got: " + jobName);
+        }
+    }
+
+    public static List<JobType> allIn(ZoneRegistry zones) {
+        return zones.zones().controllerUpgraded().zones().stream()
+                    .flatMap(zone -> zone.getEnvironment().isProduction() ? Stream.of(deploymentTo(zone.getId()), productionTestOf(zone.getId()))
+                                                                          : Stream.of(deploymentTo(zone.getId())))
+                    .sorted(naturalOrder())
+                    .collect(toUnmodifiableList());
+    }
+
+    /** A serialized form of this: {@code &lt;environment&gt;.&lt;region&gt;[.test]}; the inverse of {@link #ofSerialized(String)} */
+    public String serialized() {
+        return zone.environment().value() + "." + zone.region().value() + (isProductionTest ? ".test" : "");
+    }
+
+    public String jobName() {
+        return jobName;
+    }
+
+    /** Returns the zone for this job. */
+    public ZoneId zone() {
+        return zone;
+    }
+
+    public boolean isSystemTest() {
+        return environment() == test;
+    }
+
+    public boolean isStagingTest() {
+        return environment() == staging;
     }
 
     /** Returns whether this is a production job */
-    public boolean isProduction() { return environment() == Environment.prod; }
+    public boolean isProduction() {
+        return environment() == prod;
+    }
 
     /** Returns whether this job runs tests */
-    public boolean isTest() { return isProductionTest || environment().isTest(); }
+    public boolean isTest() {
+        return isProductionTest || environment().isTest();
+    }
 
     /** Returns whether this job deploys to a zone */
-    public boolean isDeployment() { return ! (isProduction() && isProductionTest); }
+    public boolean isDeployment() {
+        return ! isProductionTest;
+    }
 
-    /** Returns the environment of this job type, or null if it does not have an environment */
+    /** Returns the environment of this job type */
     public Environment environment() {
-        return zones.values().iterator().next().environment();
+        return zone.environment();
     }
 
-    public static Optional<JobType> fromOptionalJobName(String jobName) {
-        return Stream.of(values())
-                     .filter(jobType -> jobType.jobName.equals(jobName))
-                     .findAny();
+    @Override
+    public int compareTo(JobType other) {
+        int result;
+        if (0 != (result = environment().compareTo(other.environment()))) return -result;
+        if (0 != (result = zone.region().compareTo(other.zone.region()))) return result;
+        return Boolean.compare(isProductionTest, other.isProductionTest);
     }
 
-    public static JobType fromJobName(String jobName) {
-        return fromOptionalJobName(jobName)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown job name '" + jobName + "'"));
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JobType jobType = (JobType) o;
+        return jobName.equals(jobType.jobName);
     }
 
-    /** Returns the job type for the given zone */
-    public static Optional<JobType> from(SystemName system, ZoneId zone, boolean isTest) {
-        return Stream.of(values())
-                     .filter(job -> zone.equals(job.zones.get(system)) && job.isTest() == isTest)
-                     .findAny();
+    @Override
+    public int hashCode() {
+        return jobName.hashCode();
     }
 
-    /** Returns the job type for the given zone */
-    public static Optional<JobType> from(SystemName system, ZoneId zone) {
-        return from(system, zone, zone.environment().isTest());
-    }
-
-    /** Returns the production test job type for the given environment and region or null if none */
-    public static Optional<JobType> testFrom(SystemName system, RegionName region) {
-        return from(system, ZoneId.from(Environment.prod, region), true);
-    }
-
-    /** Returns the job job type for the given environment and region or null if none */
-    public static Optional<JobType> from(SystemName system, Environment environment, RegionName region) {
-        switch (environment) {
-            case test: return Optional.of(systemTest);
-            case staging: return Optional.of(stagingTest);
-        }
-        return from(system, ZoneId.from(environment, region));
+    @Override
+    public String toString() {
+        return jobName;
     }
 
 }

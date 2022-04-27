@@ -493,7 +493,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     @Override
     public boolean hasIndex() {
-        return  (getIndexingScript() != null) && doesIndexing();
+        return (getIndexingScript() != null) && doesIndexing();
     }
 
     /** Sets the literal boost of this field */
@@ -712,7 +712,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * @param create true to create the summary field and add it to this field before returning if it is missing
      * @return the summary field, or null if not present and create is false
      */
-    public SummaryField getSummaryField(String name,boolean create) {
+    public SummaryField getSummaryField(String name, boolean create) {
         SummaryField summaryField=summaryFields.get(name);
         if (summaryField==null && create) {
             summaryField=new SummaryField(name, getDataType());

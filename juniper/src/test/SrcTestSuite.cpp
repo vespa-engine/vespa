@@ -28,24 +28,11 @@ SrcTestSuite::SrcTestSuite() :
     AddTest(new AuxTest());
 }
 
-/**
- * The SrcTestSuiteApp class holds the main body for running the
- * SrcTestSuite class.
- *
- * @author Knut Omang
- */
-class SrcTestSuiteApp : public vespalib::TestApp {
-public:
-    int Main() override;
-};
-
-int SrcTestSuiteApp::Main() {
-    juniper::TestEnv te(this, TEST_PATH("../rpclient/testclient.rc").c_str());
+int main(int argc, char **argv) {
+    juniper::TestEnv te(argc, argv, TEST_PATH("../rpclient/testclient.rc").c_str());
     SrcTestSuite suite;
     suite.Run();
     long failures = suite.Report();
     suite.Free();
     return (int)failures;
 }
-
-FASTOS_MAIN(SrcTestSuiteApp);

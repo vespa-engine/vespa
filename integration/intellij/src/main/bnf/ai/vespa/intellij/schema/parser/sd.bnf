@@ -111,8 +111,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
 RankingExpression ::= LiteralTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
-                      QueryDefinitionExpr | FunctionCallExpr | InListRankingExpr | PrimitiveExpr |
-                      SliceExpr
+                      QueryDefinitionExpr | FunctionCallOrLambdaExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
@@ -130,7 +129,9 @@ ArithmeticOperator ::= '+' | '-' | '*' | '/' | '%' | '^' | "||" | "&&"
 
 QueryDefinitionExpr ::= QueryDefinition | ItemRawScoreDefinition
 
-FunctionCallExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierWithDashVal)?
+// Rough parsing but hard to do better due to greediness: If this is a lambda arg expressions must be identifiers
+FunctionCallOrLambdaExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierWithDashVal)?
+                             ParenthesisedExpr? // This turns the function call into a lambda
  
 ParenthesisedExpr ::= '(' RankingExpression ')'
 
@@ -152,6 +153,8 @@ LiteralTensorExpr ::= TensorType ':' '{' TensorValue ( ',' TensorValue )* '}'
 TensorValue ::= CellAddress ':' RankingExpression
 
 CellAddress ::= Label | FullTensorAddress
+
+LambdaExpr ::= IdentifierWithDashVal '(' IdentifierVal (COMMA IdentifierVal)* ')' ParenthesisedExpr
 
 //-------------------------
 //-- Rank Profile rules ---

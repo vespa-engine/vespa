@@ -50,6 +50,7 @@ public:
     const T *cend() const { return _v + _sz; }
     const T *begin() const { return _v; }
     const T *end() const { return _v + _sz; }
+    const T *data() const noexcept { return _v; }
 private:
     const T *_v;
     size_t   _sz;

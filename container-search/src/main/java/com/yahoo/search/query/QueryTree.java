@@ -185,7 +185,7 @@ public class QueryTree extends CompositeItem {
      */
     public int treeSize() {
         if (isEmpty()) return 0;
-        return(countItemsRecursively(getItemIterator().next()));
+        return countItemsRecursively(getItemIterator().next());
     }
 
     private int countItemsRecursively(Item item) {

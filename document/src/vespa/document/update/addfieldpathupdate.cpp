@@ -17,26 +17,20 @@ namespace document {
 using namespace fieldvalue;
 using vespalib::make_string;
 
-IMPLEMENT_IDENTIFIABLE(AddFieldPathUpdate, FieldPathUpdate);
-
 AddFieldPathUpdate::AddFieldPathUpdate(const DataType& type, stringref fieldPath,
-                                       stringref whereClause, const ArrayFieldValue& values)
-    : FieldPathUpdate(fieldPath, whereClause),
-      _values(vespalib::CloneablePtr<ArrayFieldValue>(values.clone()))
+                                       stringref whereClause, std::unique_ptr<ArrayFieldValue> values)
+    : FieldPathUpdate(Add, fieldPath, whereClause),
+      _values(std::move(values))
 {
     checkCompatibility(*_values, type);
 }
 
 AddFieldPathUpdate::AddFieldPathUpdate()
-    : FieldPathUpdate(), _values()
+    : FieldPathUpdate(Add),
+      _values()
 { }
 
 AddFieldPathUpdate::~AddFieldPathUpdate() = default;
-
-FieldPathUpdate*
-AddFieldPathUpdate::clone() const {
-    return new AddFieldPathUpdate(*this);
-}
 
 namespace {
 
@@ -54,7 +48,7 @@ private:
 ModificationStatus
 AddIteratorHandler::doModify(FieldValue &fv) {
     if (fv.isCollection()) {
-        CollectionFieldValue &cf = static_cast<CollectionFieldValue &>(fv);
+        auto &cf = static_cast<CollectionFieldValue &>(fv);
         for (std::size_t i = 0; i < _values.size(); ++i) {
             cf.add(_values[i]);
         }
@@ -70,10 +64,8 @@ AddIteratorHandler::doModify(FieldValue &fv) {
 bool
 AddFieldPathUpdate::operator==(const FieldPathUpdate& other) const
 {
-    if (other.getClass().id() != AddFieldPathUpdate::classId) return false;
     if (!FieldPathUpdate::operator==(other)) return false;
-    const AddFieldPathUpdate& addOther
-        = static_cast<const AddFieldPathUpdate&>(other);
+    const auto & addOther = static_cast<const AddFieldPathUpdate&>(other);
     return *addOther._values == *_values;
 }
 

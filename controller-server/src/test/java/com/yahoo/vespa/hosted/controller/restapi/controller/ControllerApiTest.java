@@ -7,7 +7,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -186,7 +185,7 @@ public class ControllerApiTest extends ControllerContainerTest {
         tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
                               "{\"message\":\"Unable to approve membership request\"}", 400);
 
-        tester.controller().supportAccess().allow(deployment, Instant.now().plus(Duration.ofHours(1)), "tenantx");
+        tester.controller().supportAccess().allow(deployment, tester.controller().clock().instant().plus(Duration.ofHours(1)), "tenantx");
         tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), requestBody, Request.Method.POST),
                               "{\"members\":[\"user.alice\"]}");
     }

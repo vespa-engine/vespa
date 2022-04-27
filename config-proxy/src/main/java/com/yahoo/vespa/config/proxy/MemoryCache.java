@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -31,8 +32,8 @@ public class MemoryCache {
 
     private final ConcurrentHashMap<ConfigCacheKey, RawConfig> cache = new ConcurrentHashMap<>(500, 0.75f);
 
-    public RawConfig get(ConfigCacheKey key) {
-        return cache.get(key);
+    public Optional<RawConfig> get(ConfigCacheKey key) {
+        return Optional.ofNullable(cache.get(key));
     }
 
     /**

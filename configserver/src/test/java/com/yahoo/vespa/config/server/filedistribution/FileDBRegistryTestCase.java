@@ -14,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 /**
@@ -32,10 +33,18 @@ public class FileDBRegistryTestCase {
     private static final FileReference FOO_REF = new FileReference("b5ce94ca1feae86c");
 
     @Test
+    public void uriResourcesNotSupportedWhenHosted() {
+        assertEquals("URI type resources are not supported in this Vespa cloud",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> new ApplicationFileManager(null, null, true).addUri(null, null))
+                             .getMessage());
+    }
+
+    @Test
     public void importAndExport() throws IOException {
         TemporaryFolder tmpDir = new TemporaryFolder();
         tmpDir.create();
-        AddFileInterface fileManager = new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()));
+        AddFileInterface fileManager = new ApplicationFileManager(new File(APP), new FileDirectory(tmpDir.newFolder()), false);
         FileRegistry fileRegistry = new FileDBRegistry(fileManager);
         assertEquals(FOO_REF, fileRegistry.addFile(FOO_FILE));
         try {

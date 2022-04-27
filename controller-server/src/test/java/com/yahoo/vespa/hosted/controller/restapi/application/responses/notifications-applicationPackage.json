@@ -1,14 +1,14 @@
 {
   "notifications": [
     {
-      "at": "(ignore)",
+      "at": 1600000000000,
       "level": "warning",
       "type": "applicationPackage",
       "tenant": "tenant1",
       "application": "app1"
     },
     {
-      "at": "(ignore)",
+      "at": 1600000000000,
       "level": "warning",
       "type": "applicationPackage",
       "tenant": "tenant2",

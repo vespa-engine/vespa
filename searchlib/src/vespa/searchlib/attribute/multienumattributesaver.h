@@ -4,13 +4,14 @@
 
 #include "multivalueattributesaver.h"
 #include "enumattributesaver.h"
+#include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace search {
 
 /**
  * Class for saving an enumerated multivalue attribute.
  *
- * Template argument MultiValueT is either  multivalue::Value<ValueType> or
+ * Template argument MultiValueT is either ValueType or
  * multivalue::WeightedValue<ValueType>
  */
 template <typename MultiValueT>
@@ -18,7 +19,7 @@ class MultiValueEnumAttributeSaver : public MultiValueAttributeSaver
 {
     using Parent = MultiValueAttributeSaver;
     using MultiValueType = MultiValueT;
-    using ValueType = typename MultiValueType::ValueType;
+    using ValueType = multivalue::ValueType_t<MultiValueType>;
     using GenerationHandler = vespalib::GenerationHandler;
     using Parent::_frozenIndices;
     using MultiValueMapping = attribute::MultiValueMapping<MultiValueType>;

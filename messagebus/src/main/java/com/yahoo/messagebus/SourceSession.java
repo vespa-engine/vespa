@@ -393,4 +393,8 @@ public final class SourceSession implements ReplyHandler, MessageBus.SendBlocked
         return this;
     }
 
+    public ThrottlePolicy getThrottlePolicy() {
+        return throttlePolicy;
+    }
+
 }

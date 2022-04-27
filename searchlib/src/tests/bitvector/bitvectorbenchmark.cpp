@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -12,7 +12,7 @@ LOG_SETUP("bitvectorbenchmark");
 
 namespace search {
 
-class BitVectorBenchmark : public FastOS_Application
+class BitVectorBenchmark
 {
 private:
     std::vector<BitVector *> _bv;
@@ -27,7 +27,7 @@ private:
 public:
     BitVectorBenchmark();
     ~BitVectorBenchmark();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 BitVectorBenchmark::BitVectorBenchmark() :
@@ -164,13 +164,13 @@ void BitVectorBenchmark::testOrSpeed2()
     }
 }
 
-int BitVectorBenchmark::Main()
+int BitVectorBenchmark::main(int argc, char **argv)
 {
     std::string operation;
     size_t numBits(8*1000000);
     int opt;
     bool optError = false;
-    while ((opt = getopt(_argc, _argv, "n:t:")) != -1) {
+    while ((opt = getopt(argc, argv, "n:t:")) != -1) {
         switch (opt) {
         case 'n':
             numBits = strtoll(optarg, NULL, 10);
@@ -184,7 +184,7 @@ int BitVectorBenchmark::Main()
         }
     }
 
-    if ((_argc != optind ) || optError) {
+    if ((argc != optind ) || optError) {
         usage();
         return -1;
     }
@@ -217,9 +217,9 @@ int BitVectorBenchmark::Main()
 }
 }
 
-int main(int argc, char ** argv)
-{
+int main(int argc, char ** argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     search::BitVectorBenchmark myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }
 

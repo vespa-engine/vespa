@@ -784,7 +784,8 @@ public:
                                                                         n.get_allow_approximate(),
                                                                         n.get_explore_additional_hits(),
                                                                         n.get_distance_threshold(),
-                                                                        getRequestContext().get_attribute_blueprint_params().nearest_neighbor_brute_force_limit));
+                                                                        getRequestContext().get_attribute_blueprint_params().global_filter_lower_limit,
+                                                                        getRequestContext().get_attribute_blueprint_params().global_filter_upper_limit));
     }
 
     void visit(query::FuzzyTerm &n) override { visitTerm(n); }

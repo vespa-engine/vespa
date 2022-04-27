@@ -18,7 +18,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
+        "message": "host-tenant.application.default-t-staging.us-east-3: unorchestrated"
       },
       {
         "at": 14503000,
@@ -33,7 +33,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
+        "message": "host-tenant.application.default-t-staging.us-east-3: unorchestrated"
       },
       {
         "at": 14503000,
@@ -48,7 +48,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
+        "message": "host-tenant.application.default-t-staging.us-east-3: unorchestrated"
       },
       {
         "at": 14503000,
@@ -63,7 +63,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "host-tenant:application:default-t-staging.us-east-3: unorchestrated"
+        "message": "host-tenant.application.default-t-staging.us-east-3: unorchestrated"
       },
       {
         "at": 14503000,
@@ -80,7 +80,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "Deploying platform version 6.1 and application version 1.0.1-commit1 ..."
+        "message": "Deploying platform version 6.1 and application build 1 ..."
       },
       {
         "at": 14503000,
@@ -102,7 +102,7 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "host-tenant:application:default-staging.us-east-3: unorchestrated"
+        "message": "host-tenant.application.default-staging.us-east-3: unorchestrated"
       },
       {
         "at": 14503000,
@@ -127,7 +127,7 @@
       {
         "at": 14503000,
         "type": "debug",
-        "message": "host-tenant:application:default-staging.us-east-3: unorchestrated"
+        "message": "host-tenant.application.default-staging.us-east-3: unorchestrated"
       },
       {
         "at": 14503000,

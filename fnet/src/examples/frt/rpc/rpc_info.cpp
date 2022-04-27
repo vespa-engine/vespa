@@ -3,12 +3,12 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-rpc-info");
 
-class RPCInfo : public FastOS_Application
+class RPCInfo
 {
 public:
 
@@ -68,23 +68,23 @@ public:
         printf("\n");
     }
 
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 
 int
-RPCInfo::Main()
+RPCInfo::main(int argc, char **argv)
 {
-    if (_argc < 2) {
+    if (argc < 2) {
         printf("usage : vespa-rpc-info <connectspec> [verbose]\n");
         return 1;
     }
 
-    bool verbose = (_argc > 2 && strcmp(_argv[2], "verbose") == 0);
+    bool verbose = (argc > 2 && strcmp(argv[2], "verbose") == 0);
     fnet::frt::StandaloneFRT server;
     FRT_Supervisor & supervisor = server.supervisor();
 
-    FRT_Target     *target = supervisor.GetTarget(_argv[1]);
+    FRT_Target     *target = supervisor.GetTarget(argv[1]);
     FRT_RPCRequest *m_list = nullptr;
     FRT_RPCRequest *info   = nullptr;
 
@@ -92,7 +92,7 @@ RPCInfo::Main()
     info->SetMethodName("frt.rpc.ping");
     target->InvokeSync(info, 5.0);
     if (info->IsError()) {
-        fprintf(stderr, "Error talking to %s\n", _argv[1]);
+        fprintf(stderr, "Error talking to %s\n", argv[1]);
         FreeReqs(m_list, info);
         return 1;
     }
@@ -135,9 +135,8 @@ RPCInfo::Main()
 }
 
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     RPCInfo myapp;
-    return myapp.Entry(argc, argv);
+    return myapp.main(argc, argv);
 }

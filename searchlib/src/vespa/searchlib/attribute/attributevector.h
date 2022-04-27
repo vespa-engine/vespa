@@ -167,39 +167,6 @@ protected:
 
     void performCompactionWarning();
 
-    void getByType(DocId doc, const char *&v) const {
-        char tmp[1024]; v = getString(doc, tmp, sizeof(tmp));
-    }
-
-    void getByType(DocId doc, vespalib::string &v) const {
-        char tmp[1024]; v = getString(doc, tmp, sizeof(tmp));
-    }
-
-    void getByType(DocId doc, largeint_t & v) const {
-        v = getInt(doc);
-    }
-
-    void getByType(DocId doc, double &v) const {
-        v = getFloat(doc);
-    }
-
-    uint32_t getByType(DocId doc, const char **v, uint32_t sz) const {
-        return get(doc, v, sz);
-    }
-
-    uint32_t getByType(DocId doc, vespalib::string *v, uint32_t sz) const {
-        return get(doc, v, sz);
-    }
-
-    uint32_t getByType(DocId doc, largeint_t * v, uint32_t sz) const {
-        return get(doc, v, sz);
-    }
-
-    uint32_t getByType(DocId doc, double *v, uint32_t sz) const {
-        return get(doc, v, sz);
-    }
-
-
     AttributeVector(vespalib::stringref baseFileName, const Config & c);
 
     void checkSetMaxValueCount(int index) {

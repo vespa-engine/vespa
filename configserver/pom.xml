@@ -184,11 +184,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>serviceview</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>zookeeper-server-common</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -246,7 +241,7 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Jersey, needed by serviceview  -->
+    <!-- Jersey, needed by orchestrator  -->
     <dependency>
       <groupId>javax.ws.rs</groupId>
       <artifactId>javax.ws.rs-api</artifactId>

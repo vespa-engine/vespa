@@ -28,8 +28,18 @@ IndexValue::IndexValue(const FieldValue& key_)
 
 IndexValue::IndexValue(IndexValue && rhs) noexcept = default;
 IndexValue & IndexValue::operator = (IndexValue && rhs) noexcept = default;
-IndexValue::IndexValue(const IndexValue & rhs) = default;
-IndexValue & IndexValue::operator = (const IndexValue & rhs) = default;
+IndexValue::IndexValue(const IndexValue & rhs) :
+    index(rhs.index),
+    key(rhs.key ? rhs.key->clone() : nullptr)
+{}
+IndexValue & IndexValue::operator = (const IndexValue & rhs) {
+    if (this != & rhs) {
+        IndexValue tmp(rhs);
+        std::swap(index, tmp.index);
+        std::swap(key, tmp.key);
+    }
+    return *this;
+}
 
 IndexValue::~IndexValue() = default;
 
@@ -44,8 +54,6 @@ IndexValue::toString() const {
 
 VariableMap::VariableMap(VariableMap && rhs) noexcept = default;
 VariableMap & VariableMap::operator = (VariableMap && rhs) noexcept = default;
-VariableMap::VariableMap(const VariableMap & rhs) = default;
-VariableMap & VariableMap::operator = (const VariableMap & rhs) = default;
 VariableMap::VariableMap() = default;
 VariableMap::~VariableMap() = default;
 

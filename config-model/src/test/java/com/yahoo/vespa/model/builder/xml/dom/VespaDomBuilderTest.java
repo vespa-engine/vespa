@@ -74,11 +74,11 @@ public class VespaDomBuilderTest {
         GenericConfig.GenericConfigBuilder builder = 
                 new GenericConfig.GenericConfigBuilder(new ConfigDefinitionKey("testnamespace", "foo"), new ConfigPayloadBuilder());
         model.getConfig(builder, "admin");
-        assertEquals(builder.getPayload().toString(), "{\n" + 
-        		" \"basicStruct\": {\n" + 
-        		"  \"stringVal\": \"default\"\n" + 
-        		" }\n" + 
-        		"}\n");
+        assertEquals("{\n" +
+                     "  \"basicStruct\": {\n" +
+                     "    \"stringVal\": \"default\"\n" +
+                     "  }\n" +
+                     "}\n", builder.getPayload().toString());
     }
 
     @Test

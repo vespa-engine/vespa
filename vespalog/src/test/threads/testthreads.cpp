@@ -1,5 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/fastos/app.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/log/bufferedlogger.h>
 #include <array>
@@ -77,10 +76,17 @@ LoggerThread::Run(FastOS_ThreadInterface *, void *)
 }
 
 
-class ThreadTester : public FastOS_Application
+class ThreadTester
 {
 public:
-    int Main() override;
+    int _argc = 0;
+    char **_argv = nullptr;
+    int Main();
+    int Entry(int argc, char **argv) {
+        _argc = argc;
+        _argv = argv;
+        return Main();
+    }
 };
 
 int

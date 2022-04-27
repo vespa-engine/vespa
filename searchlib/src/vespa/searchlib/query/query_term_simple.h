@@ -52,6 +52,8 @@ public:
     size_t           getDiversityCutoffGroups() const { return _diversityCutoffGroups; }
     bool             getDiversityCutoffStrict() const { return _diversityCutoffStrict; }
     vespalib::stringref getDiversityAttribute() const { return _diversityAttribute; }
+    size_t           getFuzzyMaxEditDistance() const { return _fuzzyMaxEditDistance; }
+    size_t           getFuzzyPrefixLength() const { return _fuzzyPrefixLength; }
     bool getAsIntegerTerm(int64_t & lower, int64_t & upper) const;
     bool getAsDoubleTerm(double & lower, double & upper) const;
     const char * getTerm() const { return _term.c_str(); }
@@ -68,6 +70,7 @@ public:
     vespalib::string getClassName() const;
     bool isValid() const { return _valid; }
     const string & getTermString() const { return _term; }
+
 private:
     bool getRangeInternal(int64_t & low, int64_t & high) const;
     template <typename N>
@@ -84,6 +87,10 @@ private:
     stringref   _diversityAttribute;
     template <typename T, typename D>
     bool    getAsNumericTerm(T & lower, T & upper, D d) const;
+
+protected:
+    uint32_t    _fuzzyMaxEditDistance;  // set in QueryTerm
+    uint32_t    _fuzzyPrefixLength;
 };
 
 }

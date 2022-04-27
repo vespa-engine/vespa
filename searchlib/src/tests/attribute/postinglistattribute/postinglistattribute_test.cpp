@@ -90,7 +90,7 @@ private:
     Int32PostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<IntegerAttributeTemplate<int32_t> >,
-        multivalue::Value<IEnumStore::AtomicIndex> >
+        IEnumStore::AtomicIndex>
     Int32ArrayPostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<IntegerAttributeTemplate<int32_t> >,
@@ -102,7 +102,7 @@ private:
     FloatPostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<FloatingPointAttributeTemplate<float> >,
-        multivalue::Value<IEnumStore::AtomicIndex> >
+        IEnumStore::AtomicIndex>
     FloatArrayPostingListAttribute;
     typedef MultiValueNumericPostingAttribute<
         EnumAttribute<FloatingPointAttributeTemplate<float> >,

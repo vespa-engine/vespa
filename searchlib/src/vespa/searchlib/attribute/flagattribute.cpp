@@ -62,7 +62,7 @@ void FlagAttributeT<B>::clearOldValues(DocId doc)
 {
     const typename B::WType * values(nullptr);
     for (uint32_t i(0), m(this->get(doc, values)); i < m; i++) {
-        BitVector * bv = _bitVectors[getOffset(values[i].value())];
+        BitVector * bv = _bitVectors[getOffset(multivalue::get_value(values[i]))];
         if (bv != nullptr) {
             bv->clearBitAndMaintainCount(doc);
         }
@@ -73,7 +73,7 @@ template <typename B>
 bool
 FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
 {
-    typedef typename B::WType::ValueType TT;
+    using TT = multivalue::ValueType_t<typename B::WType>;
 
     uint32_t numDocs = attrReader.getNumIdx() - 1;
     uint64_t numValues = attrReader.getNumValues();
@@ -133,7 +133,7 @@ void FlagAttributeT<B>::setNewValues(DocId doc, const std::vector<typename B::WT
 
 template <typename B>
 void
-FlagAttributeT<B>::setNewBVValue(DocId doc, typename B::WType::ValueType value)
+FlagAttributeT<B>::setNewBVValue(DocId doc, multivalue::ValueType_t<typename B::WType> value)
 {
     uint32_t offset = getOffset(value);
     BitVector * bv = _bitVectors[offset];

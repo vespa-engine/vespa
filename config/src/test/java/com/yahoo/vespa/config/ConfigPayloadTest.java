@@ -9,6 +9,7 @@ import com.yahoo.foo.IntConfig;
 import com.yahoo.foo.MaptypesConfig;
 import com.yahoo.foo.SimpletypesConfig;
 import com.yahoo.foo.StructtypesConfig;
+import com.yahoo.foo.UrlConfig;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.text.StringUtilities;
@@ -136,6 +137,12 @@ public class ConfigPayloadTest {
     public void test_serializer() {
         ConfigPayload payload = ConfigPayload.fromInstance(new SimpletypesConfig(new SimpletypesConfig.Builder()));
         assertThat(payload.toString(true), is("{\"boolval\":false,\"doubleval\":0.0,\"enumval\":\"VAL1\",\"intval\":0,\"longval\":0,\"stringval\":\"s\"}"));
+    }
+
+    @Test
+    public void test_serialize_url_fields() {
+        ConfigPayload payload = ConfigPayload.fromInstance(new UrlConfig(new UrlConfig.Builder()));
+        assertThat(payload.toString(true), is("{\"urlVal\":\"http://vespa.ai\"}"));
     }
 
     @Test(expected=RuntimeException.class)

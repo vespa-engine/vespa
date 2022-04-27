@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.routing.rotation;
 
 import com.yahoo.text.Text;
+
 import java.util.Objects;
 
 /**

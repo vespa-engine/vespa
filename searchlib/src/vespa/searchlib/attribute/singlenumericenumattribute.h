@@ -74,12 +74,6 @@ public:
     double getFloat(DocId doc) const override {
         return static_cast<double>(get(doc));
     }
-    uint32_t getAll(DocId doc, T * v, uint32_t sz) const override {
-        if (sz > 0) {
-            v[0] = get(doc);
-        }
-        return 1;
-    }
     uint32_t get(DocId doc, largeint_t * v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = getInt(doc);
@@ -89,12 +83,6 @@ public:
     uint32_t get(DocId doc, double * v, uint32_t sz) const override {
         if (sz > 0) {
             v[0] = getFloat(doc);
-        }
-        return 1;
-    }
-    uint32_t getAll(DocId doc, Weighted * v, uint32_t sz) const override {
-        if (sz > 0) {
-            v[0] = Weighted(get(doc));
         }
         return 1;
     }

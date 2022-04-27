@@ -2,11 +2,12 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import org.junit.Test;
@@ -28,11 +29,11 @@ public class BufferedLogStoreTest {
     public void chunkingAndFlush() {
         int chunkSize = 1 << 10;
         int maxChunks = 1 << 5;
-        CuratorDb buffer = new MockCuratorDb();
+        CuratorDb buffer = new MockCuratorDb(SystemName.main);
         RunDataStore store = new MockRunDataStore();
         BufferedLogStore logs = new BufferedLogStore(chunkSize, chunkSize * maxChunks, buffer, store);
         RunId id = new RunId(ApplicationId.from("tenant", "application", "instance"),
-                             JobType.productionUsWest1,
+                             DeploymentContext.productionUsWest1,
                              123);
 
         byte[] manyBytes = new byte[chunkSize / 2 + 1]; // One fits, and two (over-)fills.

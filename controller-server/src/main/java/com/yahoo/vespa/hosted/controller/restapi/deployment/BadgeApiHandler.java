@@ -81,16 +81,14 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
                               () -> {
                                   DeploymentStatus status = controller.jobController().deploymentStatus(controller.applications().requireApplication(TenantAndApplicationId.from(id)));
                                   Predicate<JobStatus> isDeclaredJob = job -> status.jobSteps().get(job.id()) != null && status.jobSteps().get(job.id()).isDeclared();
-                                  return Badges.overviewBadge(id,
-                                                              status.jobs().instance(id.instance()).matching(isDeclaredJob),
-                                                              controller.system());
+                                  return Badges.overviewBadge(id, status.jobs().instance(id.instance()).matching(isDeclaredJob));
                               });
     }
 
     /** Returns a URI which points to a history badge for the given application and job type. */
     private HttpResponse historyBadge(String tenant, String application, String instance, String jobName, String historyLength) {
         ApplicationId id = ApplicationId.from(tenant, application, instance);
-        JobType type = JobType.fromJobName(jobName);
+        JobType type = JobType.fromJobName(jobName, controller.zoneRegistry());
         int length = historyLength == null ? 5 : Math.min(32, Math.max(0, Integer.parseInt(historyLength)));
         return cachedResponse(new Key(id, type, length),
                               controller.clock().instant(),
@@ -135,7 +133,7 @@ public class BadgeApiHandler extends ThreadedHttpRequestHandler {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Key key = (Key) o;
-            return historyLength == key.historyLength && id.equals(key.id) && type == key.type;
+            return historyLength == key.historyLength && id.equals(key.id) && Objects.equals(type, key.type);
         }
 
         @Override

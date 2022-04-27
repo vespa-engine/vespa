@@ -3,8 +3,8 @@ package com.yahoo.vespa.zookeeper.cli;
 
 import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.zookeeper.ZooKeeperMain;
+import org.apache.zookeeper.util.ServiceUtils;
 import org.slf4j.impl.SimpleLogger;
-
 import java.io.IOException;
 
 /**
@@ -20,6 +20,7 @@ public class Main {
         new ZkClientConfigBuilder()
                 .toConfigProperties()
                 .forEach(System::setProperty);
+        ServiceUtils.setSystemExitProcedure(System::exit);
         ZooKeeperMain.main(args);
     }
 }

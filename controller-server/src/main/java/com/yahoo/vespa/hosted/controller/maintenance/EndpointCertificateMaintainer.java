@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -82,7 +83,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                 var refreshedCertificateMetadata = endpointCertificateMetadata
                         .withVersion(latestAvailableVersion.getAsInt())
                         .withLastRefreshed(clock.instant().getEpochSecond());
-                try (Lock lock = lock(applicationId)) {
+                try (Mutex lock = lock(applicationId)) {
                     if (Optional.of(endpointCertificateMetadata).equals(curator.readEndpointCertificateMetadata(applicationId))) {
                         curator.writeEndpointCertificateMetadata(applicationId, refreshedCertificateMetadata); // Certificate not validated here, but on deploy.
                     }
@@ -103,7 +104,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                         controller().applications().getInstance(applicationId)
                                 .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
                                     if (deployment.at().isBefore(refreshTime)) {
-                                        JobType job = JobType.from(controller().system(), zone).orElseThrow();
+                                        JobType job = JobType.deploymentTo(zone);
                                         deploymentTrigger.reTrigger(applicationId, job, "re-triggered by EndpointCertificateMaintainer");
                                         log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
                                                 applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
@@ -128,7 +129,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, storedMetaData) -> {
             var lastRequested = Instant.ofEpochSecond(storedMetaData.lastRequested());
             if (lastRequested.isBefore(oneMonthAgo) && hasNoDeployments(applicationId)) {
-                try (Lock lock = lock(applicationId)) {
+                try (Mutex lock = lock(applicationId)) {
                     if (Optional.of(storedMetaData).equals(curator.readEndpointCertificateMetadata(applicationId))) {
                         log.log(Level.INFO, "Cert for app " + applicationId.serializedForm()
                                 + " has not been requested in a month and app has no deployments, deleting from provider and ZK");
@@ -140,7 +141,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
         });
     }
 
-    private Lock lock(ApplicationId applicationId) {
+    private Mutex lock(ApplicationId applicationId) {
         return curator.lock(TenantAndApplicationId.from(applicationId));
     }
 
@@ -169,7 +170,7 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
                     EndpointCertificateMetadata storedAppMetadata = storedAppEntry.getValue();
                     if (storedAppMetadata.certName().equals(unknownCertDetails.cert_key_keyname())) {
                         matchFound = true;
-                        try (Lock lock = lock(storedApp)) {
+                        try (Mutex lock = lock(storedApp)) {
                             if (Optional.of(storedAppMetadata).equals(curator.readEndpointCertificateMetadata(storedApp))) {
                                 log.log(Level.INFO, "Cert for app " + storedApp.serializedForm()
                                         + " has a new leafRequestId " + unknownCertDetails.request_id() + ", updating in ZK");

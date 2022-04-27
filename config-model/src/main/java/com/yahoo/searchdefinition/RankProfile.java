@@ -773,7 +773,7 @@ public class RankProfile implements Cloneable {
                                                        input.getValue() + ", with type " + input.getValue() + "" +
                                                        " but this input is already defined with type " + existingType +
                                                        " in another profile this inherits");
-                inputs.put(input.getKey(), input.getValue());
+                allInputs.put(input.getKey(), input.getValue());
             }
         }
         allInputs.putAll(inputs);

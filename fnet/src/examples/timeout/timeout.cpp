@@ -4,7 +4,7 @@
 #include <vespa/fnet/signalshutdown.h>
 #include <vespa/fnet/packetqueue.h>
 #include <vespa/fnet/controlpacket.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/time.h>
 #include <thread>
@@ -38,15 +38,15 @@ Timeout::PerformTask()
 }
 
 
-class MyApp : public FastOS_Application
+class MyApp
 {
 public:
-  int Main() override;
+  int main(int argc, char **argv);
 };
 
 
 int
-MyApp::Main()
+MyApp::main(int, char **)
 {
   using clock = std::chrono::steady_clock;
   using ms_double = std::chrono::duration<double,std::milli>;
@@ -95,9 +95,8 @@ MyApp::Main()
 }
 
 
-int
-main(int argc, char **argv)
-{
-  MyApp myapp;
-  return myapp.Entry(argc, argv);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    MyApp myapp;
+    return myapp.main(argc, argv);
 }

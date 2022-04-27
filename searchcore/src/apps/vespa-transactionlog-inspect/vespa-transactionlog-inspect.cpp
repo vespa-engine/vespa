@@ -16,7 +16,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fnet/transport.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <thread>
 
@@ -599,59 +599,59 @@ DumpDocumentsOptions::createUtility() const
 /**
  * Main application.
  */
-class App : public FastOS_Application
+class App
 {
 private:
     std::string _programName;
     std::string _tmpArg;
 
-    void combineFirstArgs() {
-        _tmpArg = vespalib::make_string("%s %s", _argv[0], _argv[1]).c_str();
-        _argv[1] = &_tmpArg[0];
+    void combineFirstArgs(char **argv) {
+        _tmpArg = vespalib::make_string("%s %s", argv[0], argv[1]).c_str();
+        argv[1] = &_tmpArg[0];
     }
-    void replaceFirstArg(const std::string &replace) {
+    void replaceFirstArg(char **argv, const std::string &replace) {
         _tmpArg = vespalib::make_string("%s %s", _programName.c_str(), replace.c_str()).c_str();
-        _argv[0] = &_tmpArg[0];
+        argv[0] = &_tmpArg[0];
     }
     void usageHeader() {
         std::cout << _programName << " version 0.0\n";
     }
-    void usage() {
+    void usage(int argc, char **argv) {
         usageHeader();
-        replaceFirstArg(ListDomainsOptions::command());
-        ListDomainsOptions(_argc, _argv).usage();
-        replaceFirstArg(DumpOperationsOptions::command());
-        DumpOperationsOptions(_argc, _argv).usage();
-        replaceFirstArg(DumpDocumentsOptions::command());
-        DumpDocumentsOptions(_argc, _argv).usage();
+        replaceFirstArg(argv, ListDomainsOptions::command());
+        ListDomainsOptions(argc, argv).usage();
+        replaceFirstArg(argv, DumpOperationsOptions::command());
+        DumpOperationsOptions(argc, argv).usage();
+        replaceFirstArg(argv, DumpDocumentsOptions::command());
+        DumpDocumentsOptions(argc, argv).usage();
     }
 
 public:
     App();
     ~App();
-    int Main() override;
+    int main(int argc, char **argv);
 };
 
 App::App() {}
 App::~App() {}
 
 int
-App::Main() {
-    _programName = _argv[0];
-    if (_argc < 2) {
-        usage();
+App::main(int argc, char **argv) {
+    _programName = argv[0];
+    if (argc < 2) {
+        usage(argc, argv);
         return 1;
     }
     BaseOptions::UP opts;
-    if (strcmp(_argv[1], ListDomainsOptions::command().c_str()) == 0) {
-        combineFirstArgs();
-        opts.reset(new ListDomainsOptions(_argc-1, _argv+1));
-    } else if (strcmp(_argv[1], DumpOperationsOptions::command().c_str()) == 0) {
-        combineFirstArgs();
-        opts.reset(new DumpOperationsOptions(_argc-1, _argv+1));
-    } else if (strcmp(_argv[1], DumpDocumentsOptions::command().c_str()) == 0) {
-        combineFirstArgs();
-        opts.reset(new DumpDocumentsOptions(_argc-1, _argv+1));
+    if (strcmp(argv[1], ListDomainsOptions::command().c_str()) == 0) {
+        combineFirstArgs(argv);
+        opts.reset(new ListDomainsOptions(argc-1, argv+1));
+    } else if (strcmp(argv[1], DumpOperationsOptions::command().c_str()) == 0) {
+        combineFirstArgs(argv);
+        opts.reset(new DumpOperationsOptions(argc-1, argv+1));
+    } else if (strcmp(argv[1], DumpDocumentsOptions::command().c_str()) == 0) {
+        combineFirstArgs(argv);
+        opts.reset(new DumpDocumentsOptions(argc-1, argv+1));
     }
     if (opts.get() != NULL) {
         try {
@@ -664,13 +664,12 @@ App::Main() {
         }
         return opts->createUtility()->run();
     }
-    usage();
+    usage(argc, argv);
     return 1;
 }
 
-int
-main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

@@ -12,6 +12,7 @@ import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.logging.Level;
@@ -23,9 +24,9 @@ public class SimpleHttpFetcher implements HttpFetcher {
     private final CloseableHttpClient client = VespaHttpClientBuilder.create().build();
 
     @Override
-    public HttpResponse get(Params params, URL url) {
+    public HttpResponse get(Params params, URI url) {
         try {
-            HttpGet request = new HttpGet(url.toURI());
+            HttpGet request = new HttpGet(url);
             request.addHeader("Connection", "Close");
             request.setConfig(
                     RequestConfig.custom()
@@ -47,10 +48,7 @@ public class SimpleHttpFetcher implements HttpFetcher {
             String message = "Failed to get response from " + url;
             logger.log(Level.WARNING, message, e);
             throw new InternalServerException(message);
-        } catch (URISyntaxException e) {
-            String message = "Invalid URL: " + e.getMessage();
-            logger.log(Level.WARNING, message, e);
-            throw new InternalServerException(message, e);
         }
     }
+
 }

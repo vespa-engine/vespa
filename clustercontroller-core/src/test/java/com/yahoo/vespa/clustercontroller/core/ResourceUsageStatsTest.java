@@ -66,7 +66,7 @@ public class ResourceUsageStatsTest {
     }
 
     private static Collection<NodeInfo> createNodeInfo(FeedBlockUtil.NodeAndUsages... nodeAndUsages) {
-        return createFixtureWithReportedUsages(nodeAndUsages).cluster().getNodeInfo();
+        return createFixtureWithReportedUsages(nodeAndUsages).cluster().getNodeInfos();
     }
 
     private static Map<String, Double> createFeedBlockLimits(double diskLimit, double memoryLimit) {

@@ -16,8 +16,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 
+import static com.yahoo.config.model.application.provider.FilesApplicationPackage.applicationFile;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -103,7 +105,7 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
-    public void testLegacyOverrides() throws IOException {
+    public void testLegacyOverrides() {
         File appDir = new File("src/test/resources/app-legacy-overrides");
         ApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         var overrides = app.legacyOverrides();
@@ -123,6 +125,42 @@ public class FilesApplicationPackageTest {
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(e.getMessage().contains("services.xml in application package is empty"));
+        }
+    }
+
+    @Test
+    public void testApplicationFile() {
+        applicationFile(new File("foo"), "");
+        applicationFile(new File("foo"), "bar");
+        applicationFile(new File(new File(""), ""), "");
+        assertEquals("/ is not a child of ",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> applicationFile(new File(""), ""))
+                             .getMessage());
+        assertEquals("'..' is not allowed in path",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> applicationFile(new File("foo"), ".."))
+                             .getMessage());
+    }
+
+    @Test
+    public void testValidFileExtensions() {
+        File appDir = new File("src/test/resources/app-with-deployment");;
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        app.validateFileExtensions(true);
+    }
+
+    @Test
+    public void testInvalidFileExtensions() {
+        File appDir = new File("src/test/resources/app-with-invalid-files-in-subdir");;
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        try {
+            app.validateFileExtensions(true);
+            fail("expected an exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("File in application package with unknown suffix: search/query-profiles/file-with-invalid.extension " +
+                                 "Please delete or move file to another directory.",
+                         e.getMessage());
         }
     }
 

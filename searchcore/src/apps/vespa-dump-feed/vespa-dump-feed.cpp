@@ -15,7 +15,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/helper/configgetter.hpp>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 typedef vespalib::SignalHandler SIG;
 
@@ -111,10 +111,10 @@ FeedHandler::~FeedHandler()
 
 //-----------------------------------------------------------------------------
 
-class App : public FastOS_Application
+class App
 {
 public:
-    virtual int Main() override;
+    int main(int argc, char **argv);
 };
 
 template <typename CFG>
@@ -165,14 +165,14 @@ int usage() {
 }
 
 int
-App::Main()
+App::main(int argc, char **argv)
 {
     setupSignals();
-    if (_argc != 3) {
+    if (argc != 3) {
         return usage();
     }
-    std::string feedFile = _argv[1];
-    std::string dirName = _argv[2];
+    std::string feedFile = argv[1];
+    std::string dirName = argv[2];
     fprintf(stderr, "input feed: %s\n", feedFile.c_str());
     fprintf(stderr, "output directory: %s\n", dirName.c_str());
     vespalib::mkdir(dirName);
@@ -214,5 +214,5 @@ App::Main()
 
 int main(int argc, char **argv) {
     App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

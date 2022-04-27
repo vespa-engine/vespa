@@ -25,9 +25,7 @@ public class TestUtil {
         lines.addAll(Arrays.asList(xmlLines));
 
         try {
-            return XmlHelper.getDocumentBuilder().parse(
-                    inputSource((CollectionUtil.mkString(lines, "\n").replace("'", "\""))))
-                    .getDocumentElement();
+            return XmlHelper.getDocument(new StringReader(CollectionUtil.mkString(lines, "\n").replace("'", "\""))).getDocumentElement();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

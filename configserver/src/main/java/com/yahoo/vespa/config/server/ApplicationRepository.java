@@ -360,9 +360,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return deploy(applicationPackage, prepareParams, DeployHandlerLogger.forPrepareParams(prepareParams));
     }
 
-    private PrepareResult deploy(File applicationPackage, PrepareParams prepareParams, DeployHandlerLogger logger) {
+    private PrepareResult deploy(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
         ApplicationId applicationId = prepareParams.getApplicationId();
-        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationPackage);
+        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationDir);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
         if ( ! prepareParams.isDryRun())
@@ -560,8 +560,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public HttpResponse proxyServiceHostnameRequest(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path path, Query query) {
-        return httpProxy.get(getApplication(applicationId), hostName, serviceName, path, query);
+    public HttpResponse proxyServiceHostnameRequest(ApplicationId applicationId, String hostName, String serviceName, HttpURL.Path path, Query query, HttpURL forwardedUrl) {
+        return httpProxy.get(getApplication(applicationId), hostName, serviceName, path, query, forwardedUrl);
     }
 
     public Map<String, ClusterReindexing> getClusterReindexingStatus(ApplicationId applicationId) {

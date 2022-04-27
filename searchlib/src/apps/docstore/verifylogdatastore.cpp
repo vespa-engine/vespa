@@ -4,38 +4,39 @@
 #include <vespa/searchlib/docstore/logdatastore.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/exception.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using namespace search;
 
-class VerifyLogDataStoreApp : public FastOS_Application
+class VerifyLogDataStoreApp
 {
-    void usage();
+    void usage(const char *self);
     int verify(const vespalib::string & directory);
-    int Main() override;
+public:
+    int main(int argc, char **argv);
 };
 
 
 
 void
-VerifyLogDataStoreApp::usage()
+VerifyLogDataStoreApp::usage(const char *self)
 {
-    printf("Usage: %s <direcory>\n", _argv[0]);
+    printf("Usage: %s <direcory>\n", self);
     fflush(stdout);
 }
 
 int
-VerifyLogDataStoreApp::Main()
+VerifyLogDataStoreApp::main(int argc, char **argv)
 {
-    if (_argc >= 2) {
-        vespalib::string directory(_argv[1]);
+    if (argc >= 2) {
+        vespalib::string directory(argv[1]);
         return verify(directory);
     } else {
         fprintf(stderr, "Too few arguments\n");
-        usage();
+        usage(argv[0]);
         return 1;
     }
     return 0;
@@ -65,4 +66,8 @@ VerifyLogDataStoreApp::verify(const vespalib::string & dir)
     return retval;
 }
 
-FASTOS_MAIN(VerifyLogDataStoreApp);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    VerifyLogDataStoreApp app;
+    return app.main(argc, argv);
+}

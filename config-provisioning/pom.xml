@@ -8,14 +8,12 @@
     <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
-  <groupId>com.yahoo.vespa</groupId>
+
+  <name>config-provisioning</name>
+  <description>Provisioning APIs.</description>
   <artifactId>config-provisioning</artifactId>
   <packaging>container-plugin</packaging>
-  <version>7-SNAPSHOT</version>
-  <name>config-provisioning</name>
-  <description>
-Provisioning APIs.
-  </description>
+
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -67,11 +65,6 @@ Provisioning APIs.
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava-testlib</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

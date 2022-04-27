@@ -23,9 +23,8 @@ public class FileNodeTest {
         assertEquals("foo.txt", n.value().value());
         assertEquals("\"foo.txt\"", n.toString());
 
-        assertThrows("path may not start with '..', but got: foo/../../boo",
-                     IllegalArgumentException.class,
-                     () -> new FileNode("foo/../../boo"));
+        assertEquals("path may not start with '..', but got: foo/../../boo",
+                     assertThrows(IllegalArgumentException.class, () -> new FileNode("foo/../../boo")).getMessage());
     }
 
 }

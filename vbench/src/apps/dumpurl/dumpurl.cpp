@@ -3,16 +3,10 @@
 #include <vbench/http/http_result_handler.h>
 #include <vbench/http/server_spec.h>
 #include <vbench/http/http_client.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 
 using namespace vbench;
-
-class App : public FastOS_Application
-{
-public:
-    int Main() override;
-};
 
 struct MyHttpHandler : public HttpResultHandler {
     void handleHeader(const string &name, const string &value) override {
@@ -27,20 +21,14 @@ struct MyHttpHandler : public HttpResultHandler {
     }
 };
 
-int
-App::Main()
-{
-    if (_argc != 4) {
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    if (argc != 4) {
         printf("usage: dumpurl <host> <port> <url>\n");
         return -1;
     }
     auto null_crypto = std::make_shared<vespalib::NullCryptoEngine>();
     MyHttpHandler myHandler;
-    bool ok = HttpClient::fetch(*null_crypto, ServerSpec(_argv[1], atoi(_argv[2])), _argv[3], myHandler);
+    bool ok = HttpClient::fetch(*null_crypto, ServerSpec(argv[1], atoi(argv[2])), argv[3], myHandler);
     return ok ? 0 : 1;
-}
-
-int main(int argc, char **argv) {
-    App app;
-    return app.Entry(argc, argv);
 }

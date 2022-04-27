@@ -113,7 +113,7 @@ struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
 };
 
 template <typename AttrType>
-void checkWritePositionField(Test &test, AttrType &attr,
+void checkWritePositionField(AttrType &attr,
                              uint32_t doc_id, const vespalib::string &expect_json) {
     for (AttributeVector::DocId i = 0; i < doc_id + 1; ) {
         attr.addDoc(i);
@@ -143,16 +143,16 @@ void checkWritePositionField(Test &test, AttrType &attr,
     writer->insertField(doc_id, &state, res_type, inserter);
 
     test::SlimeValue expected(expect_json);
-    test.EXPECT_EQUAL(expected.slime, target);
+    EXPECT_EQUAL(expected.slime, target);
 }
 
 void Test::requireThat2DPositionFieldIsWritten() {
     SingleInt64ExtAttribute attr("foo");
-    checkWritePositionField(*this, attr, 0x3e, "{x:6,y:7,latlong:'N0.000007;E0.000006'}");
-    checkWritePositionField(*this, attr,  007, "{x:-1,y:-1,latlong:'S0.000001;W0.000001'}");
-    checkWritePositionField(*this, attr, 0x42, "{x:0,y:-1,latlong:'S0.000001;E0.000000'}");
-    checkWritePositionField(*this, attr, 0x17, "{x:-16711935,y:16711935,latlong:'N16.711935;W16.711935'}");
-    checkWritePositionField(*this, attr,   42, "null");
+    checkWritePositionField(attr, 0x3e, "{x:6,y:7,latlong:'N0.000007;E0.000006'}");
+    checkWritePositionField(attr,  007, "{x:-1,y:-1,latlong:'S0.000001;W0.000001'}");
+    checkWritePositionField(attr, 0x42, "{x:0,y:-1,latlong:'S0.000001;E0.000000'}");
+    checkWritePositionField(attr, 0x17, "{x:-16711935,y:16711935,latlong:'N16.711935;W16.711935'}");
+    checkWritePositionField(attr,   42, "null");
 }
 
 }  // namespace

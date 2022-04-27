@@ -24,24 +24,24 @@ import static org.junit.Assert.fail;
  */
 public class ApplicationPackageTest {
 
-    private static final String deploymentXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                                                "<deployment version=\"1.0\">\n" +
-                                                "    <test />\n" +
-                                                "    <prod>\n" +
-                                                "        <parallel>\n" +
-                                                "            <region active=\"true\">us-central-1</region>\n" +
-                                                "        </parallel>\n" +
-                                                "    </prod>\n" +
-                                                "</deployment>\n";
+    static final String deploymentXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                                        "<deployment version=\"1.0\">\n" +
+                                        "    <test />\n" +
+                                        "    <prod>\n" +
+                                        "        <parallel>\n" +
+                                        "            <region active=\"true\">us-central-1</region>\n" +
+                                        "        </parallel>\n" +
+                                        "    </prod>\n" +
+                                        "</deployment>\n";
 
-    private static final String servicesXml = "<services version='1.0' xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\">\n" +
-                                              "    <preprocess:include file='jdisc.xml' />\n" +
-                                              "    <content version='1.0' if='foo' />\n" +
-                                              "    <content version='1.0' id='foo' deploy:environment='staging prod' deploy:region='us-east-3 us-central-1'>\n" +
-                                              "        <preprocess:include file='content/content.xml' />\n" +
-                                              "    </content>\n" +
-                                              "    <preprocess:include file='not_found.xml' required='false' />\n" +
-                                              "</services>\n";
+    static final String servicesXml = "<services version='1.0' xmlns:deploy=\"vespa\" xmlns:preprocess=\"properties\">\n" +
+                                      "    <preprocess:include file='jdisc.xml' />\n" +
+                                      "    <content version='1.0' if='foo' />\n" +
+                                      "    <content version='1.0' id='foo' deploy:environment='staging prod' deploy:region='us-east-3 us-central-1'>\n" +
+                                      "        <preprocess:include file='content/content.xml' />\n" +
+                                      "    </content>\n" +
+                                      "    <preprocess:include file='not_found.xml' required='false' />\n" +
+                                      "</services>\n";
 
     private static final String jdiscXml = "<container id='stateless' version='1.0' />\n";
 

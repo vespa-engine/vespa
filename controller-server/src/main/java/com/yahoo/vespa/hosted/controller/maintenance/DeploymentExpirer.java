@@ -8,11 +8,9 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
-import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Optional;
 import java.util.logging.Level;
 
@@ -59,13 +57,8 @@ public class DeploymentExpirer extends ControllerMaintainer {
         Optional<Duration> ttl = controller().zoneRegistry().getDeploymentTimeToLive(deployment.zone());
         if (ttl.isEmpty()) return false;
 
-        Optional<JobId> jobId = JobType.from(controller().system(), deployment.zone())
-                                       .map(type -> new JobId(instance, type));
-        if (jobId.isEmpty()) return false;
-
-        return controller().jobController().jobStarts(jobId.get()).stream().findFirst()
-                           .map(start -> start.plus(ttl.get()).isBefore(controller().clock().instant()))
-                           .orElse(false);
+        return controller().jobController().lastDeploymentStart(instance, deployment)
+                           .plus(ttl.get()).isBefore(controller().clock().instant());
     }
 
 }

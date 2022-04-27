@@ -29,6 +29,7 @@ import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
@@ -99,7 +100,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         ConfigserverConfig.Producer,
-        CuratorConfig.Producer
+        CuratorConfig.Producer,
+        SchemaInfoConfig.Producer
 {
 
     /**
@@ -534,6 +536,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
+        if (containerSearch != null) containerSearch.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(SchemaInfoConfig.Builder builder) {
         if (containerSearch != null) containerSearch.getConfig(builder);
     }
 

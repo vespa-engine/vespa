@@ -10,6 +10,7 @@ import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
 import com.yahoo.search.query.parser.ParserEnvironment;
@@ -91,8 +92,13 @@ public class Model implements Cloneable {
     private Set<String> restrict = new LinkedHashSet<>();
     private String searchPath;
     private String documentDbName = null;
-    private Execution execution = new Execution(new Execution.Context(null, null,
-                                                                      null, null, null, Runnable::run));
+    private Execution execution = new Execution(new Execution.Context(null,
+                                                                      null,
+                                                                      SchemaInfo.empty(),
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      Runnable::run));
 
     public Model(Query query) {
         setParent(query);

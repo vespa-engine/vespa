@@ -12,7 +12,7 @@
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/eval/eval/param_usage.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 //-----------------------------------------------------------------------------
 
@@ -328,27 +328,27 @@ State::~State() {}
 
 //-----------------------------------------------------------------------------
 
-struct MyApp : public FastOS_Application {
-    int Main() override;
-    int usage();
+struct MyApp {
+    int main(int argc, char **argv);
+    int usage(const char *self);
 };
 
 int
-MyApp::usage() {
-    fprintf(stderr, "usage: %s [-v] <expression-file>\n", _argv[0]);
+MyApp::usage(const char *self) {
+    fprintf(stderr, "usage: %s [-v] <expression-file>\n", self);
     fprintf(stderr, "  analyze/benchmark vespa ranking expression\n");
     fprintf(stderr, "  -v: more verbose output\n");
     return 1;
 }
 
 int
-MyApp::Main()
+MyApp::main(int argc, char **argv)
 {
-    bool verbose = (_argc == 3) && (strcmp(_argv[1], "-v") == 0);
-    if (!(verbose || (_argc == 2))) {
-        return usage();
+    bool verbose = (argc == 3) && (strcmp(argv[1], "-v") == 0);
+    if (!(verbose || (argc == 2))) {
+        return usage(argv[0]);
     }
-    vespalib::string file_name(verbose ? _argv[2] : _argv[1]);
+    vespalib::string file_name(verbose ? argv[2] : argv[1]);
     vespalib::MappedFileInput file(file_name);
     if (!file.valid()) {
         fprintf(stderr, "could not read input file: '%s'\n",
@@ -369,8 +369,9 @@ MyApp::Main()
 }
 
 int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     MyApp my_app;
-    return my_app.Entry(argc, argv);
+    return my_app.main(argc, argv);
 }
 
 //-----------------------------------------------------------------------------

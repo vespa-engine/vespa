@@ -8,10 +8,10 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
@@ -37,7 +37,7 @@ public class DeploymentMetricsMaintainerTest {
     @Test
     public void updates_metrics() {
         var application = tester.newDeploymentContext();
-        application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
 
         DeploymentMetricsMaintainer maintainer = maintainer(tester.controller());
         Supplier<Application> app = application::application;
@@ -51,7 +51,7 @@ public class DeploymentMetricsMaintainerTest {
         assertFalse("Never received any writes", deployment.get().activity().lastWritten().isPresent());
 
         // Metrics are gathered and saved to application
-        application.runJob(JobType.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.5.5"));
+        application.runJob(DeploymentContext.devUsEast1, new ApplicationPackage(new byte[0]), Version.fromString("7.5.5"));
         var metrics0 = Map.of(ClusterMetrics.QUERIES_PER_SECOND, 1D,
                               ClusterMetrics.FEED_PER_SECOND, 2D,
                               ClusterMetrics.DOCUMENT_COUNT, 3D,

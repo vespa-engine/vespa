@@ -26,6 +26,7 @@ vespa_add_library(searchlib_attribute OBJECT
     bitvector_search_cache.cpp
     changevector.cpp
     configconverter.cpp
+    copy_multi_value_read_view.cpp
     createarrayfastsearch.cpp
     createarraystd.cpp
     createsetfastsearch.cpp
@@ -45,7 +46,12 @@ vespa_add_library(searchlib_attribute OBJECT
     enum_store_dictionary.cpp
     enum_store_loaders.cpp
     enumstore.cpp
+    enumerated_multi_value_read_view.cpp
     extendableattributes.cpp
+    extendable_numeric_array_multi_value_read_view.cpp
+    extendable_numeric_weighted_set_multi_value_read_view.cpp
+    extendable_string_array_multi_value_read_view.cpp
+    extendable_string_weighted_set_multi_value_read_view.cpp
     fixedsourceselector.cpp
     flagattribute.cpp
     floatbase.cpp
@@ -56,6 +62,7 @@ vespa_add_library(searchlib_attribute OBJECT
     imported_attribute_vector.cpp
     imported_attribute_vector_factory.cpp
     imported_attribute_vector_read_guard.cpp
+    imported_multi_value_read_view.cpp
     imported_search_context.cpp
     integerbase.cpp
     ipostinglistsearchcontext.cpp
@@ -94,6 +101,7 @@ vespa_add_library(searchlib_attribute OBJECT
     postinglisttraits.cpp
     postingstore.cpp
     predicate_attribute.cpp
+    raw_multi_value_read_view.cpp
     readerbase.cpp
     reference_attribute.cpp
     reference_attribute_saver.cpp

@@ -20,7 +20,6 @@
 #include <vespa/juniper/mcand.h>
 #include <vespa/juniper/propreader.h>
 #include <vespa/juniper/specialtokenregistry.h>
-#include <vespa/fastos/app.h>
 
 namespace juniper
 {
@@ -28,7 +27,7 @@ namespace juniper
 class TestEnv
 {
 public:
-    TestEnv(FastOS_Application* app, const char* propfile);
+    TestEnv(int argc, char **argv, const char* propfile);
     virtual ~TestEnv();
     void Usage(char* s);
 private:

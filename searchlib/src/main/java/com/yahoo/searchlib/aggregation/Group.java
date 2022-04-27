@@ -12,22 +12,48 @@ import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Group extends Identifiable {
 
     public static final int classId = registerClass(0x4000 + 90, Group.class);
     private static final ObjectPredicate REF_LOCATOR = new RefLocator();
-    private List<Integer> orderByIdx = new ArrayList<>();
-    private List<ExpressionNode> orderByExp = new ArrayList<>();
-    private List<AggregationResult> aggregationResults = new ArrayList<>();
-    private List<Group> children = new ArrayList<>();
+    private List<Integer> orderByIdx = List.of();
+    private List<ExpressionNode> orderByExp = List.of();
+    private List<AggregationResult> aggregationResults = List.of();
+    private List<Group> children = List.of();
     private ResultNode id = null;
     private double rank;
     private int tag = -1;
     private SortType sortType = SortType.UNSORTED;
+
+    private static <T> List<T> add(List<T> oldList, T obj) {
+        if (oldList.isEmpty()) {
+            return List.of(obj);
+        }
+        if (oldList.size() == 1) {
+            return List.of(oldList.get(0), obj);
+        }
+        List<T> newList = (oldList instanceof ArrayList) ? oldList : new ArrayList<>(oldList);
+        newList.add(obj);
+        return newList;
+    }
+
+    private static <T> List<T> sort(List<T> list, Comparator<T> cmp) {
+        if (list instanceof ArrayList) {
+            list.sort(cmp);
+            return list;
+        } else {
+            if (list.size() < 2) return list;
+            if (list.size() == 2) {
+                return (cmp.compare(list.get(0), list.get(1)) > 0) ? List.of(list.get(1), list.get(0)) : list;
+            }
+            return list.stream().sorted(cmp).collect(Collectors.toList());
+        }
+    }
 
     /**
      * This tells you if the children are ranked by the pure relevance or by a more complex expression.
@@ -62,7 +88,7 @@ public class Group extends Identifiable {
         if (lhsChild.hasNext() && rhsChild.hasNext()) {
             Group lhsGroup = lhsChild.next();
             Group rhsGroup = rhsChild.next();
-            for (; (lhsGroup != null) && (rhsGroup != null); ) {
+            while ((lhsGroup != null) && (rhsGroup != null)) {
                 int cmp = lhsGroup.getId().compareTo(rhsGroup.getId());
                 if (cmp < 0) {
                     merged.add(lhsGroup);
@@ -140,7 +166,7 @@ public class Group extends Identifiable {
         if (sortType == SortType.BYID) {
             return;
         }
-        Collections.sort(children, (Group lhs, Group rhs) -> lhs.compareId(rhs));
+        children = sort(children, Group::compareId);
         sortType = SortType.BYID;
     }
 
@@ -149,8 +175,7 @@ public class Group extends Identifiable {
         if (sortType == SortType.BYRANK) {
             return;
         }
-        Collections.sort(children, (Group lhs, Group rhs) ->  lhs.compareRank(rhs) );
-
+        children = sort(children, Group::compareRank);
         sortType = SortType.BYRANK;
     }
 
@@ -200,13 +225,18 @@ public class Group extends Identifiable {
         if (child == null) {
             throw new IllegalArgumentException("Child can not be null.");
         }
-        children.add(child);
+        children = add(children, child);
         return this;
     }
 
-    /** Returns the list of child groups to this. */
+    /** Returns immutable list of child groups to this. */
     public List<Group> getChildren() {
-        return children;
+        return List.copyOf(children);
+    }
+
+    /** Returns number of children groups */
+    public int getNumChildren() {
+        return children.size();
     }
 
     /**
@@ -234,7 +264,7 @@ public class Group extends Identifiable {
      * @return the aggregation results
      */
     public List<AggregationResult> getAggregationResults() {
-        return aggregationResults;
+        return List.copyOf(aggregationResults);
     }
 
     /**
@@ -244,7 +274,7 @@ public class Group extends Identifiable {
      * @return this, to allow chaining
      */
     public Group addAggregationResult(AggregationResult result) {
-        aggregationResults.add(result);
+        aggregationResults = add(aggregationResults, result);
         return this;
     }
 
@@ -261,18 +291,20 @@ public class Group extends Identifiable {
         if (exp instanceof AggregationResult) {
             exp = new AggregationRefNode((AggregationResult)exp);
         }
-        exp.select(REF_LOCATOR, new RefResolver(this));
-        orderByExp.add(exp);
-        orderByIdx.add((asc ? 1 : -1) * orderByExp.size());
+        RefResolver refResolver = new RefResolver(aggregationResults);
+        exp.select(REF_LOCATOR, refResolver);
+        aggregationResults = refResolver.results;
+        orderByExp = add(orderByExp, exp);
+        orderByIdx = add(orderByIdx, (asc ? 1 : -1) * orderByExp.size());
         return this;
     }
 
     public List<Integer> getOrderByIndexes() {
-        return Collections.unmodifiableList(orderByIdx);
+        return List.copyOf(orderByIdx);
     }
 
     public List<ExpressionNode> getOrderByExpressions() {
-        return Collections.unmodifiableList(orderByExp);
+        return List.copyOf(orderByExp);
     }
 
     private int compareId(Group rhs) {
@@ -334,28 +366,50 @@ public class Group extends Identifiable {
         super.onDeserialize(buf);
         id = (ResultNode)deserializeOptional(buf);
         rank = buf.getDouble(null);
-        orderByIdx.clear();
+        orderByIdx = List.of();
         int orderByCount = buf.getInt(null);
-        for (int i = 0; i < orderByCount; i++) {
-            orderByIdx.add(buf.getInt(null));
+        if (orderByCount > 0) {
+            Integer [] idxes = new Integer[orderByCount];
+            for (int i = 0; i < orderByCount; i++) {
+                idxes[i] = buf.getInt(null);
+            }
+            orderByIdx = List.of(idxes);
         }
         int numResults = buf.getInt(null);
-        for (int i = 0; i < numResults; i++) {
-            AggregationResult e = (AggregationResult)deserializeOptional(buf);
-            aggregationResults.add(e);
+        if (numResults > 0) {
+            AggregationResult [] results = new AggregationResult[numResults];
+            for (int i = 0; i < numResults; i++) {
+                results[i] = (AggregationResult) deserializeOptional(buf);
+            }
+            aggregationResults = List.of(results);
+        } else {
+            aggregationResults = List.of();
         }
         int numExpressionResults = buf.getInt(null);
-        RefResolver resolver = new RefResolver(this);
-        for (int i = 0; i < numExpressionResults; i++) {
-            ExpressionNode exp = (ExpressionNode)deserializeOptional(buf);
-            exp.select(REF_LOCATOR, resolver);
-            orderByExp.add(exp);
+        if (numExpressionResults > 0) {
+            RefResolver resolver = new RefResolver(aggregationResults);
+            ExpressionNode[] orderBy = new ExpressionNode[numExpressionResults];
+            for (int i = 0; i < numExpressionResults; i++) {
+                ExpressionNode exp = (ExpressionNode) deserializeOptional(buf);
+                exp.select(REF_LOCATOR, resolver);
+                orderBy[i] = exp;
+            }
+            aggregationResults = resolver.results;
+            orderByExp = List.of(orderBy);
+        } else {
+            orderByExp = List.of();
         }
         int numGroups = buf.getInt(null);
-        for (int i = 0; i < numGroups; i++) {
-            Group g = new Group();
-            g.deserializeWithId(buf);
-            children.add(g);
+        if (numGroups > 0) {
+            Group [] groups = new Group[numGroups];
+            for (int i = 0; i < numGroups; i++) {
+                Group g = new Group();
+                g.deserializeWithId(buf);
+                groups[i] = g;
+            }
+            children = List.of(groups);
+        } else {
+            children = List.of();
         }
         tag = buf.getInt(null);
     }
@@ -386,21 +440,36 @@ public class Group extends Identifiable {
         if (id != null) {
             obj.id = (ResultNode)id.clone();
         }
-        obj.aggregationResults = new ArrayList<>();
-        for (AggregationResult result : aggregationResults) {
-            obj.aggregationResults.add(result.clone());
+
+        if ( ! aggregationResults.isEmpty() ) {
+            AggregationResult [] results = new AggregationResult[aggregationResults.size()];
+            int i = 0;
+            for (AggregationResult result : aggregationResults) {
+                results[i++] = result.clone();
+            }
+            obj.aggregationResults = List.of(results);
         }
-        obj.orderByIdx = new ArrayList<>(orderByIdx);
-        obj.orderByExp = new ArrayList<>();
-        RefResolver resolver = new RefResolver(obj);
-        for (ExpressionNode exp : orderByExp) {
-            exp = exp.clone();
-            exp.select(REF_LOCATOR, resolver);
-            obj.orderByExp.add(exp);
+        obj.orderByIdx = List.copyOf(orderByIdx);
+        if ( ! orderByExp.isEmpty()) {
+            obj.orderByExp = new ArrayList<>();
+            RefResolver resolver = new RefResolver(obj.aggregationResults);
+            ExpressionNode[] orderBy = new ExpressionNode[orderByExp.size()];
+            int i = 0;
+            for (ExpressionNode exp : orderByExp) {
+                exp = exp.clone();
+                exp.select(REF_LOCATOR, resolver);
+                orderBy[i++] = exp;
+            }
+            obj.orderByExp = List.of(orderBy);
+            obj.aggregationResults = resolver.results;
         }
-        obj.children = new ArrayList<>();
-        for (Group child : children) {
-            obj.children.add(child.clone());
+        if ( ! children.isEmpty() ) {
+            Group [] groups = new Group[children.size()];
+            int i = 0;
+            for (Group child : children) {
+                groups[i++] = child.clone();
+            }
+            obj.children = List.of(groups);
         }
         return obj;
     }
@@ -443,10 +512,10 @@ public class Group extends Identifiable {
 
     private static class RefResolver implements ObjectOperation {
 
-        final List<AggregationResult> results;
+        List<AggregationResult> results;
 
-        RefResolver(Group group) {
-            this.results = group.aggregationResults;
+        RefResolver(List<AggregationResult> initial) {
+            this.results = initial;
         }
 
         @Override
@@ -458,7 +527,7 @@ public class Group extends Identifiable {
                 idx = indexOf(res);
                 if (idx < 0) {
                     idx = results.size();
-                    results.add(res);
+                    results = add(results, res);
                 }
                 ref.setIndex(idx);
             } else {

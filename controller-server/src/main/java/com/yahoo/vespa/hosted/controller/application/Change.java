@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -28,22 +29,22 @@ public final class Change {
     private final Optional<Version> platform;
 
     /** The application version we are changing to, or empty if none */
-    private final Optional<ApplicationVersion> application;
+    private final Optional<RevisionId> revision;
 
     /** Whether this change is a pin to its contained Vespa version, or to the application's current. */
     private final boolean pinned;
 
-    private Change(Optional<Version> platform, Optional<ApplicationVersion> application, boolean pinned) {
+    private Change(Optional<Version> platform, Optional<RevisionId> revision, boolean pinned) {
         this.platform = requireNonNull(platform, "platform cannot be null");
-        this.application = requireNonNull(application, "application cannot be null");
-        if (application.isPresent() && (application.get().isUnknown() || application.get().isDeployedDirectly())) {
+        this.revision = requireNonNull(revision, "revision cannot be null");
+        if (revision.isPresent() && ( ! revision.get().isProduction())) {
             throw new IllegalArgumentException("Application version to deploy must be a known version");
         }
         this.pinned = pinned;
     }
 
     public Change withoutPlatform() {
-        return new Change(Optional.empty(), application, pinned);
+        return new Change(Optional.empty(), revision, pinned);
     }
 
     public Change withoutApplication() {
@@ -52,7 +53,7 @@ public final class Change {
 
     /** Returns whether a change should currently be deployed */
     public boolean hasTargets() {
-        return platform.isPresent() || application.isPresent();
+        return platform.isPresent() || revision.isPresent();
     }
 
     /** Returns whether this is the empty change. */
@@ -64,7 +65,7 @@ public final class Change {
     public Optional<Version> platform() { return platform; }
 
     /** Returns the application version carried by this. */
-    public Optional<ApplicationVersion> application() { return application; }
+    public Optional<RevisionId> revision() { return revision; }
 
     public boolean isPinned() { return pinned; }
 
@@ -76,30 +77,30 @@ public final class Change {
         if (pinned)
             throw new IllegalArgumentException("Not allowed to set a platform version when pinned.");
 
-        return new Change(Optional.of(platformVersion), application, pinned);
+        return new Change(Optional.of(platformVersion), revision, pinned);
     }
 
-    /** Returns a version of this change which replaces or adds this application change */
-    public Change with(ApplicationVersion applicationVersion) {
-        return new Change(platform, Optional.of(applicationVersion), pinned);
+    /** Returns a version of this change which replaces or adds this revision change */
+    public Change with(RevisionId revision) {
+        return new Change(platform, Optional.of(revision), pinned);
     }
 
     /** Returns a change with the versions of this, and with the platform version pinned. */
     public Change withPin() {
-        return new Change(platform, application, true);
+        return new Change(platform, revision, true);
     }
 
     /** Returns a change with the versions of this, and with the platform version unpinned. */
     public Change withoutPin() {
-        return new Change(platform, application, false);
+        return new Change(platform, revision, false);
     }
 
     /** Returns the change obtained when overwriting elements of the given change with any present in this */
     public Change onTopOf(Change other) {
         if (platform.isPresent())
             other = other.with(platform.get());
-        if (application.isPresent())
-            other = other.with(application.get());
+        if (revision.isPresent())
+            other = other.with(revision.get());
         if (pinned)
             other = other.withPin();
         return other;
@@ -112,12 +113,12 @@ public final class Change {
         Change change = (Change) o;
         return pinned == change.pinned &&
                Objects.equals(platform, change.platform) &&
-               Objects.equals(application, change.application);
+               Objects.equals(revision, change.revision);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(platform, application, pinned);
+        return Objects.hash(platform, revision, pinned);
     }
 
     @Override
@@ -126,23 +127,23 @@ public final class Change {
         if (pinned)
             changes.add("pin to " + platform.map(Version::toString).orElse("current platform"));
         else
-            platform.ifPresent(version -> changes.add("upgrade to " + version.toString()));
-        application.ifPresent(version -> changes.add("application change to " + version.id()));
+            platform.ifPresent(version -> changes.add("upgrade to " + version));
+        revision.ifPresent(revision -> changes.add("revision change to " + revision));
         changes.setEmptyValue("no change");
         return changes.toString();
     }
 
-    public static Change of(ApplicationVersion applicationVersion) {
-        return new Change(Optional.empty(), Optional.of(applicationVersion), false);
+    public static Change of(RevisionId revision) {
+        return new Change(Optional.empty(), Optional.of(revision), false);
     }
 
     public static Change of(Version platformChange) {
         return new Change(Optional.of(platformChange), Optional.empty(), false);
     }
 
-    /** Returns whether this change carries an application downgrade relative to the given version. */
-    public boolean downgrades(ApplicationVersion version) {
-        return application.map(version::compareTo).orElse(0) > 0;
+    /** Returns whether this change carries a revision downgrade relative to the given revision. */
+    public boolean downgrades(RevisionId revision) {
+        return this.revision.map(revision::compareTo).orElse(0) > 0;
     }
 
     /** Returns whether this change carries a platform downgrade relative to the given version. */
@@ -150,9 +151,9 @@ public final class Change {
         return platform.map(version::compareTo).orElse(0) > 0;
     }
 
-    /** Returns whether this change carries an application upgrade relative to the given version. */
-    public boolean upgrades(ApplicationVersion version) {
-        return application.map(version::compareTo).orElse(0) < 0;
+    /** Returns whether this change carries a revision upgrade relative to the given  revision. */
+    public boolean upgrades(RevisionId revision) {
+        return this.revision.map(revision::compareTo).orElse(0) < 0;
     }
 
     /** Returns whether this change carries a platform upgrade relative to the given version. */

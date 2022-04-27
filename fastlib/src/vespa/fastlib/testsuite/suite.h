@@ -28,10 +28,10 @@
  *
  *
  *
- * class MySuiteApp : public FastOS_Application
+ * class MySuiteApp
  * {
  * public:
- *   virtual int Main();
+ *   int Main();
  * };
  *
  *
@@ -49,8 +49,6 @@
  *   mts.Report();
  *   mts.Free();
  * }
- *
- * FASTOS_MAIN(MyTestApp)
  *
  * ---
  *

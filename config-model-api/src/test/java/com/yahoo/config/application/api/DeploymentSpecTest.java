@@ -26,6 +26,7 @@ import static com.yahoo.config.application.api.Notifications.When.failingCommit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -125,6 +126,9 @@ public class DeploymentSpecTest {
         assertEquals(DeploymentSpec.RevisionTarget.latest, spec.requireInstance("default").revisionTarget());
         assertEquals(DeploymentSpec.RevisionChange.whenFailing, spec.requireInstance("default").revisionChange());
         assertEquals(DeploymentSpec.UpgradeRollout.separate, spec.requireInstance("default").upgradeRollout());
+        assertEquals(0, spec.requireInstance("default").minRisk());
+        assertEquals(0, spec.requireInstance("default").maxRisk());
+        assertEquals(8, spec.requireInstance("default").maxIdleHours());
     }
 
     @Test
@@ -371,7 +375,7 @@ public class DeploymentSpecTest {
         StringReader r = new StringReader(
                 "<deployment>" +
                 "   <instance id='default'>" +
-                "      <upgrade revision-change='when-clear' revision-target='next' />" +
+                "      <upgrade revision-change='when-clear' revision-target='next' min-risk='3' max-risk='12' max-idle-hours='32' />" +
                 "   </instance>" +
                 "   <instance id='custom'>" +
                 "      <upgrade revision-change='always' />" +
@@ -383,6 +387,48 @@ public class DeploymentSpecTest {
         assertEquals("latest", spec.requireInstance("custom").revisionTarget().toString());
         assertEquals("whenClear", spec.requireInstance("default").revisionChange().toString());
         assertEquals("always", spec.requireInstance("custom").revisionChange().toString());
+        assertEquals(3, spec.requireInstance("default").minRisk());
+        assertEquals(12, spec.requireInstance("default").maxRisk());
+        assertEquals(32, spec.requireInstance("default").maxIdleHours());
+    }
+
+    @Test
+    public void productionSpecsWithIllegalRevisionSettings() {
+        assertEquals("revision-change must be 'when-clear' when max-risk is specified, but got: 'always'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("<deployment>" +
+                                                               "   <instance id='default'>" +
+                                                               "      <upgrade revision-change='always' revision-target='next' min-risk='3' max-risk='12' max-idle-hours='32' />" +
+                                                               "   </instance>" +
+                                                               "</deployment>"))
+                             .getMessage());
+
+        assertEquals("revision-target must be 'next' when max-risk is specified, but got: 'latest'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("<deployment>" +
+                                                               "   <instance id='default'>" +
+                                                               "      <upgrade revision-change='when-clear' min-risk='3' max-risk='12' max-idle-hours='32' />" +
+                                                               "   </instance>" +
+                                                               "</deployment>"))
+                             .getMessage());
+
+        assertEquals("maximum risk cannot be less than minimum risk score, but got: '12'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("<deployment>" +
+                                                               "   <instance id='default'>" +
+                                                               "      <upgrade revision-change='when-clear' revision-target='next' min-risk='13' max-risk='12' max-idle-hours='32' />" +
+                                                               "   </instance>" +
+                                                               "</deployment>"))
+                             .getMessage());
+
+        assertEquals("maximum risk cannot be less than minimum risk score, but got: '0'",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> DeploymentSpec.fromXml("<deployment>" +
+                                                               "   <instance id='default'>" +
+                                                               "      <upgrade min-risk='3' />" +
+                                                               "   </instance>" +
+                                                               "</deployment>"))
+                             .getMessage());
     }
 
     @Test

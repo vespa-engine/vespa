@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
@@ -42,21 +41,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationActio
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringData;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
@@ -83,6 +78,7 @@ import java.io.File;
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -262,7 +258,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               "{\"message\":\"Deployment started in run 1 of production-us-east-3 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
-        app1.runJob(JobType.productionUsEast3);
+        app1.runJob(DeploymentContext.productionUsEast3);
         tester.controller().applications().deactivate(app1.instanceId(), ZoneId.from("prod", "us-east-3"));
 
         // POST (deploy) an application to start a manual deployment to dev
@@ -270,13 +266,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data(entity)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Deployment started in run 1 of dev-us-east-1 for tenant1.application1.instance1. This may take about 15 minutes the first time.\",\"run\":1}");
-        app1.runJob(JobType.devUsEast1);
+        app1.runJob(DeploymentContext.devUsEast1);
 
         // POST (deploy) a job to restart a manual deployment to dev
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1", POST)
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Triggered dev-us-east-1 for tenant1.application1.instance1\"}");
-        app1.runJob(JobType.devUsEast1);
+        app1.runJob(DeploymentContext.devUsEast1);
 
         // GET dev application package
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job/dev-us-east-1/package", GET)
@@ -333,9 +329,9 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(applicationPackageInstance1, 123)),
-                              "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                              "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
-        app1.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsCentral1);
+        app1.runJob(DeploymentContext.systemTest).runJob(DeploymentContext.stagingTest).runJob(DeploymentContext.productionUsCentral1);
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .withoutAthenzIdentity()
@@ -362,7 +358,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(applicationPackage, 1000)),
-                              "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                              "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         deploymentTester.triggerJobs();
 
@@ -371,7 +367,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .data("{ \"skipTests\": true, \"skipRevision\": true, \"skipUpgrade\": true }")
                                       .userIdentity(USER_ID),
                               "{\"message\":\"Triggered production-us-west-1 for tenant2.application2.instance1, without revision and platform upgrade\"}");
-        app2.runJob(JobType.productionUsWest1);
+        app2.runJob(DeploymentContext.productionUsWest1);
 
         // POST a re-triggering to force a production job to start with previous parameters
         tester.assertResponse(request("/application/v4/tenant/tenant2/application/application2/instance/instance1/job/production-us-west-1", POST)
@@ -522,18 +518,18 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // POST a roll-out of the latest application
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/application", POST)
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Triggered application change to 1.0.1-commit1 for tenant1.application1.instance1\"}");
+                              "{\"message\":\"Triggered revision change to build 1 for tenant1.application1.instance1\"}");
 
         // POST a roll-out of a given revision
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying/application", POST)
                                       .data("{ \"build\": 1 }")
                                       .userIdentity(USER_ID),
-                              "{\"message\":\"Triggered application change to 1.0.1-commit1 for tenant1.application1.instance1\"}");
+                              "{\"message\":\"Triggered revision change to build 1 for tenant1.application1.instance1\"}");
 
         // DELETE (cancel) ongoing change
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"message\":\"Changed deployment from 'application change to 1.0.1-commit1' to 'no change' for tenant1.application1.instance1\"}");
+                              "{\"message\":\"Changed deployment from 'revision change to build 1' to 'no change' for tenant1.application1.instance1\"}");
 
         // DELETE (cancel) again is a no-op
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/deploying", DELETE)
@@ -634,13 +630,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"enabled\":true,\"clusters\":[{\"name\":\"cluster\",\"pending\":[{\"type\":\"type\",\"requiredGeneration\":100}],\"ready\":[{\"type\":\"type\",\"readyAtMillis\":345,\"startedAtMillis\":456,\"endedAtMillis\":567,\"state\":\"failed\",\"message\":\"(＃｀д´)ﾉ\",\"progress\":0.1,\"speed\":1.0}]}]}");
 
         // POST to request a service dump
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1:application1:instance1-prod.us-central-1/service-dump", POST)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1.application1.instance1-prod.us-central-1/service-dump", POST)
                         .userIdentity(HOSTED_VESPA_OPERATOR)
                         .data("{\"configId\":\"default/container.1\",\"artifacts\":[\"jvm-dump\"],\"dumpOptions\":{\"duration\":30}}"),
                 "{\"message\":\"Request created\"}");
 
         // GET to get status of service dump
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1:application1:instance1-prod.us-central-1/service-dump", GET)
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/node/host-tenant1.application1.instance1-prod.us-central-1/service-dump", GET)
                         .userIdentity(HOSTED_VESPA_OPERATOR),
                 "{\"createdMillis\":" + tester.controller().clock().millis() + ",\"configId\":\"default/container.1\"" +
                         ",\"artifacts\":[\"jvm-dump\"],\"dumpOptions\":{\"duration\":30}}");
@@ -698,14 +694,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("suspended.json"));
 
-        // GET services
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service", GET)
+
+        // GET service/state/v1
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/service/storagenode/host.com/state/v1/?foo=bar", GET)
                                       .userIdentity(USER_ID),
-                              new File("services.json"));
-        // GET service
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/state/v1/", GET)
+                              new File("service"));
+
+        // GET orchestrator
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/environment/prod/region/us-central-1/orchestrator", GET)
                                       .userIdentity(USER_ID),
-                              new File("service.json"));
+                              "{\"json\":\"thank you very much\"}");
 
         // DELETE application with active deployments fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
@@ -731,11 +729,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // Setup for test config tests
         tester.controller().jobController().deploy(ApplicationId.from("tenant1", "application1", "default"),
-                                                   JobType.productionUsCentral1,
+                                                   DeploymentContext.productionUsCentral1,
                                                    Optional.empty(),
                                                    applicationPackageDefault);
         tester.controller().jobController().deploy(ApplicationId.from("tenant1", "application1", "my-user"),
-                                                   JobType.devUsEast1,
+                                                   DeploymentContext.devUsEast1,
                                                    Optional.empty(),
                                                    applicationPackageDefault);
 
@@ -777,7 +775,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(packageWithService, 123)),
-                              "{\"message\":\"Application package version: 1.0.2-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                              "{\"message\":\"application build 2, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/diff/2", GET).userIdentity(HOSTED_VESPA_OPERATOR),
                               (response) -> assertTrue(response.getBodyAsString(),
@@ -822,7 +820,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .header("X-Content-Hash", Base64.getEncoder().encodeToString(Signatures.sha256Digest(streamer::data)))
                                       .data(streamer),
-                              "{\"message\":\"Application package version: 1.0.3-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                              "{\"message\":\"application build 3, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         // Sixth attempt has a multi-instance deployment spec, and is accepted.
         ApplicationPackage multiInstanceSpec = new ApplicationPackageBuilder()
@@ -835,8 +833,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/submit", POST)
                                       .screwdriverIdentity(SCREWDRIVER_ID)
                                       .data(createApplicationSubmissionData(multiInstanceSpec, 123)),
-                              "{\"message\":\"Application package version: 1.0.4-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                              "{\"message\":\"application build 4, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
+
+        // DELETE submitted build, to mark it as non-deployable
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/2", DELETE)
+                                      .userIdentity(USER_ID),
+                              "{\"message\":\"Marked build '2' as non-deployable\"}");
 
         // GET deployment job overview, after triggering system and staging test jobs.
         assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs());
@@ -1053,6 +1056,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     public void testDeployWithApplicationPackage() {
         // Setup
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(HOSTED_VESPA_OPERATOR));
+        deploymentTester.controllerTester().upgradeController(new Version("6.2"));
 
         // POST (deploy) a system application with an application package
         MultiPartStreamer noAppEntity = createApplicationDeployData(Optional.empty());
@@ -1088,7 +1092,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Create tenant and deploy
         var app = deploymentTester.newDeploymentContext("tenant1", "application1", "instance1");
         app.submit(applicationPackage).deploy();
-        tester.controller().jobController().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage);
+        tester.controller().jobController().deploy(app.instanceId(), DeploymentContext.devUsEast1, Optional.empty(), applicationPackage);
 
         assertEquals(Set.of(ZoneId.from("prod.us-west-1"), ZoneId.from("prod.us-east-3"), ZoneId.from("prod.eu-west-1"), ZoneId.from("dev.us-east-1")),
                 app.instance().deployments().keySet());
@@ -1194,7 +1198,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         // GET non-existent application package
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET).userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No application package has been submitted for 'tenant1.application1'\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"no application package has been submitted for tenant1.application1\"}",
                               404);
 
         // GET non-existent application package of specific build
@@ -1202,11 +1206,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit", POST)
                         .screwdriverIdentity(SCREWDRIVER_ID)
                         .data(createApplicationSubmissionData(applicationPackageInstance1, 1000)),
-                "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
                                       .properties(Map.of("build", "42"))
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No application package found for 'tenant1.application1' with build number 42\"}",
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No build 42 found for tenant1.application1\"}",
                               404);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/deployment", DELETE).userIdentity(USER_ID).oAuthCredentials(OKTA_CREDENTIALS),
                 "{\"message\":\"All deployments removed\"}");
@@ -1215,7 +1219,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
                                       .properties(Map.of("build", "foobar"))
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid build number: For input string: \\\"foobar\\\"\"}",
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"invalid value for request parameter 'build': For input string: \\\"foobar\\\"\"}",
                               400);
         
         // POST (deploy) an application to legacy deploy path
@@ -1417,7 +1421,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/submit/", POST)
                                       .data(createApplicationSubmissionData(applicationPackage, 123))
                                       .screwdriverIdentity(screwdriverId),
-                              "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
+                              "{\"message\":\"application build 1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
     }
 
     @Test
@@ -1606,11 +1610,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         );
 
         // Should be 1 available grant
+        tester.serviceRegistry().clock().advance(Duration.ofSeconds(1));
+        now = tester.serviceRegistry().clock().instant();
         List<SupportAccessGrant> activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
         assertEquals(1, activeGrants.size());
 
         // Adding grant should trigger job
-        app.assertRunning(JobType.productionUsWest1);
+        app.assertRunning(DeploymentContext.productionUsWest1);
 
         // DELETE removes access
         String disallowedResponse = grantResponse
@@ -1622,37 +1628,11 @@ public class ApplicationApiTest extends ControllerContainerTest {
         );
 
         // Revoking access should trigger job
-        app.assertRunning(JobType.productionUsWest1);
+        app.assertRunning(DeploymentContext.productionUsWest1);
 
         // Should be no available grant
         activeGrants = tester.controller().supportAccess().activeGrantsFor(new DeploymentId(ApplicationId.fromSerializedForm("tenant1:application1:instance1"), zone));
         assertEquals(0, activeGrants.size());
-    }
-
-    @Test
-    public void testServiceView() {
-        createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID);
-        String serviceApi="/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service";
-        // Not allowed to request apis not listed in feature flag allowed-service-view-apis. e.g /document/v1
-        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/document/v1/", GET)
-                                      .userIdentity(USER_ID)
-                                      .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
-                              404);
-
-        // Test path traversal
-        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state/v1/../../document/v1/", GET)
-                                      .userIdentity(USER_ID)
-                                      .oAuthCredentials(OKTA_CREDENTIALS),
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at path '/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/service/storagenode-awe3slno6mmq2fye191y324jl/document/v1/'\"}",
-                              404);
-
-        // Test urlencoded path traversal
-        tester.assertResponse(request(serviceApi + "/storagenode-awe3slno6mmq2fye191y324jl/state%2Fv1%2F..%2F..%2Fdocument%2Fv1%2F", GET)
-                                      .userIdentity(USER_ID)
-                                      .oAuthCredentials(OKTA_CREDENTIALS),
-                              accessDenied,
-                              403);
     }
 
     @Test
@@ -1715,7 +1695,8 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
     static MultiPartStreamer createApplicationSubmissionData(ApplicationPackage applicationPackage, long projectId) {
         return new MultiPartStreamer().addJson(EnvironmentResource.SUBMIT_OPTIONS, "{\"repository\":\"repository1\",\"branch\":\"master\",\"commit\":\"commit1\","
-                                                                                   + "\"projectId\":" + projectId + ",\"authorEmail\":\"a@b\"}")
+                                                                                   + "\"projectId\":" + projectId + ",\"authorEmail\":\"a@b\","
+                                                                                   + "\"description\":\"my best commit yet\",\"risk\":9001}")
                                       .addBytes(EnvironmentResource.APPLICATION_ZIP, applicationPackage.zippedContent())
                                       .addBytes(EnvironmentResource.APPLICATION_TEST_ZIP, "content".getBytes());
     }
@@ -1855,7 +1836,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                 Notification.Level.warning,
                 "Something something deprecated...");
         tester.controller().notificationsDb().setNotification(
-                NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), JobType.systemTest, 12)),
+                NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), DeploymentContext.systemTest, 12)),
                 Notification.Type.deployment,
                 Notification.Level.error,
                 "Failed to deploy: Node allocation failure");

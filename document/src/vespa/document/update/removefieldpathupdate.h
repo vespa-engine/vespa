@@ -5,22 +5,20 @@
 
 namespace document {
 
-class RemoveFieldPathUpdate : public FieldPathUpdate
+class RemoveFieldPathUpdate final : public FieldPathUpdate
 {
 public:
     /** For deserialization */
     RemoveFieldPathUpdate();
-
+    RemoveFieldPathUpdate(RemoveFieldPathUpdate &&) noexcept = default;
+    RemoveFieldPathUpdate & operator =(RemoveFieldPathUpdate &&) noexcept = default;
+    RemoveFieldPathUpdate(const RemoveFieldPathUpdate &) = delete;
+    RemoveFieldPathUpdate & operator =(const RemoveFieldPathUpdate &) = delete;
     RemoveFieldPathUpdate(stringref fieldPath, stringref whereClause = stringref());
 
-    FieldPathUpdate* clone() const override { return new RemoveFieldPathUpdate(*this); }
-
-    bool operator==(const FieldPathUpdate& other) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 
-    DECLARE_IDENTIFIABLE(RemoveFieldPathUpdate);
     ACCEPT_UPDATE_VISITOR;
-
 private:
     uint8_t getSerializedType() const override { return RemoveMagic; }
     void deserialize(const DocumentTypeRepo& repo, const DataType& type, nbostream & buffer) override;

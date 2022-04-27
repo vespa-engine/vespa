@@ -6,7 +6,6 @@ package com.yahoo.vespa.model;
  * CPU socket affinity.
  *
  * @author Ulf Lilleengen
- * @since 5.12
  */
 public class Affinity {
 

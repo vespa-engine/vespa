@@ -2,10 +2,10 @@
 package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.RunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
@@ -110,10 +110,8 @@ public class BufferedLogStore {
         store.delete(id);
     }
 
-    /** Deletes all logs for the given application. */
+    /** Deletes all logs in permanent storage for the given application. */
     public void delete(ApplicationId id) {
-        for (JobType type : JobType.values())
-            buffer.deleteLog(id, type);
         store.delete(id);
     }
 

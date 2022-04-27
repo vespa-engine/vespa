@@ -36,7 +36,7 @@ struct MyRangeTerm : InitTerm<RangeTerm> {};
 struct MyStringTerm : InitTerm<StringTerm>  {};
 struct MySubstrTerm : InitTerm<SubstringTerm>  {};
 struct MySuffixTerm : InitTerm<SuffixTerm>  {};
-struct MyFuzzyTerm : InitTerm<FuzzyTerm> {};
+struct MyFuzzyTerm : FuzzyTerm { MyFuzzyTerm(): FuzzyTerm("term", "view", 0, Weight(0), 2, 0) {} };
 struct MyWeakAnd : WeakAnd { MyWeakAnd() : WeakAnd(1234, "view") {} };
 struct MyWeightedSetTerm : WeightedSetTerm { MyWeightedSetTerm() : WeightedSetTerm(0, "view", 0, Weight(42)) {} };
 struct MyDotProduct : DotProduct { MyDotProduct() : DotProduct(0, "view", 0, Weight(42)) {} };

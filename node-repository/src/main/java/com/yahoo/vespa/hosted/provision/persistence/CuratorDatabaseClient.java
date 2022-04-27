@@ -69,6 +69,7 @@ public class CuratorDatabaseClient {
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
     private static final Path archiveUrisPath = root.append("archiveUris");
 
+    // TODO: Explain reasoning behind timeout value (why its it as high as 10 minutes?)
     private static final Duration defaultLockTimeout = Duration.ofMinutes(10);
 
     private final NodeSerializer nodeSerializer;
@@ -319,7 +320,12 @@ public class CuratorDatabaseClient {
 
     /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
     public Lock lockInactive() {
-        return db.lock(lockPath.append("unallocatedLock"), defaultLockTimeout);
+        return lockInactive(defaultLockTimeout);
+    }
+
+    /** Acquires the single cluster-global, reentrant lock for all non-active nodes */
+    public Lock lockInactive(Duration timeout) {
+        return db.lock(lockPath.append("unallocatedLock"), timeout);
     }
 
     /** Acquires the single cluster-global, reentrant lock for active nodes of this application */

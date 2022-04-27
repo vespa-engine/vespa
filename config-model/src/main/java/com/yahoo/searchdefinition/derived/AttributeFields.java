@@ -216,7 +216,8 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         aaB.enablebitvectors(attribute.isEnabledBitVectors());
         aaB.enableonlybitvector(attribute.isEnabledOnlyBitVector());
-        if (attribute.isFastSearch()) {
+        if (attribute.isFastSearch() || attribute.isFastRank()) {
+            // TODO make a separate fastrank flag in config instead of overloading fastsearch
             aaB.fastsearch(true);
         }
         if (attribute.isFastAccess()) {

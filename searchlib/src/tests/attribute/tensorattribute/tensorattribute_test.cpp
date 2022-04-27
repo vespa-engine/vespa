@@ -1031,7 +1031,7 @@ public:
         return SimpleValue::from_spec(spec);
     }
 
-    std::unique_ptr<NearestNeighborBlueprint> make_blueprint(bool approximate = true, double brute_force_limit = 0.05) {
+    std::unique_ptr<NearestNeighborBlueprint> make_blueprint(bool approximate = true, double global_filter_lower_limit = 0.05) {
         search::queryeval::FieldSpec field("foo", 0, 0);
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
@@ -1039,9 +1039,8 @@ public:
             createDenseTensor(vec_2d(17, 42)),
             3, approximate, 5,
             100100.25,
-            brute_force_limit);
+            global_filter_lower_limit, 1.0);
         EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
-        EXPECT_EQUAL(approximate, bp->may_approximate());
         EXPECT_EQUAL(100100.25 * 100100.25, bp->get_distance_threshold());
         return bp;
     }
@@ -1052,8 +1051,15 @@ public:
     DenseTensorAttributeWithoutIndex() : Fixture(vec_2d_spec, FixtureTraits().dense()) {}
 };
 
+using NNBA = NearestNeighborBlueprint::Algorithm;
 using NearestNeighborBlueprintFixture = NearestNeighborBlueprintFixtureBase<DenseTensorAttributeMockIndex>;
 using NearestNeighborBlueprintWithoutIndexFixture = NearestNeighborBlueprintFixtureBase<DenseTensorAttributeWithoutIndex>;
+
+TEST_F("NN blueprint can use brute force", NearestNeighborBlueprintFixture)
+{
+    auto bp = f.make_blueprint(false);
+    EXPECT_EQUAL(NNBA::BRUTE_FORCE, bp->get_algorithm());
+}
 
 TEST_F("NN blueprint handles empty filter", NearestNeighborBlueprintFixture)
 {
@@ -1061,7 +1067,7 @@ TEST_F("NN blueprint handles empty filter", NearestNeighborBlueprintFixture)
     auto empty_filter = GlobalFilter::create();
     bp->set_global_filter(*empty_filter);
     EXPECT_EQUAL(3u, bp->getState().estimate().estHits);
-    EXPECT_TRUE(bp->may_approximate());
+    EXPECT_EQUAL(NNBA::INDEX_TOP_K, bp->get_algorithm());
 }
 
 TEST_F("NN blueprint handles strong filter", NearestNeighborBlueprintFixture)
@@ -1073,7 +1079,7 @@ TEST_F("NN blueprint handles strong filter", NearestNeighborBlueprintFixture)
     auto strong_filter = GlobalFilter::create(std::move(filter));
     bp->set_global_filter(*strong_filter);
     EXPECT_EQUAL(1u, bp->getState().estimate().estHits);
-    EXPECT_TRUE(bp->may_approximate());
+    EXPECT_EQUAL(NNBA::INDEX_TOP_K_WITH_FILTER, bp->get_algorithm());
 }
 
 TEST_F("NN blueprint handles weak filter", NearestNeighborBlueprintFixture)
@@ -1090,7 +1096,7 @@ TEST_F("NN blueprint handles weak filter", NearestNeighborBlueprintFixture)
     auto weak_filter = GlobalFilter::create(std::move(filter));
     bp->set_global_filter(*weak_filter);
     EXPECT_EQUAL(3u, bp->getState().estimate().estHits);
-    EXPECT_TRUE(bp->may_approximate());
+    EXPECT_EQUAL(NNBA::INDEX_TOP_K_WITH_FILTER, bp->get_algorithm());
 }
 
 TEST_F("NN blueprint handles strong filter triggering brute force search", NearestNeighborBlueprintFixture)
@@ -1102,7 +1108,7 @@ TEST_F("NN blueprint handles strong filter triggering brute force search", Neare
     auto strong_filter = GlobalFilter::create(std::move(filter));
     bp->set_global_filter(*strong_filter);
     EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
-    EXPECT_FALSE(bp->may_approximate());
+    EXPECT_EQUAL(NNBA::BRUTE_FORCE_FALLBACK, bp->get_algorithm());
 }
 
 TEST_F("NN blueprint wants global filter when having index", NearestNeighborBlueprintFixture)

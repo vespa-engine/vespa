@@ -4,7 +4,6 @@
 #include <vespa/fastlib/testsuite/test.h>
 #include <vespa/fastlib/text/latintokenizer.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fastos/app.h>
 
 class Mapel_Pucntuation {
 private:
@@ -449,14 +448,3 @@ void LatinTokenizerTest::Run()
     TestTypeparamObservers();
     TestMapelURL();
 }
-
-
-/**
-   The FastOS application class.
-*/
-
-class LatinTokenizerTestApp : public FastOS_Application
-{
-public:
-    int Main() override;
-};

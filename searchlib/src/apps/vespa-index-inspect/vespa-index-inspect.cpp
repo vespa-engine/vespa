@@ -12,7 +12,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <getopt.h>
 #include <cstdlib>
@@ -167,18 +167,10 @@ FieldOptions::validateFields(const Schema &schema)
 
 class SubApp
 {
-protected:
-    FastOS_Application &_app;
-
 public:
-    SubApp(FastOS_Application &app)
-        : _app(app)
-    {
-    }
-
     virtual ~SubApp() { }
     virtual void  usage(bool showHeader) = 0;
-    virtual bool getOptions() = 0;
+    virtual bool getOptions(int argc, char **argv) = 0;
     virtual int run() = 0;
 };
 
@@ -202,10 +194,10 @@ class ShowPostingListSubApp : public SubApp
     static uint64_t noWordNumHigh() { return std::numeric_limits<uint64_t>::max(); }
     static uint64_t noWordNum() { return 0u; }
 public:
-    ShowPostingListSubApp(FastOS_Application &app);
+    ShowPostingListSubApp();
     virtual ~ShowPostingListSubApp();
     virtual void usage(bool showHeader) override;
-    virtual bool getOptions() override;
+    virtual bool getOptions(int argc, char **argv) override;
     virtual int run() override;
     void showPostingList();
     bool readDocIdLimit(const Schema &schema);
@@ -216,9 +208,8 @@ public:
 };
 
 
-ShowPostingListSubApp::ShowPostingListSubApp(FastOS_Application &app)
-    : SubApp(app),
-      _indexDir("."),
+ShowPostingListSubApp::ShowPostingListSubApp()
+    : _indexDir("."),
       _fieldOptions(),
       _word(),
       _verbose(false),
@@ -260,7 +251,7 @@ ShowPostingListSubApp::usage(bool showHeader)
 
 
 bool
-ShowPostingListSubApp::getOptions()
+ShowPostingListSubApp::getOptions(int argc, char **argv)
 {
     int c;
     int longopt_index = 0;
@@ -280,7 +271,7 @@ ShowPostingListSubApp::getOptions()
         LONGOPT_MINDOCID
     };
     optind = 2;
-    while ((c = getopt_long(_app._argc, _app._argv, "di:mv",
+    while ((c = getopt_long(argc, argv, "di:mv",
                             longopts,
                             &longopt_index)) != -1) {
         switch (c) {
@@ -339,10 +330,10 @@ ShowPostingListSubApp::getOptions()
     _optIndex = optind;
     if (_transpose) {
     } else {
-        if (_optIndex >= _app._argc) {
+        if (_optIndex >= argc) {
             return false;
         }
-        _word = _app._argv[optind];
+        _word = argv[optind];
     }
     return true;
 }
@@ -673,18 +664,17 @@ class DumpWordsSubApp : public SubApp
     bool _showWordNum;
 
 public:
-    DumpWordsSubApp(FastOS_Application &app);
+    DumpWordsSubApp();
     virtual ~DumpWordsSubApp();
     virtual void usage(bool showHeader) override;
-    virtual bool getOptions() override;
+    virtual bool getOptions(int argc, char **argv) override;
     virtual int run() override;
     void dumpWords();
 };
 
 
-DumpWordsSubApp::DumpWordsSubApp(FastOS_Application &app)
-    : SubApp(app),
-      _indexDir("."),
+DumpWordsSubApp::DumpWordsSubApp()
+    : _indexDir("."),
       _fieldOptions(),
       _minNumDocs(0u),
       _verbose(false),
@@ -713,7 +703,7 @@ DumpWordsSubApp::usage(bool showHeader)
 
 
 bool
-DumpWordsSubApp::getOptions()
+DumpWordsSubApp::getOptions(int argc, char **argv)
 {
     int c;
     int longopt_index = 0;
@@ -733,7 +723,7 @@ DumpWordsSubApp::getOptions()
         LONGOPT_WORDNUM
     };
     optind = 2;
-    while ((c = getopt_long(_app._argc, _app._argv, "i:",
+    while ((c = getopt_long(argc, argv, "i:",
                             longopts,
                             &longopt_index)) != -1) {
         switch (c) {
@@ -835,43 +825,36 @@ DumpWordsSubApp::run()
 }
 
 
-class VespaIndexInspectApp : public FastOS_Application
+class VespaIndexInspectApp
 {
 public:
-    VespaIndexInspectApp();
     void usage();
-    int Main() override;
+    int main(int argc, char **argv);
 };
-
-
-VespaIndexInspectApp::VespaIndexInspectApp()
-    : FastOS_Application()
-{
-}
 
 
 void
 VespaIndexInspectApp::usage()
 {
-    ShowPostingListSubApp(*this).usage(true);
-    DumpWordsSubApp(*this).usage(false);
+    ShowPostingListSubApp().usage(true);
+    DumpWordsSubApp().usage(false);
 }
 
 
 int
-VespaIndexInspectApp::Main()
+VespaIndexInspectApp::main(int argc, char **argv)
 {
-    if (_argc < 2) {
+    if (argc < 2) {
         usage();
         return 1;
     }
     std::unique_ptr<SubApp> subApp;
-    if (strcmp(_argv[1], "showpostings") == 0)
-        subApp.reset(new ShowPostingListSubApp(*this));
-    else if (strcmp(_argv[1], "dumpwords") == 0)
-        subApp.reset(new DumpWordsSubApp(*this));
-    if (subApp.get() != NULL) {
-        if (!subApp->getOptions()) {
+    if (strcmp(argv[1], "showpostings") == 0)
+        subApp = std::make_unique<ShowPostingListSubApp>();
+    else if (strcmp(argv[1], "dumpwords") == 0)
+        subApp = std::make_unique<DumpWordsSubApp>();
+    if (subApp.get() != nullptr) {
+        if (!subApp->getOptions(argc, argv)) {
             subApp->usage(true);
             return 1;
         }
@@ -881,4 +864,8 @@ VespaIndexInspectApp::Main()
     return 1;
 }
 
-FASTOS_MAIN(VespaIndexInspectApp);
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
+    VespaIndexInspectApp app;
+    return app.main(argc, argv);
+}

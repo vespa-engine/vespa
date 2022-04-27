@@ -5,13 +5,17 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * An immutable record of the last event of each type happening to this node.
+ * An immutable record of the last event of each type happening to this node, and a chronological log of the events.
+ *
  * Note that the history cannot be used to find the nodes current state - it will have a record of some
  * event happening in the past even if that event is later undone.
  *
@@ -19,14 +23,24 @@ import java.util.stream.Collectors;
  */
 public class History {
 
-    private final ImmutableMap<Event.Type, Event> events;
+    private static final int MAX_LOG_SIZE = 10;
 
-    public History(Collection<Event> events) {
-        this(toImmutableMap(events));
+    private final ImmutableMap<Event.Type, Event> events;
+    private final List<Event> log;
+    private final int maxLogSize;
+
+    public History(Collection<Event> events, List<Event> log) {
+        this(toImmutableMap(events), log, MAX_LOG_SIZE);
     }
 
-    private History(ImmutableMap<Event.Type, Event> events) {
+    History(ImmutableMap<Event.Type, Event> events, List<Event> log, int maxLogSize) {
         this.events = events;
+        this.log = Objects.requireNonNull(log, "log must be non-null")
+                          .stream()
+                          .sorted(Comparator.comparing(Event::at))
+                          .skip(Math.max(log.size() - maxLogSize, 0))
+                          .collect(Collectors.toUnmodifiableList());
+        this.maxLogSize = maxLogSize;
     }
 
     private static ImmutableMap<Event.Type, Event> toImmutableMap(Collection<Event> events) {
@@ -36,7 +50,7 @@ public class History {
         return builder.build();
     }
 
-    /** Returns this event if it is present in this history */
+    /** Returns the last event of given type, if it is present in this history */
     public Optional<Event> event(Event.Type type) { return Optional.ofNullable(events.get(type)); }
 
     /** Returns true if a given event is registered in this history at the given time */
@@ -60,18 +74,28 @@ public class History {
                 .orElse(false);
     }
 
+    /** Returns the last event of each type in this history */
     public Collection<Event> events() { return events.values(); }
+
+    /**
+     * Returns the events in this history, in chronological order. Compared to {@link #events()}, this holds all events
+     * as they occurred, up to log size limit
+     */
+    public List<Event> log() { return log; }
 
     /** Returns a copy of this history with the given event added */
     public History with(Event event) {
         ImmutableMap.Builder<Event.Type, Event> builder = builderWithout(event.type());
         builder.put(event.type(), event);
-        return new History(builder.build());
+        List<Event> logCopy = new ArrayList<>(log);
+        logCopy.add(event);
+        return new History(builder.build(), logCopy, maxLogSize);
     }
 
-    /** Returns a copy of this history with the given event type removed (or an identical history if it was not present) */
+    /** Returns a copy of this history with the given event type removed (or an identical history if it was not
+     * present) and the log unchanged. */
     public History without(Event.Type type) {
-        return new History(builderWithout(type).build());
+        return new History(builderWithout(type).build(), log, maxLogSize);
     }
 
     private ImmutableMap.Builder<Event.Type, Event> builderWithout(Event.Type type) {
@@ -103,14 +127,14 @@ public class History {
     
     /** 
      * Events can be application or node level. 
-     * This returns a copy of this history with all application level events removed. 
+     * This returns a copy of this history with all application level events removed and the log unchanged.
      */
     private History withoutApplicationEvents() {
-        return new History(events().stream().filter(e -> ! e.type().isApplicationLevel()).collect(Collectors.toList()));
+        return new History(events().stream().filter(e -> ! e.type().isApplicationLevel()).collect(Collectors.toList()), log);
     }
 
     /** Returns the empty history */
-    public static History empty() { return new History(Collections.emptyList()); }
+    public static History empty() { return new History(List.of(), List.of()); }
 
     @Override
     public String toString() {
@@ -157,7 +181,9 @@ public class History {
             // The active node was retired
             retired,
             // The active node went down according to the service monitor
-            down, 
+            down,
+            // The active node came up according to the service monitor
+            up,
             // The node made a config request, indicating it is live
             requested,
             // The node resources/flavor were changed
@@ -168,9 +194,9 @@ public class History {
             osUpgraded(false),
             // The node verified its firmware (whether this resulted in a reboot depends on the node model)
             firmwareVerified(false);
-            
+
             private final boolean applicationLevel;
-            
+
             /** Creates an application level event */
             Type() {
                 this.applicationLevel = true;
@@ -179,7 +205,7 @@ public class History {
             Type(boolean applicationLevel) {
                 this.applicationLevel = applicationLevel;
             }
-            
+
             /** Returns true if this is an application level event and false it it is a node level event */
             public boolean isApplicationLevel() { return applicationLevel; }
         }
@@ -195,6 +221,19 @@ public class History {
 
         @Override
         public String toString() { return "'" + type + "' event at " + at + " by " + agent; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Event event = (Event) o;
+            return at.equals(event.at) && agent == event.agent && type == event.type;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(at, agent, type);
+        }
 
     }
 

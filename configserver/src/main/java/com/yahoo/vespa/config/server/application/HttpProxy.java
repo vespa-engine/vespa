@@ -11,16 +11,19 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
 import com.yahoo.vespa.config.server.http.HttpFetcher.Params;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.http.SimpleHttpFetcher;
 
-import java.net.MalformedURLException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class HttpProxy {
 
@@ -35,6 +38,10 @@ public class HttpProxy {
     }
 
     public HttpResponse get(Application application, String hostName, String serviceType, Path path, Query query) {
+        return get(application, hostName, serviceType, path, query, null);
+    }
+
+    public HttpResponse get(Application application, String hostName, String serviceType, Path path, Query query, HttpURL forwardedUrl) {
         HostInfo host = application.getModel().getHosts().stream()
                 .filter(hostInfo -> hostInfo.getHostname().equals(hostName))
                 .findFirst()
@@ -52,18 +59,39 @@ public class HttpProxy {
                                .findFirst()
                                .orElseThrow(() -> new NotFoundException("Failed to find HTTP state port"));
 
-        return internalGet(host.getHostname(), port.getPort(), path, query);
+        HttpURL url = HttpURL.create(Scheme.http, DomainName.of(host.getHostname()), port.getPort(), path, query);
+        HttpResponse response = fetcher.get(new Params(29_000), // 29 sec (30 sec on controller)
+                                            url.asURI());
+        return forwardedUrl == null ? response : new UrlRewritingProxyResponse(response, url, forwardedUrl);
     }
 
-    private HttpResponse internalGet(String hostname, int port, Path path, Query query) {
-        HttpURL url = HttpURL.create(Scheme.http, DomainName.of(hostname), port, path, query);
-        try {
-            return fetcher.get(new Params(2000), // 2_000 ms read timeout
-                               url.asURI().toURL());
-        } catch (MalformedURLException e) {
-            logger.log(Level.WARNING, "Badly formed url: " + url, e);
-            return HttpErrorResponse.internalServerError("Failed to construct URL for backend");
+    static class UrlRewritingProxyResponse extends HttpResponse {
+
+        final HttpResponse wrapped;
+        final String patten;
+        final String replacement;
+
+        public UrlRewritingProxyResponse(HttpResponse wrapped, HttpURL requestUrl, HttpURL forwardedUrl) {
+            super(wrapped.getStatus());
+            this.wrapped = wrapped;
+            this.patten = requestUrl.withPath(requestUrl.path().withoutTrailingSlash()).withQuery(Query.empty()).asURI().toString();
+            this.replacement = forwardedUrl.withPath(forwardedUrl.path().withoutTrailingSlash()).withQuery(Query.empty()).asURI().toString();
         }
+
+        @Override
+        public void render(OutputStream outputStream) throws IOException {
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            wrapped.render(buffer);
+            outputStream.write(buffer.toString(Charset.forName(wrapped.getCharacterEncoding()))
+                                     .replace(patten, replacement)
+                                     .getBytes(UTF_8));
+        }
+
+        @Override
+        public String getContentType() {
+            return wrapped.getContentType();
+        }
+
     }
 
 }

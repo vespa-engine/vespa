@@ -60,21 +60,21 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_TASK_LIMIT = defineIntFlag(
-            "feed-task-limit", 1000,
+            "feed-task-limit", -1000,
             List.of("geirst, baldersheim"), "2021-10-14", "2022-06-01",
             "The task limit used by the executors handling feed in proton",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag FEED_MASTER_TASK_LIMIT = defineIntFlag(
-            "feed-master-task-limit", 1000,
+            "feed-master-task-limit", 0,
             List.of("geirst, baldersheim"), "2021-11-18", "2022-06-01",
             "The task limit used by the master thread in each document db in proton. Ignored when set to 0.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag SHARED_FIELD_WRITER_EXECUTOR = defineStringFlag(
-            "shared-field-writer-executor", "NONE",
+            "shared-field-writer-executor", "DOCUMENT_DB",
             List.of("geirst, baldersheim"), "2021-11-05", "2022-06-01",
             "Whether to use a shared field writer executor for the document database(s) in proton. " +
             "Valid values: NONE, INDEX, INDEX_AND_ATTRIBUTE, DOCUMENT_DB",
@@ -224,7 +224,7 @@ public class Flags {
 
     public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
             "jdk-version", "11",
-            List.of("hmusum"), "2021-10-25", "2022-05-01",
+            List.of("hmusum"), "2021-10-25", "2022-05-15",
             "JDK version to use on host and inside containers. Note application-id dimension only applies for container, " +
                     "while hostname and node type applies for host.",
             "Takes effect on restart for Docker container and on next host-admin tick for host",
@@ -262,8 +262,8 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS = defineFeatureFlag(
-            "fail-deployment-with-invalid-jvm-options", false,
-            List.of("hmusum"), "2021-12-20", "2022-05-01",
+            "fail-deployment-with-invalid-jvm-options", true,
+            List.of("hmusum"), "2021-12-20", "2022-05-15",
             "Whether to fail deployments with invalid JVM options in services.xml",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -283,7 +283,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag PERSISTENCE_ASYNC_THROTTLING = defineStringFlag(
-            "persistence-async-throttling", "UNLIMITED",
+            "persistence-async-throttling", "DYNAMIC",
             List.of("vekterli"), "2022-01-12", "2022-05-01",
             "Sets the throttling policy used for async persistence operations on the content nodes. " +
             "Valid values: UNLIMITED, DYNAMIC",
@@ -341,7 +341,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING = defineFeatureFlag(
-            "inhibit-default-merges-when-global-merges-pending", false,
+            "inhibit-default-merges-when-global-merges-pending", true,
             List.of("geirst", "vekterli"), "2022-02-11", "2022-06-01",
             "Inhibits all merges to buckets in the default bucket space if the current " +
                     "cluster state bundle indicates that global merges are pending in the cluster",
@@ -369,20 +369,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REUSE_NODE_INDEXES = defineFeatureFlag(
-            "reuse-node-indexes", true,
-            List.of("bratseth"), "2022-02-25", "2022-04-25",
-            "Whether we should reuse earlier indexes when allocating new nodes",
-            "Takes effect immediately",
-            ZONE_ID);
-
-    public static final UnboundBooleanFlag ALLOW_NO_TESTS = defineFeatureFlag(
-            "allow-no-tests", false,
-            List.of("jonmv"), "2022-02-28", "2022-06-25",
-            "Whether test jobs without any tests run are acceptable",
-            "Takes effect immediately",
-            TENANT_ID);
-
     public static final UnboundBooleanFlag MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER = defineFeatureFlag(
             "merge-grouping-result-in-search-invoker", false,
             List.of("bjorncs", "baldersheim"), "2022-02-23", "2022-08-01",
@@ -397,18 +383,18 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag CONTROLLER_LOCK_SCHEME = defineStringFlag(
-            "controller-lock-scheme", "OLD",
-            List.of("hmusum"), "2022-04-07", "2022-05-07",
-            "Lock scheme to application-related controller locks (valid values: OLD, BOTH, NEW)",
-            "Takes effect immediately",
-            ZONE_ID);
-
     public static final UnboundBooleanFlag USE_ZSTD_IN_FILE_DISTRIBUTION = defineFeatureFlag(
             "use-zstd-in-file-distribution", false,
-            List.of("hmusum"), "2022-04-07", "2022-05-07",
+            List.of("hmusum"), "2022-04-07", "2022-06-01",
             "Whether to use zstd compression for data sent with file distribution",
             "Takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag FAIL_DEPLOYMENT_FOR_FILES_WITH_UNKNOWN_EXTENSION = defineFeatureFlag(
+            "fail-deployment-for-files-with-unknown-extension", false,
+            List.of("hmusum"), "2022-04-27", "2022-05-27",
+            "Whether to fail deployments when app has a file with unknown extension for a directory",
+            "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

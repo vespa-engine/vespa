@@ -142,7 +142,11 @@ public class DocumentTypeManager {
      **/
     @Deprecated
     public DataType getDataType(String name) {
-        return getDataTypeInternal(name);
+        var type = getDataTypeInternal(name);
+        if (type == null) {
+            throw new IllegalArgumentException("No datatype named " + name);
+        }
+        return type;
     }
 
     /**
@@ -162,7 +166,7 @@ public class DocumentTypeManager {
             }
         }
         if (foundTypes.isEmpty()) {
-            throw new IllegalArgumentException("No datatype named " + name);
+            return null;
         } else if (foundTypes.size() == 1) {
             return foundTypes.get(0);
         } else {

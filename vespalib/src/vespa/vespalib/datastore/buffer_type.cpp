@@ -17,10 +17,12 @@ constexpr float DEFAULT_ALLOC_GROW_FACTOR = 0.2;
 void
 BufferTypeBase::CleanContext::extraBytesCleaned(size_t value)
 {
-    assert(_extraUsedBytes >= value);
-    assert(_extraHoldBytes >= value);
-    _extraUsedBytes -= value;
-    _extraHoldBytes -= value;
+    size_t extra_used_bytes = _extraUsedBytes.load(std::memory_order_relaxed);
+    size_t extra_hold_bytes = _extraHoldBytes.load(std::memory_order_relaxed);
+    assert(extra_used_bytes >= value);
+    assert(extra_hold_bytes >= value);
+    _extraUsedBytes.store(extra_used_bytes - value, std::memory_order_relaxed);
+    _extraHoldBytes.store(extra_hold_bytes - value, std::memory_order_relaxed);
 }
 
 BufferTypeBase::BufferTypeBase(uint32_t arraySize,
@@ -62,7 +64,7 @@ BufferTypeBase::getReservedElements(uint32_t bufferId) const
 }
 
 void
-BufferTypeBase::onActive(uint32_t bufferId, ElemCount* usedElems, ElemCount* deadElems, void* buffer)
+BufferTypeBase::onActive(uint32_t bufferId, std::atomic<ElemCount>* usedElems, std::atomic<ElemCount>* deadElems, void* buffer)
 {
     _aggr_counts.add_buffer(usedElems, deadElems);
     assert(std::find(_active_buffers.begin(), _active_buffers.end(), bufferId) == _active_buffers.end());
@@ -76,7 +78,7 @@ BufferTypeBase::onActive(uint32_t bufferId, ElemCount* usedElems, ElemCount* dea
 }
 
 void
-BufferTypeBase::onHold(uint32_t buffer_id, const ElemCount* usedElems, const ElemCount* deadElems)
+BufferTypeBase::onHold(uint32_t buffer_id, const std::atomic<ElemCount>* usedElems, const std::atomic<ElemCount>* deadElems)
 {
     ++_holdBuffers;
     auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
@@ -95,7 +97,7 @@ BufferTypeBase::onFree(ElemCount usedElems)
 }
 
 void
-BufferTypeBase::resume_primary_buffer(uint32_t buffer_id, ElemCount* used_elems, ElemCount* dead_elems)
+BufferTypeBase::resume_primary_buffer(uint32_t buffer_id, std::atomic<ElemCount>* used_elems, std::atomic<ElemCount>* dead_elems)
 {
     auto itr = std::find(_active_buffers.begin(), _active_buffers.end(), buffer_id);
     assert(itr != _active_buffers.end());
@@ -174,7 +176,7 @@ BufferTypeBase::AggregatedBufferCounts::AggregatedBufferCounts()
 }
 
 void
-BufferTypeBase::AggregatedBufferCounts::add_buffer(const ElemCount* used_elems, const ElemCount* dead_elems)
+BufferTypeBase::AggregatedBufferCounts::add_buffer(const std::atomic<ElemCount>* used_elems, const std::atomic<ElemCount>* dead_elems)
 {
     for (const auto& elem : _counts) {
         assert(elem.used_ptr != used_elems);
@@ -184,7 +186,7 @@ BufferTypeBase::AggregatedBufferCounts::add_buffer(const ElemCount* used_elems, 
 }
 
 void
-BufferTypeBase::AggregatedBufferCounts::remove_buffer(const ElemCount* used_elems, const ElemCount* dead_elems)
+BufferTypeBase::AggregatedBufferCounts::remove_buffer(const std::atomic<ElemCount>* used_elems, const std::atomic<ElemCount>* dead_elems)
 {
     auto itr = std::find_if(_counts.begin(), _counts.end(),
                             [=](const auto& elem){ return elem.used_ptr == used_elems; });
@@ -199,8 +201,8 @@ BufferTypeBase::AggregatedBufferCounts::last_buffer() const
     BufferCounts result;
     assert(!_counts.empty());
     const auto& last = _counts.back();
-    result.used_elems += *last.used_ptr;
-    result.dead_elems += *last.dead_ptr;
+    result.used_elems += last.used_ptr->load(std::memory_order_relaxed);
+    result.dead_elems += last.dead_ptr->load(std::memory_order_relaxed);
     return result;
 }
 
@@ -209,8 +211,8 @@ BufferTypeBase::AggregatedBufferCounts::all_buffers() const
 {
     BufferCounts result;
     for (const auto& elem : _counts) {
-        result.used_elems += *elem.used_ptr;
-        result.dead_elems += *elem.dead_ptr;
+        result.used_elems += elem.used_ptr->load(std::memory_order_relaxed);
+        result.dead_elems += elem.dead_ptr->load(std::memory_order_relaxed);
     }
     return result;
 }

@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.ApplicationAction;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzClientFactory;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
@@ -62,6 +63,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
     private final TenantController tenants;
     private final ExecutorService executor;
     private final SystemName systemName;
+    private final ZoneRegistry zones;
 
     @Inject
     public AthenzRoleFilter(AthenzClientFactory athenzClientFactory, Controller controller) {
@@ -69,6 +71,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         this.tenants = controller.tenants();
         this.executor = Executors.newCachedThreadPool();
         this.systemName = controller.system();
+        this.zones = controller.zoneRegistry();
     }
 
     @Override
@@ -108,8 +111,7 @@ public class AthenzRoleFilter extends JsonSecurityRequestFilterBase {
         } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/{*}")) {
             zone = Optional.of(ZoneId.from(path.get("environment"), path.get("region")));
         } else if(path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/deploy/{jobname}")) {
-            var jobtype= JobType.fromJobName(path.get("jobname"));
-            zone = Optional.of(jobtype.zone(systemName));
+            zone = Optional.of(JobType.fromJobName(path.get("jobname"), zones).zone());
         } else {
             zone = Optional.empty();
         }

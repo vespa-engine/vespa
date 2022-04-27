@@ -21,23 +21,24 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
-import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
-import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
+import com.yahoo.vespa.hosted.controller.routing.RoutingStatus;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -76,6 +77,28 @@ import static org.junit.Assert.assertTrue;
  */
 public class DeploymentContext {
 
+    public static final JobType systemTest             = JobType.deploymentTo(ZoneId.from("test", "us-east-1"));
+    public static final JobType stagingTest            = JobType.deploymentTo(ZoneId.from("staging", "us-east-3"));
+    public static final JobType productionUsEast3      = JobType.prod("us-east-3");
+    public static final JobType testUsEast3            = JobType.test("us-east-3");
+    public static final JobType productionUsWest1      = JobType.prod("us-west-1");
+    public static final JobType testUsWest1            = JobType.test("us-west-1");
+    public static final JobType productionUsCentral1   = JobType.prod("us-central-1");
+    public static final JobType testUsCentral1         = JobType.test("us-central-1");
+    public static final JobType productionApNortheast1 = JobType.prod("ap-northeast-1");
+    public static final JobType testApNortheast1       = JobType.test("ap-northeast-1");
+    public static final JobType productionApNortheast2 = JobType.prod("ap-northeast-2");
+    public static final JobType testApNortheast2       = JobType.test("ap-northeast-2");
+    public static final JobType productionApSoutheast1 = JobType.prod("ap-southeast-1");
+    public static final JobType testApSoutheast1       = JobType.test("ap-southeast-1");
+    public static final JobType productionEuWest1      = JobType.prod("eu-west-1");
+    public static final JobType testEuWest1            = JobType.test("eu-west-1");
+    public static final JobType productionAwsUsEast1a  = JobType.prod("aws-us-east-1a");
+    public static final JobType testAwsUsEast1a        = JobType.test("aws-us-east-1a");
+    public static final JobType devUsEast1             = JobType.dev("us-east-1");
+    public static final JobType devAwsUsEast2a         = JobType.dev("aws-us-east-2a");
+    public static final JobType perfUsEast3            = JobType.perf("us-east-3");
+
     private final AtomicLong salt = new AtomicLong();
 
     // Application packages are expensive to construct, and a given test typically only needs to the test in the context
@@ -107,7 +130,7 @@ public class DeploymentContext {
     private final JobRunner runner;
     private final DeploymentTester tester;
 
-    private ApplicationVersion lastSubmission = null;
+    private RevisionId lastSubmission = null;
     private boolean deferDnsUpdates = false;
 
     public DeploymentContext(ApplicationId instanceId, DeploymentTester tester) {
@@ -169,10 +192,10 @@ public class DeploymentContext {
     /** Completely deploy the current change */
     public DeploymentContext deploy() {
         Application application = application();
-        assertTrue("Application package submitted", application.latestVersion().isPresent());
+        assertTrue("Application package submitted", application.revisions().last().isPresent());
         assertFalse("Submission is not already deployed", application.instances().values().stream()
                                                                      .anyMatch(instance -> instance.deployments().values().stream()
-                                                                                                     .anyMatch(deployment -> deployment.applicationVersion().equals(lastSubmission))));
+                                                                                                   .anyMatch(deployment -> deployment.revision().equals(lastSubmission))));
         completeRollout(application.deploymentSpec().instances().size() > 1);
         for (var instance : application().instances().values()) {
             assertFalse(instance.change().hasTargets());
@@ -187,7 +210,7 @@ public class DeploymentContext {
                           .anyMatch(instance -> instance.deployments().values().stream()
                                                         .anyMatch(deployment -> deployment.version().equals(version))));
         assertEquals(version, instance().change().platform().get());
-        assertFalse(instance().change().application().isPresent());
+        assertFalse(instance().change().revision().isPresent());
 
         completeRollout();
 
@@ -196,10 +219,10 @@ public class DeploymentContext {
                                                                     .allMatch(deployment -> deployment.version().equals(version))));
 
         for (var spec : application().deploymentSpec().instances())
-            for (JobType type : new DeploymentSteps(spec, tester.controller()::system).productionJobs())
+            for (JobType type : new DeploymentSteps(spec, tester.controller().zoneRegistry()).productionJobs())
                 assertTrue(tester.configServer().nodeRepository()
-                                 .list(type.zone(tester.controller().system()),
-                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream() // TODO jonmv: support more
+                                 .list(type.zone(),
+                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream()
                                  .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(instance().change().hasTargets());
@@ -247,7 +270,7 @@ public class DeploymentContext {
         var clusterId = "default-inactive";
         var id = new RoutingPolicyId(instanceId, ClusterSpec.Id.from(clusterId), zone);
         var policies = new LinkedHashMap<>(tester.controller().routing().policies().read(instanceId).asMap());
-        policies.put(id, new RoutingPolicy(id, HostName.from("lb-host"),
+        policies.put(id, new RoutingPolicy(id, HostName.of("lb-host"),
                                            Optional.empty(),
                                            Set.of(EndpointId.of("default")),
                                            Set.of(),
@@ -258,7 +281,12 @@ public class DeploymentContext {
 
     /** Submit given application package for deployment */
     public DeploymentContext resubmit(ApplicationPackage applicationPackage) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.get());
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.get(), 0);
+    }
+
+    /** Submit given application package for deployment */
+    public DeploymentContext submit(ApplicationPackage applicationPackage, int risk) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt.incrementAndGet(), risk);
     }
 
     /** Submit given application package for deployment */
@@ -267,24 +295,23 @@ public class DeploymentContext {
     }
 
     /** Submit given application package for deployment */
-    public DeploymentContext submit(ApplicationPackage applicationPackage, long salt) {
-        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt);
+    public DeploymentContext submit(ApplicationPackage applicationPackage, long salt, int risk) {
+        return submit(applicationPackage, Optional.of(defaultSourceRevision), salt, risk);
     }
 
     /** Submit given application package for deployment */
     public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision) {
-        return submit(applicationPackage, sourceRevision, salt.incrementAndGet());
+        return submit(applicationPackage, sourceRevision, salt.incrementAndGet(), 0);
     }
 
     /** Submit given application package for deployment */
-    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt) {
+    public DeploymentContext submit(ApplicationPackage applicationPackage, Optional<SourceRevision> sourceRevision, long salt, int risk) {
         var projectId = tester.controller().applications()
                               .requireApplication(applicationId)
                               .projectId()
                               .orElse(1000); // These are really set through submission, so just pick one if it hasn't been set.
         var testerpackage = new byte[]{ (byte) (salt >> 56), (byte) (salt >> 48), (byte) (salt >> 40), (byte) (salt >> 32), (byte) (salt >> 24), (byte) (salt >> 16), (byte) (salt >> 8), (byte) salt };
-        lastSubmission = jobs.submit(applicationId, sourceRevision, Optional.of("a@b"), Optional.empty(),
-                                     projectId, applicationPackage, testerpackage);
+        lastSubmission = jobs.submit(applicationId, new Submission(applicationPackage, testerpackage, Optional.empty(), sourceRevision, Optional.of("a@b"), Optional.empty(), risk), projectId).id();
         return this;
     }
 
@@ -345,7 +372,7 @@ public class DeploymentContext {
     }
 
     /** Returns the last submitted application version */
-    public Optional<ApplicationVersion> lastSubmission() {
+    public Optional<RevisionId> lastSubmission() {
         return Optional.ofNullable(lastSubmission);
     }
 
@@ -389,7 +416,7 @@ public class DeploymentContext {
 
     /** Runs a deployment of the given package to the given manually deployable zone. */
     public DeploymentContext runJob(ZoneId zone, ApplicationPackage applicationPackage) {
-        return runJob(JobType.from(tester.controller().system(), zone).get(), applicationPackage, null);
+        return runJob(JobType.deploymentTo(zone), applicationPackage, null);
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job in the instance of this, successfully. */
@@ -397,8 +424,33 @@ public class DeploymentContext {
         return runJob(type, instanceId);
     }
 
+    /** Runs the job, failing tests with noTests status, or with regular testFailure. */
+    public DeploymentContext failTests(JobType type, boolean noTests) {
+        if ( ! type.isTest()) throw new IllegalArgumentException(type + " does not run tests");
+        var job = new JobId(instanceId, type);
+        triggerJobs();
+        doDeploy(job);
+        if (job.type().isDeployment()) {
+            doUpgrade(job);
+            doConverge(job);
+            if (job.type().environment().isManuallyDeployed())
+                return this;
+        }
+
+        RunId id = currentRun(job).id();
+
+        assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
+        tester.cloud().set(noTests ? Status.NO_TESTS : Status.FAILURE);
+        runner.advance(currentRun(job));
+        assertTrue(jobs.run(id).get().hasEnded());
+        assertEquals(noTests, jobs.run(id).get().hasSucceeded());
+        assertTrue(configServer().nodeRepository().list(job.type().zone(), NodeFilter.all().applications(TesterId.of(instanceId).id())).isEmpty());
+
+        return this;
+    }
+
     /** Pulls the ready job trigger, and then runs the whole of job for the given instance, successfully. */
-    public DeploymentContext runJob(JobType type, ApplicationId instance) {
+    private DeploymentContext runJob(JobType type, ApplicationId instance) {
         var job = new JobId(instance, type);
         triggerJobs();
         doDeploy(job);
@@ -465,13 +517,13 @@ public class DeploymentContext {
         tester.readyJobsTrigger().maintain();
 
         if (type.isProduction()) {
-            runJob(JobType.systemTest);
-            runJob(JobType.stagingTest);
+            runJob(systemTest);
+            runJob(stagingTest);
             tester.readyJobsTrigger().maintain();
         }
 
         Run run = jobs.active().stream()
-                      .filter(r -> r.id().type() == type)
+                      .filter(r -> r.id().type().equals(type))
                       .findAny()
                       .orElseThrow(() -> new AssertionError(type + " is not among the active: " + jobs.active()));
         return run.id();
@@ -479,8 +531,8 @@ public class DeploymentContext {
 
     /** Start tests in system test stage */
     public RunId startSystemTestTests() {
-        var id = newRun(JobType.systemTest);
-        var testZone = JobType.systemTest.zone(tester.controller().system());
+        var id = newRun(systemTest);
+        var testZone = systemTest.zone();
         runner.run();
         if ( ! deferDnsUpdates)
             flushDnsUpdates();
@@ -494,18 +546,18 @@ public class DeploymentContext {
 
     public void assertRunning(JobType type) {
         assertTrue(jobId(type) + " should be among the active: " + jobs.active(),
-                   jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type() == type));
+                   jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)));
     }
 
     public void assertNotRunning(JobType type) {
         assertFalse(jobId(type) + " should not be among the active: " + jobs.active(),
-                    jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type() == type));
+                    jobs.active().stream().anyMatch(run -> run.id().application().equals(instanceId) && run.id().type().equals(type)));
     }
 
     /** Deploys tester and real app, and completes tester and initial staging installation first if needed. */
     private void doDeploy(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         // First step is always a deployment.
@@ -517,7 +569,7 @@ public class DeploymentContext {
         if (job.type().isTest())
             doInstallTester(job);
 
-        if (job.type() == JobType.stagingTest) { // Do the initial deployment and installation of the real application.
+        if (job.type().equals(stagingTest)) { // Do the initial deployment and installation of the real application.
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
             tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
             configServer().convergeServices(id.application(), zone);
@@ -539,7 +591,7 @@ public class DeploymentContext {
     /** Upgrades nodes to target version. */
     private void doUpgrade(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
         DeploymentId deployment = new DeploymentId(job.application(), zone);
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
@@ -550,7 +602,7 @@ public class DeploymentContext {
     /** Returns the current run for the given job type, and verifies it is still running normally. */
     private Run currentRun(JobId job) {
         Run run = jobs.last(job)
-                      .filter(r -> r.id().type() == job.type())
+                      .filter(r -> r.id().type().equals(job.type()))
                       .orElseThrow(() -> new AssertionError(job.type() + " is not among the active: " + jobs.active()));
         assertFalse(run.id() + " should not have failed yet: " + run, run.hasFailed());
         assertFalse(run.id() + " should not have ended yet: " + run, run.hasEnded());
@@ -560,7 +612,7 @@ public class DeploymentContext {
     /** Lets nodes converge on new application version. */
     private void doConverge(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installReal));
         configServer().convergeServices(id.application(), zone);
@@ -576,7 +628,7 @@ public class DeploymentContext {
     /** Installs tester and starts tests. */
     private void doInstallTester(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.installTester));
         configServer().nodeRepository().doUpgrade(new DeploymentId(TesterId.of(job.application()).id(), zone), Optional.empty(), tester.configServer().application(id.tester().id(), zone).get().version().get());
@@ -591,7 +643,7 @@ public class DeploymentContext {
     /** Completes tests with success. */
     private void doTests(JobId job) {
         RunId id = currentRun(job).id();
-        ZoneId zone = zone(job);
+        ZoneId zone = job.type().zone();
 
         // All installation is complete and endpoints are ready, so tests may begin.
         if (job.type().isDeployment())
@@ -611,10 +663,6 @@ public class DeploymentContext {
 
     private JobId jobId(JobType type) {
         return new JobId(instanceId, type);
-    }
-
-    private ZoneId zone(JobId job) {
-        return job.type().zone(tester.controller().system());
     }
 
     private ConfigServerMock configServer() {

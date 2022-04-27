@@ -9,7 +9,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-#include <vespa/fastos/app.h>
+#include <vespa/vespalib/util/signalhandler.h>
 #include <sys/time.h>
 #include <thread>
 #include <cstdlib>
@@ -19,7 +19,7 @@ LOG_SETUP("vespa-proton-cmd");
 
 namespace pandora::rtc_cmd {
 
-class App : public FastOS_Application
+class App
 {
 private:
     App(const App &);
@@ -35,16 +35,16 @@ public:
           _target(nullptr),
           _req(nullptr)
     {}
-    ~App() override
+    ~App()
     {
         assert(!_frt);
         assert(_target == nullptr);
         assert(_req == nullptr);
     }
 
-    int usage()
+    int usage(const char *self)
     {
-        fprintf(stderr, "usage: %s <port|spec|--local|--id=name> <cmd> [args]\n", _argv[0]);
+        fprintf(stderr, "usage: %s <port|spec|--local|--id=name> <cmd> [args]\n", self);
         fprintf(stderr, "die\n");
         fprintf(stderr, "getProtonStatus\n");
         fprintf(stderr, "getState\n");
@@ -208,10 +208,10 @@ public:
     }
 
 
-    int Main() override
+    int main(int argc, char **argv)
     {
-        if (_argc < 3) {
-            return usage();
+        if (argc < 3) {
+            return usage(argv[0]);
         }
 
         config::ConfigSystem configSystem;
@@ -226,7 +226,7 @@ public:
             return 2;
         }
         int port = 0;
-        std::string spec = _argv[1];
+        std::string spec = argv[1];
 
         try {
             if (spec == "--local") {
@@ -234,7 +234,7 @@ public:
             } else if (spec.compare(0, 5, "--id=") == 0) {
                 spec = findRTC(spec.substr(5));
             } else {
-                port = atoi(_argv[1]);
+                port = atoi(argv[1]);
             }
         } catch (const std::runtime_error & e) {
             fprintf(stderr, "%s", e.what());
@@ -248,7 +248,7 @@ public:
 
         if (port == 0 && spec.compare(0, 4, "tcp/") != 0) {
             finiRPC();
-            return usage();
+            return usage(argv[0]);
         }
 
         if (port != 0) {
@@ -259,14 +259,14 @@ public:
 
         bool invoked = false;
 
-        if (strcmp(_argv[2], "getState") == 0 &&
-                   _argc >= 3) {
+        if (strcmp(argv[2], "getState") == 0 &&
+                   argc >= 3) {
             _req->SetMethodName("pandora.rtc.getState");
 
             FRT_Values &params = *_req->GetParams();
 
-            params.AddInt32(_argc > 3 ? atoi(_argv[3]) : 0);
-            params.AddInt32(_argc > 4 ? atoi(_argv[4]) : 0);
+            params.AddInt32(argc > 3 ? atoi(argv[3]) : 0);
+            params.AddInt32(argc > 4 ? atoi(argv[4]) : 0);
             invokeRPC(false);
             invoked = true;
 
@@ -289,12 +289,12 @@ public:
                 printf("gencnt=%u\n",
                        static_cast<unsigned int>(gencnt._intval32));
             }
-        } else if (strcmp(_argv[2], "getProtonStatus") == 0 &&
-                   _argc >= 3) {
+        } else if (strcmp(argv[2], "getProtonStatus") == 0 &&
+                   argc >= 3) {
 
             _req->SetMethodName("proton.getStatus");
             FRT_Values &params = *_req->GetParams();
-            params.AddString(_argc > 3 ? _argv[3] : "");
+            params.AddString(argc > 3 ? argv[3] : "");
             invokeRPC(false);
             invoked = true;
             FRT_Values &rvals = *_req->GetReturn();
@@ -317,25 +317,25 @@ public:
                 }
 
             }
-        } else if (strcmp(_argv[2], "triggerFlush") == 0) {
+        } else if (strcmp(argv[2], "triggerFlush") == 0) {
             _req->SetMethodName("proton.triggerFlush");
             invokeRPC(false, 86400.0);
             invoked = true;
             if (! _req->IsError()) {
                 printf("OK: flush trigger enabled\n");
             }
-        } else if (strcmp(_argv[2], "prepareRestart") == 0) {
+        } else if (strcmp(argv[2], "prepareRestart") == 0) {
             _req->SetMethodName("proton.prepareRestart");
             invokeRPC(false, 600.0);
             invoked = true;
             if (! _req->IsError()) {
                 printf("OK: prepareRestart enabled\n");
             }
-        } else if (strcmp(_argv[2], "die") == 0) {
+        } else if (strcmp(argv[2], "die") == 0) {
             _req->SetMethodName("pandora.rtc.die");
         } else {
             finiRPC();
-            return usage();
+            return usage(argv[0]);
         }
         if (!invoked)
             invokeRPC(true);
@@ -347,8 +347,8 @@ public:
 } // namespace pandora::rtc_cmd
 
 
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
+    vespalib::SignalHandler::PIPE.ignore();
     pandora::rtc_cmd::App app;
-    return app.Entry(argc, argv);
+    return app.main(argc, argv);
 }

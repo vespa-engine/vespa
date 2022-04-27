@@ -34,13 +34,6 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>serviceview</artifactId>
-            <scope>provided</scope>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-provisioning</artifactId>
             <scope>provided</scope>
             <version>${project.version}</version>
@@ -65,6 +58,13 @@
             <artifactId>vespajlib</artifactId>
             <scope>provided</scope>
             <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>jdisc-security-filters</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- compile -->

@@ -84,11 +84,15 @@ func latestTag() (string, error) {
 func latestReleasedTag(mirror string) (string, error) {
 	switch mirror {
 	case "github":
-		resp, err := http.Get("https://api.github.com/repos/vespa-engine/vespa/releases/latest")
+		url := "https://api.github.com/repos/vespa-engine/vespa/releases/latest"
+		resp, err := http.Get(url)
 		if err != nil {
 			return "", err
 		}
 		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return "", fmt.Errorf("got status %d from %s", resp.StatusCode, url)
+		}
 		var release gitHubRelease
 		dec := json.NewDecoder(resp.Body)
 		if err := dec.Decode(&release); err != nil {

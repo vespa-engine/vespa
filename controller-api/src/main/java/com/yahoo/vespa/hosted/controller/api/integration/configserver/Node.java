@@ -61,6 +61,7 @@ public class Node {
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
     private final boolean wantToRebuild;
+    private final boolean down;
     private final Optional<TenantName> reservedTo;
     private final Optional<ApplicationId> exclusiveTo;
     private final Map<String, String> reports;
@@ -79,7 +80,7 @@ public class Node {
                  long restartGeneration, long wantedRestartGeneration, long rebootGeneration,
                  long wantedRebootGeneration, int cost, int failCount, Optional<String> flavor, String clusterId,
                  ClusterType clusterType, String group, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
-                 boolean wantToRebuild, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
+                 boolean wantToRebuild, boolean down, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
                  DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, String> reports,
                  List<Event> history, Set<String> ipAddresses, Set<String> additionalIpAddresses,
                  Set<String> additionalHostnames, Optional<String> switchHostname,
@@ -117,6 +118,7 @@ public class Node {
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage, "wantedDockerImage must be non-null");
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage, "currentDockerImage must be non-null");
         this.wantToRebuild = wantToRebuild;
+        this.down = down;
         this.reports = Map.copyOf(Objects.requireNonNull(reports, "reports must be non-null"));
         this.history = List.copyOf(Objects.requireNonNull(history, "history must be non-null"));
         this.ipAddresses = Set.copyOf(Objects.requireNonNull(ipAddresses, "ipAddresses must be non-null"));
@@ -278,6 +280,11 @@ public class Node {
     /** Whether this node has been requested to rebuild */
     public boolean wantToRebuild() {
         return wantToRebuild;
+    }
+
+    /** Whether this node is currently down */
+    public boolean down() {
+        return down;
     }
 
     /** The tenant this has been reserved to, if any */
@@ -467,6 +474,7 @@ public class Node {
         private boolean wantToRetire = false;
         private boolean wantToDeprovision = false;
         private boolean wantToRebuild = false;
+        private boolean down = false;
         private Optional<TenantName> reservedTo = Optional.empty();
         private Optional<ApplicationId> exclusiveTo = Optional.empty();
         private Map<String, String> reports = Map.of();
@@ -512,6 +520,7 @@ public class Node {
             this.wantToRetire = node.wantToRetire;
             this.wantToDeprovision = node.wantToDeprovision;
             this.wantToRebuild = node.wantToRebuild;
+            this.down = node.down;
             this.reservedTo = node.reservedTo;
             this.exclusiveTo = node.exclusiveTo;
             this.reports = node.reports;
@@ -530,7 +539,7 @@ public class Node {
         }
 
         public Builder hostname(String hostname) {
-            return hostname(HostName.from(hostname));
+            return hostname(HostName.of(hostname));
         }
 
         public Builder hostname(HostName hostname) {
@@ -539,7 +548,7 @@ public class Node {
         }
 
         public Builder parentHostname(String parentHostname) {
-            return parentHostname(HostName.from(parentHostname));
+            return parentHostname(HostName.of(parentHostname));
         }
 
         public Builder parentHostname(HostName parentHostname) {
@@ -687,6 +696,11 @@ public class Node {
             return this;
         }
 
+        public Builder down(boolean down) {
+            this.down = down;
+            return this;
+        }
+
         public Builder reservedTo(TenantName tenant) {
             this.reservedTo = Optional.of(tenant);
             return this;
@@ -742,7 +756,7 @@ public class Node {
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration,
                             wantedRebootGeneration, cost, failCount, flavor, clusterId, clusterType, group, retired,
-                            wantToRetire, wantToDeprovision, wantToRebuild, reservedTo, exclusiveTo, wantedDockerImage,
+                            wantToRetire, wantToDeprovision, wantToRebuild, down, reservedTo, exclusiveTo, wantedDockerImage,
                             currentDockerImage, reports, history, ipAddresses, additionalIpAddresses,
                             additionalHostnames, switchHostname, modelName, environment);
         }

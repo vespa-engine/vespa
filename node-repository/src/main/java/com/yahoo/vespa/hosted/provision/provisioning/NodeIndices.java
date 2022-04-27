@@ -17,10 +17,10 @@ class NodeIndices {
     private int last;
     private int probe;
 
-    /** Pass the list of current indices in the cluster, and whether to fill gaps or not. */
-    NodeIndices(List<Integer> used, boolean compact) {
+    /** Pass the list of current indices in the cluster. */
+    NodeIndices(List<Integer> used) {
         this.used = List.copyOf(used);
-        this.last = compact ? -1 : used.stream().max(naturalOrder()).orElse(-1);
+        this.last = -1;
         this.probe = last;
     }
 

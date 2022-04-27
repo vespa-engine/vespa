@@ -198,7 +198,9 @@ private:
             } else if (type == ParseItem::ITEM_REGEXP) {
                 t = &builder.addRegExpTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_FUZZY) {
-                t = &builder.addFuzzyTerm(term, view, id, weight);
+                uint32_t maxEditDistance = queryStack.getFuzzyMaxEditDistance();
+                uint32_t prefixLength = queryStack.getFuzzyPrefixLength();
+                t = &builder.addFuzzyTerm(term, view, id, weight, maxEditDistance, prefixLength);
             } else {
                 vespalib::Issue::report("query builder: Unable to create query tree from stack dump. node type = %d.", type);
             }
