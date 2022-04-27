@@ -30,18 +30,21 @@ public class Lock implements Mutex {
     private long nextSequenceNumber = 0;
     private final Map<Long, Long> reentriesByThreadId = new HashMap<>();
     private final Instant created = Instant.now();
+    private Curator curator;
 
     private final InterProcessLock mutex;
     private final String lockPath;
 
     public Lock(String lockPath, Curator curator) {
         this(lockPath, curator.createMutex(lockPath));
+        this.curator = curator;
     }
 
     /** Public for testing only */
     public Lock(String lockPath, InterProcessLock mutex) {
         this.lockPath = lockPath;
         this.mutex = mutex;
+        this.curator = null;
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
@@ -85,8 +88,9 @@ public class Lock implements Mutex {
             reentriesByThreadIdCopy = Map.copyOf(reentriesByThreadId);
         }
 
-        String debug = "thread " + threadId + " " + lockPath + "@" + created + " 0x" +
-                       Integer.toHexString(System.identityHashCode(this))  + " #" + sequenceNumber +
+        String debug = "thread " + threadId + " Lock 0x" + Integer.toHexString(System.identityHashCode(this)) +
+                       "@" + created + " Curator 0x" + Integer.toHexString(System.identityHashCode(curator)) +
+                       " lock " + lockPath + " #" + sequenceNumber +
                        ", reentries by thread ID = " + reentriesByThreadIdCopy;
         consumer.accept(debug);
     }
