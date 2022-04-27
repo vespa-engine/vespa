@@ -5,6 +5,8 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
+import com.yahoo.nativec.NativeHeap;
+
 import java.lang.management.BufferPoolMXBean;
 import java.lang.management.ManagementFactory;
 import java.nio.file.DirectoryStream;
@@ -24,6 +26,9 @@ import java.util.TimerTask;
  */
 public class MetricUpdater extends AbstractComponent {
 
+    private static final String NATIVE_FREE_MEMORY_BYTES = "mem.native.free";
+    private static final String NATIVE_USED_MEMORY_BYTES = "mem.native.used";
+    private static final String NATIVE_TOTAL_MEMORY_BYTES = "mem.native.total";
     private static final String HEAP_FREE_MEMORY_BYTES = "mem.heap.free";
     private static final String HEAP_USED_MEMORY_BYTES = "mem.heap.used";
     private static final String HEAP_TOTAL_MEMORY_BYTES = "mem.heap.total";
@@ -116,6 +121,13 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(DIRECT_COUNT, count, null);
         }
 
+        private void nativeHeapUsed() {
+            NativeHeap nativeHeap = NativeHeap.sample();
+            metric.set(NATIVE_FREE_MEMORY_BYTES, nativeHeap.availableSize(), null);
+            metric.set(NATIVE_USED_MEMORY_BYTES, nativeHeap.usedSize(), null);
+            metric.set(NATIVE_TOTAL_MEMORY_BYTES, nativeHeap.totalSize(), null);
+        }
+
         @Override
         public void run() {
             long freeMemory = runtime.freeMemory();
@@ -127,6 +139,7 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(MEMORY_MAPPINGS_COUNT, count_mappings(), null);
             metric.set(OPEN_FILE_DESCRIPTORS, count_open_files(), null);
             directMemoryUsed();
+            nativeHeapUsed();
 
             containerWatchdogMetrics.emitMetrics(metric);
             garbageCollectionMetrics.emitMetrics(metric);

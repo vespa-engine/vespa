@@ -2,7 +2,7 @@ package com.yahoo.nativec;
 
 import com.sun.jna.Structure;
 
-public class MallInfo {
+public class MallInfo extends NativeHeap {
     private final static Throwable initException = NativeC.loadLibrary(MallInfo.class);
     public static Throwable init() {
         return initException;
@@ -23,8 +23,27 @@ public class MallInfo {
         public int keepcost;  /* Top-most, releasable space (bytes) */
     }
     private static native MallInfoStruct.ByValue mallinfo();
+
+    private final MallInfoStruct mallinfo;
     public MallInfo() {
         mallinfo = mallinfo();
     }
-    private final MallInfoStruct mallinfo;
+
+    @Override
+    public long usedSize() {
+        long v = mallinfo.uordblks;
+        return v << 20; // Due to too few bits in ancient mallinfo vespamalloc reports in 1M units
+    }
+
+    @Override
+    public long totalSize() {
+        long v = mallinfo.arena;
+        return v << 20; // Due to too few bits in ancient mallinfo vespamalloc reports in 1M units
+    }
+
+    @Override
+    public long availableSize() {
+        long v = mallinfo.fordblks;
+        return v << 20; // Due to too few bits in ancient mallinfo vespamalloc reports in 1M units
+    }
 }
