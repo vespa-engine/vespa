@@ -490,13 +490,23 @@ public class JobController {
 
             TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
             if (testSummary.problems().isEmpty())
-                controller.notificationsDb().removeNotification(NotificationSource.from(id),
-                                                                Type.testPackage);
+                controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.testPackage);
             else
                 controller.notificationsDb().setNotification(NotificationSource.from(id),
                                                              Type.testPackage,
                                                              Notification.Level.warning,
                                                              testSummary.problems());
+
+            submission.applicationPackage().parentVersion().ifPresent(parent -> {
+                if (parent.getMajor() < controller.readSystemVersion().getMajor())
+                    controller.notificationsDb().setNotification(NotificationSource.from(id),
+                                                                 Type.submission,
+                                                                 Notification.Level.warning,
+                                                                 "Parent version used to compile the application is on a " +
+                                                                 "lower major version than the current Vespa Cloud version");
+                else
+                    controller.notificationsDb().removeNotification(NotificationSource.from(id), Type.submission);
+            });
 
             applications.storeWithUpdatedConfig(application, submission.applicationPackage());
             applications.deploymentTrigger().triggerNewRevision(id);

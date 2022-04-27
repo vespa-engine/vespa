@@ -745,6 +745,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static String notificationTypeAsString(Notification.Type type) {
         switch (type) {
+            case submission:
             case applicationPackage: return "applicationPackage";
             case testPackage: return "testPackage";
             case deployment: return "deployment";

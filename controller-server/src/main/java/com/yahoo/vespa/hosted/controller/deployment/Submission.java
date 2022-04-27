@@ -1,12 +1,10 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 
-import java.time.Instant;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage.calculateHash;

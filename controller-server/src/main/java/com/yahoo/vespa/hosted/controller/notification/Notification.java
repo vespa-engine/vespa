@@ -69,6 +69,9 @@ public class Notification {
         /** Related to contents of application package, e.g., usage of deprecated features/syntax */
         applicationPackage,
 
+        /** Related to contents of application package, e.g., old parent or compile version, or errors detectable on submission */
+        submission,
+
         /** Related to contents of application test package, e.g., mismatch between deployment spec and provided tests */
         testPackage,
 
