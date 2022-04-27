@@ -19,7 +19,7 @@ import java.util.Map;
  */
 abstract public class DomGenericTargetBuilder<T extends GenericTarget> extends DomChainBuilderBase<Searcher<?>, T> {
 
-    DomGenericTargetBuilder(Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    DomGenericTargetBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(Arrays.asList(ComponentsBuilder.ComponentType.searcher, ComponentsBuilder.ComponentType.federation),
                 outerSearcherTypeByComponentName);
     }

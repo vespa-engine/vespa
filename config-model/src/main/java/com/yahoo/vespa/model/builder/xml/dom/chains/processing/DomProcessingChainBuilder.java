@@ -9,21 +9,19 @@ import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
 import com.yahoo.vespa.model.container.processing.ProcessingChain;
 import com.yahoo.vespa.model.container.processing.Processor;
 import org.w3c.dom.Element;
-
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
  * @author bratseth
- * @since   5.1.6
  */
 public class DomProcessingChainBuilder extends DomChainBuilderBase<Processor, ProcessingChain> {
 
-    public DomProcessingChainBuilder(Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName) {
-        super(Arrays.asList(ComponentsBuilder.ComponentType.processor), outerComponentTypeByComponentName);
+    public DomProcessingChainBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName) {
+        super(List.of(ComponentsBuilder.ComponentType.processor), outerComponentTypeByComponentName);
     }
 
-    protected ProcessingChain buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec,
+    protected ProcessingChain buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec,
                                          ChainSpecification specWithoutInnerComponents) {
         return new ProcessingChain(specWithoutInnerComponents);
     }

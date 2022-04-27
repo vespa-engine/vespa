@@ -33,13 +33,13 @@ public class DomSearchChainsBuilder extends DomChainsBuilder<Searcher<?>, Search
     }
 
     @Override
-    protected SearchChains newChainsInstance(AbstractConfigProducer parent) {
+    protected SearchChains newChainsInstance(AbstractConfigProducer<?> parent) {
         return new SearchChains(parent, "searchchains");
     }
 
     @Override
-    protected SearchChainsBuilder readChains(DeployState deployState, AbstractConfigProducer ancestor, List<Element> searchChainsElements,
-                                             Map<String, ComponentType> outerComponentTypeByComponentName) {
+    protected SearchChainsBuilder readChains(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> searchChainsElements,
+                                             Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
         return new SearchChainsBuilder(deployState, ancestor, searchChainsElements, outerComponentTypeByComponentName);
     }
 

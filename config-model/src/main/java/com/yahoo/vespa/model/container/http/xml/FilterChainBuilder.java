@@ -19,15 +19,15 @@ import static com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.Com
  * @author Tony Vaagenes
  */
 public class FilterChainBuilder extends DomChainBuilderBase<Filter, Chain<Filter>> {
-    private static Collection<ComponentType<Filter>> allowedComponentTypes = Collections.singleton(ComponentType.filter);
 
+    private static final Collection<ComponentType<Filter>> allowedComponentTypes = Collections.singleton(ComponentType.filter);
 
-    public FilterChainBuilder(Map<String, ComponentType> outerFilterTypeByComponentName) {
+    public FilterChainBuilder(Map<String, ComponentType<?>> outerFilterTypeByComponentName) {
         super(allowedComponentTypes, outerFilterTypeByComponentName);
     }
 
     @Override
-    protected Chain<Filter> buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
+    protected Chain<Filter> buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
         return new Chain<>(specWithoutInnerComponents);
     }
 }

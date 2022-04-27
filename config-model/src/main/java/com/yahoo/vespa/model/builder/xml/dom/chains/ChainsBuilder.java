@@ -24,8 +24,8 @@ public class ChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends 
     private final Map<String, Class<? extends DomChainBuilderBase<? extends COMPONENT, ? extends CHAIN>>> chainType2BuilderClass;
 
     // NOTE: The chain type string (key in chainType2BuilderClass) must match the xml tag name for the chain.
-    public ChainsBuilder(DeployState deployState, AbstractConfigProducer ancestor, List<Element> chainsElems,
-                         Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName,
+    public ChainsBuilder(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> chainsElems,
+                         Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName,
                          Map<String, Class<? extends DomChainBuilderBase<? extends COMPONENT, ? extends CHAIN>>> chainType2BuilderClass) {
 
         this.chainType2BuilderClass = chainType2BuilderClass;
@@ -36,8 +36,8 @@ public class ChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends 
         return Collections.unmodifiableCollection(chains);
     }
 
-    private void readChains(DeployState deployState, AbstractConfigProducer ancestor, List<Element> chainsElems,
-                            Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    private void readChains(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> chainsElems,
+                            Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
 
         for (Map.Entry<String, Class<? extends DomChainBuilderBase<? extends COMPONENT, ? extends CHAIN>>>
                 chainType : chainType2BuilderClass.entrySet()) {
@@ -49,9 +49,9 @@ public class ChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends 
         }
     }
 
-    private void readChain(DeployState deployState, AbstractConfigProducer ancestor, Element chainElem,
+    private void readChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element chainElem,
                            Class<? extends DomChainBuilderBase<? extends COMPONENT, ? extends CHAIN>> builderClass,
-                           Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+                           Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
 
         DomChainBuilderBase<? extends COMPONENT, ? extends CHAIN> builder =
                 DomBuilderCreator.create(builderClass, outerSearcherTypeByComponentName);

@@ -8,9 +8,8 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.component.chain.Chain;
 import com.yahoo.vespa.model.container.component.chain.ChainedComponent;
 import org.w3c.dom.Element;
-
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,18 +19,18 @@ import java.util.Map;
 public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>, CHAIN extends Chain<COMPONENT>>
         extends VespaDomBuilder.DomConfigProducerBuilder<CHAIN> {
 
-    private Collection<ComponentsBuilder.ComponentType<COMPONENT>> allowedComponentTypes;
-    protected final Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName;
+    private final Collection<ComponentsBuilder.ComponentType<COMPONENT>> allowedComponentTypes;
+    protected final Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName;
 
     public DomChainBuilderBase(Collection<ComponentsBuilder.ComponentType<COMPONENT>> allowedComponentTypes,
-                               Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName) {
+                               Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName) {
         this.allowedComponentTypes = allowedComponentTypes;
         this.outerComponentTypeByComponentName = outerComponentTypeByComponentName;
     }
 
-    public final CHAIN doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+    public final CHAIN doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
         ComponentsBuilder<COMPONENT> componentsBuilder =
-                new ComponentsBuilder<>(deployState, ancestor, allowedComponentTypes, Arrays.asList(producerSpec), outerComponentTypeByComponentName);
+                new ComponentsBuilder<>(deployState, ancestor, allowedComponentTypes, List.of(producerSpec), outerComponentTypeByComponentName);
         ChainSpecification specWithoutInnerComponents =
                 new ChainSpecificationBuilder(producerSpec).build(componentsBuilder.getOuterComponentReferences());
 
@@ -47,6 +46,6 @@ public abstract class DomChainBuilderBase<COMPONENT extends ChainedComponent<?>,
         }
     }
 
-    protected abstract CHAIN buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec,
+    protected abstract CHAIN buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec,
                                         ChainSpecification specWithoutInnerComponents);
 }

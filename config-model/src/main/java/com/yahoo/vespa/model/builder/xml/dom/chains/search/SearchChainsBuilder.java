@@ -31,8 +31,8 @@ public class SearchChainsBuilder extends ChainsBuilder<Searcher<?>, SearchChain>
                 put("provider", DomProviderBuilder.class);
             }});
 
-    public SearchChainsBuilder(DeployState deployState, AbstractConfigProducer ancestor, List<Element> searchChainsElements,
-                               Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    public SearchChainsBuilder(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> searchChainsElements,
+                               Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(deployState, ancestor, searchChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
     }
 

@@ -16,11 +16,11 @@ import java.util.Map;
  * @author Tony Vaagenes
  */
 public class DomSourceBuilder extends DomGenericTargetBuilder<Source> {
-    DomSourceBuilder(Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    DomSourceBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(outerSearcherTypeByComponentName);
     }
 
-    protected Source buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
+    protected Source buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec, ChainSpecification specWithoutInnerComponents) {
         Source.GroupOption groupOption =
                 XmlHelper.isReference(producerSpec) ?
                         Source.GroupOption.participant :
@@ -28,4 +28,5 @@ public class DomSourceBuilder extends DomGenericTargetBuilder<Source> {
 
         return new Source(specWithoutInnerComponents, readFederationOptions(producerSpec), groupOption);
     }
+
 }

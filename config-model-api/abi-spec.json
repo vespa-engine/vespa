@@ -145,6 +145,7 @@
       "public static final com.yahoo.path.Path MODELS_DIR",
       "public static final com.yahoo.path.Path MODELS_GENERATED_DIR",
       "public static final com.yahoo.path.Path MODELS_GENERATED_REPLICATED_DIR",
+      "public static final com.yahoo.path.Path CONSTANTS_DIR",
       "public static final java.lang.String CONFIG_DEFINITIONS_DIR",
       "public static final com.yahoo.path.Path QUERY_PROFILES_DIR",
       "public static final com.yahoo.path.Path QUERY_PROFILE_TYPES_DIR",

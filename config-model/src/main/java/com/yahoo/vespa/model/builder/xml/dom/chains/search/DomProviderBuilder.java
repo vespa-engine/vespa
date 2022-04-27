@@ -1,22 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
-import com.yahoo.binaryprefix.BinaryPrefix;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 import com.yahoo.search.searchchain.model.federation.LocalProviderSpec;
 import com.yahoo.text.XML;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.model.builder.xml.dom.BinaryScaledAmountParser;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder;
 import com.yahoo.vespa.model.container.search.searchchain.GenericProvider;
 import com.yahoo.vespa.model.container.search.searchchain.LocalProvider;
 import com.yahoo.vespa.model.container.search.searchchain.Provider;
 import com.yahoo.vespa.model.container.search.searchchain.Source;
 import org.w3c.dom.Element;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -123,12 +120,12 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
         }
     }
 
-    public DomProviderBuilder(Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    public DomProviderBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(outerSearcherTypeByComponentName);
     }
 
     @Override
-    protected Provider buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element providerElement,
+    protected Provider buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element providerElement,
                                   ChainSpecification specWithoutInnerComponents) {
 
         ProviderReader providerReader = new ProviderReader(providerElement);
@@ -143,7 +140,7 @@ public class DomProviderBuilder extends DomGenericTargetBuilder<Provider> {
     }
 
 
-    private Collection<Source> buildSources(DeployState deployState, AbstractConfigProducer ancestor, Element providerElement) {
+    private Collection<Source> buildSources(DeployState deployState, AbstractConfigProducer<?> ancestor, Element providerElement) {
         List<Source> sources = new ArrayList<>();
         for (Element sourceElement : XML.getChildren(providerElement, "source")) {
             sources.add(new DomSourceBuilder(outerComponentTypeByComponentName).build(deployState, ancestor, sourceElement));

@@ -19,13 +19,14 @@ import java.util.Map;
  */
 public class DomSearchChainBuilder extends DomChainBuilderBase<Searcher<?>, SearchChain> {
 
-    public DomSearchChainBuilder(Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    public DomSearchChainBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(Arrays.asList(ComponentsBuilder.ComponentType.searcher, ComponentsBuilder.ComponentType.federation),
                 outerSearcherTypeByComponentName);
     }
 
-    protected SearchChain buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec,
+    protected SearchChain buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec,
                                      ChainSpecification specWithoutInnerComponents) {
         return new SearchChain(specWithoutInnerComponents);
     }
+
 }
