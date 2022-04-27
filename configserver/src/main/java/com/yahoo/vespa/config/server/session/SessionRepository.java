@@ -43,7 +43,9 @@ import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
@@ -127,6 +129,7 @@ public class SessionRepository {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final int maxNodeSize;
+    private final BooleanFlag failDeploymentForFilesWithUnknownExtension;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -170,6 +173,7 @@ public class SessionRepository {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
         this.maxNodeSize = maxNodeSize;
+        this.failDeploymentForFilesWithUnknownExtension = Flags.FAIL_DEPLOYMENT_FOR_FILES_WITH_UNKNOWN_EXTENSION.bindTo(flagSource);
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -673,17 +677,19 @@ public class SessionRepository {
         }
         DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp,
                                                internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
-        return FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
+        FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
+        app.validateFileExtensions(failDeploymentForFilesWithUnknownExtension.value());
+        return app;
     }
 
-    private LocalSession createSessionFromApplication(File applicationFile,
+    private LocalSession createSessionFromApplication(File applicationDirectory,
                                                       ApplicationId applicationId,
                                                       boolean internalRedeploy,
                                                       TimeoutBudget timeoutBudget) {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
-            ApplicationPackage app = createApplicationPackage(applicationFile, applicationId, sessionId, internalRedeploy);
+            ApplicationPackage app = createApplicationPackage(applicationDirectory, applicationId, sessionId, internalRedeploy);
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
             sessionZKClient.createNewSession(clock.instant());
@@ -697,7 +703,7 @@ public class SessionRepository {
         }
     }
 
-    private ApplicationPackage createApplicationPackage(File applicationFile,
+    private ApplicationPackage createApplicationPackage(File applicationDirectory,
                                                         ApplicationId applicationId,
                                                         long sessionId,
                                                         boolean internalRedeploy) throws IOException {
@@ -706,8 +712,8 @@ public class SessionRepository {
         synchronized (monitor) {
             Optional<Long> activeSessionId = getActiveSessionId(applicationId);
             File userApplicationDir = getSessionAppDir(sessionId);
-            copyApp(applicationFile, userApplicationDir);
-            ApplicationPackage applicationPackage = createApplication(applicationFile,
+            copyApp(applicationDirectory, userApplicationDir);
+            ApplicationPackage applicationPackage = createApplication(applicationDirectory,
                                                                       userApplicationDir,
                                                                       applicationId,
                                                                       sessionId,
@@ -751,7 +757,7 @@ public class SessionRepository {
             log.log(Level.FINE, "Moving " + tempDestinationDir + " to " + destinationDir.getAbsolutePath());
             Files.move(tempDestinationDir, destinationDir.toPath(), StandardCopyOption.ATOMIC_MOVE);
         } finally {
-            // In case some of the operations above fail
+            // In case some operations above fail
             if (tempDestinationDir != null)
                 IOUtils.recursiveDeleteDir(tempDestinationDir.toFile());
         }
@@ -812,7 +818,7 @@ public class SessionRepository {
                 sessionDir = fileDirectory.getFile(fileReference);
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
-                // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
+                // been downloaded yet), and e.g. when bootstrapping we cannot throw an exception in that case
                 log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return;
             }

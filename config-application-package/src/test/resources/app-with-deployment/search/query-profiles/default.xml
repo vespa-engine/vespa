@@ -1,0 +1,4 @@
+<query-profile id="default">
+    <field name="maxHits">30000</field>
+    <field name="maxOffset">30000</field>
+</query-profile>
