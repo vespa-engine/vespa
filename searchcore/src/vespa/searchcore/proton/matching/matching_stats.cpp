@@ -19,7 +19,7 @@ constexpr double MAX_CHANGE_FACTOR = 5;
 
 } // namespace proton::matching::<unnamed>
 
-MatchingStats::MatchingStats()
+MatchingStats::MatchingStats(double prev_soft_doom_factor)
     : _queries(0),
       _limited_queries(0),
       _docidSpaceCovered(0),
@@ -28,7 +28,7 @@ MatchingStats::MatchingStats()
       _docsReRanked(0),
       _softDoomed(0),
       _doomOvertime(),
-      _softDoomFactor(INITIAL_SOFT_DOOM_FACTOR),
+      _softDoomFactor(prev_soft_doom_factor),
       _queryCollateralTime(), // TODO: Remove in Vespa 8
       _querySetupTime(),
       _queryLatency(),
@@ -89,16 +89,18 @@ MatchingStats::updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::dura
     // It is merely a safety measure to avoid overflow on bad input as can happen with time senstive stuff
     // in any soft real time system.
     if ((hardLimit >= MIN_TIMEOUT) && (softLimit >= MIN_TIMEOUT)) {
+        double factor = softDoomFactor();
         double diff = vespalib::to_s(softLimit - duration)/vespalib::to_s(hardLimit);
         if (duration < softLimit) {
             // Since softdoom factor can become very small, allow a minimum change of some size
-            diff = std::min(diff, _softDoomFactor*MAX_CHANGE_FACTOR);
-            _softDoomFactor += 0.01*diff;
+            diff = std::min(diff, factor*MAX_CHANGE_FACTOR);
+            factor += 0.01*diff;
         } else {
-            diff = std::max(diff, -_softDoomFactor*MAX_CHANGE_FACTOR);
-            _softDoomFactor += 0.02*diff;
+            diff = std::max(diff, -factor*MAX_CHANGE_FACTOR);
+            factor += 0.02*diff;
         }
-        _softDoomFactor = std::max(_softDoomFactor, 0.01); // Never go below 1%
+        factor = std::max(factor, 0.01); // Never go below 1%
+        softDoomFactor(factor);
     }
     return *this;
 }
