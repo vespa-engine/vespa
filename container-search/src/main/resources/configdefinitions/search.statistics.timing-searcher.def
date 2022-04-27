@@ -1,7 +1,0 @@
-# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=search.statistics
-
-timer[].name string
-timer[].eventname string
-timer[].measure enum { FILL, PING, SEARCH } default=SEARCH
-
