@@ -2,6 +2,11 @@ package com.yahoo.nativec;
 
 import com.sun.jna.Structure;
 
+/**
+ * Gives access to the information provided by the C library mallinfo2() function.
+ *
+ * @author baldersheim
+ */
 public class MallInfo2 extends NativeHeap {
     private final static Throwable initException = NativeC.loadLibrary(MallInfo2.class);
     public static Throwable init() {

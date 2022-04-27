@@ -2,6 +2,11 @@ package com.yahoo.nativec;
 
 import com.sun.jna.Platform;
 
+/**
+ * Represents the native C heap if accessible
+ *
+ * @author baldersheim
+ */
 public class NativeHeap {
     public long usedSize() { return 0; }
     public long totalSize() { return 0; }
