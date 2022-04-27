@@ -80,6 +80,7 @@ private:
 public:
     StackTrace(const vespalib::string &heading) noexcept
     : _heading(heading), _frames(), _hash() {}
+    ~StackTrace() {}
     void add_frame(const vespalib::string &frame) {
         _frames.push_back(frame);
     }
