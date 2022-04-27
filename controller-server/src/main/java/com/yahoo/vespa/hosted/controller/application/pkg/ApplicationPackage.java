@@ -171,7 +171,7 @@ public class ApplicationPackage {
 
     private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
         if ( ! buildMetaObject.field(fieldName).valid())
-            throw new IllegalArgumentException("Missing value '" + fieldName + "' in '" + buildMetaFile + "'");
+            return Optional.empty();
         try {
             return Optional.of(mapper.apply(buildMetaObject.field(fieldName)));
         }
