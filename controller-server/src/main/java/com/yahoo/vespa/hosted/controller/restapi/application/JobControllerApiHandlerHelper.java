@@ -34,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunLog;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
+import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
@@ -194,14 +195,8 @@ class JobControllerApiHandlerHelper {
      *
      * @return Response with the new application version
      */
-    static HttpResponse submitResponse(JobController jobController, String tenant, String application,
-                                       Optional<SourceRevision> sourceRevision, Optional<String> authorEmail,
-                                       Optional<String> sourceUrl, Optional<String> description, int risk, long projectId,
-                                       ApplicationPackage applicationPackage, byte[] testPackage) {
-        ApplicationVersion version = jobController.submit(TenantAndApplicationId.from(tenant, application), sourceRevision, authorEmail,
-                                                          sourceUrl, projectId, applicationPackage, testPackage, description, risk);
-
-        return new MessageResponse("application " + version);
+    static HttpResponse submitResponse(JobController jobController, TenantAndApplicationId id, Submission submission, long projectId) {
+        return new MessageResponse("application " + jobController.submit(id, submission, projectId));
     }
 
     /** Aborts any job of the given type. */

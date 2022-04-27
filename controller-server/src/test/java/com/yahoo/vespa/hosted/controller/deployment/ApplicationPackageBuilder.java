@@ -317,7 +317,9 @@ public class ApplicationPackageBuilder {
     }
 
     private static byte[] buildMeta(Version compileVersion) {
-        return ("{\"compileVersion\":\"" + compileVersion.toFullString() + "\",\"buildTime\":1000}").getBytes(UTF_8);
+        return ("{\"compileVersion\":\"" + compileVersion.toFullString() +
+                "\",\"buildTime\":1000,\"parentVersion\":\"" +
+                compileVersion.toFullString() + "\"}").getBytes(UTF_8);
     }
 
     public ApplicationPackage build() {

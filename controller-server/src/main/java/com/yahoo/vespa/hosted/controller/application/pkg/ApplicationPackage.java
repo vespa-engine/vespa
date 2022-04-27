@@ -78,6 +78,7 @@ public class ApplicationPackage {
     private final ZipArchiveCache files;
     private final Optional<Version> compileVersion;
     private final Optional<Instant> buildTime;
+    private final Optional<Version> parentVersion;
     private final List<X509Certificate> trustedCertificates;
 
     /**
@@ -110,6 +111,7 @@ public class ApplicationPackage {
         Optional<Inspector> buildMetaObject = files.get(buildMetaFile).map(SlimeUtils::jsonToSlime).map(Slime::get);
         this.compileVersion = buildMetaObject.flatMap(object -> parse(object, "compileVersion", field -> Version.fromString(field.asString())));
         this.buildTime = buildMetaObject.flatMap(object -> parse(object, "buildTime", field -> Instant.ofEpochMilli(field.asLong())));
+        this.parentVersion = buildMetaObject.flatMap(object -> parse(object, "parentVersion", field -> Version.fromString(field.asString())));
 
         this.trustedCertificates = files.get(trustedCertificatesFile).map(bytes -> X509CertificateUtils.certificateListFromPem(new String(bytes, UTF_8))).orElse(List.of());
 
@@ -159,6 +161,9 @@ public class ApplicationPackage {
     /** Returns the time this package was built, if known. */
     public Optional<Instant> buildTime() { return buildTime; }
 
+    /** Returns the parent version used to compile the package, if known. */
+    public Optional<Version> parentVersion() { return parentVersion; }
+
     /** Returns the list of certificates trusted by this application, or an empty list if no trust configured. */
     public List<X509Certificate> trustedCertificates() {
         return trustedCertificates;
@@ -166,7 +171,7 @@ public class ApplicationPackage {
 
     private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
         if ( ! buildMetaObject.field(fieldName).valid())
-            throw new IllegalArgumentException("Missing value '" + fieldName + "' in '" + buildMetaFile + "'");
+            return Optional.empty();
         try {
             return Optional.of(mapper.apply(buildMetaObject.field(fieldName)));
         }
