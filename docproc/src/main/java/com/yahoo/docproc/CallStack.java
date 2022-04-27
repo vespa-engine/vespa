@@ -4,7 +4,6 @@ package com.yahoo.docproc;
 import com.yahoo.component.ComponentId;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.statistics.Statistics;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -47,14 +46,6 @@ public class CallStack {
         this.name = null;
         this.metric = metric;
     }
-    @Deprecated
-    public CallStack(Statistics statistics, Metric metric) {
-        this(metric);
-    }
-    @Deprecated
-    public CallStack(String name, Statistics manager, Metric metric) {
-        this(name, metric);
-    }
     /** Creates an empty stack with a name */
     public CallStack(String name, Metric metric) {
         this.name = name;
@@ -86,10 +77,6 @@ public class CallStack {
         for (DocumentProcessor docproc : docprocs) {
             addLast(docproc);
         }
-    }
-    @Deprecated
-    public CallStack(String name, Collection<DocumentProcessor> docprocs, Statistics manager, Metric metric) {
-        this(name, docprocs, metric);
     }
 
     /** Returns the name of this stack, or null if it is not named */
@@ -382,11 +369,6 @@ public class CallStack {
         }
         b.append("\n");
         return b.toString();
-    }
-
-    @Deprecated
-    public Statistics getStatistics() {
-        return null;
     }
 
     public Metric getMetric() {
