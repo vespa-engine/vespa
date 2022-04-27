@@ -20,7 +20,6 @@ import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.OsgiImpl;
 import com.yahoo.osgi.OsgiWrapper;
-import com.yahoo.statistics.Statistics;
 import org.osgi.framework.Bundle;
 
 import java.util.ArrayList;
@@ -118,7 +117,6 @@ public class HandlersConfigurerDi {
         return result.oldComponentsCleanupTask();
     }
 
-    @SuppressWarnings("deprecation")
     private Injector createFallbackInjector(com.yahoo.container.Container vespaContainer, Injector discInjector) {
         return discInjector.createChildInjector(new AbstractModule() {
             @Override
@@ -126,7 +124,6 @@ public class HandlersConfigurerDi {
                 // Provide a singleton instance for all component fallbacks,
                 // otherwise fallback injection may lead to a cascade of components requiring reconstruction.
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
-                bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
                 bind(AccessLog.class).toInstance(AccessLog.NONE_INSTANCE);
                 bind(Executor.class).toInstance(fallbackExecutor);
                 if (vespaContainer.getFileAcquirer() != null)
