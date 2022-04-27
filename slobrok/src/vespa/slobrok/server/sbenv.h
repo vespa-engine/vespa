@@ -50,14 +50,14 @@ private:
 
     std::vector<std::string>                   _partnerList;
     std::string                                _me;
+    LocalRpcMonitorMap                         _localRpcMonitorMap;
+    ServiceMapHistory                          _globalVisibleHistory;
     RPCHooks                                   _rpcHooks;
     std::unique_ptr<RemoteCheck>               _remotechecktask;
     vespalib::SimpleHealthProducer             _health;
     MetricsProducer                            _metrics;
     vespalib::SimpleComponentConfigProducer    _components;
-    LocalRpcMonitorMap                         _localRpcMonitorMap;
     UnionServiceMap                            _consensusMap;
-    ServiceMapHistory                          _globalVisibleHistory;
 
     ExchangeManager                            _exchanger;
 
