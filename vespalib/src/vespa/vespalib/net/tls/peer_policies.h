@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "assumed_roles.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 #include <vector>
@@ -49,17 +50,26 @@ public:
 class PeerPolicy {
     // _All_ credentials must match for the policy itself to match.
     std::vector<RequiredPeerCredential> _required_peer_credentials;
+    AssumedRoles                        _assumed_roles;
 public:
-    PeerPolicy() = default;
-    explicit PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials_)
-        : _required_peer_credentials(std::move(required_peer_credentials_))
-    {}
+    PeerPolicy();
+    // This policy is created with a wildcard role set, i.e. full access.
+    explicit PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials);
 
-    bool operator==(const PeerPolicy& rhs) const {
-        return (_required_peer_credentials == rhs._required_peer_credentials);
+    PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials,
+               AssumedRoles assumed_roles);
+
+    ~PeerPolicy();
+
+    bool operator==(const PeerPolicy& rhs) const noexcept {
+        return ((_required_peer_credentials == rhs._required_peer_credentials) &&
+                (_assumed_roles == rhs._assumed_roles));
     }
-    const std::vector<RequiredPeerCredential>& required_peer_credentials() const noexcept {
+    [[nodiscard]] const std::vector<RequiredPeerCredential>& required_peer_credentials() const noexcept {
         return _required_peer_credentials;
+    }
+    [[nodiscard]] const AssumedRoles& assumed_roles() const noexcept {
+        return _assumed_roles;
     }
 };
 

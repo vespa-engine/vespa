@@ -535,40 +535,40 @@ struct CertFixture : Fixture {
 CertFixture::~CertFixture() = default;
 
 struct PrintingCertificateCallback : CertificateVerificationCallback {
-    bool verify(const PeerCredentials& peer_creds) const override {
+    AuthorizationResult verify(const PeerCredentials& peer_creds) const override {
         if (!peer_creds.common_name.empty())  {
             fprintf(stderr, "Got a CN: %s\n", peer_creds.common_name.c_str());
         }
         for (auto& dns : peer_creds.dns_sans) {
             fprintf(stderr, "Got a DNS SAN entry: %s\n", dns.c_str());
         }
-        return true;
+        return AuthorizationResult::make_authorized_for_all_roles();
     }
 };
 
 // Single-use mock verifier
 struct MockCertificateCallback : CertificateVerificationCallback {
     mutable PeerCredentials creds; // only used in single thread testing context
-    bool verify(const PeerCredentials& peer_creds) const override {
+    AuthorizationResult verify(const PeerCredentials& peer_creds) const override {
         creds = peer_creds;
-        return true;
+        return AuthorizationResult::make_authorized_for_all_roles();
     }
 };
 
 struct AlwaysFailVerifyCallback : CertificateVerificationCallback {
-    bool verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
+    AuthorizationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
         fprintf(stderr, "Rejecting certificate, none shall pass!\n");
-        return false;
+        return AuthorizationResult::make_not_authorized();
     }
 };
 
 struct ExceptionThrowingCallback : CertificateVerificationCallback {
-    bool verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
+    AuthorizationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
         throw std::runtime_error("oh no what is going on");
     }
 };
 
-TEST_F("Certificate verification callback returning false breaks handshake", CertFixture) {
+TEST_F("Certificate verification callback returning unauthorized breaks handshake", CertFixture) {
     auto ck = f.create_ca_issued_peer_cert({"hello.world.example.com"}, {});
 
     f.reset_client_with_cert_opts(ck, std::make_shared<PrintingCertificateCallback>());
@@ -602,8 +602,40 @@ TEST_F("Certificate verification callback observes CN, DNS SANs and URI SANs", C
     ASSERT_EQUAL(2u, creds.dns_sans.size());
     EXPECT_EQUAL("crash.wile.example.com", creds.dns_sans[0]);
     EXPECT_EQUAL("burn.wile.example.com", creds.dns_sans[1]);
-    ASSERT_EQUAL(1u, server_cb->creds.uri_sans.size());
-    EXPECT_EQUAL("foo://bar.baz/zoid", server_cb->creds.uri_sans[0]);
+    ASSERT_EQUAL(1u, creds.uri_sans.size());
+    EXPECT_EQUAL("foo://bar.baz/zoid", creds.uri_sans[0]);
+}
+
+TEST_F("Peer credentials are propagated to CryptoCodec", CertFixture) {
+    auto cli_cert = f.create_ca_issued_peer_cert(
+            {{"rockets.wile.example.com"}},
+            {{"DNS:crash.wile.example.com"}, {"DNS:burn.wile.example.com"},
+             {"URI:foo://bar.baz/zoid"}});
+    auto serv_cert = f.create_ca_issued_peer_cert(
+            {{"birdseed.roadrunner.example.com"}},
+            {{"DNS:fake.tunnel.example.com"}});
+    f.reset_client_with_cert_opts(cli_cert, std::make_shared<PrintingCertificateCallback>());
+    auto server_cb = std::make_shared<MockCertificateCallback>();
+    f.reset_server_with_cert_opts(serv_cert, server_cb);
+    ASSERT_TRUE(f.handshake());
+
+    auto& client_creds = f.server->peer_credentials();
+    auto& server_creds = f.client->peer_credentials();
+
+    fprintf(stderr, "Client credentials (observed by server): %s\n", to_string(client_creds).c_str());
+    fprintf(stderr, "Server credentials (observed by client): %s\n", to_string(server_creds).c_str());
+
+    EXPECT_EQUAL("rockets.wile.example.com", client_creds.common_name);
+    ASSERT_EQUAL(2u, client_creds.dns_sans.size());
+    EXPECT_EQUAL("crash.wile.example.com", client_creds.dns_sans[0]);
+    EXPECT_EQUAL("burn.wile.example.com", client_creds.dns_sans[1]);
+    ASSERT_EQUAL(1u, client_creds.uri_sans.size());
+    EXPECT_EQUAL("foo://bar.baz/zoid", client_creds.uri_sans[0]);
+
+    EXPECT_EQUAL("birdseed.roadrunner.example.com", server_creds.common_name);
+    ASSERT_EQUAL(1u, server_creds.dns_sans.size());
+    EXPECT_EQUAL("fake.tunnel.example.com", server_creds.dns_sans[0]);
+    ASSERT_EQUAL(0u, server_creds.uri_sans.size());
 }
 
 TEST_F("Last occurring CN is given to verification callback if multiple CNs are present", CertFixture) {

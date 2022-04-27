@@ -12,6 +12,8 @@
 
 namespace vespalib::net::tls::impl {
 
+class OpenSslCryptoCodecImpl;
+
 class OpenSslTlsContextImpl : public TlsContext {
     crypto::SslCtxPtr _ctx;
     AuthorizationMode _authorization_mode;
@@ -47,7 +49,7 @@ private:
     void set_ssl_ctx_self_reference();
     void set_accepted_cipher_suites(const std::vector<vespalib::string>& ciphers);
 
-    bool verify_trusted_certificate(::X509_STORE_CTX* store_ctx, const SocketAddress& peer_address);
+    bool verify_trusted_certificate(::X509_STORE_CTX* store_ctx, OpenSslCryptoCodecImpl& codec_impl);
 
     static int verify_cb_wrapper(int preverified_ok, ::X509_STORE_CTX* store_ctx);
 };

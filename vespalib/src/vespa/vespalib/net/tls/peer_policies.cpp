@@ -119,6 +119,21 @@ RequiredPeerCredential::RequiredPeerCredential(Field field, vespalib::string mus
 
 RequiredPeerCredential::~RequiredPeerCredential() = default;
 
+PeerPolicy::PeerPolicy() = default;
+
+PeerPolicy::PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials)
+    : _required_peer_credentials(std::move(required_peer_credentials)),
+      _assumed_roles(AssumedRoles::make_wildcard_role())
+{}
+
+PeerPolicy::PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials,
+                       AssumedRoles assumed_roles)
+    : _required_peer_credentials(std::move(required_peer_credentials)),
+      _assumed_roles(std::move(assumed_roles))
+{}
+
+PeerPolicy::~PeerPolicy() = default;
+
 namespace {
 template <typename Collection>
 void print_joined(std::ostream& os, const Collection& coll, const char* sep) {

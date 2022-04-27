@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "authorization_result.h"
 #include "peer_credentials.h"
 
 namespace vespalib::net::tls {
@@ -13,15 +14,15 @@ struct CertificateVerificationCallback {
     virtual ~CertificateVerificationCallback() = default;
     // Return true iff the peer credentials pass verification, false otherwise.
     // Must be thread safe.
-    virtual bool verify(const PeerCredentials& peer_creds) const = 0;
+    [[nodiscard]] virtual AuthorizationResult verify(const PeerCredentials& peer_creds) const = 0;
 };
 
 // Simplest possible certificate verification callback which accepts the certificate
 // iff all its pre-verification by OpenSSL has passed. This means its chain is valid
 // and it is signed by a trusted CA.
 struct AcceptAllPreVerifiedCertificates : CertificateVerificationCallback {
-    bool verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
-        return true; // yolo
+    AuthorizationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
+        return AuthorizationResult::make_authorized_for_all_roles(); // yolo
     }
 };
 
