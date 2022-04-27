@@ -9,9 +9,11 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * A cluster-wide re-entrant mutex which is released on (the last symmetric) close.
@@ -23,9 +25,11 @@ import java.util.concurrent.TimeUnit;
  */
 public class Lock implements Mutex {
 
+    // TODO(hakon): Remove once debugging is done
     private final Object monitor = new Object();
     private long nextSequenceNumber = 0;
     private final Map<Long, Long> reentriesByThreadId = new HashMap<>();
+    private final Instant created = Instant.now();
 
     private final InterProcessLock mutex;
     private final String lockPath;
@@ -62,13 +66,8 @@ public class Lock implements Mutex {
         invoke(+1L, threadLockStats::lockAcquired);
     }
 
-    @FunctionalInterface
-    private interface TriConsumer {
-        void accept(String lockId, long reentryCountDiff, Map<Long, Long> reentriesByThreadId);
-    }
-
     // TODO(hakon): Remove once debugging is unnecessary
-    private void invoke(long reentryCountDiff, TriConsumer consumer) {
+    private void invoke(long reentryCountDiff, Consumer<String> consumer) {
         long threadId = Thread.currentThread().getId();
         final long sequenceNumber;
         final Map<Long, Long> reentriesByThreadIdCopy;
@@ -86,8 +85,10 @@ public class Lock implements Mutex {
             reentriesByThreadIdCopy = Map.copyOf(reentriesByThreadId);
         }
 
-        String lockId = Integer.toHexString(System.identityHashCode(this));
-        consumer.accept(lockId, sequenceNumber, reentriesByThreadIdCopy);
+        String debug = "thread " + threadId + " " + lockPath + "@" + created + " 0x" +
+                       Integer.toHexString(System.identityHashCode(this))  + " #" + sequenceNumber +
+                       ", reentries by thread ID = " + reentriesByThreadIdCopy;
+        consumer.accept(debug);
     }
 
     @Override
