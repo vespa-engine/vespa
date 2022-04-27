@@ -48,6 +48,8 @@ public interface ApplicationPackage {
     Path MODELS_GENERATED_DIR = Path.fromString("models.generated");
     /** Files generated from machine-learned models which should be replicated in ZooKeeper */
     Path MODELS_GENERATED_REPLICATED_DIR = MODELS_GENERATED_DIR.append("replicated");
+    /** Constant tensors */
+    Path CONSTANTS_DIR = Path.fromString("constants");
 
     // NOTE: this directory is created in serverdb during deploy, and should not exist in the original user application
     /** Do not use */

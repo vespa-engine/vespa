@@ -89,6 +89,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     private static final Logger log = Logger.getLogger(FilesApplicationPackage.class.getName());
     private static final String META_FILE_NAME = ".applicationMetaData";
+    private static final Map<Path, Set<String>> validFileExtensions;
 
     private final File appDir;
     private final File preprocessedDir;
@@ -750,26 +751,41 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     /* Validates that files in application dir and subdirectories have a known extension */
     public void validateFileExtensions(boolean throwIfInvalid) {
-        // TODO: Define this for all subdirs
-        Map<Path, Set<String>> validFileSuffixes = Map.of(
-                QUERY_PROFILES_DIR, Set.of(".xml"),
-                RULES_DIR, Set.of(".sr"),
-                SCHEMAS_DIR, Set.of(".sd", ".expression"),
-                SEARCH_DEFINITIONS_DIR, Set.of(".sd", ".expression"));
-
-        validFileSuffixes.forEach((key, value) -> {
+        validFileExtensions.forEach((key, value) -> {
             java.nio.file.Path path = appDir.toPath().resolve((key.toFile().toPath()));
             File dir = path.toFile();
             if ( ! dir.exists() || ! dir.isDirectory()) return;
 
             try (var filesInPath = Files.list(path)) {
-                filesInPath.forEach(f -> {
-                    validateFileSuffix(path, f, value, throwIfInvalid);
-                });
+                filesInPath.forEach(f -> validateFileSuffix(path, f, value, throwIfInvalid));
             } catch (IOException e) {
                 log.log(Level.WARNING, "Unable to list files in " + dir, e);
             }
         });
+    }
+
+    static {
+        validFileExtensions = Map.ofEntries(
+                Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
+                Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
+                Map.entry(Path.fromString(DOCPROCCHAINS_DIR), Set.of(".xml")),
+                Map.entry(MODELS_DIR, Set.of(".model")),
+                Map.entry(PAGE_TEMPLATES_DIR, Set.of(".xml")),
+                Map.entry(Path.fromString(PROCESSORCHAINS_DIR), Set.of(".xml")),
+                Map.entry(QUERY_PROFILES_DIR, Set.of(".xml")),
+                Map.entry(QUERY_PROFILE_TYPES_DIR, Set.of(".xml")),
+                Map.entry(Path.fromString(ROUTINGTABLES_DIR), Set.of(".xml")),
+                Map.entry(RULES_DIR, Set.of(RULES_NAME_SUFFIX)),
+                // TODO: Might have rank profiles in subdirs: schema-name]/[rank-profile].profile
+                Map.entry(SCHEMAS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX)),
+                Map.entry(Path.fromString(SEARCHCHAINS_DIR), Set.of(".xml")),
+                // TODO: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
+                Map.entry(SEARCH_DEFINITIONS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX)),
+                Map.entry(SECURITY_DIR, Set.of(".pem")));
+
+        // TODO: Files that according to doc (https://docs.vespa.ai/en/reference/schema-reference.html) can be anywhere in the application package:
+        //   constant tensors (.json, .json.lz4)
+        //   onnx model files (.onnx)
     }
 
     private void validateFileSuffix(java.nio.file.Path dir, java.nio.file.Path pathToFile, Set<String> allowedSuffixes, boolean throwIfInvalid) {
