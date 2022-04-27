@@ -28,7 +28,7 @@ struct RawDocumentMetaData
     RawDocumentMetaData() noexcept
         : _gid(),
           _bucket_used_bits_and_doc_size(BucketId::minNumBits),
-          _timestamp()
+          _timestamp(0)
     { }
 
     RawDocumentMetaData(const GlobalId &gid, const BucketId &bucketId, const Timestamp &timestamp, uint32_t docSize) noexcept
@@ -65,7 +65,7 @@ struct RawDocumentMetaData
     const GlobalId &getGid() const { return _gid; }
     GlobalId &getGid() { return _gid; }
     void setGid(const GlobalId &rhs) { _gid = rhs; }
-    uint8_t getBucketUsedBits() const { return _bucket_used_bits_and_doc_size.load(std::memory_order_relaxed); }
+    uint8_t getBucketUsedBits() const { return _bucket_used_bits_and_doc_size.load(std::memory_order_relaxed) & 0xffu; }
 
     BucketId getBucketId() const {
         BucketId ret(_gid.convertToBucketId());
