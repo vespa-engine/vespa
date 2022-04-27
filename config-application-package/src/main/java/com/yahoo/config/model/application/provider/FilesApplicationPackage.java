@@ -753,13 +753,14 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     public void validateFileExtensions(boolean throwIfInvalid) {
         validFileExtensions.forEach((key, value) -> {
             java.nio.file.Path path = appDir.toPath().resolve((key.toFile().toPath()));
-            File dir = path.toFile();
-            if ( ! dir.exists() || ! dir.isDirectory()) return;
+            File subDirectory = path.toFile();
+            if ( ! subDirectory.exists() || ! subDirectory.isDirectory()) return;
 
             try (var filesInPath = Files.list(path)) {
-                filesInPath.forEach(f -> validateFileSuffix(path, f, value, throwIfInvalid));
+                filesInPath.filter(filePath -> filePath.toFile().isFile())
+                           .forEach(f -> validateFileSuffix(path, f, value, throwIfInvalid));
             } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to list files in " + dir, e);
+                log.log(Level.WARNING, "Unable to list files in " + subDirectory, e);
             }
         });
     }
@@ -769,7 +770,7 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                 Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
                 Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
                 Map.entry(Path.fromString(DOCPROCCHAINS_DIR), Set.of(".xml")),
-                Map.entry(MODELS_DIR, Set.of(".model")),
+                // Map.entry(MODELS_DIR, Set.of(".model")),  TODO: Enable on Vespa 8
                 Map.entry(PAGE_TEMPLATES_DIR, Set.of(".xml")),
                 Map.entry(Path.fromString(PROCESSORCHAINS_DIR), Set.of(".xml")),
                 Map.entry(QUERY_PROFILES_DIR, Set.of(".xml")),

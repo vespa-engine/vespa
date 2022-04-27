@@ -1,0 +1,3 @@
+<query-profile-type id="root" inherits="native">
+    <field name="ranking.features.query(tensor)" type="tensor(x{},y[3])" />
+</query-profile-type>
