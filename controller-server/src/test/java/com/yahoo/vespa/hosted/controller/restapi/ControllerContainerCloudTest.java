@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi;
 import ai.vespa.hosted.api.MultiPartStreamer;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.vespa.hosted.controller.api.integration.user.User;
+import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
