@@ -23,8 +23,6 @@ package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.document.*;
 import com.yahoo.documentmodel.*;
-import com.yahoo.compress.Compressor;
-import com.yahoo.compress.CompressionType;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.searchdefinition.DistributableResource;
 import com.yahoo.searchdefinition.document.*;
@@ -299,10 +297,6 @@ TOKEN :
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
-| < COMPRESSION: "compression" >
-| < COMPRESSIONLEVEL: "level" >
-| < COMPRESSIONTHRESHOLD: "threshold" >
-| < LZ4: "lz4" >
 | < USEDOCUMENT: "use-document" >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
@@ -544,9 +538,6 @@ void documentBody(SDDocumentType document, Schema schema) :
 }
 {
     ( annotation(schema, document)
-      | compression(document)
-      | headercfg(document)
-      | bodycfg(document)
       | structInside(document, schema)
       | field(document, schema) )
 }
@@ -566,51 +557,6 @@ void rawAsBase64(Schema schema) :
     }
 }
 
-/**
- * Consumes a document head block.
- *
- * @param document The document type to modify.
- */
-void headercfg(SDDocumentType document) : { }
-{
-    <HEADER> lbrace() [compression(document) (<NL>)*] <RBRACE>
-}
-
-/**
- * Consumes a document body block.
- *
- * @param document The document type to modify.
- */
-void bodycfg(SDDocumentType document) : { }
-{
-    <BODY> lbrace() [compression(document) (<NL>)*] <RBRACE>
-}
-
-/**
- * Consumes a compression block. This can be set in both document header and -body block.
- *
- * @param document The document type to modify.
- */
-void compression(SDDocumentType document) :
-{
-    deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
-}
-{
-    <COMPRESSION> lbrace() ( compressionItem() (<NL>)*)* <RBRACE>  { }
-}
-
-/**
- * Consumes the body of a compression block.
- *
- */
-void compressionItem() :
-{ }
-{
-    ( ( <TYPE> <COLON> <LZ4> )
-      | (<COMPRESSIONTHRESHOLD> <COLON> <INTEGER>)
-      | (<COMPRESSIONLEVEL> <COLON> <INTEGER>)
-    ) { }
-}
 
 /**
  * Consumes a document inheritance statement.
@@ -2680,9 +2626,6 @@ String identifier() : { }
       | <BOLDING>
       | <BTREE>
       | <CASED>
-      | <COMPRESSION>
-      | <COMPRESSIONLEVEL>
-      | <COMPRESSIONTHRESHOLD>
       | <CONSTANT>
       | <CONSTANTS>
       | <CONTEXT>
