@@ -105,7 +105,7 @@ public class FilesApplicationPackageTest {
     }
 
     @Test
-    public void testLegacyOverrides() throws IOException {
+    public void testLegacyOverrides() {
         File appDir = new File("src/test/resources/app-legacy-overrides");
         ApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         var overrides = app.legacyOverrides();
@@ -141,6 +141,27 @@ public class FilesApplicationPackageTest {
                      assertThrows(IllegalArgumentException.class,
                                   () -> applicationFile(new File("foo"), ".."))
                              .getMessage());
+    }
+
+    @Test
+    public void testValidFileExtensions() {
+        File appDir = new File("src/test/resources/app-with-deployment");;
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        app.validateFileExtensions(true);
+    }
+
+    @Test
+    public void testInvalidFileExtensions() {
+        File appDir = new File("src/test/resources/app-with-invalid-files-in-subdir");;
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        try {
+            app.validateFileExtensions(true);
+            fail("expected an exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("File in application package with unknown suffix: search/query-profiles/file-with-invalid.extension " +
+                                 "Please delete or move file to another directory.",
+                         e.getMessage());
+        }
     }
 
 }

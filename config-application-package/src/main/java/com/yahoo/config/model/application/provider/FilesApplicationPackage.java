@@ -13,12 +13,12 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.codegen.DefParser;
+import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.model.application.AbstractApplicationPackage;
 import com.yahoo.io.HexDump;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
@@ -33,7 +33,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -48,6 +47,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -61,7 +61,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -69,7 +68,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 
 
 /**
- * Application package derived from local files, ie. during deploy.
+ * Application package derived from local files, i.e. during deploy.
  * Construct using {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFile(java.io.File)} or
  * {@link com.yahoo.config.model.application.provider.FilesApplicationPackage#fromFileWithDeployData(java.io.File, DeployData)}.
  *
@@ -747,6 +746,42 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
             throw new IllegalArgumentException(file + " is not a child of " + parent);
 
         return file;
+    }
+
+    /* Validates that files in application dir and subdirectories have a known extension */
+    public void validateFileExtensions(boolean throwIfInvalid) {
+        // TODO: Define this for all subdirs
+        Map<Path, Set<String>> validFileSuffixes = Map.of(
+                QUERY_PROFILES_DIR, Set.of(".xml"),
+                RULES_DIR, Set.of(".sr"),
+                SCHEMAS_DIR, Set.of(".sd", ".expression"),
+                SEARCH_DEFINITIONS_DIR, Set.of(".sd", ".expression"));
+
+        validFileSuffixes.forEach((key, value) -> {
+            java.nio.file.Path path = appDir.toPath().resolve((key.toFile().toPath()));
+            File dir = path.toFile();
+            if ( ! dir.exists() || ! dir.isDirectory()) return;
+
+            try (var filesInPath = Files.list(path)) {
+                filesInPath.forEach(f -> {
+                    validateFileSuffix(path, f, value, throwIfInvalid);
+                });
+            } catch (IOException e) {
+                log.log(Level.WARNING, "Unable to list files in " + dir, e);
+            }
+        });
+    }
+
+    private void validateFileSuffix(java.nio.file.Path dir, java.nio.file.Path pathToFile, Set<String> allowedSuffixes, boolean throwIfInvalid) {
+        String fileName = pathToFile.toFile().getName();
+        if (allowedSuffixes.stream().noneMatch(fileName::endsWith)) {
+            String message = "File in application package with unknown suffix: " +
+                    appDir.toPath().relativize(dir).resolve(fileName) + " Please delete or move file to another directory.";
+            if (throwIfInvalid)
+                throw new IllegalArgumentException(message);
+            else
+                log.log(Level.INFO, message);
+        }
     }
 
 }
