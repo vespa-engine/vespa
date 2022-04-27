@@ -8,6 +8,7 @@
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <atomic>
 
 namespace search::index {
     class IFieldLengthInspector;
@@ -52,7 +53,7 @@ private:
     std::unique_ptr<DocumentInverterCollection> _inverters;
     bool                _frozen;
     uint32_t            _maxDocId;
-    uint32_t            _numDocs;
+    std::atomic<uint32_t> _numDocs;
     mutable std::mutex  _lock;
     std::vector<bool>   _hiddenFields;
     index::Schema::SP   _prunedSchema;
@@ -70,11 +71,13 @@ private:
         }
     }
     void incNumDocs() {
-        ++_numDocs;
+        auto num_docs = _numDocs.load(std::memory_order_relaxed);
+        _numDocs.store(num_docs + 1, std::memory_order_relaxed);
     }
     void decNumDocs() {
-        if (_numDocs > 0) {
-            --_numDocs;
+        auto num_docs = _numDocs.load(std::memory_order_relaxed);
+        if (num_docs > 0) {
+            _numDocs.store(num_docs - 1, std::memory_order_relaxed);
         }
     }
 
@@ -154,7 +157,7 @@ public:
     }
 
     virtual uint32_t getNumDocs() const {
-        return _numDocs;
+        return _numDocs.load(std::memory_order_relaxed);
     }
 
     virtual uint64_t getNumWords() const;
