@@ -47,7 +47,6 @@ import com.yahoo.vespa.model.container.component.DiscBindingsConfigGenerator;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
-import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
@@ -179,7 +178,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         //               (ThreadedHttpRequestHandler.Context is source compatible.)
         addSimpleComponent("com.yahoo.container.jdisc.LoggingRequestHandler$Context");
 
-        addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
