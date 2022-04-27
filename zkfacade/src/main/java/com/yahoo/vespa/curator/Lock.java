@@ -13,7 +13,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * A cluster-wide re-entrant mutex which is released on (the last symmetric) close.
@@ -66,11 +65,16 @@ public class Lock implements Mutex {
                     " to acquire lock '" + lockPath + "'");
         }
 
-        invoke(+1L, threadLockStats::lockAcquired);
+        invoke(+1L, (lockPath, debug) -> threadLockStats.lockAcquired(debug), lockPath);
+    }
+
+    @FunctionalInterface
+    private interface BiConsumer2 {
+        void accept(String lockPath, String debug);
     }
 
     // TODO(hakon): Remove once debugging is unnecessary
-    private void invoke(long reentryCountDiff, Consumer<String> consumer) {
+    private void invoke(long reentryCountDiff, BiConsumer2 consumer, String lockPath) {
         long threadId = Thread.currentThread().getId();
         final long sequenceNumber;
         final Map<Long, Long> reentriesByThreadIdCopy;
@@ -92,20 +96,22 @@ public class Lock implements Mutex {
                        "@" + created + " Curator 0x" + Integer.toHexString(System.identityHashCode(curator)) +
                        " lock " + lockPath + " #" + sequenceNumber +
                        ", reentries by thread ID = " + reentriesByThreadIdCopy;
-        consumer.accept(debug);
+        consumer.accept(lockPath, debug);
     }
 
     @Override
     public void close() {
         ThreadLockStats threadLockStats = LockStats.getForCurrentThread();
         // Update metrics now before release() to avoid double-counting time in locked state.
-        invoke(-1L, threadLockStats::preRelease);
+        // The lockPath must be sent down as close() may be invoked in an order not necessarily
+        // equal to the reverse order of acquires.
+        invoke(-1L, threadLockStats::preRelease, lockPath);
         try {
             mutex.release();
-            threadLockStats.postRelease();
+            threadLockStats.postRelease(lockPath);
         }
         catch (Exception e) {
-            threadLockStats.releaseFailed();
+            threadLockStats.releaseFailed(lockPath);
             throw new RuntimeException("Exception releasing lock '" + lockPath + "'", e);
         }
     }
