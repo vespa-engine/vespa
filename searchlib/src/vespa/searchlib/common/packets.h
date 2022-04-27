@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/memory.h>
 #include <vector>
+#include <atomic>
 
 class FNET_DataBuffer;
 
@@ -15,21 +16,21 @@ using vespalib::string;
 class FS4PersistentPacketStreamer {
     using CompressionConfig = vespalib::compression::CompressionConfig;
 
-    unsigned int _compressionLimit;
-    unsigned int _compressionLevel;
-    CompressionConfig::Type _compressionType;
+    std::atomic<unsigned int> _compressionLimit;
+    std::atomic<unsigned int> _compressionLevel;
+    std::atomic<CompressionConfig::Type> _compressionType;
 
 public:
     static FS4PersistentPacketStreamer Instance;
 
     FS4PersistentPacketStreamer();
 
-    void SetCompressionLimit(unsigned int limit) { _compressionLimit = limit; }
-    void SetCompressionLevel(unsigned int level) { _compressionLevel = level; }
-    void SetCompressionType(CompressionConfig::Type compressionType) { _compressionType = compressionType; }
-    CompressionConfig::Type getCompressionType() const { return _compressionType; }
-    uint32_t getCompressionLimit() const { return _compressionLimit; }
-    uint32_t getCompressionLevel() const { return _compressionLevel; }
+    void SetCompressionLimit(unsigned int limit) { _compressionLimit.store(limit, std::memory_order_relaxed); }
+    void SetCompressionLevel(unsigned int level) { _compressionLevel.store(level, std::memory_order_relaxed); }
+    void SetCompressionType(CompressionConfig::Type compressionType) { _compressionType.store(compressionType, std::memory_order_relaxed); }
+    CompressionConfig::Type getCompressionType() const { return _compressionType.load(std::memory_order_relaxed); }
+    uint32_t getCompressionLimit() const { return _compressionLimit.load(std::memory_order_relaxed); }
+    uint32_t getCompressionLevel() const { return _compressionLevel.load(std::memory_order_relaxed); }
 };
 
 //==========================================================================
