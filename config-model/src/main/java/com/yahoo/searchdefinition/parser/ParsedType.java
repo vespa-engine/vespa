@@ -153,6 +153,32 @@ class ParsedType {
     }
     static ParsedType wsetOf(ParsedType vt) {
         assert(vt != null);
+        if (vt.getVariant() != Variant.BUILTIN) {
+            throw new IllegalArgumentException("weightedset of complex type '" + vt + "' is not supported");
+        }
+        switch (vt.name()) {
+            // allowed types:
+        case "bool":
+        case "byte":
+        case "int":
+        case "long":
+        case "string":
+        case "uri":
+            break;
+        case "predicate":
+        case "raw":
+        case "tag":
+            throw new IllegalArgumentException("weightedset of complex type '" + vt + "' is not supported");
+        case "float16":
+        case "float":
+        case "double":
+            /* TODO Vespa 8:
+            throw new IllegalArgumentException("weightedset of inexact type '" + vt + "' is not supported");
+            */
+            break;
+        default:
+            throw new IllegalArgumentException("weightedset of unknown type '" + vt + "' is not supported");
+        }
         return new ParsedType("weightedset<" + vt.name() + ">", Variant.WSET, vt);
     }
     static ParsedType documentRef(ParsedType docType) {
