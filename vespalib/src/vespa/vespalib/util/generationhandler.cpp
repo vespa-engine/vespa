@@ -125,7 +125,7 @@ GenerationHandler::updateFirstUsedGeneration()
         toFree->_next = _free;
         _free = toFree;
     }
-    _firstUsedGeneration = _first->_generation;
+    _firstUsedGeneration.store(_first->_generation, std::memory_order_relaxed);
 }
 
 GenerationHandler::GenerationHandler()
@@ -215,7 +215,7 @@ GenerationHandler::getGenerationRefCount(generation_t gen) const
 {
     if (static_cast<sgeneration_t>(gen - _generation) > 0)
         return 0u;
-    if (static_cast<sgeneration_t>(_firstUsedGeneration - gen) > 0)
+    if (static_cast<sgeneration_t>(getFirstUsedGeneration() - gen) > 0)
         return 0u;
     for (GenerationHold *hold = _first; hold != nullptr; hold = hold->_next) {
         if (hold->_generation.load(std::memory_order_relaxed) == gen)

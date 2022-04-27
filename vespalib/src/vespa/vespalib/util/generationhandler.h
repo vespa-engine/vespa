@@ -73,7 +73,7 @@ public:
 
 private:
     generation_t    _generation;
-    generation_t    _firstUsedGeneration;
+    std::atomic<generation_t>     _firstUsedGeneration;
     std::atomic<GenerationHold *> _last;      // Points to "current generation" entry
     GenerationHold *_first;     // Points to "firstUsedGeneration" entry
     GenerationHold *_free;      // List of free entries
@@ -109,7 +109,7 @@ public:
      * if writer hasn't updated first used generation after last reader left.
      */
     generation_t getFirstUsedGeneration() const {
-        return _firstUsedGeneration;
+        return _firstUsedGeneration.load(std::memory_order_relaxed);
     }
 
     /**
