@@ -34,16 +34,10 @@ search prefetch {
     field multifloat type array<float> {
       indexing: attribute
     }
-    field wsfloat type weightedset<float> {
-      indexing: attribute
-    }
     field singledouble type double {
       indexing: attribute
     }
     field multidouble type array<double> {
-      indexing: attribute
-    }
-    field wsdouble type weightedset<double> {
       indexing: attribute
     }
     field singlestring type string {

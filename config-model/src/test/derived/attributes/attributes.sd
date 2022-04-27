@@ -74,7 +74,7 @@ search attributes {
     field b6 type array<long> {
       indexing: summary | attribute
     }
-    field b7 type weightedset<double> {
+    field b7 type weightedset<int> {
       indexing: summary | attribute
     }
 

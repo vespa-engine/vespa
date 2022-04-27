@@ -150,7 +150,7 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
                 "        field double_array_field type array<double> { \n" +
                 "            indexing: summary | attribute \n" +
                 "        }\n" +
-                "        field weightedset_field type weightedset<double> { \n" +
+                "        field weightedset_field type weightedset<int> { \n" +
                 "            indexing: summary | attribute \n" +
                 "        }\n" +
                 "        field tensor_field_1 type tensor(x{}) { \n" +
