@@ -10,8 +10,7 @@ import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainBuilderBase;
 import com.yahoo.vespa.model.container.docproc.DocprocChain;
 import com.yahoo.vespa.model.container.docproc.DocumentProcessor;
 import org.w3c.dom.Element;
-
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,12 +20,12 @@ import java.util.Map;
  */
 public class DomDocprocChainBuilder extends DomChainBuilderBase<DocumentProcessor, DocprocChain> {
 
-    public DomDocprocChainBuilder(Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName) {
-        super(Arrays.asList(ComponentsBuilder.ComponentType.documentprocessor), outerComponentTypeByComponentName);
+    public DomDocprocChainBuilder(Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName) {
+        super(List.of(ComponentsBuilder.ComponentType.documentprocessor), outerComponentTypeByComponentName);
     }
 
     @Override
-    protected DocprocChain buildChain(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec,
+    protected DocprocChain buildChain(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec,
                                       ChainSpecification specWithoutInnerComponents) {
         Map<Pair<String, String>, String> fieldNameSchemaMap = DocumentProcessorModelBuilder.parseFieldNameSchemaMap(producerSpec);
         return new DocprocChain(specWithoutInnerComponents, fieldNameSchemaMap);

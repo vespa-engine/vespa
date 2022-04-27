@@ -24,13 +24,13 @@ public class DocprocChainsBuilder extends ChainsBuilder<DocumentProcessor, Docpr
 
     private static final Map<String, Class<? extends DomChainBuilderBase<? extends DocumentProcessor, ? extends DocprocChain>>>
             chainType2builderClass = Collections.unmodifiableMap(
-            new LinkedHashMap<String, Class<? extends DomChainBuilderBase<? extends DocumentProcessor, ? extends DocprocChain>>>() {{
+            new LinkedHashMap<>() {{
                 put("docprocchain", DomDocprocChainBuilder.class);
                 put("chain", DomDocprocChainBuilder.class);
             }});
 
-    public DocprocChainsBuilder(DeployState deployState, AbstractConfigProducer ancestor, List<Element> docprocChainsElements,
-                                Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    public DocprocChainsBuilder(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> docprocChainsElements,
+                                Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(deployState, ancestor, docprocChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
     }
 

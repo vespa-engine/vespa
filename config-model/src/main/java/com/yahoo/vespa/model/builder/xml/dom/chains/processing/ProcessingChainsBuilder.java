@@ -20,7 +20,6 @@ import java.util.Map;
  * Creates all processing chains from xml.
  *
  * @author bratseth
- * @since   5.1.6
  */
 public class ProcessingChainsBuilder extends ChainsBuilder<Processor, ProcessingChain> {
 
@@ -30,8 +29,8 @@ public class ProcessingChainsBuilder extends ChainsBuilder<Processor, Processing
                 put("chain", DomProcessingChainBuilder.class);
             }});
 
-    public ProcessingChainsBuilder(DeployState deployState, AbstractConfigProducer ancestor, List<Element> processingChainsElements,
-                                   Map<String, ComponentsBuilder.ComponentType> outerSearcherTypeByComponentName) {
+    public ProcessingChainsBuilder(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> processingChainsElements,
+                                   Map<String, ComponentsBuilder.ComponentType<?>> outerSearcherTypeByComponentName) {
         super(deployState, ancestor, processingChainsElements, outerSearcherTypeByComponentName, chainType2builderClass);
     }
 

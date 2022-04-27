@@ -38,13 +38,13 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         this.appPkgChainsDir = appPkgChainsDir;
     }
 
-    protected abstract CHAINS newChainsInstance(AbstractConfigProducer parent);
+    protected abstract CHAINS newChainsInstance(AbstractConfigProducer<?> parent);
 
     @Override
-    protected final CHAINS doBuild(DeployState deployState, AbstractConfigProducer parent, Element chainsElement) {
+    protected final CHAINS doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element chainsElement) {
         CHAINS chains = newChainsInstance(parent);
 
-        List<Element> allChainElements = allChainElements(deployState, parent, chainsElement);
+        List<Element> allChainElements = allChainElements(deployState, chainsElement);
         if (! allChainElements.isEmpty()) {
             ComponentsBuilder<COMPONENT> outerComponentsBuilder = readOuterComponents(deployState, chains, allChainElements);
             ChainsBuilder<COMPONENT, CHAIN> chainsBuilder = readChains(deployState, chains, allChainElements,
@@ -56,7 +56,7 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         return chains;
     }
 
-    private List<Element> allChainElements(DeployState deployState, AbstractConfigProducer ancestor, Element chainsElement) {
+    private List<Element> allChainElements(DeployState deployState, Element chainsElement) {
         List<Element> chainsElements = new ArrayList<>();
         if (outerChainsElem != null)
             chainsElements.add(outerChainsElem);
@@ -68,18 +68,18 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         return chainsElements;
     }
 
-    private ComponentsBuilder<COMPONENT> readOuterComponents(DeployState deployState, AbstractConfigProducer ancestor, List<Element> chainsElems) {
+    private ComponentsBuilder<COMPONENT> readOuterComponents(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> chainsElems) {
         return new ComponentsBuilder<>(deployState, ancestor, allowedComponentTypes, chainsElems, null);
     }
 
     protected abstract
-    ChainsBuilder<COMPONENT, CHAIN> readChains(DeployState deployState, AbstractConfigProducer ancestor, List<Element> allChainsElems,
-                                               Map<String, ComponentsBuilder.ComponentType> outerComponentTypeByComponentName);
+    ChainsBuilder<COMPONENT, CHAIN> readChains(DeployState deployState, AbstractConfigProducer<?> ancestor, List<Element> allChainsElems,
+                                               Map<String, ComponentsBuilder.ComponentType<?>> outerComponentTypeByComponentName);
 
     private void addOuterComponents(CHAINS chains, ComponentsBuilder<COMPONENT> outerComponentsBuilder) {
         assert (outerComponentsBuilder.getOuterComponentReferences().isEmpty());
 
-        for (ChainedComponent outerComponent : outerComponentsBuilder.getComponentDefinitions()) {
+        for (ChainedComponent<?> outerComponent : outerComponentsBuilder.getComponentDefinitions()) {
             chains.add(outerComponent);
         }
     }

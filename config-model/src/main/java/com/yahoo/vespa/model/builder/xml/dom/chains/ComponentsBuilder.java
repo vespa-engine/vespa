@@ -38,7 +38,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
 
     // NOTE: the 'name' string must match the xml tag name for the component in services.
     public static class ComponentType<T extends ChainedComponent<?>> {
-        static List<ComponentType> values = new ArrayList<>();
+        static List<ComponentType<?>> values = new ArrayList<>();
         public static final ComponentType<DocumentProcessor> documentprocessor = new ComponentType<>("documentprocessor", DomDocumentProcessorBuilder.class);
         public static final ComponentType<Searcher<?>> searcher = new ComponentType<>("searcher", DomSearcherBuilder.class);
         public static final ComponentType<Processor> processor = new ComponentType<>("processor", DomProcessorBuilder.class);
@@ -63,7 +63,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
 
     private final Set<ComponentSpecification> outerComponentReferences = new LinkedHashSet<>();
     private final List<T> componentDefinitions = new ArrayList<>();
-    private final Map<String, ComponentType> componentTypesByComponentName = new LinkedHashMap<>();
+    private final Map<String, ComponentType<?>> componentTypesByComponentName = new LinkedHashMap<>();
 
     /**
      * @param ancestor The parent config producer
@@ -73,18 +73,18 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
      *                                          every component is a definition, not a reference.
      */
     ComponentsBuilder(DeployState deployState,
-                      AbstractConfigProducer ancestor,
+                      AbstractConfigProducer<?> ancestor,
                       Collection<ComponentType<T>> componentTypes,
                       List<Element> elementsContainingComponentElems,
-                      Map<String, ComponentType> outerComponentTypeByComponentName) {
+                      Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
 
         readComponents(deployState, ancestor, componentTypes, elementsContainingComponentElems, unmodifiable(outerComponentTypeByComponentName));
     }
 
-    private void readComponents(DeployState deployState, AbstractConfigProducer ancestor,
+    private void readComponents(DeployState deployState, AbstractConfigProducer<?> ancestor,
                                 Collection<ComponentType<T>> componentTypes,
                                 List<Element> elementsContainingComponentElems,
-                                Map<String, ComponentType> outerComponentTypeByComponentName) {
+                                Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
 
         for (ComponentType<T> componentType : componentTypes) {
             for (Element elemContainingComponentElems : elementsContainingComponentElems) {
@@ -95,10 +95,10 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         }
     }
 
-    private void readComponent(DeployState deployState, AbstractConfigProducer ancestor,
+    private void readComponent(DeployState deployState, AbstractConfigProducer<?> ancestor,
                                Element componentElement,
                                ComponentType<T> componentType,
-                               Map<String, ComponentType> outerComponentTypeByComponentName) {
+                               Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
 
         ComponentSpecification componentSpecification = XmlHelper.getIdRef(componentElement);
 
@@ -109,9 +109,9 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         }
     }
 
-    private void readComponentReference(Element componentElement, ComponentType componentType,
+    private void readComponentReference(Element componentElement, ComponentType<?> componentType,
                                         ComponentSpecification componentSpecification,
-                                        Map<String, ComponentType> outerComponentTypeByComponentName) {
+                                        Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
 
         String componentName = componentSpecification.getName();
         ensureTypesMatch(componentType, outerComponentTypeByComponentName.get(componentName), componentName);
@@ -119,14 +119,14 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         outerComponentReferences.add(componentSpecification);
     }
 
-    private void readComponentDefinition(DeployState deployState, AbstractConfigProducer ancestor, Element componentElement, ComponentType<T> componentType) {
+    private void readComponentDefinition(DeployState deployState, AbstractConfigProducer<?> ancestor, Element componentElement, ComponentType<T> componentType) {
         T component = componentType.createBuilder().build(deployState, ancestor, componentElement);
         componentDefinitions.add(component);
         updateComponentTypes(component.getComponentId(), componentType);
     }
 
-    private void updateComponentTypes(ComponentId componentId, ComponentType componentType) {
-        ComponentType oldType = componentTypesByComponentName.put(componentId.getName(), componentType);
+    private void updateComponentTypes(ComponentId componentId, ComponentType<?> componentType) {
+        ComponentType<?> oldType = componentTypesByComponentName.put(componentId.getName(), componentType);
         if (oldType != null) {
             ensureTypesMatch(componentType, oldType, componentId.getName());
         }
@@ -139,14 +139,14 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
                                                " so no additional attributes or nested elements are allowed");
     }
 
-    private void ensureTypesMatch(ComponentType type1, ComponentType type2, String componentName) {
+    private void ensureTypesMatch(ComponentType<?> type1, ComponentType<?> type2, String componentName) {
         if (!type1.equals(type2)) {
             throw new IllegalArgumentException("Two different types declared for the component with name '" + componentName +
                                                "' (" + type1.name + " != " + type2.name + ").");
         }
     }
 
-    private Map<String, ComponentType> unmodifiable(Map<String, ComponentType> outerComponentTypeByComponentName) {
+    private Map<String, ComponentType<?>> unmodifiable(Map<String, ComponentType<?>> outerComponentTypeByComponentName) {
         return (outerComponentTypeByComponentName != null)?
                 Collections.unmodifiableMap(outerComponentTypeByComponentName):
                 Collections.emptyMap();
@@ -156,7 +156,7 @@ public class ComponentsBuilder<T extends ChainedComponent<?>> {
         return Collections.unmodifiableCollection(componentDefinitions);
     }
 
-    public Map<String, ComponentType> getComponentTypeByComponentName() {
+    public Map<String, ComponentType<?>> getComponentTypeByComponentName() {
         return Collections.unmodifiableMap(componentTypesByComponentName);
     }
 
