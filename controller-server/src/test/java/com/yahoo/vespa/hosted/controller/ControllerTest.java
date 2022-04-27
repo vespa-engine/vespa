@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.Notification.Level;
@@ -1118,8 +1119,7 @@ public class ControllerTest {
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentXml);
         byte[] testPackage = ApplicationPackage.filesZip(Map.of("tests/staging-test/foo.json", new byte[0]));
         var app = tester.newDeploymentContext();
-        tester.jobs().submit(app.application().id(), Optional.empty(), Optional.empty(), Optional.empty(), 1,
-                             applicationPackage, testPackage, Optional.empty(), 0);
+        tester.jobs().submit(app.application().id(), Submission.basic(applicationPackage, testPackage), 1);
         assertEquals(List.of(new Notification(tester.clock().instant(),
                                               Type.testPackage,
                                               Level.warning,

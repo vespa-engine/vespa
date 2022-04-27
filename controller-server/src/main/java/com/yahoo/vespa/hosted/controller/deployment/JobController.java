@@ -461,9 +461,7 @@ public class JobController {
     }
 
     /** Accepts and stores a new application package and test jar pair under a generated application version key. */
-    public ApplicationVersion submit(TenantAndApplicationId id, Optional<SourceRevision> revision, Optional<String> authorEmail,
-                                     Optional<String> sourceUrl, long projectId, ApplicationPackage applicationPackage,
-                                     byte[] testPackageBytes, Optional<String> description, int risk) {
+    public ApplicationVersion submit(TenantAndApplicationId id, Submission submission, long projectId) {
         ApplicationController applications = controller.applications();
         AtomicReference<ApplicationVersion> version = new AtomicReference<>();
         applications.lockApplicationOrThrow(id, application -> {
@@ -471,37 +469,26 @@ public class JobController {
             Optional<ApplicationPackage> previousPackage = previousVersion.flatMap(previous -> applications.applicationStore().find(id.tenant(), id.application(), previous.buildNumber().getAsLong()))
                                                                           .map(ApplicationPackage::new);
             long previousBuild = previousVersion.map(latestVersion -> latestVersion.buildNumber().getAsLong()).orElse(0L);
-            String packageHash = applicationPackage.bundleHash() + ApplicationPackage.calculateHash(testPackageBytes);
-            RevisionId revisionId = RevisionId.forProduction(1 + previousBuild);
-            version.set(ApplicationVersion.forProduction(revisionId,
-                                                         revision,
-                                                         authorEmail,
-                                                         applicationPackage.compileVersion(),
-                                                         applicationPackage.buildTime(),
-                                                         sourceUrl,
-                                                         revision.map(SourceRevision::commit),
-                                                         Optional.of(packageHash),
-                                                         description,
-                                                         risk));
+            version.set(submission.toApplicationVersion(1 + previousBuild));
 
-            byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, applicationPackage))
-                                         .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(applicationPackage));
+            byte[] diff = previousPackage.map(previous -> ApplicationPackageDiff.diff(previous, submission.applicationPackage()))
+                                         .orElseGet(() -> ApplicationPackageDiff.diffAgainstEmpty(submission.applicationPackage()));
             applications.applicationStore().put(id.tenant(),
                                                 id.application(),
                                                 version.get().id(),
-                                                applicationPackage.zippedContent(),
-                                                testPackageBytes,
+                                                submission.applicationPackage().zippedContent(),
+                                                submission.testPackage(),
                                                 diff);
             applications.applicationStore().putMeta(id.tenant(),
                                                     id.application(),
                                                     controller.clock().instant(),
-                                                    applicationPackage.metaDataZip());
+                                                    submission.applicationPackage().metaDataZip());
 
             application = application.withProjectId(projectId == -1 ? OptionalLong.empty() : OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
             application = withPrunedPackages(application);
 
-            TestSummary testSummary = TestPackage.validateTests(applicationPackage.deploymentSpec(), testPackageBytes);
+            TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
             if (testSummary.problems().isEmpty())
                 controller.notificationsDb().removeNotification(NotificationSource.from(id),
                                                                 Type.testPackage);
@@ -511,7 +498,7 @@ public class JobController {
                                                              Notification.Level.warning,
                                                              testSummary.problems());
 
-            applications.storeWithUpdatedConfig(application, applicationPackage);
+            applications.storeWithUpdatedConfig(application, submission.applicationPackage());
             applications.deploymentTrigger().triggerNewRevision(id);
         });
         return version.get();

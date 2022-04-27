@@ -94,6 +94,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.Submission;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
 import com.yahoo.vespa.hosted.controller.maintenance.ResourceMeterMaintainer;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -2713,31 +2714,26 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         ApplicationPackage applicationPackage = new ApplicationPackage(dataParts.get(EnvironmentResource.APPLICATION_ZIP), true);
 
+        byte[] testPackage = dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP);
+        Submission submission = new Submission(applicationPackage, testPackage, sourceUrl, sourceRevision, authorEmail, description, risk);
+
         controller.applications().verifyApplicationIdentityConfiguration(TenantName.from(tenant),
                                                                          Optional.empty(),
                                                                          Optional.empty(),
                                                                          applicationPackage,
                                                                          Optional.of(requireUserPrincipal(request)));
 
-        ensureApplicationExists(TenantAndApplicationId.from(tenant, application), request);
-
-        return JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
-                                                            tenant,
-                                                            application,
-                                                            sourceRevision,
-                                                            authorEmail,
-                                                            sourceUrl,
-                                                            description,
-                                                            risk,
-                                                            projectId,
-                                                            applicationPackage,
-                                                            dataParts.get(EnvironmentResource.APPLICATION_TEST_ZIP));
+        TenantAndApplicationId id = TenantAndApplicationId.from(tenant, application);
+        ensureApplicationExists(id, request);
+        return JobControllerApiHandlerHelper.submitResponse(controller.jobController(), id, submission, projectId);
     }
 
     private HttpResponse removeAllProdDeployments(String tenant, String application) {
-        JobControllerApiHandlerHelper.submitResponse(controller.jobController(), tenant, application,
-                Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty(), 0, 1,
-                ApplicationPackage.deploymentRemoval(), new byte[0]);
+        JobControllerApiHandlerHelper.submitResponse(controller.jobController(),
+                                                     TenantAndApplicationId.from(tenant, application),
+                                                     new Submission(ApplicationPackage.deploymentRemoval(), new byte[0], Optional.empty(),
+                                                                    Optional.empty(), Optional.empty(), Optional.empty(), 0),
+                                                     0);
         return new MessageResponse("All deployments removed");
     }
 
