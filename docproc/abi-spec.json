@@ -80,8 +80,6 @@
     "methods": [
       "public void <init>(com.yahoo.docproc.DocumentProcessor)",
       "public void <init>(com.yahoo.docproc.DocumentProcessor, com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.docproc.DocumentProcessor, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.docproc.DocumentProcessor, java.lang.String, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.docproc.DocumentProcessor, java.lang.String, com.yahoo.jdisc.Metric)",
       "public java.lang.Object clone()",
       "public com.yahoo.docproc.DocumentProcessor getDocumentProcessor()",
@@ -102,12 +100,9 @@
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
-      "public void <init>(java.lang.String, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public void <init>(java.lang.String, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.docproc.CallStack)",
       "public void <init>(java.lang.String, java.util.Collection, com.yahoo.jdisc.Metric)",
-      "public void <init>(java.lang.String, java.util.Collection, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public java.lang.String getName()",
       "public void setName(java.lang.String)",
       "public com.yahoo.docproc.CallStack addNext(com.yahoo.docproc.Call)",
@@ -133,7 +128,6 @@
       "public java.util.ListIterator iterator()",
       "public int size()",
       "public java.lang.String toString()",
-      "public com.yahoo.statistics.Statistics getStatistics()",
       "public com.yahoo.jdisc.Metric getMetric()"
     ],
     "fields": []
