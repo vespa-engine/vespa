@@ -528,7 +528,7 @@ AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
     }
     commit();
     _committedDocIdLimit.store(wantedLidLimit, std::memory_order_release);
-    _compactLidSpaceGeneration = _genHandler.getCurrentGeneration();
+    _compactLidSpaceGeneration.store(_genHandler.getCurrentGeneration(), std::memory_order_relaxed);
     incGeneration();
 }
 
@@ -536,7 +536,7 @@ AttributeVector::compactLidSpace(uint32_t wantedLidLimit) {
 bool
 AttributeVector::canShrinkLidSpace() const {
     return wantShrinkLidSpace() &&
-        _compactLidSpaceGeneration < getFirstUsedGeneration();
+        _compactLidSpaceGeneration.load(std::memory_order_relaxed) < getFirstUsedGeneration();
 }
 
 
