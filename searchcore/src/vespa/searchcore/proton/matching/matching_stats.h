@@ -5,6 +5,7 @@
 #include <vector>
 #include <cstddef>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 
 namespace proton::matching {
 
@@ -124,7 +125,8 @@ private:
     size_t                 _docsReRanked;
     size_t                 _softDoomed;
     Avg                    _doomOvertime;
-    double                 _softDoomFactor;
+    using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
+    SoftDoomFactor         _softDoomFactor;
     Avg                    _queryCollateralTime; // TODO: Remove in Vespa 8
     Avg                    _querySetupTime;
     Avg                    _queryLatency;
@@ -139,7 +141,7 @@ public:
     MatchingStats & operator = (const MatchingStats &) = delete;
     MatchingStats(MatchingStats &&) = default;
     MatchingStats & operator =  (MatchingStats &&) = default;
-    MatchingStats();
+    MatchingStats(double prev_soft_doom_factor = INITIAL_SOFT_DOOM_FACTOR);
     ~MatchingStats();
 
     MatchingStats &queries(size_t value) { _queries = value; return *this; }
@@ -165,8 +167,8 @@ public:
 
     vespalib::duration doomOvertime() const { return vespalib::from_s(_doomOvertime.max()); }
 
-    MatchingStats &softDoomFactor(double value) { _softDoomFactor = value; return *this; }
-    double softDoomFactor() const { return _softDoomFactor; }
+    MatchingStats &softDoomFactor(double value) { _softDoomFactor.store_relaxed(value); return *this; }
+    double softDoomFactor() const { return _softDoomFactor.load_relaxed(); }
     MatchingStats &updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration);
 
     // TODO: Remove in Vespa 8
