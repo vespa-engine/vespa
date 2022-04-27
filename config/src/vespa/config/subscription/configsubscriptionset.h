@@ -39,7 +39,7 @@ public:
      * @return generation number
      */
     int64_t getGeneration() const noexcept {
-        return _currentGeneration;
+        return _currentGeneration.load(std::memory_order_relaxed);
     }
 
     /**
@@ -69,7 +69,7 @@ private:
     const vespalib::duration        _maxNapTime;
     std::shared_ptr<IConfigContext> _context;             // Context to keep alive managers.
     IConfigManager &                _mgr;                 // The config manager that we use.
-    int64_t                         _currentGeneration;   // Holds the current config generation.
+    std::atomic<int64_t>            _currentGeneration;   // Holds the current config generation.
     SubscriptionList                _subscriptionList;    // List of current subscriptions.
     std::atomic<SubscriberState>    _state;               // Current state of this subscriber.
 };
