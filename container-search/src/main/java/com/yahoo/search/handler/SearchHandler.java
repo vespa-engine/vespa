@@ -3,14 +3,11 @@ package com.yahoo.search.handler;
 
 import ai.vespa.cloud.ZoneInfo;
 import com.yahoo.collections.Tuple2;
-import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Vtag;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.AclMapping;
@@ -20,11 +17,9 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.VespaHeaders;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
-import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.net.HostName;
@@ -36,12 +31,9 @@ import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.query.context.QueryContext;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
-import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.search.query.properties.DefaultProperties;
 import com.yahoo.search.query.ranking.SoftTimeout;
 import com.yahoo.search.result.ErrorMessage;
@@ -52,8 +44,6 @@ import com.yahoo.search.statistics.ElapsedTime;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.statistics.Statistics;
-import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 
@@ -130,119 +120,6 @@ public class SearchHandler extends LoggingRequestHandler {
              zoneInfo);
     }
 
-    /**
-     * @deprecated Use the @Inject annotated constructor instead.
-     */
-    @Deprecated // Vespa 8
-    public SearchHandler(Metric metric,
-                         ContainerThreadPool threadpool,
-                         CompiledQueryProfileRegistry queryProfileRegistry,
-                         ContainerHttpConfig config,
-                         Embedder embedder,
-                         ExecutionFactory executionFactory) {
-        this(metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
-             config.numQueriesToTraceOnDebugAfterConstruction(),
-             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
-             ZoneInfo.defaultInfo());
-    }
-
-    /**
-     * @deprecated Use the @Inject annotated constructor instead.
-     */
-    @Deprecated // Vespa 8
-    public SearchHandler(Statistics statistics,
-                         Metric metric,
-                         ContainerThreadPool threadpool,
-                         CompiledQueryProfileRegistry queryProfileRegistry,
-                         ContainerHttpConfig config,
-                         Embedder embedder,
-                         ExecutionFactory executionFactory) {
-        this(metric, threadpool.executor(), queryProfileRegistry, embedder, executionFactory,
-             config.numQueriesToTraceOnDebugAfterConstruction(),
-             config.hostResponseHeaderKey().equals("") ? Optional.empty() : Optional.of(config.hostResponseHeaderKey()),
-             ZoneInfo.defaultInfo());
-    }
-
-    /**
-     * @deprecated Use the @Inject annotated constructor instead.
-     */
-    @Deprecated // Vespa 8
-    public SearchHandler(Statistics statistics,
-                         Metric metric,
-                         ContainerThreadPool threadpool,
-                         AccessLog ignored,
-                         CompiledQueryProfileRegistry queryProfileRegistry,
-                         ContainerHttpConfig config,
-                         ExecutionFactory executionFactory) {
-        this(statistics, metric, threadpool.executor(), ignored, queryProfileRegistry, config, executionFactory);
-    }
-
-    /**
-     * @deprecated Use the @Inject annotated constructor instead.
-     */
-    @Deprecated // Vespa 8
-    public SearchHandler(Statistics statistics,
-                         Metric metric,
-                         Executor executor,
-                         AccessLog ignored,
-                         CompiledQueryProfileRegistry queryProfileRegistry,
-                         ContainerHttpConfig containerHttpConfig,
-                         ExecutionFactory executionFactory) {
-        this(metric, executor, queryProfileRegistry, Embedder.throwsOnUse, executionFactory,
-             containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
-             containerHttpConfig.hostResponseHeaderKey().equals("") ? Optional.empty()
-                                                                    : Optional.of(containerHttpConfig.hostResponseHeaderKey()),
-             ZoneInfo.defaultInfo());
-    }
-
-    /**
-     * @deprecated Use the @Inject annotated constructor instead.
-     */
-    @Deprecated // Vespa 8
-    public SearchHandler(Statistics statistics,
-                         Metric metric,
-                         Executor executor,
-                         AccessLog ignored,
-                         QueryProfilesConfig queryProfileConfig,
-                         ContainerHttpConfig containerHttpConfig,
-                         ExecutionFactory executionFactory) {
-        this(metric, executor, QueryProfileConfigurer.createFromConfig(queryProfileConfig).compile(),
-             Embedder.throwsOnUse, executionFactory,
-             containerHttpConfig.numQueriesToTraceOnDebugAfterConstruction(),
-             containerHttpConfig.hostResponseHeaderKey().equals("") ? Optional.empty()
-                                                                    : Optional.of( containerHttpConfig.hostResponseHeaderKey()),
-             ZoneInfo.defaultInfo());
-    }
-
-    /**
-     * @deprecated Use the @Inject annotated constructor instead.
-     */
-    @Deprecated // Vespa 8
-    public SearchHandler(Statistics statistics,
-                         Metric metric,
-                         Executor executor,
-                         AccessLog ignored,
-                         CompiledQueryProfileRegistry queryProfileRegistry,
-                         ExecutionFactory executionFactory,
-                         Optional<String> hostResponseHeaderKey) {
-        this(metric, executor, queryProfileRegistry, toRegistry(Embedder.throwsOnUse),
-             executionFactory, 0, hostResponseHeaderKey,
-             ZoneInfo.defaultInfo());
-    }
-
-    private SearchHandler(Metric metric,
-                          Executor executor,
-                          CompiledQueryProfileRegistry queryProfileRegistry,
-                          Embedder embedder,
-                          ExecutionFactory executionFactory,
-                          long numQueriesToTraceOnDebugAfterStartup,
-                          Optional<String> hostResponseHeaderKey,
-                          ZoneInfo zoneInfo) {
-        this(metric, executor, queryProfileRegistry, toRegistry(embedder),
-                executionFactory, numQueriesToTraceOnDebugAfterStartup, hostResponseHeaderKey,
-                ZoneInfo.defaultInfo());
-    }
-
     private SearchHandler(Metric metric,
                           Executor executor,
                           CompiledQueryProfileRegistry queryProfileRegistry,
@@ -264,30 +141,6 @@ public class SearchHandler extends LoggingRequestHandler {
         this.numRequestsLeftToTrace = new AtomicLong(numQueriesToTraceOnDebugAfterStartup);
         metric.set(SEARCH_CONNECTIONS, 0.0d, null);
         this.zoneInfo = zoneInfo;
-    }
-
-    /** @deprecated use the other constructor */
-    @Deprecated // TODO: Remove on Vespa 8
-    public SearchHandler(ChainsConfig chainsConfig,
-                         IndexInfoConfig indexInfo,
-                         QrSearchersConfig clusters,
-                         SpecialtokensConfig specialtokens,
-                         Statistics statistics,
-                         Linguistics linguistics,
-                         Metric metric,
-                         ComponentRegistry<Renderer> renderers,
-                         Executor executor,
-                         AccessLog accessLog,
-                         QueryProfilesConfig queryProfileConfig,
-                         ComponentRegistry<Searcher> searchers,
-                         ContainerHttpConfig containerHttpConfig) {
-        this(statistics,
-             metric,
-             executor,
-             accessLog,
-             queryProfileConfig,
-             containerHttpConfig,
-             new ExecutionFactory(chainsConfig, indexInfo, clusters, searchers, specialtokens, linguistics, renderers, executor));
     }
 
     Metric metric() { return metric; }
@@ -714,12 +567,6 @@ public class SearchHandler extends LoggingRequestHandler {
             // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
         }
         return Collections.unmodifiableMap(map);
-    }
-
-    private static ComponentRegistry<Embedder> toRegistry(Embedder embedder) {
-        ComponentRegistry<Embedder> emb = new ComponentRegistry<>();
-        emb.register(new ComponentId(Embedder.defaultEmbedderId), embedder);
-        return emb;
     }
 
 }
