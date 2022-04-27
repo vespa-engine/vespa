@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.search.test;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.container.search.SchemaInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;

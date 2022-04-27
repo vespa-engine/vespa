@@ -2,10 +2,9 @@
 package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.container.search.SchemaInfoConfig;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;

@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
-import com.yahoo.search.config.RankProfile;
+import com.yahoo.search.schema.RankProfile;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;

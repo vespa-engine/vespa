@@ -11,7 +11,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
-import com.yahoo.container.search.SchemaInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
@@ -20,7 +20,7 @@ import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.processing.rendering.Renderer;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.SchemaInfo;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 

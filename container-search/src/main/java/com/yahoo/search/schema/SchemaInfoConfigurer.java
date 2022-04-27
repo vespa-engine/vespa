@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.config;
+package com.yahoo.search.schema;
 
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.container.search.SchemaInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
  */
 class SchemaInfoConfigurer {
 
-    static List<Schema> toSchemas(SchemaInfoConfig documentdbInfoConfig) {
-        return documentdbInfoConfig.schema().stream().map(config -> toSchema(config)).collect(Collectors.toList());
+    static List<Schema> toSchemas(SchemaInfoConfig schemaInfoConfig) {
+        return schemaInfoConfig.schema().stream().map(config -> toSchema(config)).collect(Collectors.toList());
     }
 
     static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {

@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=container.search
+namespace=search.config
 
 ## The name of this schema
 schema[].name string

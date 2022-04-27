@@ -1,9 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.config;
+package com.yahoo.search.schema;
 
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.container.search.SchemaInfoConfig;
 import com.yahoo.search.Query;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;

@@ -14,7 +14,7 @@ import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.PingableSearcher;
-import com.yahoo.search.config.RankProfile;
+import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;

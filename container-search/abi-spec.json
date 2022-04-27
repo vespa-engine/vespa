@@ -1905,8 +1905,8 @@
       "public java.util.Map getEmbedders()",
       "public com.yahoo.search.Query$Builder setZoneInfo(ai.vespa.cloud.ZoneInfo)",
       "public ai.vespa.cloud.ZoneInfo getZoneInfo()",
-      "public com.yahoo.search.Query$Builder setSchemaInfo(com.yahoo.search.config.SchemaInfo)",
-      "public com.yahoo.search.config.SchemaInfo getSchemaInfo()",
+      "public com.yahoo.search.Query$Builder setSchemaInfo(com.yahoo.search.schema.SchemaInfo)",
+      "public com.yahoo.search.schema.SchemaInfo getSchemaInfo()",
       "public com.yahoo.search.Query build()"
     ],
     "fields": []
@@ -2287,580 +2287,6 @@
       "public void responded()",
       "public java.lang.Boolean isKnownWorking()",
       "protected synchronized void setWorking(boolean, java.lang.String)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.ClusterConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Builder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.ClusterConfig)",
-      "public com.yahoo.search.config.ClusterConfig$Builder clusterId(int)",
-      "public com.yahoo.search.config.ClusterConfig$Builder cacheSize(int)",
-      "public com.yahoo.search.config.ClusterConfig$Builder cacheTimeout(double)",
-      "public com.yahoo.search.config.ClusterConfig$Builder failoverToRemote(boolean)",
-      "public com.yahoo.search.config.ClusterConfig$Builder clusterName(java.lang.String)",
-      "public com.yahoo.search.config.ClusterConfig$Builder maxQueryTimeout(double)",
-      "public com.yahoo.search.config.ClusterConfig$Builder maxQueryCacheTimeout(double)",
-      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
-      "public final java.lang.String getDefMd5()",
-      "public final java.lang.String getDefName()",
-      "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
-      "public com.yahoo.search.config.ClusterConfig build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.ClusterConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Producer"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract void getConfig(com.yahoo.search.config.ClusterConfig$Builder)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.ClusterConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public static java.lang.String getDefMd5()",
-      "public static java.lang.String getDefName()",
-      "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
-      "public void <init>(com.yahoo.search.config.ClusterConfig$Builder)",
-      "public int clusterId()",
-      "public int cacheSize()",
-      "public double cacheTimeout()",
-      "public boolean failoverToRemote()",
-      "public java.lang.String clusterName()",
-      "public double maxQueryTimeout()",
-      "public double maxQueryCacheTimeout()"
-    ],
-    "fields": [
-      "public static final java.lang.String CONFIG_DEF_MD5",
-      "public static final java.lang.String CONFIG_DEF_NAME",
-      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
-      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
-    ]
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Builder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig)",
-      "public com.yahoo.search.config.IndexInfoConfig$Builder indexinfo(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder)",
-      "public com.yahoo.search.config.IndexInfoConfig$Builder indexinfo(java.util.function.Consumer)",
-      "public com.yahoo.search.config.IndexInfoConfig$Builder indexinfo(java.util.List)",
-      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
-      "public final java.lang.String getDefMd5()",
-      "public final java.lang.String getDefName()",
-      "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
-      "public com.yahoo.search.config.IndexInfoConfig build()"
-    ],
-    "fields": [
-      "public java.util.List indexinfo"
-    ]
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias$Builder alias(java.lang.String)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias$Builder indexname(java.lang.String)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias$Builder)",
-      "public java.lang.String alias()",
-      "public java.lang.String indexname()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig$Indexinfo)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder name(java.lang.String)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder command(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command$Builder)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder command(java.util.function.Consumer)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder command(java.util.List)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder alias(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias$Builder)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder alias(java.util.function.Consumer)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder alias(java.util.List)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo build()"
-    ],
-    "fields": [
-      "public java.util.List command",
-      "public java.util.List alias"
-    ]
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command$Builder indexname(java.lang.String)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command$Builder command(java.lang.String)",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command$Builder)",
-      "public java.lang.String indexname()",
-      "public java.lang.String command()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Indexinfo": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig$Indexinfo$Builder)",
-      "public java.lang.String name()",
-      "public java.util.List command()",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Command command(int)",
-      "public java.util.List alias()",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo$Alias alias(int)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.IndexInfoConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Producer"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract void getConfig(com.yahoo.search.config.IndexInfoConfig$Builder)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.IndexInfoConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public static java.lang.String getDefMd5()",
-      "public static java.lang.String getDefName()",
-      "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig$Builder)",
-      "public java.util.List indexinfo()",
-      "public com.yahoo.search.config.IndexInfoConfig$Indexinfo indexinfo(int)"
-    ],
-    "fields": [
-      "public static final java.lang.String CONFIG_DEF_MD5",
-      "public static final java.lang.String CONFIG_DEF_NAME",
-      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
-      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
-    ]
-  },
-  "com.yahoo.search.config.QrStartConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Builder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.QrStartConfig)",
-      "public com.yahoo.search.config.QrStartConfig$Builder jvm(com.yahoo.search.config.QrStartConfig$Jvm$Builder)",
-      "public com.yahoo.search.config.QrStartConfig$Builder jvm(java.util.function.Consumer)",
-      "public com.yahoo.search.config.QrStartConfig$Builder qrs(com.yahoo.search.config.QrStartConfig$Qrs$Builder)",
-      "public com.yahoo.search.config.QrStartConfig$Builder qrs(java.util.function.Consumer)",
-      "public com.yahoo.search.config.QrStartConfig$Builder ulimitv(java.lang.String)",
-      "public com.yahoo.search.config.QrStartConfig$Builder jdisc(com.yahoo.search.config.QrStartConfig$Jdisc$Builder)",
-      "public com.yahoo.search.config.QrStartConfig$Builder jdisc(java.util.function.Consumer)",
-      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
-      "public final java.lang.String getDefMd5()",
-      "public final java.lang.String getDefName()",
-      "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
-      "public com.yahoo.search.config.QrStartConfig build()"
-    ],
-    "fields": [
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder jvm",
-      "public com.yahoo.search.config.QrStartConfig$Qrs$Builder qrs",
-      "public com.yahoo.search.config.QrStartConfig$Jdisc$Builder jdisc"
-    ]
-  },
-  "com.yahoo.search.config.QrStartConfig$Jdisc$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.QrStartConfig$Jdisc)",
-      "public com.yahoo.search.config.QrStartConfig$Jdisc$Builder classpath_extra(java.lang.String)",
-      "public com.yahoo.search.config.QrStartConfig$Jdisc$Builder export_packages(java.lang.String)",
-      "public com.yahoo.search.config.QrStartConfig$Jdisc build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.QrStartConfig$Jdisc": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.config.QrStartConfig$Jdisc$Builder)",
-      "public java.lang.String classpath_extra()",
-      "public java.lang.String export_packages()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.QrStartConfig$Jvm$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.QrStartConfig$Jvm)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder server(boolean)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder verbosegc(boolean)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder gcopts(java.lang.String)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder heapsize(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder minHeapsize(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder stacksize(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder compressedClassSpaceSize(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder baseMaxDirectMemorySize(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder directMemorySizeCache(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder heapSizeAsPercentageOfPhysicalMemory(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm$Builder availableProcessors(int)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.QrStartConfig$Jvm": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.config.QrStartConfig$Jvm$Builder)",
-      "public boolean server()",
-      "public boolean verbosegc()",
-      "public java.lang.String gcopts()",
-      "public int heapsize()",
-      "public int minHeapsize()",
-      "public int stacksize()",
-      "public int compressedClassSpaceSize()",
-      "public int baseMaxDirectMemorySize()",
-      "public int directMemorySizeCache()",
-      "public int heapSizeAsPercentageOfPhysicalMemory()",
-      "public int availableProcessors()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.QrStartConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Producer"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract void getConfig(com.yahoo.search.config.QrStartConfig$Builder)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.QrStartConfig$Qrs$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigBuilder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.QrStartConfig$Qrs)",
-      "public com.yahoo.search.config.QrStartConfig$Qrs$Builder env(java.lang.String)",
-      "public com.yahoo.search.config.QrStartConfig$Qrs build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.QrStartConfig$Qrs": {
-    "superClass": "com.yahoo.config.InnerNode",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.config.QrStartConfig$Qrs$Builder)",
-      "public java.lang.String env()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.QrStartConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public static java.lang.String getDefMd5()",
-      "public static java.lang.String getDefName()",
-      "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
-      "public void <init>(com.yahoo.search.config.QrStartConfig$Builder)",
-      "public com.yahoo.search.config.QrStartConfig$Jvm jvm()",
-      "public com.yahoo.search.config.QrStartConfig$Qrs qrs()",
-      "public java.lang.String ulimitv()",
-      "public com.yahoo.search.config.QrStartConfig$Jdisc jdisc()"
-    ],
-    "fields": [
-      "public static final java.lang.String CONFIG_DEF_MD5",
-      "public static final java.lang.String CONFIG_DEF_NAME",
-      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
-      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
-    ]
-  },
-  "com.yahoo.search.config.RankProfile$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)",
-      "public com.yahoo.search.config.RankProfile$Builder setHasSummaryFeatures(boolean)",
-      "public com.yahoo.search.config.RankProfile$Builder setHasRankFeatures(boolean)",
-      "public com.yahoo.search.config.RankProfile$Builder addInput(java.lang.String, com.yahoo.tensor.TensorType)",
-      "public com.yahoo.search.config.RankProfile build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.RankProfile": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public java.lang.String name()",
-      "public boolean hasSummaryFeatures()",
-      "public boolean hasRankFeatures()",
-      "public java.util.Map inputs()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.RateLimitingConfig$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Builder"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(com.yahoo.search.config.RateLimitingConfig)",
-      "public com.yahoo.search.config.RateLimitingConfig$Builder capacityIncrement(double)",
-      "public com.yahoo.search.config.RateLimitingConfig$Builder maxAvailableCapacity(double)",
-      "public com.yahoo.search.config.RateLimitingConfig$Builder recheckForCapacityProbability(double)",
-      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
-      "public final java.lang.String getDefMd5()",
-      "public final java.lang.String getDefName()",
-      "public final java.lang.String getDefNamespace()",
-      "public final boolean getApplyOnRestart()",
-      "public final void setApplyOnRestart(boolean)",
-      "public com.yahoo.search.config.RateLimitingConfig build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.RateLimitingConfig$Producer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.config.ConfigInstance$Producer"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract void getConfig(com.yahoo.search.config.RateLimitingConfig$Builder)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.RateLimitingConfig": {
-    "superClass": "com.yahoo.config.ConfigInstance",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final"
-    ],
-    "methods": [
-      "public static java.lang.String getDefMd5()",
-      "public static java.lang.String getDefName()",
-      "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
-      "public void <init>(com.yahoo.search.config.RateLimitingConfig$Builder)",
-      "public double capacityIncrement()",
-      "public double maxAvailableCapacity()",
-      "public double recheckForCapacityProbability()"
-    ],
-    "fields": [
-      "public static final java.lang.String CONFIG_DEF_MD5",
-      "public static final java.lang.String CONFIG_DEF_NAME",
-      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
-      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
-    ]
-  },
-  "com.yahoo.search.config.Schema$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)",
-      "public com.yahoo.search.config.Schema$Builder add(com.yahoo.search.config.RankProfile)",
-      "public com.yahoo.search.config.Schema build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.Schema": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public java.lang.String name()",
-      "public java.util.Map rankProfiles()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.SchemaInfo$Session": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public com.yahoo.tensor.TensorType rankProfileInput(java.lang.String, java.lang.String)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.config.SchemaInfo": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.search.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
-      "public void <init>(java.util.List, java.util.Map)",
-      "public com.yahoo.search.config.SchemaInfo$Session newSession(com.yahoo.search.Query)",
-      "public static com.yahoo.search.config.SchemaInfo empty()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()"
     ],
     "fields": []
   },
@@ -7293,7 +6719,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.config.SchemaInfo, com.yahoo.search.Query, java.util.Map)",
+      "public void <init>(com.yahoo.search.schema.SchemaInfo, com.yahoo.search.Query, java.util.Map)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
       "public void requireSettable(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)"
     ],
@@ -8548,6 +7974,93 @@
     ],
     "fields": []
   },
+  "com.yahoo.search.schema.RankProfile$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.RankProfile$Builder setHasSummaryFeatures(boolean)",
+      "public com.yahoo.search.schema.RankProfile$Builder setHasRankFeatures(boolean)",
+      "public com.yahoo.search.schema.RankProfile$Builder addInput(java.lang.String, com.yahoo.tensor.TensorType)",
+      "public com.yahoo.search.schema.RankProfile build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.RankProfile": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String name()",
+      "public boolean hasSummaryFeatures()",
+      "public boolean hasRankFeatures()",
+      "public java.util.Map inputs()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.Schema$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.RankProfile)",
+      "public com.yahoo.search.schema.Schema build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.Schema": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public java.lang.String name()",
+      "public java.util.Map rankProfiles()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.SchemaInfo$Session": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.tensor.TensorType rankProfileInput(java.lang.String, java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.search.schema.SchemaInfo": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
+      "public void <init>(java.util.List, java.util.Map)",
+      "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
+      "public static com.yahoo.search.schema.SchemaInfo empty()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields": []
+  },
   "com.yahoo.search.searchchain.AsyncExecution": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -8573,7 +8086,7 @@
       "final"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.config.SchemaInfo, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
+      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.schema.SchemaInfo, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
@@ -8582,7 +8095,7 @@
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",
-      "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.config.SchemaInfo, com.yahoo.language.Linguistics)",
+      "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.schema.SchemaInfo, com.yahoo.language.Linguistics)",
       "public void populateFrom(com.yahoo.search.searchchain.Execution$Context)",
       "public boolean equals(com.yahoo.search.searchchain.Execution$Context)",
       "public int hashCode()",
@@ -8590,7 +8103,7 @@
       "public com.yahoo.search.searchchain.Execution$Context shallowCopy()",
       "public com.yahoo.prelude.IndexFacts getIndexFacts()",
       "public void setIndexFacts(com.yahoo.prelude.IndexFacts)",
-      "public com.yahoo.search.config.SchemaInfo schemaInfo()",
+      "public com.yahoo.search.schema.SchemaInfo schemaInfo()",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",
       "public com.yahoo.search.rendering.RendererRegistry rendererRegistry()",
       "public com.yahoo.language.process.SpecialTokenRegistry getTokenRegistry()",
@@ -8642,14 +8155,14 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.search.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
+      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
       "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",
       "public com.yahoo.search.rendering.RendererRegistry rendererRegistry()",
-      "public com.yahoo.search.config.SchemaInfo schemaInfo()",
+      "public com.yahoo.search.schema.SchemaInfo schemaInfo()",
       "public void deconstruct()",
       "public static com.yahoo.search.searchchain.ExecutionFactory empty()"
     ],
