@@ -42,7 +42,7 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
 
     steady_time now = steady_clock::now();
     const steady_time deadline = now + timeout;
-    int64_t lastGeneration = _currentGeneration;
+    int64_t lastGeneration = getGeneration();
     bool inSync = false;
 
     LOG(spam, "Going into nextConfig loop, time left is %f", vespalib::to_s(deadline - now));
@@ -55,7 +55,7 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
         // Run nextUpdate on all subscribers to get them in sync.
         for (const auto & subscription : _subscriptionList) {
 
-            if (!subscription->nextUpdate(_currentGeneration, deadline) && !subscription->hasGenerationChanged()) {
+            if (!subscription->nextUpdate(getGeneration(), deadline) && !subscription->hasGenerationChanged()) {
                 subscription->reset();
                 continue;
             }
@@ -68,7 +68,7 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
                 LOG(spam, "Config subscription did not change, id(%s), defname(%s)", key.getConfigId().c_str(), key.getDefName().c_str());
             }
             LOG(spam, "Previous generation is %" PRId64 ", updates is %" PRId64, lastGeneration, subscription->getGeneration());
-            if (isGenerationNewer(subscription->getGeneration(), _currentGeneration)) {
+            if (isGenerationNewer(subscription->getGeneration(), getGeneration())) {
                 numGenerationChanged++;
             }
             if (generation < 0) {
@@ -88,10 +88,10 @@ ConfigSubscriptionSet::acquireSnapshot(duration timeout, bool ignoreChange)
         }
     }
 
-    bool updated = inSync && isGenerationNewer(lastGeneration, _currentGeneration);
+    bool updated = inSync && isGenerationNewer(lastGeneration, getGeneration());
     if (updated) {
-        LOG(spam, "Config was updated from %" PRId64 " to %" PRId64, _currentGeneration, lastGeneration);
-        _currentGeneration = lastGeneration;
+        LOG(spam, "Config was updated from %" PRId64 " to %" PRId64, getGeneration(), lastGeneration);
+        _currentGeneration.store(lastGeneration, std::memory_order_relaxed);
         _state = CONFIGURED;
         for (const auto & subscription : _subscriptionList) {
             const ConfigKey & key(subscription->getKey());
