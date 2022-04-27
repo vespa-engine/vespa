@@ -937,7 +937,7 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
-        <curator.version>5.2.0</curator.version>
+        <curator.version>5.2.1</curator.version>
         <commons.codec.version>1.15</commons.codec.version>
         <commons.math3.version>3.6.1</commons.math3.version>
         <eclipse-collections.version>11.0.0</eclipse-collections.version>
