@@ -147,14 +147,12 @@ CompactWordsStore::insert(const Builder &builder)
             builder.docId());
         LOG_ABORT("should not be reached");
     }
-    update_docs_memory_usage();
 }
 
 void 
 CompactWordsStore::remove(uint32_t docId)
 {
     _docs.erase(docId);
-    update_docs_memory_usage();
 }
 
 CompactWordsStore::Iterator
@@ -172,6 +170,12 @@ CompactWordsStore::update_docs_memory_usage()
 {
     _docs_used_bytes.store(_docs.getMemoryUsed(), std::memory_order_relaxed);
     _docs_allocated_bytes.store(_docs.getMemoryConsumption(), std::memory_order_relaxed);
+}
+
+void
+CompactWordsStore::commit()
+{
+    update_docs_memory_usage();
 }
 
 vespalib::MemoryUsage

@@ -95,6 +95,7 @@ public:
     void insert(const Builder &builder);
     void remove(uint32_t docId);
     Iterator get(uint32_t docId) const;
+    void commit();
     vespalib::MemoryUsage getMemoryUsage() const;
 };
 

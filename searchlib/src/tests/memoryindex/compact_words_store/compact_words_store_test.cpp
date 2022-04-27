@@ -106,6 +106,7 @@ TEST(CompactWordStoreTest, multiple_words_can_be_inserted_retrieved_and_removed)
             b.insert(EntryRef(wordRef));
         }
         store.insert(b);
+        store.commit();
         MemoryUsage usage = store.getMemoryUsage();
         std::cout << "memory usage (insert): docId=" << docId << ", alloc=" << usage.allocatedBytes() << ", used=" << usage.usedBytes() << std::endl;
     }
@@ -117,6 +118,7 @@ TEST(CompactWordStoreTest, multiple_words_can_be_inserted_retrieved_and_removed)
             EXPECT_EQ(wordRef++, word.ref());
         }
         store.remove(docId);
+        store.commit();
         MemoryUsage usage = store.getMemoryUsage();
         std::cout << "memory usage (remove): docId=" << docId << ", alloc=" << usage.allocatedBytes() << ", used=" << usage.usedBytes() << std::endl;
     }
@@ -145,6 +147,7 @@ TEST(CompactWordStoreTest, memory_usage_is_updated_after_insert)
     MemoryUsage init = store.getMemoryUsage();
 
     store.insert(Builder(d1).insert(w1));
+    store.commit();
     MemoryUsage after = store.getMemoryUsage();
     EXPECT_GE(after.allocatedBytes(), init.allocatedBytes());
     EXPECT_GT(after.usedBytes(), init.usedBytes());
