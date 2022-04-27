@@ -2,7 +2,12 @@ package com.yahoo.nativec;
 
 import com.sun.jna.Structure;
 
-public class MallInfo2 {
+/**
+ * Gives access to the information provided by the C library mallinfo2() function.
+ *
+ * @author baldersheim
+ */
+public class MallInfo2 extends NativeHeap {
     private final static Throwable initException = NativeC.loadLibrary(MallInfo2.class);
     public static Throwable init() {
         return initException;
@@ -23,8 +28,24 @@ public class MallInfo2 {
         public long keepcost;  /* Top-most, releasable space (bytes) */
     }
     private static native MallInfo2Struct.ByValue mallinfo2();
+    private final MallInfo2Struct mallinfo;
+
     public MallInfo2() {
         mallinfo = mallinfo2();
     }
-    private final MallInfo2Struct mallinfo;
+
+    @Override
+    public long usedSize() {
+        return mallinfo.uordblks;
+    }
+
+    @Override
+    public long totalSize() {
+        return mallinfo.arena;
+    }
+
+    @Override
+    public long availableSize() {
+        return mallinfo.fordblks;
+    }
 }

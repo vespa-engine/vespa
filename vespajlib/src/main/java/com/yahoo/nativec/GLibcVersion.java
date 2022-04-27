@@ -1,5 +1,10 @@
 package com.yahoo.nativec;
 
+/**
+ * Gives access to the C library version.
+ *
+ * @author baldersheim
+ */
 public class GLibcVersion {
     private final static Throwable initException = NativeC.loadLibrary(GLibcVersion.class);
     public static Throwable init() {
