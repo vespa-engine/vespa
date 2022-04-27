@@ -9,7 +9,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
@@ -31,7 +30,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         ConfigserverConfig.Producer,
         CuratorConfig.Producer,
         HealthMonitorConfig.Producer,
-        StatisticsConfig.Producer,
         VipStatusConfig.Producer,
         ZookeeperServerConfig.Producer {
 
@@ -170,12 +168,6 @@ public class ConfigserverCluster extends AbstractConfigProducer
         builder.hostname(server.hostName);
         builder.id(id);
         return builder;
-    }
-
-    @Override
-    public void getConfig(StatisticsConfig.Builder builder) {
-        builder.collectionintervalsec(60.0);
-        builder.loggingintervalsec(60.0);
     }
 
     @Override

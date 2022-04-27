@@ -57,11 +57,6 @@ import java.util.List;
  * threads at any time.
  * </p>
  *
- * <p>
- * Refer to e.g. com.yahoo.search.statistics.PeakQpsSearcher for a production
- * example.
- * </p>
- *
  * @param <AGGREGATOR> the type input data is aggregated into
  * @param <SAMPLE> the type of input data
  *
