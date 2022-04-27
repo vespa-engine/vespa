@@ -365,13 +365,13 @@ DataStoreBase::getMemStats() const
     for (const BufferState & bState: _states) {
         auto typeHandler = bState.getTypeHandler();
         BufferState::State state = bState.getState();
-        if ((state == BufferState::FREE) || (typeHandler == nullptr)) {
+        if ((state == BufferState::State::FREE) || (typeHandler == nullptr)) {
             ++stats._freeBuffers;
-        } else if (state == BufferState::ACTIVE) {
+        } else if (state == BufferState::State::ACTIVE) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._activeBuffers;
             add_buffer_state_to_mem_stats(bState, elementSize, stats);
-        } else if (state == BufferState::HOLD) {
+        } else if (state == BufferState::State::HOLD) {
             size_t elementSize = typeHandler->elementSize();
             ++stats._holdBuffers;
             add_buffer_state_to_mem_stats(bState, elementSize, stats);

@@ -25,10 +25,10 @@ public:
     using ElemCount = vespalib::datastore::ElemCount;
     class CleanContext {
     private:
-        size_t &_extraUsedBytes;
-        size_t &_extraHoldBytes;
+        std::atomic<size_t> &_extraUsedBytes;
+        std::atomic<size_t> &_extraHoldBytes;
     public:
-        CleanContext(size_t &extraUsedBytes, size_t &extraHoldBytes)
+        CleanContext(std::atomic<size_t>& extraUsedBytes, std::atomic<size_t>& extraHoldBytes)
             : _extraUsedBytes(extraUsedBytes),
               _extraHoldBytes(extraHoldBytes)
         {}
@@ -60,10 +60,10 @@ public:
     virtual size_t elementSize() const = 0;
     virtual void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) = 0;
     size_t getArraySize() const { return _arraySize; }
-    virtual void onActive(uint32_t bufferId, ElemCount* usedElems, ElemCount* deadElems, void* buffer);
-    void onHold(uint32_t buffer_id, const ElemCount* usedElems, const ElemCount* deadElems);
+    virtual void onActive(uint32_t bufferId, std::atomic<ElemCount>* usedElems, std::atomic<ElemCount>* deadElems, void* buffer);
+    void onHold(uint32_t buffer_id, const std::atomic<ElemCount>* usedElems, const std::atomic<ElemCount>* deadElems);
     virtual void onFree(ElemCount usedElems);
-    void resume_primary_buffer(uint32_t buffer_id, ElemCount* used_elems, ElemCount* dead_elems);
+    void resume_primary_buffer(uint32_t buffer_id, std::atomic<ElemCount>* used_elems, std::atomic<ElemCount>* dead_elems);
     virtual const alloc::MemoryAllocator* get_memory_allocator() const;
 
     /**
@@ -95,10 +95,10 @@ protected:
     class AggregatedBufferCounts {
     private:
         struct Element {
-            const ElemCount* used_ptr;
-            const ElemCount* dead_ptr;
+            const std::atomic<ElemCount>* used_ptr;
+            const std::atomic<ElemCount>* dead_ptr;
             Element() noexcept : used_ptr(nullptr), dead_ptr(nullptr) {}
-            Element(const ElemCount* used_ptr_in, const ElemCount* dead_ptr_in) noexcept
+            Element(const std::atomic<ElemCount>* used_ptr_in, const std::atomic<ElemCount>* dead_ptr_in) noexcept
                     : used_ptr(used_ptr_in), dead_ptr(dead_ptr_in)
             {}
         };
@@ -106,8 +106,8 @@ protected:
 
     public:
         AggregatedBufferCounts();
-        void add_buffer(const ElemCount* used_elems, const ElemCount* dead_elems);
-        void remove_buffer(const ElemCount* used_elems, const ElemCount* dead_elems);
+        void add_buffer(const std::atomic<ElemCount>* used_elems, const std::atomic<ElemCount>* dead_elems);
+        void remove_buffer(const std::atomic<ElemCount>* used_elems, const std::atomic<ElemCount>* dead_elems);
         BufferCounts last_buffer() const;
         BufferCounts all_buffers() const;
         bool empty() const { return _counts.empty(); }
