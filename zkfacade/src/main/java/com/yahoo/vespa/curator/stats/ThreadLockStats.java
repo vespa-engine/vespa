@@ -98,7 +98,7 @@ public class ThreadLockStats {
     }
 
     /** Mutable method (see class doc) */
-    public void lockAcquired(String lockId, long sequenceNumber, Map<Long, Long> reentriesByThreadId) {
+    public void lockAcquired(String debug) {
         withLastLockAttempt(lockAttempt -> {
             // Note on the order of lockAcquired() vs notifyOfThreadHoldingLock(): When the latter is
             // invoked, other threads may query e.g. isAcquired() on the lockAttempt, which would
@@ -107,20 +107,18 @@ public class ThreadLockStats {
             lockAttempt.lockAcquired();
 
             if (!lockAttempt.isReentry()) {
-                LockStats.getGlobal().notifyOfThreadHoldingLock(thread, lockAttempt.getLockPath(),
-                                                                lockId, sequenceNumber, reentriesByThreadId);
+                LockStats.getGlobal().notifyOfThreadHoldingLock(thread, lockAttempt.getLockPath(), debug);
             }
         });
     }
 
     /** Mutable method (see class doc) */
-    public void preRelease(String lockId, long sequenceNumber, Map<Long, Long> reentriesByThreadId) {
+    public void preRelease(String debug) {
         withLastLockAttempt(lockAttempt -> {
             // Note on the order of these two statement: Same concerns apply here as in lockAcquired().
 
             if (!lockAttempt.isReentry()) {
-                LockStats.getGlobal().notifyOfThreadReleasingLock(thread, lockAttempt.getLockPath(),
-                                                                  lockId, sequenceNumber, reentriesByThreadId);
+                LockStats.getGlobal().notifyOfThreadReleasingLock(thread, lockAttempt.getLockPath(), debug);
             }
 
             lockAttempt.preRelease();
