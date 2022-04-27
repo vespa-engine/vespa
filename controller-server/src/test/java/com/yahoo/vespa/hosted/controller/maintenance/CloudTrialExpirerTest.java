@@ -18,6 +18,7 @@ import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author ogronnesby
@@ -70,6 +71,16 @@ public class CloudTrialExpirerTest {
         registerDeployment("with-deployments", "my-app", "default");
         expirer.maintain();
         assertPlan("with-deployments", "trial");
+    }
+
+    @Test
+    public void delete_tenants_with_applications_with_no_deployments() {
+        registerTenant("with-apps", "trial", Duration.ofDays(30));
+        tester.createApplication("with-apps", "app1", "instance1");
+        expirer.maintain();
+        assertPlan("with-apps", "none");
+        expirer.maintain();
+        assertTrue(tester.controller().tenants().get("with-apps").isEmpty());
     }
 
     private void registerTenant(String tenantName, String plan, Duration timeSinceLastLogin) {

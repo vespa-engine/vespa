@@ -47,8 +47,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
     private void moveInactiveTenantsToNonePlan() {
         var predicate = tenantReadersNotLoggedIn(loginExpiry)
-                .and(this::tenantHasTrialPlan)
-                .and(this::tenantHasNoDeployments);
+                .and(this::tenantHasTrialPlan);
 
         forTenant("'none' plan", predicate, this::setPlanNone);
     }
@@ -61,11 +60,12 @@ public class CloudTrialExpirer extends ControllerMaintainer {
     }
 
     private void forTenant(String name, Predicate<Tenant> p, Consumer<List<Tenant>> c) {
-        var predicate = ((Predicate<Tenant>) this::tenantIsCloudTenant)
-                .and(this::tenantIsNotExemptFromExpiry);
+        var predicate = p.and(this::tenantIsCloudTenant)
+                .and(this::tenantIsNotExemptFromExpiry)
+                .and(this::tenantHasNoDeployments);
 
         var tenants = controller().tenants().asList().stream()
-                .filter(predicate.and(p))
+                .filter(predicate)
                 .collect(Collectors.toList());
 
         if (! tenants.isEmpty()) {
@@ -119,7 +119,15 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
     private void tombstoneTenants(List<Tenant> tenants) {
         tenants.forEach(tenant -> {
+            deleteApplicationsWithNoDeployments(tenant);
             controller().tenants().delete(tenant.name(), Optional.empty(), false);
+        });
+    }
+
+    private void deleteApplicationsWithNoDeployments(Tenant tenant) {
+        controller().applications().asList(tenant.name()).forEach(application -> {
+            // this only removes applications with no active deployments
+            controller().applications().deleteApplication(application.id(), Optional.empty());
         });
     }
 }
