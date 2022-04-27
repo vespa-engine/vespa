@@ -2,6 +2,8 @@
 package com.yahoo.vespa.model.container.search;
 
 import com.yahoo.container.QrSearchersConfig;
+import com.yahoo.container.search.SchemaInfoConfig;
+import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
@@ -35,11 +37,12 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	QrSearchersConfig.Producer,
     	QueryProfilesConfig.Producer,
         SemanticRulesConfig.Producer,
-    	PageTemplatesConfig.Producer {
+    	PageTemplatesConfig.Producer,
+        SchemaInfoConfig.Producer {
 
     public static final String QUERY_PROFILE_REGISTRY_CLASS = CompiledQueryProfileRegistry.class.getName();
 
-    private ApplicationContainerCluster owningCluster;
+    private final ApplicationContainerCluster owningCluster;
     private final List<SearchCluster> searchClusters = new LinkedList<>();
     private final Options options;
 
@@ -115,6 +118,36 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     public void getConfig(IlscriptsConfig.Builder builder) {
         for (SearchCluster sc : searchClusters) {
             sc.getConfig(builder);
+        }
+    }
+
+    @Override
+    public void getConfig(SchemaInfoConfig.Builder builder) {
+        Map<String, SearchCluster.SchemaInfo> allSchemas = new LinkedHashMap<>();
+        for (SearchCluster sc : searchClusters)
+            allSchemas.putAll(sc.schemas());
+
+        for (var schemaEntry : allSchemas.entrySet()) {
+            var schemaBuilder = new SchemaInfoConfig.Schema.Builder();
+            schemaBuilder.name(schemaEntry.getKey());
+            addRankProfilesConfig(schemaEntry.getValue(),  schemaBuilder);
+            builder.schema(schemaBuilder);
+        }
+    }
+
+    protected void addRankProfilesConfig(SearchCluster.SchemaInfo schema, SchemaInfoConfig.Schema.Builder schemaBuilder) {
+        for (SearchCluster.RankProfileInfo rankProfile : schema.rankProfiles().values()) {
+            var rankProfileConfig = new SchemaInfoConfig.Schema.Rankprofile.Builder();
+            rankProfileConfig.name(rankProfile.name());
+            rankProfileConfig.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
+            rankProfileConfig.hasRankFeatures(rankProfile.hasRankFeatures());
+            for (var input : rankProfile.inputs().entrySet()) {
+                var inputConfig = new SchemaInfoConfig.Schema.Rankprofile.Input.Builder();
+                inputConfig.name(input.getKey().toString());
+                inputConfig.type(input.getValue().toString());
+                rankProfileConfig.input(inputConfig);
+            }
+            schemaBuilder.rankprofile(rankProfileConfig);
         }
     }
 

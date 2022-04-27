@@ -2,9 +2,8 @@
 package com.yahoo.search.config;
 
 import com.yahoo.api.annotations.Beta;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
+import com.yahoo.container.search.SchemaInfoConfig;
 import com.yahoo.search.Query;
 import com.yahoo.tensor.TensorType;
 
@@ -44,11 +43,10 @@ public class SchemaInfo {
     /** The schemas contained in each content cluster indexed by cluster name */
     private final Map<String, List<String>> clusters;
 
-    @Inject
     public SchemaInfo(IndexInfoConfig indexInfo, // will be used in the future
-                      DocumentdbInfoConfig documentdbInfoConfig,
+                      SchemaInfoConfig schemaInfoConfig,
                       QrSearchersConfig qrSearchersConfig) {
-        this(SchemaInfoConfigurer.toSchemas(documentdbInfoConfig), SchemaInfoConfigurer.toClusters(qrSearchersConfig));
+        this(SchemaInfoConfigurer.toSchemas(schemaInfoConfig), SchemaInfoConfigurer.toClusters(qrSearchersConfig));
     }
 
     public SchemaInfo(List<Schema> schemas, Map<String, List<String>> clusters) {

@@ -23,6 +23,7 @@ import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.container.jdisc.state.StateHandler;
 import com.yahoo.container.logging.AccessLog;
+import com.yahoo.container.search.SchemaInfoConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.metrics.simple.runtime.MetricProperties;
@@ -99,7 +100,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         ConfigserverConfig.Producer,
-        CuratorConfig.Producer
+        CuratorConfig.Producer,
+        SchemaInfoConfig.Producer
 {
 
     /**
@@ -534,6 +536,11 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
+        if (containerSearch != null) containerSearch.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(SchemaInfoConfig.Builder builder) {
         if (containerSearch != null) containerSearch.getConfig(builder);
     }
 

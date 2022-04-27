@@ -2,11 +2,10 @@
 package com.yahoo.search.config;
 
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
+import com.yahoo.container.search.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,13 +18,13 @@ import java.util.stream.Collectors;
  */
 class SchemaInfoConfigurer {
 
-    static List<Schema> toSchemas(DocumentdbInfoConfig documentdbInfoConfig) {
-        return documentdbInfoConfig.documentdb().stream().map(config -> toSchema(config)).collect(Collectors.toList());
+    static List<Schema> toSchemas(SchemaInfoConfig documentdbInfoConfig) {
+        return documentdbInfoConfig.schema().stream().map(config -> toSchema(config)).collect(Collectors.toList());
     }
 
-    static Schema toSchema(DocumentdbInfoConfig.Documentdb documentDbConfig) {
-        Schema.Builder builder = new Schema.Builder(documentDbConfig.name());
-        for (var profileConfig : documentDbConfig.rankprofile()) {
+    static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {
+        Schema.Builder builder = new Schema.Builder(schemaInfoConfig.name());
+        for (var profileConfig : schemaInfoConfig.rankprofile()) {
             RankProfile.Builder profileBuilder = new RankProfile.Builder(profileConfig.name());
             profileBuilder.setHasSummaryFeatures(profileConfig.hasSummaryFeatures());
             profileBuilder.setHasRankFeatures(profileConfig.hasRankFeatures());
