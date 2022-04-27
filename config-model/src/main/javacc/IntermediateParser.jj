@@ -269,10 +269,6 @@ TOKEN :
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
-| < COMPRESSION: "compression" >
-| < COMPRESSIONLEVEL: "level" >
-| < COMPRESSIONTHRESHOLD: "threshold" >
-| < LZ4: "lz4" >
 | < USEDOCUMENT: "use-document" >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
@@ -518,10 +514,7 @@ ParsedDocument namedDocument() :
  */
 void documentBody(ParsedDocument document) : { }
 {
-    ( compression()
-      | headercfg()
-      | bodycfg()
-      | annotation(document)
+    ( annotation(document)
       | structInside(document)
       | fieldInsideDoc(document)
     )
@@ -540,44 +533,6 @@ void rawAsBase64(ParsedSchema schema) :
     {
         schema.enableRawAsBase64(enabled);
     }
-}
-
-/**
- * Consumes a document head block.
- */
-void headercfg() : { }
-{
-    <HEADER> lbrace() [compression() (<NL>)*] <RBRACE>
-}
-
-/**
- * Consumes a document body block.
- */
-void bodycfg() : { }
-{
-    <BODY> lbrace() [compression() (<NL>)*] <RBRACE>
-}
-
-/**
- * Consumes a compression block. This can be set in both document header and -body block.
- */
-void compression() :
-{
-    deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
-}
-{
-    <COMPRESSION> lbrace() ( compressionItem() (<NL>)*)* <RBRACE>
-}
-
-/**
- * Consumes the body of a compression block.
- */
-void compressionItem() : { }
-{
-    ( ( <TYPE> <COLON> <LZ4> )
-      | (<COMPRESSIONTHRESHOLD> <COLON> <INTEGER>)
-      | (<COMPRESSIONLEVEL> <COLON> <INTEGER>)
-    )
 }
 
 /**
@@ -2542,9 +2497,6 @@ String identifier() : { }
       | <BOLDING>
       | <BTREE>
       | <CASED>
-      | <COMPRESSION>
-      | <COMPRESSIONLEVEL>
-      | <COMPRESSIONTHRESHOLD>
       | <CONSTANT>
       | <CONSTANTS>
       | <CONTEXT>
