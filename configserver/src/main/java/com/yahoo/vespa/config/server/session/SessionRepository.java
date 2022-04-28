@@ -678,7 +678,13 @@ public class SessionRepository {
         DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp,
                                                internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
-        app.validateFileExtensions(failDeploymentForFilesWithUnknownExtension.value());
+        try {
+            app.validateFileExtensions();
+        } catch (IllegalArgumentException e) {
+            if (failDeploymentForFilesWithUnknownExtension.value())
+                throw e;
+            log.log(Level.INFO, e.getMessage());
+        }
         return app;
     }
 

@@ -144,20 +144,20 @@ public class FilesApplicationPackageTest {
 
     @Test
     public void testValidFileExtensions() {
-        File appDir = new File("src/test/resources/app-with-deployment");;
+        File appDir = new File("src/test/resources/app-with-deployment");
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
-        app.validateFileExtensions(true);
+        app.validateFileExtensions();
     }
 
     @Test
     public void testInvalidFileExtensions() {
-        File appDir = new File("src/test/resources/app-with-invalid-files-in-subdir");;
+        File appDir = new File("src/test/resources/app-with-invalid-files-in-subdir");
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         try {
-            app.validateFileExtensions(true);
+            app.validateFileExtensions();
             fail("expected an exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("File in application package with unknown suffix: search/query-profiles/file-with-invalid.extension, " +
+            assertEquals("File in application package with unknown extension: search/query-profiles/file-with-invalid.extension, " +
                                  "please delete or move file to another directory.",
                          e.getMessage());
         }
@@ -165,13 +165,13 @@ public class FilesApplicationPackageTest {
 
     @Test
     public void testInvalidFileExtensionInSubDirOfSubDir() {
-        File appDir = new File("src/test/resources/app-with-files-with-invalid-extension-in-subdir-of-subdir/");;
+        File appDir = new File("src/test/resources/app-with-files-with-invalid-extension-in-subdir-of-subdir/");
         FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
         try {
-            app.validateFileExtensions(true);
+            app.validateFileExtensions();
             fail("expected an exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("File in application package with unknown suffix: schemas/foo/bar.junk, " +
+            assertEquals("File in application package with unknown extension: schemas/foo/bar.junk, " +
                                  "please delete or move file to another directory.",
                          e.getMessage());
         }
