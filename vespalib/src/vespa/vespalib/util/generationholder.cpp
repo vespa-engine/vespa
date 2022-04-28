@@ -17,14 +17,14 @@ GenerationHolder::~GenerationHolder()
 {
     assert(_hold1List.empty());
     assert(_hold2List.empty());
-    assert(_heldBytes == 0);
+    assert(getHeldBytes() == 0);
 }
 
 void
 GenerationHolder::hold(GenerationHeldBase::UP data)
 {
     _hold1List.push_back(GenerationHeldBase::SP(data.release()));
-    _heldBytes += _hold1List.back()->getSize();
+    _heldBytes.store(getHeldBytes() + _hold1List.back()->getSize(), std::memory_order_relaxed);
 }
 
 void
@@ -50,7 +50,7 @@ GenerationHolder::trimHoldListsSlow(generation_t usedGen)
         GenerationHeldBase &first = *_hold2List.front();
         if (static_cast<sgeneration_t>(first._generation - usedGen) >= 0)
             break;
-        _heldBytes -= first.getSize();
+        _heldBytes.store(getHeldBytes() - first.getSize(), std::memory_order_relaxed);
         _hold2List.erase(_hold2List.begin());
     }
 }

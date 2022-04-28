@@ -53,7 +53,7 @@ private:
 
     HoldList _hold1List;
     HoldList _hold2List;
-    size_t   _heldBytes;
+    std::atomic<size_t>   _heldBytes;
 
     /**
      * Transfer holds from hold1 to hold2 lists, assigning generation.
@@ -93,7 +93,7 @@ public:
     }
 
     void clearHoldLists();
-    size_t getHeldBytes() const { return _heldBytes; }
+    size_t getHeldBytes() const { return _heldBytes.load(std::memory_order_relaxed); }
 };
 
 }
