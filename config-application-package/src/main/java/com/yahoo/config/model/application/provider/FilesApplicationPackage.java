@@ -751,17 +751,24 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
 
     /* Validates that files in application dir and subdirectories have a known extension */
     public void validateFileExtensions(boolean throwIfInvalid) {
-        validFileExtensions.forEach((key, value) -> {
-            java.nio.file.Path path = appDir.toPath().resolve((key.toFile().toPath()));
-            File dir = path.toFile();
-            if ( ! dir.exists() || ! dir.isDirectory()) return;
+        validFileExtensions.forEach((subDir, __) -> validateInDir(subDir.toFile().toPath(), throwIfInvalid));
+    }
 
-            try (var filesInPath = Files.list(path)) {
-                filesInPath.forEach(f -> validateFileSuffix(path, f, value, throwIfInvalid));
-            } catch (IOException e) {
-                log.log(Level.WARNING, "Unable to list files in " + dir, e);
-            }
-        });
+    private void validateInDir(java.nio.file.Path subDir, boolean throwIfInvalid) {
+        java.nio.file.Path path = appDir.toPath().resolve(subDir);
+        File subDirectory = path.toFile();
+        if ( ! subDirectory.exists() || ! subDirectory.isDirectory()) return;
+
+        try (var filesInPath = Files.list(path)) {
+            filesInPath.forEach(filePath -> {
+                if (filePath.toFile().isDirectory())
+                    validateInDir(appDir.toPath().relativize(filePath), throwIfInvalid);
+                else
+                    validateFileSuffix(filePath, throwIfInvalid);
+            });
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Unable to list files in " + subDirectory, e);
+        }
     }
 
     static {
@@ -769,17 +776,17 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
                 Map.entry(Path.fromString(COMPONENT_DIR), Set.of(".jar")),
                 Map.entry(CONSTANTS_DIR, Set.of(".json", ".json.lz4")),
                 Map.entry(Path.fromString(DOCPROCCHAINS_DIR), Set.of(".xml")),
-                Map.entry(MODELS_DIR, Set.of(".model")),
+                // Map.entry(MODELS_DIR, Set.of(".model")),  TODO: Enable on Vespa 8
                 Map.entry(PAGE_TEMPLATES_DIR, Set.of(".xml")),
                 Map.entry(Path.fromString(PROCESSORCHAINS_DIR), Set.of(".xml")),
                 Map.entry(QUERY_PROFILES_DIR, Set.of(".xml")),
                 Map.entry(QUERY_PROFILE_TYPES_DIR, Set.of(".xml")),
                 Map.entry(Path.fromString(ROUTINGTABLES_DIR), Set.of(".xml")),
                 Map.entry(RULES_DIR, Set.of(RULES_NAME_SUFFIX)),
-                // TODO: Might have rank profiles in subdirs: schema-name]/[rank-profile].profile
+                // Note: Might have rank profiles in subdirs: schema-name]/[rank-profile].profile
                 Map.entry(SCHEMAS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX)),
                 Map.entry(Path.fromString(SEARCHCHAINS_DIR), Set.of(".xml")),
-                // TODO: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
+                // Note: Might have rank profiles in subdirs: [schema-name]/[rank-profile].profile
                 Map.entry(SEARCH_DEFINITIONS_DIR, Set.of(SD_NAME_SUFFIX, RANKEXPRESSION_NAME_SUFFIX)),
                 Map.entry(SECURITY_DIR, Set.of(".pem")));
 
@@ -788,16 +795,39 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
         //   onnx model files (.onnx)
     }
 
-    private void validateFileSuffix(java.nio.file.Path dir, java.nio.file.Path pathToFile, Set<String> allowedSuffixes, boolean throwIfInvalid) {
+    private void validateFileSuffix(java.nio.file.Path pathToFile, boolean throwIfInvalid) {
         String fileName = pathToFile.toFile().getName();
-        if (allowedSuffixes.stream().noneMatch(fileName::endsWith)) {
+        java.nio.file.Path relativeDirectory = appDir.toPath().relativize(pathToFile).getParent();
+        Set<String> allowedExtensions = findAllowedExtensions(relativeDirectory);
+        log.log(Level.FINE, "Checking " + pathToFile + " against " + allowedExtensions);
+        if (allowedExtensions.stream().noneMatch(fileName::endsWith)) {
             String message = "File in application package with unknown suffix: " +
-                    appDir.toPath().relativize(dir).resolve(fileName) + " Please delete or move file to another directory.";
+                    appDir.toPath().relativize(pathToFile.getParent()).resolve(fileName) + ", please delete or move file to another directory.";
             if (throwIfInvalid)
                 throw new IllegalArgumentException(message);
             else
                 log.log(Level.INFO, message);
         }
     }
+
+    private Set<String> findAllowedExtensions(java.nio.file.Path relativeDirectory) {
+        return (isSubDirInSchemas(relativeDirectory))
+                ? Set.of(".profile") // Special case, since subdir in schemas can have any name
+                : validFileExtensions.entrySet().stream()
+                                     .filter(entry -> entry.getKey().equals(Path.fromString(relativeDirectory.toString())))
+                                     .map(Map.Entry::getValue)
+                                     .findFirst()
+                                     .orElse(Set.of());
+    }
+
+    private boolean isSubDirInSchemas(java.nio.file.Path relativeDirectory) {
+        java.nio.file.Path schemasPath = SCHEMAS_DIR.toFile().toPath().getName(0);
+        java.nio.file.Path searchDefinitionsPath = SEARCH_DEFINITIONS_DIR.toFile().toPath().getName(0);
+        if (relativeDirectory.equals(schemasPath) ||relativeDirectory.equals(searchDefinitionsPath)) return false;
+
+        return (relativeDirectory.startsWith(schemasPath + "/")
+                || relativeDirectory.startsWith(SEARCH_DEFINITIONS_DIR.toFile().toPath().getName(0) + "/"));
+    }
+
 
 }

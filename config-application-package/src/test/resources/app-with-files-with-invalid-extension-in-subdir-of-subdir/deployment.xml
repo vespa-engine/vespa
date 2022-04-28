@@ -1,0 +1,9 @@
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<deployment version='1.0'>
+  <test />
+  <staging />
+  <prod>
+    <region active="true">us-east</region>
+    <region active="false">us-west-1</region>
+  </prod>
+</deployment>
