@@ -207,7 +207,7 @@ public class Autoscaler {
         private static Advice scaleTo(ClusterResources target) {
             return new Advice(Optional.of(target), true,
                               new AutoscalingStatus(AutoscalingStatus.Status.rescaling,
-                                                    "Scheduled scaling to " + target + " due to load changes"));
+                                                    "Rescaling initiated due to load changes"));
         }
 
         @Override
