@@ -164,7 +164,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         checkVersion(spec);
         checkTagName(spec, log);
-        checkDeprecatedAttributes(spec, log);
 
         ApplicationContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
@@ -172,16 +171,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setRpcServerEnabled(rpcServerEnabled);
         cluster.setHttpServerEnabled(httpServerEnabled);
         model.setCluster(cluster);
-    }
-
-    private void checkDeprecatedAttributes(Element spec, DeployLogger log) {
-        String version = spec.getAttribute("jetty");
-        if (!version.isEmpty()) {
-            log.logApplicationPackage(WARNING,
-                    "The 'jetty' attribute is deprecated and will be removed in Vespa 8. " +
-                            "It has no effect - Jetty is always enabled." +
-                            "Please remove the attribute from the 'container'/'jdisc' element in services.xml.");
-        }
     }
 
     private ApplicationContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
