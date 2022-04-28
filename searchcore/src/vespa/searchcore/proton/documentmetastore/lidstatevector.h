@@ -3,27 +3,31 @@
 #pragma once
 
 #include <vespa/searchlib/common/growablebitvector.h>
+#include <atomic>
 
 namespace proton {
 
 class LidStateVector
 {
     search::GrowableBitVector _bv;
-    uint32_t _lowest;
-    uint32_t _highest;
+    std::atomic<uint32_t> _lowest;
+    std::atomic<uint32_t> _highest;
     bool     _trackLowest;
     bool     _trackHighest;
 
-    void updateLowest();
-    void updateHighest(); 
+    void updateLowest(uint32_t lowest);
+    void updateHighest(uint32_t highest);
     void maybeUpdateLowest() {
-        if (_trackLowest && _lowest < _bv.size() && !_bv.testBit(_lowest))
-            updateLowest();
+        uint32_t lowest = getLowest();
+        if (_trackLowest && lowest < _bv.size() && !_bv.testBit(lowest)) {
+            updateLowest(lowest);
+        }
     }
-
     void maybeUpdateHighest() {
-        if (_trackHighest && _highest != 0 && !_bv.testBit(_highest))
-            updateHighest();
+        uint32_t highest = getHighest();
+        if (_trackHighest && highest != 0 && !_bv.testBit(highest)) {
+            updateHighest(highest);
+        }
     }
     template <bool do_set>
     uint32_t assert_is_not_set_then_set_bits_helper(const std::vector<uint32_t>& idxs);
@@ -51,8 +55,8 @@ public:
         return _bv.extraByteSize() + sizeof(LidStateVector);
     }
     bool empty() const { return count() == 0u; }
-    unsigned int getLowest() const { return _lowest; }
-    unsigned int getHighest() const { return _highest; }
+    unsigned int getLowest() const { return _lowest.load(std::memory_order_relaxed); }
+    unsigned int getHighest() const { return _highest.load(std::memory_order_relaxed); }
 
     /**
      * Get cached number of bits set in vector.  Called by read or

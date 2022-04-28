@@ -23,9 +23,11 @@ LidStateVector::~LidStateVector() = default;
 void
 LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)
 {
-    assert(!_trackLowest || _lowest <= _bv.size());
-    assert(!_trackHighest || _bv.size() == 0 || _highest < _bv.size());
-    bool nolowest(_lowest == _bv.size());
+    uint32_t lowest = getLowest();
+    uint32_t highest = getHighest();
+    assert(!_trackLowest || lowest <= _bv.size());
+    assert(!_trackHighest || _bv.size() == 0 || highest < _bv.size());
+    bool nolowest(lowest == _bv.size());
     if (_bv.size() > newSize) {
         _bv.shrink(newSize);
     }
@@ -36,55 +38,44 @@ LidStateVector::resizeVector(uint32_t newSize, uint32_t newCapacity)
         _bv.extend(newSize);
     }
     if (_trackLowest) {
-        if (nolowest) {
-            _lowest = _bv.size();
-        }
-        if (_lowest > _bv.size()) {
-            _lowest = _bv.size();
+        if (nolowest || lowest > _bv.size()) {
+            lowest = _bv.size();
+            _lowest.store(lowest, std::memory_order_relaxed);
         }
     }
     if (_trackHighest) {
-        if (_highest >= _bv.size()) {
-            _highest = _bv.size() > 0 ? _bv.getPrevTrueBit(_bv.size() - 1) : 0;
+        if (highest >= _bv.size()) {
+            highest = _bv.size() > 0 ? _bv.getPrevTrueBit(_bv.size() - 1) : 0;
+            _highest.store(highest, std::memory_order_relaxed);
         }
     }
-    maybeUpdateLowest();
-    maybeUpdateHighest();
 }
 
 void
-LidStateVector::updateLowest()
+LidStateVector::updateLowest(uint32_t lowest)
 {
-    if (_lowest >= _bv.size())
-        return;
-    if (_bv.testBit(_lowest))
-        return;
-    uint32_t lowest = _bv.getNextTrueBit(_lowest);
+    lowest = _bv.getNextTrueBit(lowest);
     assert(lowest <= _bv.size());
-    _lowest = lowest;
+    _lowest.store(lowest, std::memory_order_relaxed);
 }
 
 void
-LidStateVector::updateHighest()
+LidStateVector::updateHighest(uint32_t highest)
 {
-    if (_highest == 0)
-        return;
-    if (_bv.testBit(_highest))
-        return;
-    uint32_t highest = _bv.getPrevTrueBit(_highest);
+    highest = _bv.getPrevTrueBit(highest);
     assert(_bv.size() == 0 || highest < _bv.size());
-    _highest = highest;
+    _highest.store(highest, std::memory_order_relaxed);
 }
 
 void
 LidStateVector::setBit(unsigned int idx)
 {
     assert(idx < _bv.size());
-    if (_trackLowest && idx < _lowest) {
-        _lowest = idx;
+    if (_trackLowest && idx < getLowest()) {
+        _lowest.store(idx, std::memory_order_relaxed);
     }
-    if (_trackHighest && idx > _highest) {
-        _highest = idx;
+    if (_trackHighest && idx > getHighest()) {
+        _highest.store(idx, std::memory_order_relaxed);
     }
     assert(!_bv.testBit(idx));
     _bv.setBitAndMaintainCount(idx);
@@ -111,11 +102,11 @@ LidStateVector::assert_is_not_set_then_set_bits_helper(const std::vector<uint32_
         }
     }
     if (do_set) {
-        if (_trackLowest && low < _lowest) {
-            _lowest = low;
+        if (_trackLowest && low < getLowest()) {
+            _lowest.store(low, std::memory_order_relaxed);
         }
-        if (_trackHighest && high > _highest) {
-            _highest = high;
+        if (_trackHighest && high > getHighest()) {
+            _highest.store(high, std::memory_order_relaxed);
         }
     }
     return high;
