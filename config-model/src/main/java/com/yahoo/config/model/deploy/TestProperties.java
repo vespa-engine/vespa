@@ -75,7 +75,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean persistenceThrottlingOfMergeFeedOps = true;
     private boolean useV8GeoPositions = false;
     private List<String> environmentVariables = List.of();
-    private boolean avoidRenamingSummaryFeatures = false;
+    private boolean avoidRenamingSummaryFeatures = true;
     private boolean experimentalSdParsing = true;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
