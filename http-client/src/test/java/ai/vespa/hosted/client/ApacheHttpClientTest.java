@@ -4,6 +4,9 @@ package ai.vespa.hosted.client;
 import ai.vespa.hosted.client.HttpClient.HostStrategy;
 import ai.vespa.hosted.client.HttpClient.ResponseException;
 import com.github.tomakehurst.wiremock.http.Fault;
+import com.yahoo.concurrent.UncheckedTimeoutException;
+import com.yahoo.test.ManualClock;
+import com.yahoo.time.TimeBudget;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.Method;
 import org.junit.jupiter.api.AfterEach;
@@ -14,6 +17,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
+import java.time.Duration;
 import java.util.List;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
@@ -100,6 +104,19 @@ class ApacheHttpClientTest {
         assertEquals("GET http://localhost:" + server.port() + "/ failed with status 409 and body 'hi'", thrown.getMessage());
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
+        server.resetRequests();
+
+        // Timeout results in UncheckedTimeoutException
+        ManualClock clock = new ManualClock();
+        TimeBudget budget = TimeBudget.fromNow(clock, Duration.ofSeconds(1));
+        clock.advance(Duration.ofSeconds(1));
+        UncheckedTimeoutException timeout = assertThrows(UncheckedTimeoutException.class,
+                                                         () -> client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 2),
+                                                                           Method.GET)
+                                                                     .deadline(budget)
+                                                                     .discard());
+        assertEquals("Time since start PT1S exceeds timeout PT1S", timeout.getMessage());
+        server.verify(0, anyRequestedFor(anyUrl()));
         server.resetRequests();
     }
 

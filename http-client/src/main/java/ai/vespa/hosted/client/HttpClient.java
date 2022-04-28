@@ -4,6 +4,7 @@ package ai.vespa.hosted.client;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
+import com.yahoo.time.TimeBudget;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
@@ -19,6 +20,7 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -99,6 +101,12 @@ public interface HttpClient extends Closeable {
 
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */
         RequestBuilder timeout(Duration timeout);
+
+        /**
+         * Pseudo-deadline for the request, including retries.
+         * Pseudo- because it only ensures request timeouts are low enough to honour the deadline, but nothing else.
+         */
+        RequestBuilder deadline(TimeBudget deadline);
 
         /** Overrides the default request config of the request. */
         RequestBuilder config(RequestConfig config);

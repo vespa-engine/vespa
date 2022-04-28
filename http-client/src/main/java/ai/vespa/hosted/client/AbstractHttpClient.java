@@ -1,9 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
+import ai.vespa.hosted.client.HttpClient.RequestBuilder;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
+import com.yahoo.concurrent.UncheckedTimeoutException;
+import com.yahoo.time.TimeBudget;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
@@ -16,12 +19,15 @@ import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.http.io.support.ClassicRequestBuilder;
+import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -58,8 +64,6 @@ public abstract class AbstractHttpClient implements HttpClient {
     private <T> T execute(RequestBuilder builder,
                           BiFunction<ClassicHttpResponse, ClassicHttpRequest, T> handler,
                           ExceptionHandler catcher) {
-        HttpClientContext context = HttpClientContext.create();
-        context.setRequestConfig(builder.config);
 
         Throwable thrown = null;
         for (URI host : builder.hosts) {
@@ -72,7 +76,7 @@ public abstract class AbstractHttpClient implements HttpClient {
             request.setEntity(builder.entity);
             try {
                 try {
-                    return handler.apply(execute(request, context), request);
+                    return handler.apply(execute(request, contextWithTimeout(builder)), request);
                 }
                 catch (IOException e) {
                     catcher.handle(e, request);
@@ -104,6 +108,29 @@ public abstract class AbstractHttpClient implements HttpClient {
         throw new IllegalStateException("No hosts to perform the request against");
     }
 
+    private HttpClientContext contextWithTimeout(RequestBuilder builder) {
+        HttpClientContext context = HttpClientContext.create();
+        RequestConfig config = builder.config;
+        if (builder.deadline != null) {
+            Optional<Duration> remaining = builder.deadline.timeLeftOrThrow();
+            if (remaining.isPresent()) {
+                config = RequestConfig.copy(config)
+                                      .setConnectTimeout(min(config.getConnectTimeout(), remaining.get()))
+                                      .setConnectionRequestTimeout(min(config.getConnectionRequestTimeout(), remaining.get()))
+                                      .setResponseTimeout(min(config.getResponseTimeout(), remaining.get()))
+                                      .build();
+            }
+        }
+        context.setRequestConfig(config);
+        return context;
+    }
+
+    // TimeBudget guarantees remaining duration is positive.
+    static Timeout min(Timeout first, Duration second) {
+        long firstMillis = first == null || first.isDisabled() ? second.toMillis() : first.toMilliseconds();
+        return Timeout.ofMilliseconds(Math.min(firstMillis, second.toMillis()));
+    }
+
     @Override
     public HttpClient.RequestBuilder send(HostStrategy hosts, Method method) {
         return new RequestBuilder(hosts, method);
@@ -120,6 +147,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         private RequestConfig config = HttpClient.defaultRequestConfig;
         private ResponseVerifier verifier = HttpClient.throwOnError;
         private ExceptionHandler catcher = HttpClient.retryAll;
+        private TimeBudget deadline;
 
         private RequestBuilder(HostStrategy hosts, Method method) {
             if ( ! hosts.iterator().hasNext())
@@ -179,6 +207,12 @@ public abstract class AbstractHttpClient implements HttpClient {
             return config(RequestConfig.copy(config)
                                        .setResponseTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                                        .build());
+        }
+
+        @Override
+        public HttpClient.RequestBuilder deadline(TimeBudget deadline) {
+            this.deadline = requireNonNull(deadline);
+            return this;
         }
 
         @Override

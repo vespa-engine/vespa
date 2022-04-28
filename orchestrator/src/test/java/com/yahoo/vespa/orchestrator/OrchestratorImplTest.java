@@ -23,7 +23,6 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
@@ -460,18 +459,16 @@ public class OrchestratorImplTest {
                                             applicationApiFactory,
                                             flagSource);
 
-        ClusterControllerStateResponse accepted = new ClusterControllerStateResponse(true, "OK");
-        ClusterControllerStateResponse denied = new ClusterControllerStateResponse(false, "NO");
-        when(fooClient.setNodeState(any(), eq(1), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
-        when(fooClient.setNodeState(any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
-        when(barClient.setNodeState(any(), eq(0), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
-        when(barClient.setNodeState(any(), eq(3), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
+        when(fooClient.setNodeState(any(), any(), eq(1), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
+        when(fooClient.setNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
+        when(barClient.setNodeState(any(), any(), eq(0), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
+        when(barClient.setNodeState(any(), any(), eq(3), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
         assertTrue(orchestrator.isQuiescent(id));
 
-        when(fooClient.setNodeState(any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(denied);
+        when(fooClient.setNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(false);
         assertFalse(orchestrator.isQuiescent(id));
 
-        when(fooClient.setNodeState(any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenThrow(new RuntimeException());
+        when(fooClient.setNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenThrow(new RuntimeException());
         assertFalse(orchestrator.isQuiescent(id));
     }
 

@@ -72,6 +72,23 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>http-client</artifactId>
+      <version>${project.version}</version>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents.client5</groupId>
+      <artifactId>httpclient5</artifactId>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>slf4j-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>jaxrs_client_utils</artifactId>
       <version>${project.version}</version>
       <scope>compile</scope>

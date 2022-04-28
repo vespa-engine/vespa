@@ -86,7 +86,6 @@
         <module>http-utils</module>
         <module>indexinglanguage</module>
         <!--<module>integration/intellij</module>-->
-        <module>jaxrs_client_utils</module>
         <module>jaxrs_utils</module>
         <module>jdisc-cloud-aws</module>
         <module>jdisc-security-filters</module>

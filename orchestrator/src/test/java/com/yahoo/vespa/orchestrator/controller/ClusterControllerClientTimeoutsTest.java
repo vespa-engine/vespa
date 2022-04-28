@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ClusterControllerClientTimeoutsTest {
+
     // The minimum time that allows for a single RPC to CC.
     private static final Duration MINIMUM_TIME_LEFT = CONNECT_TIMEOUT
             .plus(DOWNSTREAM_OVERHEAD)
@@ -44,27 +45,26 @@ public class ClusterControllerClientTimeoutsTest {
 
     @Test
     public void makesManyRequestsWithShortProcessingTime() {
-        assertEquals(Duration.ofMillis(100), timeouts.getConnectTimeoutOrThrow());
-        assertEquals(Duration.ofMillis(2900), timeouts.getReadTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(100), timeouts.connectTimeout());
+        assertEquals(Duration.ofMillis(2900), timeouts.readBudget().timeLeftOrThrow().get());
         assertEquals(Duration.ofMillis(2600), timeouts.getServerTimeoutOrThrow());
 
         clock.advance(Duration.ofMillis(100));
 
-        assertEquals(Duration.ofMillis(100), timeouts.getConnectTimeoutOrThrow());
-        assertEquals(Duration.ofMillis(2800), timeouts.getReadTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(100), timeouts.connectTimeout());
+        assertEquals(Duration.ofMillis(2800), timeouts.readBudget().timeLeftOrThrow().get());
         assertEquals(Duration.ofMillis(2500), timeouts.getServerTimeoutOrThrow());
 
         clock.advance(Duration.ofMillis(100));
 
-        assertEquals(Duration.ofMillis(100), timeouts.getConnectTimeoutOrThrow());
-        assertEquals(Duration.ofMillis(2700), timeouts.getReadTimeoutOrThrow());
+        assertEquals(Duration.ofMillis(100), timeouts.connectTimeout());
+        assertEquals(Duration.ofMillis(2700), timeouts.readBudget().timeLeftOrThrow().get());
         assertEquals(Duration.ofMillis(2400), timeouts.getServerTimeoutOrThrow());
     }
 
     @Test
     public void alreadyTimedOut() {
         clock.advance(Duration.ofSeconds(4));
-
         try {
             timeouts.getServerTimeoutOrThrow();
             fail();
@@ -89,4 +89,5 @@ public class ClusterControllerClientTimeoutsTest {
         clock.advance(originalTimeout.minus(MINIMUM_TIME_LEFT));
         timeouts.getServerTimeoutOrThrow();
     }
+
 }
