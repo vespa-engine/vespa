@@ -1,14 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
-import ai.vespa.hosted.client.ConfigServerClient.ResponseException;
 import ai.vespa.hosted.client.ConfigServerClient.HostStrategy;
+import ai.vespa.hosted.client.ConfigServerClient.ResponseException;
 import com.github.tomakehurst.wiremock.http.Fault;
-import com.yahoo.vespa.athenz.api.AthenzService;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.Method;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.List;
@@ -35,7 +38,12 @@ class HttpConfigServerClientTest {
     @RegisterExtension
     final WireMockExtension server = new WireMockExtension();
 
-    final ConfigServerClient client = new HttpConfigServerClient(List.of(new AthenzService("mydomain", "yourservice")), "user");
+    ConfigServerClient client;
+
+    @BeforeEach
+    void setup() {
+        client = AbstractConfigServerClient.wrapping(HttpClients.createMinimal());
+    }
 
     @Test
     void testRetries() {
@@ -93,6 +101,11 @@ class HttpConfigServerClientTest {
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
         server.resetRequests();
+    }
+
+    @AfterEach
+    void teardown() throws IOException {
+        client.close();
     }
 
 }

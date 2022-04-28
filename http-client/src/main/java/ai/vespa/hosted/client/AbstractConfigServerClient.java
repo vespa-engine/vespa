@@ -1,11 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
-import ai.vespa.hosted.client.ConfigServerClient.RequestBuilder;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
 import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
@@ -38,8 +38,21 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
     private static final Logger log = Logger.getLogger(AbstractConfigServerClient.class.getName());
 
+    public static ConfigServerClient wrapping(CloseableHttpClient client) {
+        return new AbstractConfigServerClient() {
+            @Override
+            protected ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException {
+                return client.execute(request, context);
+            }
+            @Override
+            public void close() throws IOException {
+                client.close();
+            }
+        };
+    }
+
     /** Executes the request with the given context. The caller must close the response. */
-    abstract ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException;
+    protected abstract ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException;
 
     /** Executes the given request with response/error handling and retries. */
     private <T> T execute(RequestBuilder builder,

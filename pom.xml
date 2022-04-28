@@ -49,7 +49,6 @@
         <module>config-provisioning</module>
         <module>config-proxy</module>
         <module>configserver</module>
-        <module>configserver-client</module>
         <module>configserver-flags</module>
         <module>config_test</module>
         <module>container</module>
@@ -83,6 +82,7 @@
         <module>hosted-api</module>
         <module>hosted-tenant-base</module>
         <module>hosted-zone-api</module>
+        <module>http-client</module>
         <module>http-utils</module>
         <module>indexinglanguage</module>
         <!--<module>integration/intellij</module>-->

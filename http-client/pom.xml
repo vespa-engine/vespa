@@ -11,8 +11,8 @@
         <version>7-SNAPSHOT</version>
 	<relativePath>../parent/pom.xml</relativePath>
     </parent>
-    <artifactId>configserver-client</artifactId>
-    <description>HTTP client for configserver APIs, built on Apache http client 5</description>
+    <artifactId>http-client</artifactId>
+    <description>HTTP client wrapper around an Apache http client 5</description>
 
     <dependencies>
         <dependency>
@@ -24,25 +24,7 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>vespa-athenz</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-apache-http-client-bundle</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>security-utils</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>config-provisioning</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
