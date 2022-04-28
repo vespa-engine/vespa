@@ -92,14 +92,6 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         assertEquals(SummaryTransform.GEOPOS, transform.getTransform());
 
         transform = (FieldResultTransform)transforms.next();
-        assertEquals(PositionDataType.getPositionSummaryFieldName(fieldName), transform.getFieldName());
-        assertEquals(SummaryTransform.POSITIONS, transform.getTransform());
-
-        transform = (FieldResultTransform)transforms.next();
-        assertEquals(PositionDataType.getDistanceSummaryFieldName(fieldName), transform.getFieldName());
-        assertEquals(SummaryTransform.DISTANCE,transform.getTransform());
-
-        transform = (FieldResultTransform)transforms.next();
         assertEquals("rankfeatures", transform.getFieldName());
         assertEquals(SummaryTransform.RANKFEATURES, transform.getTransform());
 
@@ -118,31 +110,23 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         SummarymapConfig c = scb.build();
         
         assertEquals(-1, c.defaultoutputclass());
-        assertEquals(c.override().size(), 6);
+        assertEquals(c.override().size(), 4);
 
         assertEquals(c.override(0).field(), fieldName);
         assertEquals(c.override(0).command(), "geopos");
         assertEquals(c.override(0).arguments(), PositionDataType.getZCurveFieldName(fieldName));
 
-        assertEquals(c.override(1).field(), PositionDataType.getPositionSummaryFieldName(fieldName));
-        assertEquals(c.override(1).command(), "positions");
-        assertEquals(c.override(1).arguments(), PositionDataType.getZCurveFieldName(fieldName));
-
-        assertEquals(c.override(2).field(), PositionDataType.getDistanceSummaryFieldName(fieldName));
-        assertEquals(c.override(2).command(), "absdist");
-        assertEquals(c.override(2).arguments(), PositionDataType.getZCurveFieldName(fieldName));
-
-        assertEquals(c.override(3).field(), "rankfeatures");
-        assertEquals(c.override(3).command(), "rankfeatures");
-        assertEquals(c.override(3).arguments(), "");
+        assertEquals(c.override(1).field(), "rankfeatures");
+        assertEquals(c.override(1).command(), "rankfeatures");
+        assertEquals(c.override(1).arguments(), "");
         
-        assertEquals(c.override(4).field(), "summaryfeatures");
-        assertEquals(c.override(4).command(), "summaryfeatures");
-        assertEquals(c.override(4).arguments(), "");
+        assertEquals(c.override(2).field(), "summaryfeatures");
+        assertEquals(c.override(2).command(), "summaryfeatures");
+        assertEquals(c.override(2).arguments(), "");
 
-        assertEquals(c.override(5).field(), "location_zcurve");
-        assertEquals(c.override(5).command(), "attribute");
-        assertEquals(c.override(5).arguments(), "location_zcurve");
+        assertEquals(c.override(3).field(), "location_zcurve");
+        assertEquals(c.override(3).command(), "attribute");
+        assertEquals(c.override(3).arguments(), "location_zcurve");
     }
 
     @Test

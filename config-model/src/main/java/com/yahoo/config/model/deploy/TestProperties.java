@@ -73,7 +73,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int persistenceThrottlingWindowSize = -1;
     private double persistenceThrottlingWsResizeRate = 3.0;
     private boolean persistenceThrottlingOfMergeFeedOps = true;
-    private boolean useV8GeoPositions = false;
+    private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = true;
     private boolean experimentalSdParsing = true;
