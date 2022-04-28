@@ -338,27 +338,27 @@ TEST("AssumedRolesBuilder builds union set of added roles") {
     EXPECT_EQUAL(roles, AssumedRoles::make_for_roles({"hello", "goodbye", "moon", "world"}));
 }
 
-TEST("AuthorizationResult is not authorized by default") {
-    AuthorizationResult result;
+TEST("VerificationResult is not authorized by default") {
+    VerificationResult result;
     EXPECT_FALSE(result.success());
     EXPECT_TRUE(result.assumed_roles().empty());
 }
 
-TEST("AuthorizationResult can be explicitly created as not authorzed") {
-    auto result = AuthorizationResult::make_not_authorized();
+TEST("VerificationResult can be explicitly created as not authorized") {
+    auto result = VerificationResult::make_not_authorized();
     EXPECT_FALSE(result.success());
     EXPECT_TRUE(result.assumed_roles().empty());
 }
 
-TEST("AuthorizationResult can be pre-authorized for all roles") {
-    auto result = AuthorizationResult::make_authorized_for_all_roles();
+TEST("VerificationResult can be pre-authorized for all roles") {
+    auto result = VerificationResult::make_authorized_for_all_roles();
     EXPECT_TRUE(result.success());
     EXPECT_FALSE(result.assumed_roles().empty());
     EXPECT_TRUE(result.assumed_roles().can_assume_role("foo"));
 }
 
-TEST("AuthorizationResult can be pre-authorized for an explicit set of roles") {
-    auto result = AuthorizationResult::make_authorized_for_roles(AssumedRoles::make_for_roles({"elden", "ring"}));
+TEST("VerificationResult can be pre-authorized for an explicit set of roles") {
+    auto result = VerificationResult::make_authorized_for_roles(AssumedRoles::make_for_roles({"elden", "ring"}));
     EXPECT_TRUE(result.success());
     EXPECT_FALSE(result.assumed_roles().empty());
     EXPECT_TRUE(result.assumed_roles().can_assume_role("elden"));

@@ -61,7 +61,7 @@ public:
 
     ~PolicyConfiguredCertificateVerifier() override;
 
-    AuthorizationResult verify(const PeerCredentials& peer_creds) const override;
+    VerificationResult verify(const PeerCredentials& peer_creds) const override;
 };
 
 PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(AuthorizedPeers authorized_peers) noexcept
@@ -69,9 +69,9 @@ PolicyConfiguredCertificateVerifier::PolicyConfiguredCertificateVerifier(Authori
 
 PolicyConfiguredCertificateVerifier::~PolicyConfiguredCertificateVerifier() = default;
 
-AuthorizationResult PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_creds) const {
+VerificationResult PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_creds) const {
     if (_authorized_peers.allows_all_authenticated()) {
-        return AuthorizationResult::make_authorized_for_all_roles();
+        return VerificationResult::make_authorized_for_all_roles();
     }
     AssumedRolesBuilder roles_builder;
     for (const auto& policy : _authorized_peers.peer_policies()) {
@@ -80,9 +80,9 @@ AuthorizationResult PolicyConfiguredCertificateVerifier::verify(const PeerCreden
         }
     }
     if (!roles_builder.empty()) {
-        return AuthorizationResult::make_authorized_for_roles(roles_builder.build_with_move());
+        return VerificationResult::make_authorized_for_roles(roles_builder.build_with_move());
     } else {
-        return AuthorizationResult::make_not_authorized();
+        return VerificationResult::make_not_authorized();
     }
 }
 

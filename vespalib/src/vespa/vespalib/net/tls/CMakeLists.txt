@@ -3,7 +3,6 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     SOURCES
     assumed_roles.cpp
     authorization_mode.cpp
-    authorization_result.cpp
     auto_reloading_tls_crypto_engine.cpp
     crypto_codec.cpp
     crypto_codec_adapter.cpp
@@ -19,6 +18,7 @@ vespa_add_library(vespalib_vespalib_net_tls OBJECT
     tls_crypto_socket.cpp
     transport_security_options.cpp
     transport_security_options_reading.cpp
+    verification_result.cpp
     DEPENDS
 )
 find_package(OpenSSL)
