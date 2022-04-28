@@ -54,16 +54,14 @@ OrderedFieldIndexInserter<interleaved_features>::flushWord()
     }
     //XXX: Feature store leak, removed features not marked dead
     PostingListStore &postingListStore(_fieldIndex.getPostingListStore());
-    vespalib::datastore::EntryRef pidx(_dItr.getData());
+    vespalib::datastore::EntryRef pidx(_dItr.getData().load_relaxed());
     postingListStore.apply(pidx,
                            &_adds[0],
                            &_adds[0] + _adds.size(),
                            &_removes[0],
                            &_removes[0] + _removes.size());
-    if (pidx.ref() != _dItr.getData()) {
-        // Before updating ref
-        std::atomic_thread_fence(std::memory_order_release);
-        _dItr.writeData(pidx.ref());
+    if (pidx != _dItr.getData().load_relaxed()) {
+        _dItr.getWData().store_release(pidx);
     }
     _removes.clear();
     _adds.clear();
@@ -105,7 +103,7 @@ OrderedFieldIndexInserter<interleaved_features>::setNextWord(const vespalib::str
 
         WordKey insertKey(wordRef);
         DictionaryTree &dTree(_fieldIndex.getDictionaryTree());
-        dTree.insert(_dItr, insertKey, vespalib::datastore::EntryRef().ref());
+        dTree.insert(_dItr, insertKey, vespalib::datastore::AtomicEntryRef());
     }
     assert(_dItr.valid());
     assert(_word == wordStore.getWord(_dItr.getKey()._wordRef));
