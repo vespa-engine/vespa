@@ -86,7 +86,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -362,7 +361,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private PrepareResult deploy(File applicationDir, PrepareParams prepareParams, DeployHandlerLogger logger) {
         ApplicationId applicationId = prepareParams.getApplicationId();
-        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationDir);
+        long sessionId = createSession(applicationId, prepareParams.getTimeoutBudget(), applicationDir, logger);
         Deployment deployment = prepare(sessionId, prepareParams, logger);
 
         if ( ! prepareParams.isDryRun())
@@ -428,7 +427,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         DeployLogger logger = new SilentDeployLogger();
-        Session newSession = sessionRepository.createSessionFromExisting(activeSession.get(), true, timeoutBudget);
+        Session newSession = sessionRepository.createSessionFromExisting(activeSession.get(), true, timeoutBudget, logger);
 
         return Optional.of(Deployment.unprepared(newSession, this, hostProvisioner, tenant, logger, timeout, clock,
                                                  false /* don't validate as this is already deployed */, bootstrap));
@@ -511,7 +510,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
      * Deletes an application
      *
      * @return true if the application was found and deleted, false if it was not present
-     * @throws RuntimeException if the delete transaction fails. This method is exception safe.
+     * @throws RuntimeException if deleting the application fails. This method is exception safe.
      */
     public boolean delete(ApplicationId applicationId) {
         Tenant tenant = getTenant(applicationId);
@@ -861,12 +860,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             throw new IllegalArgumentException("Session not prepared: " + sessionId);
     }
 
-    public long createSessionFromExisting(ApplicationId applicationId, boolean internalRedeploy, TimeoutBudget timeoutBudget) {
+    public long createSessionFromExisting(ApplicationId applicationId,
+                                          boolean internalRedeploy,
+                                          TimeoutBudget timeoutBudget,
+                                          DeployLogger deployLogger) {
         Tenant tenant = getTenant(applicationId);
         SessionRepository sessionRepository = tenant.getSessionRepository();
         Session fromSession = getExistingSession(tenant, applicationId);
-        Session session = sessionRepository.createSessionFromExisting(fromSession, internalRedeploy, timeoutBudget);
-        return session.getSessionId();
+        return sessionRepository.createSessionFromExisting(fromSession, internalRedeploy, timeoutBudget, deployLogger).getSessionId();
     }
 
     public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, InputStream in,
@@ -874,16 +875,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         File tempDir = uncheck(() -> Files.createTempDirectory("deploy")).toFile();
         long sessionId;
         try {
-            sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir));
+            sessionId = createSession(applicationId, timeoutBudget, decompressApplication(in, contentType, tempDir), logger);
         } finally {
             cleanupTempDirectory(tempDir, logger);
         }
         return sessionId;
     }
 
-    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory) {
+    public long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File applicationDirectory, DeployLogger deployLogger) {
         SessionRepository sessionRepository = getTenant(applicationId).getSessionRepository();
-        Session session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget);
+        Session session = sessionRepository.createSessionFromApplicationPackage(applicationDirectory, applicationId, timeoutBudget, deployLogger);
         return session.getSessionId();
     }
 

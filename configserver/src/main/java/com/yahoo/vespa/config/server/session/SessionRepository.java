@@ -266,10 +266,11 @@ public class SessionRepository {
      */
     public LocalSession createSessionFromExisting(Session existingSession,
                                                   boolean internalRedeploy,
-                                                  TimeoutBudget timeoutBudget) {
+                                                  TimeoutBudget timeoutBudget,
+                                                  DeployLogger deployLogger) {
         ApplicationId existingApplicationId = existingSession.getApplicationId();
         File existingApp = getSessionAppDir(existingSession.getSessionId());
-        LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, internalRedeploy, timeoutBudget);
+        LocalSession session = createSessionFromApplication(existingApp, existingApplicationId, internalRedeploy, timeoutBudget, deployLogger);
         // Note: Setters below need to be kept in sync with calls in SessionPreparer.writeStateToZooKeeper()
         session.setApplicationId(existingApplicationId);
         session.setApplicationPackageReference(existingSession.getApplicationPackageReference());
@@ -289,9 +290,12 @@ public class SessionRepository {
      * @param timeoutBudget Timeout for creating session and waiting for other servers.
      * @return a new session
      */
-    public LocalSession createSessionFromApplicationPackage(File applicationDirectory, ApplicationId applicationId, TimeoutBudget timeoutBudget) {
+    public LocalSession createSessionFromApplicationPackage(File applicationDirectory,
+                                                            ApplicationId applicationId,
+                                                            TimeoutBudget timeoutBudget,
+                                                            DeployLogger deployLogger) {
         applicationRepo.createApplication(applicationId);
-        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget);
+        return createSessionFromApplication(applicationDirectory, applicationId, false, timeoutBudget, deployLogger);
     }
 
     /**
@@ -300,7 +304,7 @@ public class SessionRepository {
      */
     private void createLocalSession(File applicationFile, ApplicationId applicationId, long sessionId) {
         try {
-            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, sessionId, false);
+            ApplicationPackage applicationPackage = createApplicationPackage(applicationFile, applicationId, sessionId, false, Optional.empty());
             createLocalSession(sessionId, applicationPackage);
         } catch (Exception e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -669,7 +673,8 @@ public class SessionRepository {
                                                  ApplicationId applicationId,
                                                  long sessionId,
                                                  Optional<Long> currentlyActiveSessionId,
-                                                 boolean internalRedeploy) {
+                                                 boolean internalRedeploy,
+                                                 Optional<DeployLogger> deployLogger) {
         long deployTimestamp = System.currentTimeMillis();
         String user = System.getenv("USER");
         if (user == null) {
@@ -678,18 +683,26 @@ public class SessionRepository {
         DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp,
                                                internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
-        app.validateFileExtensions(failDeploymentForFilesWithUnknownExtension.value());
+        try {
+            app.validateFileExtensions();
+        } catch (IllegalArgumentException e) {
+            if (failDeploymentForFilesWithUnknownExtension.value())
+                throw e;
+            deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.INFO, e.getMessage()));
+        }
+
         return app;
     }
 
     private LocalSession createSessionFromApplication(File applicationDirectory,
                                                       ApplicationId applicationId,
                                                       boolean internalRedeploy,
-                                                      TimeoutBudget timeoutBudget) {
+                                                      TimeoutBudget timeoutBudget,
+                                                      DeployLogger deployLogger) {
         long sessionId = getNextSessionId();
         try {
             ensureSessionPathDoesNotExist(sessionId);
-            ApplicationPackage app = createApplicationPackage(applicationDirectory, applicationId, sessionId, internalRedeploy);
+            ApplicationPackage app = createApplicationPackage(applicationDirectory, applicationId, sessionId, internalRedeploy, Optional.of(deployLogger));
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
             sessionZKClient.createNewSession(clock.instant());
@@ -706,7 +719,8 @@ public class SessionRepository {
     private ApplicationPackage createApplicationPackage(File applicationDirectory,
                                                         ApplicationId applicationId,
                                                         long sessionId,
-                                                        boolean internalRedeploy) throws IOException {
+                                                        boolean internalRedeploy,
+                                                        Optional<DeployLogger> deployLogger) throws IOException {
         // Synchronize to avoid threads trying to create an application package concurrently
         // (e.g. a maintainer and an external deployment)
         synchronized (monitor) {
@@ -718,7 +732,8 @@ public class SessionRepository {
                                                                       applicationId,
                                                                       sessionId,
                                                                       activeSessionId,
-                                                                      internalRedeploy);
+                                                                      internalRedeploy,
+                                                                      deployLogger);
             applicationPackage.writeMetaData();
             return applicationPackage;
         }

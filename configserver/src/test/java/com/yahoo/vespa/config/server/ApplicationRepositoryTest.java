@@ -8,6 +8,7 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.model.NullConfigModelRegistry;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
@@ -834,11 +835,11 @@ public class ApplicationRepositoryTest {
     }
 
     private long createSession(ApplicationId applicationId, TimeoutBudget timeoutBudget, File app) {
-        return applicationRepository.createSession(applicationId, timeoutBudget, app);
+        return applicationRepository.createSession(applicationId, timeoutBudget, app, new BaseDeployLogger());
     }
 
     private long createSessionFromExisting(ApplicationId applicationId, TimeoutBudget timeoutBudget) {
-        return applicationRepository.createSessionFromExisting(applicationId, false, timeoutBudget);
+        return applicationRepository.createSessionFromExisting(applicationId, false, timeoutBudget, new BaseDeployLogger());
     }
 
 }
