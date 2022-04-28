@@ -2,7 +2,6 @@
 ContainerCluster = element container | jdisc {
     attribute version { "1.0" } &
     attribute id { xsd:NCName }? &
-    attribute jetty { xsd:boolean }? &
     Include* &
     ContainerServices &    
     DocumentBinding* &
