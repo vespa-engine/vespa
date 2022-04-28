@@ -105,15 +105,16 @@ SBEnv::SBEnv(const ConfigShim &shim)
       _shuttingDown(false),
       _partnerList(),
       _me(createSpec(_configShim.portNumber())),
-      _rpcHooks(*this),
-      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _exchanger)),
-      _health(),
-      _metrics(_rpcHooks, *_transport),
-      _components(),
       _localRpcMonitorMap(getScheduler(),
                           [this] (MappingMonitorOwner &owner) {
                               return std::make_unique<RpcMappingMonitor>(*_supervisor, owner);
                           }),
+      _globalVisibleHistory(),
+      _rpcHooks(*this), // Transitively references _localRpcMonitorMap and _globalVisibleHistory
+      _remotechecktask(std::make_unique<RemoteCheck>(getSupervisor()->GetScheduler(), _exchanger)),
+      _health(),
+      _metrics(_rpcHooks, *_transport),
+      _components(),
       _exchanger(*this)
 {
     srandom(time(nullptr) ^ getpid());
