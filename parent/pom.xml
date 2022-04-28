@@ -943,7 +943,7 @@
         <eclipse-collections.version>11.0.0</eclipse-collections.version>
         <gson.version>2.8.9</gson.version>
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
-        <jna.version>5.9.0</jna.version>
+        <jna.version>5.11.0</jna.version>
         <junit.version>5.8.1</junit.version>
         <maven-archiver.version>3.5.2</maven-archiver.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
