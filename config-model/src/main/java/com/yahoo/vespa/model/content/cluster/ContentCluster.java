@@ -328,7 +328,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
         }
 
-        public static final NodeResources clusterControllerResources = new NodeResources(0.25, 1, 10, 0.3, DiskSpeed.any, StorageType.any);
+        public static final NodeResources clusterControllerResources = new NodeResources(0.25, 1.14, 10, 0.3, DiskSpeed.any, StorageType.any);
 
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement,
                                                                                 Admin admin,
