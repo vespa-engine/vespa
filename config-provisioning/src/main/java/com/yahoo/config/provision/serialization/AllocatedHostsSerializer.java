@@ -39,7 +39,6 @@ public class AllocatedHostsSerializer {
     private static final String mappingKey = "mapping";
     private static final String hostSpecKey = "hostSpec";
     private static final String hostSpecHostNameKey = "hostName";
-    private static final String aliasesKey = "aliases";
     private static final String hostSpecMembershipKey = "membership";
 
     private static final String realResourcesKey = "realResources";
@@ -78,7 +77,6 @@ public class AllocatedHostsSerializer {
 
     private static void toSlime(HostSpec host, Cursor object) {
         object.setString(hostSpecHostNameKey, host.hostname());
-        aliasesToSlime(host, object);
         host.membership().ifPresent(membership -> {
             object.setString(hostSpecMembershipKey, membership.stringValue());
             object.setString(hostSpecVespaVersionKey, membership.cluster().vespaVersion().toFullString());
@@ -89,13 +87,6 @@ public class AllocatedHostsSerializer {
         host.requestedResources().ifPresent(resources -> toSlime(resources, object.setObject(requestedResourcesKey)));
         host.version().ifPresent(version -> object.setString(hostSpecCurrentVespaVersionKey, version.toFullString()));
         host.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(hostSpecNetworkPortsKey)));
-    }
-
-    private static void aliasesToSlime(HostSpec spec, Cursor cursor) {
-        if (spec.aliases().isEmpty()) return;
-        Cursor aliases = cursor.setArray(aliasesKey);
-        for (String alias : spec.aliases())
-            aliases.addString(alias);
     }
 
     private static void toSlime(NodeResources resources, Cursor resourcesObject) {
@@ -135,16 +126,8 @@ public class AllocatedHostsSerializer {
         }
         else {
             return new HostSpec(object.field(hostSpecHostNameKey).asString(),
-                                aliasesFromSlime(object),
                                 NetworkPortsSerializer.fromSlime(object.field(hostSpecNetworkPortsKey)));
         }
-    }
-
-    private static List<String> aliasesFromSlime(Inspector object) {
-        if ( ! object.field(aliasesKey).valid()) return List.of();
-        List<String> aliases = new ArrayList<>();
-        object.field(aliasesKey).traverse((ArrayTraverser)(index, alias) -> aliases.add(alias.asString()));
-        return aliases;
     }
 
     private static NodeResources nodeResourcesFromSlime(Inspector resources) {

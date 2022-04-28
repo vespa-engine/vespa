@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -56,14 +54,7 @@ public class HostsXmlProvisionerTest {
         Map<String, HostSpec> map = allocate(hostProvisioner, aliases);
 
         assertCorrectNumberOfHosts(map, 2);
-        for (HostSpec hostSpec : map.values()) {
-            if (hostSpec.hostname().equals("test2.yahoo.com")) {
-                assertThat(hostSpec.aliases().size(), is(2));
-            } else {
-                assertThat(hostSpec.aliases().size(), is(1));
-            }
-        }
-        assertThat(map.size(), is(2));
+        assertEquals(2, map.size());
         assertTrue(map.keySet().containsAll(aliases));
 
         // 5 services, 3 host aliases, mapping to 2 host.
@@ -71,13 +62,13 @@ public class HostsXmlProvisionerTest {
         map = allocate(hostProvisioner, aliases);
 
         assertCorrectNumberOfHosts(map, 2);
-        assertThat(map.size(), is(3));
+        assertEquals(3, map.size());
         assertTrue(map.keySet().containsAll(aliases));
 
         // 5 services, 3 host aliases, mapping to 3 host.
         aliases = createAliases(Collections.singletonList("node4"));
         map = allocate(hostProvisioner, aliases);
-        assertThat(map.size(), is(3));
+        assertEquals(3, map.size());
         assertCorrectNumberOfHosts(map, 3);
         assertTrue(map.keySet().containsAll(aliases));
         
@@ -95,7 +86,7 @@ public class HostsXmlProvisionerTest {
         for (HostSpec host : hostToServiceMap.values()) {
             hostSet.add(host.hostname());
         }
-        assertThat(hostSet.size(), is(expectedHostCount));
+        assertEquals(expectedHostCount, hostSet.size());
     }
 
     private HostsXmlProvisioner createProvisioner(String hosts) {
@@ -129,7 +120,8 @@ public class HostsXmlProvisionerTest {
     public void require_singlenode_HostAlias_is_used_if_hosts_xml() {
         HostsXmlProvisioner hostProvisioner = createProvisioner(oneHost);
         HostSpec hostSpec = hostProvisioner.allocateHost(Container.SINGLENODE_CONTAINER_SERVICESPEC);
-        assertThat(hostSpec.hostname(), is("test1.yahoo.com"));
+        assertEquals("test1.yahoo.com", hostSpec.hostname());
     }
+
 }
 
