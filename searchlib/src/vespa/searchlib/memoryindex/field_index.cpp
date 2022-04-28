@@ -62,12 +62,10 @@ FieldIndex<interleaved_features>::~FieldIndex()
     // XXX: Kludge
     for (DictionaryTree::Iterator it = _dict.begin();
          it.valid(); ++it) {
-        EntryRef pidx(it.getData());
+        EntryRef pidx(it.getData().load_relaxed());
         if (pidx.valid()) {
             _postingListStore.clear(pidx);
-            // Before updating ref
-            std::atomic_thread_fence(std::memory_order_release);
-            it.writeData(EntryRef().ref());
+            it.getWData().store_release(EntryRef());
         }
     }
     _postingListStore.clearBuilder();
@@ -86,7 +84,7 @@ FieldIndex<interleaved_features>::find(const vespalib::stringref word) const
 {
     DictionaryTree::Iterator itr = _dict.find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
-        return _postingListStore.begin(EntryRef(itr.getData()));
+        return _postingListStore.begin(itr.getData().load_relaxed());
     }
     return typename PostingList::Iterator();
 }
@@ -97,7 +95,7 @@ FieldIndex<interleaved_features>::findFrozen(const vespalib::stringref word) con
 {
     auto itr = _dict.getFrozenView().find(WordKey(EntryRef()), KeyComp(_wordStore, word));
     if (itr.valid()) {
-        return _postingListStore.beginFrozen(EntryRef(itr.getData()));
+        return _postingListStore.beginFrozen(itr.getData().load_acquire());
     }
     return typename PostingList::Iterator();
 }
@@ -112,7 +110,7 @@ FieldIndex<interleaved_features>::compactFeatures()
     auto itr = _dict.begin();
     uint32_t packedIndex = _fieldId;
     for (; itr.valid(); ++itr) {
-        typename PostingListStore::RefType pidx(EntryRef(itr.getData()));
+        typename PostingListStore::RefType pidx(itr.getData().load_relaxed());
         if (!pidx.valid()) {
             continue;
         }
@@ -170,7 +168,7 @@ FieldIndex<interleaved_features>::dump(search::index::IndexBuilder & indexBuilde
     _featureStore.setupForField(_fieldId, decoder);
     for (auto itr = _dict.begin(); itr.valid(); ++itr) {
         const WordKey & wk = itr.getKey();
-        typename PostingListStore::RefType plist(EntryRef(itr.getData()));
+        typename PostingListStore::RefType plist(itr.getData().load_relaxed());
         word = _wordStore.getWord(wk._wordRef);
         if (!plist.valid()) {
             continue;

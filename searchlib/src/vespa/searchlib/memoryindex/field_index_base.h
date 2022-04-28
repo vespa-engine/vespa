@@ -65,7 +65,7 @@ public:
         }
     };
 
-    using PostingListPtr = uint32_t;
+    using PostingListPtr = vespalib::datastore::AtomicEntryRef;
     using DictionaryTree = vespalib::btree::BTree<WordKey, PostingListPtr,
                                         vespalib::btree::NoAggregated,
                                         const KeyComp>;
