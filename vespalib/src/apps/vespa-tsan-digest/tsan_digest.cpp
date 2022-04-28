@@ -45,7 +45,7 @@ uint64_t get_hash(const std::vector<vespalib::string> &list) {
 
 //-----------------------------------------------------------------------------
 
-class FrameHist {
+class SymbolHist {
 private:
     std::map<vespalib::string,size_t> _hist;
 public:
@@ -57,56 +57,97 @@ public:
         for (const auto &entry: _hist) {
             entries.push_back(entry);
         }
-        std::sort(entries.begin(), entries.end(), [](const auto &a, const auto &b){
-                if (a.second != b.second) {
-                    return (a.second > b.second);
-                }
-                return (a.first < b.first);
-            });
-        fprintf(dst, "  top rated frames:\n");
-        for (size_t i = 0; i < entries.size() && i < trace_limit; ++i) {
-            fprintf(dst, "%s -- score: %zu\n", entries[i].first.c_str(), entries[i].second);
+        std::sort(entries.begin(), entries.end(), [](const auto &a, const auto &b)
+                  {
+                      if (a.second != b.second) {
+                          return (a.second > b.second);
+                      }
+                      return a.first.size() < b.first.size();
+                  });
+        fprintf(dst, "  hot symbols:\n");
+        size_t i = 0;
+        size_t worst_score = 0;
+        for (; i < entries.size() && i < 5; ++i) {
+            worst_score = entries[i].second;
+            fprintf(dst, "    %zu: %s\n", worst_score, entries[i].first.c_str());
+        }
+        size_t overflow = i;
+        for (; i < entries.size() && entries[i].second >= worst_score && i - overflow < trace_limit; ++i) {
+            fprintf(dst, "    %zu: %s\n", entries[i].second, entries[i].first.c_str());
         }
     }
 };
 
 //-----------------------------------------------------------------------------
 
+vespalib::string get_symbol_from_frame(const vespalib::string &frame) {
+    auto pos1 = frame.find("#");
+    pos1 = frame.find(" ", pos1);
+    auto pos2 = frame.rfind(" /");
+    if (pos1 == npos) {
+        return {};
+    }
+    if (pos2 == npos) {
+        return frame.substr(pos1+1);
+    }
+    return frame.substr(pos1+1, pos2-pos1-1);
+}
+
+void strip_after(vespalib::string &str, const vespalib::string &delimiter) {
+    auto pos = str.find(delimiter);
+    if (pos != npos) {
+        str = str.substr(0, pos);
+    }
+}
+
+void replace_first(vespalib::string &str, const vespalib::string &old_str, const vespalib::string &new_str) {    
+    auto pos = str.find(old_str);
+    if (pos != npos) {
+        str.replace(pos, old_str.size(), new_str);
+    }
+}
+
 class StackTrace {
 private:
     vespalib::string _heading;
     std::vector<vespalib::string> _frames;
     uint64_t _hash;
+    bool _is_read;
+    bool _is_write;
 public:
     StackTrace(const vespalib::string &heading) noexcept
-    : _heading(heading), _frames(), _hash() {}
+    : _heading(heading), _frames(), _hash(), _is_read(false), _is_write(false) {}
     ~StackTrace() {}
     void add_frame(const vespalib::string &frame) {
         _frames.push_back(frame);
     }
-    void done() { _hash = get_hash(_frames); }
+    void done() {
+        strip_after(_heading, " at 0x");
+        replace_first(_heading, "Previous", "");
+        replace_first(_heading, "Atomic", "atomic");
+        replace_first(_heading, "Read", "read"); 
+        replace_first(_heading, "Write", "write");
+        _is_read = (_heading.find("read") != npos);
+        _is_write = (_heading.find("write") != npos);
+        _hash = get_hash(_frames);
+    }
+    bool is_read() const { return _is_read; }
+    bool is_write() const { return _is_write; }
     uint64_t hash() const { return _hash; }
-    void update(FrameHist &hist, size_t weight) const {
+    void update(SymbolHist &hist, size_t weight) const {
         for (const auto &frame: _frames) {
-            hist.add(frame, weight);
+            hist.add(get_symbol_from_frame(frame), weight);
         }
     }
-    void dump(FILE *dst) const {
-        fprintf(dst, "%s\n", _heading.c_str());
+    const vespalib::string &heading() const { return _heading; }
+    void dump(FILE *dst, const vespalib::string &info) const {
+        fprintf(dst, "%s %s\n", _heading.c_str(), info.c_str());
         for (const auto &frame: _frames) {
-            fprintf(dst, "%s\n", frame.c_str());            
+            fprintf(dst, "%s\n", frame.c_str());
         }
         fprintf(dst, "\n");
     }
 };
-
-vespalib::string make_trace_heading(const vespalib::string &line) {
-    auto pos = line.find(" at 0x");
-    if ((pos != npos) && (line.find("Location") == npos)) {
-        return line.substr(0, pos);
-    }
-    return line;
-}
 
 std::vector<StackTrace> extract_traces(const std::vector<vespalib::string> &lines, size_t cutoff) {
     std::vector<StackTrace> result;
@@ -114,7 +155,7 @@ std::vector<StackTrace> extract_traces(const std::vector<vespalib::string> &line
         auto pos = lines[i].find("#0 ");
         if (pos != npos) {
             size_t start = i;
-            result.emplace_back(make_trace_heading(lines[i - 1]));
+            result.emplace_back(lines[i - 1]);
             result.back().add_frame(lines[i]);
             for (i = i + 1; i < lines.size(); ++i) {
                 if (((i - start) > trace_limit) ||
@@ -166,13 +207,18 @@ struct Report {
     virtual ~Report() {}
 };
 
+size_t raw_reports = 0;
+
 class RawReport : public Report {
 private:
     std::vector<vespalib::string> _lines;
     size_t _count;
 public:
     RawReport(const std::vector<vespalib::string> &lines)
-      : _lines(lines), _count(1) {}
+      : _lines(lines), _count(1)
+    {
+        ++raw_reports;
+    }
     std::vector<vespalib::string> make_keys() const override {
         return {fmt("raw:%zu", get_hash(_lines))};
     }
@@ -185,19 +231,26 @@ public:
     }
 };
 
+size_t write_write_races = 0;
+
 class RaceReport : public Report {
 private:
     struct Node {
         StackTrace trace;
-        size_t count;
+        size_t before;
+        size_t after;
+        size_t count() const { return before + after; }
     };
     std::vector<Node> _nodes;
-    size_t _count;
+    size_t _wr;
+    size_t _rw;
+    size_t _ww;
 
     void add(const Node &node) {
         for (Node &dst: _nodes) {
             if (dst.trace.hash() == node.trace.hash()) {
-                dst.count += node.count;
+                dst.before += node.before;
+                dst.after += node.after;
                 return;
             }
         }
@@ -205,8 +258,21 @@ private:
     }
 
 public:
+    // Note: b happened before a
     RaceReport(const StackTrace &a, const StackTrace &b)
-      : _nodes({{a, 1}, {b, 1}}), _count(1) {}
+      : _nodes({{a, 0, 1}, {b, 1, 0}}), _wr(0), _rw(0), _ww(0)
+    {
+        if (b.is_write() && a.is_write()) {
+            ++_ww;
+            ++write_write_races;
+        } else if (b.is_read() && a.is_write()) {
+            ++_rw;
+        } else if (b.is_write() && a.is_read()) {
+            ++_wr;
+        } else {
+            throw(fmt("invalid race report ('%s' vs '%s')", a.heading().c_str(), b.heading().c_str()));
+        }
+    }
 
     std::vector<vespalib::string> make_keys() const override {
         std::vector<vespalib::string> result;
@@ -218,12 +284,14 @@ public:
     void merge(const Report &report) override {
         // should have correct type due to key prefix
         const auto &rhs = dynamic_cast<const RaceReport &>(report);
-        _count += rhs._count;
+        _wr += rhs._wr;
+        _rw += rhs._rw;
+        _ww += rhs._ww;
         for (const auto &node: rhs._nodes) {
             add(node);
         }
     }
-    size_t count() const override { return _count; }
+    size_t count() const override { return (_wr + _rw + _ww); }
     void dump(FILE *dst) const override {
         std::vector<const Node *> list;
         for (const auto &node: _nodes) {
@@ -231,15 +299,16 @@ public:
         }
         std::sort(list.begin(), list.end(),
                   [](const auto *a, const auto *b) {
-                      return (a->count > b->count);
+                      return (a->count() > b->count());
                   });
-        fprintf(dst, "WARNING: data race cluster with %zu conflicts between %zu traces\n", _count, list.size());
-        FrameHist frame_hist;
+        fprintf(dst, "WARNING: data race cluster with %zu conflicts between %zu traces\n", count(), list.size());
+        fprintf(dst, " WR: %zu, RW: %zu, WW: %zu\n", _wr, _rw, _ww);
+        SymbolHist sym_hist;
         for (const auto *node: list) {
-            node->trace.update(frame_hist, node->count);
-            node->trace.dump(dst);
+            node->trace.update(sym_hist, node->count());
+            node->trace.dump(dst, fmt("(%zu before, %zu after)", node->before, node->after));
         }
-        frame_hist.dump(dst);
+        sym_hist.dump(dst);
     }
 };
 
@@ -250,7 +319,7 @@ using MapPos = ReportMap::const_iterator;
 
 size_t total_reports = 0;
 ReportMap report_map;
-FrameHist race_frame_hist;
+SymbolHist race_sym_hist;
 
 void handle_report(std::unique_ptr<Report> report) {
     ++total_reports;
@@ -285,9 +354,13 @@ void make_report(const std::vector<vespalib::string> &lines) {
     auto type = detect_report_type(lines);
     if (type == ReportType::RACE) {
         auto traces = extract_traces(lines, 2);
-        if (traces.size() == 2) {
-            traces[0].update(race_frame_hist, 1);
-            traces[1].update(race_frame_hist, 1);
+        if ((traces.size() == 2) &&
+            !(traces[0].is_read() == traces[0].is_write()) &&
+            !(traces[1].is_read() == traces[1].is_write()) &&
+            (traces[0].is_write() || traces[1].is_write()))
+        {
+            traces[0].update(race_sym_hist, 1);
+            traces[1].update(race_sym_hist, 1);
             return handle_report(std::make_unique<RaceReport>(traces[0], traces[1]));
         }
     }
@@ -350,7 +423,9 @@ void write_output() {
         dump_delimiter(stdout);
     }
     fprintf(stderr, "%zu reports in, %zu reports out\n", total_reports, list.size());
-    race_frame_hist.dump(stderr);
+    fprintf(stderr, "found %zu write write races\n", write_write_races);
+    fprintf(stderr, "%zu raw reports (unhandled)\n", raw_reports);
+    race_sym_hist.dump(stderr);
 }
 
 int main(int, char **) {
