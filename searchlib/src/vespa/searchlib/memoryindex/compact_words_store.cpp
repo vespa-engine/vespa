@@ -128,8 +128,12 @@ CompactWordsStore::Store::get(vespalib::datastore::EntryRef wordRef) const
 
 CompactWordsStore::CompactWordsStore()
     : _docs(),
+      _docs_used_bytes(0),
+      _docs_allocated_bytes(0),
       _wordsStore()
-{ }
+{
+    update_docs_memory_usage();
+}
 
 CompactWordsStore::~CompactWordsStore() { }
 
@@ -161,12 +165,25 @@ CompactWordsStore::get(uint32_t docId) const
     return Iterator();
 }
 
+void
+CompactWordsStore::update_docs_memory_usage()
+{
+    _docs_used_bytes.store(_docs.getMemoryUsed(), std::memory_order_relaxed);
+    _docs_allocated_bytes.store(_docs.getMemoryConsumption(), std::memory_order_relaxed);
+}
+
+void
+CompactWordsStore::commit()
+{
+    update_docs_memory_usage();
+}
+
 vespalib::MemoryUsage
 CompactWordsStore::getMemoryUsage() const
 {
     vespalib::MemoryUsage usage;
-    usage.incAllocatedBytes(_docs.getMemoryConsumption());
-    usage.incUsedBytes(_docs.getMemoryUsed());
+    usage.incAllocatedBytes(_docs_allocated_bytes.load(std::memory_order_relaxed));
+    usage.incUsedBytes(_docs_used_bytes.load(std::memory_order_relaxed));
     usage.merge(_wordsStore.getMemoryUsage());
     return usage;
 

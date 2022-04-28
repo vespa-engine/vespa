@@ -43,6 +43,7 @@ void
 FieldIndexRemover::flush()
 {
     if (_wordFieldDocTuples.empty()) {
+        _store.commit();
         return;
     }
     ShiftBasedRadixSorter<WordFieldDocTuple, WordFieldDocTuple::Radix, std::less<WordFieldDocTuple>, 24, true>::
@@ -56,6 +57,7 @@ FieldIndexRemover::flush()
         builder->insert(tuple._wordRef);
     }
     _store.insert(*builder);
+    _store.commit();
     _wordFieldDocTuples.clear();
 }
 

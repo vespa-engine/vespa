@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <atomic>
 
 namespace search::memoryindex {
 
@@ -82,7 +83,11 @@ public:
 
 private:
     DocumentWordsMap _docs;
+    std::atomic<size_t> _docs_used_bytes;
+    std::atomic<size_t> _docs_allocated_bytes;
     Store            _wordsStore;
+
+    void update_docs_memory_usage();
 
 public:
     CompactWordsStore();
@@ -90,6 +95,7 @@ public:
     void insert(const Builder &builder);
     void remove(uint32_t docId);
     Iterator get(uint32_t docId) const;
+    void commit();
     vespalib::MemoryUsage getMemoryUsage() const;
 };
 
