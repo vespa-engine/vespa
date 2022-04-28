@@ -16,7 +16,7 @@ import java.util.function.Function;
 /**
  * @author jonmv
  */
-public class MockConfigServerClient extends AbstractConfigServerClient {
+public class MockHttpClient extends AbstractHttpClient {
 
     private final Deque<Expectation> expectations = new ArrayDeque<>();
 

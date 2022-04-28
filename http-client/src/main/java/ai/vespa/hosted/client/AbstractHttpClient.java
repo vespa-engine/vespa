@@ -34,12 +34,12 @@ import static java.util.logging.Level.WARNING;
 /**
  * @author jonmv
  */
-public abstract class AbstractConfigServerClient implements ConfigServerClient {
+public abstract class AbstractHttpClient implements HttpClient {
 
-    private static final Logger log = Logger.getLogger(AbstractConfigServerClient.class.getName());
+    private static final Logger log = Logger.getLogger(AbstractHttpClient.class.getName());
 
-    public static ConfigServerClient wrapping(CloseableHttpClient client) {
-        return new AbstractConfigServerClient() {
+    public static HttpClient wrapping(CloseableHttpClient client) {
+        return new AbstractHttpClient() {
             @Override
             protected ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException {
                 return client.execute(request, context);
@@ -105,21 +105,21 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
     }
 
     @Override
-    public ConfigServerClient.RequestBuilder send(HostStrategy hosts, Method method) {
+    public HttpClient.RequestBuilder send(HostStrategy hosts, Method method) {
         return new RequestBuilder(hosts, method);
     }
 
     /** Builder for a request against a given set of hosts. */
-    class RequestBuilder implements ConfigServerClient.RequestBuilder {
+    class RequestBuilder implements HttpClient.RequestBuilder {
 
         private final Method method;
         private final HostStrategy hosts;
         private HttpURL.Path path = Path.empty();
         private HttpURL.Query query = Query.empty();
         private HttpEntity entity;
-        private RequestConfig config = ConfigServerClient.defaultRequestConfig;
-        private ResponseVerifier verifier = ConfigServerClient.throwOnError;
-        private ExceptionHandler catcher = ConfigServerClient.retryAll;
+        private RequestConfig config = HttpClient.defaultRequestConfig;
+        private ResponseVerifier verifier = HttpClient.throwOnError;
+        private ExceptionHandler catcher = HttpClient.retryAll;
 
         private RequestBuilder(HostStrategy hosts, Method method) {
             if ( ! hosts.iterator().hasNext())
@@ -136,7 +136,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public ConfigServerClient.RequestBuilder body(byte[] json) {
+        public HttpClient.RequestBuilder body(byte[] json) {
             return body(HttpEntities.create(json, ContentType.APPLICATION_JSON));
         }
 
@@ -147,7 +147,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public ConfigServerClient.RequestBuilder emptyParameters(List<String> keys) {
+        public HttpClient.RequestBuilder emptyParameters(List<String> keys) {
             for (String key : keys)
                 query = query.add(key);
 
@@ -169,7 +169,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public ConfigServerClient.RequestBuilder parameters(Query query) {
+        public HttpClient.RequestBuilder parameters(Query query) {
             this.query = this.query.add(query.entries());
             return this;
         }

@@ -33,7 +33,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
 /**
  * @author jonmv
  */
-public interface ConfigServerClient extends Closeable {
+public interface HttpClient extends Closeable {
 
     RequestConfig defaultRequestConfig = RequestConfig.custom()
                                                       .setConnectionRequestTimeout(Timeout.ofSeconds(5))

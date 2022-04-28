@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
-import ai.vespa.hosted.client.ConfigServerClient.HostStrategy;
-import ai.vespa.hosted.client.ConfigServerClient.ResponseException;
+import ai.vespa.hosted.client.HttpClient.HostStrategy;
+import ai.vespa.hosted.client.HttpClient.ResponseException;
 import com.github.tomakehurst.wiremock.http.Fault;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.Method;
@@ -33,16 +33,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * @author jonmv
  */
-class HttpConfigServerClientTest {
+class ApacheHttpClientTest {
 
     @RegisterExtension
     final WireMockExtension server = new WireMockExtension();
 
-    ConfigServerClient client;
+    HttpClient client;
 
     @BeforeEach
     void setup() {
-        client = AbstractConfigServerClient.wrapping(HttpClients.createMinimal());
+        client = AbstractHttpClient.wrapping(HttpClients.createMinimal());
     }
 
     @Test
