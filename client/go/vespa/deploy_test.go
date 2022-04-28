@@ -102,8 +102,9 @@ func TestFindApplicationPackage(t *testing.T) {
 		existingFile: filepath.Join(dir, "src", "main", "application") + string(os.PathSeparator),
 	})
 	assertFindApplicationPackage(t, dir, pkgFixture{
-		expectedPath: filepath.Join(dir, "src", "main", "application"),
-		existingFile: filepath.Join(dir, "pom.xml"),
+		expectedPath:     filepath.Join(dir, "src", "main", "application"),
+		expectedTestPath: filepath.Join(dir, "src", "test", "application"),
+		existingFiles:    []string{filepath.Join(dir, "pom.xml"), filepath.Join(dir, "src/test/application/tests/foo.json")},
 	})
 	assertFindApplicationPackage(t, dir, pkgFixture{
 		existingFile:     filepath.Join(dir, "pom.xml"),
@@ -115,10 +116,17 @@ func TestFindApplicationPackage(t *testing.T) {
 		existingFiles:    []string{filepath.Join(dir, "pom.xml"), filepath.Join(dir, "target", "application.zip")},
 		requirePackaging: true,
 	})
+	dir2 := t.TempDir()
+	assertFindApplicationPackage(t, dir2, pkgFixture{
+		expectedPath:     dir2,
+		expectedTestPath: dir2,
+		existingFiles:    []string{filepath.Join(dir2, "services.xml"), filepath.Join(dir2, "tests", "foo.json")},
+	})
 }
 
 type pkgFixture struct {
 	expectedPath     string
+	expectedTestPath string
 	existingFile     string
 	existingFiles    []string
 	requirePackaging bool
@@ -136,6 +144,7 @@ func assertFindApplicationPackage(t *testing.T, zipOrDir string, fixture pkgFixt
 	pkg, err := FindApplicationPackage(zipOrDir, fixture.requirePackaging)
 	assert.Equal(t, err != nil, fixture.fail, "Expected error for "+zipOrDir)
 	assert.Equal(t, fixture.expectedPath, pkg.Path)
+	assert.Equal(t, fixture.expectedTestPath, pkg.TestPath)
 }
 
 func writeFile(t *testing.T, name string) {

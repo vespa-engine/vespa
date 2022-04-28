@@ -215,13 +215,18 @@ func FindApplicationPackage(zipOrDir string, requirePackaging bool) (Application
 		}
 	}
 	if path := filepath.Join(zipOrDir, "src", "main", "application"); util.PathExists(path) {
-		if testPath := filepath.Join(zipOrDir, "src", "test", "application"); util.PathExists(testPath) {
-			return ApplicationPackage{Path: path, TestPath: testPath}, nil
+		testPath := ""
+		if d := filepath.Join(zipOrDir, "src", "test", "application"); util.PathExists(d) {
+			testPath = d
 		}
-		return ApplicationPackage{Path: path}, nil
+		return ApplicationPackage{Path: path, TestPath: testPath}, nil
 	}
 	if util.PathExists(filepath.Join(zipOrDir, "services.xml")) {
-		return ApplicationPackage{Path: zipOrDir}, nil
+		testPath := ""
+		if util.PathExists(filepath.Join(zipOrDir, "tests")) {
+			testPath = zipOrDir
+		}
+		return ApplicationPackage{Path: zipOrDir, TestPath: testPath}, nil
 	}
 	return ApplicationPackage{}, fmt.Errorf("could not find an application package source in '%s'", zipOrDir)
 }
