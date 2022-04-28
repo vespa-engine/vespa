@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -131,7 +132,8 @@ public class SessionActiveHandlerTest {
         void invoke() {
             long sessionId = applicationRepository.createSession(applicationId(),
                                                                  new TimeoutBudget(clock, Duration.ofSeconds(10)),
-                                                                 testApp);
+                                                                 testApp,
+                                                                 new BaseDeployLogger());
             applicationRepository.prepare(sessionId, new PrepareParams.Builder().applicationId(applicationId()).build());
             actResponse = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.ACTIVE, sessionId, subPath));
             Tenant tenant = applicationRepository.getTenant(applicationId());

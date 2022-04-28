@@ -56,7 +56,7 @@ public class SessionCreateHandler extends SessionHandler {
         if (request.hasProperty("from")) {
             ApplicationId applicationId = getFromApplicationId(request);
             logger = DeployHandlerLogger.forApplication(applicationId, verbose);
-            sessionId = applicationRepository.createSessionFromExisting(applicationId, false, timeoutBudget);
+            sessionId = applicationRepository.createSessionFromExisting(applicationId, false, timeoutBudget, logger);
         } else {
             validateDataAndHeader(request, List.of(ApplicationApiHandler.APPLICATION_ZIP, ApplicationApiHandler.APPLICATION_X_GZIP));
             logger = DeployHandlerLogger.forTenant(tenantName, verbose);
@@ -70,17 +70,17 @@ public class SessionCreateHandler extends SessionHandler {
 
     static ApplicationId getFromApplicationId(HttpRequest request) {
         String from = request.getProperty("from");
-        if (from == null || "".equals(from)) {
+        if (from == null || "".equals(from))
             throw new BadRequestException("Parameter 'from' has illegal value '" + from + "'");
-        }
+
         return getAndValidateFromParameter(URI.create(from));
     }
 
     private static ApplicationId getAndValidateFromParameter(URI from) {
         UriPattern.Match match = new UriPattern(fromPattern).match(from);
-        if (match == null || match.groupCount() < 7) {
+        if (match == null || match.groupCount() < 7)
             throw new BadRequestException("Parameter 'from' has illegal value '" + from + "'");
-        }
+
         return new ApplicationId.Builder()
             .tenant(match.group(2))
             .applicationName(match.group(3))
@@ -88,18 +88,18 @@ public class SessionCreateHandler extends SessionHandler {
     }
 
     static void validateDataAndHeader(HttpRequest request, List<String> supportedContentTypes) {
-        if (request.getData() == null) {
+        if (request.getData() == null)
             throw new BadRequestException("Request contains no data");
-        }
+
         String header = request.getHeader(ApplicationApiHandler.contentTypeHeader);
-        if (header == null) {
+        if (header == null)
             throw new BadRequestException("Request contains no " + ApplicationApiHandler.contentTypeHeader + " header");
-        } else {
-            ContentType contentType = ContentType.parse(header);
-            if (!supportedContentTypes.contains(contentType.getMimeType())) {
-                throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader + " header (" + contentType.getMimeType() + "), only '["
-                                              + String.join(", ", supportedContentTypes) + "]' are supported");
-            }
-        }
+
+        ContentType contentType = ContentType.parse(header);
+        if ( ! supportedContentTypes.contains(contentType.getMimeType()))
+            throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader +
+                                                  " header (" + contentType.getMimeType() + "), only '[" +
+                                                  String.join(", ", supportedContentTypes) + "]' are supported");
     }
+
 }

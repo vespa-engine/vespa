@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.UncheckedTimeoutException;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationName;
@@ -329,7 +330,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     }
 
     private long createSession(ApplicationId applicationId) {
-        return applicationRepository.createSession(applicationId, timeoutBudget, app);
+        return applicationRepository.createSession(applicationId, timeoutBudget, app, new BaseDeployLogger());
     }
 
     private static class FailingSessionPrepareHandler extends SessionPrepareHandler {
