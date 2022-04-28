@@ -33,6 +33,7 @@ class HttpRequestFactory {
                     new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
                     getConnection((Request) servletRequest).getCreatedTimeStamp());
             httpRequest.context().put(RequestUtils.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
+            httpRequest.context().put(RequestUtils.JDICS_REQUEST_PORT, servletRequest.getLocalPort());
             servletRequest.setAttribute(HttpRequest.class.getName(), httpRequest);
             return httpRequest;
         } catch (Utf8Appendable.NotUtf8Exception e) {

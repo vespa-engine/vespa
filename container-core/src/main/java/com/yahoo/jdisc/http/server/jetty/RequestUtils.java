@@ -17,6 +17,11 @@ public class RequestUtils {
     public static final String JDISC_RESPONSE_CHAIN = "jdisc.response.chain";
     public static final String SERVLET_REQUEST_X509CERT = "javax.servlet.request.X509Certificate";
 
+    // The local port as reported by servlet spec. This will be influenced by Host header and similar mechanisms.
+    // The request URI uses the local listen port as the URI is used for handler routing/bindings.
+    // Use this attribute for generating URIs that is presented to client.
+    public static final String JDICS_REQUEST_PORT = "jdisc.request.port";
+
     private RequestUtils() {}
 
     public static Connection getConnection(Request request) {

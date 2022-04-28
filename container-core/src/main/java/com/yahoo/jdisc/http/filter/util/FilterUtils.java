@@ -10,12 +10,14 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
+import com.yahoo.jdisc.http.server.jetty.RequestUtils;
 
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Helper methods for auth0/okta request filters.
@@ -64,7 +66,10 @@ public class FilterUtils {
 
     public static URI createUriFromRequest(DiscFilterRequest request, String path) {
         try {
-            return new URI(request.getScheme(), null, request.getServerName(), request.getUri().getPort(), path, null, null);
+            // Prefer local port as observed by client over local listen port
+            int port = Optional.ofNullable((Integer)request.getAttribute(RequestUtils.JDICS_REQUEST_PORT))
+                    .orElse(request.getUri().getPort());
+            return new URI(request.getScheme(), null, request.getServerName(), port, path, null, null);
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
