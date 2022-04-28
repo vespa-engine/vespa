@@ -12,6 +12,7 @@ Chunk::append(uint32_t lid, const void * buffer, size_t len)
 {
     vespalib::nbostream & os = getData();
     size_t oldSz(os.size());
+    std::lock_guard guard(_lock);
     os << lid << static_cast<uint32_t>(len);
     os.write(buffer, len);
     _lids.push_back(Entry(lid, len, oldSz));
@@ -21,6 +22,7 @@ Chunk::append(uint32_t lid, const void * buffer, size_t len)
 ssize_t
 Chunk::read(uint32_t lid, vespalib::DataBuffer & buffer) const
 {
+    std::lock_guard guard(_lock);
     vespalib::ConstBufferRef buf = getLid(lid);
     if (buf.size() != 0) {
         buffer.writeBytes(buf.c_str(), buf.size());
@@ -52,13 +54,15 @@ void
 Chunk::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const CompressionConfig & compression)
 {
     _lastSerial = lastSerial;
+    std::lock_guard guard(_lock);
     _format->pack(_lastSerial, compressed, compression);
 }
 
 Chunk::Chunk(uint32_t id, const Config & config) :
     _id(id),
     _lastSerial(static_cast<uint64_t>(-1l)),
-    _format(std::make_unique<ChunkFormatV2>(config.getMaxBytes()))
+    _format(std::make_unique<ChunkFormatV2>(config.getMaxBytes())),
+    _lock()
 {
     _lids.reserve(4_Ki/sizeof(Entry));
 }
@@ -136,6 +140,7 @@ vespalib::MemoryUsage
 Chunk::getMemoryUsage() const
 {
     vespalib::MemoryUsage result;
+    std::lock_guard guard(_lock);
     result.incAllocatedBytes(_format->getBuffer().capacity());
     result.incUsedBytes(_format->getBuffer().size());
     result.incAllocatedBytes(sizeof(Entry) * _lids.capacity());
