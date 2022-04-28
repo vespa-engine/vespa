@@ -10,7 +10,6 @@ import com.yahoo.io.IOUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -158,8 +157,22 @@ public class FilesApplicationPackageTest {
             app.validateFileExtensions(true);
             fail("expected an exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("File in application package with unknown suffix: search/query-profiles/file-with-invalid.extension " +
-                                 "Please delete or move file to another directory.",
+            assertEquals("File in application package with unknown suffix: search/query-profiles/file-with-invalid.extension, " +
+                                 "please delete or move file to another directory.",
+                         e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInvalidFileExtensionInSubDirOfSubDir() {
+        File appDir = new File("src/test/resources/app-with-files-with-invalid-extension-in-subdir-of-subdir/");;
+        FilesApplicationPackage app = FilesApplicationPackage.fromFile(appDir);
+        try {
+            app.validateFileExtensions(true);
+            fail("expected an exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("File in application package with unknown suffix: schemas/foo/bar.junk, " +
+                                 "please delete or move file to another directory.",
                          e.getMessage());
         }
     }
