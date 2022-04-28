@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 namespace vespalib {
@@ -110,6 +111,7 @@ private:
     uint64_t                      _lastSerial;
     std::unique_ptr<ChunkFormat>  _format;
     LidList                       _lids;
+    mutable std::mutex            _lock;
 };
 
 typedef std::vector<ChunkMeta> ChunkMetaV;
