@@ -69,6 +69,16 @@ public class NotificationsSerializer {
 
     public List<Notification> fromSlime(TenantName tenantName, Slime slime) {
         return SlimeUtils.entriesStream(slime.get().field(notificationsFieldName))
+                .filter(inspector -> { // TODO: remove in summer.
+                    if ( ! inspector.field(jobTypeField).valid()) return true;
+                    try {
+                        JobType.ofSerialized(inspector.field(jobTypeField).asString());
+                        return true;
+                    }
+                    catch (RuntimeException e) {
+                        return false;
+                    }
+                })
                 .map(inspector -> fromInspector(tenantName, inspector))
                 .collect(Collectors.toUnmodifiableList());
     }
