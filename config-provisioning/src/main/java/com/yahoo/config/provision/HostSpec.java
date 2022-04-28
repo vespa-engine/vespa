@@ -18,9 +18,6 @@ public class HostSpec implements Comparable<HostSpec> {
     /** The name of this host */
     private final String hostname;
 
-    /** Aliases of this host */
-    private final List<String> aliases;
-
     private final NodeResources realResources;
     private final NodeResources advertisedResources;
     private final NodeResources requestedResources;
@@ -35,8 +32,15 @@ public class HostSpec implements Comparable<HostSpec> {
     private final Optional<NetworkPorts> networkPorts;
 
     /** Create a host in a non-cloud system, where hosts are specified in config */
-    public HostSpec(String hostname, List<String> aliases, Optional<NetworkPorts> networkPorts) {
-        this(hostname, aliases,
+    public HostSpec(String hostname, Optional<NetworkPorts> networkPorts) {
+        this(hostname,
+             NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
+             Optional.empty(), Optional.empty(), networkPorts, Optional.empty());
+    }
+
+    // TODO: Remove after May 2022
+    public HostSpec(String hostname, List<String> ignored, Optional<NetworkPorts> networkPorts) {
+        this(hostname,
              NodeResources.unspecified(), NodeResources.unspecified(), NodeResources.unspecified(),
              Optional.empty(), Optional.empty(), networkPorts, Optional.empty());
     }
@@ -51,7 +55,6 @@ public class HostSpec implements Comparable<HostSpec> {
                     Optional<NetworkPorts> networkPorts,
                     Optional<DockerImage> dockerImageRepo) {
         this(hostname,
-             List.of(),
              realResources,
              advertisedResources,
              requestedResources,
@@ -62,7 +65,6 @@ public class HostSpec implements Comparable<HostSpec> {
     }
 
     private HostSpec(String hostname,
-                     List<String> aliases,
                      NodeResources realResources,
                      NodeResources advertisedResurces,
                      NodeResources requestedResources,
@@ -72,7 +74,6 @@ public class HostSpec implements Comparable<HostSpec> {
                      Optional<DockerImage> dockerImageRepo) {
         if (hostname == null || hostname.isEmpty()) throw new IllegalArgumentException("Hostname must be specified");
         this.hostname = hostname;
-        this.aliases = List.copyOf(aliases);
         this.realResources = Objects.requireNonNull(realResources);
         this.advertisedResources = Objects.requireNonNull(advertisedResurces);
         this.requestedResources = Objects.requireNonNull(requestedResources, "RequestedResources cannot be null");
@@ -84,9 +85,6 @@ public class HostSpec implements Comparable<HostSpec> {
 
     /** Returns the name identifying this host */
     public String hostname() { return hostname; }
-
-    /** Returns the aliases of this host as an immutable list. This may be empty but never null. */
-    public List<String> aliases() { return aliases; }
 
     /** The real resources available for Vespa processes on this node, after subtracting infrastructure overhead. */
     public NodeResources realResources() { return realResources; }
@@ -109,13 +107,12 @@ public class HostSpec implements Comparable<HostSpec> {
     public Optional<DockerImage> dockerImageRepo() { return dockerImageRepo; }
 
     public HostSpec withPorts(Optional<NetworkPorts> ports) {
-        return new HostSpec(hostname, aliases, realResources, advertisedResources, requestedResources, membership, version, ports, dockerImageRepo);
+        return new HostSpec(hostname, realResources, advertisedResources, requestedResources, membership, version, ports, dockerImageRepo);
     }
 
     @Override
     public String toString() {
         return hostname +
-               (! aliases.isEmpty() ? " (aliases: " + aliases + ")" : "") +
                (membership.isPresent() ? " (membership: " + membership.get() + ")" : " (no membership)");
     }
 
