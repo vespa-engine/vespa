@@ -68,6 +68,10 @@ func (a ApplicationID) SerializedForm() string {
 	return fmt.Sprintf("%s:%s:%s", a.Tenant, a.Application, a.Instance)
 }
 
+func (z ZoneID) String() string {
+	return fmt.Sprintf("%s.%s", z.Environment, z.Region)
+}
+
 func (d Deployment) String() string {
 	return fmt.Sprintf("deployment of %s in %s", d.Application, d.Zone)
 }
