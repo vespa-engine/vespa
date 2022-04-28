@@ -5,7 +5,6 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +19,10 @@ public class SecretStoreExternalIdRetriever {
         return tenantSecretStores.stream()
                 .map(tenantSecretStore -> {
                     var secretName = secretName(tenant, system, tenantSecretStore.getName());
-                    return tenantSecretStore.withExternalId(secretStore.getSecret(secretName));
+                    String secret = secretStore.getSecret(secretName);
+                    if (secret == null)
+                     throw new RuntimeException("No secret found in secret store for " + secretName);
+                    return tenantSecretStore.withExternalId(secret);
                 })
                 .collect(Collectors.toList());
     }
@@ -39,4 +41,5 @@ public class SecretStoreExternalIdRetriever {
                 throw new IllegalArgumentException("No tenant secret store key group defined for system " + system);
         }
     }
+
 }
