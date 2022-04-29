@@ -110,7 +110,7 @@ class MaintenanceDeployment implements Closeable {
             return Optional.of(nodeRepository.nodes().lock(application, timeout));
         }
         catch (ApplicationLockException e) {
-            log.log(Level.WARNING, () -> "Could not lock " + application + " for maintenance deployment within " + timeout);
+            log.log(Level.INFO, () -> "Could not lock " + application + " for maintenance deployment within " + timeout);
             return Optional.empty();
         }
     }
