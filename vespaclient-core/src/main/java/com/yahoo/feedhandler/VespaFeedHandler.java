@@ -65,11 +65,10 @@ public final class VespaFeedHandler extends VespaFeedHandlerBase {
     }
 
     private Feeder createFeeder(SimpleFeedAccess sender, HttpRequest request) {
-        if (Boolean.valueOf(request.getProperty(JSON_INPUT))) {
-            return new JsonFeeder(getDocumentTypeManager(), sender, getRequestInputStream(request));
-        } else {
+        if ( ! Boolean.valueOf(request.getProperty(JSON_INPUT))) {
             return new XMLFeeder(getDocumentTypeManager(), sender, getRequestInputStream(request));
         }
+        return new JsonFeeder(getDocumentTypeManager(), sender, getRequestInputStream(request));
     }
 
 }
