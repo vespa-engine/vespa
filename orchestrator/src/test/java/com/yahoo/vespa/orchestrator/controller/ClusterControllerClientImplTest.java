@@ -30,6 +30,9 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+/**
+ * @author jonmv
+ */
 public class ClusterControllerClientImplTest {
 
     final HostName host = new HostName("node");

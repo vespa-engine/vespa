@@ -7,7 +7,6 @@ import ai.vespa.hosted.client.HttpClient.ResponseException;
 import ai.vespa.hosted.client.HttpClient.ResponseVerifier;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL;
-import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
 import ai.vespa.http.HttpURL.Scheme;
 import com.yahoo.concurrent.UncheckedTimeoutException;
@@ -25,19 +24,15 @@ import com.yahoo.yolean.Exceptions;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.Method;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
-import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * Default implementation of the ClusterControllerClient.
- *
- * @author smorgrav
+ * @author jonmv
  */
 public class ClusterControllerClientImpl implements ClusterControllerClient {
 

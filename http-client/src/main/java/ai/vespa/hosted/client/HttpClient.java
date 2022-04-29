@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -111,6 +110,12 @@ public interface HttpClient extends Closeable {
          * Pseudo- because it only ensures request timeouts are low enough to honour the deadline, but nothing else.
          */
         RequestBuilder deadline(TimeBudget deadline);
+
+        /** Adds the given header value to the list of headers with the given name. */
+        RequestBuilder addHeader(String name, String value);
+
+        /** Sets the list of headers with the given name to the given value. */
+        RequestBuilder setHeader(String name, String value);
 
         /** Overrides the default request config of the request. */
         RequestBuilder config(RequestConfig config);

@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
-import ai.vespa.hosted.client.HttpClient.RequestBuilder;
 import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
-import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.time.TimeBudget;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
@@ -25,9 +23,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
@@ -79,7 +78,9 @@ public abstract class AbstractHttpClient implements HttpClient {
                                                                              .appendQuery(query)
                                                                              .asURI())
                                                               .build();
+            builder.headers.forEach((name, values) -> values.forEach(value -> request.setHeader(name, value)));
             request.setEntity(builder.entity);
+
             try {
                 try {
                     return handler.apply(execute(request, contextWithTimeout(builder)), request);
@@ -150,6 +151,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         private HttpURL.Path path = Path.empty();
         private HttpURL.Query query = Query.empty();
         private List<Supplier<Query>> dynamicQuery = new ArrayList<>();
+        private Map<String, List<String>> headers = new LinkedHashMap<>();
         private HttpEntity entity;
         private RequestConfig config = HttpClient.defaultRequestConfig;
         private ResponseVerifier verifier = HttpClient.throwOnError;
@@ -225,6 +227,18 @@ public abstract class AbstractHttpClient implements HttpClient {
         @Override
         public HttpClient.RequestBuilder deadline(TimeBudget deadline) {
             this.deadline = requireNonNull(deadline);
+            return this;
+        }
+
+        @Override
+        public HttpClient.RequestBuilder addHeader(String name, String value) {
+            this.headers.computeIfAbsent(name, __ -> new ArrayList<>()).add(value);
+            return this;
+        }
+
+        @Override
+        public HttpClient.RequestBuilder setHeader(String name, String value) {
+            this.headers.put(name, new ArrayList<>(List.of(value)));
             return this;
         }
 

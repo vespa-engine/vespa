@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * @author bakksjo
+ * @author jonmv
  */
 public class RetryingClusterControllerClientFactory extends AbstractComponent implements ClusterControllerClientFactory {
 
