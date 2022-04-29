@@ -7,6 +7,7 @@ import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.applicationmodel.HostName;
+import org.apache.hc.core5.http.message.BasicHeader;
 
 import java.io.IOException;
 import java.util.List;
@@ -26,6 +27,7 @@ public class RetryingClusterControllerClientFactory extends AbstractComponent im
     public RetryingClusterControllerClientFactory() {
         this(AbstractHttpClient.wrapping(VespaHttpClientBuilder.create()
                                                                .setUserAgent("orchestrator-cluster-controller-client")
+                                                               .setDefaultHeaders(List.of(new BasicHeader("Accept", "application/json")))
                                                                .build()));
     }
 
