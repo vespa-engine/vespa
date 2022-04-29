@@ -156,8 +156,8 @@ private:
     void handle_status_requests();
     void signal_work_was_done();
     [[nodiscard]] bool work_was_done() const noexcept;
-    void enableNextDistribution();
-    void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
+    void enable_next_distribution_if_changed();
+    void propagate_default_distribution_thread_unsafe(std::shared_ptr<const lib::Distribution> distribution);
     void un_inhibit_maintenance_if_safe_time_passed();
 
     void dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg);
@@ -217,6 +217,7 @@ private:
     MetricUpdateHook                     _metricUpdateHook;
     DistributorHostInfoReporter          _hostInfoReporter;
 
+    mutable std::mutex                   _distribution_mutex;
     std::shared_ptr<lib::Distribution>   _distribution;
     std::shared_ptr<lib::Distribution>   _next_distribution;
 
