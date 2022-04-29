@@ -23,7 +23,7 @@ import java.util.Optional;
 public class FormatInputStream {
 
     private InputStream inputStream;
-    private Format format;
+    private final Format format;
 
     /**
      * Creates a single data input stream from either file or InputStream depending on which one is present. Preference
