@@ -8,7 +8,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
@@ -86,13 +85,6 @@ public class ConfigserverClusterTest {
     public void zookeeperConfig_negative_zk_id() {
         TestOptions testOptions = createTestOptions(Arrays.asList("cfg1", "localhost", "cfg3"), Arrays.asList(1, 2, -1));
         getConfig(ZookeeperServerConfig.class, testOptions);
-    }
-
-    @Test
-    public void testStatisticsConfig() {
-        StatisticsConfig config = getConfig(StatisticsConfig.class);
-        assertEquals(60, (int) config.collectionintervalsec());
-        assertEquals(60, (int) config.loggingintervalsec());
     }
 
     @Test
