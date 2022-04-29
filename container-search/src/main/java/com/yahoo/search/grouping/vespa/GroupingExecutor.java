@@ -48,11 +48,10 @@ public class GroupingExecutor extends Searcher {
     private final static CompoundName PROP_GROUPINGLIST = newCompoundName(GROUPING_LIST);
     private final static Logger log = Logger.getLogger(GroupingExecutor.class.getName());
 
-    // TODO Vespa 8: Modify defaults
-    private static final double DEFAULT_PRECISION_FACTOR = 1;
-    private static final int DEFAULT_MAX_GROUPS = -1;
-    private static final int DEFAULT_MAX_HITS = -1;
-    private static final long DEFAULT_GLOBAL_MAX_GROUPS = -1;
+    private static final double DEFAULT_PRECISION_FACTOR = 2.0;
+    private static final int DEFAULT_MAX_GROUPS = 10;
+    private static final int DEFAULT_MAX_HITS = 10;
+    private static final long DEFAULT_GLOBAL_MAX_GROUPS = 10000;
 
     /**
      * Constructs a new instance of this searcher without configuration.
