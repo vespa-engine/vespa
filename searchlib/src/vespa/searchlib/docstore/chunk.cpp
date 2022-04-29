@@ -30,6 +30,18 @@ Chunk::read(uint32_t lid, vespalib::DataBuffer & buffer) const
     return buf.size();
 }
 
+std::pair<size_t, vespalib::alloc::Alloc>
+Chunk::read(uint32_t lid) const
+{
+    std::lock_guard guard(_lock);
+    vespalib::ConstBufferRef buf = getLid(lid);
+    auto copy = vespalib::alloc::Alloc::alloc(buf.size());
+    if (buf.size() != 0) {
+        memcpy(copy.get(), buf.data(), buf.size());
+    }
+    return std::make_pair(buf.size(), std::move(copy));
+}
+
 bool
 Chunk::hasRoom(size_t len) const
 {
@@ -108,6 +120,7 @@ Chunk::getLid(uint32_t lid) const
 
 size_t
 Chunk::size() const {
+    std::lock_guard guard(_lock);
     return getData().size();
 }
 

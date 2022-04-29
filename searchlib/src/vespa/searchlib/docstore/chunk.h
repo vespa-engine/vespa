@@ -13,6 +13,7 @@ namespace vespalib {
     class nbostream;
     class DataBuffer;
 }
+namespace vespalib::alloc { class Alloc; }
 
 namespace search {
 
@@ -90,6 +91,7 @@ public:
     ~Chunk();
     LidMeta append(uint32_t lid, const void * buffer, size_t len);
     ssize_t read(uint32_t lid, vespalib::DataBuffer & buffer) const;
+    std::pair<size_t, vespalib::alloc::Alloc> read(uint32_t lid) const;
     size_t count() const { return _lids.size(); }
     bool empty() const { return count() == 0; }
     size_t size() const;
