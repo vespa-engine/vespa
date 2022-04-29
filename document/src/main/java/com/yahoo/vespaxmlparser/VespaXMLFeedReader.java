@@ -45,15 +45,6 @@ public class VespaXMLFeedReader extends VespaXMLReader implements FeedReader {
     }
 
     /**
-     * Creates a reader that uses the given reader to read - this can be used if the vespa feed
-     * is part of a larger XML document.
-     */
-    public VespaXMLFeedReader(XMLStreamReader reader, DocumentTypeManager manager) throws Exception {
-        super(reader, manager);
-        readInitial();
-    }
-
-    /**
      * Skips the initial "vespafeed" tag.
      */
     private void readInitial() throws Exception {
