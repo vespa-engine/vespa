@@ -61,7 +61,7 @@ public class ClusterControllerClientImplTest {
         wire.expect((url, body) -> {
                         assertEquals("http://host1:19050/cluster/v2/cc/storage/2?timeout=9.6",
                                      url.asURI().toString());
-                        assertEquals("{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"down\"},\"condition\":\"SAFE\"}",
+                        assertEquals("{\"state\":{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"down\"}},\"condition\":\"SAFE\"}",
                                      body);
                         return "{ \"wasModified\": true }";
                     },
@@ -72,7 +72,7 @@ public class ClusterControllerClientImplTest {
         wire.expect((url, body) -> {
                         assertEquals("http://host1:19050/cluster/v2/cc/storage/1?timeout=0.6",
                                      url.asURI().toString());
-                        assertEquals("{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"down\"},\"condition\":\"SAFE\"}",
+                        assertEquals("{\"state\":{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"down\"}},\"condition\":\"SAFE\"}",
                                      body);
                         return "{ \"wasModified\": false, \"reason\": \"because\" }";
                     },
@@ -88,7 +88,7 @@ public class ClusterControllerClientImplTest {
         wire.expect((url, body) -> {
                         assertEquals("http://host1:19050/cluster/v2/cc/storage/2?timeout=59.6",
                                      url.asURI().toString());
-                        assertEquals("{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"maintenance\"},\"condition\":\"SAFE\",\"probe\":true}",
+                        assertEquals("{\"state\":{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"maintenance\"}},\"condition\":\"SAFE\",\"probe\":true}",
                                      body);
                         return "{ \"wasModified\": false, \"reason\": \"no reason\" }";
                     },
@@ -101,7 +101,7 @@ public class ClusterControllerClientImplTest {
         wire.expect((url, body) -> {
                         assertEquals("http://host1:19050/cluster/v2/cc?timeout=299.6",
                                      url.asURI().toString());
-                        assertEquals("{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"up\"},\"condition\":\"FORCE\"}",
+                        assertEquals("{\"state\":{\"user\":{\"reason\":\"Orchestrator\",\"state\":\"up\"}},\"condition\":\"FORCE\"}",
                                      body);
                         return "{ \"message\": \":<\" }";
                     },

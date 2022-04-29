@@ -57,9 +57,11 @@ public class MockHttpClient extends AbstractHttpClient {
     public void expect(BiFunction<HttpURL, String, String> mapper, int status) {
         expect(request -> {
             try {
-                BasicClassicHttpResponse response = new BasicClassicHttpResponse(status);
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-                request.getEntity().writeTo(buffer);
+                if (request.getEntity() != null)
+                    request.getEntity().writeTo(buffer);
+
+                BasicClassicHttpResponse response = new BasicClassicHttpResponse(status);
                 response.setEntity(HttpEntities.create(mapper.apply(HttpURL.from(request.getUri()), buffer.toString(UTF_8)),
                                                        ContentType.APPLICATION_JSON));
                 return response;

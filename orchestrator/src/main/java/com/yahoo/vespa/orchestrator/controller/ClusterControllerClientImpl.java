@@ -142,9 +142,9 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
 
     static byte[] stateChangeRequestBytes(ClusterControllerNodeState wantedState, Condition condition, boolean isProbe) {
         Cursor root = new Slime().setObject();
-        Cursor stateObject = root.setObject("user");
-        stateObject.setString("reason", REQUEST_REASON);
-        stateObject.setString("state", wantedState.getWireName());
+        Cursor userObject = root.setObject("state").setObject("user");
+        userObject.setString("reason", REQUEST_REASON);
+        userObject.setString("state", wantedState.getWireName());
         root.setString("condition", condition.name());
         if (isProbe) root.setBool("probe", true);
         return Exceptions.uncheck(() -> SlimeUtils.toJsonBytes(root));
