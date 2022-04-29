@@ -198,21 +198,18 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     public static final class SchemaInfo {
 
         private final Schema schema;
-        private final UserConfigRepo userConfigRepo;
 
         // Info about profiles needed in memory after build.
         // The rank profile registry itself is not kept around due to its size.
         private final Map<String, RankProfileInfo> rankProfiles;
 
-        public SchemaInfo(Schema schema, UserConfigRepo userConfigRepo, RankProfileRegistry rankProfileRegistry) {
+        public SchemaInfo(Schema schema, RankProfileRegistry rankProfileRegistry) {
             this.schema = schema;
-            this.userConfigRepo = userConfigRepo;
             this.rankProfiles = Collections.unmodifiableMap(toRankProfiles(rankProfileRegistry.rankProfilesOf(schema)));
         }
 
         public String name() { return schema.getName(); }
         public Schema fullSchema() { return schema; }
-        public UserConfigRepo userConfigs() { return userConfigRepo; }
         public Map<String, RankProfileInfo> rankProfiles() { return rankProfiles; }
 
         private Map<String, RankProfileInfo> toRankProfiles(Collection<RankProfile> rankProfiles) {

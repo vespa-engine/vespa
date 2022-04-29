@@ -191,7 +191,6 @@ Documents = element documents {
     DocumentProcessing? &
 
     element document {
-        GenericConfig* &
         attribute type { xsd:string } &
         attribute selection { xsd:string }? &
         attribute mode { string "index" | string "streaming" | string "store-only" } &
