@@ -14,15 +14,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.StatisticsConfig;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.core.StateserverConfig;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.Test;
@@ -224,33 +221,6 @@ public class AdminTestCase {
         qrCluster.getConfig(builder);
         HealthMonitorConfig qrClusterConfig = new HealthMonitorConfig(builder);
         assertEquals(60, (int) qrClusterConfig.snapshot_interval());
-
-        StatisticsComponent stat = null;
-        for (Component component : qrCluster.getAllComponents()) {
-            if (component.getClassId().getName().contains("com.yahoo.statistics.StatisticsImpl")) {
-                stat = (StatisticsComponent) component;
-                break;
-            }
-        }
-        assertNotNull(stat);
-        StatisticsConfig.Builder sb = new StatisticsConfig.Builder();
-        stat.getConfig(sb);
-        StatisticsConfig sc = new StatisticsConfig(sb);
-        assertEquals(60, (int) sc.collectionintervalsec());
-        assertEquals(60, (int) sc.loggingintervalsec());
-    }
-
-    @Test
-    public void testStatisticsConfig() {
-        StatisticsComponent stat = new StatisticsComponent();
-        StatisticsConfig.Builder sb = new StatisticsConfig.Builder();
-        stat.getConfig(sb);
-        StatisticsConfig sc = new StatisticsConfig(sb);
-        assertEquals(sc.collectionintervalsec(), 300, 0.1);
-        assertEquals(sc.loggingintervalsec(), 300, 0.1);
-        assertEquals(sc.values(0).operations(0).name(), StatisticsConfig.Values.Operations.Name.REGULAR);
-        assertEquals(sc.values(0).operations(0).arguments(0).key(), "limits");
-        assertEquals(sc.values(0).operations(0).arguments(0).value(), "25,50,100,500");
     }
 
     @Test
