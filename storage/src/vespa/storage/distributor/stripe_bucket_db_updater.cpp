@@ -516,6 +516,8 @@ StripeBucketDBUpdater::processSingleBucketInfoReply(
         handleSingleBucketInfoFailure(repl, req);
         return true;
     }
+    LOG(debug, "Received single bucket info reply from node %u: %s",
+        req.targetNode, repl->toString(true).c_str()); // Verbose mode to include bucket info in output
     mergeBucketInfoWithDatabase(repl, req);
     return true;
 }
