@@ -6,6 +6,7 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import org.apache.hc.client5.http.ConnectTimeoutException;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.reactor.IOReactorConfig;
@@ -166,7 +167,7 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
                 if ((result != null) && result) numOk++;
             } catch (InterruptedException | ExecutionException | TimeoutException e) {
                 Throwable cause = e.getCause();
-                if ( e instanceof ExecutionException && (cause instanceof SocketException)) {
+                if ( e instanceof ExecutionException && ((cause instanceof SocketException) || cause instanceof ConnectTimeoutException)) {
                     log.log(Level.FINE, "Failed retrieving metrics for '" + entry.getKey() +  "' : " + cause.getMessage());
                 } else {
                     log.log(Level.WARNING, "Failed retrieving metrics for '" + entry.getKey() + "' : ", e);
