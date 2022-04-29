@@ -81,7 +81,7 @@ TopLevelDistributorTestUtil::setup_distributor(int redundancy,
     // triggerDistributionChange().
     // This isn't pretty, folks, but it avoids breaking the world for now,
     // as many tests have implicit assumptions about this being the behavior.
-    _distributor->propagateDefaultDistribution(distribution);
+    _distributor->propagate_default_distribution_thread_unsafe(distribution);
     // Explicitly init the stripe pool since onOpen isn't called during testing
     _distributor->start_stripe_pool();
     enable_distributor_cluster_state(state);
@@ -446,7 +446,7 @@ TopLevelDistributorTestUtil::trigger_distribution_change(std::shared_ptr<lib::Di
 {
     _node->getComponentRegister().setDistribution(std::move(distr));
     _distributor->storageDistributionChanged();
-    _distributor->enableNextDistribution();
+    _distributor->enable_next_distribution_if_changed();
 }
 
 const lib::ClusterStateBundle&

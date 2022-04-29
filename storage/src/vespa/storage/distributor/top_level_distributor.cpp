@@ -111,7 +111,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
 
     _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
-    propagateDefaultDistribution(_component.getDistribution());
+    propagate_default_distribution_thread_unsafe(_component.getDistribution()); // Stripes not started yet
 };
 
 TopLevelDistributor::~TopLevelDistributor()
@@ -306,10 +306,11 @@ TopLevelDistributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 void
 TopLevelDistributor::storageDistributionChanged()
 {
+    std::lock_guard guard(_distribution_mutex);
     if (!_distribution || (*_component.getDistribution() != *_distribution)) {
         LOG(debug, "Distribution changed to %s, must re-fetch bucket information",
             _component.getDistribution()->toString().c_str());
-        _next_distribution = _component.getDistribution(); // FIXME this is not thread safe
+        _next_distribution = _component.getDistribution();
     } else {
         LOG(debug, "Got distribution change, but the distribution %s was the same as before: %s",
             _component.getDistribution()->toString().c_str(),
@@ -318,20 +319,19 @@ TopLevelDistributor::storageDistributionChanged()
 }
 
 void
-TopLevelDistributor::enableNextDistribution()
+TopLevelDistributor::enable_next_distribution_if_changed()
 {
+    std::lock_guard guard(_distribution_mutex);
     if (_next_distribution) {
         _distribution = _next_distribution;
         _next_distribution = std::shared_ptr<lib::Distribution>();
         auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(_distribution);
-        _bucket_db_updater->storage_distribution_changed(new_configs);
+        _bucket_db_updater->storage_distribution_changed(new_configs); // Transitively updates all stripes' configs
     }
 }
 
-// TODO STRIPE only used by tests to directly inject new distribution config
-//   - actually, also by ctor
 void
-TopLevelDistributor::propagateDefaultDistribution(
+TopLevelDistributor::propagate_default_distribution_thread_unsafe(
         std::shared_ptr<const lib::Distribution> distribution)
 {
     // Should only be called at ctor time, at which point the pool is not yet running.
@@ -417,7 +417,7 @@ framework::ThreadWaitInfo
 TopLevelDistributor::doCriticalTick([[maybe_unused]] framework::ThreadIndex idx)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    enableNextDistribution();
+    enable_next_distribution_if_changed();
     fetch_status_requests();
     fetch_external_messages();
     // Propagates any new configs down to stripe(s)
