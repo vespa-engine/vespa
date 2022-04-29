@@ -6851,18 +6851,22 @@
     "methods": [
       "public void <init>()",
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
-      "public java.lang.Integer getNumSearchPartitions()",
-      "public void setNumSearchPartitions(int)",
-      "public java.lang.Integer getMinHitsPerThread()",
-      "public void setMinHitsPerThread(int)",
-      "public void setTermwiselimit(double)",
       "public java.lang.Double getTermwiseLimit()",
-      "public void setNumThreadsPerSearch(int)",
       "public java.lang.Integer getNumThreadsPerSearch()",
+      "public java.lang.Integer getNumSearchPartitions()",
+      "public java.lang.Integer getMinHitsPerThread()",
+      "public java.lang.Double getPostFilterThreshold()",
+      "public java.lang.Double getApproximateThreshold()",
+      "public void setTermwiselimit(double)",
+      "public void setNumThreadsPerSearch(int)",
+      "public void setNumSearchPartitions(int)",
+      "public void setMinHitsPerThread(int)",
+      "public void setPostFilterThreshold(double)",
+      "public void setApproximateThreshold(double)",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
       "public com.yahoo.search.query.ranking.Matching clone()",
-      "public int hashCode()",
       "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
@@ -6870,6 +6874,8 @@
       "public static final java.lang.String NUMTHREADSPERSEARCH",
       "public static final java.lang.String NUMSEARCHPARTITIIONS",
       "public static final java.lang.String MINHITSPERTHREAD",
+      "public static final java.lang.String POST_FILTER_THRESHOLD",
+      "public static final java.lang.String APPROXIMATE_THRESHOLD",
       "public java.lang.Double termwiseLimit"
     ]
   },

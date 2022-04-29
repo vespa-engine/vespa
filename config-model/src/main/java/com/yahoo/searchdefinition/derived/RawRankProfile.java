@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -134,6 +135,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final int minHitsPerThread;
         private final int numSearchPartitions;
         private final double termwiseLimit;
+        private final OptionalDouble postFilterThreshold;
+        private final OptionalDouble approximateThreshold;
         private final double rankScoreDropLimit;
         private final boolean mapBackRankingExpressionFeatures;
 
@@ -170,6 +173,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             minHitsPerThread = compiled.getMinHitsPerThread();
             numSearchPartitions = compiled.getNumSearchPartitions();
             termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
+            postFilterThreshold = compiled.getPostFilterThreshold();
+            approximateThreshold = compiled.getApproximateThreshold();
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             mapBackRankingExpressionFeatures = deployProperties.featureFlags().avoidRenamingSummaryFeatures();
@@ -381,6 +386,12 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             }
             if (termwiseLimit < 1.0) {
                 properties.add(new Pair<>("vespa.matching.termwise_limit", termwiseLimit + ""));
+            }
+            if (postFilterThreshold.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.global_filter.upper_limit", String.valueOf(postFilterThreshold.getAsDouble())));
+            }
+            if (approximateThreshold.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.global_filter.lower_limit", String.valueOf(approximateThreshold.getAsDouble())));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));

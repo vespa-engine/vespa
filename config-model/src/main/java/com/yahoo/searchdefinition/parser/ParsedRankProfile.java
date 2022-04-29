@@ -28,6 +28,8 @@ class ParsedRankProfile extends ParsedBlock {
     private boolean ignoreDefaultRankFeatures = false;
     private Double rankScoreDropLimit = null;
     private Double termwiseLimit = null;
+    private Double postFilterThreshold = null;
+    private Double approximateThreshold = null;
     private final List<FeatureList> matchFeatures = new ArrayList<>();
     private final List<FeatureList> rankFeatures = new ArrayList<>();
     private final List<FeatureList> summaryFeatures = new ArrayList<>();
@@ -59,6 +61,8 @@ class ParsedRankProfile extends ParsedBlock {
     boolean getIgnoreDefaultRankFeatures() { return this.ignoreDefaultRankFeatures; }
     Optional<Double> getRankScoreDropLimit() { return Optional.ofNullable(this.rankScoreDropLimit); }
     Optional<Double> getTermwiseLimit() { return Optional.ofNullable(this.termwiseLimit); }
+    Optional<Double> getPostFilterThreshold() { return Optional.ofNullable(this.postFilterThreshold); }
+    Optional<Double> getApproximateThreshold() { return Optional.ofNullable(this.approximateThreshold); }
     List<FeatureList> getMatchFeatures() { return List.copyOf(this.matchFeatures); }
     List<FeatureList> getRankFeatures() { return List.copyOf(this.rankFeatures); }
     List<FeatureList> getSummaryFeatures() { return List.copyOf(this.summaryFeatures); }
@@ -202,6 +206,15 @@ class ParsedRankProfile extends ParsedBlock {
         verifyThat(termwiseLimit == null, "already has termwise-limit");
         this.termwiseLimit = limit;
     }
-  
-    
+
+    void setPostFilterThreshold(double threshold) {
+        verifyThat(postFilterThreshold == null, "already has post-filter-threshold");
+        this.postFilterThreshold = threshold;
+    }
+
+    void setApproximateThreshold(double threshold) {
+        verifyThat(approximateThreshold == null, "already has approximate-threshold");
+        this.approximateThreshold = threshold;
+    }
+
 }

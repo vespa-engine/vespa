@@ -70,6 +70,10 @@ public class ConvertParsedRanking {
             (value -> profile.setRankScoreDropLimit(value));
         parsed.getTermwiseLimit().ifPresent
             (value -> profile.setTermwiseLimit(value));
+        parsed.getPostFilterThreshold().ifPresent
+                (value -> profile.setPostFilterThreshold(value));
+        parsed.getApproximateThreshold().ifPresent
+                (value -> profile.setApproximateThreshold(value));
         parsed.getKeepRankCount().ifPresent
             (value -> profile.setKeepRankCount(value));
         parsed.getMinHitsPerThread().ifPresent

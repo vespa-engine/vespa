@@ -22,7 +22,8 @@ public class Matching implements Cloneable {
     public static final String NUMTHREADSPERSEARCH = "numthreadspersearch";
     public static final String NUMSEARCHPARTITIIONS = "numsearchpartitions";
     public static final String MINHITSPERTHREAD = "minhitsperthread";
-
+    public static final String POST_FILTER_THRESHOLD = "postFilterThreshold";
+    public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
 
     static {
         argumentType =new QueryProfileType(Ranking.MATCHING);
@@ -32,6 +33,8 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(NUMTHREADSPERSEARCH, "integer"));
         argumentType.addField(new FieldDescription(NUMSEARCHPARTITIIONS, "integer"));
         argumentType.addField(new FieldDescription(MINHITSPERTHREAD, "integer"));
+        argumentType.addField(new FieldDescription(POST_FILTER_THRESHOLD, "double"));
+        argumentType.addField(new FieldDescription(APPROXIMATE_THRESHOLD, "double"));
         argumentType.freeze();
     }
 
@@ -41,22 +44,15 @@ public class Matching implements Cloneable {
     private Integer numThreadsPerSearch = null;
     private Integer numSearchPartitions = null;
     private Integer minHitsPerThread = null;
+    private Double postFilterThreshold = null;
+    private Double approximateThreshold = null;
 
-    public Integer getNumSearchPartitions() {
-        return numSearchPartitions;
-    }
-
-    public void setNumSearchPartitions(int numSearchPartitions) {
-        this.numSearchPartitions = numSearchPartitions;
-    }
-
-    public Integer getMinHitsPerThread() {
-        return minHitsPerThread;
-    }
-
-    public void setMinHitsPerThread(int minHitsPerThread) {
-        this.minHitsPerThread = minHitsPerThread;
-    }
+    public Double getTermwiseLimit() { return termwiseLimit; }
+    public Integer getNumThreadsPerSearch() { return numThreadsPerSearch; }
+    public Integer getNumSearchPartitions() { return numSearchPartitions; }
+    public Integer getMinHitsPerThread() { return minHitsPerThread; }
+    public Double getPostFilterThreshold() { return postFilterThreshold; }
+    public Double getApproximateThreshold() { return approximateThreshold; }
 
     public void setTermwiselimit(double value) {
         if ((value < 0.0) || (value > 1.0)) {
@@ -64,14 +60,21 @@ public class Matching implements Cloneable {
         }
         termwiseLimit = value;
     }
-
-    public Double getTermwiseLimit() { return termwiseLimit; }
-
     public void setNumThreadsPerSearch(int value) {
         numThreadsPerSearch = value;
     }
-    public Integer getNumThreadsPerSearch() { return numThreadsPerSearch; }
-
+    public void setNumSearchPartitions(int value) {
+        numSearchPartitions = value;
+    }
+    public void setMinHitsPerThread(int value) {
+        minHitsPerThread = value;
+    }
+    public void setPostFilterThreshold(double threshold) {
+        postFilterThreshold = threshold;
+    }
+    public void setApproximateThreshold(double threshold) {
+        approximateThreshold = threshold;
+    }
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
@@ -88,6 +91,12 @@ public class Matching implements Cloneable {
         if (minHitsPerThread != null) {
             rankProperties.put("vespa.matching.minhitsperthread", String.valueOf(minHitsPerThread));
         }
+        if (postFilterThreshold != null) {
+            rankProperties.put("vespa.matching.global_filter.upper_limit", String.valueOf(postFilterThreshold));
+        }
+        if (approximateThreshold != null) {
+            rankProperties.put("vespa.matching.global_filter.lower_limit", String.valueOf(approximateThreshold));
+        }
     }
 
     @Override
@@ -101,27 +110,21 @@ public class Matching implements Cloneable {
     }
 
     @Override
-    public int hashCode() {
-        int hash = 0;
-        if (termwiseLimit != null) hash += 11 * termwiseLimit.hashCode();
-        if (numThreadsPerSearch != null) hash += 13 * numThreadsPerSearch.hashCode();
-        if (numSearchPartitions != null) hash += 17 * numSearchPartitions.hashCode();
-        if (minHitsPerThread != null) hash += 19 * minHitsPerThread.hashCode();
-        return hash;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Matching matching = (Matching) o;
+        return Objects.equals(termwiseLimit, matching.termwiseLimit) &&
+                Objects.equals(numThreadsPerSearch, matching.numThreadsPerSearch) &&
+                Objects.equals(numSearchPartitions, matching.numSearchPartitions) &&
+                Objects.equals(minHitsPerThread, matching.minHitsPerThread) &&
+                Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
+                Objects.equals(approximateThreshold, matching.approximateThreshold);
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof Matching)) return false;
-
-        Matching other = (Matching) o;
-        if ( ! Objects.equals(this.termwiseLimit, other.termwiseLimit)) return false;
-        if ( ! Objects.equals(this.numThreadsPerSearch, other.numThreadsPerSearch)) return false;
-        if ( ! Objects.equals(this.numSearchPartitions, other.numSearchPartitions)) return false;
-        if ( ! Objects.equals(this.minHitsPerThread, other.minHitsPerThread)) return false;
-        return true;
+    public int hashCode() {
+        return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread, postFilterThreshold, approximateThreshold);
     }
-
 }
 
