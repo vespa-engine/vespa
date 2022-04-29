@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
@@ -64,6 +65,17 @@ public class MemoizedTest {
                          assertThrows(ExecutionException.class, future::get).getMessage());
 
         executor.shutdown();
+    }
+
+    @Test
+    public void closeBeforeFirstGet() throws Exception {
+        OnceSupplier supplier = new OnceSupplier();
+        Memoized<OnceCloseable, ?> lazy = Memoized.of(supplier);
+        lazy.close();
+        assertEquals("already closed",
+                     assertThrows(IllegalStateException.class, lazy::get).getMessage());
+        lazy.close();
+        assertFalse(supplier.initialized.get());
     }
 
     class OnceSupplier implements Supplier<OnceCloseable> {
