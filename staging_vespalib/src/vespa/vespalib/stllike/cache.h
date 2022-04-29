@@ -1,11 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/stllike/lrucache_map.h>
+#include "lrucache_map.h"
 #include <atomic>
 #include <mutex>
 
 namespace vespalib {
+
+struct CacheStats;
 
 template<typename K, typename V>
 class NullStore {
@@ -74,9 +76,9 @@ public:
     cache & setCapacityBytes(size_t sz);
 
     size_t capacity()                  const { return Lru::capacity(); }
-    size_t capacityBytes()             const { return _maxBytes; }
+    size_t capacityBytes()             const { return _maxBytes.load(std::memory_order_relaxed); }
     size_t size()                      const { return Lru::size(); }
-    size_t sizeBytes()                 const { return _sizeBytes; }
+    size_t sizeBytes()                 const { return _sizeBytes.load(std::memory_order_relaxed); }
     bool empty()                       const { return Lru::empty(); }
 
     /**
@@ -109,15 +111,16 @@ public:
      */
     bool hasKey(const K & key) const;
 
-    size_t          getHit() const { return _hit; }
-    size_t         getMiss() const { return _miss; }
-    size_t getNoneExisting() const { return _noneExisting; }
-    size_t         getRace() const { return _race; }
-    size_t       getInsert() const { return _insert; }
-    size_t        getWrite() const { return _write; }
-    size_t        getErase() const { return _erase; }
-    size_t   getInvalidate() const { return _invalidate; }
-    size_t       getlookup() const { return _lookup; }
+    CacheStats get_stats() const;
+
+    size_t          getHit() const { return _hit.load(std::memory_order_relaxed); }
+    size_t         getMiss() const { return _miss.load(std::memory_order_relaxed); }
+    size_t getNoneExisting() const { return _noneExisting.load(std::memory_order_relaxed); }
+    size_t         getRace() const { return _race.load(std::memory_order_relaxed); }
+    size_t       getInsert() const { return _insert.load(std::memory_order_relaxed); }
+    size_t        getWrite() const { return _write.load(std::memory_order_relaxed); }
+    size_t   getInvalidate() const { return _invalidate.load(std::memory_order_relaxed); }
+    size_t       getlookup() const { return _lookup.load(std::memory_order_relaxed); }
 
 protected:
     using UniqueLock = std::unique_lock<std::mutex>;
@@ -138,21 +141,30 @@ private:
         size_t h(_hasher(k));
         return _addLocks[h%(sizeof(_addLocks)/sizeof(_addLocks[0]))];
     }
+
+    template <typename V>
+    static void increment_stat(std::atomic<V>& v, const std::lock_guard<std::mutex>&) {
+        v.store(v.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+    }
+    template <typename V>
+    static void increment_stat(std::atomic<V>& v, const std::unique_lock<std::mutex>&) {
+        v.store(v.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
+    }
+
     Hash                _hasher;
     SizeK               _sizeK;
     SizeV               _sizeV;
-    size_t              _maxBytes;
-    size_t              _sizeBytes;
-    mutable size_t      _hit;
-    mutable size_t      _miss;
-    std::atomic<size_t> _noneExisting;
-    mutable size_t      _race;
-    mutable size_t      _insert;
-    mutable size_t      _write;
-    mutable size_t      _update;
-    mutable size_t      _erase;
-    mutable size_t      _invalidate;
-    mutable size_t      _lookup;
+    std::atomic<size_t>         _maxBytes;
+    std::atomic<size_t>         _sizeBytes;
+    mutable std::atomic<size_t> _hit;
+    mutable std::atomic<size_t> _miss;
+    std::atomic<size_t>         _noneExisting;
+    mutable std::atomic<size_t> _race;
+    mutable std::atomic<size_t> _insert;
+    mutable std::atomic<size_t> _write;
+    mutable std::atomic<size_t> _update;
+    mutable std::atomic<size_t> _invalidate;
+    mutable std::atomic<size_t> _lookup;
     BackingStore      & _store;
     mutable std::mutex  _hashLock;
     /// Striped locks that can be used for having a locked access to the backing store.

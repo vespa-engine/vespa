@@ -2,7 +2,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/value.h>
-#include <vespa/searchlib/docstore/cachestats.h>
+#include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
 

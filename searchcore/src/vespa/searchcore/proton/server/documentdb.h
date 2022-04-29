@@ -23,8 +23,8 @@
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
-#include <vespa/searchlib/docstore/cachestats.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <mutex>

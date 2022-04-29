@@ -82,7 +82,7 @@ public:
     size_t  getDiskFootprint() const override { return _backingStore.getDiskFootprint(); }
     size_t      getDiskBloat() const override { return _backingStore.getDiskBloat(); }
     size_t getMaxSpreadAsBloat() const override { return _backingStore.getMaxSpreadAsBloat(); }
-    CacheStats getCacheStats() const override;
+    vespalib::CacheStats getCacheStats() const override;
     size_t memoryMeta() const override { return _backingStore.memoryMeta(); }
     const vespalib::string & getBaseDir() const override { return _backingStore.getBaseDir(); }
     void accept(IDocumentStoreReadVisitor &visitor, IDocumentStoreVisitorProgress &visitorProgress,

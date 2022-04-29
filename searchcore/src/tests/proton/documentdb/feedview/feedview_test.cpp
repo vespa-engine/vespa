@@ -36,7 +36,6 @@ using document::DocumentUpdate;
 using proton::matching::SessionManager;
 using proton::test::MockGidToLidChangeHandler;
 using search::AttributeVector;
-using search::CacheStats;
 using search::DocumentMetaData;
 using vespalib::IDestructorCallback;
 using vespalib::Gate;
@@ -49,6 +48,7 @@ using storage::spi::BucketChecksum;
 using storage::spi::BucketInfo;
 using storage::spi::Timestamp;
 using storage::spi::UpdateResult;
+using vespalib::CacheStats;
 using vespalib::eval::ValueType;
 
 using namespace proton;

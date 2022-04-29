@@ -80,7 +80,9 @@ lrucache_map<P>::~lrucache_map() = default;
 template< typename P >
 void
 lrucache_map<P>::swap(lrucache_map & rhs) {
-    std::swap(_maxElements, rhs._maxElements);
+    auto maxElements = rhs._maxElements.load(std::memory_order_relaxed);
+    rhs._maxElements.store(_maxElements.load(std::memory_order_relaxed), std::memory_order_relaxed);
+    _maxElements.store(maxElements, std::memory_order_relaxed);
     std::swap(_head, rhs._head);
     std::swap(_tail, rhs._tail);
     HashTable::swap(rhs);

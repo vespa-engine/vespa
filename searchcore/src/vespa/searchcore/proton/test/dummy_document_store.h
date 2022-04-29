@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/searchlib/docstore/cachestats.h>
+#include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/searchlib/docstore/idocumentstore.h>
 
 namespace proton::test {
@@ -34,7 +34,7 @@ struct DummyDocumentStore : public search::IDocumentStore
     size_t getDiskFootprint() const override { return 0; }
     size_t getDiskBloat() const override { return 0; }
     size_t getMaxSpreadAsBloat() const override { return getDiskBloat(); }
-    search::CacheStats getCacheStats() const override { return search::CacheStats(); }
+    vespalib::CacheStats getCacheStats() const override { return vespalib::CacheStats(); }
     const vespalib::string &getBaseDir() const override { return _baseDir; }
     void accept(search::IDocumentStoreReadVisitor &,
                 search::IDocumentStoreVisitorProgress &,

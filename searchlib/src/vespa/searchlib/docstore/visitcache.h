@@ -3,7 +3,6 @@
 #pragma once
 
 #include "idocumentstore.h"
-#include "cachestats.h"
 #include <vespa/vespalib/stllike/cache.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/hash_map.h>
@@ -105,7 +104,7 @@ public:
     void remove(uint32_t key);
     void invalidate(uint32_t key) { remove(key); }
 
-    CacheStats getCacheStats() const;
+    vespalib::CacheStats getCacheStats() const;
     void reconfigure(size_t cacheSize, const CompressionConfig &compression);
 private:
     /**
