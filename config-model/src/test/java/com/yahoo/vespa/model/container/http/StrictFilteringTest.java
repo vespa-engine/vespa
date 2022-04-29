@@ -8,7 +8,7 @@ import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author bjorncs
@@ -16,11 +16,11 @@ import static org.junit.Assert.assertTrue;
 public class StrictFilteringTest extends DomBuilderTest {
 
     @Test
-    public void default_request_and_response_filters_in_services_xml_are_listen_in_server_config() {
+    public void strict_filtering_enabled_if_specified_in_services() {
         Element xml = parse(
                 "<container version='1.0'>",
                 "  <http>",
-                "    <filtering strict-mode=\"true\">",
+                "    <filtering strict-mode='true'>",
                 "      <request-chain id='request-chain-with-binding'>",
                 "        <filter id='my-filter' class='MyFilter'/>",
                 "        <binding>http://*/my-chain-binding</binding>",
@@ -29,9 +29,42 @@ public class StrictFilteringTest extends DomBuilderTest {
                 "    <server id='server1' port='8000' />",
                 "  </http>",
                 "</container>");
-        buildContainerCluster(xml);
+        assertStrictFiltering(true, xml);
+    }
+
+    @Test
+    public void strict_filtering_enabled_by_default_if_filter_present() {
+        Element xml = parse(
+                "<container version='1.0'>",
+                "  <http>",
+                "    <filtering>",
+                "      <request-chain id='request-chain'>",
+                "        <filter id='my-filter' class='MyFilter'/>",
+                "      </request-chain>",
+                "    </filtering>",
+                "    <server id='server1' port='8000' />",
+                "  </http>",
+                "</container>");
+        assertStrictFiltering(true, xml);
+    }
+
+    @Test
+    public void strict_filtering_disabled_if_no_filter() {
+        Element xml = parse(
+                "<container version='1.0'>",
+                "  <http>",
+                "    <filtering>",
+                "    </filtering>",
+                "    <server id='server1' port='8000' />",
+                "  </http>",
+                "</container>");
+        assertStrictFiltering(false, xml);
+    }
+
+    private void assertStrictFiltering(boolean expected, Element services) {
+        buildContainerCluster(services);
         ServerConfig config = root.getConfig(ServerConfig.class, "container/http/jdisc-jetty/server1");
-        assertTrue(config.strictFiltering());
+        assertEquals(expected, config.strictFiltering());
     }
 
     private void buildContainerCluster(Element containerElem) {
