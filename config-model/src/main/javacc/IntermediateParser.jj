@@ -331,6 +331,8 @@ TOKEN :
 | < MINHITSPERTHREAD: "min-hits-per-thread" >
 | < NUMSEARCHPARTITIONS: "num-search-partitions" >
 | < TERMWISELIMIT: "termwise-limit" >
+| < POSTFILTERTHRESHOLD: "post-filter-threshold" >
+| < APPROXIMATETHRESHOLD: "approximate-threshold" >
 | < KEEPRANKCOUNT: "keep-rank-count" >
 | < RANKSCOREDROPLIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
@@ -1834,6 +1836,8 @@ void rankProfileItem(ParsedRankProfile profile) : { }
       | minHitsPerThread(profile)
       | numSearchPartitions(profile)
       | termwiseLimit(profile)
+      | postFilterThreshold(profile)
+      | approximateThreshold(profile)
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
@@ -2210,6 +2214,32 @@ void termwiseLimit(ParsedRankProfile profile) :
 }
 {
     (<TERMWISELIMIT> <COLON> num = consumeFloat()) { profile.setTermwiseLimit(num); }
+}
+
+/**
+ * This rule consumes a post-filter-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void postFilterThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+{
+    (<POSTFILTERTHRESHOLD> <COLON> threshold = consumeFloat()) { profile.setPostFilterThreshold(threshold); }
+}
+
+/**
+ * This rule consumes an approximate-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void approximateThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+{
+    (<APPROXIMATETHRESHOLD> <COLON> threshold = consumeFloat()) { profile.setApproximateThreshold(threshold); }
 }
 
 /**

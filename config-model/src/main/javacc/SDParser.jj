@@ -361,6 +361,8 @@ TOKEN :
 | < MINHITSPERTHREAD: "min-hits-per-thread" >
 | < NUMSEARCHPARTITIONS: "num-search-partitions" >
 | < TERMWISELIMIT: "termwise-limit" >
+| < POSTFILTERTHRESHOLD: "post-filter-threshold" >
+| < APPROXIMATETHRESHOLD: "approximate-threshold" >
 | < KEEPRANKCOUNT: "keep-rank-count" >
 | < RANKSCOREDROPLIMIT: "rank-score-drop-limit" >
 | < CONSTANTS: "constants" >
@@ -1974,6 +1976,8 @@ void rankProfileItem(RankProfile profile) : { }
       | minHitsPerThread(profile)
       | numSearchPartitions(profile)
       | termwiseLimit(profile)
+      | postFilterThreshold(profile)
+      | approximateThreshold(profile)
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
@@ -2332,7 +2336,7 @@ void numSearchPartitions(RankProfile profile) :
 }
 
 /**
- * This rule consumes a num-threads-per-search statement for a rank profile.
+ * This rule consumes a termwise-limit statement for a rank profile.
  *
  * @param profile the rank profile to modify
  */
@@ -2343,6 +2347,33 @@ void termwiseLimit(RankProfile profile) :
 {
     (<TERMWISELIMIT> <COLON> num = consumeFloat()) { profile.setTermwiseLimit(num); }
 }
+
+/**
+ * This rule consumes a post-filter-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void postFilterThreshold(RankProfile profile) :
+{
+    double threshold;
+}
+{
+    (<POSTFILTERTHRESHOLD> <COLON> threshold = consumeFloat()) { profile.setPostFilterThreshold(threshold); }
+}
+
+/**
+ * This rule consumes an approximate-threshold statement for a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
+void approximateThreshold(RankProfile profile) :
+{
+    double threshold;
+}
+{
+    (<APPROXIMATETHRESHOLD> <COLON> threshold = consumeFloat()) { profile.setApproximateThreshold(threshold); }
+}
+
 /**
  * This rule consumes a rank-properties block of a rank profile. There is a little trick within this rule to allow the
  * final rank property to skip the terminating newline token.

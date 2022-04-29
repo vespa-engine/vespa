@@ -385,4 +385,59 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         return Optional.empty();
     }
 
+    @Test
+    public void approximate_nearest_neighbor_threshold_settings_are_configurable() throws ParseException {
+        verifyApproximateNearestNeighborThresholdSettings(0.7, null);
+        verifyApproximateNearestNeighborThresholdSettings(null, 0.3);
+        verifyApproximateNearestNeighborThresholdSettings(0.7, 0.3);
+    }
+
+    private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold) throws ParseException {
+        verifyApproximateNearestNeighborThresholdSettings(postFilterThreshold, approximateThreshold, false);
+        verifyApproximateNearestNeighborThresholdSettings(postFilterThreshold, approximateThreshold, true);
+    }
+
+    private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold,
+                                                                   boolean experimentalSdParsing) throws ParseException {
+        var rankProfileRegistry = new RankProfileRegistry();
+        var props = new TestProperties();
+        props.setExperimentalSdParsing(experimentalSdParsing);
+        var queryProfileRegistry = new QueryProfileRegistry();
+        var builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry, props);
+        builder.addSchema(createSDWithRankProfileThresholds(postFilterThreshold, approximateThreshold));
+        builder.build(true);
+
+        var schema = builder.getSchema();
+        var rankProfile = rankProfileRegistry.get(schema, "my_profile");
+        var rawRankProfile = new RawRankProfile(rankProfile, new LargeRankExpressions(new MockFileRegistry()), queryProfileRegistry,
+                new ImportedMlModels(), new AttributeFields(schema), props);
+
+        if (postFilterThreshold != null) {
+            assertEquals((double)postFilterThreshold, rankProfile.getPostFilterThreshold().getAsDouble(), 0.000001);
+            assertEquals(String.valueOf(postFilterThreshold), findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.upper_limit").get());
+        } else {
+            assertTrue(rankProfile.getPostFilterThreshold().isEmpty());
+            assertFalse(findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.upper_limit").isPresent());
+        }
+
+        if (approximateThreshold != null) {
+            assertEquals((double)approximateThreshold, rankProfile.getApproximateThreshold().getAsDouble(), 0.000001);
+            assertEquals(String.valueOf(approximateThreshold), findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.lower_limit").get());
+        } else {
+            assertTrue(rankProfile.getApproximateThreshold().isEmpty());
+            assertFalse(findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.lower_limit").isPresent());
+        }
+    }
+
+    private String createSDWithRankProfileThresholds(Double postFilterThreshold, Double approximateThreshold) {
+        return joinLines(
+                "search test {",
+                "    document test {}",
+                "    rank-profile my_profile {",
+                (postFilterThreshold != null ? ("        post-filter-threshold: " + postFilterThreshold) : ""),
+                (approximateThreshold != null ? ("        approximate-threshold: " + approximateThreshold) : ""),
+                "    }",
+                "}");
+    }
+
 }
