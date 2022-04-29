@@ -17,7 +17,6 @@ import com.yahoo.vespa.orchestrator.config.OrchestratorConfig;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
@@ -37,7 +36,6 @@ import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.yolean.Exceptions;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
@@ -427,10 +425,7 @@ public class OrchestratorImpl implements Orchestrator {
                 ClusterControllerClient client = clusterControllerClientFactory.createClient(clusterControllers, cluster.clusterId().s());
                 for (ServiceInstance service : cluster.serviceInstances()) {
                     try {
-                        ClusterControllerStateResponse response = client.setNodeState(context,
-                                                                                      VespaModelUtil.getStorageNodeIndex(service.configId()),
-                                                                                      MAINTENANCE);
-                        if ( ! response.wasModified)
+                        if ( ! client.trySetNodeState(context, service.hostName(), VespaModelUtil.getStorageNodeIndex(service.configId()), MAINTENANCE))
                             return false;
                     }
                     catch (Exception e) {
@@ -449,7 +444,7 @@ public class OrchestratorImpl implements Orchestrator {
     private void setClusterStateInController(OrchestratorContext context,
                                              ApplicationInstance application,
                                              ClusterControllerNodeState state)
-            throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException {
+            throws ApplicationStateChangeDeniedException {
         // Get all content clusters for this application
         Set<ClusterId> contentClusterIds = application.serviceClusters().stream()
                 .filter(VespaModelUtil::isContent)
@@ -459,23 +454,8 @@ public class OrchestratorImpl implements Orchestrator {
         // For all content clusters set in maintenance
         for (ClusterId clusterId : contentClusterIds) {
             List<HostName> clusterControllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, clusterId);
-            ClusterControllerClient client = clusterControllerClientFactory.createClient(
-                    clusterControllers,
-                    clusterId.s());
-            try {
-                ClusterControllerStateResponse response = client.setApplicationState(context, state);
-                if (!response.wasModified) {
-                    String msg = String.format("Fail to set application %s, cluster name %s to cluster state %s due to: %s",
-                            application.applicationInstanceId(), clusterId, state, response.reason);
-                    throw new ApplicationStateChangeDeniedException(msg);
-                }
-            } catch (IOException e) {
-                throw new ApplicationStateChangeDeniedException(e.getMessage());
-            } catch (UncheckedTimeoutException e) {
-                throw new ApplicationStateChangeDeniedException(
-                        "Timed out while waiting for cluster controllers " + clusterControllers +
-                                " with cluster ID " + clusterId.s() + ": " + e.getMessage());
-            }
+            ClusterControllerClient client = clusterControllerClientFactory.createClient(clusterControllers, clusterId.s());
+            client.setApplicationState(context, application.applicationInstanceId(), state);
         }
     }
 

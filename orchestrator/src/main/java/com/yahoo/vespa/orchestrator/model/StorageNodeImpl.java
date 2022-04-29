@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
-import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
@@ -11,14 +10,8 @@ import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateErrorResponse;
-import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -69,41 +62,7 @@ public class StorageNodeImpl implements StorageNode {
                 ", node index " + nodeIndex +
                 ", node state " + wantedNodeState);
 
-        ClusterControllerStateResponse response;
-        try {
-            response = client.setNodeState(context, nodeIndex, wantedNodeState);
-        } catch (IOException e) {
-            throw new HostStateChangeDeniedException(
-                    hostName(),
-                    HostedVespaPolicy.CLUSTER_CONTROLLER_AVAILABLE_CONSTRAINT,
-                    "Failed to communicate with cluster controllers " + clusterControllers + ": " + e,
-                    e);
-        } catch (WebApplicationException e) {
-            Response webResponse = e.getResponse();
-            // Response may contain detail message
-            ClusterControllerStateErrorResponse errorResponse = webResponse.readEntity(ClusterControllerStateErrorResponse.class);
-            String detail = errorResponse.message == null ? "" : ": " + errorResponse.message;
-            throw new HostStateChangeDeniedException(
-                    hostName(),
-                    HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
-                    "Failure from cluster controllers " + clusterControllers + " when setting node " + nodeIndex +
-                            " in cluster " + clusterId + " to state " + wantedNodeState + detail,
-                    e);
-        } catch (UncheckedTimeoutException e) {
-            throw new HostStateChangeDeniedException(
-                    hostName(),
-                    HostedVespaPolicy.DEADLINE_CONSTRAINT,
-                    "Timeout while waiting for setNodeState(" + nodeIndex + ", " + wantedNodeState +
-                            ") against " + clusterControllers + ": " + e.getMessage(),
-                    e);
-        }
-
-        if ( ! response.wasModified) {
-            throw new HostStateChangeDeniedException(
-                    hostName(),
-                    HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
-                    "Failed to set state to " + wantedNodeState + " in cluster controller: " + response.reason);
-        }
+        client.setNodeState(context, storageService.hostName(), nodeIndex, wantedNodeState);
     }
 
     @Override

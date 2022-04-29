@@ -60,7 +60,7 @@ public class TimeBudget {
             Duration passed = timePassed();
             Duration left = timeout.minus(passed);
             if (left.toMillis() <= 0) {
-                throw new UncheckedTimeoutException("Time since start " + passed + " exceeds timeout " + this.timeout);
+                throw new UncheckedTimeoutException("Time since start " + passed + " exceeds timeout " + timeout);
             }
 
             return left;
@@ -75,13 +75,17 @@ public class TimeBudget {
     /** Returns the time left as a new TimeBudget. */
     public TimeBudget timeLeftAsTimeBudget() {
         Instant now = clock.instant();
-        Optional<Instant> deadline = deadline();
-        return new TimeBudget(clock, now, deadline.map(d -> Duration.between(now, d)));
+        return new TimeBudget(clock, now, deadline().map(d -> Duration.between(now, d)));
     }
 
     /** Returns a new TimeBudget with the same clock and start, but with this deadline. */
     public TimeBudget withDeadline(Instant deadline) {
         return new TimeBudget(clock, start, Optional.of(Duration.between(start, deadline)));
+    }
+
+    /** Returns a new TimeBudget with the given duration chopped off, reserved for something else. */
+    public TimeBudget withReserved(Duration chunk) {
+        return timeout.isEmpty() ? this : new TimeBudget(clock, start, Optional.of(timeout.get().minus(chunk)));
     }
 
     private static Duration nonNegativeBetween(Instant start, Instant end) {

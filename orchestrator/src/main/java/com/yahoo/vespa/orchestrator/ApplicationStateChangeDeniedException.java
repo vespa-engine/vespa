@@ -9,11 +9,8 @@ package com.yahoo.vespa.orchestrator;
  */
 public class ApplicationStateChangeDeniedException extends Exception {
 
-    final String reason;
-
     public ApplicationStateChangeDeniedException(String reason) {
-        super();
-        this.reason = reason;
+        super(reason);
     }
 
 }
