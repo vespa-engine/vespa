@@ -5,7 +5,7 @@
 #include <cstdint>
 #include <sys/types.h>
 
-namespace search {
+namespace vespalib {
 
 struct CacheStats {
     size_t hits;
@@ -40,6 +40,8 @@ struct CacheStats {
         invalidations += rhs.invalidations;
         return *this;
     }
+
+    void add_extra_misses(size_t extra_misses) { misses += extra_misses; }
 
     size_t lookups() const { return hits + misses; }
 };

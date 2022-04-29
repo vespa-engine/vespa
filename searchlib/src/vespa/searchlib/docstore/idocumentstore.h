@@ -12,11 +12,12 @@ namespace document {
     class DocumentTypeRepo;
 }
 
-namespace vespalib { class nbostream; }
+namespace vespalib {
+class CacheStats;
+class nbostream;
+}
 
 namespace search {
-
-struct CacheStats;
 
 class IDocumentStoreReadVisitor
 {
@@ -163,7 +164,7 @@ public:
     /**
      * Returns statistics about the cache.
      */
-    virtual CacheStats getCacheStats() const = 0;
+    virtual vespalib::CacheStats getCacheStats() const = 0;
 
     /**
      * Returns the base directory from which all structures are stored.

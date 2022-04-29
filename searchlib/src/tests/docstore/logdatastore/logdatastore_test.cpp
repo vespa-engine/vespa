@@ -13,6 +13,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -24,6 +25,7 @@ using document::StringFieldValue;
 using namespace search::docstore;
 using namespace search;
 using namespace vespalib::alloc;
+using vespalib::CacheStats;
 using search::index::DummyFileHeaderContext;
 using search::test::DirectoryHandler;
 

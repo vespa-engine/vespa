@@ -2,6 +2,7 @@
 #pragma once
 
 #include "cache.h"
+#include "cache_stats.h"
 #include "lrucache_map.hpp"
 
 namespace vespalib {
@@ -23,7 +24,7 @@ cache<P>::reserveElements(size_t elems) {
 template< typename P >
 cache<P> &
 cache<P>::setCapacityBytes(size_t sz) {
-    _maxBytes = sz;
+    _maxBytes.store(sz, std::memory_order_relaxed);
     return *this;
 }
 
@@ -56,7 +57,6 @@ cache<P>::cache(BackingStore & b, size_t maxBytes) :
     _insert(0),
     _write(0),
     _update(0),
-    _erase(0),
     _invalidate(0),
     _lookup(0),
     _store(b)
@@ -67,7 +67,7 @@ bool
 cache<P>::removeOldest(const value_type & v) {
     bool remove(Lru::removeOldest(v) || (sizeBytes() >= capacityBytes()));
     if (remove) {
-        _sizeBytes -= calcSize(v.first, v.second._value);
+        _sizeBytes.store(sizeBytes() - calcSize(v.first, v.second._value), std::memory_order_relaxed);
     }
     return remove;
 }
@@ -85,10 +85,10 @@ cache<P>::read(const K & key)
     {
         std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
-            _hit++;
+            increment_stat(_hit, guard);
             return (*this)[key];
         } else {
-            _miss++;
+            increment_stat(_miss, guard);
         }
     }
 
@@ -97,7 +97,7 @@ cache<P>::read(const K & key)
         std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
             // Somebody else just fetched it ahead of me.
-            _race++;
+            increment_stat(_race, guard);
             return (*this)[key];
         }
     }
@@ -105,8 +105,8 @@ cache<P>::read(const K & key)
     if (_store.read(key, value)) {
         std::lock_guard guard(_hashLock);
         Lru::insert(key, value);
-        _sizeBytes += calcSize(key, value);
-        _insert++;
+        _sizeBytes.store(sizeBytes() + calcSize(key, value), std::memory_order_relaxed);
+        increment_stat(_insert, guard);
     } else {
         _noneExisting.fetch_add(1);
     }
@@ -122,8 +122,8 @@ cache<P>::write(const K & key, V value)
     {
         std::lock_guard guard(_hashLock);
         if (Lru::hasKey(key)) {
-            _sizeBytes -= calcSize(key, (*this)[key]);
-            _update++;
+            _sizeBytes.store(sizeBytes() - calcSize(key, (*this)[key]), std::memory_order_relaxed);
+            increment_stat(_update, guard);
         }
     }
 
@@ -131,8 +131,8 @@ cache<P>::write(const K & key, V value)
     {
         std::lock_guard guard(_hashLock);
         (*this)[key] = std::move(value);
-        _sizeBytes += newSize;
-        _write++;
+        _sizeBytes.store(sizeBytes() + newSize, std::memory_order_relaxed);
+        increment_stat(_write, guard);
     }
 }
 
@@ -151,8 +151,8 @@ cache<P>::invalidate(const UniqueLock & guard, const K & key)
 {
     verifyHashLock(guard);
     if (Lru::hasKey(key)) {
-        _sizeBytes -= calcSize(key, (*this)[key]);
-        _invalidate++;
+        _sizeBytes.store(sizeBytes() - calcSize(key, (*this)[key]), std::memory_order_relaxed);
+        increment_stat(_invalidate, guard);
         Lru::erase(key);
     }
 }
@@ -162,7 +162,7 @@ bool
 cache<P>::hasKey(const UniqueLock & guard, const K & key) const
 {
     verifyHashLock(guard);
-    _lookup++;
+    increment_stat(_lookup, guard);
     return Lru::hasKey(key);
 }
 
@@ -171,6 +171,14 @@ void
 cache<P>::verifyHashLock(const UniqueLock & guard) const {
     assert(guard.mutex() == & _hashLock);
     assert(guard.owns_lock());
+}
+
+template <typename P>
+CacheStats
+cache<P>::get_stats() const
+{
+    std::lock_guard guard(_hashLock);
+    return CacheStats(getHit(), getMiss(), Lru::size(), sizeBytes(), getInvalidate());
 }
 
 }

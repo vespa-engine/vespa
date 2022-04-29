@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/hashtable.h>
 #include <vespa/vespalib/stllike/hash_fun.h>
 #include <vespa/vespalib/stllike/select.h>
+#include <atomic>
 #include <vector>
 
 namespace vespalib {
@@ -90,7 +91,7 @@ public:
     virtual ~lrucache_map();
 
     lrucache_map & maxElements(size_t elems) {
-        _maxElements = elems;
+        _maxElements.store(elems, std::memory_order_relaxed);
         return *this;
     }
     lrucache_map & reserve(size_t elems) {
@@ -99,7 +100,7 @@ public:
     }
 
 
-    size_t capacity()                  const { return _maxElements; }
+    size_t capacity()                  const { return _maxElements.load(std::memory_order_relaxed); }
     size_t size()                      const { return HashTable::size(); }
     bool empty()                       const { return HashTable::empty(); }
     iterator begin()                         { return iterator(this, _head); }
@@ -199,7 +200,7 @@ private:
         lrucache_map & _lru;
     };
 
-    size_t            _maxElements;
+    std::atomic<size_t> _maxElements;
     mutable uint32_t  _head;
     mutable uint32_t  _tail;
     bool              _moveRecordingEnabled;

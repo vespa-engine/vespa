@@ -16,7 +16,7 @@
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/executor_threading_service_stats.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/docstore/cachestats.h>
+#include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/searchlib/util/searchable_stats.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
@@ -24,7 +24,7 @@
 LOG_SETUP(".proton.server.documentdb_metrics_updater");
 
 using search::LidUsageStats;
-using search::CacheStats;
+using vespalib::CacheStats;
 using vespalib::MemoryUsage;
 
 namespace proton {
@@ -253,7 +253,7 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreM
     metrics.maxBucketSpread.set(storageStats.maxBucketSpread());
     updateMemoryUsageMetrics(metrics.memoryUsage, backingStore.getMemoryUsage(), totalStats);
 
-    search::CacheStats cacheStats = backingStore.getCacheStats();
+    vespalib::CacheStats cacheStats = backingStore.getCacheStats();
     totalStats.memoryUsage.incAllocatedBytes(cacheStats.memory_used);
     metrics.cache.memoryUsage.set(cacheStats.memory_used);
     metrics.cache.elements.set(cacheStats.elements);

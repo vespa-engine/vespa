@@ -3,7 +3,7 @@
 
 #include "feed_handler_stats.h"
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
-#include <vespa/searchlib/docstore/cachestats.h>
+#include <vespa/vespalib/stllike/cache_stats.h>
 #include <optional>
 
 namespace proton {
@@ -25,9 +25,9 @@ class DocumentDBMetricsUpdater {
 public:
 
     struct DocumentStoreCacheStats {
-        search::CacheStats readySubDb;
-        search::CacheStats notReadySubDb;
-        search::CacheStats removedSubDb;
+        vespalib::CacheStats readySubDb;
+        vespalib::CacheStats notReadySubDb;
+        vespalib::CacheStats removedSubDb;
         DocumentStoreCacheStats() : readySubDb(), notReadySubDb(), removedSubDb() {}
     };
 
