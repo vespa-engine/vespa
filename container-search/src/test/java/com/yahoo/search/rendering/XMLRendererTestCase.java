@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
@@ -28,6 +27,7 @@ import com.yahoo.text.Utf8;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -155,12 +155,11 @@ public class XMLRendererTestCase {
         assertTrue(summary.contains("<meta type=\"context\">"));
     }
 
-    @SuppressWarnings("removal")
     private String render(Result result) throws Exception {
         XmlRenderer renderer = new XmlRenderer();
         renderer.init();
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        ListenableFuture<Boolean> f = renderer.render(bs, result, null, null);
+        CompletableFuture<Boolean> f = renderer.renderResponse(bs, result, null, null);
         assertTrue(f.get());
         return Utf8.toString(bs.toByteArray());
     }
