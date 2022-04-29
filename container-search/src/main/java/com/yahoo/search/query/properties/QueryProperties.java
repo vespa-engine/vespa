@@ -263,6 +263,10 @@ public class QueryProperties extends Properties {
                         matching.setNumSearchPartitions(asInteger(value, 1));
                     else if (key.last().equals(Matching.MINHITSPERTHREAD))
                         matching.setMinHitsPerThread(asInteger(value, 0));
+                    else if (key.last().equals(Matching.POST_FILTER_THRESHOLD))
+                        matching.setPostFilterThreshold(asDouble(value, 1.0));
+                    else if (key.last().equals(Matching.APPROXIMATE_THRESHOLD))
+                        matching.setApproximateThreshold(asDouble(value, 0.05));
                     else
                         throwIllegalParameter(key.rest().toString(), Ranking.MATCHING);
                 }
