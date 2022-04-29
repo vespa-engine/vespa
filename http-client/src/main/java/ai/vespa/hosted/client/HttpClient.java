@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -98,6 +99,9 @@ public interface HttpClient extends Closeable {
 
         /** Appends all parameters from the given query. */
         RequestBuilder parameters(Query query);
+
+        /** Sets all parameters from the given query dynamically, when creating retried requests. */
+        RequestBuilder parameters(Supplier<Query> query);
 
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */
         RequestBuilder timeout(Duration timeout);

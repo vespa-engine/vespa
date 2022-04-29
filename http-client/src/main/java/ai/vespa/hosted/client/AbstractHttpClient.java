@@ -26,11 +26,13 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static java.util.Objects.requireNonNull;
@@ -67,10 +69,14 @@ public abstract class AbstractHttpClient implements HttpClient {
 
         Throwable thrown = null;
         for (URI host : builder.hosts) {
+            Query query = builder.query;
+            for (Supplier<Query> dynamic : builder.dynamicQuery)
+                query = query.set(dynamic.get().lastEntries());
+
             ClassicHttpRequest request = ClassicRequestBuilder.create(builder.method.name())
                                                               .setUri(HttpURL.from(host)
                                                                              .appendPath(builder.path)
-                                                                             .appendQuery(builder.query)
+                                                                             .appendQuery(query)
                                                                              .asURI())
                                                               .build();
             request.setEntity(builder.entity);
@@ -143,6 +149,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         private final HostStrategy hosts;
         private HttpURL.Path path = Path.empty();
         private HttpURL.Query query = Query.empty();
+        private List<Supplier<Query>> dynamicQuery = new ArrayList<>();
         private HttpEntity entity;
         private RequestConfig config = HttpClient.defaultRequestConfig;
         private ResponseVerifier verifier = HttpClient.throwOnError;
@@ -199,6 +206,12 @@ public abstract class AbstractHttpClient implements HttpClient {
         @Override
         public HttpClient.RequestBuilder parameters(Query query) {
             this.query = this.query.add(query.entries());
+            return this;
+        }
+
+        @Override
+        public HttpClient.RequestBuilder parameters(Supplier<Query> query) {
+            dynamicQuery.add(query);
             return this;
         }
 

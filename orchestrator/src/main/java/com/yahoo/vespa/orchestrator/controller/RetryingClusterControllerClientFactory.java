@@ -35,16 +35,7 @@ public class RetryingClusterControllerClientFactory extends AbstractComponent im
 
     @Override
     public ClusterControllerClient createClient(List<HostName> clusterControllers, String clusterName) {
-        List<HostName> hosts = clusterControllers.size() == 1
-                                // If there's only 1 CC, we'll try that one twice.
-                                ? List.of(clusterControllers.get(0), clusterControllers.get(0))
-                                // Otherwise, try each host once:
-                                //  * if host 1 responds, it will redirect to master if necessary; otherwise
-                                //  * if host 2 responds, it will redirect to master if necessary; otherwise
-                                //  * if host 3 responds, it may redirect to master if necessary (if they're up
-                                //    after all), but more likely there's no quorum and this will fail too.
-                                : List.copyOf(clusterControllers);
-        return new ClusterControllerClientImpl(client, hosts, clusterName);
+        return new ClusterControllerClientImpl(client, clusterControllers, clusterName);
     }
 
     @Override

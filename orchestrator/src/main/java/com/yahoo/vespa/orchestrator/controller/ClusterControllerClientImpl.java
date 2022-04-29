@@ -30,6 +30,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -59,9 +60,11 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
     @Override
     public boolean setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) {
         try {
-            Inspector response = client.send(strategyWithTimeout(hosts, context.getClusterControllerTimeouts()), Method.POST)
+            ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
+            Inspector response = client.send(strategy(hosts), Method.POST)
                                        .at("cluster", "v2", clusterName, "storage", Integer.toString(storageNodeIndex))
-                                       .deadline(context.getClusterControllerTimeouts().readBudget())
+                                       .deadline(timeouts.readBudget())
+                                       .parameters(() -> deadline(timeouts))
                                        .body(stateChangeRequestBytes(wantedState, Condition.SAFE, context.isProbe()))
                                        .throwing(retryOnRedirect)
                                        .read(SlimeUtils::jsonToSlime).get();
@@ -105,9 +108,11 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
     public void setApplicationState(OrchestratorContext context, ApplicationInstanceId applicationId,
                                     ClusterControllerNodeState wantedState) throws ApplicationStateChangeDeniedException {
         try {
-            Inspector response = client.send(strategyWithTimeout(hosts, context.getClusterControllerTimeouts()), Method.POST)
+            ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
+            Inspector response = client.send(strategy(hosts), Method.POST)
                                        .at("cluster", "v2", clusterName)
-                                       .deadline(context.getClusterControllerTimeouts().readBudget())
+                                       .deadline(timeouts.readBudget())
+                                       .parameters(() -> deadline(timeouts))
                                        .body(stateChangeRequestBytes(wantedState, Condition.FORCE, false))
                                        .throwing(retryOnRedirect)
                                        .read(SlimeUtils::jsonToSlime).get();
@@ -142,21 +147,24 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
     }
 
     /** ᕙ༼◕_◕༽ᕤ hack to vary query parameters with retries ᕙ༼◕_◕༽ᕤ */
-    static HostStrategy strategyWithTimeout(List<HostName> hosts, ClusterControllerClientTimeouts timeouts) {
-        return () -> new Iterator<>() {
-            final Iterator<HostName> wrapped = hosts.iterator();
-            @Override public boolean hasNext() {
-                return wrapped.hasNext();
-            }
-            @Override public URI next() {
-                return HttpURL.create(Scheme.http,
-                                      DomainName.of(wrapped.next().s()),
-                                      19050,
-                                      Path.empty(),
-                                      Query.empty().set("timeout", Double.toString(timeouts.getServerTimeoutOrThrow().toMillis() * 1e-3)))
-                              .asURI();
-            }
-        };
+    static HostStrategy strategy(List<HostName> hosts) {
+        return hosts.size() == 1
+                               // If there's only 1 CC, we'll try that one twice.
+                               ? HostStrategy.repeating(toUrl(hosts.get(0)), 2)
+                               // Otherwise, try each host once:
+                               //  * if host 1 responds, it will redirect to master if necessary; otherwise
+                               //  * if host 2 responds, it will redirect to master if necessary; otherwise
+                               //  * if host 3 responds, it may redirect to master if necessary (if they're up
+                               //    after all), but more likely there's no quorum and this will fail too.
+                               : HostStrategy.ordered(hosts.stream().map(ClusterControllerClientImpl::toUrl).collect(Collectors.toList()));
+    }
+
+    static URI toUrl(HostName host) {
+        return HttpURL.create(Scheme.http, DomainName.of(host.s()), 19050).asURI();
+    }
+
+    static Query deadline(ClusterControllerClientTimeouts timeouts) {
+        return Query.empty().set("timeout", Double.toString(timeouts.getServerTimeoutOrThrow().toMillis() * 1e-3));
     }
 
     static final ResponseVerifier retryOnRedirect = new ResponseVerifier() {
