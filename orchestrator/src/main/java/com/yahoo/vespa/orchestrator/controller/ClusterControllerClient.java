@@ -18,8 +18,16 @@ public interface ClusterControllerClient {
      * @return false is this was a probe operation, and permission would be denied.
      * @throws HostStateChangeDeniedException if operation fails, or is otherwise disallowed.
      */
-    boolean setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
-                         ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
+    boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
+                            ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
+
+    /**
+     * Requests that a cluster controller sets the requested node to the requested state.
+     *
+     * @throws HostStateChangeDeniedException if operation fails, or is disallowed.
+     */
+    void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
+                      ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
 
     /**
      * Requests that a cluster controller sets all nodes in the cluster to the requested state.

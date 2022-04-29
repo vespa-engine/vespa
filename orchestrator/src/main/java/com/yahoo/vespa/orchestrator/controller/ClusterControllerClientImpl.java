@@ -52,8 +52,8 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
         this.client = client;
     }
 
-    @Override
-    public boolean setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) {
+    private boolean setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
+                              ClusterControllerNodeState wantedState, boolean throwOnFailure) {
         try {
             ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
             Inspector response = client.send(strategy(hosts), Method.POST)
@@ -64,13 +64,12 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
                                        .throwing(retryOnRedirect)
                                        .read(SlimeUtils::jsonToSlime).get();
             if ( ! response.field("wasModified").asBool()) {
-                if (context.isProbe())
-                    return false;
-
-                throw new HostStateChangeDeniedException(host,
-                                                         HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
-                                                         "Failed to set state to " + wantedState +
-                                                         " in cluster controller: " + response.field("reason").asString());
+                if (throwOnFailure)
+                    throw new HostStateChangeDeniedException(host,
+                                                             HostedVespaPolicy.SET_NODE_STATE_CONSTRAINT,
+                                                             "Failed to set state to " + wantedState +
+                                                             " in cluster controller: " + response.field("reason").asString());
+                return false;
             }
             return true;
         }
@@ -97,6 +96,16 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
                                                      ") against " + hosts + ": " + e.getMessage(),
                                                      e);
         }
+    }
+
+    @Override
+    public boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException {
+        return setNodeState(context, host, storageNodeIndex, wantedState, false);
+    }
+
+    @Override
+    public void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException {
+        setNodeState(context, host, storageNodeIndex, wantedState, true);
     }
 
     @Override

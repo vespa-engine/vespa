@@ -425,7 +425,7 @@ public class OrchestratorImpl implements Orchestrator {
                 ClusterControllerClient client = clusterControllerClientFactory.createClient(clusterControllers, cluster.clusterId().s());
                 for (ServiceInstance service : cluster.serviceInstances()) {
                     try {
-                        if ( ! client.setNodeState(context, service.hostName(), VespaModelUtil.getStorageNodeIndex(service.configId()), MAINTENANCE))
+                        if ( ! client.trySetNodeState(context, service.hostName(), VespaModelUtil.getStorageNodeIndex(service.configId()), MAINTENANCE))
                             return false;
                     }
                     catch (Exception e) {

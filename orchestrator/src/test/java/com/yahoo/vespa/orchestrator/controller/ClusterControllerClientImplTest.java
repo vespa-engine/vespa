@@ -66,7 +66,7 @@ public class ClusterControllerClientImplTest {
                         return "{ \"wasModified\": true }";
                     },
                     200);
-        assertTrue(client.setNodeState(context, host, 2, DOWN));
+        client.setNodeState(context, host, 2, DOWN);
 
         clock.advance(Duration.ofSeconds(9));
         wire.expect((url, body) -> {
@@ -93,7 +93,7 @@ public class ClusterControllerClientImplTest {
                         return "{ \"wasModified\": false, \"reason\": \"no reason\" }";
                     },
                     200);
-        assertFalse(client.setNodeState(OrchestratorContext.createContextForBatchProbe(clock), host, 2, MAINTENANCE));
+        assertFalse(client.trySetNodeState(OrchestratorContext.createContextForBatchProbe(clock), host, 2, MAINTENANCE));
     }
 
     @Test

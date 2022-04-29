@@ -53,13 +53,14 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
     @Override
     public ClusterControllerClient createClient(List<HostName> clusterControllers, String clusterName) {
         return new ClusterControllerClient() {
-            @Override public boolean setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
-                                               ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException {
+            @Override public boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) {
                 nodes.put(clusterName + "/" + storageNodeIndex, wantedState);
                 return true;
             }
-            @Override public void setApplicationState(OrchestratorContext context, ApplicationInstanceId applicationId,
-                                                      ClusterControllerNodeState wantedState) throws ApplicationStateChangeDeniedException {
+            @Override public void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) {
+                trySetNodeState(context, host, storageNodeIndex, wantedState);
+            }
+            @Override public void setApplicationState(OrchestratorContext context, ApplicationInstanceId applicationId, ClusterControllerNodeState wantedState) {
                 nodes.replaceAll((key, state) -> key.startsWith(clusterName + "/") ? wantedState : state);
             }
         };

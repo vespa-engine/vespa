@@ -459,16 +459,16 @@ public class OrchestratorImplTest {
                                             applicationApiFactory,
                                             flagSource);
 
-        when(fooClient.setNodeState(any(), any(), eq(1), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
-        when(fooClient.setNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
-        when(barClient.setNodeState(any(), any(), eq(0), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
-        when(barClient.setNodeState(any(), any(), eq(3), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
+        when(fooClient.trySetNodeState(any(), any(), eq(1), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
+        when(fooClient.trySetNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
+        when(barClient.trySetNodeState(any(), any(), eq(0), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
+        when(barClient.trySetNodeState(any(), any(), eq(3), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(true);
         assertTrue(orchestrator.isQuiescent(id));
 
-        when(fooClient.setNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(false);
+        when(fooClient.trySetNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(false);
         assertFalse(orchestrator.isQuiescent(id));
 
-        when(fooClient.setNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenThrow(new RuntimeException());
+        when(fooClient.trySetNodeState(any(), any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenThrow(new RuntimeException());
         assertFalse(orchestrator.isQuiescent(id));
     }
 
