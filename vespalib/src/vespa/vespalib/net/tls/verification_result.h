@@ -17,17 +17,17 @@ namespace vespalib::net::tls {
  * authorization rules. If no rules matched, the set will be empty. The role
  * set will also be empty for a default-constructed instance.
  */
-class AuthorizationResult {
+class VerificationResult {
     AssumedRoles _assumed_roles;
 
-    explicit AuthorizationResult(AssumedRoles assumed_roles);
+    explicit VerificationResult(AssumedRoles assumed_roles);
 public:
-    AuthorizationResult();
-    AuthorizationResult(const AuthorizationResult&);
-    AuthorizationResult& operator=(const AuthorizationResult&);
-    AuthorizationResult(AuthorizationResult&&) noexcept;
-    AuthorizationResult& operator=(AuthorizationResult&&) noexcept;
-    ~AuthorizationResult();
+    VerificationResult();
+    VerificationResult(const VerificationResult&);
+    VerificationResult& operator=(const VerificationResult&);
+    VerificationResult(VerificationResult&&) noexcept;
+    VerificationResult& operator=(VerificationResult&&) noexcept;
+    ~VerificationResult();
 
     // Returns true iff at least one assumed role has been granted.
     [[nodiscard]] bool success() const noexcept {
@@ -43,13 +43,13 @@ public:
 
     void print(asciistream& os) const;
 
-    static AuthorizationResult make_authorized_for_roles(AssumedRoles assumed_roles);
-    static AuthorizationResult make_authorized_for_all_roles();
-    static AuthorizationResult make_not_authorized();
+    static VerificationResult make_authorized_for_roles(AssumedRoles assumed_roles);
+    static VerificationResult make_authorized_for_all_roles();
+    static VerificationResult make_not_authorized();
 };
 
-asciistream& operator<<(asciistream&, const AuthorizationResult&);
-std::ostream& operator<<(std::ostream&, const AuthorizationResult&);
-string to_string(const AuthorizationResult&);
+asciistream& operator<<(asciistream&, const VerificationResult&);
+std::ostream& operator<<(std::ostream&, const VerificationResult&);
+string to_string(const VerificationResult&);
 
 }

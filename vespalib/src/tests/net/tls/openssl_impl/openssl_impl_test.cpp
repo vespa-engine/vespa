@@ -535,35 +535,35 @@ struct CertFixture : Fixture {
 CertFixture::~CertFixture() = default;
 
 struct PrintingCertificateCallback : CertificateVerificationCallback {
-    AuthorizationResult verify(const PeerCredentials& peer_creds) const override {
+    VerificationResult verify(const PeerCredentials& peer_creds) const override {
         if (!peer_creds.common_name.empty())  {
             fprintf(stderr, "Got a CN: %s\n", peer_creds.common_name.c_str());
         }
         for (auto& dns : peer_creds.dns_sans) {
             fprintf(stderr, "Got a DNS SAN entry: %s\n", dns.c_str());
         }
-        return AuthorizationResult::make_authorized_for_all_roles();
+        return VerificationResult::make_authorized_for_all_roles();
     }
 };
 
 // Single-use mock verifier
 struct MockCertificateCallback : CertificateVerificationCallback {
     mutable PeerCredentials creds; // only used in single thread testing context
-    AuthorizationResult verify(const PeerCredentials& peer_creds) const override {
+    VerificationResult verify(const PeerCredentials& peer_creds) const override {
         creds = peer_creds;
-        return AuthorizationResult::make_authorized_for_all_roles();
+        return VerificationResult::make_authorized_for_all_roles();
     }
 };
 
 struct AlwaysFailVerifyCallback : CertificateVerificationCallback {
-    AuthorizationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
+    VerificationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
         fprintf(stderr, "Rejecting certificate, none shall pass!\n");
-        return AuthorizationResult::make_not_authorized();
+        return VerificationResult::make_not_authorized();
     }
 };
 
 struct ExceptionThrowingCallback : CertificateVerificationCallback {
-    AuthorizationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
+    VerificationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
         throw std::runtime_error("oh no what is going on");
     }
 };
