@@ -104,6 +104,7 @@ private:
     void updateCurrentDiskFootprint();
     size_t getDiskFootprint(const unique_lock & guard) const;
     std::unique_ptr<FastOS_FileInterface> openIdx();
+    const Chunk& get_chunk(uint32_t chunk) const;
 
     Config            _config;
     SerialNum         _serialNum;

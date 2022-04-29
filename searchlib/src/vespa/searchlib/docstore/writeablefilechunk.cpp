@@ -219,6 +219,18 @@ struct LidAndBuffer {
 
 }
 
+const Chunk&
+WriteableFileChunk::get_chunk(uint32_t chunk) const
+{
+    auto found = _chunkMap.find(chunk);
+    if (found != _chunkMap.end()) {
+        return *found->second;
+    } else {
+        assert(chunk == _active->getId());
+        return *_active;
+    }
+}
+
 void
 WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IBufferVisitor & visitor) const
 {
@@ -232,17 +244,8 @@ WriteableFileChunk::read(LidInfoWithLidV::const_iterator begin, size_t count, IB
                 const LidInfoWithLid & li = *(begin + i);
                 uint32_t chunk = li.getChunkId();
                 if ((chunk >= _chunkInfo.size()) || !_chunkInfo[chunk].valid()) {
-                    auto found = _chunkMap.find(chunk);
-                    vespalib::ConstBufferRef buffer;
-                    if (found != _chunkMap.end()) {
-                        buffer = found->second->getLid(li.getLid());
-                    } else {
-                        assert(chunk == _active->getId());
-                        buffer = _active->getLid(li.getLid());
-                    }
-                    auto copy = vespalib::alloc::Alloc::alloc(buffer.size());
-                    memcpy(copy.get(), buffer.data(), buffer.size());
-                    buffers.emplace_back(li.getLid(), buffer.size(), std::move(copy));
+                    auto copy = get_chunk(chunk).read(li.getLid());
+                    buffers.emplace_back(li.getLid(), copy.first, std::move(copy.second));
                 } else {
                     chunksOnFile[chunk] = _chunkInfo[chunk];
                 }
