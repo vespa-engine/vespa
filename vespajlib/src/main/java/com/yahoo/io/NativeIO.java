@@ -28,8 +28,9 @@ public class NativeIO {
             boolean initComplete = false;
             boolean disabled = true;
             Field field = null;
-            Throwable exception = PosixFAdvise.init();
+            Throwable exception = null;
             try {
+                exception = PosixFAdvise.init();
                 if (exception == null) {
                     disabled = System.getenv().containsKey(DISABLE_NATIVE_IO);
                     if (!disabled) {
