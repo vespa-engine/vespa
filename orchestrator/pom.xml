@@ -77,15 +77,10 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents.client5</groupId>
-      <artifactId>httpclient5</artifactId>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
+      <version>${project.version}</version>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
