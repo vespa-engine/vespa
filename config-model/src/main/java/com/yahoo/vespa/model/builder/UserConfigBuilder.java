@@ -15,17 +15,13 @@ import java.util.logging.Logger;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class UserConfigBuilder {
 
     public static final Logger log = Logger.getLogger(UserConfigBuilder.class.getPackage().toString());
 
     public static UserConfigRepo build(Element producerSpec, ConfigDefinitionStore configDefinitionStore, DeployLogger deployLogger) {
-        final Map<ConfigDefinitionKey, ConfigPayloadBuilder> builderMap = new LinkedHashMap<>();
-        if (producerSpec == null) {
-            log.log(Level.FINEST, "In getUserConfigs. producerSpec is null");
-        }
+        Map<ConfigDefinitionKey, ConfigPayloadBuilder> builderMap = new LinkedHashMap<>();
         log.log(Level.FINE, () -> "getUserConfigs for " + producerSpec);
         for (Element configE : XML.getChildren(producerSpec, "config")) {
             buildElement(configE, builderMap, configDefinitionStore, deployLogger);

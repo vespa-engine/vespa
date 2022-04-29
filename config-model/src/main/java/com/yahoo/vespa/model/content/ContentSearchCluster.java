@@ -243,9 +243,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                 throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
                                                    this + " does not exist");
 
-            // TODO: remove explicit building of user configs when the complete content model is built using builders.
             sc.add(new SearchCluster.SchemaInfo(schema,
-                                                UserConfigBuilder.build(e.getXml(), deployState, deployState.getDeployLogger()),
                                                 deployState.rankProfileRegistry()));
         }
     }

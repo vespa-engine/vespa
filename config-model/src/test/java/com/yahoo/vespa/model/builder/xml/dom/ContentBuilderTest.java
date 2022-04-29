@@ -9,9 +9,6 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.text.StringUtilities;
-import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.vespa.config.GenericConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
@@ -707,25 +704,6 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertTrue(cfg.contains("summary.cache.compression.level 8"));
         assertTrue(cfg.contains("summary.cache.compression.type LZ4"));
         assertTrue(cfg.contains("summary.read.io DIRECTIO"));
-    }
-
-    @Test
-    public void requireThatUserConfigCanBeSpecifiedForASearchDefinition() {
-        String services =  getConfigOverrideServices(
-                "<node hostalias='mockhost' distribution-key='0'/>",
-                "  <config name='mynamespace.myconfig'>" +
-                "    <myfield>myvalue</myfield>" +
-                "  </config>"
-        );
-
-        VespaModel m = new VespaModelCreatorWithMockPkg(createAppWithMusic(getHosts(), services)).create();
-        String configId = "clu/search/cluster.clu/music";
-        {
-            GenericConfig.GenericConfigBuilder builder = 
-                    new GenericConfig.GenericConfigBuilder(new ConfigDefinitionKey("myconfig", "mynamespace"), new ConfigPayloadBuilder());
-            m.getConfig(builder, configId);
-            assertEquals(builder.getPayload().getSlime().get().field("myfield").asString(), "myvalue");
-        }
     }
 
     @Test

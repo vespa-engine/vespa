@@ -191,8 +191,6 @@ public class IndexedSearchCluster extends SearchCluster
                                                                                 deployState.getQueryProfiles().getRegistry(),
                                                                                 deployState.getImportedModels(),
                                                                                 deployState.getExecutor()));
-            // TODO: remove explicit adding of user configs when the complete content model is built using builders.
-            db.mergeUserConfigs(spec.userConfigs());
             documentDbs.add(db);
         }
     }
