@@ -20,6 +20,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
@@ -49,6 +50,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import static com.yahoo.slime.Type.NIX;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toMap;
 
@@ -170,7 +172,8 @@ public class ApplicationPackage {
     }
 
     private static <Type> Optional<Type> parse(Inspector buildMetaObject, String fieldName, Function<Inspector, Type> mapper) {
-        if ( ! buildMetaObject.field(fieldName).valid())
+        Inspector field = buildMetaObject.field(fieldName);
+        if ( ! field.valid() || field.type() == NIX)
             return Optional.empty();
         try {
             return Optional.of(mapper.apply(buildMetaObject.field(fieldName)));

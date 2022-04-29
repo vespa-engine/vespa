@@ -70,7 +70,7 @@ public class ApplicationMojo extends AbstractMojo {
 
         Version parentVersion = null;
         Artifact parentArtifact = current.getParentArtifact();
-        if (parentArtifact != null && (parentArtifact.getGroupId().startsWith("com.yahoo.vespa.") || parentArtifact.getGroupId().startsWith("ai.vespa."))) {
+        if (parentArtifact != null && isVespaParent(parentArtifact.getGroupId())) {
             parentVersion = Version.from(parentArtifact.getVersion());
             if (parentVersion.compareTo(compileVersion) < 0)
                 throw new IllegalArgumentException("compile version (" + compileVersion + ") cannot be higher than parent version (" + parentVersion + ")");
@@ -91,6 +91,10 @@ public class ApplicationMojo extends AbstractMojo {
         catch (IOException e) {
             throw new MojoExecutionException("Failed writing compile version and build time.", e);
         }
+    }
+
+    static boolean isVespaParent(String groupId) {
+        return groupId.matches("(com\\.yahoo\\.vespa|ai\\.vespa)(\\..+)?");
     }
 
     private void copyBundlesForSubModules(File componentsDir) throws MojoExecutionException {
