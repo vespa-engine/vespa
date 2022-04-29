@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostFilter;
 import com.yahoo.config.provision.NodeFlavors;
@@ -43,7 +44,6 @@ import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
-
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -101,6 +101,10 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         }
         catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
+        }
+        catch (ApplicationLockException e) {
+            log.log(Level.INFO, "Timed out getting lock when handling '" + request.getUri() + "': " + Exceptions.toMessageString(e));
+            return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
         catch (RuntimeException e) {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
