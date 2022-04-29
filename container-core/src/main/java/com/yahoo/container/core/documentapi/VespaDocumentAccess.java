@@ -22,7 +22,6 @@ import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.yolean.concurrent.Memoized;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 

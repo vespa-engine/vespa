@@ -55,8 +55,7 @@ public final class SessionCache extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(SessionCache.class.getName());
 
-    private final Object monitor = new Object();
-    private Memoized<SharedMessageBus, RuntimeException> messageBus;
+    private final Memoized<SharedMessageBus, RuntimeException> messageBus;
 
     private final Object intermediateLock = new Object();
     private final Map<String, SharedIntermediateSession> intermediates = new HashMap<>();

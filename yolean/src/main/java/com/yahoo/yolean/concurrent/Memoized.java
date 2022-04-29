@@ -1,6 +1,5 @@
 package com.yahoo.yolean.concurrent;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
