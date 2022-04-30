@@ -141,7 +141,7 @@ RpcForwarder::flush()
     if (!request->CheckReturnTypes("bix")) {
         auto error_msg = make_string("Error in rpc reply from logserver ('%s'): '%s'",
                                      _connection_spec.c_str(), request->GetErrorMessage());
-        LOG(warning, "%s", error_msg.c_str());
+        LOG(debug, "%s", error_msg.c_str());
         throw ConnectionException(error_msg);
     }
     ProtoConverter::ProtoLogResponse proto_response;
