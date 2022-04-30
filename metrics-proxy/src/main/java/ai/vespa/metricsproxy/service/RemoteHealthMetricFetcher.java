@@ -34,7 +34,9 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
         try (InputStream stream = getJson()) {
             return createHealthMetrics(stream, fetchCount);
         } catch (IOException | InterruptedException | ExecutionException e) {
-            logMessageNoResponse(errMsgNoResponse(e), fetchCount);
+            if (service.isAlive()) {
+                logMessageNoResponse(errMsgNoResponse(e), fetchCount);
+            }
             return HealthMetric.getUnknown("Failed fetching metrics for service: " + service.getMonitoringName());
         }
     }
