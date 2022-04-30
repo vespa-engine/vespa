@@ -214,6 +214,7 @@ public class DeployState implements ConfigDefinitionStore {
         File importFrom = applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR);
         ImportedMlModels importedModels = new ImportedMlModels(importFrom, executor, modelImporters);
         for (var entry : importedModels.getSkippedModels().entrySet()) {
+            // TODO: Vespa 8: Throw IllegalArgumentException instead
             deployLogger.logApplicationPackage(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
                                                               "occurred during import. Error: " + entry.getValue());
         }
