@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 import com.google.inject.Inject;
+import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueInfo.Status;
 
+import java.io.InputStream;
 import java.net.URI;
 import java.time.Clock;
 import java.time.Duration;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -24,6 +27,7 @@ public class MockIssueHandler implements IssueHandler {
     private final Clock clock;
     private final AtomicLong counter = new AtomicLong();
     private final Map<IssueId, MockIssue> issues = new HashMap<>();
+    private final Map<IssueId, Map<String, InputStream>> attachments = new HashMap<>();
     private final Map<String, ProjectInfo> projects = new HashMap<>();
 
     @Inject
@@ -45,11 +49,14 @@ public class MockIssueHandler implements IssueHandler {
     }
 
     @Override
-    public Optional<IssueId> findBySimilarity(Issue issue) {
+    public List<IssueInfo> findAllBySimilarity(Issue issue) {
         return issues.entrySet().stream()
-                .filter(entry -> entry.getValue().issue.summary().equals(issue.summary()))
-                .findFirst()
-                .map(Map.Entry::getKey);
+                     .filter(entry -> entry.getValue().issue.summary().equals(issue.summary()))
+                     .map(entry -> new IssueInfo(entry.getKey(),
+                                                 entry.getValue().updated,
+                                                 entry.getValue().isOpen() ? Status.toDo : Status.done,
+                                                 entry.getValue().assignee))
+                     .collect(Collectors.toList());
     }
 
     @Override
@@ -116,6 +123,11 @@ public class MockIssueHandler implements IssueHandler {
     @Override
     public ProjectInfo projectInfo(String projectKey) {
         return projects.get(projectKey);
+    }
+
+    @Override
+    public void addAttachment(IssueId id, String filename, Supplier<InputStream> contentAsStream) {
+        attachments.computeIfAbsent(id, __ -> new HashMap<>()).put(filename, contentAsStream.get());
     }
 
     public MockIssueHandler close(IssueId issueId) {
