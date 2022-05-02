@@ -4,13 +4,11 @@ import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
 import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactoryBuilder;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpHeaders;
 import org.apache.hc.core5.util.Timeout;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import java.time.Duration;
 import java.util.Map;
@@ -28,19 +26,18 @@ public class DefaultHttpClientBuilder {
 
     private DefaultHttpClientBuilder() { }
 
-    public static HttpClientBuilder create(Supplier<SSLContext> sslContext, String userAgent) {
-        return create(sslContext, new DefaultHostnameVerifier(), userAgent);
+    public static HttpClientBuilder create(SSLContext sslContext, String userAgent) {
+        return create(() -> sslContext, userAgent);
     }
 
     /** Creates an HTTP client builder with the given SSL context, and using the provided timeouts for requests where config is not overridden. */
-    public static HttpClientBuilder create(Supplier<SSLContext> sslContext, HostnameVerifier verifier, String userAgent) {
+    public static HttpClientBuilder create(Supplier<SSLContext> sslContext, String userAgent) {
         return HttpClientBuilder.create()
                                 .setConnectionManager(PoolingHttpClientConnectionManagerBuilder
                                                               .create()
                                                               .setSSLSocketFactory(SSLConnectionSocketFactoryBuilder
                                                                                            .create()
                                                                                            .setSslContext(sslContext.get())
-                                                                                           .setHostnameVerifier(verifier)
                                                                                            .build())
                                                               .build())
                                 .setUserAgent(userAgent)
