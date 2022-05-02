@@ -1,7 +1,7 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=prelude.fastsearch
 
-## The name of the search definition that this document database info applies to
+## The name of the schema/document database
 documentdb[].name string
 
 ## The id of the summary class

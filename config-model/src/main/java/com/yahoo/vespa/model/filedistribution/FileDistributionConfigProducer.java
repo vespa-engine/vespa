@@ -8,9 +8,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * @author hmusum
- * <p>
  * File distribution config producer, delegates getting config to {@link FileDistributionConfigProvider} (one per host)
+ *
+ * @author hmusum
  */
 public class FileDistributionConfigProducer extends AbstractConfigProducer<AbstractConfigProducer<?>> {
 

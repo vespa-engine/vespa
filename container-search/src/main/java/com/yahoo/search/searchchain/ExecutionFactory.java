@@ -68,7 +68,7 @@ public class ExecutionFactory extends AbstractComponent {
         this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
     }
 
-    /** @deprecated pass documentDbInfo */
+    /** @deprecated pass SchemaInfoConfig */
     @Deprecated
     public ExecutionFactory(ChainsConfig chainsConfig,
                             IndexInfoConfig indexInfo,

@@ -55,6 +55,9 @@ public class SchemaInfo {
         this.clusters = Map.copyOf(clusters);
     }
 
+    /** Returns all schemas configured in this application. */
+    public List<Schema> schemas() { return schemas; }
+
     public Session newSession(Query query) {
         return new Session(query.getModel().getSources(), query.getModel().getRestrict(), clusters, schemas);
     }

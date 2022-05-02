@@ -8060,6 +8060,7 @@
     "methods": [
       "public void <init>(com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
       "public void <init>(java.util.List, java.util.Map)",
+      "public java.util.List schemas()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",
@@ -8098,6 +8099,7 @@
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts)",
+      "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.schema.SchemaInfo)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.Linguistics)",

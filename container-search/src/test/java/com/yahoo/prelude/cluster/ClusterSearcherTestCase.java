@@ -22,6 +22,9 @@ import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import org.junit.Test;
@@ -81,7 +84,7 @@ public class ClusterSearcherTestCase {
     }
 
     private Set<String> resolve(ClusterSearcher searcher, String query) {
-        return searcher.resolveDocumentTypes(new Query("?query=hello" + query), createIndexFacts());
+        return searcher.resolveSchemas(new Query("?query=hello" + query), createIndexFacts());
     }
 
     @Test
@@ -267,9 +270,15 @@ public class ClusterSearcherTestCase {
                                                       new MyMockSearcher(expectAttributePrefetch),
                                                       new InThreadExecutorService());
         try {
-            cluster.setValidRankProfile("default", documentTypes);
-            cluster.addValidRankProfile("testprofile", "type1");
-            return new Execution(cluster, Execution.Context.createContextStub());
+            List<Schema> schemas = new ArrayList<>();
+            for (String docType : docTypesList) {
+                var schemaBuilder = new Schema.Builder(docType);
+                schemaBuilder.add(new RankProfile.Builder("default").build());
+                if (docType.equals("type1"))
+                    schemaBuilder.add(new RankProfile.Builder("testprofile").build());
+                schemas.add(schemaBuilder.build());
+            }
+            return new Execution(cluster, Execution.Context.createContextStub(new SchemaInfo(schemas, Map.of())));
         } finally {
             cluster.deconstruct();
         }
