@@ -78,13 +78,7 @@ public interface HttpClient extends Closeable {
         RequestBuilder body(byte[] json);
 
         /** Sets the request body. */
-        default RequestBuilder body(HttpEntity entity) {
-            if (entity.isRepeatable()) return body(() -> entity);
-            throw new IllegalArgumentException("entitiy must be repeatable, or a supplier must be used");
-        }
-
-        /** Sets the request body. */
-        RequestBuilder body(Supplier<HttpEntity> entity);
+        RequestBuilder body(HttpEntity entity);
 
         /** Sets query parameters without a value, like {@code ?debug&recursive}. */
         default RequestBuilder emptyParameters(String... keys) {

@@ -29,7 +29,6 @@ import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
-import com.yahoo.yolean.concurrent.Memoized;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -55,7 +54,9 @@ public final class SessionCache extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(SessionCache.class.getName());
 
-    private final Memoized<SharedMessageBus, RuntimeException> messageBus;
+    private final Object monitor = new Object();
+    private Supplier<SharedMessageBus> messageBuses;
+    private SharedMessageBus messageBus;
 
     private final Object intermediateLock = new Object();
     private final Map<String, SharedIntermediateSession> intermediates = new HashMap<>();
@@ -95,18 +96,24 @@ public final class SessionCache extends AbstractComponent {
 
     public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
                         MessagebusConfig messagebusConfig, Protocol protocol) {
-        this.messageBus = new Memoized<>(() -> createSharedMessageBus(net.get(), containerMbusConfig, messagebusConfig, protocol),
-                                         SharedMessageBus::release);
+        this.messageBuses = () -> createSharedMessageBus(net.get(), containerMbusConfig, messagebusConfig, protocol);
     }
 
     @Override
     public void deconstruct() {
-        messageBus.close();
+        synchronized (monitor) {
+            messageBuses = () -> { throw new IllegalStateException("Session cache already deconstructed"); };
+
+            if (messageBus != null)
+                messageBus.release();
+        }
     }
 
     // Lazily create shared message bus.
     private SharedMessageBus bus() {
-        return messageBus.get();
+        synchronized (monitor) {
+            return messageBus = messageBus != null ? messageBus : messageBuses.get();
+        }
     }
 
     private static SharedMessageBus createSharedMessageBus(NetworkMultiplexer net,
