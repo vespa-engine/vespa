@@ -24,7 +24,7 @@ import java.io.Writer;
 import java.util.concurrent.ExecutorService;
 
 /**
- * A set of all derived configuration of a search definition. Use this as a facade to individual configurations when
+ * A set of all derived configuration of a schema. Use this as a facade to individual configurations when
  * necessary.
  *
  * @author bratseth
@@ -39,6 +39,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     private RankProfileList rankProfileList;
     private IndexingScript indexingScript;
     private IndexInfo indexInfo;
+    private SchemaInfo schemaInfo;
     private VsmFields streamingFields;
     private VsmSummary streamingSummary;
     private IndexSchema indexSchema;
@@ -99,6 +100,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
                                                   queryProfiles, importedModels, deployProperties, executor);
             indexingScript = new IndexingScript(schema);
             indexInfo = new IndexInfo(schema);
+            schemaInfo = new SchemaInfo(schema, rankProfileRegistry, summaries, summaryMap);
             indexSchema = new IndexSchema(schema);
             importedFields = new ImportedFields(schema);
         }
@@ -178,6 +180,8 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     public IndexInfo getIndexInfo() {
         return indexInfo;
     }
+
+    public SchemaInfo getSchemaInfo() { return schemaInfo; }
 
     public void setIndexingScript(IndexingScript script) {
         this.indexingScript = script;

@@ -8,6 +8,7 @@ import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
+import com.yahoo.searchdefinition.derived.SchemaInfo;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
@@ -122,31 +123,8 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
     @Override
     public void getConfig(SchemaInfoConfig.Builder builder) {
-        Map<String, SearchCluster.SchemaInfo> allSchemas = new LinkedHashMap<>();
-        for (SearchCluster sc : searchClusters)
-            allSchemas.putAll(sc.schemas());
-
-        for (var schemaEntry : allSchemas.entrySet()) {
-            var schemaBuilder = new SchemaInfoConfig.Schema.Builder();
-            schemaBuilder.name(schemaEntry.getKey());
-            addRankProfilesConfig(schemaEntry.getValue(),  schemaBuilder);
-            builder.schema(schemaBuilder);
-        }
-    }
-
-    protected void addRankProfilesConfig(SearchCluster.SchemaInfo schema, SchemaInfoConfig.Schema.Builder schemaBuilder) {
-        for (SearchCluster.RankProfileInfo rankProfile : schema.rankProfiles().values()) {
-            var rankProfileConfig = new SchemaInfoConfig.Schema.Rankprofile.Builder();
-            rankProfileConfig.name(rankProfile.name());
-            rankProfileConfig.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
-            rankProfileConfig.hasRankFeatures(rankProfile.hasRankFeatures());
-            for (var input : rankProfile.inputs().entrySet()) {
-                var inputConfig = new SchemaInfoConfig.Schema.Rankprofile.Input.Builder();
-                inputConfig.name(input.getKey().toString());
-                inputConfig.type(input.getValue().toString());
-                rankProfileConfig.input(inputConfig);
-            }
-            schemaBuilder.rankprofile(rankProfileConfig);
+        for (SearchCluster sc : searchClusters) {
+            sc.getConfig(builder);
         }
     }
 
@@ -156,7 +134,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
     	    SearchCluster sys = findClusterWithId(searchClusters, i);
     		QrSearchersConfig.Searchcluster.Builder scB = new QrSearchersConfig.Searchcluster.Builder().
     				name(sys.getClusterName());
-    		for (SearchCluster.SchemaInfo spec : sys.schemas().values()) {
+    		for (SchemaInfo spec : sys.schemas().values()) {
     			scB.searchdef(spec.fullSchema().getName());
     		}
     		scB.rankprofiles(new QrSearchersConfig.Searchcluster.Rankprofiles.Builder().configid(sys.getConfigId()));

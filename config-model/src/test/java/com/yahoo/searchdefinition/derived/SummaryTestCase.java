@@ -37,7 +37,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "}");
         Schema schema = ApplicationBuilder.createFromString(sd).getSchema();
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
-        assertEquals(SummaryClassField.Type.RAW, summary.getField("raw_field").getType());
+        assertEquals(SummaryClassField.Type.RAW, summary.fields().get("raw_field").getType());
     }
 
     @Test
@@ -52,7 +52,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
                 "}");
         Schema schema = ApplicationBuilder.createFromString(sd).getSchema();
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
-        assertEquals(SummaryClassField.Type.DATA, summary.getField("raw_field").getType());
+        assertEquals(SummaryClassField.Type.DATA, summary.fields().get("raw_field").getType());
     }
 
     @Test
@@ -61,11 +61,11 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         SummaryClass summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         assertEquals("default", summary.getName());
 
-        Iterator<SummaryClassField> fields = summary.fieldIterator();
+        Iterator<SummaryClassField> fields = summary.fields().values().iterator();
 
         SummaryClassField field;
 
-        assertEquals(13, summary.getFieldCount());
+        assertEquals(13, summary.fields().size());
 
         field = fields.next();
         assertEquals("exactemento", field.getName());
@@ -125,12 +125,12 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         Schema adSchema = buildCampaignAdModel();
 
         SummaryClass defaultClass = new SummaryClass(adSchema, adSchema.getSummary("default"), new BaseDeployLogger());
-        assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.getField("campaign_ref").getType());
-        assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.getField("other_campaign_ref").getType());
+        assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.fields().get("campaign_ref").getType());
+        assertEquals(SummaryClassField.Type.LONGSTRING, defaultClass.fields().get("other_campaign_ref").getType());
 
         SummaryClass myClass = new SummaryClass(adSchema, adSchema.getSummary("my_summary"), new BaseDeployLogger());
-        assertNull(myClass.getField("campaign_ref"));
-        assertEquals(SummaryClassField.Type.LONGSTRING, myClass.getField("other_campaign_ref").getType());
+        assertNull(myClass.fields().get("campaign_ref"));
+        assertEquals(SummaryClassField.Type.LONGSTRING, myClass.fields().get("other_campaign_ref").getType());
     }
 
     private static Schema buildCampaignAdModel() throws ParseException {

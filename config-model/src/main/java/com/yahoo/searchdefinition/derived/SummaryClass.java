@@ -9,9 +9,9 @@ import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
-import java.util.Iterator;
+
+import java.util.Collections;
 import java.util.Map;
-import java.util.Random;
 import java.util.logging.Level;
 
 /**
@@ -19,11 +19,13 @@ import java.util.logging.Level;
  * Each summary definition have at least one summary, the default
  * which has the same name as the search definition.
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class SummaryClass extends Derived {
 
     public static final String DOCUMENT_ID_FIELD = "documentid";
+
+    private final int id;
 
     /** True if this summary class needs to access summary information on disk */
     private boolean accessingDiskSummary = false;
@@ -31,11 +33,9 @@ public class SummaryClass extends Derived {
     private final boolean omitSummaryFeatures;
 
     /** The summary fields of this indexed by name */
-    private final Map<String,SummaryClassField> fields = new java.util.LinkedHashMap<>();
+    private final Map<String, SummaryClassField> fields;
 
     private final DeployLogger deployLogger;
-
-    private final Random random = new Random(7);
 
     /**
      * Creates a summary class from a search definition summary
@@ -43,39 +43,42 @@ public class SummaryClass extends Derived {
      * @param deployLogger a {@link DeployLogger}
      */
     public SummaryClass(Schema schema, DocumentSummary summary, DeployLogger deployLogger) {
+        super(summary.getName());
         this.deployLogger = deployLogger;
         this.rawAsBase64 = schema.isRawAsBase64();
         this.omitSummaryFeatures = summary.omitSummaryFeatures();
-        deriveName(summary);
-        deriveFields(schema, summary);
-        deriveImplicitFields(summary);
+        Map<String, SummaryClassField> fields = new java.util.LinkedHashMap<>();
+        deriveFields(schema, summary, fields);
+        deriveImplicitFields(summary, fields);
+        this.fields = Collections.unmodifiableMap(fields);
+        this.id = deriveId(summary.getName(), fields);
     }
 
-    private void deriveName(DocumentSummary summary) {
-        setName(summary.getName());
-    }
+    public int id() { return id; }
 
     /** MUST be called after all other fields are added */
-    private void deriveImplicitFields(DocumentSummary summary) {
+    private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
         if (summary.getName().equals("default")) {
-            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING);
+            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, fields);
         }
     }
 
-    private void deriveFields(Schema schema, DocumentSummary summary) {
+    private void deriveFields(Schema schema, DocumentSummary summary, Map<String, SummaryClassField> fields) {
         for (SummaryField summaryField : summary.getSummaryFields().values()) {
             if (!accessingDiskSummary && schema.isAccessingDiskSummary(summaryField)) {
                 accessingDiskSummary = true;
             }
-            addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform());
+            addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform(), fields);
         }
     }
 
-    private void addField(String name, DataType type) {
-        addField(name, type, null);
+    private void addField(String name, DataType type, Map<String, SummaryClassField> fields) {
+        addField(name, type, null, fields);
     }
 
-    private void addField(String name, DataType type, SummaryTransform transform) {
+    private void addField(String name, DataType type,
+                          SummaryTransform transform,
+                          Map<String, SummaryClassField> fields) {
         if (fields.containsKey(name)) {
             SummaryClassField sf = fields.get(name);
             if ( SummaryClassField.convertDataType(type, transform, rawAsBase64) != sf.getType()) {
@@ -87,48 +90,23 @@ public class SummaryClass extends Derived {
         }
     }
 
+    public Map<String, SummaryClassField> fields() { return fields; }
 
-    /** Returns an iterator of the fields of this summary. Removes on this iterator removes the field from this summary */
-    public Iterator<SummaryClassField> fieldIterator() {
-        return fields.values().iterator();
-    }
-
-    public void addField(SummaryClassField field) {
-        fields.put(field.getName(),field);
-    }
-
-    /** Returns the writable map of fields of this summary */ // TODO: Make read only, move writers to iterator/addField
-    public Map<String,SummaryClassField> getFields() { return fields; }
-
-    public SummaryClassField getField(String name) {
-        return fields.get(name);
-    }
-
-    public int getFieldCount() { return fields.size(); }
-
-    @Override
-    public int hashCode() {
+    private static int deriveId(String name, Map<String, SummaryClassField> fields) {
+        int hash = name.hashCode();
         int number = 1;
-        int hash = getName().hashCode();
-        for (Iterator i = fieldIterator(); i.hasNext(); ) {
-            SummaryClassField field = (SummaryClassField)i.next();
-            hash += number * (field.getName().hashCode() +
-                              17*field.getType().getName().hashCode());
-            number++;
+        for (var field : fields.values()) {
+            hash += number++ * (field.getName().hashCode() +
+                                17 * field.getType().getName().hashCode());
         }
-        if (hash < 0)
-            hash *= -1;
+        hash = Math.abs(hash);
+        if (hash == DocsumDefinitionSet.SLIME_MAGIC_ID)
+            hash++;
         return hash;
     }
 
     public SummaryConfig.Classes.Builder getSummaryClassConfig() {
         SummaryConfig.Classes.Builder classBuilder = new SummaryConfig.Classes.Builder();
-        int id = hashCode();
-        if (id == DocsumDefinitionSet.SLIME_MAGIC_ID) {
-            deployLogger.log(Level.WARNING, "Summary class '" + getName() + "' hashes to the SLIME_MAGIC_ID '" + id +
-                                            "'. This is unlikely but I autofix it for you by adding a random number.");
-            id += random.nextInt();
-        }
         classBuilder.
             id(id).
             name(getName()).
@@ -142,11 +120,14 @@ public class SummaryClass extends Derived {
     }
 
     @Override
+    public int hashCode() { return id; }
+
+    @Override
     protected String getDerivedName() { return "summary"; }
 
     @Override
     public String toString() {
-        return "summary class " + getName();
+        return "summary class '" + getName() + "'";
     }
 
 }
