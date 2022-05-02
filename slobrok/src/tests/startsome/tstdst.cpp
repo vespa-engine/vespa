@@ -176,6 +176,7 @@ TstEnv::MainLoop()
     FRT_Target *slobrok = getSupervisor()->GetTarget(sbspec.c_str());
     slobrok->InvokeAsync(req, 5.0, this);
     getTransport()->Main();
+    getTransport()->WaitFinished();
     return 0;
 }
 
