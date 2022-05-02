@@ -4,6 +4,9 @@ package com.yahoo.vespa.hosted.controller.notify;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.text.Text;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
@@ -32,20 +35,22 @@ public class Notifier {
     private final CuratorDb curatorDb;
     private final ZoneRegistry zoneRegistry;
     private final Mailer mailer;
+    private final FlagSource flagSource;
 
     private static final Logger log = Logger.getLogger(Notifier.class.getName());
 
-    public Notifier(CuratorDb curatorDb, ZoneRegistry zoneRegistry, Mailer mailer) {
+    public Notifier(CuratorDb curatorDb, ZoneRegistry zoneRegistry, Mailer mailer, FlagSource flagSource) {
         this.curatorDb = Objects.requireNonNull(curatorDb);
         this.zoneRegistry = Objects.requireNonNull(zoneRegistry);
         this.mailer = Objects.requireNonNull(mailer);
+        this.flagSource = Objects.requireNonNull(flagSource);
     }
 
     public void dispatch(List<Notification> notifications, NotificationSource source) {
-        if (notifications.isEmpty()) {
+        if (!dispatchEnabled(source) || skipSource(source)) {
             return;
         }
-        if (skipSource(source)) {
+        if (notifications.isEmpty()) {
             return;
         }
         var tenant = curatorDb.readTenant(source.tenant());
@@ -59,6 +64,12 @@ public class Notifier {
                         .forEach(e -> notifications.forEach(n -> dispatch(n, e.getKey(), e.getValue())));
             }
         });
+    }
+
+    private boolean dispatchEnabled(NotificationSource source) {
+        return Flags.NOTIFICATION_DISPATCH_FLAG.bindTo(flagSource)
+                .with(FetchVector.Dimension.TENANT_ID, source.tenant().value())
+                .value();
     }
 
     private boolean skipSource(NotificationSource source) {

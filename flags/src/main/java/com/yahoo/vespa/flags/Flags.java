@@ -397,6 +397,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag NOTIFICATION_DISPATCH_FLAG = defineFeatureFlag(
+            "dispatch-notifications", false,
+            List.of("enygaard"), "2022-05-02", "2022-09-30",
+            "Whether we should send notification for a given tenant",
+            "Takes effect immediately",
+            TENANT_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
