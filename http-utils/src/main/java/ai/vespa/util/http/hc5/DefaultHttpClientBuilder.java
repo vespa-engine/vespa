@@ -28,12 +28,8 @@ public class DefaultHttpClientBuilder {
 
     private DefaultHttpClientBuilder() { }
 
-    public static HttpClientBuilder create(SSLContext sslContext, String userAgent) {
-        return create(() -> sslContext, new DefaultHostnameVerifier(), userAgent);
-    }
-
-    public static HttpClientBuilder create(SSLContext sslContext, HostnameVerifier verifier, String userAgent) {
-        return create(() -> sslContext, verifier, userAgent);
+    public static HttpClientBuilder create(Supplier<SSLContext> sslContext, String userAgent) {
+        return create(sslContext, new DefaultHostnameVerifier(), userAgent);
     }
 
     /** Creates an HTTP client builder with the given SSL context, and using the provided timeouts for requests where config is not overridden. */

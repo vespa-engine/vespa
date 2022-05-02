@@ -226,7 +226,8 @@ public interface HttpClient extends Closeable {
 
         @Override
         default RuntimeException toException(int statusCode, byte[] body, ClassicHttpRequest request) {
-            return new ResponseException(request + " failed with status " + statusCode + " and body '" + new String(body, UTF_8) + "'");
+            return new ResponseException(statusCode,
+                                         request + " failed with status " + statusCode + " and body '" + new String(body, UTF_8) + "'");
         }
 
     }
@@ -297,9 +298,14 @@ public interface HttpClient extends Closeable {
     /** An exception due to server error, a bad request, or similar, which resulted in a non-OK HTTP response. */
     class ResponseException extends RuntimeException {
 
-        public ResponseException(String message) {
+        private final int statusCode;
+
+        public ResponseException(int statusCode, String message) {
             super(message);
+            this.statusCode = statusCode;
         }
+
+        public int statusCode() { return statusCode; }
 
     }
 
