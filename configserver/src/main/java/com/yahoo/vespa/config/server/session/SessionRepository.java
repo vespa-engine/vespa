@@ -688,7 +688,7 @@ public class SessionRepository {
         } catch (IllegalArgumentException e) {
             if (failDeploymentForFilesWithUnknownExtension.value())
                 throw e;
-            deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.INFO, e.getMessage()));
+            deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
         }
 
         return app;
