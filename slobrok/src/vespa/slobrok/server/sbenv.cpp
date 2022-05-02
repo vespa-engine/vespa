@@ -183,6 +183,7 @@ SBEnv::MainLoop()
         LOG(debug, "slobrok: starting main event loop");
         EV_STARTED("slobrok");
         getTransport()->Main();
+        getTransport()->WaitFinished();
         LOG(debug, "slobrok: main event loop done");
     } catch (vespalib::Exception &e) {
         LOG(error, "invalid config: %s", e.what());
