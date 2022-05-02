@@ -237,7 +237,9 @@ public final class LazyArrayContext extends Context implements ContextIndex {
                 FunctionReference reference = FunctionReference.fromSerial(node.toString()).get();
                 bindTargets.add(reference.serialForm());
 
-                ExpressionNode functionNode = functions.get(reference).getBody().getRoot();
+                ExpressionFunction function = functions.get(reference);
+                if (function == null) return; // Function not included in this model: Not all models are for standalone use
+                ExpressionNode functionNode = function.getBody().getRoot();
                 extractBindTargets(functionNode, functions, bindTargets, arguments, onnxModels, onnxModelsInUse);
             }
             else if (isOnnx(node)) {

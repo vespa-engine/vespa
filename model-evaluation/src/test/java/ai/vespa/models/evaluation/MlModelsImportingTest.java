@@ -25,7 +25,7 @@ public class MlModelsImportingTest {
     public void testImportingModels() {
         ModelTester tester = new ModelTester("src/test/resources/config/models/");
 
-        assertEquals(6, tester.models().size());
+        assertEquals(7, tester.models().size());
 
         // TODO: When we get type information in Models, replace the evaluator.context().names() check below by that
         {
