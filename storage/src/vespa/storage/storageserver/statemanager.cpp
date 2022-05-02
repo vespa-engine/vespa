@@ -272,8 +272,9 @@ StateManager::notifyStateListeners()
         }
         for (auto* listener : _stateListeners) {
             listener->handleNewState();
-                // If one of them actually altered the state again, abort
-                // sending events, update states and send new one to all.
+            // If one of them actually altered the state again, abort
+            // sending events, update states and send new one to all.
+            std::lock_guard guard(_stateLock);
             if (_nextNodeState || _nextSystemState) {
                 break;
             }
