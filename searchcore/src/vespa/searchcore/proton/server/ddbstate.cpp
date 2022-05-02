@@ -43,8 +43,8 @@ DDBState::enterLoadState()
     if (getClosed()) {
         return false;
     }
-    assert(_state == State::CONSTRUCT);
-    _state = State::LOAD;
+    assert(getState() == State::CONSTRUCT);
+    set_state(State::LOAD);
     return true;
 }
 
@@ -56,8 +56,8 @@ DDBState::enterReplayTransactionLogState()
     if (getClosed()) {
         return false;
     }
-    assert(_state == State::LOAD);
-    _state = State::REPLAY_TRANSACTION_LOG;
+    assert(getState() == State::LOAD);
+    set_state(State::REPLAY_TRANSACTION_LOG);
     return true;
 }
 
@@ -69,8 +69,8 @@ DDBState::enterRedoReprocessState()
     if (getClosed()) {
         return false;
     }
-    assert(_state == State::REPLAY_TRANSACTION_LOG);
-    _state = State::REDO_REPROCESS;
+    assert(getState() == State::REPLAY_TRANSACTION_LOG);
+    set_state(State::REDO_REPROCESS);
     return true;
 }
 
@@ -82,9 +82,10 @@ DDBState::enterApplyLiveConfigState()
     if (getClosed()) {
         return false;
     }
-    assert(_state == State::REPLAY_TRANSACTION_LOG ||
-           _state == State::REDO_REPROCESS);
-    _state = State::APPLY_LIVE_CONFIG;
+    State state(getState());
+    assert(state == State::REPLAY_TRANSACTION_LOG ||
+           state == State::REDO_REPROCESS);
+    set_state(State::APPLY_LIVE_CONFIG);
     return true;
 }
 
@@ -96,8 +97,8 @@ DDBState::enterReprocessState()
     if (getClosed()) {
         return false;
     }
-    assert(_state == State::APPLY_LIVE_CONFIG);
-    _state = State::REPROCESS;
+    assert(getState() == State::APPLY_LIVE_CONFIG);
+    set_state(State::REPROCESS);
     return true;
 }
 
@@ -108,8 +109,8 @@ DDBState::enterOnlineState()
     if (getClosed()) {
         return false;
     }
-    assert(_state == State::REPROCESS);
-    _state = State::ONLINE;
+    assert(getState() == State::REPROCESS);
+    set_state(State::ONLINE);
     _cond.notify_all();
     return true;
 }
@@ -123,7 +124,7 @@ DDBState::enterShutdownState()
     if (getClosed()) {
         return;
     }
-    _state = State::SHUTDOWN;
+    set_state(State::SHUTDOWN);
     _cond.notify_all();
 }
 
@@ -131,11 +132,11 @@ void
 DDBState::enterDeadState()
 {
     Guard guard(_lock);
-    if (_state == State::DEAD) {
+    if (getState() == State::DEAD) {
         return;
     }
-    assert(_state == State::SHUTDOWN);
-    _state = State::DEAD;
+    assert(getState() == State::SHUTDOWN);
+    set_state(State::DEAD);
     _cond.notify_all();
 }
 
@@ -144,7 +145,7 @@ void
 DDBState::setConfigState(ConfigState newConfigState)
 {
     Guard guard(_lock);
-    _configState = newConfigState;
+    _configState.store(newConfigState, std::memory_order_relaxed);
 }
 
 
@@ -173,7 +174,7 @@ void
 DDBState::waitForOnlineState()
 {
     GuardLock lk(_lock);
-    _cond.wait(lk, [this] { return this->_state >= State::ONLINE; } );
+    _cond.wait(lk, [this] { return this->getState() >= State::ONLINE; } );
 }
 
 
