@@ -147,10 +147,10 @@ public abstract class AbstractHttpClient implements HttpClient {
 
         private final Method method;
         private final HostStrategy hosts;
+        private final List<Supplier<Query>> dynamicQuery = new ArrayList<>();
+        private final Map<String, List<String>> headers = new LinkedHashMap<>();
         private HttpURL.Path path = Path.empty();
         private HttpURL.Query query = Query.empty();
-        private List<Supplier<Query>> dynamicQuery = new ArrayList<>();
-        private Map<String, List<String>> headers = new LinkedHashMap<>();
         private Supplier<HttpEntity> entity = () -> null;
         private RequestConfig config = HttpClient.defaultRequestConfig;
         private ResponseVerifier verifier = HttpClient.throwOnError;

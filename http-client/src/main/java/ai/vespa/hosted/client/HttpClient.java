@@ -249,6 +249,11 @@ public interface HttpClient extends Closeable {
     @FunctionalInterface
     interface HostStrategy extends Iterable<URI> {
 
+        /** Attempts the given host once. */
+        static HostStrategy of(URI host) {
+            return repeating(host, 1);
+        }
+
         /** Attempts each request once against each listed host. */
         static HostStrategy ordered(List<URI> hosts) {
             return List.copyOf(hosts)::iterator;
