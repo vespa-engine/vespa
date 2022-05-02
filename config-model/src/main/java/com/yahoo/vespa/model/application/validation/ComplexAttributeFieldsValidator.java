@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.derived.SchemaInfo;
 import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
 import com.yahoo.searchdefinition.document.GeoPos;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -29,7 +30,7 @@ public class ComplexAttributeFieldsValidator extends Validator {
         for (SearchCluster cluster : searchClusters) {
             if (cluster.isStreaming()) continue;
 
-            for (SearchCluster.SchemaInfo spec : cluster.schemas().values()) {
+            for (SchemaInfo spec : cluster.schemas().values()) {
                 validateComplexFields(cluster.getClusterName(), spec.fullSchema());
             }
         }

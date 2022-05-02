@@ -1,12 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
+import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.searchdefinition.DocumentOnlySchema;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
+import com.yahoo.searchdefinition.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.DispatchConfig;
 import com.yahoo.vespa.config.search.DispatchConfig.DistributionPolicy;
@@ -30,8 +33,10 @@ public class IndexedSearchCluster extends SearchCluster
     implements
         DocumentdbInfoConfig.Producer,
         IndexInfoConfig.Producer,
+        SchemaInfoConfig.Producer,
         IlscriptsConfig.Producer,
-        DispatchConfig.Producer {
+        DispatchConfig.Producer,
+        ConfigInstance.Producer {
 
     private String indexingClusterName = null; // The name of the docproc cluster to run indexing, by config.
     private String indexingChainName = null;
@@ -44,7 +49,7 @@ public class IndexedSearchCluster extends SearchCluster
     // This is the document selector string as derived from the subscription tag.
     private String routingSelector = null;
     private final List<DocumentDatabase> documentDbs = new LinkedList<>();
-    private final UnionConfiguration unionCfg;
+    private final MultipleDocumentDatabasesConfigProducer documentDbsConfigProducer;
 
     private int searchableCopies = 1;
 
@@ -64,7 +69,7 @@ public class IndexedSearchCluster extends SearchCluster
 
     public IndexedSearchCluster(AbstractConfigProducer<SearchCluster> parent, String clusterName, int index) {
         super(parent, clusterName, index);
-        unionCfg = new UnionConfiguration(this, documentDbs);
+        documentDbsConfigProducer = new MultipleDocumentDatabasesConfigProducer(this, documentDbs);
         rootDispatch =  new DispatchGroup(this);
     }
 
@@ -227,22 +232,27 @@ public class IndexedSearchCluster extends SearchCluster
 
     @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
-        unionCfg.getConfig(builder);
+        documentDbsConfigProducer.getConfig(builder);
+    }
+
+    @Override
+    public void getConfig(SchemaInfoConfig.Builder builder) {
+        documentDbsConfigProducer.getConfig(builder);
     }
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
-        unionCfg.getConfig(builder);
+        documentDbsConfigProducer.getConfig(builder);
     }
 
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
-        unionCfg.getConfig(builder);
+        documentDbsConfigProducer.getConfig(builder);
     }
 
     @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
-        unionCfg.getConfig(builder);
+        documentDbsConfigProducer.getConfig(builder);
     }
 
     boolean useFixedRowInDispatch() {
@@ -326,21 +336,39 @@ public class IndexedSearchCluster extends SearchCluster
 
     /**
      * Class used to retrieve combined configuration from multiple document databases.
-     * It is not a {@link com.yahoo.config.ConfigInstance.Producer} of those configs,
+     * It is not a direct {@link com.yahoo.config.ConfigInstance.Producer} of those configs,
      * that is handled (by delegating to this) by the {@link IndexedSearchCluster}
      * which is the parent to this. This avoids building the config multiple times.
      */
-    public static class UnionConfiguration
-            extends AbstractConfigProducer<UnionConfiguration>
-            implements AttributesConfig.Producer {
+    public static class MultipleDocumentDatabasesConfigProducer
+            extends AbstractConfigProducer<MultipleDocumentDatabasesConfigProducer>
+            implements AttributesConfig.Producer,
+                       IndexInfoConfig.Producer,
+                       IlscriptsConfig.Producer,
+                       SchemaInfoConfig.Producer,
+                       RankProfilesConfig.Producer {
         private final List<DocumentDatabase> docDbs;
 
+        private MultipleDocumentDatabasesConfigProducer(AbstractConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
+            super(parent, "union");
+            this.docDbs = docDbs;
+        }
+
+        @Override
         public void getConfig(IndexInfoConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
             }
         }
 
+        @Override
+        public void getConfig(SchemaInfoConfig.Builder builder) {
+            for (DocumentDatabase docDb : docDbs) {
+                docDb.getConfig(builder);
+            }
+        }
+
+        @Override
         public void getConfig(IlscriptsConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
@@ -354,16 +382,13 @@ public class IndexedSearchCluster extends SearchCluster
             }
         }
 
+        @Override
         public void getConfig(RankProfilesConfig.Builder builder) {
             for (DocumentDatabase docDb : docDbs) {
                 docDb.getConfig(builder);
             }
         }
 
-        private UnionConfiguration(AbstractConfigProducer<?> parent, List<DocumentDatabase> docDbs) {
-            super(parent, "union");
-            this.docDbs = docDbs;
-        }
     }
 
 }

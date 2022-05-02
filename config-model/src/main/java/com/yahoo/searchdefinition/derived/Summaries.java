@@ -16,9 +16,10 @@ import java.util.List;
 public class Summaries extends Derived implements SummaryConfig.Producer {
 
     private final boolean useV8GeoPositions;
-    private List<SummaryClass> summaries=new java.util.ArrayList<>(1);
+    private final List<SummaryClass> summaries = new java.util.ArrayList<>(1);
 
     public Summaries(Schema schema, DeployLogger deployLogger, ModelContext.FeatureFlags featureFlags) {
+        super();
         this.useV8GeoPositions = featureFlags.useV8GeoPositions();
         // Make sure the default is first
         summaries.add(new SummaryClass(schema, schema.getSummary("default"), deployLogger));

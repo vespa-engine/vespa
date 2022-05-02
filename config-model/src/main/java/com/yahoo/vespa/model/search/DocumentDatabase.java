@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.search;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.searchdefinition.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
@@ -33,7 +34,8 @@ public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> i
         JuniperrcConfig.Producer,
         SummarymapConfig.Producer,
         SummaryConfig.Producer,
-        ImportedFieldsConfig.Producer {
+        ImportedFieldsConfig.Producer,
+        SchemaInfoConfig.Producer {
 
     private final String schemaName;
     private final DerivedConfiguration derivedCfg;
@@ -57,63 +59,42 @@ public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> i
     }
 
     @Override
-    public void getConfig(IndexInfoConfig.Builder builder) {
-        derivedCfg.getIndexInfo().getConfig(builder);
-    }
+    public void getConfig(IndexInfoConfig.Builder builder) { derivedCfg.getIndexInfo().getConfig(builder); }
 
     @Override
-    public void getConfig(IlscriptsConfig.Builder builder) {
-        derivedCfg.getIndexingScript().getConfig(builder);
-    }
+    public void getConfig(IlscriptsConfig.Builder builder) { derivedCfg.getIndexingScript().getConfig(builder); }
 
     @Override
-    public void getConfig(AttributesConfig.Builder builder) {
-        derivedCfg.getConfig(builder);
-    }
+    public void getConfig(AttributesConfig.Builder builder) { derivedCfg.getConfig(builder); }
 
     @Override
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        derivedCfg.getRankProfileList().getConfig(builder);
-    }
+    public void getConfig(RankProfilesConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
 
     @Override
-    public void getConfig(RankingExpressionsConfig.Builder builder) {
-        derivedCfg.getRankProfileList().getConfig(builder);
-    }
+    public void getConfig(RankingExpressionsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
 
     @Override
-    public void getConfig(RankingConstantsConfig.Builder builder) {
-        derivedCfg.getRankProfileList().getConfig(builder);
-    }
+    public void getConfig(RankingConstantsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
 
     @Override
-    public void getConfig(OnnxModelsConfig.Builder builder) {
-        derivedCfg.getRankProfileList().getConfig(builder);
-    }
+    public void getConfig(OnnxModelsConfig.Builder builder) { derivedCfg.getRankProfileList().getConfig(builder); }
 
     @Override
-    public void getConfig(IndexschemaConfig.Builder builder) {
-        derivedCfg.getIndexSchema().getConfig(builder);
-    }
+    public void getConfig(IndexschemaConfig.Builder builder) { derivedCfg.getIndexSchema().getConfig(builder); }
 
     @Override
-    public void getConfig(JuniperrcConfig.Builder builder) {
-        derivedCfg.getJuniperrc().getConfig(builder);
-    }
+    public void getConfig(JuniperrcConfig.Builder builder) { derivedCfg.getJuniperrc().getConfig(builder); }
 
     @Override
-    public void getConfig(SummarymapConfig.Builder builder) {
-        derivedCfg.getSummaryMap().getConfig(builder);
-    }
+    public void getConfig(SummarymapConfig.Builder builder) { derivedCfg.getSummaryMap().getConfig(builder); }
 
     @Override
-    public void getConfig(SummaryConfig.Builder builder) {
-        derivedCfg.getSummaries().getConfig(builder);
-    }
+    public void getConfig(SummaryConfig.Builder builder) { derivedCfg.getSummaries().getConfig(builder); }
 
     @Override
-    public void getConfig(ImportedFieldsConfig.Builder builder) {
-        derivedCfg.getImportedFields().getConfig(builder);
-    }
+    public void getConfig(ImportedFieldsConfig.Builder builder) { derivedCfg.getImportedFields().getConfig(builder); }
+
+    @Override
+    public void getConfig(SchemaInfoConfig.Builder builder) { derivedCfg.getSchemaInfo().getConfig(builder); }
 
 }

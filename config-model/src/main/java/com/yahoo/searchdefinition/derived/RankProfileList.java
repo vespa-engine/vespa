@@ -41,7 +41,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     private final LargeRankExpressions largeRankExpressions;
     private final OnnxModels onnxModels;
 
-    public static RankProfileList empty = new RankProfileList();
+    public static final RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
         rankingConstants = new RankingConstants(null, Optional.empty());

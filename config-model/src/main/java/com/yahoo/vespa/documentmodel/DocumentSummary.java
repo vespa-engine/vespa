@@ -21,6 +21,7 @@ import java.util.logging.Level;
  */
 public class DocumentSummary extends FieldView {
 
+    private int id;
     private boolean fromDisk = false;
     private boolean omitSummaryFeatures = false;
     private Optional<String> inherited = Optional.empty();
@@ -32,6 +33,8 @@ public class DocumentSummary extends FieldView {
         super(name);
         this.owner = owner;
     }
+
+    public int id() { return id; }
 
     public void setFromDisk(boolean fromDisk) { this.fromDisk = fromDisk; }
 

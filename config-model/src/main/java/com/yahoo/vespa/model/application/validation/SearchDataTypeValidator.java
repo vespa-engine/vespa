@@ -12,6 +12,7 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.searchdefinition.Schema;
+import com.yahoo.searchdefinition.derived.SchemaInfo;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.VespaModel;
@@ -34,7 +35,7 @@ public class SearchDataTypeValidator extends Validator {
             if (cluster.isStreaming()) {
                 continue;
             }
-            for (SearchCluster.SchemaInfo spec : cluster.schemas().values()) {
+            for (SchemaInfo spec : cluster.schemas().values()) {
                 SDDocumentType docType = spec.fullSchema().getDocument();
                 if (docType == null) {
                     continue;

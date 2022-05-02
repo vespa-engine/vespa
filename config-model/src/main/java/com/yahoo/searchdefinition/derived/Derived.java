@@ -26,9 +26,17 @@ public abstract class Derived implements Exportable {
 
     private String name;
 
+    public Derived() {
+        this("");
+    }
+
+    public Derived(String name) {
+        this.name = name;
+    }
+
     public String getName() { return name; }
 
-    protected final void setName(String name) { this.name=name; }
+    protected final void setName(String name) { this.name = name; }
 
     /**
      * Derives the content of this configuration. This

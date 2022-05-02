@@ -7,6 +7,7 @@ import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
+import com.yahoo.searchdefinition.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.config.ClusterConfig;
@@ -115,7 +116,7 @@ public class LocalProvider extends Provider implements
     public List<String> getDocumentTypes() {
         List<String> documentTypes = new ArrayList<>();
 
-        for (SearchCluster.SchemaInfo spec : searchCluster.schemas().values()) {
+        for (SchemaInfo spec : searchCluster.schemas().values()) {
             documentTypes.add(spec.fullSchema().getDocument().getName());
         }
 

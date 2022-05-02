@@ -87,9 +87,7 @@ public class StreamingSearchCluster extends SearchCluster implements
     }
 
     @Override
-    public DerivedConfiguration getSchemaConfig() {
-        return schemaConfig;
-    }
+    public DerivedConfiguration getSchemaConfig() { return schemaConfig; }
 
     @Override
     public void defaultDocumentsConfig() { }

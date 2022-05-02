@@ -10,11 +10,11 @@ import java.util.Map;
 
 /**
  * @author    baldersheim
- * @since     2010-02-19
  */
 public class FieldView implements Serializable {
-    private String name;
-    private Map<String, Field> fields = new LinkedHashMap<>();
+
+    private final String name;
+    private final Map<String, Field> fields = new LinkedHashMap<>();
 
     /**
      * Creates a view with a name
