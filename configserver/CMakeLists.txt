@@ -16,7 +16,6 @@ install_symlink(lib/jars/athenz-identity-provider-service-jar-with-dependencies.
 install_symlink(lib/jars/config-model-fat.jar conf/configserver-app/components/config-model-fat.jar)
 install_symlink(lib/jars/configserver-flags-jar-with-dependencies.jar conf/configserver-app/components/configserver-flags.jar)
 install_symlink(lib/jars/flags-jar-with-dependencies.jar conf/configserver-app/components/flags.jar)
-install_symlink(lib/jars/http-client-jar-with-dependencies.jar conf/configserver-app/components/http-client.jar)
 install_symlink(lib/jars/orchestrator-jar-with-dependencies.jar conf/configserver-app/components/orchestrator.jar)
 install_symlink(lib/jars/service-monitor-jar-with-dependencies.jar conf/configserver-app/components/service-monitor.jar)
 install_symlink(lib/jars/application-model-jar-with-dependencies.jar conf/configserver-app/components/application-model.jar)
