@@ -234,36 +234,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.yolean.concurrent.Memoized$Closer": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract void close(java.lang.Object)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.yolean.concurrent.Memoized": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.util.function.Supplier",
-      "java.lang.AutoCloseable"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.util.function.Supplier, com.yahoo.yolean.concurrent.Memoized$Closer)",
-      "public static com.yahoo.yolean.concurrent.Memoized of(java.util.function.Supplier)",
-      "public java.lang.Object get()",
-      "public void close()"
-    ],
-    "fields": []
-  },
   "com.yahoo.yolean.concurrent.ResourceFactory": {
     "superClass": "java.lang.Object",
     "interfaces": [],
