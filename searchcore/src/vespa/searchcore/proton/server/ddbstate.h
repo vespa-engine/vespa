@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <atomic>
 #include <mutex>
 #include <condition_variable>
 #include <vector>
@@ -36,8 +37,8 @@ public:
     };
 private:
 
-    State          _state;
-    ConfigState    _configState;
+    std::atomic<State>       _state;
+    std::atomic<ConfigState> _configState;
 
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
@@ -47,6 +48,8 @@ private:
 
     static std::vector<vespalib::string> _stateNames;
     static std::vector<vespalib::string> _configStateNames;
+
+    void set_state(State state) noexcept { _state.store(state, std::memory_order_relaxed); }
 
 public:
     DDBState();
@@ -64,35 +67,35 @@ public:
     bool enterOnlineState();
     void enterShutdownState();
     void enterDeadState();
-    State getState() const { return _state; }
+    State getState() const noexcept { return _state.load(std::memory_order_relaxed); }
     static vespalib::string getStateString(State state);
     
-    bool getClosed() const{
-        State state(_state);
+    bool getClosed() const noexcept {
+        State state(getState());
         return state >= State::SHUTDOWN;
     }
 
-    bool getAllowReconfig() const {
-        State state(_state);
+    bool getAllowReconfig() const noexcept {
+        State state(getState());
         return state >= State::APPLY_LIVE_CONFIG && state < State::SHUTDOWN;
     }
 
-    bool getAllowPrune() const {
-        State state(_state);
+    bool getAllowPrune() const noexcept {
+        State state(getState());
         return state == State::ONLINE;
     }
     
-    static bool getDelayedConfig(ConfigState state) {
+    static bool getDelayedConfig(ConfigState state) noexcept {
         return state != ConfigState::OK;
     }
     
-    bool getDelayedConfig() const {
-        ConfigState state(_configState);
+    bool getDelayedConfig() const noexcept {
+        ConfigState state(getConfigState());
         return getDelayedConfig(state);
     }
 
     void clearDelayedConfig();
-    ConfigState getConfigState() const { return _configState; }
+    ConfigState getConfigState() const noexcept { return _configState.load(std::memory_order_relaxed); }
     static vespalib::string getConfigStateString(ConfigState configState);
     void setConfigState(ConfigState newConfigState);
     void waitForOnlineState();
