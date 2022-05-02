@@ -43,15 +43,14 @@ import com.yahoo.vespa.config.server.zookeeper.SessionCounter;
 import com.yahoo.vespa.config.server.zookeeper.ZKApplication;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.KeeperException;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -129,7 +128,7 @@ public class SessionRepository {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final int maxNodeSize;
-    private final BooleanFlag failDeploymentForFilesWithUnknownExtension;
+    private final StringFlag failDeploymentForFilesWithUnknownExtension;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -173,7 +172,7 @@ public class SessionRepository {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
         this.maxNodeSize = maxNodeSize;
-        this.failDeploymentForFilesWithUnknownExtension = Flags.FAIL_DEPLOYMENT_FOR_FILES_WITH_UNKNOWN_EXTENSION.bindTo(flagSource);
+        this.failDeploymentForFilesWithUnknownExtension = Flags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION.bindTo(flagSource);
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -686,9 +685,16 @@ public class SessionRepository {
         try {
             app.validateFileExtensions();
         } catch (IllegalArgumentException e) {
-            if (failDeploymentForFilesWithUnknownExtension.value())
-                throw e;
-            deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
+            switch (failDeploymentForFilesWithUnknownExtension.value()) {
+                case "FAIL":
+                    throw e;
+                case "LOG":
+                    deployLogger.ifPresent(logger -> logger.logApplicationPackage(Level.WARNING, e.getMessage()));
+                    break;
+                case "NOOP":
+                default:
+                    break;
+            }
         }
 
         return app;
