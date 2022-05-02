@@ -31,7 +31,7 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class AsynchronousSectionedRendererTest {
 
@@ -222,14 +222,14 @@ public class AsynchronousSectionedRendererTest {
         return render(renderer, data);
     }
 
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     public String render(Renderer renderer, DataList data) throws InterruptedException, IOException {
         TestContentChannel contentChannel = new TestContentChannel();
 
         Execution execution = Execution.createRoot(new NoopProcessor(), 0, null);
 
         final ContentChannelOutputStream stream = new ContentChannelOutputStream(contentChannel);
-        ListenableFuture result = renderer.render(stream, new Response(data), execution, null);
+        CompletableFuture<Boolean> result = renderer.renderResponse(stream, new Response(data), execution, null);
 
         int waitCounter = 1000;
         while (!result.isDone()) {

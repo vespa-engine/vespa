@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
@@ -20,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -54,7 +54,6 @@ public class SyncDefaultRendererTestCase {
         assertEquals("text/xml", d.getMimeType());
     }
 
-    @SuppressWarnings({"deprecation", "removal"})
     @Test
     public void testRenderWriterResult() throws InterruptedException, ExecutionException {
         Query q = new Query("/?query=a&tracelevel=5");
@@ -90,7 +89,7 @@ public class SyncDefaultRendererTestCase {
         r.hits().add(gg);
         r.hits().addError(ErrorMessage.createInternalServerError("boom"));
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        ListenableFuture<Boolean> f = d.render(bs, r, null, null);
+        CompletableFuture<Boolean> f = d.renderResponse(bs, r, null, null);
         assertTrue(f.get());
         String summary = Utf8.toString(bs.toByteArray());
         // TODO figure out a reasonably strict and reasonably flexible way to test

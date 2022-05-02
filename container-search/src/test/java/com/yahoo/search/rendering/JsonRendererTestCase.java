@@ -66,6 +66,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
@@ -82,7 +83,7 @@ public class JsonRendererTestCase {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private JsonRenderer originalRenderer;
+    private final JsonRenderer originalRenderer;
     private JsonRenderer renderer;
 
     public JsonRendererTestCase() {
@@ -381,7 +382,6 @@ public class JsonRendererTestCase {
     }
 
     @Test
-    @SuppressWarnings("removal")
     public void testEmptyTracing() throws IOException, InterruptedException, ExecutionException {
         String expected = "{"
                 + "    \"root\": {"
@@ -403,7 +403,7 @@ public class JsonRendererTestCase {
         subQuery.trace("yellow", 1);
         q.trace("marker", 1);
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
+        CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
         assertTrue(f.get());
         String summary = Utf8.toString(bs.toByteArray());
         assertEqualJson(expected, summary);
@@ -445,7 +445,7 @@ public class JsonRendererTestCase {
         execution.search(q);
         new Execution(new Chain<>(), execution.context());
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
+        CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
         assertTrue(f.get());
         String summary = Utf8.toString(bs.toByteArray());
         ObjectMapper m = new ObjectMapper();
@@ -1441,7 +1441,7 @@ public class JsonRendererTestCase {
     @SuppressWarnings("removal")
     private String render(Execution execution, Result r) throws InterruptedException, ExecutionException {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        ListenableFuture<Boolean> f = renderer.render(bs, r, execution, null);
+        CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
         assertTrue(f.get());
         return Utf8.toString(bs.toByteArray());
     }
