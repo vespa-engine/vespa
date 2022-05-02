@@ -248,7 +248,7 @@ protected:
     vespalib::string      _dataFileName;
     vespalib::string      _idxFileName;
     ChunkInfoVector       _chunkInfo;
-    uint64_t              _lastPersistedSerialNum;
+    std::atomic<uint64_t> _lastPersistedSerialNum;
     uint32_t              _dataHeaderLen;
     uint32_t              _idxHeaderLen;
     uint32_t              _numLids;

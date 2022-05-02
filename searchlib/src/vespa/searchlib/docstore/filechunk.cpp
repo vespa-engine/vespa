@@ -240,8 +240,8 @@ FileChunk::updateLidMap(const unique_lock &guard, ISetLid &ds, uint64_t serialNu
                     serialNum = chunkMeta.getLastSerial();
                     addNumBuckets(bucketMap.getNumBuckets());
                     _chunkInfo.push_back(ChunkInfo(chunkMeta.getOffset(), chunkMeta.getSize(), chunkMeta.getLastSerial()));
-                    assert(serialNum >= _lastPersistedSerialNum);
-                    _lastPersistedSerialNum = serialNum;
+                    assert(serialNum >= _lastPersistedSerialNum.load(std::memory_order_relaxed));
+                    _lastPersistedSerialNum.store(serialNum, std::memory_order_relaxed);
                 }
                 _numUniqueBuckets = globalBucketMap.getNumBuckets();
             }
@@ -294,7 +294,7 @@ FileChunk::remove(uint32_t lid, uint32_t size)
 uint64_t
 FileChunk::getLastPersistedSerialNum() const
 {
-    return _lastPersistedSerialNum;
+    return _lastPersistedSerialNum.load(std::memory_order_relaxed);
 }
 
 vespalib::system_time
