@@ -37,7 +37,7 @@ public:
         return _syncedSerial; 
     }
     
-    size_t          size() const { return _sz; }
+    size_t          size() const noexcept { return _sz.load(std::memory_order_relaxed); }
     size_t      byteSize() const {
         return _byteSize.load(std::memory_order_acquire);
     }
@@ -51,6 +51,7 @@ private:
 
     void write(FastOS_FileInterface &file, SerialNumRange range, vespalib::ConstBufferRef buf);
     void writeHeader(const common::FileHeaderContext &fileHeaderContext);
+    void set_size(size_t sz) noexcept { _sz.store(sz, std::memory_order_relaxed); }
 
     class SkipInfo
     {
@@ -72,7 +73,7 @@ private:
     std::mutex            _lock;
     std::mutex            _fileLock;
     SerialNumRange        _range;
-    size_t                _sz;
+    std::atomic<size_t>   _sz;
     std::atomic<uint64_t> _byteSize;
     vespalib::string      _fileName;
     std::unique_ptr<FastOS_FileInterface> _transLog;

@@ -232,7 +232,7 @@ DomainPart::buildPacketMapping(bool allowTruncate)
         const int64_t firstPos(currPos);
         Packet packet = readPacket(transLog, all, TARGET_PACKET_SIZE, allowTruncate);
         if (!packet.empty()) {
-            _sz += packet.size();
+            set_size(size() + packet.size());
             const SerialNum firstSerial = packet.range().from();
             if (currPos == _headerLen) {
                 _range.from(firstSerial);
@@ -384,7 +384,7 @@ DomainPart::commit(const SerializedChunk & serialized)
 
     int64_t firstPos(byteSize());
     assert(_range.to() < range.to());
-    _sz += serialized.getNumEntries();
+    set_size(size() + serialized.getNumEntries());
     _range.to(range.to());
     if (_range.from() == 0) {
         _range.from(range.from());
