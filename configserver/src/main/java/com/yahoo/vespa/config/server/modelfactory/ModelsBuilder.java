@@ -181,8 +181,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                applicationPackage,
                                                                applicationId,
                                                                wantedDockerImageRepository,
-                                                               wantedNodeVespaVersion,
-                                                               allocatedHosts.asOptional());
+                                                               wantedNodeVespaVersion);
             allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
             builtModelVersions.add(latestModelVersion);
         }
@@ -202,8 +201,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                              applicationPackage,
                                                              applicationId,
                                                              wantedDockerImageRepository,
-                                                             wantedNodeVespaVersion,
-                                                             allocatedHosts.asOptional());
+                                                             wantedNodeVespaVersion);
                 allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
                 builtModelVersions.add(modelVersion);
             } catch (RuntimeException e) {
@@ -259,7 +257,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
                                                      ApplicationId applicationId, Optional<DockerImage> dockerImageRepository,
-                                                     Version wantedNodeVespaVersion, Optional<AllocatedHosts> allocatedHosts);
+                                                     Version wantedNodeVespaVersion);
 
     /**
      * Returns a host provisioner returning the previously allocated hosts if available and when on hosted Vespa,

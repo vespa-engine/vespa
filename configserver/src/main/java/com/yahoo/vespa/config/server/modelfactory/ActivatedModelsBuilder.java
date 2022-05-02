@@ -97,9 +97,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                             ApplicationPackage applicationPackage,
                                             ApplicationId applicationId,
                                             Optional<DockerImage> wantedDockerImageRepository,
-                                            Version wantedNodeVespaVersion,
-                                            Optional<AllocatedHosts> ignored // Ignored since we have this in the app package for activated models
-    ) {
+                                            Version wantedNodeVespaVersion) {
         log.log(Level.FINE, () -> String.format("Loading model version %s for session %s application %s",
                                                 modelFactory.version(), applicationGeneration, applicationId));
         ModelContext.Properties modelContextProperties = createModelContextProperties(applicationId, wantedNodeVespaVersion, applicationPackage);

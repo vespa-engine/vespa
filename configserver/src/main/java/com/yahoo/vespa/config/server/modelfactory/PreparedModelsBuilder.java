@@ -90,8 +90,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     ApplicationPackage applicationPackage,
                                                     ApplicationId applicationId,
                                                     Optional<DockerImage> wantedDockerImageRepository,
-                                                    Version wantedNodeVespaVersion,
-                                                    Optional<AllocatedHosts> allocatedHosts) {
+                                                    Version wantedNodeVespaVersion) {
         Version modelVersion = modelFactory.version();
         log.log(Level.FINE, () -> "Building model " + modelVersion + " for " + applicationId);
 

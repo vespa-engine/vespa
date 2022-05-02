@@ -364,18 +364,16 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
                                                                            DeployState deployState) {
             var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();
-            if (clusterControllers.getContainers().isEmpty()) {
-                int index = 0;
-                for (HostResource host : hosts) {
-                    int ccIndex = host.spec().membership().map(ClusterMembership::index).orElse(index);
-                    boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
-                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, runStandaloneZooKeeper, deployState, retired);
-                    clusterControllerContainer.setHostResource(host);
-                    clusterControllerContainer.initService(deployState);
-                    clusterControllerContainer.setProp("clustertype", "admin");
-                    containers.add(clusterControllerContainer);
-                    ++index;
-                }
+            int index = 0;
+            for (HostResource host : hosts) {
+                int ccIndex = host.spec().membership().map(ClusterMembership::index).orElse(index);
+                boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
+                var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, runStandaloneZooKeeper, deployState, retired);
+                clusterControllerContainer.setHostResource(host);
+                clusterControllerContainer.initService(deployState);
+                clusterControllerContainer.setProp("clustertype", "admin");
+                containers.add(clusterControllerContainer);
+                ++index;
             }
             clusterControllers.addContainers(containers);
             return clusterControllers;
