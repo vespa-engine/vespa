@@ -2,8 +2,13 @@
 package com.yahoo.vespa.hosted.controller.api.integration.organization;
 
 
+import com.yahoo.vespa.hosted.controller.api.integration.jira.JiraIssue;
+
+import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * @author jonmv
@@ -19,12 +24,22 @@ public interface IssueHandler {
     IssueId file(Issue issue);
 
     /**
+     * Returns all open issues similar to the given.
+     *
+     * @param issue The issue to search for; relevant fields are the summary and the owner (propertyId).
+     * @return All open, similar issues.
+     */
+    List<IssueInfo> findAllBySimilarity(Issue issue);
+
+    /**
      * Returns the ID of this issue, if it exists and is open, based on a similarity search.
      *
      * @param issue The issue to search for; relevant fields are the summary and the owner (propertyId).
      * @return ID of the issue, if it is found.
      */
-    Optional<IssueId> findBySimilarity(Issue issue);
+    default Optional<IssueId> findBySimilarity(Issue issue) {
+        return findAllBySimilarity(issue).stream().findFirst().map(IssueInfo::id);
+    }
 
     /**
      * Update the description of the issue with the given ID.
@@ -108,4 +123,8 @@ public interface IssueHandler {
      * @throws RuntimeException exception if project not found
      */
     ProjectInfo projectInfo(String projectKey);
+
+    /** Upload an attachment to the issue, with indicated filename, from the given input stream. */
+    void addAttachment(IssueId id, String filename, Supplier<InputStream> contentAsStream);
+
 }

@@ -79,9 +79,9 @@ public abstract class AbstractHttpClient implements HttpClient {
                                                                              .asURI())
                                                               .build();
             builder.headers.forEach((name, values) -> values.forEach(value -> request.setHeader(name, value)));
-            request.setEntity(builder.entity);
 
-            try {
+            try (HttpEntity entity = builder.entity.get()) {
+                request.setEntity(entity);
                 try {
                     return handler.apply(execute(request, contextWithTimeout(builder)), request);
                 }
@@ -90,16 +90,15 @@ public abstract class AbstractHttpClient implements HttpClient {
                     throw RetryException.wrap(e, request);
                 }
             }
+            catch (IOException e) {
+                throw new UncheckedIOException("failed closing request entity", e);
+            }
             catch (RetryException e) {
                 if (thrown == null)
                     thrown = e.getCause();
                 else
                     thrown.addSuppressed(e.getCause());
 
-                if (builder.entity != null && ! builder.entity.isRepeatable()) {
-                    log.log(WARNING, "Cannot retry " + request + " as entity is not repeatable");
-                    break;
-                }
                 log.log(FINE, e.getCause(), () -> request + " failed; will retry");
             }
         }
@@ -152,7 +151,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         private HttpURL.Query query = Query.empty();
         private List<Supplier<Query>> dynamicQuery = new ArrayList<>();
         private Map<String, List<String>> headers = new LinkedHashMap<>();
-        private HttpEntity entity;
+        private Supplier<HttpEntity> entity = () -> null;
         private RequestConfig config = HttpClient.defaultRequestConfig;
         private ResponseVerifier verifier = HttpClient.throwOnError;
         private ExceptionHandler catcher = HttpClient.retryAll;
@@ -178,7 +177,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         }
 
         @Override
-        public RequestBuilder body(HttpEntity entity) {
+        public RequestBuilder body(Supplier<HttpEntity> entity) {
             this.entity = requireNonNull(entity);
             return this;
         }

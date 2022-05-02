@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.api;
 
+import com.yahoo.yolean.Exceptions;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -51,26 +53,26 @@ public class MultiPartStreamer {
 
     /** Adds the given data as a named part in this, using the given content type. */
     public MultiPartStreamer addData(String name, String type, String data) {
-        streams.add(() -> separator(name, type));
-        streams.add(() -> asStream(data));
-
-        return this;
+        return addData(name, type, null, () -> asStream(data));
     }
 
     /** Adds the given data as a named part in this, using the {@code "application/octet-stream" content type}. */
     public MultiPartStreamer addBytes(String name, byte[] bytes) {
-        streams.add(() -> separator(name, "application/octet-stream"));
-        streams.add(() -> new ByteArrayInputStream(bytes));
+        return addData(name, "application/octet-stream", null, () -> new ByteArrayInputStream(bytes));
+    }
+
+    /** Adds the given data as a named part in this, using the given content type. */
+    public MultiPartStreamer addData(String name, String type, String filename, Supplier<InputStream> data) {
+        streams.add(() -> separator(name, filename, type));
+        streams.add(data);
 
         return this;
     }
 
     /** Adds the contents of the file at the given path as a named part in this. */
     public MultiPartStreamer addFile(String name, Path path) {
-        streams.add(() -> separator(name, path));
-        streams.add(() -> asStream(path));
-
-        return this;
+        String type = Exceptions.uncheck(() -> Files.probeContentType(path));
+        return addData(name, type != null ? type : "application/octet-stream", path.getFileName().toString(), () -> asStream(path));
     }
 
     /**
@@ -107,16 +109,15 @@ public class MultiPartStreamer {
     }
 
     /** Returns the separator to put between one part and the next, when this is a string. */
-    private InputStream separator(String name, String contentType) {
-        return asStream(disposition(name) + type(contentType));
+    private InputStream separator(String name, String filename, String contentType) {
+        return asStream(disposition(name) + (filename == null ? "" : "; filename=\"" + filename + "\"") + type(contentType));
     }
 
     /** Returns the separator to put between one part and the next, when this is a file. */
     private InputStream separator(String name, Path path) {
         try {
             String contentType = Files.probeContentType(path);
-            return asStream(disposition(name) + "; filename=\"" + path.getFileName() + "\"" +
-                            type(contentType != null ? contentType : "application/octet-stream"));
+            return separator(name, path.getFileName().toString(), contentType != null ? contentType : "application/octet-stream");
         }
         catch (IOException e) {
             throw new UncheckedIOException(e);
