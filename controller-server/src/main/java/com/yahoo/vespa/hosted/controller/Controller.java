@@ -123,7 +123,7 @@ public class Controller extends AbstractComponent {
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         archiveBucketDb = new CuratorArchiveBucketDb(this);
-        notifier = new Notifier(curator, serviceRegistry.zoneRegistry(), serviceRegistry.mailer());
+        notifier = new Notifier(curator, serviceRegistry.zoneRegistry(), serviceRegistry.mailer(), flagSource);
         notificationsDb = new NotificationsDb(this);
         supportAccessControl = new SupportAccessControl(this);
 
