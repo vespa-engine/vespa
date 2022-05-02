@@ -64,7 +64,7 @@ public final class SchemaInfo implements SchemaInfoConfig.Producer {
     private void addSummaryConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
         for (var summary : summaries.asList()) {
             var summaryBuilder = new SchemaInfoConfig.Schema.Summaryclass.Builder();
-            summaryBuilder.id(summary.id()).name(summary.getName());
+            summaryBuilder.name(summary.getName());
             for (var field : summary.fields().values()) {
                 var fieldsBuilder = new SchemaInfoConfig.Schema.Summaryclass.Fields.Builder();
                 fieldsBuilder.name(field.getName())

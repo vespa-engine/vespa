@@ -4,8 +4,6 @@ namespace=search.config
 ## The name of this schema
 schema[].name string
 
-## The id of the summary class
-schema[].summaryclass[].id int
 ## The name of the summary class
 schema[].summaryclass[].name string
 ## The name of a field in the summary class
