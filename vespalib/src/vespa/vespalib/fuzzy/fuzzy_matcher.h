@@ -25,6 +25,7 @@ private:
 
     uint32_t _max_edit_distance; // max edit distance
     uint32_t _prefix_size;       // prefix of a term that is considered frozen, i.e. non-fuzzy
+    bool     _is_cased;
 
     std::vector<uint32_t> _folded_term_codepoints;
 
@@ -32,37 +33,13 @@ private:
     std::span<const uint32_t> _folded_term_codepoints_suffix;
 
 public:
-    FuzzyMatcher():
-            _max_edit_distance(DefaultMaxEditDistance),
-            _prefix_size(DefaultPrefixSize),
-            _folded_term_codepoints(),
-            _folded_term_codepoints_prefix(),
-            _folded_term_codepoints_suffix()
-    {}
+    FuzzyMatcher();
 
-    FuzzyMatcher(const std::vector<uint32_t>&& codepoints):
-            _max_edit_distance(DefaultMaxEditDistance),
-            _prefix_size(DefaultPrefixSize),
-            _folded_term_codepoints(codepoints),
-            _folded_term_codepoints_prefix(get_prefix(_folded_term_codepoints, _prefix_size)),
-            _folded_term_codepoints_suffix(get_suffix(_folded_term_codepoints, _prefix_size))
-    {}
-
-    FuzzyMatcher(const std::vector<uint32_t>&& codepoints, uint32_t max_edit_distance, uint32_t prefix_size):
-            _max_edit_distance(max_edit_distance),
-            _prefix_size(prefix_size),
-            _folded_term_codepoints(codepoints),
-            _folded_term_codepoints_prefix(get_prefix(_folded_term_codepoints, _prefix_size)),
-            _folded_term_codepoints_suffix(get_suffix(_folded_term_codepoints, _prefix_size))
-    {}
+    FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased);
 
     [[nodiscard]] bool isMatch(std::string_view target) const;
 
     [[nodiscard]] vespalib::string getPrefix() const;
-
-    ///
-
-    static FuzzyMatcher from_term(std::string_view term, uint32_t maxEditDistance, uint32_t prefixLength);
 
     static std::span<const uint32_t> get_prefix(const std::vector<uint32_t>& termCodepoints, uint32_t prefixLength);
 

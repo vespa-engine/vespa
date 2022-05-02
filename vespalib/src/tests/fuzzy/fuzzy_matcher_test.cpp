@@ -33,7 +33,7 @@ TEST(FuzzyMatcherTest, get_suffix_edge_cases) {
 }
 
 TEST(FuzzyMatcherTest, fuzzy_match_empty_prefix) {
-    FuzzyMatcher fuzzy = FuzzyMatcher::from_term("abc", 2, 0);
+    FuzzyMatcher fuzzy("abc", 2, 0, false);
     EXPECT_TRUE(fuzzy.isMatch("abc"));
     EXPECT_TRUE(fuzzy.isMatch("ABC"));
     EXPECT_TRUE(fuzzy.isMatch("ab1"));
@@ -41,8 +41,16 @@ TEST(FuzzyMatcherTest, fuzzy_match_empty_prefix) {
     EXPECT_FALSE(fuzzy.isMatch("123"));
 }
 
+TEST(FuzzyMatcherTest, fuzzy_match_cased) {
+    FuzzyMatcher fuzzy("abc", 2, 0, true);
+    EXPECT_TRUE(fuzzy.isMatch("abc"));
+    EXPECT_TRUE(fuzzy.isMatch("abC"));
+    EXPECT_TRUE(fuzzy.isMatch("aBC"));
+    EXPECT_FALSE(fuzzy.isMatch("ABC"));
+}
+
 TEST(FuzzyMatcherTest, fuzzy_match_with_prefix) {
-    FuzzyMatcher fuzzy = FuzzyMatcher::from_term("abcdef", 2, 2);
+    FuzzyMatcher fuzzy("abcdef", 2, 2, false);
     EXPECT_TRUE(fuzzy.isMatch("abcdef"));
     EXPECT_TRUE(fuzzy.isMatch("ABCDEF"));
     EXPECT_TRUE(fuzzy.isMatch("abcde1"));
@@ -52,12 +60,12 @@ TEST(FuzzyMatcherTest, fuzzy_match_with_prefix) {
 }
 
 TEST(FuzzyMatcherTest, get_prefix_is_empty) {
-    FuzzyMatcher fuzzy = FuzzyMatcher::from_term("whatever", 2, 0);
+    FuzzyMatcher fuzzy("whatever", 2, 0, false);
     EXPECT_EQ(fuzzy.getPrefix(), "");
 }
 
 TEST(FuzzyMatcherTest, term_is_empty) {
-    FuzzyMatcher fuzzy = FuzzyMatcher::from_term("", 2, 0);
+    FuzzyMatcher fuzzy("", 2, 0, false);
     EXPECT_TRUE(fuzzy.isMatch(""));
     EXPECT_TRUE(fuzzy.isMatch("a"));
     EXPECT_TRUE(fuzzy.isMatch("aa"));
@@ -65,7 +73,7 @@ TEST(FuzzyMatcherTest, term_is_empty) {
 }
 
 TEST(FuzzyMatcherTest, get_prefix_non_empty) {
-    FuzzyMatcher fuzzy = FuzzyMatcher::from_term("abcd", 2, 2);
+    FuzzyMatcher fuzzy("abcd", 2, 2, false);
     EXPECT_EQ(fuzzy.getPrefix(), "ab");
 }
 
