@@ -11,6 +11,7 @@
         <version>7-SNAPSHOT</version>
 	<relativePath>../parent/pom.xml</relativePath>
     </parent>
+    <packaging>container-plugin</packaging>
     <artifactId>http-client</artifactId>
     <description>HTTP client wrapper around an Apache http client 5</description>
 
