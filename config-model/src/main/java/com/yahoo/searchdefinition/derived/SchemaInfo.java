@@ -62,22 +62,6 @@ public final class SchemaInfo implements SchemaInfoConfig.Producer {
     }
 
     private void addSummaryConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {
-        /*
-        for (SummaryConfig.Classes sclass : summaryConfig.classes()) {
-            DocumentdbInfoConfig.Documentdb.Summaryclass.Builder sumClassBuilder = new DocumentdbInfoConfig.Documentdb.Summaryclass.Builder();
-            sumClassBuilder.
-                    id(sclass.id()).
-                    name(sclass.name()); ------- kommet hit
-            for (SummaryConfig.Classes.Fields field : sclass.fields()) {
-                DocumentdbInfoConfig.Documentdb.Summaryclass.Fields.Builder fieldsBuilder = new DocumentdbInfoConfig.Documentdb.Summaryclass.Fields.Builder();
-                fieldsBuilder.name(field.name())
-                             .type(field.type())
-                             .dynamic(isDynamic(field.name(), summarymapConfig));
-                sumClassBuilder.fields(fieldsBuilder);
-            }
-            docDb.summaryclass(sumClassBuilder);
-        }
-         */
         for (var summary : summaries.asList()) {
             var summaryBuilder = new SchemaInfoConfig.Schema.Summaryclass.Builder();
             summaryBuilder.id(summary.id()).name(summary.getName());
