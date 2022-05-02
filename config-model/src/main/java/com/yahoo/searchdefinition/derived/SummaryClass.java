@@ -54,6 +54,8 @@ public class SummaryClass extends Derived {
         this.id = deriveId(summary.getName(), fields);
     }
 
+    public int id() { return id; }
+
     /** MUST be called after all other fields are added */
     private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
         if (summary.getName().equals("default")) {

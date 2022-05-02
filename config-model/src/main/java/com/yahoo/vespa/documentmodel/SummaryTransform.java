@@ -24,7 +24,7 @@ public enum SummaryTransform {
     MATCHED_ELEMENTS_FILTER("matchedelementsfilter"),
     MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter");
 
-    private String name;
+    private final String name;
 
     SummaryTransform(String name) {
         this.name=name;

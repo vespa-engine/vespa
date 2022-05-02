@@ -7,6 +7,8 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.config.search.SummarymapConfig;
+import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.search.SearchCluster;
 
 import java.util.Collection;
@@ -27,16 +29,22 @@ public final class SchemaInfo implements SchemaInfoConfig.Producer {
     // The rank profile registry itself is not kept around due to its size.
     private final Map<String, RankProfileInfo> rankProfiles;
 
-    public SchemaInfo(Schema schema, RankProfileRegistry rankProfileRegistry) {
+    private final Summaries summaries;
+    private final SummaryMap summaryMap;
+
+    public SchemaInfo(Schema schema, RankProfileRegistry rankProfileRegistry,
+                      Summaries summaries, SummaryMap summaryMap) {
         this.schema = schema;
         this.rankProfiles = Collections.unmodifiableMap(toRankProfiles(rankProfileRegistry.rankProfilesOf(schema)));
+        this.summaries = summaries;
+        this.summaryMap = summaryMap;
     }
 
-    public String name() {return schema.getName();}
+    public String name() { return schema.getName(); }
 
-    public Schema fullSchema() {return schema;}
+    public Schema fullSchema() { return schema; }
 
-    public Map<String, RankProfileInfo> rankProfiles() {return rankProfiles;}
+    public Map<String, RankProfileInfo> rankProfiles() { return rankProfiles; }
 
     private Map<String, RankProfileInfo> toRankProfiles(Collection<RankProfile> rankProfiles) {
         Map<String, RankProfileInfo> rankProfileInfos = new LinkedHashMap<>();
@@ -70,12 +78,30 @@ public final class SchemaInfo implements SchemaInfoConfig.Producer {
             docDb.summaryclass(sumClassBuilder);
         }
          */
-        /*
-        for (var summary : schema.getSummaries().values()) {
+        for (var summary : summaries.asList()) {
             var summaryBuilder = new SchemaInfoConfig.Schema.Summaryclass.Builder();
             summaryBuilder.id(summary.id()).name(summary.getName());
+            for (var field : summary.fields().values()) {
+                var fieldsBuilder = new SchemaInfoConfig.Schema.Summaryclass.Fields.Builder();
+                fieldsBuilder.name(field.getName())
+                             .type(field.getType().getName())
+                             .dynamic(isDynamic(field.getName()));
+                summaryBuilder.fields(fieldsBuilder);
+            }
+            schemaBuilder.summaryclass(summaryBuilder);
         }
-         */
+    }
+
+    /** Returns whether the given field is a dynamic summary field. */
+    private boolean isDynamic(String fieldName) {
+        if (summaryMap == null) return false; // not know for streaming, but also not used
+
+        var fieldTransform = summaryMap.resultTransforms().get(fieldName);
+        if (fieldTransform == null) return false;
+        // TODO: Move this into SummaryTransform and call it something else than "dynamic"
+        return fieldTransform.getTransform().isDynamic() ||
+               fieldTransform.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER ||
+               fieldTransform.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER;
     }
 
     private void addRankProfilesConfig(SchemaInfoConfig.Schema.Builder schemaBuilder) {

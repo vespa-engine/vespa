@@ -243,8 +243,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                 throw new IllegalArgumentException("Schema '" + schemaDefinitionXMLHandler.getName() + "' referenced in " +
                                                    this + " does not exist");
 
-            sc.add(new SchemaInfo(schema,
-                                  deployState.rankProfileRegistry()));
+            sc.add(new SchemaInfo(schema, deployState.rankProfileRegistry(), null, null));
         }
     }
 

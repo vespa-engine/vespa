@@ -6,6 +6,8 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.config.search.SummaryConfig;
+
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -16,18 +18,23 @@ import java.util.List;
 public class Summaries extends Derived implements SummaryConfig.Producer {
 
     private final boolean useV8GeoPositions;
-    private final List<SummaryClass> summaries = new java.util.ArrayList<>(1);
+    private final List<SummaryClass> summaries;
 
     public Summaries(Schema schema, DeployLogger deployLogger, ModelContext.FeatureFlags featureFlags) {
         super();
         this.useV8GeoPositions = featureFlags.useV8GeoPositions();
+
         // Make sure the default is first
+        List<SummaryClass> summaries = new ArrayList<>();
         summaries.add(new SummaryClass(schema, schema.getSummary("default"), deployLogger));
         for (DocumentSummary summary : schema.getSummaries().values()) {
             if (!summary.getName().equals("default"))
                 summaries.add(new SummaryClass(schema, summary, deployLogger));
         }
+        this.summaries = List.copyOf(summaries);
     }
+
+    public List<SummaryClass> asList() { return summaries; }
 
     @Override
     protected String getDerivedName() { return "summary"; }
@@ -40,4 +47,5 @@ public class Summaries extends Derived implements SummaryConfig.Producer {
             builder.classes(summaryClass.getSummaryClassConfig());
         }
     }    
+
 }

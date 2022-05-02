@@ -100,7 +100,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
                                                   queryProfiles, importedModels, deployProperties, executor);
             indexingScript = new IndexingScript(schema);
             indexInfo = new IndexInfo(schema);
-            schemaInfo = new SchemaInfo(schema, rankProfileRegistry);
+            schemaInfo = new SchemaInfo(schema, rankProfileRegistry, summaries, summaryMap);
             indexSchema = new IndexSchema(schema);
             importedFields = new ImportedFields(schema);
         }

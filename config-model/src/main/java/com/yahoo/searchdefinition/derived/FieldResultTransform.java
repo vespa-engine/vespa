@@ -6,19 +6,19 @@ import com.yahoo.vespa.documentmodel.SummaryTransform;
 /**
  * The result transformation of a named field
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class FieldResultTransform {
 
-    private String fieldName;
+    private final String fieldName;
 
     private SummaryTransform transform;
 
-    private String argument;
+    private final String argument;
 
-    public FieldResultTransform(String fieldName,SummaryTransform transform,String argument) {
-        this.fieldName=fieldName;
-        this.transform=transform;
+    public FieldResultTransform(String fieldName, SummaryTransform transform, String argument) {
+        this.fieldName = fieldName;
+        this.transform = transform;
         this.argument = argument;
     }
 
@@ -26,18 +26,19 @@ public class FieldResultTransform {
 
     public SummaryTransform getTransform() { return transform; }
 
-    public void setTransform(SummaryTransform transform) { this.transform=transform; }
+    public void setTransform(SummaryTransform transform) { this.transform = transform; }
 
     /** Returns the argument of this (used as input to the backend docsum rewriter) */
     public String getArgument() { return argument; }
 
     public int hashCode() {
-        return fieldName.hashCode() + 11*transform.hashCode() + 17* argument.hashCode();
+        return fieldName.hashCode() + 11 * transform.hashCode() + 17 * argument.hashCode();
     }
 
+    @Override
     public boolean equals(Object o) {
         if (! (o instanceof FieldResultTransform)) return false;
-        FieldResultTransform other=(FieldResultTransform)o;
+        FieldResultTransform other = (FieldResultTransform)o;
 
         return
             this.fieldName.equals(other.fieldName) &&
@@ -45,10 +46,12 @@ public class FieldResultTransform {
             this.argument.equals(other.argument);
     }
 
+    @Override
     public String toString() {
-        String sourceString="";
+        String sourceString = "";
         if ( ! argument.equals(fieldName))
-            sourceString=" (argument: " + argument + ")";
+            sourceString = " (argument: " + argument + ")";
         return "field " + fieldName + ": " + transform + sourceString;
     }
+
 }

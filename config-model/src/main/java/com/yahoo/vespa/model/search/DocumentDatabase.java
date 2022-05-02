@@ -87,7 +87,6 @@ public class DocumentDatabase extends AbstractConfigProducer<DocumentDatabase> i
 
     @Override
     public void getConfig(SummarymapConfig.Builder builder) { derivedCfg.getSummaryMap().getConfig(builder); }
-
     @Override
     public void getConfig(SummaryConfig.Builder builder) { derivedCfg.getSummaries().getConfig(builder); }
 
