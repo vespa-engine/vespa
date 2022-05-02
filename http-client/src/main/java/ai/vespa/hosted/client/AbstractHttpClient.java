@@ -151,7 +151,7 @@ public abstract class AbstractHttpClient implements HttpClient {
         private HttpURL.Query query = Query.empty();
         private List<Supplier<Query>> dynamicQuery = new ArrayList<>();
         private Map<String, List<String>> headers = new LinkedHashMap<>();
-        private Supplier<HttpEntity> entity;
+        private Supplier<HttpEntity> entity = () -> null;
         private RequestConfig config = HttpClient.defaultRequestConfig;
         private ResponseVerifier verifier = HttpClient.throwOnError;
         private ExceptionHandler catcher = HttpClient.retryAll;
