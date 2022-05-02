@@ -165,6 +165,11 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
+        public static Context createContextStub(SchemaInfo schemaInfo) {
+            return createContextStub(null, null, schemaInfo, null);
+        }
+
+        /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts) {
             return createContextStub(searchChainRegistry, indexFacts, SchemaInfo.empty(), null);
         }
