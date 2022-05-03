@@ -3,7 +3,9 @@ package com.yahoo.search.schema;
 
 import com.yahoo.tensor.TensorType;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -23,7 +25,7 @@ public class RankProfile {
         this.name = builder.name;
         this.hasSummaryFeatures = builder.hasSummaryFeatures;
         this.hasRankFeatures = builder.hasRankFeatures;
-        this.inputs = Map.copyOf(builder.inputs);
+        this.inputs = Collections.unmodifiableMap(builder.inputs);
     }
 
     public String name() { return name; }
@@ -64,7 +66,7 @@ public class RankProfile {
         private final String name;
         private boolean hasSummaryFeatures = true;
         private boolean hasRankFeatures = true;
-        private final Map<String, TensorType> inputs = new HashMap<>();
+        private final Map<String, TensorType> inputs = new LinkedHashMap<>();
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);

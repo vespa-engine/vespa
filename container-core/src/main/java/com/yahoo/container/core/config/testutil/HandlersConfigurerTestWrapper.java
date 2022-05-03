@@ -33,10 +33,10 @@ import java.util.concurrent.Executors;
  * Not for public use.
  *
  * If possible, please avoid using this class and HandlersConfigurer in your tests
+ *
  * @author Tony Vaagenes
  * @author gjoranv
- *
-*/
+ */
 public class HandlersConfigurerTestWrapper {
 
     @SuppressWarnings("removal") // TODO Vespa 8: remove
@@ -57,6 +57,7 @@ public class HandlersConfigurerTestWrapper {
             "qr-templates.cfg",
             "documentmanager.cfg",
             "schemamapping.cfg",
+            "schema-info.cfg",
             "chains.cfg",
             "container-mbus.cfg",
             "container-mbus.cfg",

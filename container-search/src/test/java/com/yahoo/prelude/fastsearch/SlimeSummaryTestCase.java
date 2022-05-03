@@ -10,6 +10,8 @@ import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.StructuredData;
+import com.yahoo.search.schema.DocumentSummary;
+import com.yahoo.search.schema.Schema;
 import com.yahoo.slime.BinaryFormat;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
@@ -43,7 +45,7 @@ public class SlimeSummaryTestCase {
 
     @Test
     public void testDecodingEmpty() {
-        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
         assertNull(docsum.lazyDecode("default", emptySummary(), hit));
         assertNull(hit.getField("integer_field"));
@@ -69,7 +71,7 @@ public class SlimeSummaryTestCase {
 
     @Test
     public void testTimeout() {
-        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
         assertEquals("Hit hit index:null/0/000000000000000000000000 (relevance 0.0) [fasthit, globalid: 0 0 0 0 0 0 0 0 0 0 0 0, partId: 0, distributionkey: 0] failed: Timed out....",
                      docsum.lazyDecode("default", timeoutSummary(), hit));
@@ -79,7 +81,7 @@ public class SlimeSummaryTestCase {
     public void testDecoding() {
         Tensor tensor1 = Tensor.from("tensor(x{},y{}):{{x:foo,y:bar}:0.1}");
         Tensor tensor2 = Tensor.from("tensor(x[1],y[1]):{{x:0,y:0}:-0.3}");
-        DocsumDefinitionSet docsum = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet docsum = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
         assertNull(docsum.lazyDecode("default", fullSummary(tensor1, tensor2), hit));
         assertEquals(4, hit.getField("integer_field"));
@@ -127,10 +129,10 @@ public class SlimeSummaryTestCase {
 
     @Test
     public void testFieldAccessAPI() {
-        DocsumDefinitionSet partialDocsum1 = createDocsumDefinitionSet(partial_summary1_cf);
-        DocsumDefinitionSet partialDocsum2 = createDocsumDefinitionSet(partial_summary2_cf);
-        DocsumDefinitionSet partialDocsum3 = createDocsumDefinitionSet(partial_summary3_cf);
-        DocsumDefinitionSet fullDocsum = createDocsumDefinitionSet(summary_cf);
+        DocsumDefinitionSet partialDocsum1 = createPartialDocsumDefinitionSet1();
+        DocsumDefinitionSet partialDocsum2 = createPartialDocsumDefinitionSet2();
+        DocsumDefinitionSet partialDocsum3 = createPartialDocsumDefinitionSet3();
+        DocsumDefinitionSet fullDocsum = createDocsumDefinitionSet();
         FastHit hit = new FastHit();
         Map<String, Object> expected = new HashMap<>();
 
@@ -437,14 +439,59 @@ public class SlimeSummaryTestCase {
         return buf.array();
     }
 
-    private DocsumDefinitionSet createDocsumDefinitionSet(String configID) {
-        DocumentdbInfoConfig config = new ConfigGetter<>(DocumentdbInfoConfig.class).getConfig(configID);
-        return new DocsumDefinitionSet(config.documentdb(0));
+    private DocsumDefinitionSet createDocsumDefinitionSet() {
+        var schema = new Schema.Builder("test");
+        var summary = new DocumentSummary.Builder("default");
+        summary.add(new DocumentSummary.Field("integer_field", "integer"));
+        summary.add(new DocumentSummary.Field("short_field", "short"));
+        summary.add(new DocumentSummary.Field("byte_field", "byte"));
+        summary.add(new DocumentSummary.Field("float_field", "float"));
+        summary.add(new DocumentSummary.Field("double_field", "double"));
+        summary.add(new DocumentSummary.Field("int64_field", "int64"));
+        summary.add(new DocumentSummary.Field("string_field", "string"));
+        summary.add(new DocumentSummary.Field("data_field", "data"));
+        summary.add(new DocumentSummary.Field("longstring_field", "longstring"));
+        summary.add(new DocumentSummary.Field("longdata_field", "longdata"));
+        summary.add(new DocumentSummary.Field("xmlstring_field", "xmlstring"));
+        summary.add(new DocumentSummary.Field("jsonstring_field", "jsonstring"));
+        summary.add(new DocumentSummary.Field("tensor_field1", "tensor"));
+        summary.add(new DocumentSummary.Field("tensor_field2", "tensor"));
+        summary.add(new DocumentSummary.Field("summaryfeatures", "featuredata"));
+        schema.add(summary.build());
+        return new DocsumDefinitionSet(schema.build());
+    }
+
+    private DocsumDefinitionSet createPartialDocsumDefinitionSet1() {
+        var schema = new Schema.Builder("test");
+        var summary = new DocumentSummary.Builder("default");
+        summary.add(new DocumentSummary.Field("integer_field", "integer"));
+        summary.add(new DocumentSummary.Field("short_field", "short"));
+        schema.add(summary.build());
+        return new DocsumDefinitionSet(schema.build());
+    }
+
+    private DocsumDefinitionSet createPartialDocsumDefinitionSet2() {
+        var schema = new Schema.Builder("test");
+        var summary = new DocumentSummary.Builder("default");
+        summary.add(new DocumentSummary.Field("integer_field", "integer"));
+        summary.add(new DocumentSummary.Field("float_field", "float"));
+        summary.add(new DocumentSummary.Field("double_field", "double"));
+        schema.add(summary.build());
+        return new DocsumDefinitionSet(schema.build());
+    }
+
+    private DocsumDefinitionSet createPartialDocsumDefinitionSet3() {
+        var schema = new Schema.Builder("test");
+        var summary = new DocumentSummary.Builder("default");
+        summary.add(new DocumentSummary.Field("integer_field", "integer"));
+        summary.add(new DocumentSummary.Field("string_field", "string"));
+        schema.add(summary.build());
+        return new DocsumDefinitionSet(schema.build());
     }
 
     private static class Utf8FieldTraverser implements Hit.RawUtf8Consumer {
 
-        private Map<String, Object> traversed;
+        private final Map<String, Object> traversed;
 
         public Utf8FieldTraverser(Map<String, Object> traversed) {
             this.traversed = traversed;

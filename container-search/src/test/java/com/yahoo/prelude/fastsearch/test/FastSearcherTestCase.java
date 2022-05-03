@@ -24,12 +24,17 @@ import com.yahoo.search.grouping.request.EachOperation;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.result.ErrorMessage;
+import com.yahoo.search.schema.DocumentSummary;
+import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -56,7 +61,8 @@ public class FastSearcherTestCase {
                                                      MockDispatcher.create(Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     SchemaInfo.empty());
 
         String query = "?junkparam=ignored";
         Result result = doSearch(fastSearcher,new Query(query), 0, 10);
@@ -90,7 +96,8 @@ public class FastSearcherTestCase {
                                                      MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 0))),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     SchemaInfo.empty());
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -108,13 +115,18 @@ public class FastSearcherTestCase {
 
     @Test
     public void testSummaryNeedsQuery() {
-        ConfigGetter<DocumentdbInfoConfig> getter = new ConfigGetter<>(DocumentdbInfoConfig.class);
-        DocumentdbInfoConfig config = getter.getConfig("file:src/test/java/com/yahoo/prelude/fastsearch/test/documentdb-info.cfg");
+        var documentDb = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("test")));
+        var schema = new Schema.Builder("test")
+                               .add(new DocumentSummary.Builder("default").build())
+                               .add(new RankProfile.Builder("default").setHasRankFeatures(false)
+                                                                            .setHasSummaryFeatures(false)
+                                                                            .build());
         FastSearcher backend = new FastSearcher("container.0",
                                                 MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 0))),
                                                 new SummaryParameters(null),
                                                 new ClusterParams("testhittype"),
-                                                config);
+                                                documentDb,
+                                                new SchemaInfo(List.of(schema.build()), Map.of()));
         Query q = new Query("?query=foo");
         Result result = doSearch(backend, q, 0, 10);
         assertFalse(backend.summaryNeedsQuery(q));
@@ -133,7 +145,8 @@ public class FastSearcherTestCase {
                                                      dispatcher,
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     documentdbInfoConfig);
+                                                     documentdbInfoConfig,
+                                                     SchemaInfo.empty());
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
