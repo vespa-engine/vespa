@@ -44,8 +44,13 @@ public:
     void * getStart() { return _words; }
     Index size() const { return _sz; }
     Index sizeBytes() const { return numBytes(getActiveSize()); }
+    Word load_word(Index widx) const { return vespalib::atomic::load_ref_relaxed(_words[widx]); }
+    void store_word(Index widx, Word word) { return vespalib::atomic::store_ref_relaxed(_words[widx], word); }
     bool testBit(Index idx) const {
-        return ((_words[wordNum(idx)] & mask(idx)) != 0);
+        return ((load_word(wordNum(idx)) & mask(idx)) != 0);
+    }
+    Index getSizeSafe() const {
+        return vespalib::atomic::load_ref_acquire(_sz);
     }
     bool testBitSafe(Index idx) const {
         auto my_words = vespalib::atomic::load_ref_acquire(_words);
@@ -139,13 +144,13 @@ public:
             // Can only remove the old stopsign if it is ahead of the new.
             clearBit(_sz);
         }
-        _sz = sz;
+        vespalib::atomic::store_ref_release(_sz, sz);
     }
     void setBit(Index idx) {
-        vespalib::atomic::store_ref_relaxed(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
+        store_word(wordNum(idx), _words[wordNum(idx)] | mask(idx));
     }
     void clearBit(Index idx) {
-        vespalib::atomic::store_ref_relaxed(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
+        store_word(wordNum(idx), _words[wordNum(idx)] & ~ mask(idx));
     }
     void flipBit(Index idx) {
         _words[wordNum(idx)] ^= mask(idx);
