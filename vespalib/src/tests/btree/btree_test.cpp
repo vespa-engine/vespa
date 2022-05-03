@@ -1285,6 +1285,23 @@ TEST_F(BTreeTest, require_that_small_nodes_works)
     s.trimHoldLists(g.getFirstUsedGeneration());
 }
 
+namespace {
+
+template <typename TreeStore, typename AdditionsVector, typename RemovalsVector>
+void
+apply_tree_mutations(TreeStore& s,
+                     EntryRef& root,
+                     const AdditionsVector& additions,
+                     const RemovalsVector& removals)
+{
+    s.apply(root, additions.empty() ? nullptr : &additions[0],
+                  additions.empty() ? nullptr : &additions[0] + additions.size(),
+                  removals.empty()  ? nullptr : &removals[0],
+                  removals.empty()  ? nullptr : &removals[0] + removals.size());
+}
+
+}
+
 
 TEST_F(BTreeTest, require_that_apply_works)
 {
@@ -1304,32 +1321,28 @@ TEST_F(BTreeTest, require_that_apply_works)
     additions.clear();
     removals.clear();
     additions.push_back(KeyDataType(40, "fourty"));
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
     removals.clear();
     additions.push_back(KeyDataType(20, "twenty"));
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(2u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
     removals.clear();
     additions.push_back(KeyDataType(60, "sixty"));
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(3u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
     removals.clear();
     additions.push_back(KeyDataType(50, "fifty"));
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(4u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
@@ -1337,8 +1350,7 @@ TEST_F(BTreeTest, require_that_apply_works)
         additions.clear();
         removals.clear();
         additions.push_back(KeyDataType(1000 + i, "big"));
-        s.apply(root, &additions[0], &additions[0] + additions.size(),
-                      &removals[0], &removals[0] + removals.size());
+        apply_tree_mutations(s, root, additions, removals);
         EXPECT_EQ(5u + i, s.size(root));
         EXPECT_EQ(5u + i <= 8u,  s.isSmallArray(root));
     }
@@ -1346,32 +1358,28 @@ TEST_F(BTreeTest, require_that_apply_works)
     additions.clear();
     removals.clear();
     removals.push_back(40);
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(103u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     additions.clear();
     removals.clear();
     removals.push_back(20);
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(102u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     additions.clear();
     removals.clear();
     removals.push_back(50);
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(101u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     for (uint32_t i = 0; i < 100; ++i) {
         additions.clear();
         removals.clear();
         removals.push_back(1000 +i);
-        s.apply(root, &additions[0], &additions[0] + additions.size(),
-                      &removals[0], &removals[0] + removals.size());
+        apply_tree_mutations(s, root, additions, removals);
         EXPECT_EQ(100 - i, s.size(root));
         EXPECT_EQ(100 - i <= 8u,  s.isSmallArray(root));
     }
@@ -1384,14 +1392,12 @@ TEST_F(BTreeTest, require_that_apply_works)
         additions.push_back(KeyDataType(1000 + i, "big"));
     removals.push_back(60);
     removals.push_back(1002);
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(20u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     additions.clear();
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(19u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
@@ -1401,8 +1407,7 @@ TEST_F(BTreeTest, require_that_apply_works)
         additions.push_back(KeyDataType(1100 + i, "big"));
     for (uint32_t i = 0; i < 10; ++i)
         removals.push_back(1000 + i);
-    s.apply(root, &additions[0], &additions[0] + additions.size(),
-                  &removals[0], &removals[0] + removals.size());
+    apply_tree_mutations(s, root, additions, removals);
     EXPECT_EQ(30u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
