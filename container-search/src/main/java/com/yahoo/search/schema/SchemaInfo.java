@@ -2,13 +2,17 @@
 package com.yahoo.search.schema;
 
 import com.yahoo.api.annotations.Beta;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -39,11 +43,12 @@ public class SchemaInfo {
 
     private static final SchemaInfo empty = new SchemaInfo(List.of(), Map.of());
 
-    private final List<Schema> schemas;
+    private final Map<String, Schema> schemas;
 
     /** The schemas contained in each content cluster indexed by cluster name */
     private final Map<String, List<String>> clusters;
 
+    @Inject
     public SchemaInfo(IndexInfoConfig indexInfo, // will be used in the future
                       SchemaInfoConfig schemaInfoConfig,
                       QrSearchersConfig qrSearchersConfig) {
@@ -51,12 +56,14 @@ public class SchemaInfo {
     }
 
     public SchemaInfo(List<Schema> schemas, Map<String, List<String>> clusters) {
-        this.schemas = List.copyOf(schemas);
-        this.clusters = Map.copyOf(clusters);
+        Map<String, Schema> schemaMap = new LinkedHashMap<>();
+        schemas.forEach(schema -> schemaMap.put(schema.name(), schema));
+        this.schemas = Collections.unmodifiableMap(schemaMap);
+        this.clusters = Collections.unmodifiableMap(clusters);
     }
 
-    /** Returns all schemas configured in this application. */
-    public List<Schema> schemas() { return schemas; }
+    /** Returns all schemas configured in this application, indexed by schema name. */
+    public Map<String, Schema> schemas() { return schemas; }
 
     public Session newSession(Query query) {
         return new Session(query.getModel().getSources(), query.getModel().getRestrict(), clusters, schemas);
@@ -80,13 +87,13 @@ public class SchemaInfo {
     /** The schema information resolved to be relevant to this session. */
     public static class Session {
 
-        private final List<Schema> schemas;
+        private final Collection<Schema> schemas;
 
         private Session(Set<String> sources,
                         Set<String> restrict,
                         Map<String, List<String>> clusters,
-                        List<Schema> candidates) {
-            this.schemas = resolveSchemas(sources, restrict, clusters, candidates);
+                        Map<String, Schema> candidates) {
+            this.schemas = resolveSchemas(sources, restrict, clusters, candidates.values());
         }
 
         /**
@@ -96,10 +103,10 @@ public class SchemaInfo {
          *
          * @return the possibly empty list of schemas matching the arguments
          */
-        private static List<Schema> resolveSchemas(Set<String> sources,
-                                                   Set<String> restrict,
-                                                   Map<String, List<String>> clusters,
-                                                   List<Schema> candidates) {
+        private static Collection<Schema> resolveSchemas(Set<String> sources,
+                                                         Set<String> restrict,
+                                                         Map<String, List<String>> clusters,
+                                                         Collection<Schema> candidates) {
             if (sources.isEmpty())
                 return restrict.isEmpty() ? candidates : keep(restrict, candidates);
 
@@ -114,7 +121,7 @@ public class SchemaInfo {
             return restrict.isEmpty() ? candidates : keep(restrict, candidates);
         }
 
-        private static List<Schema> keep(Set<String> names, List<Schema> schemas) {
+        private static List<Schema> keep(Set<String> names, Collection<Schema> schemas) {
             return schemas.stream().filter(schema -> names.contains(schema.name())).collect(Collectors.toList());
         }
 

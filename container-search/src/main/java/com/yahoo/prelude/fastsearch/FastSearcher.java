@@ -6,6 +6,7 @@ import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.dispatch.FillInvoker;
 import com.yahoo.search.dispatch.SearchInvoker;
@@ -15,6 +16,7 @@ import com.yahoo.search.query.Ranking;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.HitGroup;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 
 import java.io.IOException;
@@ -51,10 +53,13 @@ public class FastSearcher extends VespaBackEndSearcher {
      * @param clusterParams the cluster number, and other cluster backend parameters
      * @param documentdbInfoConfig document database parameters
      */
-    public FastSearcher(String serverId, Dispatcher dispatcher,
-                        SummaryParameters docSumParams, ClusterParams clusterParams,
-                        DocumentdbInfoConfig documentdbInfoConfig) {
-        init(serverId, docSumParams, clusterParams, documentdbInfoConfig);
+    public FastSearcher(String serverId,
+                        Dispatcher dispatcher,
+                        SummaryParameters docSumParams,
+                        ClusterParams clusterParams,
+                        DocumentdbInfoConfig documentdbInfoConfig,
+                        SchemaInfo schemaInfo) {
+        init(serverId, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
         this.dispatcher = dispatcher;
     }
 
