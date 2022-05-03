@@ -113,7 +113,7 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
     private void setPlanNone(List<Tenant> tenants) {
         tenants.forEach(tenant -> {
-            controller().serviceRegistry().billingController().setPlan(tenant.name(), PlanId.from("none"), false);
+            controller().serviceRegistry().billingController().setPlan(tenant.name(), PlanId.from("none"), false, false);
         });
     }
 
