@@ -42,4 +42,6 @@ public abstract class ResultNodeVector extends ResultNode {
     }
 
     public abstract ResultNodeVector add(ResultNode r);
+
+    public abstract int size();
 }

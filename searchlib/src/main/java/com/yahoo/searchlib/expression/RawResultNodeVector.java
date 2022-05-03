@@ -35,6 +35,8 @@ public class RawResultNodeVector extends ResultNodeVector {
         return add((RawResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     public ArrayList<RawResultNode> getVector() {
         return vector;
     }

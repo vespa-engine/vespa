@@ -24,6 +24,8 @@ public class BoolResultNodeVector extends ResultNodeVector {
         return add((BoolResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     @Override
     protected int onGetClassId() {
         return classId;

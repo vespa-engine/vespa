@@ -35,6 +35,8 @@ public class StringBucketResultNodeVector extends ResultNodeVector {
         return add((StringBucketResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     public ArrayList<StringBucketResultNode> getVector() {
         return vector;
     }

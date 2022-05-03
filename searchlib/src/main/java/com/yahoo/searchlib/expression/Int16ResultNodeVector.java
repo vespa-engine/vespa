@@ -34,6 +34,8 @@ public class Int16ResultNodeVector extends ResultNodeVector {
         return add((Int16ResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     @Override
     protected int onGetClassId() {
         return classId;
