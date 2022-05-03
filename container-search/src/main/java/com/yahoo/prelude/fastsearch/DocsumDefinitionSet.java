@@ -13,7 +13,6 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Map;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.data.access.Type.OBJECT;
@@ -27,7 +26,6 @@ import static com.yahoo.data.access.Type.OBJECT;
 public final class DocsumDefinitionSet {
 
     public static final int SLIME_MAGIC_ID = 0x55555555;
-    private final static Logger log = Logger.getLogger(DocsumDefinitionSet.class.getName());
 
     private final Map<String, DocsumDefinition> definitionsByName;
 
@@ -62,6 +60,8 @@ public final class DocsumDefinitionSet {
 
     /** Do we have a summary definition with the given name */
     public boolean hasDocsum(String summaryClass) {
+        if (summaryClass == null)
+            summaryClass = "default";
         return definitionsByName.containsKey(summaryClass);
     }
 
