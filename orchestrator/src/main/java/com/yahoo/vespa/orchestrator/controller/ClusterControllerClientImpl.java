@@ -181,7 +181,8 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
             Inspector root = SlimeUtils.jsonToSlime(body).get();
             String detail = root.field("message").valid() ? root.field("message").asString()
                                                           : new String(body, UTF_8);
-            return new ResponseException("got status code " + statusCode + " for " + request + (detail.isBlank() ? "" : ": " + detail));
+            return new ResponseException(statusCode,
+                                         "got status code " + statusCode + " for " + request + (detail.isBlank() ? "" : ": " + detail));
         }
     };
 
