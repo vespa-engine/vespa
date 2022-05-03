@@ -382,6 +382,13 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID);
 
+    public static final UnboundStringFlag PROVISION_IN_EXTERNAL_ACCOUNT = defineStringFlag(
+            "provision-in-external-account", "",
+            List.of("mpolden"), "2022-05-02", "2022-09-01",
+            "The 12-digit AWS account ID where resources belonging to an application should be provisioned",
+            "Takes effect on config server restart",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
