@@ -5,20 +5,13 @@
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
+#include <vespa/vespalib/util/sanitizers.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <cstddef>
 #include <sys/mman.h>
 
 using namespace vespalib;
 using namespace vespalib::alloc;
-
-#ifndef __SANITIZE_ADDRESS__
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#define __SANITIZE_ADDRESS__
-#endif
-#endif
-#endif
 
 namespace {
 
@@ -228,7 +221,7 @@ TEST("auto alloced mmap alloc can not be extended if no room") {
  * or munmap calls, breaking some of the assumptions in the disabled
  * tests.
  */
-#ifndef __SANITIZE_ADDRESS__
+#ifndef VESPA_USE_ADDRESS_SANITIZER
 TEST("mmap alloc can be extended if room") {
     Alloc dummy = Alloc::allocMMap(100);
     Alloc reserved = Alloc::allocMMap(100);

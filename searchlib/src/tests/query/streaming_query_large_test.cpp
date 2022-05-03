@@ -4,28 +4,13 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/sanitizers.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <sys/resource.h>
 
 using namespace search;
 using namespace search::query;
 using namespace search::streaming;
-
-#ifndef __SANITIZE_ADDRESS__
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#define __SANITIZE_ADDRESS__
-#endif
-#endif
-#endif
-
-#ifndef __SANITIZE_THREAD__
-#if defined(__has_feature)
-#if __has_feature(thread_sanitizer)
-#define __SANITIZE_THREAD__
-#endif
-#endif
-#endif
 
 namespace {
 
@@ -44,10 +29,10 @@ namespace {
 // a stack overflow if the stack usage increases.
 TEST("testveryLongQueryResultingInBug6850778") {
     uint32_t NUMITEMS=20000;
-#ifdef __SANITIZE_ADDRESS__
+#ifdef VESPA_USE_ADDRESS_SANITIZER
     setMaxStackSize(12_Mi);
 #else
-#ifdef __SANITIZE_THREAD__
+#ifdef VESPA_USE_THREAD_SANITIZER
     NUMITEMS = 10000;
 #else
     setMaxStackSize(4_Mi);

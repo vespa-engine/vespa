@@ -1166,6 +1166,7 @@ IndexMaintainer::getFlushStats() const
     // Called by flush engine scheduler thread (from getFlushTargets())
     FlushStats stats;
     uint64_t source_selector_bytes;
+    uint32_t source_selector_changes;
     uint32_t numFrozen = 0;
     {
         LockGuard lock(_index_update_lock);
@@ -1176,9 +1177,10 @@ IndexMaintainer::getFlushStats() const
         for (const FrozenMemoryIndexRef & frozen : _frozenMemoryIndexes) {
             stats.memory_before_bytes += frozen._index->getMemoryUsage().allocatedBytes() + source_selector_bytes;
         }
+        source_selector_changes = _source_selector_changes;
     }
 
-    if (!_source_selector_changes && stats.memory_after_bytes >= stats.memory_before_bytes) {
+    if (!source_selector_changes && stats.memory_after_bytes >= stats.memory_before_bytes) {
         // Nothing is written if the index is empty.
         stats.disk_write_bytes = 0;
         stats.cpu_time_required = 0;
