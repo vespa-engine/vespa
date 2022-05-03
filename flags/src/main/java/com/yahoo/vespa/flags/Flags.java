@@ -411,6 +411,13 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID);
 
+    public static final UnboundBooleanFlag INSTALL_JDK_FROM_LATEST_APPSTREAM_REPO = defineFeatureFlag(
+            "install-jdk-from-latest-appstream-repo", false,
+            List.of("hmusum"), "2022-05-03", "2022-06-03",
+            "Whether we should install JDK from latest-appstream repo on hosts (e.g. for security issues fixed in newer JDK versions)",
+            "Takes effect immediately",
+            TENANT_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
