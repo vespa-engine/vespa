@@ -101,7 +101,6 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     OpWithNotFound revert;
     Op createIterator;
     Visitor visit;
-    Op multiOp;
     Op createBuckets;
     Op deleteBuckets;
     Op repairs;
@@ -120,7 +119,6 @@ struct FileStorThreadMetrics : public metrics::MetricSet
     metrics::LongCountMetric getBucketDiffReply;
     metrics::LongCountMetric applyBucketDiffReply;
     MergeHandlerMetrics merge_handler_metrics;
-    metrics::LongAverageMetric batchingSize;
 
     FileStorThreadMetrics(const std::string& name, const std::string& desc);
     ~FileStorThreadMetrics() override;
@@ -154,7 +152,6 @@ public:
     metrics::LongAverageMetric throttle_waiting_threads;
     metrics::LongAverageMetric throttle_active_tokens;
     metrics::DoubleAverageMetric waitingForLockHitRate;
-    metrics::DoubleAverageMetric lockWaitTime; // unused
     ActiveOperationsMetrics      active_operations;
 
     FileStorDiskMetrics(const std::string& name, const std::string& description, MetricSet* owner);
