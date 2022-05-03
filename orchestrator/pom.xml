@@ -117,12 +117,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <!-- Provided by the configserver bundle -->
-      <groupId>org.glassfish.jersey.ext</groupId>
-      <artifactId>jersey-proxy-client</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
       <version>${jackson2.version}</version>

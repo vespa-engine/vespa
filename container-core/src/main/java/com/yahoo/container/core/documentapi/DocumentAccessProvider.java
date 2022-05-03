@@ -7,10 +7,9 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 
 /**
- * Lets a lazily initialised DocumentAccess forwarding to a real MessageBusDocumentAccess be injected in containers.
+ * Lets a lazily initialised DocumentAccess that forwards to a MessageBusDocumentAccess be injected in containers.
  *
  * @author jonmv
  */
