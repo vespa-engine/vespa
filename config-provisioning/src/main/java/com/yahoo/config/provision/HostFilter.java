@@ -27,10 +27,10 @@ public class HostFilter {
                        Set<String> flavors,
                        Set<ClusterSpec.Type> clusterTypes,
                        Set<ClusterSpec.Id> clusterIds) {
-        this.hostnames = Objects.requireNonNull(hostnames, "Hostnames cannot be null, use an empty list");
-        this.flavors = Objects.requireNonNull(flavors, "Flavors cannot be null, use an empty list");
-        this.clusterTypes = Objects.requireNonNull(clusterTypes, "clusterTypes cannot be null, use an empty list");
-        this.clusterIds = Objects.requireNonNull(clusterIds, "clusterIds cannot be null, use an empty list");
+        this.hostnames = Objects.requireNonNull(hostnames, "Hostnames cannot be null, use an empty set");
+        this.flavors = Objects.requireNonNull(flavors, "Flavors cannot be null, use an empty set");
+        this.clusterTypes = Objects.requireNonNull(clusterTypes, "clusterTypes cannot be null, use an empty set");
+        this.clusterIds = Objects.requireNonNull(clusterIds, "clusterIds cannot be null, use an empty set");
     }
 
     /** Returns true if this filter matches the given host properties */
@@ -85,6 +85,11 @@ public class HostFilter {
                 StringUtilities.split(flavors),
                 StringUtilities.split(clusterTypes).stream().map(ClusterSpec.Type::from).collect(Collectors.toSet()),
                 StringUtilities.split(clusterIds).stream().map(ClusterSpec.Id::from).collect(Collectors.toSet()));
+    }
+
+    /** Returns a host filter filtering only on hostnames */
+    public static HostFilter from(Collection<String> hostNames) {
+        return HostFilter.from(hostNames, Set.of(), Set.of(), Set.of());
     }
 
     @Override

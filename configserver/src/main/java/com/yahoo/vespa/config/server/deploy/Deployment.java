@@ -6,7 +6,6 @@ import com.google.common.base.Suppliers;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
@@ -31,7 +30,6 @@ import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Optional;
@@ -46,7 +44,7 @@ import static com.yahoo.vespa.config.server.application.ConfigConvergenceChecker
 /**
  * The process of deploying an application.
  * Deployments are created by an {@link ApplicationRepository}.
- * Instances of this are not multithread safe.
+ * Instances of this are not multi-thread safe.
  *
  * @author Ulf Lilleengen
  * @author bratseth
@@ -106,16 +104,14 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
     @Override
     public void prepare() {
         if (prepared) return;
+
         PrepareParams params = this.params.get();
-        ApplicationId applicationId = params.getApplicationId();
-        SessionRepository sessionRepository = tenant.getSessionRepository();
-        try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.prepareMillis")) {
-            this.configChangeActions = sessionRepository.prepareLocalSession(session, deployLogger, params, clock.instant());
+        try (ActionTimer timer = applicationRepository.timerFor(params.getApplicationId(), "deployment.prepareMillis")) {
+            this.configChangeActions = sessionRepository().prepareLocalSession(session, deployLogger, params, clock.instant());
             this.prepared = true;
         } catch (Exception e) {
-            LocalSession localSession = sessionRepository.getLocalSession(session.getSessionId());
             log.log(Level.FINE, "Preparing session " + session.getSessionId() + " failed, deleting it");
-            sessionRepository.deleteLocalSession(localSession);
+            deleteSession();
             throw e;
         }
 
@@ -128,35 +124,31 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
         prepare();
 
         validateSessionStatus(session);
+
         PrepareParams params = this.params.get();
         ApplicationId applicationId = session.getApplicationId();
         try (ActionTimer timer = applicationRepository.timerFor(applicationId, "deployment.activateMillis")) {
             TimeoutBudget timeoutBudget = params.getTimeoutBudget();
             timeoutBudget.assertNotTimedOut(() -> "Timeout exceeded when trying to activate '" + applicationId + "'");
 
-            Activation activation;
             try {
-                activation = applicationRepository.activate(session, applicationId, tenant, params.force());
+                Activation activation = applicationRepository.activate(session, applicationId, tenant, params.force());
+                waitForActivation(applicationId, timeoutBudget, activation);
             } catch (Exception e) {
-                SessionRepository sessionRepository = tenant.getSessionRepository();
-                LocalSession localSession = sessionRepository.getLocalSession(session.getSessionId());
                 log.log(Level.FINE, "Activating session " + session.getSessionId() + " failed, deleting it");
-                sessionRepository.deleteLocalSession(localSession);
+                deleteSession();
                 throw e;
             }
-            activation.awaitCompletion(timeoutBudget.timeLeft());
-            logActivatedMessage(applicationId, activation);
 
-            if (provisioner.isPresent() && configChangeActions != null)
-                restartServices(applicationId);
-
+            restartServicesIfNeeded(applicationId);
             storeReindexing(applicationId, session.getMetaData().getGeneration());
 
             return session.getMetaData().getGeneration();
         }
     }
 
-    private void logActivatedMessage(ApplicationId applicationId, Activation activation) {
+    private void waitForActivation(ApplicationId applicationId, TimeoutBudget timeoutBudget, Activation activation) {
+        activation.awaitCompletion(timeoutBudget.timeLeft());
         Set<FileReference> fileReferences = applicationRepository.getFileReferences(applicationId);
         String fileReferencesText = fileReferences.size() > 10
                 ? " " + fileReferences.size() + " file references"
@@ -168,27 +160,31 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                 ". " + fileReferencesText);
     }
 
-    private void restartServices(ApplicationId applicationId) {
+    private void deleteSession() {
+        SessionRepository sessionRepository = sessionRepository();
+        LocalSession localSession = sessionRepository.getLocalSession(session.getSessionId());
+        sessionRepository.deleteLocalSession(localSession);
+    }
+
+    private SessionRepository sessionRepository() {
+        return tenant.getSessionRepository();
+    }
+
+    private void restartServicesIfNeeded(ApplicationId applicationId) {
+        if (provisioner.isEmpty() || configChangeActions == null) return;
+
         RestartActions restartActions = configChangeActions.getRestartActions().useForInternalRestart(internalRedeploy);
+        if (restartActions.isEmpty()) return;
 
-        if ( ! restartActions.isEmpty()) {
+        waitForConfigToConverge(applicationId);
 
-            waitForConfigToConverge(applicationId);
-
-            Set<String> hostnames = restartActions.getEntries().stream()
-                                                  .flatMap(entry -> entry.getServices().stream())
-                                                  .map(ServiceInfo::getHostName)
-                                                  .collect(Collectors.toUnmodifiableSet());
-
-            provisioner.get().restart(applicationId, HostFilter.from(hostnames, Set.of(), Set.of(), Set.of()));
-            deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
-                                                       hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
-            log.info(String.format("%sScheduled service restart of %d nodes: %s",
-                                   session.logPre(), hostnames.size(), restartActions.format()));
-
-            this.configChangeActions = new ConfigChangeActions(
-                    new RestartActions(), configChangeActions.getRefeedActions(), configChangeActions.getReindexActions());
-        }
+        Set<String> hostnames = restartActions.hostnames();
+        provisioner.get().restart(applicationId, HostFilter.from(hostnames));
+        deployLogger.log(Level.INFO, String.format("Scheduled service restart of %d nodes: %s",
+                                                   hostnames.size(), hostnames.stream().sorted().collect(Collectors.joining(", "))));
+        log.info(String.format("%sScheduled service restart of %d nodes: %s",
+                               session.logPre(), hostnames.size(), restartActions.format()));
+        this.configChangeActions = configChangeActions.withRestartActions(new RestartActions());
     }
 
     private void waitForConfigToConverge(ApplicationId applicationId) {
@@ -268,8 +264,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             Clock clock, Duration timeout, Session session,
             boolean isBootstrap, boolean ignoreValidationErrors, boolean force, boolean waitForResourcesInPrepare) {
 
-        // Supplier because shouldn't/cant create this before validateSessionStatus() for prepared deployments
-        // memoized because we want to create this once for unprepared deployments
+        // Use supplier because we shouldn't/can't create this before validateSessionStatus() for prepared deployments,
+        // memoize because we want to create this once for unprepared deployments
         return Suppliers.memoize(() -> {
             TimeoutBudget timeoutBudget = new TimeoutBudget(clock, timeout);
 
