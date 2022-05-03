@@ -77,7 +77,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = true;
     private boolean experimentalSdParsing = true;
-    private boolean enableBitVectors = true;
+    private boolean enableBitVectors = false;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
