@@ -282,14 +282,6 @@ public class Flags {
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag PERSISTENCE_ASYNC_THROTTLING = defineStringFlag(
-            "persistence-async-throttling", "DYNAMIC",
-            List.of("vekterli"), "2022-01-12", "2022-08-01",
-            "Sets the throttling policy used for async persistence operations on the content nodes. " +
-            "Valid values: UNLIMITED, DYNAMIC",
-            "Triggers restart, takes effect immediately",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundStringFlag MERGE_THROTTLING_POLICY = defineStringFlag(
             "merge-throttling-policy", "STATIC",
             List.of("vekterli"), "2022-01-25", "2022-08-01",
@@ -355,26 +347,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_JDISC_PRESHUTDOWN_COMMAND = defineFeatureFlag(
-            "enable-jdisc-preshutdown-command", false,
-            List.of("bjorncs", "baldersheim"), "2022-01-31", "2022-05-31",
-            "Enable pre-shutdown command for jdisc",
-            "Takes effect at redeployment",
-            APPLICATION_ID, HOSTNAME, TENANT_ID);
-
     public static final UnboundBooleanFlag AVOID_RENAMING_SUMMARY_FEATURES = defineFeatureFlag(
             "avoid-renaming-summary-features", false,
             List.of("arnej"), "2022-01-15", "2023-12-31",
             "Tell backend about the original name of summary-features that were wrapped in a rankingExpression feature",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag MERGE_GROUPING_RESULT_IN_SEARCH_INVOKER = defineFeatureFlag(
-            "merge-grouping-result-in-search-invoker", false,
-            List.of("bjorncs", "baldersheim"), "2022-02-23", "2022-08-01",
-            "Merge grouping results incrementally in interleaved search invoker",
-            "Takes effect at redeployment",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag EXPERIMENTAL_SD_PARSING = defineFeatureFlag(
             "experimental-sd-parsing", false,
@@ -388,13 +366,6 @@ public class Flags {
             List.of("baldersheim"), "2022-05-03", "2022-12-31",
             "Enables bit vector by default for fast-search attributes",
             "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_ZSTD_IN_FILE_DISTRIBUTION = defineFeatureFlag(
-            "use-zstd-in-file-distribution", false,
-            List.of("hmusum"), "2022-04-07", "2022-06-01",
-            "Whether to use zstd compression for data sent with file distribution",
-            "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
