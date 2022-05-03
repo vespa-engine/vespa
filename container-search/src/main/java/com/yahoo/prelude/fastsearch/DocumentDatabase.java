@@ -2,6 +2,8 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.search.schema.RankProfile;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
@@ -17,48 +19,20 @@ import java.util.stream.Collectors;
  */
 public class DocumentDatabase {
 
-    // TODO: What about name conflicts when different search defs have the same rank profile/docsum?
-
     public static final String MATCH_PROPERTY = "match";
     public static final String SEARCH_DOC_TYPE_KEY = "documentdb.searchdoctype";
 
-    private final String name;
+    private final Schema schema;
     private final DocsumDefinitionSet docsumDefSet;
 
-    private final Map<String, RankProfile> rankProfiles;
-
-    public DocumentDatabase(DocumentdbInfoConfig.Documentdb documentDb) {
-        this(documentDb.name(), new DocsumDefinitionSet(documentDb), toRankProfiles(documentDb.rankprofile()));
+    public DocumentDatabase(Schema schema) {
+        this.schema = schema;
+        this.docsumDefSet = new DocsumDefinitionSet(schema);
     }
 
-    public DocumentDatabase(String name, DocsumDefinitionSet docsumDefinitionSet, Collection<RankProfile> rankProfiles) {
-        this.name = name;
-        this.docsumDefSet = docsumDefinitionSet;
-        this.rankProfiles = Map.copyOf(rankProfiles.stream().collect(Collectors.toMap(RankProfile::name, p -> p)));
-    }
+    public Schema schema() { return schema; }
 
-    public String getName() {
-        return name;
-    }
-
-    public DocsumDefinitionSet getDocsumDefinitionSet() {
-        return docsumDefSet;
-    }
-
-    /** Returns an unmodifiable map of all the rank profiles in this indexed by rank profile name */
-    public Map<String, RankProfile> rankProfiles() { return rankProfiles; }
-
-    private static Collection<RankProfile> toRankProfiles(Collection<DocumentdbInfoConfig.Documentdb.Rankprofile> rankProfileConfigList) {
-        List<RankProfile> rankProfiles = new ArrayList<>();
-        for (var profileConfig : rankProfileConfigList) {
-            var builder = new RankProfile.Builder(profileConfig.name());
-            builder.setHasSummaryFeatures(profileConfig.hasSummaryFeatures());
-            builder.setHasRankFeatures(profileConfig.hasRankFeatures());
-            for (var inputConfig : profileConfig.input())
-                builder.addInput(inputConfig.name(), TensorType.fromSpec(inputConfig.type()));
-            rankProfiles.add(builder.build());
-        }
-        return rankProfiles;
-    }
+    /** Returns the document summary model in this which knows how to convert serialized data to hit fields. */
+    public DocsumDefinitionSet getDocsumDefinitionSet() { return docsumDefSet; }
 
 }
