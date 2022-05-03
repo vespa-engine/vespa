@@ -787,7 +787,6 @@ public class VespaMetricSet {
     }
     private static Set<Metric> getDistributorMetrics() {
         Set<Metric> metrics = new LinkedHashSet<>();
-        //Distributor
         metrics.add(new Metric("vds.idealstate.buckets_rechecking.average"));
         metrics.add(new Metric("vds.idealstate.idealstate_diff.average"));
         metrics.add(new Metric("vds.idealstate.buckets_toofewcopies.average"));
