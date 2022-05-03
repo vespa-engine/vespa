@@ -170,7 +170,9 @@ protected:
     AttributeVector(vespalib::stringref baseFileName, const Config & c);
 
     void checkSetMaxValueCount(int index) {
-        _highestValueCount = std::max(index, _highestValueCount);
+        if (index > _highestValueCount.load(std::memory_order_relaxed)) {
+            _highestValueCount.store(index, std::memory_order_relaxed);
+        }
     }
 
     void setEnumMax(uint32_t e)          { _enumMax = e; setEnum(); }
@@ -496,7 +498,7 @@ private:
     GenerationHandler                     _genHandler;
     GenerationHolder                      _genHolder;
     Status                                _status;
-    int                                   _highestValueCount;
+    std::atomic<int>                      _highestValueCount;
     uint32_t                              _enumMax;
     std::atomic<uint32_t>                 _committedDocIdLimit; // docid limit for search
     uint32_t                              _uncommittedDocIdLimit; // based on queued changes
