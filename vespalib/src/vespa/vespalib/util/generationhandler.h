@@ -72,12 +72,14 @@ public:
     };
 
 private:
-    generation_t    _generation;
+    std::atomic<generation_t>     _generation;
     std::atomic<generation_t>     _firstUsedGeneration;
     std::atomic<GenerationHold *> _last;      // Points to "current generation" entry
     GenerationHold *_first;     // Points to "firstUsedGeneration" entry
     GenerationHold *_free;      // List of free entries
     uint32_t        _numHolds;  // Number of allocated generation hold entries
+
+    void set_generation(generation_t generation) noexcept { _generation.store(generation, std::memory_order_relaxed); }
 
 public:
     /**
@@ -108,19 +110,19 @@ public:
      * Returns the first generation guarded by a reader.  It might be too low
      * if writer hasn't updated first used generation after last reader left.
      */
-    generation_t getFirstUsedGeneration() const {
+    generation_t getFirstUsedGeneration() const noexcept {
         return _firstUsedGeneration.load(std::memory_order_relaxed);
     }
 
     /**
      * Returns the current generation.
      **/
-    generation_t getCurrentGeneration() const {
-        return _generation;
+    generation_t getCurrentGeneration() const noexcept {
+        return _generation.load(std::memory_order_relaxed);
     }
 
-    generation_t getNextGeneration() const {
-        return _generation + 1;
+    generation_t getNextGeneration() const noexcept {
+        return getCurrentGeneration() + 1;
     }
 
     /**
