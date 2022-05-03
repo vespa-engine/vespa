@@ -78,17 +78,17 @@ public class Memoized<T, E extends Exception> implements Supplier<T>, AutoClosea
 
     private interface Thrower<E extends Exception> { void call() throws E; }
 
-    private static <T, E extends Exception, F extends E, G extends E> Closer<T, E> compose(Closer<T, G> inner, Thrower<F> outer) {
+    private static <T, E extends Exception, F extends E, G extends E> Closer<T, E> compose(Closer<T, G> outer, Thrower<F> inner) {
         return parent -> {
             Exception thrown = null;
             try {
-                inner.close(parent);
+                outer.close(parent);
             }
             catch (Exception e) {
                 thrown = e;
             }
             try {
-                outer.call();
+                inner.call();
             }
             catch (Exception e) {
                 if (thrown != null) thrown.addSuppressed(e);
