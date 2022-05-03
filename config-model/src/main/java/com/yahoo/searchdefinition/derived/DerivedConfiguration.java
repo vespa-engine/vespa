@@ -46,6 +46,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     private ImportedFields importedFields;
     private final QueryProfileRegistry queryProfiles;
     private final long maxUncommittedMemory;
+    private final boolean enableBitVectors;
 
     /**
      * Creates a complete derived configuration from a search definition.
@@ -86,6 +87,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         this.schema = schema;
         this.queryProfiles = queryProfiles;
         this.maxUncommittedMemory = deployProperties.featureFlags().maxUnCommittedMemory();
+        this.enableBitVectors = deployProperties.featureFlags().enableBitVectors();
         if ( ! schema.isDocumentsOnly()) {
             streamingFields = new VsmFields(schema);
             streamingSummary = new VsmSummary(schema);
@@ -145,10 +147,8 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
         Writer writer = null;
         try {
             writer = IOUtils.createWriter(fileName, false);
-            if (writer != null) {
-                writer.write(instance.toString());
-                writer.write("\n");
-            }
+            writer.write(instance.toString());
+            writer.write("\n");
         } finally {
             if (writer != null) {
                 IOUtils.closeWriter(writer);
@@ -170,7 +170,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     }
 
     public void getConfig(AttributesConfig.Builder builder, AttributeFields.FieldSet fs) {
-        attributeFields.getConfig(builder, fs, maxUncommittedMemory);
+        attributeFields.getConfig(builder, fs, maxUncommittedMemory, enableBitVectors);
     }
 
     public IndexingScript getIndexingScript() {

@@ -211,6 +211,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useQrserverServiceName;
         private final boolean avoidRenamingSummaryFeatures;
         private final boolean experimentalSdParsing;
+        private final boolean enableBitVectors;
         private final Architecture adminClusterArchitecture;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
@@ -260,6 +261,7 @@ public class ModelContextImpl implements ModelContext {
             this.useQrserverServiceName = flagValue(source, appId, version, Flags.USE_QRSERVER_SERVICE_NAME);
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
             this.experimentalSdParsing = flagValue(source, appId, version, Flags.EXPERIMENTAL_SD_PARSING);
+            this.enableBitVectors = flagValue(source, appId, version, Flags.ENABLE_BIT_VECTORS);
             this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
         }
 
@@ -311,6 +313,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
         @Override public boolean experimentalSdParsing() { return experimentalSdParsing; }
+        @Override public boolean enableBitVectors() { return this.enableBitVectors; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
