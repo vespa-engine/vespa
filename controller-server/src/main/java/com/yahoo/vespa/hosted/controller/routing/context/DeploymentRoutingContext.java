@@ -123,12 +123,6 @@ public abstract class DeploymentRoutingContext implements RoutingContext {
             return upstreamNames;
         }
 
-        private Optional<Endpoint> primaryEndpoint() {
-            return controller.readDeclaredEndpointsOf(deployment.applicationId())
-                             .requiresRotation()
-                             .primary();
-        }
-
     }
 
     /**
