@@ -375,7 +375,7 @@ StorageNode::shutdown()
     // we might be shutting down after init exception causing only parts
     // of the server to have initialize
     LOG(debug, "Shutting down storage node of type %s", getNodeType().toString().c_str());
-    if (!_attemptedStopped) {
+    if (!attemptedStopped()) {
         LOG(debug, "Storage killed before requestShutdown() was called. No "
                    "reason has been given for why we're stopping.");
     }
@@ -518,7 +518,7 @@ void StorageNode::configure(std::unique_ptr<BucketspacesConfig> config) {
 bool
 StorageNode::attemptedStopped() const
 {
-    return _attemptedStopped;
+    return _attemptedStopped.load(std::memory_order_relaxed);
 }
 
 void
@@ -550,7 +550,12 @@ StorageNode::waitUntilInitialized(uint32_t timeout) {
 void
 StorageNode::requestShutdown(vespalib::stringref reason)
 {
-    if (_attemptedStopped) return;
+    bool was_stopped = false;
+    const bool stop_now = _attemptedStopped.compare_exchange_strong(was_stopped, true,
+                                                                    std::memory_order_relaxed, std::memory_order_relaxed);
+    if (!stop_now) {
+        return; // Someone else beat us to it.
+    }
     if (_component) {
         NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
         lib::NodeState nodeState(*_component->getStateUpdater().getReportedNodeState());
@@ -560,7 +565,6 @@ StorageNode::requestShutdown(vespalib::stringref reason)
             _component->getStateUpdater().setReportedNodeState(nodeState);
         }
     }
-    _attemptedStopped = true;
 }
 
 std::unique_ptr<StateManager>
