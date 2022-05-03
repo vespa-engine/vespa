@@ -74,9 +74,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { return "THROUGHPUT"; }
-        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default int feedTaskLimit() { return -1000; }
-        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default int feedMasterTaskLimit() { return 0; }
-        @ModelFeatureFlag(owners = {"geirst, baldersheim"}) default String sharedFieldWriterExecutor() { return "DOCUMENT_DB"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipCommunicationManagerThread() { throw new UnsupportedOperationException("TODO specify default value"); }
@@ -101,21 +98,17 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean ignoreThreadStackSizes() { return false; }
         @ModelFeatureFlag(owners = {"vekterli", "geirst"}) default boolean unorderedMergeChaining() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
-        @ModelFeatureFlag(owners = {"arnej", "baldersheim"}) default boolean useV8DocManagerCfg() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default int maxCompactBuffers() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean failDeploymentWithInvalidJvmOptions() { return false; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean enableServerOcspStapling() { return false; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default String persistenceAsyncThrottling() { return "DYNAMIC"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default String mergeThrottlingPolicy() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsDecrementFactor() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsBackoff() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThrottlingWindowSize() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default double persistenceThrottlingWsResizeRate() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean persistenceThrottlingOfMergeFeedOps() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default boolean inhibitDefaultMergesWhenGlobalMergesPending() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useQrserverServiceName() { return true; }
-        @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean enableJdiscPreshutdownCommand() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableBitVectors() { return false; }

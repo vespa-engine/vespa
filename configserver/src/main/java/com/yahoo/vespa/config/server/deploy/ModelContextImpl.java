@@ -168,9 +168,6 @@ public class ModelContextImpl implements ModelContext {
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final String feedSequencer;
-        private final int feedTaskLimit;
-        private final int feedMasterTaskLimit;
-        private final String sharedFieldWriterExecutor;
         private final String responseSequencer;
         private final int numResponseThreads;
         private final boolean skipCommunicationManagerThread;
@@ -195,19 +192,16 @@ public class ModelContextImpl implements ModelContext {
         private final boolean ignoreThreadStackSizes;
         private final boolean unorderedMergeChaining;
         private final boolean useV8GeoPositions;
-        private final boolean useV8DocManagerCfg;
         private final int maxCompactBuffers;
         private final boolean failDeploymentWithInvalidJvmOptions;
         private final List<String> ignoredHttpUserAgents;
         private final boolean enableServerOcspStapling;
-        private final String persistenceAsyncThrottling;
         private final String mergeThrottlingPolicy;
         private final double persistenceThrottlingWsDecrementFactor;
         private final double persistenceThrottlingWsBackoff;
         private final int persistenceThrottlingWindowSize;
         private final double persistenceThrottlingWsResizeRate;
         private final boolean persistenceThrottlingOfMergeFeedOps;
-        private final boolean inhibitDefaultMergesWhenGlobalMergesPending;
         private final boolean useQrserverServiceName;
         private final boolean avoidRenamingSummaryFeatures;
         private final boolean experimentalSdParsing;
@@ -218,9 +212,6 @@ public class ModelContextImpl implements ModelContext {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
             this.useThreePhaseUpdates = flagValue(source, appId, version, Flags.USE_THREE_PHASE_UPDATES);
             this.feedSequencer = flagValue(source, appId, version, Flags.FEED_SEQUENCER_TYPE);
-            this.feedTaskLimit = flagValue(source, appId, version, Flags.FEED_TASK_LIMIT);
-            this.feedMasterTaskLimit = flagValue(source, appId, version, Flags.FEED_MASTER_TASK_LIMIT);
-            this.sharedFieldWriterExecutor = flagValue(source, appId, version, Flags.SHARED_FIELD_WRITER_EXECUTOR);
             this.responseSequencer = flagValue(source, appId, version, Flags.RESPONSE_SEQUENCER_TYPE);
             this.numResponseThreads = flagValue(source, appId, version, Flags.RESPONSE_NUM_THREADS);
             this.skipCommunicationManagerThread = flagValue(source, appId, version, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
@@ -245,19 +236,16 @@ public class ModelContextImpl implements ModelContext {
             this.ignoreThreadStackSizes = flagValue(source, appId, version, Flags.IGNORE_THREAD_STACK_SIZES);
             this.unorderedMergeChaining = flagValue(source, appId, version, Flags.UNORDERED_MERGE_CHAINING);
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
-            this.useV8DocManagerCfg = flagValue(source, appId, version, Flags.USE_V8_DOC_MANAGER_CFG);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
             this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, version, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
             this.enableServerOcspStapling = flagValue(source, appId, version, Flags.ENABLE_SERVER_OCSP_STAPLING);
-            this.persistenceAsyncThrottling = flagValue(source, appId, version, Flags.PERSISTENCE_ASYNC_THROTTLING);
             this.mergeThrottlingPolicy = flagValue(source, appId, version, Flags.MERGE_THROTTLING_POLICY);
             this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
             this.persistenceThrottlingWsBackoff = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
             this.persistenceThrottlingWindowSize = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WINDOW_SIZE);
             this.persistenceThrottlingWsResizeRate = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_RESIZE_RATE);
             this.persistenceThrottlingOfMergeFeedOps = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS);
-            this.inhibitDefaultMergesWhenGlobalMergesPending = flagValue(source, appId, version, Flags.INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING);
             this.useQrserverServiceName = flagValue(source, appId, version, Flags.USE_QRSERVER_SERVICE_NAME);
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
             this.experimentalSdParsing = flagValue(source, appId, version, Flags.EXPERIMENTAL_SD_PARSING);
@@ -268,9 +256,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public String feedSequencerType() { return feedSequencer; }
-        @Override public int feedTaskLimit() { return feedTaskLimit; }
-        @Override public int feedMasterTaskLimit() { return feedMasterTaskLimit; }
-        @Override public String sharedFieldWriterExecutor() { return sharedFieldWriterExecutor; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
         @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
@@ -297,19 +282,16 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
-        @Override public boolean useV8DocManagerCfg() { return useV8DocManagerCfg; }
         @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }
-        @Override public String persistenceAsyncThrottling() { return persistenceAsyncThrottling; }
         @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
         @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
         @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
         @Override public int persistenceThrottlingWindowSize() { return persistenceThrottlingWindowSize; }
         @Override public double persistenceThrottlingWsResizeRate() { return persistenceThrottlingWsResizeRate; }
         @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
-        @Override public boolean inhibitDefaultMergesWhenGlobalMergesPending() { return inhibitDefaultMergesWhenGlobalMergesPending; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
         @Override public boolean experimentalSdParsing() { return experimentalSdParsing; }
