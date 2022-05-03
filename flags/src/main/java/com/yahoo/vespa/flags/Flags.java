@@ -382,6 +382,13 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID);
 
+    public static final UnboundBooleanFlag INSTALL_JDK_FROM_LATEST_APPSTREAM_REPO = defineFeatureFlag(
+            "install-jdk-from-latest-appstream-repo", false,
+            List.of("hmusum"), "2022-05-03", "2022-06-03",
+            "Whether we should install JDK from latest-appstream repo on hosts (e.g. for security issues fixed in newer JDK versions)",
+            "Takes effect immediately",
+            HOSTNAME);
+
     public static final UnboundStringFlag PROVISION_IN_EXTERNAL_ACCOUNT = defineStringFlag(
             "provision-in-external-account", "",
             List.of("mpolden"), "2022-05-02", "2022-09-01",
