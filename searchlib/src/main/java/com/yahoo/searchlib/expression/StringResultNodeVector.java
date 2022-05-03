@@ -35,6 +35,8 @@ public class StringResultNodeVector extends ResultNodeVector {
         return add((StringResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     public ArrayList<StringResultNode> getVector() {
         return vector;
     }

@@ -35,6 +35,8 @@ public class FloatBucketResultNodeVector extends ResultNodeVector {
         return add((FloatBucketResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     public ArrayList<FloatBucketResultNode> getVector() {
         return vector;
     }

@@ -35,6 +35,8 @@ public class IntegerResultNodeVector extends ResultNodeVector {
         return add((IntegerResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     @Override
     protected int onGetClassId() {
         return classId;

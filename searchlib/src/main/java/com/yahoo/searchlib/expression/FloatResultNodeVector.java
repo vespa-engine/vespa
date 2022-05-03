@@ -31,6 +31,8 @@ public class FloatResultNodeVector extends ResultNodeVector {
         return this;
     }
 
+    @Override public int size() { return vector.size(); }
+
     public ResultNodeVector add(ResultNode r) {
         return add((FloatResultNode)r);
     }

@@ -780,6 +780,7 @@ public class RequestBuilderTestCase {
                 "all(" +
                         "   all(group(a) max(3) each(output(count()) max(5) each(output(summary())))) " +
                         "   all(group(b) max(3) each(output(count()) max(5) each(output(summary())))))");
+        assertTotalGroupsAndSummaries(3, "all(group(predefined(a,bucket(1,3),bucket(6,9))) each(output(count())))");
     }
 
     @Test

@@ -40,6 +40,8 @@ public class IntegerBucketResultNodeVector extends ResultNodeVector {
         return add((IntegerBucketResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     @Override
     protected void onSerialize(Serializer buf) {
         super.onSerialize(buf);

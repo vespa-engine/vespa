@@ -31,6 +31,8 @@ public class RawBucketResultNodeVector extends ResultNodeVector {
         return add((RawBucketResultNode)r);
     }
 
+    @Override public int size() { return vector.size(); }
+
     public ArrayList<RawBucketResultNode> getVector() {
         return vector;
     }
