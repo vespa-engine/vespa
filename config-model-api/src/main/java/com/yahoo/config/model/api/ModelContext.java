@@ -118,7 +118,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs", "baldersheim"}) default boolean enableJdiscPreshutdownCommand() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
-        @ModelFeatureFlag(owners = {"balder"}) default boolean enableBitVectors() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableBitVectors() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
     }
 
