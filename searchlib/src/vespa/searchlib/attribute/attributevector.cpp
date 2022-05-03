@@ -169,7 +169,7 @@ AttributeVector::updateStat(bool force) {
 }
 
 bool AttributeVector::hasEnum() const { return _hasEnum; }
-uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount; }
+uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount.load(std::memory_order_relaxed); }
 
 bool
 AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
