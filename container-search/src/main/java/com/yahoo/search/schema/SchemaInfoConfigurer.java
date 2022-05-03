@@ -1,17 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.prelude.fastsearch.DocsumDefinition;
-import com.yahoo.prelude.fastsearch.DocsumField;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.tensor.TensorType;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +24,6 @@ class SchemaInfoConfigurer {
 
     static Schema toSchema(SchemaInfoConfig.Schema schemaInfoConfig) {
         Schema.Builder builder = new Schema.Builder(schemaInfoConfig.name());
-
         for (var profileConfig : schemaInfoConfig.rankprofile()) {
             RankProfile.Builder profileBuilder = new RankProfile.Builder(profileConfig.name());
             profileBuilder.setHasSummaryFeatures(profileConfig.hasSummaryFeatures());
@@ -39,17 +32,6 @@ class SchemaInfoConfigurer {
                 profileBuilder.addInput(inputConfig.name(), TensorType.fromSpec(inputConfig.type()));
             builder.add(profileBuilder.build());
         }
-
-        for (var summaryConfig : schemaInfoConfig.summaryclass()) {
-            DocumentSummary.Builder summaryBuilder = new DocumentSummary.Builder(summaryConfig.name());
-            for (var field : summaryConfig.fields()) {
-                if (field.dynamic())
-                    summaryBuilder.setDynamic(true);
-                summaryBuilder.add(new DocumentSummary.Field(field.name(), field.type()));
-            }
-            builder.add(summaryBuilder.build());
-        }
-
         return builder.build();
     }
 

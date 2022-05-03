@@ -3,9 +3,7 @@ package com.yahoo.search.schema;
 
 import com.yahoo.api.annotations.Beta;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -21,17 +19,14 @@ public class Schema {
 
     private final String name;
     private final Map<String, RankProfile> rankProfiles;
-    private final Map<String, DocumentSummary> documentSummaries;
 
     private Schema(Builder builder) {
         this.name = builder.name;
-        this.rankProfiles = Collections.unmodifiableMap(builder.rankProfiles);
-        this.documentSummaries = Collections.unmodifiableMap(builder.documentSummaries);
+        this.rankProfiles = Map.copyOf(builder.rankProfiles);
     }
 
     public String name() { return name; }
     public Map<String, RankProfile> rankProfiles() { return rankProfiles; }
-    public Map<String, DocumentSummary> documentSummaries() { return documentSummaries; }
 
     @Override
     public boolean equals(Object o) {
@@ -40,13 +35,12 @@ public class Schema {
         Schema other = (Schema)o;
         if ( ! other.name.equals(this.name)) return false;
         if ( ! other.rankProfiles.equals(this.rankProfiles)) return false;
-        if ( ! other.documentSummaries.equals(this.documentSummaries)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, rankProfiles, documentSummaries);
+        return Objects.hash(name, rankProfiles);
     }
 
     @Override
@@ -57,20 +51,14 @@ public class Schema {
     public static class Builder {
 
         private final String name;
-        private final Map<String, RankProfile> rankProfiles = new LinkedHashMap<>();
-        private final Map<String, DocumentSummary> documentSummaries = new LinkedHashMap<>();
+        private final Map<String, RankProfile> rankProfiles = new HashMap<>();
 
         public Builder(String name) {
             this.name = Objects.requireNonNull(name);
         }
 
         public Builder add(RankProfile profile) {
-            rankProfiles.put(profile.name(), profile);
-            return this;
-        }
-
-        public Builder add(DocumentSummary documentSummary) {
-            documentSummaries.put(documentSummary.name(), documentSummary);
+            rankProfiles.put(profile.name(), Objects.requireNonNull(profile));
             return this;
         }
 

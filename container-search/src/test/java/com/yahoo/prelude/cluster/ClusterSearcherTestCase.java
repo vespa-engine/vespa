@@ -522,7 +522,6 @@ public class ClusterSearcherTestCase {
 
         DocumentdbInfoConfig.Builder documentDbConfig = new DocumentdbInfoConfig.Builder();
         documentDbConfig.documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("type1"));
-        var schema = new Schema.Builder("type1");
 
         DispatchConfig dispatchConfig = new DispatchConfig.Builder().build();
         Dispatcher dispatcher = new Dispatcher(new RpcResourcePool(dispatchConfig),
@@ -538,7 +537,6 @@ public class ClusterSearcherTestCase {
                                    qrSearchersConfig.build(),
                                    clusterConfig.build(),
                                    documentDbConfig.build(),
-                                   new SchemaInfo(List.of(schema.build()), Map.of()),
                                    dispatchers,
                                    vipStatus,
                                    null);
