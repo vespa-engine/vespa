@@ -1,5 +1,8 @@
 package com.yahoo.yolean.concurrent;
 
+import com.yahoo.api.annotations.Beta;
+
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
@@ -12,11 +15,19 @@ import static java.util.Objects.requireNonNull;
  *
  * @author jonmv
  */
+@Beta
 public class Memoized<T, E extends Exception> implements Supplier<T>, AutoCloseable {
 
-    /** Provides a tighter bound on the thrown exception type. */
+    /**
+     * Provides a tighter bound on the thrown exception type.
+     */
     @FunctionalInterface
-    public interface Closer<T, E extends Exception> { void close(T t) throws E; }
+    public interface Closer<T, E extends Exception> {
+
+        void close(T t) throws E;
+
+    }
+
 
     private final Object monitor = new Object();
     private final Closer<T, E> closer;
@@ -30,6 +41,10 @@ public class Memoized<T, E extends Exception> implements Supplier<T>, AutoClosea
 
     public static <T extends AutoCloseable> Memoized<T, ?> of(Supplier<T> factory) {
         return new Memoized<>(factory, AutoCloseable::close);
+    }
+
+    public static <T, U, E extends Exception, F extends E, G extends E> Memoized<U, E> combine(Memoized<T, F> inner, Function<T, U> outer, Closer<U, G> closer) {
+        return new Memoized<>(() -> outer.apply(inner.get()), compose(closer, inner::close));
     }
 
     @Override
@@ -59,6 +74,30 @@ public class Memoized<T, E extends Exception> implements Supplier<T>, AutoClosea
             factory = null;
             if (maybe != null) closer.close(maybe);
         }
+    }
+
+    private interface Thrower<E extends Exception> { void call() throws E; }
+
+    private static <T, E extends Exception, F extends E, G extends E> Closer<T, E> compose(Closer<T, G> outer, Thrower<F> inner) {
+        return parent -> {
+            Exception thrown = null;
+            try {
+                outer.close(parent);
+            }
+            catch (Exception e) {
+                thrown = e;
+            }
+            try {
+                inner.call();
+            }
+            catch (Exception e) {
+                if (thrown != null) thrown.addSuppressed(e);
+                else thrown = e;
+            }
+            @SuppressWarnings("unchecked")
+            E e = (E) thrown;
+            if (e != null) throw e;
+        };
     }
 
 }

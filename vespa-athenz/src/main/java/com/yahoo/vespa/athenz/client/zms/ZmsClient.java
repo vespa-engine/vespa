@@ -11,6 +11,7 @@ import com.yahoo.vespa.athenz.api.AthenzRoleInformation;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
+import java.io.Closeable;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +21,7 @@ import java.util.Set;
 /**
  * @author bjorncs
  */
-public interface ZmsClient extends AutoCloseable {
+public interface ZmsClient extends Closeable {
 
     void createTenancy(AthenzDomain tenantDomain, AthenzIdentity providerService, OAuthCredentials oAuthCredentials);
 
