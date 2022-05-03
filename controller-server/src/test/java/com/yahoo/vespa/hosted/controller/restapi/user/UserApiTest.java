@@ -291,7 +291,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
             var tenant1 = controller.createTenant("tenant1", Tenant.Type.cloud);
             var tenant2 = controller.createTenant("tenant2", Tenant.Type.cloud);
-            controller.serviceRegistry().billingController().setPlan(tenant2, PlanId.from("paid"), false);
+            controller.serviceRegistry().billingController().setPlan(tenant2, PlanId.from("paid"), false, false);
 
             tester.assertResponse(
                     request("/user/v1/user")

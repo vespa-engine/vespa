@@ -86,7 +86,7 @@ public class CloudTrialExpirerTest {
     private void registerTenant(String tenantName, String plan, Duration timeSinceLastLogin) {
         var name = TenantName.from(tenantName);
         tester.createTenant(tenantName, Tenant.Type.cloud);
-        tester.serviceRegistry().billingController().setPlan(name, PlanId.from(plan), false);
+        tester.serviceRegistry().billingController().setPlan(name, PlanId.from(plan), false, false);
         tester.controller().tenants().updateLastLogin(name, List.of(LastLoginInfo.UserLevel.user), tester.controller().clock().instant().minus(timeSinceLastLogin));
     }
 

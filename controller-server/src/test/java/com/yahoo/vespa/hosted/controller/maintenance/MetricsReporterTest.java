@@ -490,8 +490,8 @@ public class MetricsReporterTest {
         tester.createTenant("foo", Tenant.Type.cloud);
         tester.createTenant("bar", Tenant.Type.cloud);
         tester.createTenant("fix", Tenant.Type.cloud);
-        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("foo"), PlanId.from("pay-as-you-go"), false);
-        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("bar"), PlanId.from("pay-as-you-go"), false);
+        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("foo"), PlanId.from("pay-as-you-go"), false, false);
+        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("bar"), PlanId.from("pay-as-you-go"), false, false);
 
         var reporter = createReporter(tester.controller());
         reporter.maintain();

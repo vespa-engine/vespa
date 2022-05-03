@@ -211,7 +211,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     @Test
     public void trial_tenant_limit_reached() {
         ((InMemoryFlagSource) tester.controller().flagSource()).withIntFlag(PermanentFlags.MAX_TRIAL_TENANTS.id(), 1);
-        tester.controller().serviceRegistry().billingController().setPlan(tenantName, PlanId.from("pay-as-you-go"), false);
+        tester.controller().serviceRegistry().billingController().setPlan(tenantName, PlanId.from("pay-as-you-go"), false, false);
 
         // tests that we can create the one trial tenant the flag says we can have -- and that the tenant created
         // in @Before does not count towards that limit.

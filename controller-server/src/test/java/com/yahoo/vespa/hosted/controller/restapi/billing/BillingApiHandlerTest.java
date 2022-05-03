@@ -102,7 +102,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
 
         billingController.addBill(tenant, bill, true);
         billingController.addBill(tenant, bill, false);
-        billingController.setPlan(tenant, PlanId.from("some-plan"), true);
+        billingController.setPlan(tenant, PlanId.from("some-plan"), true, false);
 
         var request = request("/billing/v1/tenant/tenant1/billing?until=2020-05-28").roles(tenantRole);
         tester.assertResponse(request, new File("tenant-billing-view.json"));
@@ -179,8 +179,8 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         tester.controller().tenants().create(new CloudTenantSpec(tenant2, ""), new Auth0Credentials(() -> "foo", Set.of(Role.hostedOperator())));
 
         var bill = createBill();
-        billingController.setPlan(tenant, PlanId.from("some-plan"), true);
-        billingController.setPlan(tenant2, PlanId.from("some-plan"), true);
+        billingController.setPlan(tenant, PlanId.from("some-plan"), true, false);
+        billingController.setPlan(tenant2, PlanId.from("some-plan"), true, false);
         billingController.addBill(tenant, bill, false);
         billingController.addLineItem(tenant, "support", new BigDecimal("42"), "Smith");
         billingController.addBill(tenant2, bill, false);
