@@ -126,6 +126,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
             indexingScript.export(toDirectory);
             indexInfo.export(toDirectory);
             importedFields.export(toDirectory);
+            schemaInfo.export(toDirectory);
         }
     }
 
