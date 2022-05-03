@@ -390,13 +390,6 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag FAIL_DEPLOYMENT_FOR_FILES_WITH_UNKNOWN_EXTENSION = defineFeatureFlag(
-            "fail-deployment-for-files-with-unknown-extension", false,
-            List.of("hmusum"), "2022-04-27", "2022-05-27",
-            "Whether to fail deployments when app has a file with unknown extension for a directory",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
             "fail-deployment-for-files-with-unknown-extension", "NOOP",
             List.of("hmusum"), "2022-04-27", "2022-05-27",
