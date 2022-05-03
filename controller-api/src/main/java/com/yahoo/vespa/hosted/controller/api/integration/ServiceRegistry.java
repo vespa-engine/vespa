@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
+import com.yahoo.vespa.hosted.controller.api.integration.artifact.ArtifactRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
@@ -14,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
-import com.yahoo.vespa.hosted.controller.api.integration.container.ContainerRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
@@ -99,7 +99,7 @@ public interface ServiceRegistry {
 
     BillingDatabaseClient billingDatabase();
 
-    ContainerRegistry containerRegistry();
+    ArtifactRegistry containerRegistry();
 
     TenantSecretService tenantSecretService();
 

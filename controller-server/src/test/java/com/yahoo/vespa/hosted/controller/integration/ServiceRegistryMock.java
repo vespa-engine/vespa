@@ -82,7 +82,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
     private final RoleService roleService = new MockRoleService();
     private final BillingController billingController = new MockBillingController(clock);
-    private final ContainerRegistryMock containerRegistry = new ContainerRegistryMock();
+    private final ArtifactRegistryMock containerRegistry = new ArtifactRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final ArchiveService archiveService = new MockArchiveService();
     private final MockChangeRequestClient changeRequestClient = new MockChangeRequestClient();
@@ -236,7 +236,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public ContainerRegistryMock containerRegistry() {
+    public ArtifactRegistryMock containerRegistry() {
         return containerRegistry;
     }
 

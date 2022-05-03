@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.api.integration.container;
+package com.yahoo.vespa.hosted.controller.api.integration.artifact;
 
 import com.yahoo.component.Version;
 
@@ -8,23 +8,31 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A container image.
+ * A registry artifact (e.g. container image or RPM)
  *
  * @author mpolden
  */
-public class ContainerImage {
+public class Artifact {
 
     private final String id;
-    private final String registry;
-    private final String repository;
+    private final Optional<String> registry;
+    private final Optional<String> repository;
     private final Instant createdAt;
     private final Version version;
     private final Optional<Architecture> architecture;
 
-    public ContainerImage(String id, String registry, String repository, Instant createdAt, Version version, Optional<Architecture> architecture) {
+    public Artifact(String id, String registry, String repository, Instant createdAt, Version version, Optional<Architecture> architecture) {
         this.id = Objects.requireNonNull(id);
-        this.registry = Objects.requireNonNull(registry);
-        this.repository = Objects.requireNonNull(repository);
+        this.registry = Optional.of(registry);
+        this.repository = Optional.of(repository);
+        this.createdAt = Objects.requireNonNull(createdAt);
+        this.version = Objects.requireNonNull(version);
+    }
+
+    public Artifact(String id, Instant createdAt, Version version) {
+        this.id = Objects.requireNonNull(id);
+        this.registry = Optional.empty();
+        this.repository = Optional.empty();
         this.createdAt = Objects.requireNonNull(createdAt);
         this.version = Objects.requireNonNull(version);
         this.architecture = Objects.requireNonNull(architecture);
@@ -35,13 +43,13 @@ public class ContainerImage {
         return id;
     }
 
-    /** The registry holding this image */
-    public String registry() {
+    /** The registry holding this artifact */
+    public Optional<String> registry() {
         return registry;
     }
 
-    /** Repository of this image */
-    public String repository() {
+    /** Repository of this artifact */
+    public Optional<String> repository() {
         return repository;
     }
 
@@ -69,7 +77,7 @@ public class ContainerImage {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ContainerImage that = (ContainerImage) o;
+        Artifact that = (Artifact) o;
         return id.equals(that.id) &&
                registry.equals(that.registry) &&
                repository.equals(that.repository) &&
@@ -85,8 +93,8 @@ public class ContainerImage {
 
     @Override
     public String toString() {
-        return "container image " + repository + " [registry=" + registry + ",version=" + version.toFullString() +
-               ",createdAt=" + createdAt + ",architecture=" + architecture.map(Enum::name).orElse("<none>") + "]";
+        String name = repository.isPresent() ? registry.get() + "/" + repository.get() : id;
+        return "artifact " + name + " [version=" + version.toFullString() + ",createdAt=" + createdAt + ",architecture=" + architecture.map(Enum::name).orElse("<none>") + "]";
     }
 
     public enum Architecture {

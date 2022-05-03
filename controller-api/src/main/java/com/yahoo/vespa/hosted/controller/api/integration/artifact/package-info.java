@@ -3,6 +3,6 @@
  * @author mpolden
  */
 @ExportPackage
-package com.yahoo.vespa.hosted.controller.api.integration.container;
+package com.yahoo.vespa.hosted.controller.api.integration.artifact;
 
 import com.yahoo.osgi.annotation.ExportPackage;
