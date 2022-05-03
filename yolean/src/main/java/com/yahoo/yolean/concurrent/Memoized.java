@@ -1,5 +1,7 @@
 package com.yahoo.yolean.concurrent;
 
+import com.yahoo.api.annotations.Beta;
+
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -13,6 +15,7 @@ import static java.util.Objects.requireNonNull;
  *
  * @author jonmv
  */
+@Beta
 public class Memoized<T, E extends Exception> implements Supplier<T>, AutoCloseable {
 
     /**
