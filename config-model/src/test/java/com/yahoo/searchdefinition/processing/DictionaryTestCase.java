@@ -26,7 +26,7 @@ public class DictionaryTestCase {
     private static AttributesConfig getConfig(Schema schema) {
         AttributeFields attributes = new AttributeFields(schema);
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
-        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 130000);
+        attributes.getConfig(builder, AttributeFields.FieldSet.ALL, 130000, true);
         return builder.build();
     }
     private Schema createSearch(String def) throws ParseException {

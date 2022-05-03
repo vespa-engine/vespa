@@ -2,7 +2,6 @@
 package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.config.subscription.ConfigInstanceUtil;
-import com.yahoo.document.DataType;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.Case;
@@ -196,7 +195,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
         //TODO This is just to get some exporting tests to work, Should be undone and removed
-        getConfig(builder, FieldSet.ALL, 77777);
+        getConfig(builder, FieldSet.ALL, 77777, false);
     }
 
     private boolean isAttributeInFieldSet(Attribute attribute, FieldSet fs) {
@@ -302,11 +301,14 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return AttributesConfig.Attribute.Match.UNCASED;
     }
 
-    public void getConfig(AttributesConfig.Builder builder, FieldSet fs, long maxUnCommittedMemory) {
+    public void getConfig(AttributesConfig.Builder builder, FieldSet fs, long maxUnCommittedMemory, boolean enableBitVectors) {
         for (Attribute attribute : attributes.values()) {
             if (isAttributeInFieldSet(attribute, fs)) {
                 AttributesConfig.Attribute.Builder attrBuilder = getConfig(attribute.getName(), attribute, false);
                 attrBuilder.maxuncommittedmemory(maxUnCommittedMemory);
+                if (enableBitVectors && attribute.isFastSearch()) {
+                    attrBuilder.enablebitvectors(true);
+                }
                 builder.attribute(attrBuilder);
             }
         }

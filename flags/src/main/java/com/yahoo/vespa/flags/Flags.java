@@ -383,6 +383,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_BIT_VECTORS = defineFeatureFlag(
+            "enable-bit-vectors", false,
+            List.of("arnej"), "2022-05-03", "2022-12-31",
+            "Enables bit vector by default for fast-search attributes",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_ZSTD_IN_FILE_DISTRIBUTION = defineFeatureFlag(
             "use-zstd-in-file-distribution", false,
             List.of("hmusum"), "2022-04-07", "2022-06-01",
