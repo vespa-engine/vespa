@@ -412,7 +412,7 @@ class RequestBuilder {
         for (Grouping grp : requestList) {
             int levelMultiplier = 1;
             for (GroupingLevel lvl : grp.getLevels()) {
-                totalGroupsAndSummaries += (levelMultiplier *= validateSummaryMax(lvl));
+                totalGroupsAndSummaries += (levelMultiplier *= validateGroupMax(lvl));
                 var hars = hitsAggregationResult(lvl);
                 for (HitsAggregationResult har : hars) {
                     totalGroupsAndSummaries += (levelMultiplier * validateSummaryMax(har));
@@ -429,7 +429,7 @@ class RequestBuilder {
         this.totalGroupsAndSummaries = totalGroupsAndSummaries;
     }
 
-    private int validateSummaryMax(GroupingLevel lvl) {
+    private int validateGroupMax(GroupingLevel lvl) {
         int max = transform.getMax(lvl.getGroupPrototype().getTag());
         if (lvl.getExpression() instanceof RangeBucketPreDefFunctionNode) {
             int maxBuckets = ((RangeBucketPreDefFunctionNode) lvl.getExpression()).getBucketList().size() + 1; // +1 for "null" bucket
