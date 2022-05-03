@@ -33,6 +33,10 @@ public class ConfigChangeActions {
         this.reindexActions = Objects.requireNonNull(reindexActions);
     }
 
+    public ConfigChangeActions withRestartActions(RestartActions restartActions) {
+        return new ConfigChangeActions(restartActions, refeedActions, reindexActions);
+    }
+
     public RestartActions getRestartActions() {
         return restartActions;
     }

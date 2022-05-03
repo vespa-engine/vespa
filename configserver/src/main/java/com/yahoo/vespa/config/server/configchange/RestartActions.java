@@ -28,9 +28,8 @@ public class RestartActions {
             return this;
         }
 
-        private Entry addMessage(String message) {
+        private void addMessage(String message) {
             messages.add(message);
-            return this;
         }
 
         private Entry(String clusterName, String clusterType, String serviceType, boolean ignoreForInternalRedeploy) {
@@ -115,4 +114,12 @@ public class RestartActions {
     public boolean isEmpty() {
         return actions.isEmpty();
     }
+
+    public Set<String> hostnames() {
+        return getEntries().stream()
+                           .flatMap(entry -> entry.getServices().stream())
+                           .map(ServiceInfo::getHostName)
+                           .collect(Collectors.toUnmodifiableSet());
+    }
+
 }
