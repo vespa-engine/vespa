@@ -387,7 +387,7 @@ public class Flags {
             List.of("hmusum"), "2022-05-03", "2022-06-03",
             "Whether we should install JDK from latest-appstream repo on hosts (e.g. for security issues fixed in newer JDK versions)",
             "Takes effect immediately",
-            TENANT_ID);
+            HOSTNAME);
 
     public static final UnboundStringFlag PROVISION_IN_EXTERNAL_ACCOUNT = defineStringFlag(
             "provision-in-external-account", "",
