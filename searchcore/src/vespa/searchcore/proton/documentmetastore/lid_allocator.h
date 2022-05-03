@@ -68,7 +68,7 @@ public:
         return lid < _usedLids.size();
     }
     bool validLid(DocId lid) const {
-        return (lid < _usedLids.size() && _usedLids.testBit(lid));
+        return (lid < _usedLids.getSizeSafe() && _usedLids.testBit(lid));
     }
     bool validLidSafe(DocId lid, uint32_t limit) const {
         return (lid < limit && _usedLids.testBitSafe(lid));

@@ -51,6 +51,7 @@ public:
     bool testBit(unsigned int idx) const { return _bv.testBit(idx); }
     bool testBitSafe(unsigned int idx) const { return _bv.testBitSafe(idx); }
     unsigned int size() const { return _bv.size(); }
+    unsigned int getSizeSafe() const { return _bv.getSizeSafe(); }
     unsigned int byteSize() const {
         return _bv.extraByteSize() + sizeof(LidStateVector);
     }
