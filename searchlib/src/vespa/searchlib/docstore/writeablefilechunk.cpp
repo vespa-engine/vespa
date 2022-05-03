@@ -629,6 +629,7 @@ WriteableFileChunk::getMemoryFootprint() const
 size_t
 WriteableFileChunk::getMemoryMetaFootprint() const
 {
+    std::lock_guard guard(_lock);
     constexpr size_t mySizeWithoutMyParent(sizeof(*this) - sizeof(FileChunk));
     return mySizeWithoutMyParent + FileChunk::getMemoryMetaFootprint();
 }
