@@ -43,7 +43,7 @@ public class Memoized<T, E extends Exception> implements Supplier<T>, AutoClosea
         return new Memoized<>(factory, AutoCloseable::close);
     }
 
-    public static <T, U, E extends Exception, F extends E, G extends E> Memoized<U, E> combine(Memoized<T, F> inner, Function<T, U> outer, Closer<U, G> closer) {
+    public static <T, U, E extends Exception, F extends E, G extends E> Memoized<U, E> combine(Memoized<T, ? extends F> inner, Function<T, U> outer, Closer<U, ? extends G> closer) {
         return new Memoized<>(() -> outer.apply(inner.get()), compose(closer, inner::close));
     }
 
