@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.messagebus.Trace;
 import com.yahoo.messagebus.routing.Route;
@@ -12,8 +13,6 @@ import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.schema.Schema;
-import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
@@ -220,13 +219,12 @@ public class VdsStreamingSearcherTestCase {
         MockVisitorFactory factory = new MockVisitorFactory();
         VdsStreamingSearcher searcher = new VdsStreamingSearcher(factory);
 
-        var schema = new Schema.Builder("test");
-        schema.add(new com.yahoo.search.schema.DocumentSummary.Builder("default").build());
+        ConfigGetter<DocumentdbInfoConfig> getter = new ConfigGetter<>(DocumentdbInfoConfig.class);
+        DocumentdbInfoConfig config = getter.getConfig("file:src/test/java/com/yahoo/prelude/fastsearch/test/documentdb-info.cfg");
         searcher.init("container.0",
                       new SummaryParameters("default"),
                       new ClusterParams("clusterName"),
-                      new DocumentdbInfoConfig.Builder().documentdb(new DocumentdbInfoConfig.Documentdb.Builder().name("test")).build(),
-                      new SchemaInfo(List.of(schema.build()), Map.of()));
+                      config);
 
         // Magic query values are used to trigger specific behaviors from mock visitor.
         checkError(searcher, "/?query=noselection",
