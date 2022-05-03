@@ -124,11 +124,7 @@ FieldIndex<interleaved_features>::compactFeatures()
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, posting_entry.get_features());
-
-                // Features must be written before reference is updated.
-                std::atomic_thread_fence(std::memory_order_release);
-
+                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, posting_entry.get_features_relaxed());
                 // Reference the moved data
                 posting_entry.update_features(newFeatures);
             }
@@ -141,11 +137,7 @@ FieldIndex<interleaved_features>::compactFeatures()
                 // Filter on which buffers to move features from when
                 // performing incremental compaction.
 
-                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, posting_entry.get_features());
-
-                // Features must be written before reference is updated.
-                std::atomic_thread_fence(std::memory_order_release);
-
+                EntryRef newFeatures = _featureStore.moveFeatures(packedIndex, posting_entry.get_features_relaxed());
                 // Reference the moved data
                 posting_entry.update_features(newFeatures);
             }
@@ -184,7 +176,7 @@ FieldIndex<interleaved_features>::dump(search::index::IndexBuilder & indexBuilde
                 const PostingListEntryType &entry(pitr.getData());
                 features.set_num_occs(entry.get_num_occs());
                 features.set_field_length(entry.get_field_length());
-                _featureStore.setupForReadFeatures(entry.get_features(), decoder);
+                _featureStore.setupForReadFeatures(entry.get_features_relaxed(), decoder);
                 decoder.readFeatures(features);
                 indexBuilder.add_document(features);
             }
@@ -197,7 +189,7 @@ FieldIndex<interleaved_features>::dump(search::index::IndexBuilder & indexBuilde
                 const PostingListEntryType &entry(kd->getData());
                 features.set_num_occs(entry.get_num_occs());
                 features.set_field_length(entry.get_field_length());
-                _featureStore.setupForReadFeatures(entry.get_features(), decoder);
+                _featureStore.setupForReadFeatures(entry.get_features_relaxed(), decoder);
                 decoder.readFeatures(features);
                 indexBuilder.add_document(features);
             }

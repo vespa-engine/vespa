@@ -106,6 +106,16 @@ FeatureStore::addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features
 }
 
 void
+FeatureStore::add_features_guard_bytes()
+{
+    uint32_t len = DECODE_SAFETY;
+    uint32_t pad = RefType::pad(len);
+    auto result = _store.rawAllocator<int8_t>(_typeId).alloc(len + pad);
+    memset(result.data, 0, len + pad);
+    _store.incDead(result.ref, len + pad);
+}
+
+void
 FeatureStore::getFeatures(uint32_t packedIndex, vespalib::datastore::EntryRef ref, DocIdAndFeatures &features)
 {
     setupForField(packedIndex, _d);

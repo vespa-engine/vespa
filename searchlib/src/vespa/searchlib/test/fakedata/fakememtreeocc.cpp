@@ -263,7 +263,7 @@ FakeMemTreeOccMgr::flush()
         lastWord = wordIdx;
         if (i->getRemove()) {
             if (itr.valid() && itr.getKey() == docId) {
-                uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(), EntryRef(itr.getData().get_features()));
+                uint64_t bits = _featureStore.bitSize(fw->getPackedIndex(), EntryRef(itr.getData().get_features_relaxed()));
                 _featureSizes[wordIdx] -= RefType::align((bits + 7) / 8) * 8;
                 tree.remove(itr);
             }
