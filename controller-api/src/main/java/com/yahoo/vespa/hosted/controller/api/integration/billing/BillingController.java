@@ -48,9 +48,10 @@ public interface BillingController {
      * @param tenant The name of the tenant.
      * @param planId The ID of the plan to change to.
      * @param hasDeployments Does the tenant have active deployments.
+     * @param isAccountant Is it the hosted accountant that is doing the operation
      * @return String containing error message if something went wrong. Empty otherwise
      */
-    PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments);
+    PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments, boolean isAccountant);
 
     /**
      * Create a bill of unbilled use for the given tenant in the given time period.
