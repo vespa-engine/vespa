@@ -15,6 +15,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btree.hpp>
+#include <cstdio>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.memoryindex.ordered_document_inserter");
@@ -38,7 +39,10 @@ OrderedFieldIndexInserter<interleaved_features>::OrderedFieldIndexInserter(Field
       _dItr(_fieldIndex.getDictionaryTree().begin()),
       _listener(_fieldIndex.getDocumentRemover()),
       _removes(),
-      _adds()
+      _adds(),
+      _word_entries(),
+      _removes_offset(0),
+      _adds_offset(0)
 {
 }
 
@@ -49,22 +53,12 @@ template <bool interleaved_features>
 void
 OrderedFieldIndexInserter<interleaved_features>::flushWord()
 {
-    if (_removes.empty() && _adds.empty()) {
+    if (_removes.size() == _removes_offset && _adds.size() == _adds_offset) {
         return;
     }
-    //XXX: Feature store leak, removed features not marked dead
-    PostingListStore &postingListStore(_fieldIndex.getPostingListStore());
-    vespalib::datastore::EntryRef pidx(_dItr.getData().load_relaxed());
-    postingListStore.apply(pidx,
-                           &_adds[0],
-                           &_adds[0] + _adds.size(),
-                           &_removes[0],
-                           &_removes[0] + _removes.size());
-    if (pidx != _dItr.getData().load_relaxed()) {
-        _dItr.getWData().store_release(pidx);
-    }
-    _removes.clear();
-    _adds.clear();
+    _word_entries.emplace_back(_word, _adds.size() - _adds_offset, _removes.size() - _removes_offset);
+    _adds_offset = _adds.size();
+    _removes_offset = _removes.size();
 }
 
 template <bool interleaved_features>
@@ -72,6 +66,55 @@ void
 OrderedFieldIndexInserter<interleaved_features>::flush()
 {
     flushWord();
+    assert(_adds_offset == _adds.size());
+    assert(_removes_offset == _removes.size());
+    if (!_adds.empty()) {
+        _fieldIndex.add_features_guard_bytes();
+    }
+    const WordStore &wordStore(_fieldIndex.getWordStore());
+    PostingListStore &postingListStore(_fieldIndex.getPostingListStore());
+    size_t adds_offset = 0;
+    size_t removes_offset = 0;
+    for (const auto& word_entry : _word_entries) {
+        auto word = std::get<0>(word_entry);
+        vespalib::ConstArrayRef<PostingListKeyDataType> adds(_adds.data() + adds_offset, std::get<1>(word_entry));
+        vespalib::ConstArrayRef<uint32_t> removes(_removes.data() + removes_offset, std::get<2>(word_entry));
+        KeyComp cmp(wordStore, word);
+        WordKey key;
+        if (_dItr.valid() && cmp(_dItr.getKey(), key)) {
+            _dItr.binarySeek(key, cmp);
+        }
+        if (!_dItr.valid() || cmp(key, _dItr.getKey())) {
+            vespalib::datastore::EntryRef wordRef = _fieldIndex.addWord(word);
+            WordKey insertKey(wordRef);
+            DictionaryTree &dTree(_fieldIndex.getDictionaryTree());
+            dTree.insert(_dItr, insertKey, vespalib::datastore::AtomicEntryRef());
+        }
+        assert(_dItr.valid());
+        assert(word == wordStore.getWord(_dItr.getKey()._wordRef));
+        for (auto& add_entry : adds) {
+            _listener.insert(_dItr.getKey()._wordRef, add_entry._key);
+        }
+        //XXX: Feature store leak, removed features not marked dead
+        vespalib::datastore::EntryRef pidx(_dItr.getData().load_relaxed());
+        postingListStore.apply(pidx,
+                               adds.begin(),
+                               adds.end(),
+                               removes.begin(),
+                               removes.end());
+        if (pidx != _dItr.getData().load_relaxed()) {
+            _dItr.getWData().store_release(pidx);
+        }
+        adds_offset += adds.size();
+        removes_offset += removes.size();
+    }
+    assert(adds_offset == _adds.size());
+    assert(removes_offset == _removes.size());
+    _removes_offset = 0;
+    _adds_offset = 0;
+    _adds.clear();
+    _removes.clear();
+    _word_entries.clear();
     _listener.flush();
 }
 
@@ -86,27 +129,12 @@ template <bool interleaved_features>
 void
 OrderedFieldIndexInserter<interleaved_features>::setNextWord(const vespalib::stringref word)
 {
+    flushWord();
     // TODO: Adjust here if zero length words should be legal.
     assert(_word < word);
     _word = word;
     _prevDocId = noDocId;
     _prevAdd = false;
-    flushWord();
-    const WordStore &wordStore(_fieldIndex.getWordStore());
-    KeyComp cmp(wordStore, _word);
-    WordKey key;
-    if (_dItr.valid() && cmp(_dItr.getKey(), key)) {
-        _dItr.binarySeek(key, cmp);
-    }
-    if (!_dItr.valid() || cmp(key, _dItr.getKey())) {
-        vespalib::datastore::EntryRef wordRef = _fieldIndex.addWord(_word);
-
-        WordKey insertKey(wordRef);
-        DictionaryTree &dTree(_fieldIndex.getDictionaryTree());
-        dTree.insert(_dItr, insertKey, vespalib::datastore::AtomicEntryRef());
-    }
-    assert(_dItr.valid());
-    assert(_word == wordStore.getWord(_dItr.getKey()._wordRef));
 }
 
 template <bool interleaved_features>
@@ -121,7 +149,6 @@ OrderedFieldIndexInserter<interleaved_features>::add(uint32_t docId,
     _adds.push_back(PostingListKeyDataType(docId, PostingListEntryType(featureRef,
                                                                        cap_u16(features.num_occs()),
                                                                        cap_u16(features.field_length()))));
-    _listener.insert(_dItr.getKey()._wordRef, docId);
     _prevDocId = docId;
     _prevAdd = true;
 }

@@ -97,6 +97,8 @@ public:
         return _featureStore.addFeatures(_fieldId, features).first;
     }
 
+    void add_features_guard_bytes() { _featureStore.add_features_guard_bytes(); }
+
     FieldIndexBase(const index::Schema& schema, uint32_t fieldId);
     FieldIndexBase(const index::Schema& schema, uint32_t fieldId, const index::FieldLengthInfo& info);
     ~FieldIndexBase();

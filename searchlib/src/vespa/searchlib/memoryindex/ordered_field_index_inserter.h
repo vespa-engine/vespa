@@ -41,6 +41,10 @@ private:
     // Pending changes to posting list for (_word)
     std::vector<uint32_t>    _removes;
     std::vector<PostingListKeyDataType> _adds;
+    using WordEntry = std::tuple<vespalib::stringref, size_t, size_t>;
+    std::vector<WordEntry> _word_entries;
+    size_t _removes_offset;
+    size_t _adds_offset;
 
     static constexpr uint32_t noFieldId = std::numeric_limits<uint32_t>::max();
     static constexpr uint32_t noDocId = std::numeric_limits<uint32_t>::max();

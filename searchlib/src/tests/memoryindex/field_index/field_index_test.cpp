@@ -22,6 +22,7 @@
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <unordered_set>
 
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -290,33 +291,21 @@ public:
 MockFieldIndex::~MockFieldIndex() = default;
 
 /**
- * MockWordStoreScan is a helper class to ensure that previous word is
+ * MockWordStoreScan is a helper class to ensure that previous words are
  * still stored safely in memory, to satisfy OrderedFieldIndexInserter
  * needs.
  */
 class MockWordStoreScan {
-    vespalib::string _word0;
-    vespalib::string _word1;
-    vespalib::string *_prevWord;
-    vespalib::string *_word;
+    std::unordered_set<vespalib::string, vespalib::hash<vespalib::string>> _words;
 
 public:
     MockWordStoreScan()
-        : _word0(),
-          _word1(),
-          _prevWord(&_word0),
-          _word(&_word1)
+        : _words()
     { }
     ~MockWordStoreScan();
 
-    const vespalib::string &getWord() const {
-        return *_word;
-    }
-
     const vespalib::string &setWord(const vespalib::string &word) {
-        std::swap(_prevWord, _word);
-        *_word = word;
-        return *_word;
+        return *_words.insert(word).first;
     }
 };
 
@@ -759,11 +748,10 @@ TEST_F(FieldIndexCollectionTest, require_that_multiple_insert_and_remove_works)
             for (uint32_t di = 0; di < (uint32_t) w; ++di) { // insert
                 inserter.add(di * 3);
             }
-            EXPECT_EQ((w - 'a' + 1u) + ('z' - 'a' +1u) * fi,
-                      inserter.getNumUniqueWords());
         }
     }
     EXPECT_TRUE(inserter.assertPostings());
+    EXPECT_EQ(('z' - 'a' +1u) * numFields, inserter.getNumUniqueWords());
     inserter.rewind();
     for (uint32_t fi = 0; fi < numFields; ++fi) {
         MyDrainRemoves drainRemoves(inserter.getFieldIndexes(), fi);

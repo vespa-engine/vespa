@@ -25,7 +25,7 @@ private:
     using DocIdAndFeatures = index::DocIdAndFeatures;
     using PosOccFieldsParams = bitcompression::PosOccFieldsParams;
 
-    static const uint32_t DECODE_SAFETY = 16;
+    static constexpr uint32_t DECODE_SAFETY = 16;
 
     DataStoreType _store;
 
@@ -105,6 +105,20 @@ public:
      */
     std::pair<vespalib::datastore::EntryRef, uint64_t> addFeatures(uint32_t packedIndex, const DocIdAndFeatures &features);
 
+    /*
+     * Decoding of bitwise compressed data can read up to DECODE_SAFETY
+     * bytes beyond end of compressed data. This can cause issues with future
+     * features being written after new features are made visible for readers.
+     * Adding guard bytes when flushing OrderedFieldIndexInserter before
+     * updating the posting lists and dictionary ensures that the decoder
+     * overrun beyond the compressed data either goes into other features
+     * already written or into the guard area.
+     *
+     * If buffer type is changed to have a nonzero numArraysForNewBuffer then
+     * extra logic to add guard bytes is needed when switching primary buffer
+     * to avoid issues if the buffer is resumed as primary buffer later on.
+     */
+    void add_features_guard_bytes();
 
     /**
      * Get features from feature store.
