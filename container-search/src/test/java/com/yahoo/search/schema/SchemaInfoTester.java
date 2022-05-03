@@ -69,6 +69,11 @@ public class SchemaInfoTester {
                             .add(new RankProfile.Builder("inconsistent")
                                          .addInput("query(myTensor1)", TensorType.fromSpec("tensor(a{},b{})"))
                                          .build())
+                            .add(new DocumentSummary.Builder("testSummary")
+                                         .add(new DocumentSummary.Field("field1", "string"))
+                                         .add(new DocumentSummary.Field("field2", "integer"))
+                                         .setDynamic(true)
+                                         .build())
                             .build());
         schemas.add(new Schema.Builder("b")
                             .add(common)
@@ -98,17 +103,32 @@ public class SchemaInfoTester {
 
         var schemaInfoInfoConfig = new SchemaInfoConfig.Builder();
 
+        // ----- Schema A
         var schemaA = new SchemaInfoConfig.Schema.Builder();
         schemaA.name("a");
+
         schemaA.rankprofile(rankProfileCommon);
         var rankProfileInconsistentA = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileInconsistentA.name("inconsistent");
         rankProfileInconsistentA.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
         schemaA.rankprofile(rankProfileInconsistentA);
+
+        var summaryClass = new SchemaInfoConfig.Schema.Summaryclass.Builder();
+        summaryClass.name("testSummary");
+        var field1 = new SchemaInfoConfig.Schema.Summaryclass.Fields.Builder();
+        field1.name("field1").type("string").dynamic(true);
+        summaryClass.fields(field1);
+        var field2 = new SchemaInfoConfig.Schema.Summaryclass.Fields.Builder();
+        field2.name("field2").type("integer");
+        summaryClass.fields(field2);
+        schemaA.summaryclass(summaryClass);
+
         schemaInfoInfoConfig.schema(schemaA);
 
+        // ----- Schema B
         var schemaB = new SchemaInfoConfig.Schema.Builder();
         schemaB.name("b");
+
         schemaB.rankprofile(rankProfileCommon);
         var rankProfileInconsistentB = new SchemaInfoConfig.Schema.Rankprofile.Builder();
         rankProfileInconsistentB.name("inconsistent");
@@ -118,8 +138,10 @@ public class SchemaInfoTester {
         rankProfileBOnly.name("bOnly");
         rankProfileBOnly.input(new SchemaInfoConfig.Schema.Rankprofile.Input.Builder().name("query(myTensor1)").type("tensor(a{},b{})"));
         schemaB.rankprofile(rankProfileBOnly);
+
         schemaInfoInfoConfig.schema(schemaB);
 
+        // ----- Info about which schemas are in which clusters
         var qrSearchersConfig = new QrSearchersConfig.Builder();
         var clusterAB = new QrSearchersConfig.Searchcluster.Builder();
         clusterAB.name("ab");

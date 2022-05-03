@@ -183,7 +183,7 @@ public class FastHit extends Hit {
     /** For internal use */
     public void addSummary(DocsumDefinition docsumDef, Inspector value) {
         if (removedFields != null)
-            removedFields.removeAll(docsumDef.fieldNames());
+            removedFields.removeAll(docsumDef.fields().keySet());
         if ( ! (summaries instanceof ArrayList) ) summaries = new ArrayList<>(8);
         summaries.add(0, new SummaryData(this, docsumDef, value, 1 + summaries.size()));
     }
@@ -363,8 +363,8 @@ public class FastHit extends Hit {
 
     @Override
     public String toString() {
-        return super.toString() + " [fasthit, globalid: " + new GlobalId(globalId).toString() + ", partId: "
-               + partId + ", distributionkey: " + distributionKey + "]";
+        return super.toString() + " [fasthit, globalid: " + new GlobalId(globalId).toString() + ", partId: " +
+               partId + ", distributionkey: " + distributionKey + "]";
     }
 
     @Override
@@ -562,7 +562,7 @@ public class FastHit extends Hit {
         void forEachFieldAsRaw(RawUtf8Consumer consumer) {
             data.traverse((ObjectTraverser)(name, value) -> {
                 if (!shadowed(name) && !removed(name)) {
-                    DocsumField fieldType = type.getField(name);
+                    DocsumField fieldType = type.fields().get(name);
                     if (fieldType != null) {
                         if (fieldType.isString()) {
                             byte[] utf8Value = value.asUtf8();
@@ -592,7 +592,7 @@ public class FastHit extends Hit {
         private boolean shadowed(String name) {
             if (hit.hasField(name)) return true;
             for (int i = 0; i < hit.summaries.size() - index; i++) {
-                if (hit.summaries.get(i).type.fieldNames().contains(name))
+                if (hit.summaries.get(i).type.fields().containsKey(name))
                     return true;
             }
             return false;
