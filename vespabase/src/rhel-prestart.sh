@@ -89,21 +89,29 @@ fixdir () {
         echo "fixdir: Expected 4 params, got:" "$@"
         exit 1
     fi
-
-    parent=`dirname "$4"`
-    [ -d "$parent" ] || fixdir "$1" "$2" "$3" "$parent"
-    [ -d "$4" ] || mkdir --mode "$3" "$4"
-    [ "${VESPA_UNPRIVILEGED}" == yes ] || chown $1:$2 "$4"
+    mkdir -p "$4"
+    if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
+      chown $1 "$4"
+      chgrp $2 "$4"
+    fi
+    chmod $3 "$4"
 }
 
 # BEGIN directory fixups
 
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  libexec/vespa/plugins/qrs
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/configserver
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/qrs
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/search
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp/vespa
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/crash
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server/serverdb
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/config_server/serverdb/tenants
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/filedistribution
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/index
@@ -112,9 +120,11 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/search
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/db/vespa/tmp
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/jdisc_container
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/run
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/application
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache/configserver
-fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config/
 
 if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
   chown -hR ${VESPA_USER} logs/vespa
