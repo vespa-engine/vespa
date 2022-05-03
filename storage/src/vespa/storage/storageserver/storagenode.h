@@ -23,6 +23,7 @@
 #include <vespa/storage/storageutil/resumeguard.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
+#include <atomic>
 #include <mutex>
 
 namespace document { class DocumentTypeRepo; }
@@ -109,7 +110,7 @@ private:
     StorageNodeContext& _context;
     ApplicationGenerationFetcher& _generationFetcher;
     vespalib::string _rootFolder;
-    bool _attemptedStopped;
+    std::atomic<bool> _attemptedStopped;
     vespalib::string _pidFile;
 
     // First components that doesn't depend on others
