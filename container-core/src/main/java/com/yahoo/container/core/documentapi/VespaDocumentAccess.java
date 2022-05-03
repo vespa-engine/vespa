@@ -20,8 +20,8 @@ import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
+import com.yahoo.yolean.concurrent.Memoized;
 
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,8 +37,7 @@ public class VespaDocumentAccess extends DocumentAccess {
 
     private final MessageBusParams parameters;
 
-    private final AtomicReference<DocumentAccess> delegate = new AtomicReference<>();
-    private boolean shutDown = false;
+    private final Memoized<DocumentAccess, RuntimeException> delegate;
 
     VespaDocumentAccess(DocumentmanagerConfig documentmanagerConfig,
                         String slobroksConfigId,
@@ -51,19 +50,11 @@ public class VespaDocumentAccess extends DocumentAccess {
         this.parameters.setDocumentmanagerConfig(documentmanagerConfig);
         this.parameters.getRPCNetworkParams().setSlobrokConfigId(slobroksConfigId);
         this.parameters.getMessageBusParams().setMessageBusConfig(messagebusConfig);
+        this.delegate = new Memoized<>(() -> new MessageBusDocumentAccess(parameters), DocumentAccess::shutdown);
     }
 
     public DocumentAccess delegate() {
-        DocumentAccess access = delegate.getAcquire();
-        return access != null ? access : delegate.updateAndGet(value -> {
-            if (value != null)
-                return value;
-
-            if (shutDown)
-                throw new IllegalStateException("This document access has been shut down");
-
-            return new MessageBusDocumentAccess(parameters);
-        });
+        return delegate.get();
     }
 
     @Override
@@ -72,14 +63,7 @@ public class VespaDocumentAccess extends DocumentAccess {
     }
 
     void protectedShutdown() {
-        delegate.updateAndGet(access -> {
-            super.shutdown();
-            shutDown = true;
-            if (access != null)
-                access.shutdown();
-
-            return null;
-        });
+        delegate.close();
     }
 
     @Override

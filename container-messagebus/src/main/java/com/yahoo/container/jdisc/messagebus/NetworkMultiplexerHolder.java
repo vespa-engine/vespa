@@ -7,6 +7,9 @@ import com.yahoo.messagebus.network.NetworkMultiplexer;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
 import com.yahoo.messagebus.shared.NullNetwork;
+import com.yahoo.yolean.concurrent.Memoized;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Holds a reference to a singleton {@link NetworkMultiplexer}.
@@ -15,21 +18,17 @@ import com.yahoo.messagebus.shared.NullNetwork;
  */
 public class NetworkMultiplexerHolder extends AbstractComponent {
 
-    private final Object monitor = new Object();
-    private boolean destroyed = false;
-    private NetworkMultiplexer net;
+    private final AtomicReference<RPCNetworkParams> params = new AtomicReference<>();
+    private final Memoized<NetworkMultiplexer, RuntimeException> net = new Memoized<>(() -> NetworkMultiplexer.shared(newNetwork(params.get())),
+                                                                                      NetworkMultiplexer::disown);
 
     /** Get the singleton RPCNetworkAdapter, creating it if this hasn't yet been done. */
     public NetworkMultiplexer get(RPCNetworkParams params) {
-        synchronized (monitor) {
-            if (destroyed)
-                throw new IllegalStateException("Component already destroyed");
-
-            return net = net != null ? net : NetworkMultiplexer.shared(newNetwork(params));
-        }
+        this.params.set(params);
+        return net.get();
     }
 
-    private Network newNetwork(RPCNetworkParams params) {
+    private static Network newNetwork(RPCNetworkParams params) {
         return params.getSlobroksConfig() != null && params.getSlobroksConfig().slobrok().isEmpty()
                ? new NullNetwork() // For LocalApplication, test setup.
                : new RPCNetwork(params);
@@ -37,13 +36,7 @@ public class NetworkMultiplexerHolder extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        synchronized (monitor) {
-            if (net != null) {
-                net.disown();
-                net = null;
-            }
-            destroyed = true;
-        }
+        net.close();
     }
 
 }
