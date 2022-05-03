@@ -86,7 +86,6 @@ VisitorManager::create_and_start_manager_thread()
 void
 VisitorManager::updateMetrics(const MetricLockGuard &)
 {
-    std::lock_guard sync(_visitorLock);
     _metrics->queueSize.addValue(_visitorQueue.size());
 }
 
