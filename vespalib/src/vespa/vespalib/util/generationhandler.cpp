@@ -138,7 +138,7 @@ GenerationHandler::GenerationHandler()
 {
     _last = _first = new GenerationHold;
     ++_numHolds;
-    _first->_generation.store(_generation, std::memory_order_relaxed);
+    _first->_generation.store(getCurrentGeneration(), std::memory_order_relaxed);
     _first->setValid();
 }
 
@@ -188,7 +188,7 @@ GenerationHandler::incGeneration()
         // the typical case when no readers are present.
         // Note: atomic thread fence above is needed to avoid stale data in
         // reader
-        _generation = ngen;
+        set_generation(ngen);
         last->_generation.store(ngen, std::memory_order_relaxed);
         updateFirstUsedGeneration();
         return;
@@ -205,7 +205,7 @@ GenerationHandler::incGeneration()
     nhold->_next = nullptr;
     nhold->setValid();
     last->_next = nhold;
-    _generation = ngen;
+    set_generation(ngen);
     _last.store(nhold, std::memory_order_release);
     updateFirstUsedGeneration();
 }
@@ -213,7 +213,7 @@ GenerationHandler::incGeneration()
 uint32_t
 GenerationHandler::getGenerationRefCount(generation_t gen) const
 {
-    if (static_cast<sgeneration_t>(gen - _generation) > 0)
+    if (static_cast<sgeneration_t>(gen - getCurrentGeneration()) > 0)
         return 0u;
     if (static_cast<sgeneration_t>(getFirstUsedGeneration() - gen) > 0)
         return 0u;
