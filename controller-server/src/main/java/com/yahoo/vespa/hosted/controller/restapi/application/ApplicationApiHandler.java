@@ -2159,6 +2159,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                            requireZone(environment, region));
         // Attempt to deactivate application even if the deployment is not known by the controller
         controller.applications().deactivate(id.applicationId(), id.zoneId());
+        controller.jobController().last(id.applicationId(), JobType.deploymentTo(id.zoneId()))
+                  .filter(run -> ! run.hasEnded())
+                  .ifPresent(last -> controller.jobController().abort(last.id(), "deployment deactivated by " + request.getJDiscRequest().getUserPrincipal().getName()));
         return new MessageResponse("Deactivated " + id);
     }
 
