@@ -13,6 +13,7 @@ import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.FillInvoker;
@@ -69,7 +70,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             if (summaryClass.equals("")) {
                 summaryClass = null;
             } else if (! documentDb.getDocsumDefinitionSet().hasDocsum(summaryClass)) {
-                throw new IllegalArgumentException("invalid presentation.summary=" + summaryClass);
+                throw new IllegalInputException("invalid presentation.summary=" + summaryClass);
             }
         }
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
