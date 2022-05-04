@@ -3,4 +3,5 @@
  * @author bjorncs
  */
 @com.yahoo.api.annotations.PublicApi
+@com.yahoo.osgi.annotation.ExportPackage
 package com.yahoo.component.annotation;
