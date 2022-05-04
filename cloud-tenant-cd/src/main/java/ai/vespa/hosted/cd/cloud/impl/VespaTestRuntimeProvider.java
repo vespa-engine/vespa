@@ -14,4 +14,5 @@ public class VespaTestRuntimeProvider extends AbstractComponent implements TestR
         VespaTestRuntime vespaTestRuntime = new VespaTestRuntime(config);
         updateReference(vespaTestRuntime);
     }
+
 }

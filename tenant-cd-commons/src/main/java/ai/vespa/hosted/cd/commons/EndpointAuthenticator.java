@@ -4,6 +4,7 @@ package ai.vespa.hosted.cd.commons;
 import javax.net.ssl.SSLContext;
 import java.net.http.HttpRequest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,6 +29,11 @@ public interface EndpointAuthenticator {
 
     /** Adds necessary authentication data to the given HTTP request builder, to pass the data plane of a Vespa endpoint. */
     default HttpRequest.Builder authenticated(HttpRequest.Builder request) {
+        Map<String, List<String>> headers = request.build().headers().map();
+        authorizationHeaders().forEach((name, value) -> {
+            if ( ! headers.containsKey(name))
+                request.setHeader(name, value);
+        });
         return request;
     }
 
