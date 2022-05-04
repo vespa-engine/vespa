@@ -107,7 +107,6 @@ public class RoutingController {
     /** Read and return zone-scoped endpoints for given deployment */
     public EndpointList readEndpointsOf(DeploymentId deployment) {
         Set<Endpoint> endpoints = new LinkedHashSet<>();
-        boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
         // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.read(deployment)) {
             if (!policy.status().isActive()) continue;
