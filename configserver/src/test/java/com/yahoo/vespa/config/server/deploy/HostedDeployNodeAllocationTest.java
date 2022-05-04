@@ -82,8 +82,8 @@ public class HostedDeployNodeAllocationTest {
                                    host("host2", resources(3), 2, "7.2", cluster));
                 } else if (invocation == 1) { // Building 7.2
                     invocation++;
-                    return List.of(host("host3", resources(2), 2, "7.2", cluster),
-                                   host("host4", resources(2), 3, "7.2", cluster),
+                    return List.of(host("host2", resources(2), 2, "7.2", cluster),
+                                   host("host3", resources(2), 3, "7.2", cluster),
                                    host("host4", resources(2), 4, "7.2", cluster));
                 } else {
                     throw new RuntimeException("Unexpected third invocation");
