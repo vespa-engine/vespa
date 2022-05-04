@@ -13,17 +13,16 @@ BucketDbMetrics::BucketDbMetrics(const vespalib::string& db_type, metrics::Metri
 
 BucketDbMetrics::~BucketDbMetrics() = default;
 
-//TODO Vespa 8 all metrics with .sum in the name should have that removed.
 DistributorMetricSet::DistributorMetricSet()
     : MetricSet("distributor", {{"distributor"}}, ""),
-      puts("puts.sum", this),
+      puts("puts", this),
       updates(this),
       update_puts("update_puts", this),
       update_gets("update_gets", this),
       update_metadata_gets("update_metadata_gets", this),
-      removes("removes.sum", this),
-      removelocations("removelocations.sum", this),
-      gets("gets.sum", this),
+      removes("removes", this),
+      removelocations("removelocations", this),
+      gets("gets", this),
       stats("stats", this),
       getbucketlists("getbucketlists", this),
       visits(this),
