@@ -56,18 +56,8 @@ public class DockerImage {
         return new DockerImage(registry, repository, Optional.of(version.toFullString()));
     }
 
-    /** Returns a copy of this tagged with the given tag */
-    public DockerImage withTag(String tag) {
-        return new DockerImage(registry, repository, Optional.of(tag));
-    }
-
     /** Returns a copy of this with registry set to given value */
     public DockerImage withRegistry(String registry) {
-        return new DockerImage(registry, repository, tag);
-    }
-
-    /** Returns a copy of this with repository set to given value */
-    public DockerImage withRepository(String repository) {
         return new DockerImage(registry, repository, tag);
     }
 
