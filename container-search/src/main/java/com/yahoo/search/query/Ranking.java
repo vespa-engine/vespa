@@ -69,7 +69,7 @@ public class Ranking implements Cloneable {
         argumentType.addField(new FieldDescription(DIVERSITY, new QueryProfileFieldType(Diversity.getArgumentType())));
         argumentType.addField(new FieldDescription(SOFTTIMEOUT, new QueryProfileFieldType(SoftTimeout.getArgumentType())));
         argumentType.addField(new FieldDescription(MATCHING, new QueryProfileFieldType(Matching.getArgumentType())));
-        argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature")); // Repeated at the end of RankFeatures
+        argumentType.addField(new FieldDescription(FEATURES, "query-profile", "rankfeature input")); // Repeated at the end of RankFeatures
         argumentType.addField(new FieldDescription(PROPERTIES, "query-profile", "rankproperty"));
         argumentType.freeze();
         argumentTypeName = new CompoundName(argumentType.getId().getName());

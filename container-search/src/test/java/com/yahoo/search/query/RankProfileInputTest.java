@@ -188,7 +188,7 @@ public class RankProfileInputTest {
         return new Query.Builder()
                 .setSchemaInfo(createSchemaInfo())
                 .setQueryProfile(createQueryProfile()) // Use the instantiation path with query profiles
-                .setRequest(HttpRequest.createTestRequest("?" + urlEncode("ranking.features.query(myTensor1)") +
+                .setRequest(HttpRequest.createTestRequest("?" + urlEncode("input.query(myTensor1)") +
                                                           "=" + urlEncode(tensorString) +
                                                           "&ranking=" + profile +
                                                           "&" + additionalParams,

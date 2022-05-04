@@ -137,12 +137,7 @@ public class QueryProperties extends Properties {
             } else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
                 if (key.last().equals(Presentation.TENSORS)) return query.getPresentation().getTensorShortForm();
             }
-        }
-        else if (key.first().equals("rankfeature") || key.first().equals("featureoverride")) { // featureoverride is deprecated
-            return query.getRanking().getFeatures().getObject(key.rest().toString());
-        } else if (key.first().equals("rankproperty")) {
-            return query.getRanking().getProperties().get(key.rest().toString());
-        } else if (key.size()==1) {
+        } else if (key.size() == 1) {
             if (key.equals(Query.HITS)) return query.getHits();
             if (key.equals(Query.OFFSET)) return query.getOffset();
             if (key.equals(Query.TRACE_LEVEL)) return query.getTraceLevel();
@@ -160,6 +155,7 @@ public class QueryProperties extends Properties {
 
     @Override
     public void set(CompoundName key, Object value, Map<String,String> context) {
+        System.out.println("Setting " + key);
         // Note: The defaults here are never used
         try {
             if (key.size() == 2 && key.first().equals(Model.MODEL)) {
