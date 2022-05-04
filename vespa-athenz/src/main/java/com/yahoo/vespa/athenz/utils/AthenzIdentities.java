@@ -19,6 +19,7 @@ public class AthenzIdentities {
 
     public static final AthenzDomain USER_PRINCIPAL_DOMAIN = new AthenzDomain("user");
     public static final AthenzService ZMS_ATHENZ_SERVICE = new AthenzService("sys.auth", "zms");
+    public static final AthenzService ZTS_ATHENZ_SERVICE = new AthenzService("sys.auth", "zts");
 
     public static AthenzIdentity from(AthenzDomain domain, String identityName) {
         if (domain.equals(USER_PRINCIPAL_DOMAIN)) {
