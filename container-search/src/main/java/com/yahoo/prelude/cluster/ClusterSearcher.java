@@ -18,11 +18,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
-import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher;
 import com.yahoo.yolean.Exceptions;
@@ -78,7 +76,6 @@ public class ClusterSearcher extends Searcher {
                            QrSearchersConfig qrsConfig,
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
-                           SchemaInfo schemaInfo,
                            ComponentRegistry<Dispatcher> dispatchers,
                            VipStatus vipStatus,
                            VespaDocumentAccess access) {
@@ -102,11 +99,11 @@ public class ClusterSearcher extends Searcher {
         String uniqueServerId = UUID.randomUUID().toString();
         if (searchClusterConfig.indexingmode() == STREAMING) {
             server = vdsCluster(uniqueServerId, searchClusterIndex,
-                                searchClusterConfig, docSumParams, documentDbConfig, schemaInfo, access);
+                                                       searchClusterConfig, docSumParams, documentDbConfig, access);
             vipStatus.addToRotation(server.getName());
         } else {
             server = searchDispatch(searchClusterIndex, searchClusterName, uniqueServerId,
-                                    docSumParams, documentDbConfig, schemaInfo, dispatchers);
+                                                   docSumParams, documentDbConfig, dispatchers);
         }
     }
 
@@ -128,7 +125,6 @@ public class ClusterSearcher extends Searcher {
                                                String serverId,
                                                SummaryParameters docSumParams,
                                                DocumentdbInfoConfig documentdbInfoConfig,
-                                               SchemaInfo schemaInfo,
                                                ComponentRegistry<Dispatcher> dispatchers) {
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         ComponentId dispatcherComponentId = new ComponentId("dispatcher." + searchClusterName);
@@ -136,7 +132,7 @@ public class ClusterSearcher extends Searcher {
         if (dispatcher == null)
             throw new IllegalArgumentException("Configuration error: No dispatcher " + dispatcherComponentId +
                                                " is configured");
-        return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
+        return new FastSearcher(serverId, dispatcher, docSumParams, clusterParams, documentdbInfoConfig);
     }
 
     private static VdsStreamingSearcher vdsCluster(String serverId,
@@ -144,7 +140,6 @@ public class ClusterSearcher extends Searcher {
                                                    QrSearchersConfig.Searchcluster searchClusterConfig,
                                                    SummaryParameters docSumParams,
                                                    DocumentdbInfoConfig documentdbInfoConfig,
-                                                   SchemaInfo schemaInfo,
                                                    VespaDocumentAccess access) {
         if (searchClusterConfig.searchdef().size() != 1) {
             throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
@@ -154,7 +149,7 @@ public class ClusterSearcher extends Searcher {
         searcher.setSearchClusterName(searchClusterConfig.rankprofiles().configid());
         searcher.setDocumentType(searchClusterConfig.searchdef(0));
         searcher.setStorageClusterRouteSpec(searchClusterConfig.storagecluster().routespec());
-        searcher.init(serverId, docSumParams, clusterParams, documentdbInfoConfig, schemaInfo);
+        searcher.init(serverId, docSumParams, clusterParams, documentdbInfoConfig);
         return searcher;
     }
 
@@ -223,7 +218,7 @@ public class ClusterSearcher extends Searcher {
     }
 
     private Set<String> schemasHavingProfile(String profile, Execution.Context context) {
-        return context.schemaInfo().schemas().values().stream()
+        return context.schemaInfo().schemas().stream()
                                              .filter(schema -> schema.rankProfiles().containsKey(profile))
                                              .map(schema -> schema.name())
                                              .collect(Collectors.toSet());
@@ -239,8 +234,7 @@ public class ClusterSearcher extends Searcher {
                 searcher.fill(result, summaryClass, execution);
             } else {
                 if (result.hits().getErrorHit() == null) {
-                    result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " +
-                                                                      query.getTimeout() + " ms"));
+                    result.hits().addError(ErrorMessage.createTimeout("No time left to get summaries, query timeout was " + query.getTimeout() + " ms"));
                 }
             }
         } else {

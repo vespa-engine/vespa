@@ -215,7 +215,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
                 if (summary.valid()) {
-                    hits.get(i).setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
+                    hits.get(i).setField(Hit.SDDOCNAME_FIELD, documentDb.getName());
                     hits.get(i).addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
                     hits.get(i).setFilled(summaryClass);
                 } else {

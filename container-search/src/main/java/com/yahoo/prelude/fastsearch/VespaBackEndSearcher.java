@@ -14,12 +14,10 @@ import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.PingableSearcher;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.result.Hit;
-import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.Grouping;
 
@@ -109,7 +107,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         if (hasLocation(query.getModel().getQueryTree())) return true;
 
         // Needed to generate ranking features?
-        RankProfile rankProfile = documentDb.schema().rankProfiles().get(query.getRanking().getProfile());
+        RankProfile rankProfile = documentDb.rankProfiles().get(query.getRanking().getProfile());
         if (rankProfile == null) return true; // stay safe
         if (rankProfile.hasSummaryFeatures()) return true;
         if (query.getRanking().getListFeatures()) return true;
@@ -135,12 +133,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     private void resolveDocumentDatabase(Query query) {
         DocumentDatabase docDb = getDocumentDatabase(query);
         if (docDb != null) {
-            query.getModel().setDocumentDb(docDb.schema().name());
+            query.getModel().setDocumentDb(docDb.getName());
         }
     }
 
     public final void init(String serverId, SummaryParameters docSumParams, ClusterParams clusterParams,
-                           DocumentdbInfoConfig documentdbInfoConfig, SchemaInfo schemaInfo) {
+                           DocumentdbInfoConfig documentdbInfoConfig) {
         this.serverId = serverId;
         this.name = clusterParams.searcherName;
 
@@ -150,9 +148,10 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         if (documentdbInfoConfig != null) {
             for (DocumentdbInfoConfig.Documentdb docDb : documentdbInfoConfig.documentdb()) {
-                DocumentDatabase db = new DocumentDatabase(schemaInfo.schemas().get(docDb.name()));
-                if (documentDbs.isEmpty())
+                DocumentDatabase db = new DocumentDatabase(docDb);
+                if (documentDbs.isEmpty()) {
                     defaultDocumentDb = db;
+                }
                 documentDbs.put(docDb.name(), db);
             }
         }
@@ -160,7 +159,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     protected void transformQuery(Query query) { }
 
-    @Override
     public Result search(Query query, Execution execution) {
         // query root should not be null here
         Item root = query.getModel().getQueryTree().getRoot();
@@ -393,7 +391,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
     private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata) {
         DocumentDatabase db = getDocumentDatabase(hit.getQuery());
-        hit.setField(Hit.SDDOCNAME_FIELD, db.schema().name());
+        hit.setField(Hit.SDDOCNAME_FIELD, db.getName());
         return decodeSummary(summaryClass, hit, docsumdata, db.getDocsumDefinitionSet());
     }
 

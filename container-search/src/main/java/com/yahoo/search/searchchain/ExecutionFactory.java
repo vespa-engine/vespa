@@ -2,7 +2,6 @@
 package com.yahoo.search.searchchain;
 
 import com.google.inject.Inject;
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.ChainsConfigurer;
@@ -49,8 +48,6 @@ public class ExecutionFactory extends AbstractComponent {
     private final RendererRegistry rendererRegistry;
     private final Executor executor;
 
-    // TODO: Fix tests depending on HandlersConfigurerTestWrapper so that this constructor can be removed
-    @Beta
     @Inject
     public ExecutionFactory(ChainsConfig chainsConfig,
                             IndexInfoConfig indexInfo,
@@ -61,29 +58,9 @@ public class ExecutionFactory extends AbstractComponent {
                             Linguistics linguistics,
                             ComponentRegistry<Renderer> renderers,
                             Executor executor) {
-        this(chainsConfig,
-             indexInfo,
-             new SchemaInfo(indexInfo, schemaInfo, clusters),
-             clusters,
-             searchers,
-             specialTokens,
-             linguistics,
-             renderers,
-             executor);
-    }
-
-    public ExecutionFactory(ChainsConfig chainsConfig,
-                            IndexInfoConfig indexInfo,
-                            SchemaInfo schemaInfo,
-                            QrSearchersConfig clusters,
-                            ComponentRegistry<Searcher> searchers,
-                            SpecialtokensConfig specialTokens,
-                            Linguistics linguistics,
-                            ComponentRegistry<Renderer> renderers,
-                            Executor executor) {
         this.searchChainRegistry = createSearchChainRegistry(searchers, chainsConfig);
         this.indexFacts = new IndexFacts(new IndexModel(indexInfo, clusters)).freeze();
-        this.schemaInfo = schemaInfo;
+        this.schemaInfo = new SchemaInfo(indexInfo, schemaInfo, clusters);
         this.specialTokens = new SpecialTokenRegistry(specialTokens);
         this.linguistics = linguistics;
         this.renderingExecutor = createRenderingExecutor();
@@ -101,7 +78,7 @@ public class ExecutionFactory extends AbstractComponent {
                             Linguistics linguistics,
                             ComponentRegistry<Renderer> renderers,
                             Executor executor) {
-        this(chainsConfig, indexInfo, SchemaInfo.empty(), clusters, searchers, specialTokens, linguistics, renderers, executor);
+        this(chainsConfig, indexInfo, new SchemaInfoConfig.Builder().build(), clusters, searchers, specialTokens, linguistics, renderers, executor);
     }
 
     /** @deprecated pass the container threadpool */
@@ -113,7 +90,7 @@ public class ExecutionFactory extends AbstractComponent {
                             SpecialtokensConfig specialTokens,
                             Linguistics linguistics,
                             ComponentRegistry<Renderer> renderers) {
-        this(chainsConfig, indexInfo, SchemaInfo.empty(), clusters, searchers, specialTokens, linguistics, renderers, null);
+        this(chainsConfig, indexInfo, new SchemaInfoConfig.Builder().build(), clusters, searchers, specialTokens, linguistics, renderers, null);
     }
 
     private SearchChainRegistry createSearchChainRegistry(ComponentRegistry<Searcher> searchers,
@@ -167,7 +144,7 @@ public class ExecutionFactory extends AbstractComponent {
     public static ExecutionFactory empty() {
         return new ExecutionFactory(new ChainsConfig.Builder().build(),
                                     new IndexInfoConfig.Builder().build(),
-                                    SchemaInfo.empty(),
+                                    new SchemaInfoConfig.Builder().build(),
                                     new QrSearchersConfig.Builder().build(),
                                     new ComponentRegistry<>(),
                                     new SpecialtokensConfig.Builder().build(),
