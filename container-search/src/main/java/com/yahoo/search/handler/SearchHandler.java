@@ -1,11 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import com.google.inject.Inject;
+import ai.vespa.cloud.ZoneInfo;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.Vtag;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.QrSearchersConfig;
@@ -55,7 +56,6 @@ import com.yahoo.statistics.Statistics;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
-import ai.vespa.cloud.ZoneInfo;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
