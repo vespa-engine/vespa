@@ -272,7 +272,7 @@ public:
 private:
     ServiceLayerComponent   _component;
     std::atomic<DiskState>  _state;
-    FileStorDiskMetrics   * _metrics;
+    FileStorMetrics       * _metrics;
     std::unique_ptr<vespalib::SharedOperationThrottler> _dynamic_operation_throttler;
     std::unique_ptr<vespalib::SharedOperationThrottler> _unlimited_operation_throttler;
     std::atomic<vespalib::SharedOperationThrottler*>    _active_throttler;

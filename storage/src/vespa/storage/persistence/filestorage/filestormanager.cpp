@@ -187,11 +187,11 @@ FileStorManager::createRegisteredHandler(const ServiceLayerComponent & component
 {
     std::lock_guard guard(_lock);
     size_t index = _persistenceHandlers.size();
-    assert(index < _metrics->disk->threads.size());
+    assert(index < _metrics->threads.size());
     _persistenceHandlers.push_back(
             std::make_unique<PersistenceHandler>(*_sequencedExecutor, component,
                                                  *_config, *_provider, *_filestorHandler,
-                                                 *_bucketOwnershipNotifier, *_metrics->disk->threads[index]));
+                                                 *_bucketOwnershipNotifier, *_metrics->threads[index]));
     return *_persistenceHandlers.back();
 }
 
