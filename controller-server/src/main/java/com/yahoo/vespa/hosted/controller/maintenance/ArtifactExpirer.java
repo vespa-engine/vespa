@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.artifact.Artifact;
+import com.yahoo.vespa.hosted.controller.api.integration.artifact.ArtifactRegistry;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
@@ -35,16 +37,30 @@ public class ArtifactExpirer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        Instant now = controller().clock().instant();
-        VersionStatus versionStatus = controller().readVersionStatus();
-        List<Artifact> artifactsToExpire = controller().serviceRegistry().containerRegistry().list().stream()
-                                                          .filter(artifact -> isExpired(artifact, now, versionStatus))
-                                                          .collect(Collectors.toList());
-        if (!artifactsToExpire.isEmpty()) {
-            log.log(Level.INFO, "Expiring " + artifactsToExpire.size() + " artifacts: " + artifactsToExpire);
-            controller().serviceRegistry().containerRegistry().deleteAll(artifactsToExpire);
+        return controller().clouds().stream()
+                .flatMapToDouble(cloud ->
+                    controller().serviceRegistry().artifactRegistry(cloud).stream()
+                            .mapToDouble(artifactRegistry -> maintain(cloud, artifactRegistry)))
+                .average()
+                .orElse(1);
+    }
+
+    private double maintain(CloudName cloudName, ArtifactRegistry artifactRegistry) {
+        try {
+            Instant now = controller().clock().instant();
+            VersionStatus versionStatus = controller().readVersionStatus();
+            List<Artifact> artifactsToExpire = artifactRegistry.list().stream()
+                    .filter(artifact -> isExpired(artifact, now, versionStatus))
+                    .collect(Collectors.toList());
+            if (!artifactsToExpire.isEmpty()) {
+                log.log(Level.INFO, "Expiring " + artifactsToExpire.size() + " artifacts: " + artifactsToExpire);
+                artifactRegistry.deleteAll(artifactsToExpire);
+            }
+            return 1;
+        } catch (RuntimeException e) {
+            log.log(Level.WARNING, "Failed to expire artifacts in " + cloudName + ". Will retry in " + interval(), e);
+            return 0;
         }
-        return 1.0;
     }
 
     /** Returns whether given artifact is expired */

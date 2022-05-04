@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.vespa.hosted.controller.api.integration.artifact.Artifact;
 import com.yahoo.vespa.hosted.controller.api.integration.container.ContainerImage.Architecture;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -24,7 +25,7 @@ public class ArtifactExpirerTest {
     public void maintain() {
         DeploymentTester tester = new DeploymentTester();
         ArtifactExpirer expirer = new ArtifactExpirer(tester.controller(), Duration.ofDays(1));
-        ArtifactRegistryMock registry = tester.controllerTester().serviceRegistry().containerRegistry();
+        ArtifactRegistryMock registry = tester.controllerTester().serviceRegistry().artifactRegistry(CloudName.defaultName()).orElseThrow();
 
         Instant instant = tester.clock().instant();
         Artifact image0 = new Artifact("image0", "registry.example.com", "vespa/vespa", instant, Version.fromString("7.1"), Optional.empty());

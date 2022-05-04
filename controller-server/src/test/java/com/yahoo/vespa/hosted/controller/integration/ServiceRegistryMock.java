@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.test.ManualClock;
@@ -50,6 +51,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainerMock
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.MockChangeRequestClient;
 
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -236,8 +238,8 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public ArtifactRegistryMock containerRegistry() {
-        return containerRegistry;
+    public Optional<ArtifactRegistryMock> artifactRegistry(CloudName cloudName) {
+        return Optional.of(containerRegistry);
     }
 
     @Override
