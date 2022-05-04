@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
+import com.google.inject.Inject;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
