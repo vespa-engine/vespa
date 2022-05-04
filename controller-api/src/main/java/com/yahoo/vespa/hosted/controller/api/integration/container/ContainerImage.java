@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * A container image.
@@ -18,13 +19,15 @@ public class ContainerImage {
     private final String repository;
     private final Instant createdAt;
     private final Version version;
+    private final Optional<Architecture> architecture;
 
-    public ContainerImage(String id, String registry, String repository, Instant createdAt, Version version) {
+    public ContainerImage(String id, String registry, String repository, Instant createdAt, Version version, Optional<Architecture> architecture) {
         this.id = Objects.requireNonNull(id);
         this.registry = Objects.requireNonNull(registry);
         this.repository = Objects.requireNonNull(repository);
         this.createdAt = Objects.requireNonNull(createdAt);
         this.version = Objects.requireNonNull(version);
+        this.architecture = Objects.requireNonNull(architecture);
     }
 
     /** Unique identifier of this */
@@ -52,6 +55,16 @@ public class ContainerImage {
         return version;
     }
 
+    /** The architecture of this, if any */
+    public Optional<Architecture> architecture() {
+        return architecture;
+    }
+
+    /** The tag of this image */
+    public String tag() {
+        return version().toFullString() + architecture.map(arch -> "-" + arch.name()).orElse("");
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -61,18 +74,24 @@ public class ContainerImage {
                registry.equals(that.registry) &&
                repository.equals(that.repository) &&
                createdAt.equals(that.createdAt) &&
-               version.equals(that.version);
+               version.equals(that.version) &&
+               architecture.equals(that.architecture);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, registry, repository, createdAt, version);
+        return Objects.hash(id, registry, repository, createdAt, version, architecture);
     }
 
     @Override
     public String toString() {
         return "container image " + repository + " [registry=" + registry + ",version=" + version.toFullString() +
-               ",createdAt=" + createdAt + "]";
+               ",createdAt=" + createdAt + ",architecture=" + architecture.map(Enum::name).orElse("<none>") + "]";
+    }
+
+    public enum Architecture {
+        amd64,
+        arm64,
     }
 
 }
