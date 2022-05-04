@@ -104,9 +104,9 @@ public class NotificationsDbTest {
     @Test
     public void notifier_test() {
         Notification notification1 = notification(12345, Type.deployment, Level.warning, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
-        Notification notification2 = notification(12345, Type.deployment, Level.error,   NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
-        Notification notification3 = notification(12345, Type.reindex, Level.warning, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
-
+        Notification notification2 = notification(12345, Type.applicationPackage, Level.error,   NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
+        Notification notification3 = notification(12345, Type.reindex, Level.warning, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app2", "instance2"), ZoneId.defaultId()), new ClusterSpec.Id("content")), "instance msg #2");
+;
         var a = notifications.get(0);
         notificationsDb.setNotification(a.source(), a.type(), a.level(), a.messages());
         assertEquals(0, mailer.inbox(email).size());

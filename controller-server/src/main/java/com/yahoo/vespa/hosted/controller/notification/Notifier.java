@@ -1,13 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.notification;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MailerException;
@@ -16,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 
-import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -31,17 +28,17 @@ import java.util.stream.Collectors;
  */
 public class Notifier {
     private final CuratorDb curatorDb;
-    private final ZoneRegistry zoneRegistry;
     private final Mailer mailer;
     private final FlagSource flagSource;
+    private final NotificationFormatter formatter;
 
     private static final Logger log = Logger.getLogger(Notifier.class.getName());
 
     public Notifier(CuratorDb curatorDb, ZoneRegistry zoneRegistry, Mailer mailer, FlagSource flagSource) {
         this.curatorDb = Objects.requireNonNull(curatorDb);
-        this.zoneRegistry = Objects.requireNonNull(zoneRegistry);
         this.mailer = Objects.requireNonNull(mailer);
         this.flagSource = Objects.requireNonNull(flagSource);
+        this.formatter = new NotificationFormatter(zoneRegistry);
     }
 
     public void dispatch(List<Notification> notifications, NotificationSource source) {
@@ -64,6 +61,10 @@ public class Notifier {
         });
     }
 
+    public void dispatch(Notification notification) {
+        dispatch(List.of(notification), notification.source());
+    }
+
     private boolean dispatchEnabled(NotificationSource source) {
         return Flags.NOTIFICATION_DISPATCH_FLAG.bindTo(flagSource)
                 .with(FetchVector.Dimension.TENANT_ID, source.tenant().value())
@@ -80,10 +81,6 @@ public class Notifier {
         return false;
     }
 
-    public void dispatch(Notification notification) {
-        dispatch(List.of(notification), notification.source());
-    }
-
     private void dispatch(Notification notification, TenantContacts.Type type, Collection<? extends TenantContacts.Contact> contacts) {
         switch (type) {
             case EMAIL:
@@ -96,21 +93,24 @@ public class Notifier {
 
     private void dispatch(Notification notification, Collection<TenantContacts.EmailContact> contacts) {
         try {
-            mailer.send(mailOf(notification, contacts.stream().map(c -> c.email()).collect(Collectors.toList())));
+            var content = formatter.format(notification);
+            mailer.send(mailOf(content, contacts.stream().map(c -> c.email()).collect(Collectors.toList())));
         } catch (MailerException e) {
             log.log(Level.SEVERE, "Failed sending email", e);
+        } catch (MissingOptionalException e) {
+            log.log(Level.WARNING, "Missing value in required field '" + e.field() + "' for notification type: " + notification.type(), e);
         }
     }
 
-    private Mail mailOf(Notification n, Collection<String> recipients) {
-        var source = n.source();
-        var subject = Text.format("[%s] %s Vespa Notification for %s", n.level().toString().toUpperCase(), n.type().name(), applicationIdSource(source));
+    private Mail mailOf(FormattedNotification content, Collection<String> recipients) {
+        var notification = content.notification();
+        var subject = Text.format("[%s] %s Vespa Notification for %s", notification.level().toString().toUpperCase(), content.prettyType(), applicationIdSource(notification.source()));
         var body = new StringBuilder();
-        body.append("Source: ").append(n.source().toString()).append("\n")
+        body.append(content.messagePrefix()).append("\n\n")
+                .append(notification.messages().stream().map(m -> " * " + m).collect(Collectors.joining("\n"))).append("\n")
                 .append("\n")
-                .append(String.join("\n", n.messages()))
-                .append("\n")
-                .append(url(source).toString());
+                .append("Vespa Console link:\n")
+                .append(content.uri().toString());
         return new Mail(recipients, subject, body.toString());
     }
 
@@ -122,22 +122,5 @@ public class Notifier {
         return sb.toString();
     }
 
-    private URI url(NotificationSource source) {
-        if (source.application().isPresent()) {
-            if (source.instance().isPresent()) {
-                if (source.jobType().isPresent() && source.runNumber().isPresent()) {
-                    return zoneRegistry.dashboardUrl(
-                            new RunId(ApplicationId.from(source.tenant(),
-                                    source.application().get(),
-                                    source.instance().get()),
-                                    source.jobType().get(),
-                                    source.runNumber().getAsLong()));
-                }
-                return zoneRegistry.dashboardUrl(ApplicationId.from(source.tenant(), source.application().get(), source.instance().get()));
-            }
-            return zoneRegistry.dashboardUrl(source.tenant(), source.application().get());
-        }
-        return zoneRegistry.dashboardUrl(source.tenant());
-    }
 
 }
