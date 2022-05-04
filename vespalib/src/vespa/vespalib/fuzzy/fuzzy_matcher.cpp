@@ -23,18 +23,20 @@ namespace {
 vespalib::FuzzyMatcher::FuzzyMatcher():
         _max_edit_distance(DefaultMaxEditDistance),
         _prefix_size(DefaultPrefixSize),
-        _is_cased(false)
+        _is_cased(false),
+        _folded_term_codepoints(),
+        _folded_term_codepoints_prefix(),
+        _folded_term_codepoints_suffix()
 {}
 
 vespalib::FuzzyMatcher::FuzzyMatcher(std::string_view term, uint32_t max_edit_distance, uint32_t prefix_size, bool is_cased):
         _max_edit_distance(max_edit_distance),
         _prefix_size(prefix_size),
-        _is_cased(is_cased)
-{
-    _folded_term_codepoints = _is_cased ? cased_convert_to_ucs4(term) : LowerCase::convert_to_ucs4(term);
-    _folded_term_codepoints_prefix = get_prefix(_folded_term_codepoints, _prefix_size);
-    _folded_term_codepoints_suffix = get_suffix(_folded_term_codepoints, _prefix_size);
-}
+        _is_cased(is_cased),
+        _folded_term_codepoints(_is_cased ? cased_convert_to_ucs4(term) : LowerCase::convert_to_ucs4(term)),
+        _folded_term_codepoints_prefix(get_prefix(_folded_term_codepoints, _prefix_size)),
+        _folded_term_codepoints_suffix(get_suffix(_folded_term_codepoints, _prefix_size))
+{}
 
 std::span<const uint32_t> vespalib::FuzzyMatcher::get_prefix(const std::vector<uint32_t>& termCodepoints, uint32_t prefixLength) {
     if (prefixLength == 0 || termCodepoints.empty()) {
