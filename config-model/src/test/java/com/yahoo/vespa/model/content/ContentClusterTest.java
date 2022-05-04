@@ -744,18 +744,18 @@ public class ContentClusterTest extends ContentBaseTest {
             MetricsmanagerConfig config = new MetricsmanagerConfig(builder);
 
             String expected =
-                    "[vds.filestor.alldisks.allthreads.put.sum\n" +
-                    "vds.filestor.alldisks.allthreads.get.sum\n" +
-                    "vds.filestor.alldisks.allthreads.remove.sum\n" +
-                    "vds.filestor.alldisks.allthreads.update.sum\n" +
+                    "[vds.filestor.allthreads.put\n" +
+                    "vds.filestor.allthreads.get\n" +
+                    "vds.filestor.allthreads.remove\n" +
+                    "vds.filestor.allthreads.update\n" +
                     "vds.datastored.alldisks.docs\n" +
                     "vds.datastored.alldisks.bytes\n" +
-                    "vds.filestor.alldisks.queuesize\n" +
-                    "vds.filestor.alldisks.averagequeuewait.sum\n" +
+                    "vds.filestor.queuesize\n" +
+                    "vds.filestor.averagequeuewait\n" +
                     "vds.visitor.cv_queuewaittime\n" +
                     "vds.visitor.allthreads.averagequeuewait\n" +
                     "vds.visitor.allthreads.averagevisitorlifetime\n" +
-                    "vds.visitor.allthreads.created.sum]";
+                    "vds.visitor.allthreads.created]";
             String actual = getConsumer("log", config).addedmetrics().toString().replaceAll(", ", "\n");
             assertEquals(expected, actual);
             assertEquals("[logdefault]", getConsumer("log", config).tags().toString());
