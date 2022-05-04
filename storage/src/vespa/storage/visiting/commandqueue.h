@@ -18,6 +18,7 @@
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/storageframework/generic/clock/clock.h>
+#include <atomic>
 #include <vector>
 #include <ostream>
 
@@ -71,6 +72,7 @@ private:
     const framework::Clock& _clock;
     mutable CommandList     _commands;
     uint64_t                _sequenceId;
+    std::atomic<size_t>     _cached_size;
 
 public:
     typedef typename CommandList::iterator iterator;
@@ -81,7 +83,9 @@ public:
 
     explicit CommandQueue(const framework::Clock& clock)
         : _clock(clock),
-          _sequenceId(0) {}
+          _sequenceId(0),
+          _cached_size(0)
+    {}
 
     const framework::Clock& getTimer() const { return _clock; }
 
@@ -101,17 +105,26 @@ public:
     }
 
     bool empty() const { return _commands.empty(); }
-    uint32_t size() const { return _commands.size(); }
+    size_t size() const { return _commands.size(); }
+    size_t relaxed_atomic_size() const noexcept { return _cached_size.load(std::memory_order_relaxed); }
     std::pair<std::shared_ptr<Command>, vespalib::steady_time> releaseNextCommand();
     std::shared_ptr<Command> peekNextCommand() const;
     void add(const std::shared_ptr<Command>& msg);
-    void erase(iterator it) { _commands.erase(it); }
+    void erase(iterator it) {
+        _commands.erase(it);
+        update_cached_size();
+    }
     std::vector<CommandEntry> releaseTimedOut();
     std::pair<std::shared_ptr<Command>, vespalib::steady_time> releaseLowestPriorityCommand();
 
     std::shared_ptr<Command> peekLowestPriorityCommand() const;
     void clear() { return _commands.clear(); }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
+
+private:
+    void update_cached_size() noexcept {
+        _cached_size.store(_commands.size(), std::memory_order_relaxed);
+    }
 };
 
 
@@ -125,6 +138,7 @@ CommandQueue<Command>::releaseNextCommand()
         retVal.first = first->_command;
         retVal.second = first->_deadline;
         _commands.erase(first);
+        update_cached_size();
     }
     return retVal;
 }
@@ -147,6 +161,7 @@ CommandQueue<Command>::add(const std::shared_ptr<Command>& cmd)
 {
     auto deadline = _clock.getMonotonicTime() + cmd->getQueueTimeout();
     _commands.insert(CommandEntry(cmd, deadline, ++_sequenceId, cmd->getPriority()));
+    update_cached_size();
 }
 
 template<class Command>
@@ -160,6 +175,7 @@ CommandQueue<Command>::releaseTimedOut()
         timelist& tl = boost::multi_index::get<1>(_commands);
         tl.erase(tbegin());
     }
+    update_cached_size();
     return timed_out;
 }
 
@@ -172,6 +188,7 @@ CommandQueue<Command>::releaseLowestPriorityCommand()
         auto deadline = last->_deadline;
         std::shared_ptr<Command> cmd(last->_command);
         _commands.erase(last);
+        update_cached_size();
         return {cmd, deadline};
     } else {
         return {};
