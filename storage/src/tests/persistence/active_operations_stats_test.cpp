@@ -115,7 +115,7 @@ ActiveOperationsStatsTest::test_active_operations_stats()
     EXPECT_EQ(4, stats.get_total_size());
     EXPECT_LT(0.0, stats.get_total_latency());
     update_metrics();
-    auto &ao_metrics = metrics.disk->active_operations;
+    auto &ao_metrics = metrics.active_operations;
     EXPECT_DOUBLE_EQ(1.0, ao_metrics.size.getAverage());
     EXPECT_DOUBLE_EQ(0.0, ao_metrics.size.getMinimum());
     EXPECT_DOUBLE_EQ(2.0, ao_metrics.size.getMaximum());
