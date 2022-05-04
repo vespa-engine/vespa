@@ -49,7 +49,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
                                          const vespalib::SharedOperationThrottler::DynamicThrottleParams& dyn_throttle_params)
     : _component(compReg, "filestorhandlerimpl"),
       _state(FileStorHandler::AVAILABLE),
-      _metrics(nullptr),
+      _metrics(&metrics),
       _dynamic_operation_throttler(vespalib::SharedOperationThrottler::make_dynamic_throttler(dyn_throttle_params)),
       _unlimited_operation_throttler(vespalib::SharedOperationThrottler::make_unlimited_throttler()),
       _active_throttler(_unlimited_operation_throttler.get()), // Will be set by FileStorManager
@@ -67,8 +67,6 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
         _stripes.emplace_back(*this, sender);
     }
 
-    _metrics = metrics.disk.get();
-    assert(_metrics != nullptr);
     uint32_t j(0);
     for (Stripe & stripe : _stripes) {
         stripe.setMetrics(_metrics->stripes[j++].get());
