@@ -133,7 +133,7 @@ void MetricsTest::createFakeLoad()
     _filestorMetrics->partitionEvents.inc(4);
     _filestorMetrics->diskEvents.inc(3);
     {
-        FileStorDiskMetrics& disk(*_filestorMetrics->disk);
+        FileStorMetrics& disk(*_filestorMetrics);
         disk.queueSize.addValue(4 * n);
         disk.averageQueueWaitingTime.addValue(10 * n);
         disk.pendingMerges.addValue(4 * n);
@@ -207,10 +207,10 @@ TEST_F(MetricsTest, filestor_metrics) {
     bool retVal = _metricsConsumer->reportStatus(ost, path);
     ASSERT_TRUE(retVal) << "_metricsConsumer->reportStatus failed";
     std::string s = ost.str();
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.get.sum.count count=60"));
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.put.sum.count count=50"));
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.count count=30"));
-    EXPECT_THAT(s, HasSubstr("vds.filestor.alldisks.allthreads.remove.sum.not_found count=5"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.allthreads.get.count count=60"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.allthreads.put.count count=50"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.allthreads.remove.count count=30"));
+    EXPECT_THAT(s, HasSubstr("vds.filestor.allthreads.remove.not_found count=5"));
 }
 
 #define ASSERT_METRIC(interval, metric, count) \
@@ -233,8 +233,7 @@ TEST_F(MetricsTest, filestor_metrics) {
 }
 
 TEST_F(MetricsTest, snapshot_presenting) {
-    FileStorDiskMetrics& disk0(*_filestorMetrics->disk);
-    FileStorThreadMetrics& thread0(*disk0.threads[0]);
+    FileStorThreadMetrics& thread0(*_filestorMetrics->threads[0]);
 
     LOG(debug, "Adding to get metric");
 
@@ -257,20 +256,20 @@ TEST_F(MetricsTest, snapshot_presenting) {
     thread0.put.count.inc(1);
 
     // Verify that active metrics have set put count but not get count
-    ASSERT_METRIC(-2, "vds.filestor.alldisks.allthreads.put.sum.count", 1);
-    ASSERT_METRIC(-2, "vds.filestor.alldisks.allthreads.get.sum.count", -1);
+    ASSERT_METRIC(-2, "vds.filestor.allthreads.put.count", 1);
+    ASSERT_METRIC(-2, "vds.filestor.allthreads.get.count", -1);
 
     // Verify that 5 min metrics have set get count but not put count
-    ASSERT_METRIC(300, "vds.filestor.alldisks.allthreads.put.sum.count", -1);
-    ASSERT_METRIC(300, "vds.filestor.alldisks.allthreads.get.sum.count", 1);
+    ASSERT_METRIC(300, "vds.filestor.allthreads.put.count", -1);
+    ASSERT_METRIC(300, "vds.filestor.allthreads.get.count", 1);
 
     // Verify that the total metrics is equal to 5 minute
-    ASSERT_METRIC(0, "vds.filestor.alldisks.allthreads.put.sum.count", -1);
-    ASSERT_METRIC(0, "vds.filestor.alldisks.allthreads.get.sum.count", 1);
+    ASSERT_METRIC(0, "vds.filestor.allthreads.put.count", -1);
+    ASSERT_METRIC(0, "vds.filestor.allthreads.get.count", 1);
 
     // Verify that total + active have set both
-    ASSERT_METRIC(-1, "vds.filestor.alldisks.allthreads.put.sum.count", 1);
-    ASSERT_METRIC(-1, "vds.filestor.alldisks.allthreads.get.sum.count", 1);
+    ASSERT_METRIC(-1, "vds.filestor.allthreads.put.count", 1);
+    ASSERT_METRIC(-1, "vds.filestor.allthreads.get.count", 1);
 }
 
 TEST_F(MetricsTest, html_metrics_report) {
