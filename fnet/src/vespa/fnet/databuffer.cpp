@@ -65,15 +65,18 @@ FNET_DataBuffer::DataToFree(uint32_t len)
 bool
 FNET_DataBuffer::Shrink(uint32_t newsize)
 {
-    if (GetBufSize() <= newsize || GetDataLen() > newsize) {
+    const auto data_len = GetDataLen();
+    if (GetBufSize() <= newsize || data_len > newsize) {
         return false;
     }
     
     Alloc newBuf(Alloc::alloc(newsize));
-    memcpy(newBuf.get(), _datapt, GetDataLen());
+    if (data_len > 0) [[likely]] {
+        memcpy(newBuf.get(), _datapt, data_len);
+    }
     _ownedBuf.swap(newBuf);
     _bufstart = static_cast<char *>(_ownedBuf.get());
-    _freept   = _bufstart + GetDataLen();
+    _freept   = _bufstart + data_len;
     _datapt   = _bufstart;
     _bufend   = _bufstart + newsize;
     return true;
@@ -94,7 +97,7 @@ FNET_DataBuffer::Pack(uint32_t needbytes)
             bufsize *= 2;
 
         Alloc newBuf(Alloc::alloc(bufsize));
-        if (_datapt != nullptr) {
+        if (_datapt != nullptr) [[likely]] {
             memcpy(newBuf.get(), _datapt, GetDataLen());
         }
         _ownedBuf.swap(newBuf);
