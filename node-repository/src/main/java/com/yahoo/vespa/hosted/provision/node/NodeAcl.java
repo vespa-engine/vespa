@@ -81,9 +81,9 @@ public class NodeAcl {
                 // Tenant nodes in other states than ready, trust:
                 // - config servers
                 // - proxy nodes
-                // - parents of the nodes in the same application: If some of the nodes are on a different IP versions
-                //   or only a subset of them are dual-stacked, the communication between the nodes may be NATed
-                //   with via parent's IP address.
+                // - parents of the nodes in the same application: If some nodes are on a different IP version
+                //   or only a subset of them are dual-stacked, the communication between the nodes may be NAT-ed
+                //   via parent's IP address
                 trustedNodes.addAll(allNodes.nodeType(NodeType.config).asList());
                 trustedNodes.addAll(allNodes.nodeType(NodeType.proxy).asList());
                 node.allocation().ifPresent(allocation ->
@@ -91,9 +91,9 @@ public class NodeAcl {
 
                 if (node.state() == Node.State.ready) {
                     // Tenant nodes in state ready, trust:
-                    // - All tenant nodes in zone. When a ready node is allocated to a an application there's a brief
+                    // - All tenant nodes in zone. When a ready node is allocated to an application there's a brief
                     //   window where current ACLs have not yet been applied on the node. To avoid service disruption
-                    //   during this window, ready tenant nodes trust all other tenant nodes.
+                    //   during this window, ready tenant nodes trust all other tenant nodes
                     trustedNodes.addAll(allNodes.nodeType(NodeType.tenant).asList());
                 }
                 break;

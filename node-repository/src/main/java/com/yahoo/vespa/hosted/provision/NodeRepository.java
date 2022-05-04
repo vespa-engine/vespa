@@ -34,7 +34,6 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import java.time.Clock;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * The top level singleton in the node repo, providing access to all its state as child objects.
@@ -182,10 +181,10 @@ public class NodeRepository extends AbstractComponent {
 
     public NodeRepoStats computeStats() { return NodeRepoStats.computeOver(this); }
 
-    /** Returns the time keeper of this system */
+    /** Returns the time-keeper of this */
     public Clock clock() { return clock; }
 
-    /** Returns the zone of this system */
+    /** Returns the zone of this */
     public Zone zone() { return zone; }
 
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
@@ -200,9 +199,8 @@ public class NodeRepository extends AbstractComponent {
     public List<NodeAcl> getChildAcls(Node host) {
         if ( ! host.type().isHost()) throw new IllegalArgumentException("Only hosts have children");
         NodeList allNodes = nodes().list();
-        return nodes().list().childrenOf(host).asList().stream()
-                             .map(childNode -> childNode.acl(allNodes, loadBalancers))
-                             .collect(Collectors.toUnmodifiableList());
+        return allNodes.childrenOf(host)
+                       .mapToList(childNode -> childNode.acl(allNodes, loadBalancers));
     }
 
     /** Removes this application: all nodes are set dirty. */
