@@ -136,38 +136,24 @@ public:
     ~FileStorStripeMetrics() override;
 };
 
-class FileStorDiskMetrics : public metrics::MetricSet
+struct FileStorMetrics : public metrics::MetricSet
 {
-public:
-    using SP = std::shared_ptr<FileStorDiskMetrics>;
-
     std::vector<FileStorThreadMetrics::SP> threads;
     std::vector<FileStorStripeMetrics::SP> stripes;
     metrics::SumMetric<MetricSet> sumThreads;
     metrics::SumMetric<MetricSet> sumStripes;
-    metrics::DoubleAverageMetric averageQueueWaitingTime;
-    metrics::LongAverageMetric queueSize;
-    metrics::LongAverageMetric pendingMerges;
-    metrics::LongAverageMetric throttle_window_size;
-    metrics::LongAverageMetric throttle_waiting_threads;
-    metrics::LongAverageMetric throttle_active_tokens;
-    metrics::DoubleAverageMetric waitingForLockHitRate;
-    ActiveOperationsMetrics      active_operations;
-
-    FileStorDiskMetrics(const std::string& name, const std::string& description, MetricSet* owner);
-    ~FileStorDiskMetrics() override;
-
-    void initDiskMetrics(uint32_t numStripes, uint32_t threadsPerDisk);
-};
-
-struct FileStorMetrics : public metrics::MetricSet
-{
-    FileStorDiskMetrics::SP disk;
-    metrics::SumMetric<MetricSet> sum;
-    metrics::LongCountMetric directoryEvents;
-    metrics::LongCountMetric partitionEvents;
-    metrics::LongCountMetric diskEvents;
-    metrics::LongAverageMetric bucket_db_init_latency;
+    metrics::DoubleAverageMetric  averageQueueWaitingTime;
+    metrics::LongAverageMetric    queueSize;
+    metrics::LongAverageMetric    pendingMerges;
+    metrics::LongAverageMetric    throttle_window_size;
+    metrics::LongAverageMetric    throttle_waiting_threads;
+    metrics::LongAverageMetric    throttle_active_tokens;
+    metrics::DoubleAverageMetric  waitingForLockHitRate;
+    ActiveOperationsMetrics       active_operations;
+    metrics::LongCountMetric      directoryEvents;
+    metrics::LongCountMetric      partitionEvents;
+    metrics::LongCountMetric      diskEvents;
+    metrics::LongAverageMetric    bucket_db_init_latency;
 
     FileStorMetrics();
     ~FileStorMetrics() override;
