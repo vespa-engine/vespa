@@ -155,7 +155,6 @@ public class QueryProperties extends Properties {
 
     @Override
     public void set(CompoundName key, Object value, Map<String,String> context) {
-        System.out.println("Setting " + key);
         // Note: The defaults here are never used
         try {
             if (key.size() == 2 && key.first().equals(Model.MODEL)) {
