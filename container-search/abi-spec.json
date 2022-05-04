@@ -7980,88 +7980,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.search.schema.DocumentSummary$Builder": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)",
-      "public com.yahoo.search.schema.DocumentSummary$Builder add(com.yahoo.search.schema.DocumentSummary$Field)",
-      "public com.yahoo.search.schema.DocumentSummary$Builder setDynamic(boolean)",
-      "public com.yahoo.search.schema.DocumentSummary build()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.schema.DocumentSummary$Field$Type": {
-    "superClass": "java.lang.Enum",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "final",
-      "enum"
-    ],
-    "methods": [
-      "public static com.yahoo.search.schema.DocumentSummary$Field$Type[] values()",
-      "public static com.yahoo.search.schema.DocumentSummary$Field$Type valueOf(java.lang.String)",
-      "public java.lang.String asString()",
-      "public java.lang.String toString()",
-      "public static com.yahoo.search.schema.DocumentSummary$Field$Type fromString(java.lang.String)"
-    ],
-    "fields": [
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type bool",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type byteType",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type shortType",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type integer",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type int64",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type float16",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type floatType",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type doubleType",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type string",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type data",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type raw",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type longstring",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type longdata",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type jsonstring",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type featuredata",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type xmlstring",
-      "public static final enum com.yahoo.search.schema.DocumentSummary$Field$Type tensor"
-    ]
-  },
-  "com.yahoo.search.schema.DocumentSummary$Field": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, java.lang.String)",
-      "public void <init>(java.lang.String, com.yahoo.search.schema.DocumentSummary$Field$Type)",
-      "public java.lang.String name()",
-      "public com.yahoo.search.schema.DocumentSummary$Field$Type type()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.search.schema.DocumentSummary": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public java.lang.String name()",
-      "public java.util.List fields()",
-      "public boolean isDynamic()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
-      "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
   "com.yahoo.search.schema.RankProfile$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -8103,7 +8021,6 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.RankProfile)",
-      "public com.yahoo.search.schema.Schema$Builder add(com.yahoo.search.schema.DocumentSummary)",
       "public com.yahoo.search.schema.Schema build()"
     ],
     "fields": []
@@ -8117,7 +8034,6 @@
     "methods": [
       "public java.lang.String name()",
       "public java.util.Map rankProfiles()",
-      "public java.util.Map documentSummaries()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()"
@@ -8144,7 +8060,7 @@
     "methods": [
       "public void <init>(com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig)",
       "public void <init>(java.util.List, java.util.Map)",
-      "public java.util.Map schemas()",
+      "public java.util.List schemas()",
       "public com.yahoo.search.schema.SchemaInfo$Session newSession(com.yahoo.search.Query)",
       "public static com.yahoo.search.schema.SchemaInfo empty()",
       "public boolean equals(java.lang.Object)",
@@ -8248,7 +8164,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
-      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.schema.SchemaInfo, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",

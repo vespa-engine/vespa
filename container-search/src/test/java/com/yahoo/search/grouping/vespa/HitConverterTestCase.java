@@ -13,8 +13,6 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.result.Relevance;
-import com.yahoo.search.schema.DocumentSummary;
-import com.yahoo.search.schema.Schema;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.searchlib.aggregation.FS4Hit;
 import com.yahoo.searchlib.aggregation.VdsHit;
@@ -100,17 +98,17 @@ public class HitConverterTestCase {
         return new GroupingListHit(Collections.emptyList(), null);
     }
 
-    private static DocsumDefinitionSet sixtynine() {
-        var schema = new Schema.Builder("none");
-        var summary = new DocumentSummary.Builder("69");
-        schema.add(summary.build());
-        return new DocsumDefinitionSet(schema.build());
+    private static DocumentdbInfoConfig.Documentdb sixtynine() {
+        DocumentdbInfoConfig.Documentdb.Builder summaryConfig = new DocumentdbInfoConfig.Documentdb.Builder();
+        summaryConfig.name("none");
+        summaryConfig.summaryclass(new DocumentdbInfoConfig.Documentdb.Summaryclass.Builder().id(0).name("69"));
+        return new DocumentdbInfoConfig.Documentdb(summaryConfig);
     }
 
     @Test
     public void requireThatVdsHitCanBeConverted() {
         HitConverter converter = new HitConverter(new MySearcher(), new Query());
-        GroupingListHit context = new GroupingListHit(null, sixtynine());
+        GroupingListHit context = new GroupingListHit(null, new DocsumDefinitionSet(sixtynine()));
         VdsHit lowHit = new VdsHit("id:ns:type::", new byte[] { 0x55, 0x55, 0x55, 0x55 }, 1);
         lowHit.setContext(context);
         Hit hit = converter.toSearchHit("69", lowHit);
