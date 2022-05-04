@@ -22,10 +22,26 @@
     ],
     "methods": [
       "public abstract java.net.URI uri()",
+      "public abstract ai.vespa.hosted.cd.EndpointAuthenticator authenticator()",
       "public abstract java.net.http.HttpResponse send(java.net.http.HttpRequest$Builder, java.net.http.HttpResponse$BodyHandler)",
       "public java.net.http.HttpResponse send(java.net.http.HttpRequest$Builder)",
       "public abstract java.net.http.HttpRequest$Builder request(java.lang.String, java.util.Map)",
       "public java.net.http.HttpRequest$Builder request(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "ai.vespa.hosted.cd.EndpointAuthenticator": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public javax.net.ssl.SSLContext sslContext()",
+      "public java.net.http.HttpRequest$Builder authenticated(java.net.http.HttpRequest$Builder)",
+      "public java.util.Map authorizationHeaders()"
     ],
     "fields": []
   },

@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.cd.commons;
+package ai.vespa.hosted.cd;
 
 import javax.net.ssl.SSLContext;
 import java.net.http.HttpRequest;

@@ -3,6 +3,7 @@ package ai.vespa.hosted.cd.commons;
 
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.Endpoint;
+import ai.vespa.hosted.cd.EndpointAuthenticator;
 
 import java.net.URI;
 import java.util.Map;

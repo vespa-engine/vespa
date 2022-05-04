@@ -3,6 +3,7 @@
 package ai.vespa.hosted.cd.commons;
 
 import ai.vespa.feed.client.impl.FeedClientBuilderImpl;
+import ai.vespa.hosted.cd.EndpointAuthenticator;
 
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
