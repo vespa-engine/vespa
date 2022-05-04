@@ -29,8 +29,12 @@ public interface EndpointAuthenticator {
 
     /** Adds necessary authentication data to the given HTTP request builder, to pass the data plane of a Vespa endpoint. */
     default HttpRequest.Builder authenticated(HttpRequest.Builder request) {
+        Map<String, String> authorizationHeaders = authorizationHeaders();
+        if (authorizationHeaders.isEmpty())
+            return request;
+
         Map<String, List<String>> headers = request.build().headers().map();
-        authorizationHeaders().forEach((name, value) -> {
+        authorizationHeaders.forEach((name, value) -> {
             if ( ! headers.containsKey(name))
                 request.setHeader(name, value);
         });
@@ -40,4 +44,5 @@ public interface EndpointAuthenticator {
     default Map<String, String> authorizationHeaders() {
         return Map.of();
     }
+
 }
