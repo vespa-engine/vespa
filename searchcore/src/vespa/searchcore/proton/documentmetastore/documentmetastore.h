@@ -74,7 +74,7 @@ private:
     SerialNum           _gid_to_lid_map_write_itr_prepare_serial_num;
     documentmetastore::LidAllocator _lidAlloc;
     BucketDBOwnerSP     _bucketDB;
-    uint32_t            _shrinkLidSpaceBlockers;
+    std::atomic<uint32_t> _shrinkLidSpaceBlockers;
     const SubDbType     _subDbType;
     bool                _trackDocumentSizes;
     size_t              _changesSinceCommit;
@@ -136,6 +136,9 @@ private:
     MetaDataView make_meta_data_view() { return vespalib::ConstArrayRef(&_metaDataStore[0], getCommittedDocIdLimit()); }
     UnboundMetaDataView acquire_unbound_meta_data_view() const noexcept { return &_metaDataStore.acquire_elem_ref(0); }
     UnboundMetaDataView get_unbound_meta_data_view() const noexcept { return &_metaDataStore.get_elem_ref(0); } // Called from writer only
+
+    uint32_t get_shrink_lid_space_blockers() const noexcept { return _shrinkLidSpaceBlockers.load(std::memory_order_relaxed); }
+    void set_shrink_lid_space_blockers(uint32_t value) noexcept { _shrinkLidSpaceBlockers.store(value, std::memory_order_relaxed); }
 
 public:
     typedef TreeType::Iterator Iterator;
