@@ -8,6 +8,7 @@
 #include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/transactionlog/syncproxy.h>
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/vespalib/util/cpu_usage.h>
@@ -37,20 +38,22 @@ public:
     using NameIdSet = std::set<NameId>;
     using MonitorGuard = std::unique_lock<std::mutex>;
     using CompressionConfig = vespalib::compression::CompressionConfig;
+    template <typename T>
+    using AtomicValueWrapper = vespalib::datastore::AtomicValueWrapper<T>;
     class Config {
     public:
         Config();
 
         Config & setMaxFileSize(size_t v) { _maxFileSize = v; return *this; }
         Config & setMaxNumLids(size_t v) { _maxNumLids = v; return *this; }
-        Config & setMaxBucketSpread(double v) { _maxBucketSpread = v; return *this; }
+        Config & setMaxBucketSpread(double v) noexcept { _maxBucketSpread.store_relaxed(v); return *this; }
         Config & setMinFileSizeFactor(double v) { _minFileSizeFactor = v; return *this; }
 
         Config & compactCompression(CompressionConfig v) { _compactCompression = v; return *this; }
         Config & setFileConfig(WriteableFileChunk::Config v) { _fileConfig = v; return *this; }
 
         size_t getMaxFileSize() const { return _maxFileSize; }
-        double getMaxBucketSpread() const { return _maxBucketSpread; }
+        double getMaxBucketSpread() const noexcept { return _maxBucketSpread.load_relaxed(); }
         double getMinFileSizeFactor() const { return _minFileSizeFactor; }
         uint32_t getMaxNumLids() const { return _maxNumLids; }
 
@@ -63,7 +66,7 @@ public:
         bool operator == (const Config &) const;
     private:
         size_t                      _maxFileSize;
-        double                      _maxBucketSpread;
+        AtomicValueWrapper<double>  _maxBucketSpread;
         double                      _minFileSizeFactor;
         uint32_t                    _maxNumLids;
         bool                        _skipCrcOnRead;
