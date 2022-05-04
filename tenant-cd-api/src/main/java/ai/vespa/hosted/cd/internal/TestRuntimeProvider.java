@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public interface TestRuntimeProvider  {
 
-    static final AtomicReference<TestRuntime> testRuntime = new AtomicReference<>();
+    AtomicReference<TestRuntime> testRuntime = new AtomicReference<>();
 
     void initialize(byte[] config);
 
@@ -18,7 +18,8 @@ public interface TestRuntimeProvider  {
         TestRuntimeProvider.testRuntime.set(testRuntime);
     }
 
-    public static TestRuntime getTestRuntime() {
+    static TestRuntime getTestRuntime() {
         return testRuntime.get();
     }
+
 }

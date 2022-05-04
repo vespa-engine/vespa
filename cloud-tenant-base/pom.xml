@@ -19,24 +19,6 @@
         <relativePath>../hosted-tenant-base/pom.xml</relativePath>
     </parent>
 
-    <licenses>
-        <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-        </license>
-    </licenses>
-    <developers>
-        <developer>
-            <name>Vespa</name>
-            <url>https://github.com/vespa-engine</url>
-        </developer>
-    </developers>
-    <scm>
-        <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
-        <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
-        <url>git@github.com:vespa-engine/vespa.git</url>
-    </scm>
-
     <properties>
         <endpoint>https://api-ctl.vespa-cloud.com:4443</endpoint>
         <extraTestBundleScopeOverrides>
