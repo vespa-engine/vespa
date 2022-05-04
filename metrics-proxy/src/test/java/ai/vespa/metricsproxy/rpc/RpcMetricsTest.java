@@ -43,6 +43,7 @@ public class RpcMetricsTest {
 
     private static final String METRICS_RESPONSE = getFileContents("metrics-storage-simple.json").trim();
     private static final String EXTRA_APP = "extra";
+    private static final double RPC_INVOKE_TIMEOUT = 60.0;
 
     private static class RpcClient implements AutoCloseable {
         private final Supervisor supervisor;
@@ -245,7 +246,7 @@ public class RpcMetricsTest {
 
     private static String invoke(Request req, RpcClient client, boolean expectReturnValue) {
         String returnValue;
-        client.target.invokeSync(req, 20.0);
+        client.target.invokeSync(req, RPC_INVOKE_TIMEOUT);
         if (req.checkReturnTypes("s")) {
             returnValue = req.returnValues().get(0).asString();
         } else if (expectReturnValue) {

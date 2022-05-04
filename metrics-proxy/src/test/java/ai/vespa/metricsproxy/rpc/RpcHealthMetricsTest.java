@@ -33,6 +33,7 @@ public class RpcHealthMetricsTest {
             getFileContents("health-check-failed.response.json");
     private static final String WANTED_RPC_RESPONSE =
             getFileContents("rpc-json-output-check.json").trim();
+    private static final double RPC_INVOKE_TIMEOUT = 60.0;
 
     @Test
     public void expected_response_is_returned() {
@@ -74,7 +75,7 @@ public class RpcHealthMetricsTest {
         req.parameters().add(new StringValue(service));
         String returnValue;
 
-        target.invokeSync(req, 20.0);
+        target.invokeSync(req, RPC_INVOKE_TIMEOUT);
         if (req.checkReturnTypes("s")) {
             returnValue = req.returnValues().get(0).asString();
         } else {
