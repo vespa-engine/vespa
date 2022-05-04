@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 public abstract class DocsumField {
 
     private static final Logger log = Logger.getLogger(DocsumField.class.getName());
-    private static FieldFactory fieldFactory;
+    private static final FieldFactory fieldFactory;
 
     private static class FieldFactory {
 
@@ -32,8 +32,7 @@ public abstract class DocsumField {
         DocsumField create(String typename, String name)
                 throws InstantiationException, IllegalAccessException,
                        IllegalArgumentException, InvocationTargetException {
-            DocsumField f = constructors.get(typename).newInstance(name);
-            return f;
+            return constructors.get(typename).newInstance(name);
         }
     }
 
