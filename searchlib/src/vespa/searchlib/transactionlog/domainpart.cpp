@@ -235,9 +235,9 @@ DomainPart::buildPacketMapping(bool allowTruncate)
             set_size(size() + packet.size());
             const SerialNum firstSerial = packet.range().from();
             if (currPos == _headerLen) {
-                _range.from(firstSerial);
+                set_range_from(firstSerial);
             }
-            _range.to(packet.range().to());
+            set_range_to(packet.range().to());
             // Called only from constructor so no need to hold lock
             _skipList.emplace_back(firstSerial, firstPos);
         } else {
@@ -252,7 +252,8 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
                        const FileHeaderContext &fileHeaderContext, bool allowTruncate)
     : _lock(),
       _fileLock(),
-      _range(s),
+      _range_from(s),
+      _range_to(s ? s - 1 : s),
       _sz(0),
       _byteSize(0),
       _fileName(fmt("%s/%s-%016" PRIu64, baseDir.c_str(), name.c_str(), s)),
@@ -295,7 +296,7 @@ DomainPart::DomainPart(const string & name, const string & baseDir, SerialNum s,
                                 _transLog->GetFileName(), _transLog->GetSize()));
     }
     handleSync(*_transLog);
-    _writtenSerial = _range.to();
+    _writtenSerial = get_range_to();
     _syncedSerial = _writtenSerial;
     assert(int64_t(byteSize()) == _transLog->GetSize());
     assert(int64_t(byteSize()) == _transLog->GetPosition());
@@ -368,11 +369,14 @@ bool
 DomainPart::erase(SerialNum to)
 {
     bool retval(true);
-    if (to > _range.to()) {
+    if (to > get_range_to()) {
         close();
         _transLog->Delete();
     } else {
-        _range.from(std::max(to, _range.from()));
+        auto range_from = get_range_from();
+        if (to > range_from) {
+            set_range_from(to);
+        }
     }
     return retval;
 }
@@ -383,11 +387,11 @@ DomainPart::commit(const SerializedChunk & serialized)
     SerialNumRange range = serialized.range();
 
     int64_t firstPos(byteSize());
-    assert(_range.to() < range.to());
+    assert(get_range_to() < range.to());
     set_size(size() + serialized.getNumEntries());
-    _range.to(range.to());
-    if (_range.from() == 0) {
-        _range.from(range.from());
+    set_range_to(range.to());
+    if (get_range_from() == 0) {
+        set_range_from(range.from());
     }
 
     write(*_transLog, range, serialized.getData());
