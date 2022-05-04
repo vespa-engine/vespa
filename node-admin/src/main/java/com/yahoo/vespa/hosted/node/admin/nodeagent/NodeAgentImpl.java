@@ -466,6 +466,7 @@ public class NodeAgentImpl implements NodeAgent {
             case failed:
             case inactive:
             case parked:
+                storageMaintainer.syncLogs(context, true);
                 removeContainerIfNeededUpdateContainerState(context, container);
                 updateNodeRepoWithCurrentAttributes(context, Optional.empty());
                 stopServicesIfNeeded(context);
