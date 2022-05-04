@@ -30,7 +30,7 @@ public class NodesAndHosts<NL extends NodeList> {
 
     private NodesAndHosts(NL nodes) {
         this.nodes = nodes;
-        nodes.forEach(node -> node.ipConfig().primary().forEach(ip -> allPrimaryIps.add(ip)));
+        nodes.forEach(node -> allPrimaryIps.addAll(node.ipConfig().primary()));
         allHostNames = nodes.stream().map(Node::hostname).collect(Collectors.toSet());
         nodes.forEach(node -> {
             node.parentHostname().ifPresentOrElse(
