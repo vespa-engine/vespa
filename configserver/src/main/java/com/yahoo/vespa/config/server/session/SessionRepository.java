@@ -34,6 +34,7 @@ import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.modelfactory.ActivatedModelsBuilder;
+import com.yahoo.vespa.config.server.modelfactory.AllocatedHostsFromAllModels;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
@@ -536,14 +537,11 @@ public class SessionRepository {
                                                                     zone,
                                                                     modelFactoryRegistry,
                                                                     configDefinitionRepo);
-        // Read hosts allocated on the config server instance which created this
-        SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>(applicationPackage.getAllocatedHosts());
-
         return ApplicationSet.fromList(builder.buildModels(session.getApplicationId(),
                                                            sessionZooKeeperClient.readDockerImageRepository(),
                                                            sessionZooKeeperClient.readVespaVersion(),
                                                            applicationPackage,
-                                                           allocatedHosts,
+                                                           new AllocatedHostsFromAllModels(),
                                                            clock.instant()));
     }
 
