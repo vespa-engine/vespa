@@ -58,7 +58,7 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(const std::string & rootO
     _metrics.initDiskMetrics(1, 1);
     _handler = std::make_unique<FileStorHandlerImpl>(_messageKeeper, _metrics, _node.getComponentRegister());
     _diskEnv = std::make_unique<PersistenceUtil>(_component, *_handler,
-                                                 *_metrics.disk->threads[0], _node.getPersistenceProvider());
+                                                 *_metrics.threads[0], _node.getPersistenceProvider());
 }
 
 PersistenceTestEnvironment::~PersistenceTestEnvironment() {
