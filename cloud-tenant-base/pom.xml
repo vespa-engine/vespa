@@ -38,12 +38,11 @@
     </scm>
 
     <properties>
-        <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
+        <endpoint>https://api-ctl.vespa-cloud.com:4443</endpoint>
         <extraTestBundleScopeOverrides>
             com.yahoo.vespa:cloud-tenant-cd:provided
         </extraTestBundleScopeOverrides>
     </properties>
-
 
     <dependencies>
         <dependency>
