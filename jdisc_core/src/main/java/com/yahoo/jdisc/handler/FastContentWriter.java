@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * <p>This class provides a non-blocking, awaitable <em>write</em>-interface to a {@link ContentChannel}.
- * The ListenableFuture&lt;Boolean&gt; interface can be used to await
+ * The {@link CompletableFuture<Boolean>} interface can be used to await
  * the asynchronous completion of all pending operations. Any asynchronous
  * failure will be rethrown when calling either of the get() methods on
  * this class.</p>

@@ -25,7 +25,7 @@ import static org.junit.Assert.assertEquals;
 public class FutureDataTestCase {
 
     /** Run a chain which ends in a processor which returns a response containing future data. */
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testFutureDataPassThrough() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -45,14 +45,14 @@ public class FutureDataTestCase {
         futureDataSource.incomingData.get(0).add(new StringData(request, "d1"));
         futureDataSource.incomingData.get(0).addLast(new StringData(request, "d2"));
         assertEquals("New data is not visible because we haven't asked for it", 1, response.data().asList().size());
-        response.data().complete().get(1000, TimeUnit.MILLISECONDS);
+        response.data().completeFuture().get(1000, TimeUnit.MILLISECONDS);
         assertEquals("Now the data is available", 3, response.data().asList().size());
         assertEquals("d1",response.data().get(1).toString().toString());
         assertEquals("d2",response.data().get(2).toString().toString());
     }
 
     /** Federate to one source which returns data immediately and one who return future data */
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testFederateSyncAndAsyncData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -81,7 +81,7 @@ public class FutureDataTestCase {
         futureDataSource.incomingData.get(0).add(new StringData(request, "d1"));
         futureDataSource.incomingData.get(0).addLast(new StringData(request, "d2"));
         assertEquals("New data is not visible because we haven't asked for it", 0, asyncData.asList().size());
-        asyncData.complete().get(1000, TimeUnit.MILLISECONDS);
+        asyncData.completeFuture().get(1000, TimeUnit.MILLISECONDS);
         assertEquals("Now the data is available", 2, asyncData.asList().size());
         assertEquals("d1",asyncData.get(0).toString().toString());
         assertEquals("d2", asyncData.get(1).toString().toString());
@@ -108,7 +108,7 @@ public class FutureDataTestCase {
         assertEquals("New data is not visible because it is not complete", 0, response.data().asList().size());
         futureDataSource.incomingData.get(0).addLast(new StringData(request, "d2"));
         assertEquals("Not visible because it has not been synced yet", 0, response.data().asList().size());
-        response.data().complete().get(1000, TimeUnit.MILLISECONDS);
+        response.data().completeFuture().get(1000, TimeUnit.MILLISECONDS);
         assertEquals("Now the data as well as the count is available", 3, response.data().asList().size());
         assertEquals("d1",response.data().get(0).toString().toString());
         assertEquals("d2",response.data().get(1).toString().toString());
@@ -120,7 +120,7 @@ public class FutureDataTestCase {
      * When the first of the futures are done one additional chain is to be run.
      * When both are done another chain is to be run.
      */
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testAsyncDataProcessingOfFederatedResult() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -154,7 +154,7 @@ public class FutureDataTestCase {
         // complete async data in source1
         futureSource1.incomingData.get(0).addLast(new StringData(request,"source1Data"));
         assertEquals("Not visible yet", 0, source1Data.asList().size());
-        source1Data.complete().get(1000, TimeUnit.MILLISECONDS);
+        source1Data.completeFuture().get(1000, TimeUnit.MILLISECONDS);
         assertEquals(2, source1Data.asList().size());
         assertEquals("source1Data",source1Data.get(0).toString());
         assertEquals("Completion listener chain on this has run", "[source1] Data count: 1", source1Data.get(1).toString());
@@ -164,7 +164,7 @@ public class FutureDataTestCase {
         futureSource2.incomingData.get(0).addLast(new StringData(request, "source2Data"));
         assertEquals("Main completion listener has not run", 3, response.data().asList().size());
 
-        Response.recursiveComplete(response.data()).get();
+        Response.recursiveFuture(response.data()).get();
         assertEquals("Main completion listener has run", 4, response.data().asList().size());
         assertEquals("The main data counter saw all sync data, but not source2 data as it executes after this",
                      "[main] Data count: " + (2 + 0 + 3), response.data().get(3).toString());
