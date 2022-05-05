@@ -1,13 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
-import com.yahoo.yolean.UncheckedInterruptedException;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -87,48 +82,4 @@ public class CompletableFutures {
                     return results;
                 });
     }
-
-    /**
-     * Helper for migrating from {@link ListenableFuture} to {@link CompletableFuture} in Vespa public apis
-     * @deprecated to be removed in Vespa 8
-     */
-    @SuppressWarnings("unchecked")
-    @Deprecated(forRemoval = true, since = "7")
-    public static <V> ListenableFuture<V> toGuavaListenableFuture(CompletableFuture<V> future) {
-        if (future instanceof ListenableFuture) {
-            return ((ListenableFuture<V>) future);
-        }
-        SettableFuture<V> guavaFuture = SettableFuture.create();
-        future.whenComplete((result, error) -> {
-            if (result != null) guavaFuture.set(result);
-            else if (error instanceof CancellationException) guavaFuture.setException(error);
-            else guavaFuture.cancel(true);
-        });
-        return guavaFuture;
-    }
-
-    /**
-     * Helper for migrating from {@link ListenableFuture} to {@link CompletableFuture} in Vespa public apis
-     * @deprecated to be removed in Vespa 8
-     */
-    @Deprecated(forRemoval = true, since = "7")
-    public static <V> CompletableFuture<V> toCompletableFuture(ListenableFuture<V> guavaFuture) {
-        CompletableFuture<V> future = new CompletableFuture<>();
-        guavaFuture.addListener(
-                () -> {
-                    if (guavaFuture.isCancelled()) future.cancel(true);
-                    try {
-                        V value = guavaFuture.get();
-                        future.complete(value);
-                    } catch (InterruptedException e) {
-                        // Should not happens since listener is invoked after future is complete
-                        throw new UncheckedInterruptedException(e);
-                    } catch (ExecutionException e) {
-                        future.completeExceptionally(e.getCause());
-                    }
-                },
-                Runnable::run);
-        return future;
-    }
-
 }
