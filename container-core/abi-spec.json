@@ -2794,8 +2794,7 @@
       "public void <init>(com.yahoo.processing.Request, com.yahoo.processing.request.ErrorMessage)",
       "public void mergeWith(com.yahoo.processing.Response)",
       "public com.yahoo.processing.response.DataList data()",
-      "public static java.util.concurrent.CompletableFuture recursiveFuture(com.yahoo.processing.response.DataList)",
-      "public static com.google.common.util.concurrent.ListenableFuture recursiveComplete(com.yahoo.processing.response.DataList)"
+      "public static java.util.concurrent.CompletableFuture recursiveFuture(com.yahoo.processing.response.DataList)"
     ],
     "fields": []
   },
@@ -3096,7 +3095,6 @@
       "public final java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public void deconstruct()",
       "public final java.util.concurrent.CompletableFuture renderResponseBeforeHandover(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
-      "public final com.google.common.util.concurrent.ListenableFuture renderBeforeHandover(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public com.yahoo.processing.execution.Execution getExecution()",
       "public com.yahoo.processing.Response getResponse()",
       "protected boolean clientClosed()",
@@ -3141,8 +3139,7 @@
       "public void <init>()",
       "public com.yahoo.processing.rendering.Renderer clone()",
       "public void init()",
-      "public com.google.common.util.concurrent.ListenableFuture render(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
-      "public java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
+      "public abstract java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public abstract java.lang.String getEncoding()",
       "public abstract java.lang.String getMimeType()",
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
@@ -3381,7 +3378,6 @@
       "protected void <init>(com.yahoo.processing.Request, com.yahoo.processing.response.IncomingData, boolean, boolean)",
       "public com.yahoo.processing.Request request()",
       "public com.yahoo.processing.response.IncomingData incoming()",
-      "public com.google.common.util.concurrent.ListenableFuture complete()",
       "public java.util.concurrent.CompletableFuture completeFuture()",
       "public boolean isOrdered()",
       "public boolean isStreamed()",
@@ -3442,7 +3438,6 @@
       "public abstract java.util.List asList()",
       "public abstract com.yahoo.processing.response.IncomingData incoming()",
       "public abstract java.util.concurrent.CompletableFuture completeFuture()",
-      "public abstract com.google.common.util.concurrent.ListenableFuture complete()",
       "public abstract void addDataListener(java.lang.Runnable)",
       "public void close()"
     ],
@@ -3461,7 +3456,6 @@
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public final void assignOwner(com.yahoo.processing.response.DataList)",
       "public com.yahoo.processing.response.DataList getOwner()",
-      "public com.google.common.util.concurrent.ListenableFuture completed()",
       "public java.util.concurrent.CompletableFuture completedFuture()",
       "public synchronized boolean isComplete()",
       "public synchronized void addLast(com.yahoo.processing.response.Data)",
@@ -3526,7 +3520,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.processing.response.DataList)",
-      "public com.google.common.util.concurrent.ListenableFuture completed()",
       "public java.util.concurrent.CompletableFuture completedFuture()",
       "public com.yahoo.processing.response.DataList getOwner()",
       "public boolean isComplete()",
@@ -3552,7 +3545,6 @@
     "methods": [
       "public abstract com.yahoo.processing.response.DataList getOwner()",
       "public abstract java.util.concurrent.CompletableFuture completedFuture()",
-      "public abstract com.google.common.util.concurrent.ListenableFuture completed()",
       "public abstract boolean isComplete()",
       "public abstract void addLast(com.yahoo.processing.response.Data)",
       "public abstract void add(com.yahoo.processing.response.Data)",

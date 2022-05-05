@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.rendering;
 
-import com.google.common.util.concurrent.ListenableFuture;
-import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
@@ -221,15 +219,6 @@ public abstract class AsynchronousSectionedRenderer<RESPONSE extends Response> e
         if ( ! isInitialized) throw new IllegalStateException("render() invoked before init().");
 
         return startRender(stream, response, execution, request);
-    }
-
-
-    /** @deprecated Use {@link #renderResponseBeforeHandover(OutputStream, Response, Execution, Request)} */
-    @Deprecated(forRemoval = true, since = "7")
-    @SuppressWarnings("removal")
-    public final ListenableFuture<Boolean> renderBeforeHandover(OutputStream stream, RESPONSE response,
-                                                                Execution execution, Request request) {
-        return CompletableFutures.toGuavaListenableFuture(renderResponseBeforeHandover(stream, response, execution, request));
     }
 
     private CompletableFuture<Boolean> startRender(OutputStream stream, RESPONSE response,
