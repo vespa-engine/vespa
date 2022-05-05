@@ -17,25 +17,26 @@ public class Artifact {
     private final String id;
     private final Optional<String> registry;
     private final Optional<String> repository;
+    private final Optional<String> tag;
     private final Instant createdAt;
     private final Version version;
-    private final Optional<Architecture> architecture;
 
-    public Artifact(String id, String registry, String repository, Instant createdAt, Version version, Optional<Architecture> architecture) {
+    public Artifact(String id, String registry, String repository, String tag, Instant createdAt, Version version) {
         this.id = Objects.requireNonNull(id);
         this.registry = Optional.of(registry);
         this.repository = Optional.of(repository);
+        this.tag = Optional.of(tag);
         this.createdAt = Objects.requireNonNull(createdAt);
         this.version = Objects.requireNonNull(version);
     }
 
-    public Artifact(String id, Instant createdAt, Version version) {
+    public Artifact(String id, Instant createdAt, Optional<String> tag, Version version) {
         this.id = Objects.requireNonNull(id);
         this.registry = Optional.empty();
         this.repository = Optional.empty();
+        this.tag = Objects.requireNonNull(tag);
         this.createdAt = Objects.requireNonNull(createdAt);
         this.version = Objects.requireNonNull(version);
-        this.architecture = Objects.requireNonNull(architecture);
     }
 
     /** Unique identifier of this */
@@ -53,6 +54,11 @@ public class Artifact {
         return repository;
     }
 
+    /** Tag of this artifact */
+    public Optional<String> tag() {
+        return tag;
+    }
+
     /** The time this was created */
     public Instant createdAt() {
         return createdAt;
@@ -63,16 +69,6 @@ public class Artifact {
         return version;
     }
 
-    /** The architecture of this, if any */
-    public Optional<Architecture> architecture() {
-        return architecture;
-    }
-
-    /** The tag of this image */
-    public String tag() {
-        return version().toFullString() + architecture.map(arch -> "-" + arch.name()).orElse("");
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -81,25 +77,19 @@ public class Artifact {
         return id.equals(that.id) &&
                registry.equals(that.registry) &&
                repository.equals(that.repository) &&
+               tag.equals(that.tag) &&
                createdAt.equals(that.createdAt) &&
-               version.equals(that.version) &&
-               architecture.equals(that.architecture);
+               version.equals(that.version);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, registry, repository, createdAt, version, architecture);
+        return Objects.hash(id, registry, repository, tag, createdAt, version);
     }
 
     @Override
     public String toString() {
         String name = repository.isPresent() ? registry.get() + "/" + repository.get() : id;
-        return "artifact " + name + " [version=" + version.toFullString() + ",createdAt=" + createdAt + ",architecture=" + architecture.map(Enum::name).orElse("<none>") + "]";
+        return "artifact " + name + " [version=" + version.toFullString() + ",createdAt=" + createdAt + tag.map(t -> ",tag=" + t).orElse("") + "]";
     }
-
-    public enum Architecture {
-        amd64,
-        arm64,
-    }
-
 }
