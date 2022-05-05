@@ -18,7 +18,8 @@
       "retired": false,
       "restarting": false,
       "rebooting": false,
-      "group": ""
+      "group": "",
+      "index": 0
     }
   ]
 }

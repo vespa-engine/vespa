@@ -57,7 +57,7 @@ public class Node {
     private final String clusterId;
     private final ClusterType clusterType;
     private final String group;
-    private final String index;
+    private final int index;
     private final boolean retired;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
@@ -80,7 +80,7 @@ public class Node {
                  Optional<Instant> wantedFirmwareCheck, ServiceState serviceState, Optional<Instant> suspendedSince,
                  long restartGeneration, long wantedRestartGeneration, long rebootGeneration,
                  long wantedRebootGeneration, int cost, int failCount, Optional<String> flavor, String clusterId,
-                 ClusterType clusterType, String group, String index, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
+                 ClusterType clusterType, String group, int index, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
                  boolean wantToRebuild, boolean down, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
                  DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, String> reports,
                  List<Event> history, Set<String> ipAddresses, Set<String> additionalIpAddresses,
@@ -265,10 +265,10 @@ public class Node {
     }
 
     /** The group of this node, empty string if unallocated */
-    public String group() {return group; }
+    public String group() { return group; }
 
     /** The membership index of this node */
-    public String index() {return index; }
+    public int index() { return index; }
 
     /** Whether this node has been requested to retire */
     public boolean wantToRetire() {
@@ -471,7 +471,7 @@ public class Node {
         private String clusterId = "";
         private ClusterType clusterType = ClusterType.unknown;
         private String group = "";
-        private String index = "";
+        private int index = 0;
         private boolean retired = false;
         private boolean wantToRetire = false;
         private boolean wantToDeprovision = false;
@@ -679,7 +679,7 @@ public class Node {
             return this;
         }
 
-        public Builder index(String index) {
+        public Builder index(int index) {
             this.index = index;
             return this;
         }
