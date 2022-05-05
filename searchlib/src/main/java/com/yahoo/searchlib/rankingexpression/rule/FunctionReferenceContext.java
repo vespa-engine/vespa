@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 
 import java.util.Collection;
@@ -48,12 +47,6 @@ public class FunctionReferenceContext {
             this.bindings.putAll(bindings);
     }
 
-    /** @deprecated Use {@link #FunctionReferenceContext(Map, Map)} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    protected FunctionReferenceContext(ImmutableMap<String, ExpressionFunction> functions, Map<String, String> bindings) {
-        this((Map<String, ExpressionFunction>)functions, bindings);
-    }
-
     private static Map<String, ExpressionFunction> toMap(Collection<ExpressionFunction> list) {
         Map<String, ExpressionFunction> mapBuilder = new HashMap<>();
         for (ExpressionFunction function : list)
@@ -63,10 +56,6 @@ public class FunctionReferenceContext {
 
     /** Returns a function or null if it isn't defined in this context */
     public ExpressionFunction getFunction(String name) { return functions.get(name); }
-
-    /** @deprecated Use {@link #getFunctions()} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    protected ImmutableMap<String, ExpressionFunction> functions() { return ImmutableMap.copyOf(functions); }
 
     protected Map<String, ExpressionFunction> getFunctions() { return functions; }
 
