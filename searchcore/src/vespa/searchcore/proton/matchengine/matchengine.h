@@ -26,7 +26,7 @@ private:
     vespalib::ThreadStackExecutor      _executor;
     vespalib::SimpleThreadBundle::Pool _threadBundlePool;
     std::atomic<bool>                  _nodeUp;
-    bool                               _nodeMaintenance;
+    std::atomic<bool>                  _nodeMaintenance;
 
 public:
     /**
