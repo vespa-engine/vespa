@@ -1120,6 +1120,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());
             nodeObject.setString("group", node.group());
+            nodeObject.setString("index", node.index());
         }
         return new SlimeJsonResponse(slime);
     }
