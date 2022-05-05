@@ -655,7 +655,7 @@ IndexMaintainer::doneFlush(FlushArgs *args, IDiskIndex::SP *disk_index) {
     if (args->_prunedSchema != memoryIndex.getPrunedSchema()) {
         return false;    // Must retry operation
     }
-    _flush_serial_num = std::max(_flush_serial_num, args->flush_serial_num);
+    set_flush_serial_num(std::max(flush_serial_num(), args->flush_serial_num));
     vespalib::system_time timeStamp = search::FileKit::getModificationTime((*disk_index)->getIndexDir());
     _lastFlushTime = timeStamp > _lastFlushTime ? timeStamp : _lastFlushTime;
     const uint32_t old_id = args->old_absolute_id - _last_fusion_id;
@@ -919,13 +919,13 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
                                   ? getFusionDir(_next_id - 1)
                                   : getFlushDir(_next_id - 1);
 
-        _flush_serial_num = IndexReadUtilities::readSerialNum(latest_index_dir);
+        set_flush_serial_num(IndexReadUtilities::readSerialNum(latest_index_dir));
         _lastFlushTime = search::FileKit::getModificationTime(latest_index_dir);
-        set_current_serial_num(_flush_serial_num);
+        set_current_serial_num(flush_serial_num());
         const string selector = IndexDiskLayout::getSelectorFileName(latest_index_dir);
         _selector = FixedSourceSelector::load(selector, _next_id - 1);
     } else {
-        _flush_serial_num = 0;
+        set_flush_serial_num(0);
         _selector = std::make_shared<FixedSourceSelector>(0, "sourceselector", 1);
     }
     uint32_t baseId(_selector->getBaseId());
@@ -942,7 +942,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     _selector->setDefaultSource(_current_index_id);
     auto sourceList = loadDiskIndexes(spec, std::make_unique<IndexCollection>(_selector));
     _current_index = operations.createMemoryIndex(_schema, *sourceList, current_serial_num());
-    LOG(debug, "Index manager created with flushed serial num %" PRIu64, _flush_serial_num);
+    LOG(debug, "Index manager created with flushed serial num %" PRIu64, flush_serial_num());
     sourceList->append(_current_index_id, _current_index);
     sourceList->setCurrentIndex(_current_index_id);
     _source_list = std::move(sourceList);
@@ -984,11 +984,11 @@ IndexMaintainer::initFlush(SerialNum serialNum, searchcorespi::FlushStats * stat
     if (args._skippedEmptyLast && args._extraIndexes.empty()) {
         // No memory index to flush, it was empty
         LockGuard lock(_state_lock);
-        _flush_serial_num = current_serial_num();
+        set_flush_serial_num(current_serial_num());
         _lastFlushTime = vespalib::system_clock::now();
         LOG(debug, "No memory index to flush. Update serial number and flush time to current: "
             "flushSerialNum(%" PRIu64 "), lastFlushTime(%f)",
-            _flush_serial_num, vespalib::to_s(_lastFlushTime.time_since_epoch()));
+            flush_serial_num(), vespalib::to_s(_lastFlushTime.time_since_epoch()));
         return FlushTask::UP();
     }
     SerialNum realSerialNum = args.flush_serial_num;
