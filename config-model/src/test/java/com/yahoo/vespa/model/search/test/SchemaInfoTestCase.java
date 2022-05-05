@@ -20,7 +20,7 @@ public class SchemaInfoTestCase {
                 "      query(foo) tensor<float>(x[10])" +
                 "      query(bar) tensor(key{},x[1000])" +
                 "      query(myDouble1) double" +
-                "      query(myDouble2) double" +
+                "      query(myDouble2) tensor()" +
                 "    }" +
                 "  }";
         List<String> schemas = List.of("type1", "type2");

@@ -266,7 +266,7 @@ TOKEN :
 | < FASTRANK: "fast-rank" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
-| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
+| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
 | < COMPRESSION: "compression" >
@@ -2480,7 +2480,7 @@ TensorType tensorType(String errorMessage) :
     String tensorTypeString;
 }
 {
-    ( <TENSOR_TYPE> ) { tensorTypeString = token.image; }
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
     {
         TensorType tensorType;
         try {
