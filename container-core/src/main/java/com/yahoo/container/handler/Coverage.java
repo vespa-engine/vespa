@@ -47,7 +47,7 @@ public class Coverage {
 
     protected Coverage(long docs, int nodes, boolean full, int resultSets) {
         this(docs, docs, nodes, resultSets, full ? FullCoverageDefinition.EXPLICITLY_FULL
-                : FullCoverageDefinition.EXPLICITLY_INCOMPLETE);
+                                                 : FullCoverageDefinition.EXPLICITLY_INCOMPLETE);
     }
 
     private Coverage(long docs, long active, int nodes, int resultSets, FullCoverageDefinition fullReason) {
@@ -168,9 +168,8 @@ public class Coverage {
     }
 
     /**
-     * An int between 0 (inclusive) and 100 (inclusive) representing how many
-     * percent coverage the result sets this Coverage instance contains information
-     * about had.
+     * An int between 0 (inclusive) and 100 (inclusive) representing the
+     * percent coverage of the result sets this instance contains information about.
      */
     public int getResultPercentage() {
         if (getResultSets() == 0) {
