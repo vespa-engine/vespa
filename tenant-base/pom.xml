@@ -304,6 +304,23 @@
                 <skipNexusStagingDeployMojo>true</skipNexusStagingDeployMojo>
             </properties>
         </profile>
+        <profile>
+            <id>default-build</id> <!-- Delays resolution of bundle plugin to where Maven has the repos from child projects? -->
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>bundle-plugin</artifactId>
+                        <version>${vespaversion}</version>
+                        <extensions>true</extensions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+
     </profiles>
 
     <build>
@@ -420,13 +437,6 @@
                         </goals>
                     </execution>
                 </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>com.yahoo.vespa</groupId>
-                <artifactId>bundle-plugin</artifactId>
-                <version>${vespaversion}</version>
-                <extensions>true</extensions>
             </plugin>
 
             <plugin>
