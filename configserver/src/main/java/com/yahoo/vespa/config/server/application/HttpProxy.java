@@ -6,7 +6,7 @@ import ai.vespa.http.HttpURL;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
 import ai.vespa.http.HttpURL.Scheme;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
