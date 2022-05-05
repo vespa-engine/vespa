@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.api.annotations.Beta;
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
@@ -340,13 +339,6 @@ public class TensorFunctionNode extends CompositeNode {
         @Override
         public Optional<TypeContext<Reference>> typeContext() {
             return wrappedSerializationContext.typeContext();
-        }
-
-        /** @deprecated Use {@link #getFunctions()} instead */
-        @SuppressWarnings("removal")
-        @Deprecated(forRemoval = true, since = "7")
-        protected ImmutableMap<String, ExpressionFunction> functions() {
-            return ImmutableMap.copyOf(wrappedSerializationContext.getFunctions());
         }
 
         @Override
