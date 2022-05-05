@@ -30,7 +30,7 @@ public:
     bool visit(FastOS_FileInterface &file, SerialNumRange &r, Packet &packet);
     bool close();
     void sync();
-    SerialNumRange range() const { return _range; }
+    SerialNumRange range() const { return SerialNumRange(get_range_from(), get_range_to()); }
 
     SerialNum getSynced() const {
         std::lock_guard guard(_writeLock);
@@ -52,6 +52,10 @@ private:
     void write(FastOS_FileInterface &file, SerialNumRange range, vespalib::ConstBufferRef buf);
     void writeHeader(const common::FileHeaderContext &fileHeaderContext);
     void set_size(size_t sz) noexcept { _sz.store(sz, std::memory_order_relaxed); }
+    SerialNum get_range_from() const noexcept { return _range_from.load(std::memory_order_relaxed); }
+    SerialNum get_range_to() const noexcept { return _range_to.load(std::memory_order_relaxed); }
+    void set_range_from(SerialNum range_from) noexcept { _range_from.store(range_from, std::memory_order_relaxed); }
+    void set_range_to(SerialNum range_to) noexcept { _range_to.store(range_to, std::memory_order_relaxed); }
 
     class SkipInfo
     {
@@ -72,7 +76,8 @@ private:
     };
     std::mutex            _lock;
     std::mutex            _fileLock;
-    SerialNumRange        _range;
+    std::atomic<SerialNum> _range_from;
+    std::atomic<SerialNum> _range_to;
     std::atomic<size_t>   _sz;
     std::atomic<uint64_t> _byteSize;
     vespalib::string      _fileName;
