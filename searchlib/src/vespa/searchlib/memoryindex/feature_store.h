@@ -154,7 +154,7 @@ public:
         uint32_t bufferId = RefType(ref).bufferId();
         const vespalib::datastore::BufferState &state = _store.getBufferState(bufferId);
         decoder.setEnd(
-                ((_store.getEntry<uint8_t>(RefType(state.size(), bufferId)) -
+                ((_store.getEntry<uint8_t>(RefType(0, bufferId)) + state.size() -
                   bits) + 7) / 8,
                 false);
     }
