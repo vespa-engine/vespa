@@ -79,7 +79,9 @@ struct BTreeBucketDatabase::ReplicaValueTraits {
         return Entry::createInvalid();
     }
     static uint64_t wrap_and_store_value(DataStoreType& store, const Entry& entry) noexcept {
-        auto replicas_ref = store.add(entry.getBucketInfo().getRawNodes());
+        const auto& raw_nodes = entry.getBucketInfo().getRawNodes();
+        auto replicas_ref = store.add(raw_nodes.empty() ? ConstArrayRef<BucketCopy>()
+                                                        : ConstArrayRef<BucketCopy>(raw_nodes));
         return value_from(entry.getBucketInfo().getLastGarbageCollectionTime(), replicas_ref);
     }
     static void remove_by_wrapped_value(DataStoreType& store, uint64_t value) noexcept {
