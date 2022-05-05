@@ -11,7 +11,7 @@ import ai.vespa.metricsproxy.http.application.ServiceIdDimensionProcessor;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
 import ai.vespa.metricsproxy.service.VespaServices;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
 import com.yahoo.container.handler.metrics.JsonResponse;

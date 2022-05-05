@@ -3,7 +3,7 @@ package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import ai.vespa.hosted.api.Method;
 import ai.vespa.hosted.api.RequestVerifier;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;

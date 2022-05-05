@@ -2,7 +2,7 @@
 
 package com.yahoo.vespa.hosted.controller.api.integration.stubs;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;

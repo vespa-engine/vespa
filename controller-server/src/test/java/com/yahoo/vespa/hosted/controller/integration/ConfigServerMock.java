@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.integration;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;

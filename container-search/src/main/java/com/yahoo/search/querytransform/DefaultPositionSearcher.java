@@ -14,7 +14,7 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.PhaseNames;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import java.util.List;
 
 /**
