@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.handler;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListMap;
-import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.container.handler.Coverage;
 import com.yahoo.container.handler.Timing;
 import com.yahoo.container.jdisc.ExtendedResponse;
@@ -75,22 +73,6 @@ public class HttpSearchResponse extends ExtendedResponse {
                 outputHeaders.add(header.getKey(), value);
             }
         }
-    }
-
-    /** @deprecated Use {@link #asyncRender(OutputStream)} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    public ListenableFuture<Boolean> waitableRender(OutputStream stream) throws IOException {
-        return waitableRender(result, query, rendererCopy, stream);
-    }
-
-    /** @deprecated Use {@link #asyncRender(Result, Query, Renderer, OutputStream)} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    @SuppressWarnings("removal")
-    public static ListenableFuture<Boolean> waitableRender(Result result,
-                                                           Query query,
-                                                           Renderer<Result> renderer,
-                                                           OutputStream stream) throws IOException {
-        return CompletableFutures.toGuavaListenableFuture(asyncRender(result, query, renderer, stream));
     }
 
     public CompletableFuture<Boolean> asyncRender(OutputStream stream) {
