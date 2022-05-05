@@ -4369,8 +4369,6 @@
     ],
     "methods": [
       "public void <init>(int, com.yahoo.search.Result, com.yahoo.search.Query, com.yahoo.processing.rendering.Renderer)",
-      "public com.google.common.util.concurrent.ListenableFuture waitableRender(java.io.OutputStream)",
-      "public static com.google.common.util.concurrent.ListenableFuture waitableRender(com.yahoo.search.Result, com.yahoo.search.Query, com.yahoo.processing.rendering.Renderer, java.io.OutputStream)",
       "public java.util.concurrent.CompletableFuture asyncRender(java.io.OutputStream)",
       "public static java.util.concurrent.CompletableFuture asyncRender(com.yahoo.search.Result, com.yahoo.search.Query, com.yahoo.processing.rendering.Renderer, java.io.OutputStream)",
       "public void render(java.io.OutputStream, com.yahoo.jdisc.handler.ContentChannel, com.yahoo.jdisc.handler.CompletionHandler)",
@@ -7809,7 +7807,6 @@
       "public boolean isFillable()",
       "public java.util.Set getFilled()",
       "public com.yahoo.processing.response.IncomingData incoming()",
-      "public com.google.common.util.concurrent.ListenableFuture complete()",
       "public java.util.concurrent.CompletableFuture completeFuture()",
       "public void addDataListener(java.lang.Runnable)",
       "public void close()",
