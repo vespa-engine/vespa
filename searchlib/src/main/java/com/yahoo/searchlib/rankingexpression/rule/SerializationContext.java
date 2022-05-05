@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
-import com.google.common.collect.ImmutableMap;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -88,13 +87,6 @@ public class SerializationContext extends FunctionReferenceContext {
         super(functions, bindings);
         this.typeContext = typeContext;
         this.serializedFunctions = serializedFunctions;
-    }
-
-    /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
-    @Deprecated(forRemoval = true, since = "7")
-    public SerializationContext(ImmutableMap<String,ExpressionFunction> functions, Map<String, String> bindings,
-                                Map<String, String> serializedFunctions) {
-        this((Map<String, ExpressionFunction>)functions, bindings, serializedFunctions);
     }
 
     /** Returns the type context of this, if it is able to resolve types. */

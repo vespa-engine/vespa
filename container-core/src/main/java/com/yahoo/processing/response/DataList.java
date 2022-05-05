@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.response;
 
-import com.google.common.util.concurrent.ListenableFuture;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -73,10 +71,6 @@ public interface DataList<DATATYPE extends Data> extends Data {
      * causes no memory synchronization cost.
      */
     CompletableFuture<DataList<DATATYPE>> completeFuture();
-
-    /** @deprecated Use {@link #completeFuture()} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    ListenableFuture<DataList<DATATYPE>> complete();
 
     /**
      * Adds a listener which is invoked every time data is added to this list.
