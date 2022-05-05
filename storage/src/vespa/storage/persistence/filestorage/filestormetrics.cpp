@@ -158,7 +158,6 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
       revert("revert", "Revert", this),
       createIterator("createiterator", {}, this),
       visit(this),
-      multiOp("multioperations", "The number of multioperations that have been created", this),
       createBuckets("createbuckets", "Number of buckets that has been created.", this),
       deleteBuckets("deletebuckets", "Number of buckets that has been deleted.", this),
       repairs("bucketverified", "Number of times buckets have been checked.", this),
@@ -181,9 +180,7 @@ FileStorThreadMetrics::FileStorThreadMetrics(const std::string& name, const std:
       applyBucketDiff("applybucketdiff", "Number of applybucketdiff commands that have been processed.", this),
       getBucketDiffReply("getbucketdiffreply", {}, "Number of getbucketdiff replies that have been processed.", this),
       applyBucketDiffReply("applybucketdiffreply", {}, "Number of applybucketdiff replies that have been processed.", this),
-      merge_handler_metrics(this),
-      batchingSize("batchingsize", {}, "Number of operations batched per bucket (only counts "
-                   "batches of size > 1)", this)
+      merge_handler_metrics(this)
 { }
 
 FileStorThreadMetrics::~FileStorThreadMetrics() = default;
@@ -218,7 +215,6 @@ FileStorDiskMetrics::FileStorDiskMetrics(const std::string& name, const std::str
       waitingForLockHitRate("waitingforlockrate", {},
               "Amount of times a filestor thread has needed to wait for "
               "lock to take next message in queue.", this),
-      lockWaitTime("lockwaittime", {}, "Amount of time waiting used waiting for lock.", this),
       active_operations(this)
 {
     pendingMerges.unsetOnZeroValue();
