@@ -86,8 +86,6 @@ public class HttpResponseStatisticsCollectorTest {
         assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, "read", 401, 1L);
         assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, "read", 403, 1L);
         assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_4XX, "read", 404, 1L);
-        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_401, "read", 401, 1L);
-        assertStatisticsEntry(stats, "http", "GET", MetricDefinitions.RESPONSES_403, "read", 403, 1L);
 
     }
 
