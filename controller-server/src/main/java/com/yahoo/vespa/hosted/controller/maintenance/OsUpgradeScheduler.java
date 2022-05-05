@@ -15,8 +15,6 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Automatically schedule upgrades to the next OS version.
@@ -52,10 +50,10 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     private boolean upgradingToNewMajor(CloudName cloud) {
-        Set<Integer> majorVersions = controller().osVersionStatus().versionsIn(cloud).stream()
-                                                 .map(Version::getMajor)
-                                                 .collect(Collectors.toSet());
-        return majorVersions.size() > 1;
+        return controller().osVersionStatus().versionsIn(cloud).stream()
+                           .map(Version::getMajor)
+                           .distinct()
+                           .count() > 1;
     }
 
     private boolean canTriggerAt(Instant instant) {

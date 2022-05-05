@@ -72,23 +72,21 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                                                             .nodeType(NodeType.tenant, NodeType.host)
                                                             .asList());
 
-        recycleIf(remainingNodes,
-                  node -> node.allocation().isEmpty(),
+        recycleIf(node -> node.allocation().isEmpty(), remainingNodes, allNodes);
+        recycleIf(node -> !node.allocation().get().membership().cluster().isStateful() &&
+                node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
+                  remainingNodes,
                   allNodes);
-        recycleIf(remainingNodes,
-                  node -> !node.allocation().get().membership().cluster().isStateful() &&
-                          node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statelessExpiry)),
-                  allNodes);
-        recycleIf(remainingNodes,
-                  node -> node.allocation().get().membership().cluster().isStateful() &&
+        recycleIf(node -> node.allocation().get().membership().cluster().isStateful() &&
                           node.history().hasEventBefore(History.Event.Type.failed, clock().instant().minus(statefulExpiry)),
+                  remainingNodes,
                   allNodes);
         return 1.0;
     }
 
     /** Recycle the nodes matching condition, and remove those nodes from the nodes list. */
-    private void recycleIf(List<Node> failedNodes, Predicate<Node> recycleCondition, NodeList allNodes) {
-        List<Node> nodesToRecycle = failedNodes.stream().filter(recycleCondition).collect(Collectors.toList());
+    private void recycleIf(Predicate<Node> condition, List<Node> failedNodes, NodeList allNodes) {
+        List<Node> nodesToRecycle = failedNodes.stream().filter(condition).collect(Collectors.toList());
         failedNodes.removeAll(nodesToRecycle);
         recycle(nodesToRecycle, allNodes);
     }

@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.notify.Notifier;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;

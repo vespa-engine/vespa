@@ -393,7 +393,7 @@ public class Flags {
             "provision-in-external-account", "",
             List.of("mpolden"), "2022-05-02", "2022-09-01",
             "The 12-digit AWS account ID where resources belonging to an application should be provisioned",
-            "Takes effect on config server restart",
+            "Takes effect immediately",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

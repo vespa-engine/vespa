@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.controller.notify;
+package com.yahoo.vespa.hosted.controller.notification;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
@@ -12,8 +12,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.MailerException;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
-import com.yahoo.vespa.hosted.controller.notification.Notification;
-import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;

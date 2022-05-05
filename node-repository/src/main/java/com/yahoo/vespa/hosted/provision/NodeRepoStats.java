@@ -116,11 +116,6 @@ public class NodeRepoStats {
         return snapshots;
     }
 
-    private static double divide(double a, double b) {
-        if (a == 0 && b == 0) return 0;
-        return a / b;
-    }
-
     public static class ApplicationStats implements Comparable<ApplicationStats> {
 
         private static final Comparator<ApplicationStats> comparator = Comparator.comparingDouble(ApplicationStats::unutilizedCost).reversed()
