@@ -156,7 +156,7 @@ public class DocumentDatabaseTestCase {
         assertEquals(attributeField, acfg.attribute(0).name());
         assertEquals(attributeField+"_nfa", acfg.attribute(1).name());
         RankProfilesConfig rcfg = model.getConfig(RankProfilesConfig.class, configId);
-        assertEquals(7, rcfg.rankprofile().size());
+        assertEquals(6, rcfg.rankprofile().size());
     }
 
     @Test
@@ -211,9 +211,16 @@ public class DocumentDatabaseTestCase {
 
     @Test
     public void requireThatRelevantConfigIsAvailableForClusterSearcher() {
+        String inputsProfile =
+                "  rank-profile inputs {" +
+                "    inputs {" +
+                "      query(foo) tensor<float>(x[10])" +
+                "      query(bar) tensor(key{},x[1000])" +
+                "    }" +
+                "  }";
         List<String> schemas = List.of("type1", "type2");
         var tester = new SchemaTester();
-        VespaModel model = tester.createModel(schemas);
+        VespaModel model = tester.createModelWithRankProfile(inputsProfile, schemas);
         String searcherId = "container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher";
 
         { // documentdb-info config

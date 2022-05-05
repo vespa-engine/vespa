@@ -81,7 +81,7 @@ public class SchemaTester {
     void assertSingleSD(String mode) {
         List<String> sds = List.of("type1");
         VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, mode),
-                                                            generateSchemas(sds)).create();
+                                                            generateSchemas("", sds)).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         assertEquals(1, indexedSearchCluster.getDocumentDbs().size());
@@ -95,7 +95,13 @@ public class SchemaTester {
     VespaModel createModel(List<String> schemas) {
         return new VespaModelCreatorWithMockPkg(vespaHosts,
                                                 createVespaServices(schemas, "index"),
-                                                generateSchemas(schemas)).create();
+                                                generateSchemas("", schemas)).create();
+    }
+
+    VespaModel createModelWithRankProfile(String rankProfile, List<String> schemas) {
+        return new VespaModelCreatorWithMockPkg(vespaHosts,
+                                                createVespaServices(schemas, "index"),
+                                                generateSchemas(rankProfile, schemas)).create();
     }
 
     VespaModel createModel(List<DocType> nameAndModes, String xmlTuning) {
@@ -105,14 +111,14 @@ public class SchemaTester {
     VespaModel createModelWithMode(String mode, List<String> schemas) {
         return new VespaModelCreatorWithMockPkg(vespaHosts,
                                                 createVespaServices(schemas, mode),
-                                                generateSchemas(schemas)).create();
+                                                generateSchemas("", schemas)).create();
 
     }
 
     VespaModel createModelWithMode(String mode, List<String> schemas, DeployState.Builder builder) {
         return new VespaModelCreatorWithMockPkg(vespaHosts,
                                                 createVespaServices(schemas, mode),
-                                                generateSchemas(schemas)).create(builder);
+                                                generateSchemas("", schemas)).create(builder);
     }
 
     VespaModel createModel(List<DocType> nameAndModes, String xmlTuning, DeployState.Builder builder) {
@@ -121,11 +127,11 @@ public class SchemaTester {
             sds.add(nameAndMode.getType());
         }
         var creator = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
-                                                       generateSchemas(sds));
+                                                       generateSchemas("", sds));
         return builder != null ? creator.create(builder) : creator.create();
     }
 
-    public static String generateSchema(String name, String field1, String field2) {
+    public static String generateSchema(String name, String field1, String field2, String rankProfile) {
         return "schema " + name + " {" +
                "  document " + name + " {" +
                "    field " + field1 + " type string {\n" +
@@ -153,24 +159,19 @@ public class SchemaTester {
                "    first-phase { expression: attribute(" + field2 + ") }\n" +
                "    rank-features: attribute(" + field2 + ")" +
                "  }" +
-               "  rank-profile inputs {" +
-               "    inputs {" +
-               "      query(foo) tensor<float>(x[10])" +
-               "      query(bar) tensor(key{},x[1000])" +
-               "    }" +
-               "  }" +
+               rankProfile +
                "}";
     }
 
-    public static List<String> generateSchemas(String ... sdNames) {
-        return generateSchemas(Arrays.asList(sdNames));
+    public static List<String> generateSchemas(String rankProfile, String ... sdNames) {
+        return generateSchemas(rankProfile, Arrays.asList(sdNames));
     }
 
-    public static List<String> generateSchemas(List<String> sdNames) {
+    public static List<String> generateSchemas(String rankProfile, List<String> sdNames) {
         List<String> sds = new ArrayList<>();
         int i = 0;
         for (String sdName : sdNames) {
-            sds.add(generateSchema(sdName, "f" + (i + 1), "f" + (i + 2)));
+            sds.add(generateSchema(sdName, "f" + (i + 1), "f" + (i + 2), rankProfile));
             i = i + 2;
         }
         return sds;

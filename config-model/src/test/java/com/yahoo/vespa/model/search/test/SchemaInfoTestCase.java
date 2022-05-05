@@ -14,9 +14,16 @@ public class SchemaInfoTestCase {
     /** Schema-info should contain all schemas, independent of clusters. */
     @Test
     public void requireThatSchemaInfoIsAvailable() {
+        String inputs =
+                "  rank-profile inputs {" +
+                "    inputs {" +
+                "      query(foo) tensor<float>(x[10])" +
+                "      query(bar) tensor(key{},x[1000])" +
+                "    }" +
+                "  }";
         List<String> schemas = List.of("type1", "type2");
         var tester = new SchemaTester();
-        var model = tester.createModel(schemas);
+        var model = tester.createModelWithRankProfile(inputs, schemas);
         assertSchemaInfo("container/searchchains/chain/test/component/com.yahoo.prelude.cluster.ClusterSearcher", model, tester);
         assertSchemaInfo("container", model, tester);
     }
