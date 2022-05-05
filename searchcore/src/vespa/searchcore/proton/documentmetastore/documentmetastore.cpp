@@ -441,7 +441,7 @@ DocumentMetaStore::~DocumentMetaStore()
     // between document types
     unload();
     getGenerationHolder().clearHoldLists();
-    assert(_shrinkLidSpaceBlockers == 0);
+    assert(get_shrink_lid_space_blockers() == 0);
 }
 
 DocumentMetaStore::Result
@@ -1005,13 +1005,13 @@ void
 DocumentMetaStore::compactLidSpace(uint32_t wantedLidLimit)
 {
     AttributeVector::compactLidSpace(wantedLidLimit);
-    ++_shrinkLidSpaceBlockers;
+    set_shrink_lid_space_blockers(get_shrink_lid_space_blockers() + 1);
 }
 
 void
 DocumentMetaStore::holdUnblockShrinkLidSpace()
 {
-    assert(_shrinkLidSpaceBlockers > 0);
+    assert(get_shrink_lid_space_blockers() > 0);
     auto hold = std::make_unique<ShrinkBlockHeld>(*this);
     getGenerationHolder().hold(std::move(hold));
     incGeneration();
@@ -1020,15 +1020,16 @@ DocumentMetaStore::holdUnblockShrinkLidSpace()
 void
 DocumentMetaStore::unblockShrinkLidSpace()
 {
-    assert(_shrinkLidSpaceBlockers > 0);
-    --_shrinkLidSpaceBlockers;
+    auto shrink_lid_space_blockers = get_shrink_lid_space_blockers();
+    assert(shrink_lid_space_blockers > 0);
+    set_shrink_lid_space_blockers(shrink_lid_space_blockers - 1);
 }
 
 bool
 DocumentMetaStore::canShrinkLidSpace() const
 {
     return AttributeVector::canShrinkLidSpace() &&
-        _shrinkLidSpaceBlockers == 0;
+        get_shrink_lid_space_blockers() == 0;
 }
 
 void
