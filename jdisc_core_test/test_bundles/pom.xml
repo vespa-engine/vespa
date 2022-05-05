@@ -21,6 +21,12 @@
             <version>${project.version}</version>
 	    <scope>provided</scope>
 	</dependency>
+    <dependency>
+        <groupId>com.yahoo.vespa</groupId>
+        <artifactId>annotations</artifactId>
+        <version>${project.version}</version>
+        <scope>provided</scope>
+    </dependency>
     </dependencies>
     <build>
         <plugins>
