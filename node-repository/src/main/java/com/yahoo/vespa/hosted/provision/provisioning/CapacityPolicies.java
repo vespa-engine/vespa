@@ -76,14 +76,17 @@ public class CapacityPolicies {
         return target;
     }
 
-    public NodeResources defaultNodeResources(ClusterSpec.Type clusterType, ApplicationId applicationId) {
-        if (clusterType == ClusterSpec.Type.admin) {
+    public NodeResources defaultNodeResources(ClusterSpec clusterSpec, ApplicationId applicationId) {
+        if (clusterSpec.type() == ClusterSpec.Type.admin) {
             Architecture architecture = Architecture.valueOf(
                     ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(flagSource)
                                                    .with(APPLICATION_ID, applicationId.serializedForm())
                                                    .value());
 
-            return zone.getCloud().dynamicProvisioning() && ! sharedHosts.apply(clusterType) ?
+            if (clusterSpec.id().value().equals("cluster-controllers"))
+                 return new NodeResources(0.25, 1.14, 10, 0.3).with(architecture);
+
+            return zone.getCloud().dynamicProvisioning() && ! sharedHosts.apply(clusterSpec.type()) ?
                     new NodeResources(0.5, 4, 50, 0.3).with(architecture) :
                     new NodeResources(0.5, 2, 50, 0.3).with(architecture);
         }
