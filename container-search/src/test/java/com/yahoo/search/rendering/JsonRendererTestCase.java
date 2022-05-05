@@ -408,7 +408,7 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
         String expected =  "{"
@@ -1437,7 +1437,6 @@ public class JsonRendererTestCase {
         return render(execution, r);
     }
 
-    @SuppressWarnings("removal")
     private String render(Execution execution, Result r) throws InterruptedException, ExecutionException {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
