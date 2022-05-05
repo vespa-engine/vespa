@@ -202,6 +202,7 @@ TOKEN :
 | < INDEXING: "indexing" >
 | < SUMMARYTO: "summary-to" >
 | < DOCUMENTSUMMARY: "document-summary" >
+| <DOUBLE_KEYWORD: "double" >
 | < RANKTYPE: "rank-type" >
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
@@ -2203,8 +2204,21 @@ void inputs(RankProfile profile) :
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-      ( reference = queryFeature() type = tensorType("Type of " + reference) { profile.addInput(reference, type); } (<NL>)*) *
+      ( reference = queryFeature() type = inputType(reference) { profile.addInput(reference, type); } (<NL>)*) *
     <RBRACE>
+}
+
+TensorType inputType(Reference reference) :
+{
+    TensorType type;
+}
+{
+    (
+      ( type = tensorType("Type of " + reference) )
+      |
+      ( <DOUBLE_KEYWORD> { type = TensorType.empty; } )
+    )
+    { return type; }
 }
 
 Reference queryFeature() :
@@ -2408,10 +2422,13 @@ void rankProperty(RankProfile profile) :
  */
 String rankPropertyItem() :
 {
-    String image, ret = "";
+    String image;
+    String ret = "";
+    Token dToken;
 }
 {
-    ( ( image = identifierWithDash()              { ret += image; }
+    ( ( image = identifierWithDash() { ret += image; }
+        | dToken = <DOUBLE> { ret += dToken.image; }
         | image = quotedString()                  { ret += image; }
         | ( "(" | ")" | <DOT> | <COMMA> )         { ret += token.image; } )+ )
     { return ret; }
@@ -2542,10 +2559,10 @@ void constants(RankProfile profile) :
 
 void constantValue(RankProfile profile, String name) :
 {
-    String value;
+    Token value;
 }
 {
-    <COLON> value = identifier() { profile.addConstant(name, Value.parse(value)); }
+    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> ) { profile.addConstant(name, Value.parse(value.image)); }
 }
 
 void constantTensor(RankProfile profile, String name) :
@@ -2693,7 +2710,7 @@ String identifier() : { }
       | <DIRECT>
       | <DOCUMENT>
       | <DOCUMENTSUMMARY>
-      | <DOUBLE>
+      | <DOUBLE_KEYWORD>
       | <DYNAMIC>
       | <ENABLEBITVECTORS>
       | <ENABLEONLYBITVECTOR>

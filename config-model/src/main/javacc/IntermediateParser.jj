@@ -303,6 +303,7 @@ TOKEN :
 | < ENABLE_BM25: "enable-bm25" >
 | < HNSW: "hnsw" >
 | < MAXLINKSPERNODE: "max-links-per-node" >
+| < DOUBLE_KEYWORD: "double" >
 | < DISTANCEMETRIC: "distance-metric" >
 | < NEIGHBORSTOEXPLOREATINSERT: "neighbors-to-explore-at-insert" >
 | < MULTITHREADEDINDEXING: "multi-threaded-indexing" >
@@ -2067,8 +2068,22 @@ void inputs(ParsedRankProfile profile) :
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-      ( reference = queryFeature() type = tensorType("Type of " + reference) { profile.addInput(reference, type); } (<NL>)*) *
+      ( reference = queryFeature() type = inputType(reference) { profile.addInput(reference, type); } (<NL>)*) *
     <RBRACE>
+}
+
+TensorType inputType(Reference reference) :
+{
+    TensorType type;
+
+}
+{
+    (
+      ( type = tensorType("Type of " + reference) )
+      |
+      ( <DOUBLE_KEYWORD> { type = TensorType.empty; } )
+    )
+    { return type; }
 }
 
 Reference queryFeature() :
@@ -2276,10 +2291,13 @@ void rankProperty(ParsedRankProfile profile) :
  */
 String rankPropertyItem() :
 {
-    String image, ret = "";
+    String image = null;
+    String ret = "";
+    Token dToken = null;
 }
 {
-    ( ( image = identifierWithDash()              { ret += image; }
+    ( ( image = identifierWithDash() { ret += image; }
+        | dToken = <DOUBLE> { ret += dToken.image; }
         | image = quotedString()                  { ret += image; }
         | ( "(" | ")" | <DOT> | <COMMA> )         { ret += token.image; } )+ )
     { return ret; }
@@ -2408,10 +2426,10 @@ void constants(ParsedRankProfile profile) :
 
 void constantValue(ParsedRankProfile profile, String name) :
 {
-    String value;
+    Token value;
 }
 {
-    <COLON> value = identifier() { profile.addConstant(name, Value.parse(value)); }
+    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> ) { profile.addConstant(name, Value.parse(value.image)); }
 }
 
 void constantTensor(ParsedRankProfile profile, String name) :
@@ -2555,7 +2573,7 @@ String identifier() : { }
       | <DIRECT>
       | <DOCUMENT>
       | <DOCUMENTSUMMARY>
-      | <DOUBLE>
+      | <DOUBLE_KEYWORD>
       | <DYNAMIC>
       | <ENABLEBITVECTORS>
       | <ENABLEONLYBITVECTOR>
