@@ -9,9 +9,6 @@ import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import org.apache.curator.framework.recipes.locks.InterProcessLock;
 
 import java.time.Duration;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,26 +21,17 @@ import java.util.concurrent.TimeUnit;
  */
 public class Lock implements Mutex {
 
-    // TODO(hakon): Remove once debugging is done
-    private final Object monitor = new Object();
-    private long nextSequenceNumber = 0;
-    private final Map<Long, Long> reentriesByThreadId = new HashMap<>();
-    private final Instant created = Instant.now();
-    private Curator curator;
-
     private final InterProcessLock mutex;
     private final String lockPath;
 
     public Lock(String lockPath, Curator curator) {
         this(lockPath, curator.createMutex(lockPath));
-        this.curator = curator;
     }
 
     /** Public for testing only */
     public Lock(String lockPath, InterProcessLock mutex) {
         this.lockPath = lockPath;
         this.mutex = mutex;
-        this.curator = null;
     }
 
     /** Take the lock with the given timeout. This may be called multiple times from the same thread - each matched by a close */
@@ -65,38 +53,7 @@ public class Lock implements Mutex {
                     " to acquire lock '" + lockPath + "'");
         }
 
-        invoke(+1L, (lockPath, debug) -> threadLockStats.lockAcquired(debug), lockPath);
-    }
-
-    @FunctionalInterface
-    private interface BiConsumer2 {
-        void accept(String lockPath, String debug);
-    }
-
-    // TODO(hakon): Remove once debugging is unnecessary
-    private void invoke(long reentryCountDiff, BiConsumer2 consumer, String lockPath) {
-        long threadId = Thread.currentThread().getId();
-        final long sequenceNumber;
-        final Map<Long, Long> reentriesByThreadIdCopy;
-        synchronized (monitor) {
-            sequenceNumber = nextSequenceNumber++;
-            reentriesByThreadId.merge(threadId, reentryCountDiff, (oldValue, argumentValue) -> {
-                long sum = oldValue + argumentValue /* == reentryCountDiff */;
-                if (sum == 0) {
-                    // Remove from map
-                    return null;
-                } else {
-                    return sum;
-                }
-            });
-            reentriesByThreadIdCopy = Map.copyOf(reentriesByThreadId);
-        }
-
-        String debug = "thread " + threadId + " Lock 0x" + Integer.toHexString(System.identityHashCode(this)) +
-                       "@" + created + " Curator 0x" + Integer.toHexString(System.identityHashCode(curator)) +
-                       " lock " + lockPath + " #" + sequenceNumber +
-                       ", reentries by thread ID = " + reentriesByThreadIdCopy;
-        consumer.accept(lockPath, debug);
+        threadLockStats.lockAcquired();
     }
 
     @Override
@@ -105,7 +62,7 @@ public class Lock implements Mutex {
         // Update metrics now before release() to avoid double-counting time in locked state.
         // The lockPath must be sent down as close() may be invoked in an order not necessarily
         // equal to the reverse order of acquires.
-        invoke(-1L, threadLockStats::preRelease, lockPath);
+        threadLockStats.preRelease(lockPath);
         try {
             mutex.release();
             threadLockStats.postRelease(lockPath);
