@@ -3,9 +3,7 @@ package com.yahoo.search.result;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.ListenableArrayList;
-import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.SortDataHitSorter;
 import com.yahoo.processing.response.ArrayDataList;
@@ -963,13 +961,6 @@ public class HitGroup extends Hit implements DataList<Hit>, Cloneable, Iterable<
     /** Returns the incoming hit buffer to which new hits can be added to this asynchronous, if supported by the instance */
     @Override
     public IncomingData<Hit> incoming() { return incomingHits; }
-
-    @Override
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "7")
-    public ListenableFuture<DataList<Hit>> complete() {
-        return CompletableFutures.toGuavaListenableFuture(completedFuture);
-    }
 
     @Override public CompletableFuture<DataList<Hit>> completeFuture() { return completedFuture; }
 

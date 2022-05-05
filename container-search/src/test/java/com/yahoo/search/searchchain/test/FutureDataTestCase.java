@@ -32,7 +32,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class FutureDataTestCase {
 
-    @SuppressWarnings("removal")
     @Test
     public void testAsyncFederation() throws InterruptedException, ExecutionException {
         // Setup environment
@@ -73,13 +72,12 @@ public class FutureDataTestCase {
         asyncProviderSearcher.simulateOneHitIOComplete(new Hit("async:1"));
         asyncProviderSearcher.simulateAllHitsIOComplete();
         assertEquals("Got no async data yet, as we haven't pulled it", 0, asyncGroup.size());
-        asyncGroup.complete().get();
+        asyncGroup.completeFuture().get();
         assertEquals("Completed, so we have the data", 2, asyncGroup.size());
         assertEquals("async:0", asyncGroup.get(0).getId().toString());
         assertEquals("async:1", asyncGroup.get(1).getId().toString());
     }
 
-    @SuppressWarnings("removal")
     @Test
     public void testFutureData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -104,7 +102,7 @@ public class FutureDataTestCase {
 
         // Results with future hit groups will be passed to rendering directly and start rendering immediately.
         // For this test we block and wait for the data instead:
-        result.hits().complete().get(1000, TimeUnit.MILLISECONDS);
+        result.hits().completeFuture().get(1000, TimeUnit.MILLISECONDS);
         assertEquals(2, result.hits().getConcreteSize());
     }
 
