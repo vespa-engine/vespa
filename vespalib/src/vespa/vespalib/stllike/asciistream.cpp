@@ -628,6 +628,9 @@ asciistream::createFromFile(stringref fileName)
         if (sz < 0) {
             throw IoException("Failed getting size of  file " + fileName + " : Error=" + file.getLastErrorString(), IoException::UNSPECIFIED, VESPA_STRLOC);
         }
+        if (sz == 0) {
+            return is;
+        }
         alloc::Alloc buf = alloc::Alloc::alloc(sz);
         ssize_t actual = file.Read(buf.get(), sz);
         if (actual != sz) {
