@@ -2,6 +2,7 @@
 package ai.vespa.hosted.cd.commons;
 
 import ai.vespa.hosted.api.Properties;
+import ai.vespa.hosted.cd.EndpointAuthenticator;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;

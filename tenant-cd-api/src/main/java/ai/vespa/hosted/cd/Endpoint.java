@@ -18,6 +18,9 @@ public interface Endpoint {
     /** Returns the URI of the endpoint, with scheme, host and port. */
     URI uri();
 
+    /** Returns the authenticator for HTTP requests against this particular endpoint. */
+    EndpointAuthenticator authenticator();
+
     /** Sends the given request with required authentication. */
     <T> HttpResponse<T> send(HttpRequest.Builder request, HttpResponse.BodyHandler<T> handler);
 

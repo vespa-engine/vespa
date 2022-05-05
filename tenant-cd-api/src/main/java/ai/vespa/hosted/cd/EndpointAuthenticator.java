@@ -1,9 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.hosted.cd.commons;
+package ai.vespa.hosted.cd;
 
 import javax.net.ssl.SSLContext;
 import java.net.http.HttpRequest;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -28,10 +29,20 @@ public interface EndpointAuthenticator {
 
     /** Adds necessary authentication data to the given HTTP request builder, to pass the data plane of a Vespa endpoint. */
     default HttpRequest.Builder authenticated(HttpRequest.Builder request) {
+        Map<String, String> authorizationHeaders = authorizationHeaders();
+        if (authorizationHeaders.isEmpty())
+            return request;
+
+        Map<String, List<String>> headers = request.build().headers().map();
+        authorizationHeaders.forEach((name, value) -> {
+            if ( ! headers.containsKey(name))
+                request.setHeader(name, value);
+        });
         return request;
     }
 
     default Map<String, String> authorizationHeaders() {
         return Map.of();
     }
+
 }

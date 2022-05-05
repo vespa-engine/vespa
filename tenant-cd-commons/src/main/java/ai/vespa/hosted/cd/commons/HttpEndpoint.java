@@ -2,6 +2,7 @@
 package ai.vespa.hosted.cd.commons;
 
 import ai.vespa.hosted.cd.Endpoint;
+import ai.vespa.hosted.cd.EndpointAuthenticator;
 
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
@@ -44,6 +45,11 @@ public class HttpEndpoint implements Endpoint {
     @Override
     public URI uri() {
         return endpoint;
+    }
+
+    @Override
+    public EndpointAuthenticator authenticator() {
+        return authenticator;
     }
 
     @Override
