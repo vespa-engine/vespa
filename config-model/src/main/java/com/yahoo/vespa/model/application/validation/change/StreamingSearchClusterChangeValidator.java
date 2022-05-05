@@ -64,11 +64,11 @@ public class StreamingSearchClusterChangeValidator implements ChangeValidator {
                                                   getDocumentType(currentCluster, currentStreamingCluster),
                                                   getDocumentType(nextCluster, nextStreamingCluster), overrides, now));
         result.addAll(validateAttributeFastAccessAdded(currentCluster.id(),
-                                                       currentStreamingCluster.derived().getAttributeFields(),
-                                                       nextStreamingCluster.derived().getAttributeFields()));
+                                                       currentStreamingCluster.getSchemaConfig().getAttributeFields(),
+                                                       nextStreamingCluster.getSchemaConfig().getAttributeFields()));
         result.addAll(validateAttributeFastAccessRemoved(currentCluster.id(),
-                                                         currentStreamingCluster.derived().getAttributeFields(),
-                                                         nextStreamingCluster.derived().getAttributeFields()));
+                                                         currentStreamingCluster.getSchemaConfig().getAttributeFields(),
+                                                         nextStreamingCluster.getSchemaConfig().getAttributeFields()));
 
         return modifyActions(result, getSearchNodeServices(nextCluster), nextStreamingCluster.getDocTypeName());
     }

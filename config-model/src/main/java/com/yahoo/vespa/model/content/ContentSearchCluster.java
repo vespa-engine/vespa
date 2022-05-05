@@ -329,7 +329,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         return getClusters().values().stream()
                 .filter(StreamingSearchCluster.class::isInstance)
                 .map(StreamingSearchCluster.class::cast)
-                .filter(ssc -> ssc.schemas().get(docType) != null)
+                .filter(ssc -> ssc.getSchemaConfig().getSchema().getName().equals(docType))
                 .findFirst();
     }
 
