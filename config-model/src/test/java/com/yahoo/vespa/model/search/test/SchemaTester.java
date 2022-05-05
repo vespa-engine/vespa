@@ -200,4 +200,20 @@ public class SchemaTester {
         return rankProfile;
     }
 
+    void assertSummaryField(DocumentdbInfoConfig.Documentdb db, int summaryClassIndex, int fieldIndex,
+                            String name, String type, boolean dynamic) {
+        DocumentdbInfoConfig.Documentdb.Summaryclass.Fields field = db.summaryclass(summaryClassIndex).fields(fieldIndex);
+        assertEquals(name, field.name());
+        assertEquals(type, field.type());
+        assertEquals(dynamic, field.dynamic());
+    }
+
+    void assertSummaryField(SchemaInfoConfig.Schema schema, int summaryClassIndex, int fieldIndex,
+                            String name, String type, boolean dynamic) {
+        SchemaInfoConfig.Schema.Summaryclass.Fields field = schema.summaryclass(summaryClassIndex).fields(fieldIndex);
+        assertEquals(name, field.name());
+        assertEquals(type, field.type());
+        assertEquals(dynamic, field.dynamic());
+    }
+
 }

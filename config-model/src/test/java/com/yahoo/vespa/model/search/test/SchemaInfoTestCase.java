@@ -22,12 +22,12 @@ public class SchemaInfoTestCase {
     }
 
     private void assertSchemaInfo(String configId, VespaModel model, SchemaTester tester) {
-        { // schema-info config
-            SchemaInfoConfig dcfg = model.getConfig(SchemaInfoConfig.class, configId);
-            assertEquals(2, dcfg.schema().size());
+        {
+            SchemaInfoConfig schemaInfoConfig = model.getConfig(SchemaInfoConfig.class, configId);
+            assertEquals(2, schemaInfoConfig.schema().size());
 
             { // type1
-                SchemaInfoConfig.Schema schema = dcfg.schema(0);
+                SchemaInfoConfig.Schema schema = schemaInfoConfig.schema(0);
                 assertEquals("type1", schema.name());
 
                 assertEquals(7, schema.rankprofile().size());
@@ -45,14 +45,14 @@ public class SchemaInfoTestCase {
                 assertEquals("query(bar)", inputs.input(1).name());
                 assertEquals("tensor(key{},x[1000])", inputs.input(1).type());
 
-                // assertEquals(2, schema.summaryclass().size());
-                // assertEquals("default", schema.summaryclass(0).name());
-                // assertEquals("attributeprefetch", schema.summaryclass(1).name());
-                // assertSummaryField(schema, 0, 0, "f1", "longstring", true);
-                // assertSummaryField(schema, 0, 1, "f2", "integer", false);
+                assertEquals(2, schema.summaryclass().size());
+                assertEquals("default", schema.summaryclass(0).name());
+                assertEquals("attributeprefetch", schema.summaryclass(1).name());
+                tester.assertSummaryField(schema, 0, 0, "f1", "longstring", true);
+                tester.assertSummaryField(schema, 0, 1, "f2", "integer", false);
             }
             { // type2
-                SchemaInfoConfig.Schema schema = dcfg.schema(1);
+                SchemaInfoConfig.Schema schema = schemaInfoConfig.schema(1);
                 assertEquals("type2", schema.name());
             }
         }

@@ -242,8 +242,8 @@ public class DocumentDatabaseTestCase {
                 assertEquals(2, db.summaryclass().size());
                 assertEquals("default", db.summaryclass(0).name());
                 assertEquals("attributeprefetch", db.summaryclass(1).name());
-                assertSummaryField(db, 0, 0, "f1", "longstring", true);
-                assertSummaryField(db, 0, 1, "f2", "integer", false);
+                tester.assertSummaryField(db, 0, 0, "f1", "longstring", true);
+                tester.assertSummaryField(db, 0, 1, "f2", "integer", false);
             }
             { // type2
                 DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(1);
@@ -259,14 +259,6 @@ public class DocumentDatabaseTestCase {
             assertEquals("f4_nfa", acfg.attribute(3).name());
 
         }
-    }
-
-    private void assertSummaryField(DocumentdbInfoConfig.Documentdb db, int summaryClassIndex, int fieldIndex,
-                                    String name, String type, boolean dynamic) {
-        DocumentdbInfoConfig.Documentdb.Summaryclass.Fields field = db.summaryclass(summaryClassIndex).fields(fieldIndex);
-        assertEquals(name, field.name());
-        assertEquals(type, field.type());
-        assertEquals(dynamic, field.dynamic());
     }
 
     private void assertDocumentDBConfigAvailableForStreaming(String mode) {
