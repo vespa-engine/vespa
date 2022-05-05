@@ -110,7 +110,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         if (newPlan.valid() && newPlan.type() == Type.STRING) {
             var planId = PlanId.from(newPlan.asString());
             var hasDeployments = tenantHasDeployments(tenant.name());
-            var result = billing.setPlan(tenant.name(), planId, hasDeployments);
+            var result = billing.setPlan(tenant.name(), planId, hasDeployments, false);
             if (! result.isSuccess()) {
                 throw new RestApiException.Forbidden(result.getErrorMessage().get());
             }

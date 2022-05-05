@@ -24,6 +24,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMetho
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
+import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
@@ -41,6 +43,7 @@ import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -158,9 +161,11 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         var tenantName = TenantName.from(tenant);
         var slime = inspectorOrThrow(request);
         var planId = PlanId.from(slime.field("plan").asString());
+        var roles = requestRoles(request);
+        var isAccountant = roles.contains(Role.hostedAccountant());
 
         var hasDeployments = hasDeployments(tenantName);
-        var result = billingController.setPlan(tenantName, planId, hasDeployments);
+        var result = billingController.setPlan(tenantName, planId, hasDeployments, isAccountant);
 
         if (result.isSuccess())
             return new StringResponse("Plan: " + planId.value());
@@ -481,6 +486,14 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
                         .flatMap(instance -> instance.deployments().values().stream())
                 )
                 .count() > 0;
+    }
+
+    private static Set<Role> requestRoles(HttpRequest request) {
+        return Optional.ofNullable(request.getJDiscRequest().context().get(SecurityContext.ATTRIBUTE_NAME))
+                .filter(SecurityContext.class::isInstance)
+                .map(SecurityContext.class::cast)
+                .map(SecurityContext::roles)
+                .orElseThrow(() -> new IllegalArgumentException("Attribute '" + SecurityContext.ATTRIBUTE_NAME + "' was not set on request"));
     }
 
 }

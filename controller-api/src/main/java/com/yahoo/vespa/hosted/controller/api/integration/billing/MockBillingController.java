@@ -56,7 +56,7 @@ public class MockBillingController implements BillingController {
     }
 
     @Override
-    public PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments) {
+    public PlanResult setPlan(TenantName tenant, PlanId planId, boolean hasDeployments, boolean isAccountant) {
         plans.put(tenant, planId);
         return PlanResult.success();
     }
