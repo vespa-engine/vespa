@@ -7248,10 +7248,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean)",
-      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean)",
       "protected void <init>(boolean, boolean, boolean)",
-      "public void <init>(com.fasterxml.jackson.core.JsonGenerator, boolean, boolean, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
@@ -7271,7 +7268,6 @@
     "methods": [
       "public void <init>()",
       "public void <init>(java.util.concurrent.Executor)",
-      "protected static com.fasterxml.jackson.databind.ObjectMapper createJsonCodec()",
       "public void init()",
       "public void beginResponse(java.io.OutputStream)",
       "protected void renderTrace(com.yahoo.processing.execution.Execution$Trace)",
@@ -7292,8 +7288,7 @@
       "public void endResponse()",
       "public java.lang.String getEncoding()",
       "public java.lang.String getMimeType()",
-      "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(boolean)",
-      "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(com.fasterxml.jackson.core.JsonGenerator, boolean)"
+      "protected com.yahoo.search.rendering.JsonRenderer$FieldConsumer createFieldConsumer(boolean)"
     ],
     "fields": []
   },
