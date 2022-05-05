@@ -167,6 +167,7 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <!-- TODO: provided scope does not make sense here! -->
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>annotations</artifactId>
             <version>${project.version}</version>
