@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.provider.ListenableFreezableClass;
-import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.processing.execution.ResponseReceiver;
 import com.yahoo.processing.impl.ProcessingFuture;
@@ -100,13 +98,6 @@ public class Response extends ListenableFreezableClass {
         List<CompletableFuture<DataList<D>>> futures = new ArrayList<>();
         collectCompletionFutures(rootDataList, futures);
         return new CompleteAllOnGetFuture<D>(futures);
-    }
-
-    /** @deprecated Use {@link #recursiveFuture(DataList)} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    @SuppressWarnings("removal")
-    public static <D extends Data> ListenableFuture<DataList<D>> recursiveComplete(DataList<D> rootDataList) {
-        return CompletableFutures.toGuavaListenableFuture(recursiveFuture(rootDataList));
     }
 
     @SuppressWarnings("unchecked")

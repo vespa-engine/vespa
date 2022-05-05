@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.response;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.provider.ListenableFreezableClass;
-import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.impl.ProcessingFuture;
 
@@ -92,13 +90,6 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
         return incomingData;
     }
 
-    @Override
-    @SuppressWarnings("removal")
-    @Deprecated(forRemoval = true, since = "7")
-    public ListenableFuture<DataList<DATATYPE>> complete() {
-        return CompletableFutures.toGuavaListenableFuture(completedFuture);
-    }
-
     @Override public CompletableFuture<DataList<DATATYPE>> completeFuture() { return completedFuture; }
 
     @Override
@@ -108,7 +99,7 @@ public abstract class AbstractDataList<DATATYPE extends Data> extends Listenable
     public boolean isStreamed() { return streamed; }
 
     public String toString() {
-        return super.toString() + (complete().isDone() ? " [completed]" : " [incomplete, " + incoming() + "]");
+        return super.toString() + (completeFuture().isDone() ? " [completed]" : " [incomplete, " + incoming() + "]");
     }
 
     public static final class DrainOnGetFuture<DATATYPE extends Data> extends ProcessingFuture<DataList<DATATYPE>> {

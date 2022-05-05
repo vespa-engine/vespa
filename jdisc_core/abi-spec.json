@@ -32,7 +32,6 @@
     ],
     "methods": [
       "public abstract com.yahoo.jdisc.handler.RequestHandler resolveHandler(com.yahoo.jdisc.Request)",
-      "public java.lang.Object getInstance(com.google.inject.Key)",
       "public abstract java.lang.Object getInstance(java.lang.Class)"
     ],
     "fields": []
