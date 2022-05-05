@@ -1,38 +1,20 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vdslib;
+
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Deserializer;
 
 import java.nio.ByteOrder;
 import java.io.UnsupportedEncodingException;
-import java.lang.String;
-
 
 public class DocumentSummary {
-    public static class Summary implements Comparable<Summary> {
-        private String  docId;
-        private byte [] summary;
-        private Summary(String docId) {
-            this.docId = docId;
-        }
-        public Summary(String docId, byte [] summary) {
-            this(docId);
-            this.summary = summary;
-        }
-        final public String getDocId()           { return docId; }
-        final public byte [] getSummary()        { return summary; }
-        final public void setSummary(byte [] summary) { this.summary = summary; }
-        public int compareTo(Summary s) {
-            return getDocId().compareTo(s.getDocId());
-        }
-    }
 
-    private Summary []  summaries;
+    private final Summary[] summaries;
 
     public DocumentSummary(Deserializer buf) {
         BufferSerializer bser = (BufferSerializer) buf; // This is a trick. This should be done in a different way.
         bser.order(ByteOrder.BIG_ENDIAN);
-        int vacant4byteOldSeqId = buf.getInt(null);
+        buf.getInt(null); // legacy - ignored
         int numSummaries = buf.getInt(null);
         summaries = new Summary[numSummaries];
         if (numSummaries > 0) {
@@ -56,15 +38,37 @@ public class DocumentSummary {
             }
         }
     }
-    /**
-     * Constructs a new message from a byte buffer.
-     *
-     * @param buffer A byte buffer that contains a serialized message.
-     */
+
+    /** Constructs a new message from a byte buffer. */
     public DocumentSummary(byte[] buffer) {
         this(BufferSerializer.wrap(buffer));
     }
 
     final public int getSummaryCount()         { return summaries.length; }
     final public Summary getSummary(int hitNo) { return summaries[hitNo]; }
+
+    public static class Summary implements Comparable<Summary> {
+
+        private final String  docId;
+        private byte[] summary;
+
+        private Summary(String docId) {
+            this.docId = docId;
+        }
+
+        public Summary(String docId, byte [] summary) {
+            this(docId);
+            this.summary = summary;
+        }
+
+        final public String getDocId()           { return docId; }
+        final public byte [] getSummary()        { return summary; }
+        final public void setSummary(byte [] summary) { this.summary = summary; }
+
+        public int compareTo(Summary s) {
+            return getDocId().compareTo(s.getDocId());
+        }
+
+    }
+
 }

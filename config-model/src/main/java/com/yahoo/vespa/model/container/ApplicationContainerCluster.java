@@ -348,4 +348,5 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             this.containerCoreMemory = containerCoreMemory;
         }
     }
+
 }
