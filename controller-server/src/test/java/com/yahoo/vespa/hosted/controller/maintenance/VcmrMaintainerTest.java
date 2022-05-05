@@ -18,9 +18,11 @@ import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -242,6 +244,17 @@ public class VcmrMaintainerTest {
 
         assertEquals(State.OUT_OF_SYNC, action.getState());
         assertEquals(Status.OUT_OF_SYNC, writtenChangeRequest.getStatus());
+    }
+
+    @Test
+    public void retirement_start_time_ignores_weekends() {
+        var plannedStartTime = ZonedDateTime.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.WEDNESDAY));
+        var retirementStartTime = maintainer.getRetirementStartTime(plannedStartTime);
+        assertEquals(plannedStartTime.minusDays(2), retirementStartTime);
+
+        plannedStartTime = ZonedDateTime.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.TUESDAY));
+        retirementStartTime = maintainer.getRetirementStartTime(plannedStartTime);
+        assertEquals(plannedStartTime.minusDays(4), retirementStartTime);
     }
 
     private VespaChangeRequest canceledChangeRequest() {
