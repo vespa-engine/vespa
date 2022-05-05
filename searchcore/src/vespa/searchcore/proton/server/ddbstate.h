@@ -94,6 +94,11 @@ public:
         return getDelayedConfig(state);
     }
 
+    bool get_load_done() const noexcept {
+        State state(getState());
+        return state >= State::REPLAY_TRANSACTION_LOG;
+    }
+
     void clearDelayedConfig();
     ConfigState getConfigState() const noexcept { return _configState.load(std::memory_order_relaxed); }
     static vespalib::string getConfigStateString(ConfigState configState);

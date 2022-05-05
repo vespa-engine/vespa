@@ -612,13 +612,21 @@ DocumentDB::closeSubDBs()
 size_t
 DocumentDB::getNumDocs() const
 {
-    return _subDBs.getReadySubDB()->getNumDocs();
+    if (_state.get_load_done()) {
+        return _subDBs.getReadySubDB()->getNumDocs();
+    } else {
+        return 0u;
+    }
 }
 
 size_t
 DocumentDB::getNumActiveDocs() const
 {
-    return _subDBs.getReadySubDB()->getNumActiveDocs();
+    if (_state.get_load_done()) {
+        return _subDBs.getReadySubDB()->getNumActiveDocs();
+    } else {
+        return 0u;
+    }
 }
 
 void
