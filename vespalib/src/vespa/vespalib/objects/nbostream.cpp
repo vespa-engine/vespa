@@ -128,17 +128,17 @@ void nbostream::compact()
 
 void nbostream::extend(size_t extraSize)
 {
-    if (&_wbuf[0] != _rbuf.c_str()) {
+    if (_wbuf.data() != _rbuf.c_str()) {
         _wbuf.resize(roundUp2inN(_rbuf.size() + extraSize));
         compact();
-        _rbuf = ConstBufferRef(&_wbuf[0], _wbuf.capacity());
+        _rbuf = ConstBufferRef(_wbuf.data(), _wbuf.capacity());
     }
     if (_rp != 0) {
         compact();
     }
     if (space() < extraSize) {
         _wbuf.resize(roundUp2inN(_wbuf.size() + extraSize));
-        _rbuf = ConstBufferRef(&_wbuf[0], _wbuf.capacity());
+        _rbuf = ConstBufferRef(_wbuf.data(), _wbuf.capacity());
     }
 }
 

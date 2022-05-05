@@ -137,6 +137,8 @@ public:
     }
     void reset();
     bool empty() const                      { return _sz == 0; }
+    T * data() noexcept                     { return static_cast<T *>(_array.get()); }
+    const T * data() const noexcept         { return static_cast<const T *>(_array.get()); }
     T & operator [] (size_t i)              { return *array(i); }
     const T & operator [] (size_t i) const  { return *array(i); }
     bool operator == (const Array & rhs) const;
