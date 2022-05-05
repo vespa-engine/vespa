@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.rendering;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.concurrent.CompletableFutures;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution;
@@ -43,17 +41,6 @@ public abstract class Renderer<RESPONSE extends Response> extends AbstractCompon
     }
 
     /**
-     * @deprecated Use/implement {@link #renderResponse(OutputStream, Response, Execution, Request)} instead.
-     *             Return type changed from {@link ListenableFuture} to {@link CompletableFuture}.
-     */
-    @Deprecated(forRemoval = true, since = "7")
-    @SuppressWarnings("removal")
-    public ListenableFuture<Boolean> render(OutputStream stream, RESPONSE response, Execution execution,
-                                            Request request) {
-        return CompletableFutures.toGuavaListenableFuture(renderResponse(stream, response, execution, request));
-    }
-
-    /**
      * Render a response to a stream. The stream also exposes a ByteBuffer API
      * for efficient transactions to JDisc. The returned future will throw the
      * exception causing failure wrapped in an ExecutionException if rendering
@@ -65,11 +52,8 @@ public abstract class Renderer<RESPONSE extends Response> extends AbstractCompon
      * @param request the request matching the response
      * @return a {@link CompletableFuture} containing a boolean where true indicates a successful rendering
      */
-    @SuppressWarnings("removal")
-    public CompletableFuture<Boolean> renderResponse(OutputStream stream, RESPONSE response,
-                                                     Execution execution, Request request) {
-        return CompletableFutures.toCompletableFuture(render(stream, response, execution, request));
-    }
+    public abstract CompletableFuture<Boolean> renderResponse(OutputStream stream, RESPONSE response,
+                                                     Execution execution, Request request);
 
     /**
      * Name of the output encoding, if applicable.

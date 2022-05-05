@@ -22,7 +22,7 @@ public class ResponseTestCase {
      * Check the recursive toString printing along the way.
      * List variable names ends by numbers specifying the index of the list at each level.
      */
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testRecursiveCompletionAndToString() throws InterruptedException, ExecutionException {
         // create lists
@@ -68,7 +68,7 @@ public class ResponseTestCase {
         assertEqualsIgnoreObjectNumbers("Uncompleted tree, incoming complete", uncompletedTreeCompletedIncoming, Responses.recursiveToString(list1));
 
         // complete all
-        Response.recursiveComplete(list1).get();
+        Response.recursiveFuture(list1).get();
         assertEqualsIgnoreObjectNumbers("Completed tree", completedTree, Responses.recursiveToString(list1));
     }
 
