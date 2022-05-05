@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.deploy;
 
-import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.model.api.ConfigChangeAction;
@@ -36,7 +35,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -68,10 +66,10 @@ public class HostedDeployTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     @Test
-    public void testRedeployWithVersion() throws IOException {
-        DeployTester tester = new DeployTester.Builder()
+    public void testRedeployWithVersion() {
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
-                .configserverConfig(createConfigserverConfig()).build();
+                .build();
         tester.deployApp("src/test/apps/hosted/", "4.5.6");
 
         Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
@@ -81,10 +79,10 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testRedeploy() throws IOException {
-        DeployTester tester = new DeployTester.Builder()
+    public void testRedeploy() {
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactory(createHostedModelFactory())
-                .configserverConfig(createConfigserverConfig()).build();
+                .build();
         ApplicationId appId = tester.applicationId();
         tester.deployApp("src/test/apps/hosted/");
         assertFalse(tester.applicationRepository().getActiveSession(appId).get().getMetaData().isInternalRedeploy());
@@ -96,10 +94,10 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testReDeployWithWantedDockerImageRepositoryAndAthenzDomain() throws IOException {
-        DeployTester tester = new DeployTester.Builder()
+    public void testReDeployWithWantedDockerImageRepositoryAndAthenzDomain() {
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
-                .configserverConfig(createConfigserverConfig()).build();
+                .build();
         String dockerImageRepository = "docker.foo.com:4443/bar/baz";
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
@@ -115,11 +113,11 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testRedeployWithTenantSecretStores() throws IOException {
+    public void testRedeployWithTenantSecretStores() {
         List<TenantSecretStore> tenantSecretStores = List.of(new TenantSecretStore("foo", "123", "role"));
-        DeployTester tester = new DeployTester.Builder()
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
-                .configserverConfig(createConfigserverConfig()).build();
+                .build();
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
                 .vespaVersion("4.5.6")
                 .tenantSecretStores(tenantSecretStores));
@@ -131,9 +129,11 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testDeployOnUnknownVersion() throws IOException {
+    public void testDeployOnUnknownVersion() {
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("1.0.0")));
-        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                                              .modelFactories(modelFactories)
+                                              .build();
 
         // No version requested: OK
         tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder());
@@ -156,11 +156,13 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testDeployMultipleVersions() throws IOException {
+    public void testDeployMultipleVersions() {
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.1.0")),
                                                     createHostedModelFactory(Version.fromString("6.2.0")),
                                                     createHostedModelFactory(Version.fromString("7.0.0")));
-        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactories(modelFactories)
+                                                                       .hostedConfigserverConfig(Zone.defaultZone())
+                                                                       .build();
         tester.deployApp("src/test/apps/hosted/", "6.2.0");
         assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
     }
@@ -170,7 +172,7 @@ public class HostedDeployTest {
      * and the latest version for the latest major)
      */
     @Test
-    public void testCreateOnlyNeededModelVersions() throws IOException {
+    public void testCreateOnlyNeededModelVersions() {
         List<Host> hosts = createHosts(7, "6.0.0", "6.1.0", null, "6.1.0"); // Use a host without a version as well.
 
         CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
@@ -201,7 +203,7 @@ public class HostedDeployTest {
      * the latest major, since nodes are without version)
      */
     @Test
-    public void testCreateOnlyNeededModelVersionsNewNodes() throws IOException {
+    public void testCreateOnlyNeededModelVersionsNewNodes() {
         List<Host> hosts = createHosts(7, (String) null);
 
         CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
@@ -225,7 +227,7 @@ public class HostedDeployTest {
      * (not just the latest one, manually deployed apps always have skipOldConfigModels set to true)
      */
     @Test
-    public void testCreateNeededModelVersionsForManuallyDeployedApps() throws IOException {
+    public void testCreateNeededModelVersionsForManuallyDeployedApps() {
         List<Host> hosts = createHosts(5, "7.0.0");
 
         CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"), devZone);
@@ -250,7 +252,7 @@ public class HostedDeployTest {
      * even if creating one of the older model fails
      */
     @Test
-    public void testCreateModelVersionsForManuallyDeployedAppsWhenCreatingFailsForOneVersion() throws IOException {
+    public void testCreateModelVersionsForManuallyDeployedAppsWhenCreatingFailsForOneVersion() {
         List<Host> hosts = createHosts(5, "7.0.0");
 
         ModelFactory factory700 = createFailingModelFactory(Version.fromString("7.0.0"));
@@ -273,7 +275,7 @@ public class HostedDeployTest {
      * that are still using features that do not work on version 8.x)
      */
     @Test
-    public void testCreateLatestMajorOnPreviousMajorIfItFailsOnMajorVersion8() throws IOException {
+    public void testCreateLatestMajorOnPreviousMajorIfItFailsOnMajorVersion8() {
         deployWithModelForLatestMajorVersionFailing(8);
     }
 
@@ -283,7 +285,7 @@ public class HostedDeployTest {
      * for major version >= 8 (see test above) or when major-version=6 is set in application package.
      */
     @Test(expected = InvalidApplicationException.class)
-    public void testFailingToCreateModelVersion7FailsDeployment() throws IOException {
+    public void testFailingToCreateModelVersion7FailsDeployment() {
         deployWithModelForLatestMajorVersionFailing(7);
     }
 
@@ -291,7 +293,7 @@ public class HostedDeployTest {
      * Tests that we create the minimal set of models, but latest model version is created for
      * previous major if creating latest model version on latest major version fails
      **/
-    private void deployWithModelForLatestMajorVersionFailing(int newestMajorVersion) throws IOException {
+    private void deployWithModelForLatestMajorVersionFailing(int newestMajorVersion) {
         int oldestMajorVersion = newestMajorVersion - 1;
         String oldestVersion = oldestMajorVersion + ".0.0";
         String newestOnOldMajorVersion = oldestMajorVersion + ".1.0";
@@ -317,7 +319,7 @@ public class HostedDeployTest {
      * Tests that we fail deployment if a needed model version fails to be created
      */
     @Test(expected = InvalidApplicationException.class)
-    public void testDeploymentFailsIfNeededModelVersionFails() throws IOException {
+    public void testDeploymentFailsIfNeededModelVersionFails() {
         List<Host> hosts = createHosts(7, "7.0.0");
 
         List<ModelFactory> modelFactories = List.of(createFailingModelFactory(Version.fromString("7.0.0")),
@@ -333,7 +335,7 @@ public class HostedDeployTest {
      * that will be done)
      */
     @Test
-    public void testCreateOnlyNeededModelVersionsWhenNoHostsAllocated() throws IOException {
+    public void testCreateOnlyNeededModelVersionsWhenNoHostsAllocated() {
         CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"));
         CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"));
         List<ModelFactory> modelFactories = List.of(factory700, factory720);
@@ -345,7 +347,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testAccessControlIsOnlyCheckedWhenNoProdDeploymentExists() throws IOException {
+    public void testAccessControlIsOnlyCheckedWhenNoProdDeploymentExists() {
         // Provisioner does not reuse hosts, so need twice as many hosts as app requires
         List<Host> hosts = createHosts(14, "6.0.0");
 
@@ -366,12 +368,13 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testRedeployAfterExpiredValidationOverride() throws IOException {
+    public void testRedeployAfterExpiredValidationOverride() {
         // Old version of model fails, but application disables loading old models until 2016-10-10, so deployment works
         ManualClock clock = new ManualClock("2016-10-09T00:00:00");
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(clock),
                                                     createFailingModelFactory(Version.fromString("1.0.0"))); // older than default
-        DeployTester tester = new DeployTester.Builder().modelFactories(modelFactories).configserverConfig(createConfigserverConfig()).build();
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactories(modelFactories)
+                                                                       .build();
         tester.deployApp("src/test/apps/validationOverride/");
 
         // Redeployment from local active works
@@ -403,7 +406,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testThatConfigChangeActionsAreCollectedFromAllModels() throws IOException {
+    public void testThatConfigChangeActionsAreCollectedFromAllModels() {
         List<Host> hosts = createHosts(7, "6.1.0", "6.2.0");
         List<ServiceInfo> services = List.of(
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
@@ -421,7 +424,7 @@ public class HostedDeployTest {
     }
 
     @Test
-    public void testThatAllowedConfigChangeActionsAreActedUpon() throws IOException {
+    public void testThatAllowedConfigChangeActionsAreActedUpon() {
         List<Host> hosts = createHosts(7, "6.1.0");
         List<ServiceInfo> services = List.of(
                 new ServiceInfo("serviceName", "serviceType", null, Map.of("clustername", "cluster"), "configId", "hostName"));
@@ -433,13 +436,13 @@ public class HostedDeployTest {
                                                                           "reindex please", services, "music"),
                                                     new VespaRestartAction(ClusterSpec.Id.from("test"), "change", services)));
 
-        DeployTester tester = new DeployTester.Builder()
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactories(modelFactories)
-                .configserverConfig(createConfigserverConfig(prodZone))
                 .clock(clock)
                 .zone(prodZone)
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
                 .configConvergenceChecker(new MockConfigConvergenceChecker(2))
+                .hostedConfigserverConfig(prodZone)
                 .build();
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0");
 
@@ -450,24 +453,8 @@ public class HostedDeployTest {
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
     }
 
-    private ConfigserverConfig createConfigserverConfig() throws IOException {
-        return createConfigserverConfig(Zone.defaultZone());
-    }
-
-    private ConfigserverConfig createConfigserverConfig(Zone zone) throws IOException {
-        return new ConfigserverConfig(new ConfigserverConfig.Builder()
-                                              .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
-                                              .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
-                                              .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
-                                              .hostedVespa(true)
-                                              .multitenant(true)
-                                              .region(zone.region().value())
-                                              .environment(zone.environment().value())
-                                              .system(zone.system().value()));
-    }
-
     /** Create the given number of hosts using the supplied versions--the last version is repeated as needed. */
-    private List<Host> createHosts(int count, String... versions) {
+    private List<Host> createHosts(int count, String ... versions) {
         return IntStream.rangeClosed(1, count)
                         .mapToObj(i -> createHost("host" + i, versions[Math.min(i, versions.length) - 1]))
                         .collect(toList());
@@ -477,19 +464,19 @@ public class HostedDeployTest {
         return new Host(hostname, Collections.emptyList(), Optional.empty(), Optional.ofNullable(version).map(Version::fromString));
     }
 
-    private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories, Zone zone) throws IOException {
+    private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories, Zone zone) {
         return createTester(hosts, modelFactories, zone, Clock.systemUTC());
     }
 
     private DeployTester createTester(List<Host> hosts, List<ModelFactory> modelFactories,
-                                      Zone prodZone, Clock clock) throws IOException {
-        return new DeployTester.Builder()
+                                      Zone prodZone, Clock clock) {
+        return new DeployTester.Builder(temporaryFolder)
                 .modelFactories(modelFactories)
-                .configserverConfig(createConfigserverConfig(prodZone))
                 .clock(clock)
                 .zone(prodZone)
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
                 .configConvergenceChecker(new MockConfigConvergenceChecker(2))
+                .hostedConfigserverConfig(prodZone)
                 .build();
     }
 

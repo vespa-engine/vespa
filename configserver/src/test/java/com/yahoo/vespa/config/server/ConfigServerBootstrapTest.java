@@ -67,8 +67,9 @@ public class ConfigServerBootstrapTest {
     public void testBootstrap() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(7, false);
-        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
-                .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory())
+                                                                       .configserverConfig(configserverConfig)
+                                                                       .hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
         RpcServer rpcServer = createRpcServer(configserverConfig);
@@ -104,7 +105,7 @@ public class ConfigServerBootstrapTest {
     public void testBootstrapWithVipStatusFile() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
         InMemoryProvisioner provisioner = new InMemoryProvisioner(7, false);
-        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory())
                 .configserverConfig(configserverConfig).hostProvisioner(provisioner).build();
         tester.deployApp("src/test/apps/hosted/");
 
@@ -123,7 +124,7 @@ public class ConfigServerBootstrapTest {
     @Test
     public void testBootstrapWhenRedeploymentFails() throws Exception {
         ConfigserverConfig configserverConfig = createConfigserverConfig(temporaryFolder);
-        DeployTester tester = new DeployTester.Builder().modelFactory(createHostedModelFactory())
+        DeployTester tester = new DeployTester.Builder(temporaryFolder).modelFactory(createHostedModelFactory())
                 .configserverConfig(configserverConfig).build();
         tester.deployApp("src/test/apps/hosted/");
 
@@ -156,7 +157,7 @@ public class ConfigServerBootstrapTest {
         String vespaVersion = "1.2.3";
         List<Host> hosts = createHosts(vespaVersion);
         Curator curator = new MockCurator();
-        DeployTester tester = new DeployTester.Builder()
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
                 .modelFactory(DeployTester.createModelFactory(Version.fromString(vespaVersion)))
                 .hostProvisioner(new InMemoryProvisioner(new Hosts(hosts), true, false))
                 .configserverConfig(configserverConfig)

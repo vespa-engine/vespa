@@ -87,7 +87,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                          Optional<DockerImage> dockerImageRepository,
                                          Version wantedNodeVespaVersion,
                                          ApplicationPackage applicationPackage,
-                                         SettableOptional<AllocatedHosts> allocatedHosts,
+                                         AllocatedHostsFromAllModels allocatedHosts,
                                          Instant now) {
         Instant start = Instant.now();
         log.log(Level.FINE, () -> "Will build models for " + applicationId);
@@ -168,7 +168,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                  Optional<DockerImage> wantedDockerImageRepository,
                                                  Version wantedNodeVespaVersion,
                                                  ApplicationPackage applicationPackage,
-                                                 SettableOptional<AllocatedHosts> allocatedHosts,
+                                                 AllocatedHostsFromAllModels allocatedHosts,
                                                  Instant now,
                                                  boolean buildLatestModelForThisMajor,
                                                  int majorVersion) {
@@ -182,17 +182,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                                applicationId,
                                                                wantedDockerImageRepository,
                                                                wantedNodeVespaVersion);
-            allocatedHosts.set(latestModelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
+            allocatedHosts.add(latestModelVersion.getModel().allocatedHosts(), latest.get());
             builtModelVersions.add(latestModelVersion);
         }
 
         // load old model versions
-        versions = versionsToBuild(versions, wantedNodeVespaVersion, majorVersion, allocatedHosts.get());
-        // TODO: We use the allocated hosts from the newest version when building older model versions.
-        // This is correct except for the case where an old model specifies a cluster which the new version
-        // does not. In that case we really want to extend the set of allocated hosts to include those of that
-        // cluster as well. To do that, create a new provisioner which uses static provisioning for known
-        // clusters and the node repository provisioner as fallback.
+        versions = versionsToBuild(versions, wantedNodeVespaVersion, majorVersion, allocatedHosts);
         for (Version version : versions) {
             if (latest.isPresent() && version.equals(latest.get())) continue; // already loaded
 
@@ -202,7 +197,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                              applicationId,
                                                              wantedDockerImageRepository,
                                                              wantedNodeVespaVersion);
-                allocatedHosts.set(modelVersion.getModel().allocatedHosts()); // Update with additional clusters allocated
+                allocatedHosts.add(modelVersion.getModel().allocatedHosts(), version);
                 builtModelVersions.add(modelVersion);
             } catch (RuntimeException e) {
                 // allow failure to create old config models if there is a validation override that allow skipping old
@@ -220,14 +215,16 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return builtModelVersions;
     }
 
-    private Set<Version> versionsToBuild(Set<Version> versions, Version wantedVersion, int majorVersion, AllocatedHosts allocatedHosts) {
-        versions = keepThoseUsedOn(allocatedHosts, versions);
+    private Set<Version> versionsToBuild(Set<Version> versions, Version wantedVersion, int majorVersion,
+                                         AllocatedHostsFromAllModels allocatedHosts) {
+        // TODO: This won't find nodes allocated to the application only on older model versions.
+        //       Correct would be to determine this from all active nodes.
+        versions = keepThoseUsedOn(allocatedHosts.toAllocatedHosts(), versions);
 
         // Make sure we build wanted version if we are building models for this major version and we are on hosted vespa
         // If not on hosted vespa, we do not want to try to build this version, since we have only one version (the latest)
         if (hosted && wantedVersion.getMajor() == majorVersion)
             versions.add(wantedVersion);
-
         return versions;
     }
 

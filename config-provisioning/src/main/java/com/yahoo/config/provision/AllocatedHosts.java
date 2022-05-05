@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
-import com.google.common.collect.ImmutableSet;
-
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -16,7 +15,7 @@ public class AllocatedHosts {
     private final Set<HostSpec> hosts;
 
     private AllocatedHosts(Set<HostSpec> hosts) {
-        this.hosts = ImmutableSet.copyOf(hosts);
+        this.hosts = new LinkedHashSet<>(hosts); // Preserve order for tests
     }
 
     public static AllocatedHosts withHosts(Set<HostSpec> hosts) {

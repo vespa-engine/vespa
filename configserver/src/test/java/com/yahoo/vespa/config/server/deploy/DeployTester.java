@@ -42,8 +42,10 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.time.Clock;
 import java.time.Duration;
@@ -251,6 +253,8 @@ public class DeployTester {
     }
 
     public static class Builder {
+
+        private final TemporaryFolder temporaryFolder;
         private Clock clock;
         private Provisioner provisioner;
         private ConfigserverConfig configserverConfig;
@@ -260,6 +264,10 @@ public class DeployTester {
         private List<ModelFactory> modelFactories;
         private ConfigConvergenceChecker configConvergenceChecker = new ConfigConvergenceChecker();
         private FlagSource flagSource = new InMemoryFlagSource();
+
+        public Builder(TemporaryFolder temporaryFolder) {
+            this.temporaryFolder = temporaryFolder;
+        }
 
         public DeployTester build() {
             Clock clock = Optional.ofNullable(this.clock).orElseGet(Clock::systemUTC);
@@ -352,6 +360,24 @@ public class DeployTester {
         public Builder flagSource(FlagSource flagSource) {
             this.flagSource = flagSource;
             return this;
+        }
+
+        public Builder hostedConfigserverConfig(Zone zone) {
+            try {
+                this.configserverConfig = new ConfigserverConfig(new ConfigserverConfig.Builder()
+                                                      .configServerDBDir(temporaryFolder.newFolder().getAbsolutePath())
+                                                      .configDefinitionsDir(temporaryFolder.newFolder().getAbsolutePath())
+                                                      .fileReferencesDir(temporaryFolder.newFolder().getAbsolutePath())
+                                                      .hostedVespa(true)
+                                                      .multitenant(true)
+                                                      .region(zone.region().value())
+                                                      .environment(zone.environment().value())
+                                                      .system(zone.system().value()));
+                return this;
+            }
+            catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
     }

@@ -35,6 +35,7 @@ import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
 import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.http.InvalidApplicationException;
+import com.yahoo.vespa.config.server.modelfactory.AllocatedHostsFromAllModels;
 import com.yahoo.vespa.config.server.modelfactory.LegacyFlags;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
@@ -254,11 +255,11 @@ public class SessionPreparer {
         }
 
         AllocatedHosts buildModels(Instant now) {
-            SettableOptional<AllocatedHosts> allocatedHosts = new SettableOptional<>();
+            var allocatedHosts = new AllocatedHostsFromAllModels();
             this.modelResultList = preparedModelsBuilder.buildModels(applicationId, dockerImageRepository, vespaVersion,
                                                                      preprocessedApplicationPackage, allocatedHosts, now);
             checkTimeout("build models");
-            return allocatedHosts.get();
+            return allocatedHosts.toAllocatedHosts();
         }
 
         void makeResult(AllocatedHosts allocatedHosts) {
