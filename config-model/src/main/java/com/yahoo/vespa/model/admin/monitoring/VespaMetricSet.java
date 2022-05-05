@@ -223,8 +223,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("http.status.3xx.rate"));
         metrics.add(new Metric("http.status.4xx.rate"));
         metrics.add(new Metric("http.status.5xx.rate"));
-        metrics.add(new Metric("http.status.401.rate")); // TODO: Remove in Vespa 8
-        metrics.add(new Metric("http.status.403.rate")); // TODO: Remove in Vespa 8
 
         metrics.add(new Metric("jdisc.http.request.uri_length.max"));
         metrics.add(new Metric("jdisc.http.request.uri_length.sum"));
