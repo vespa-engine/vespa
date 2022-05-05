@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author Tony Vaagenes
@@ -30,12 +31,19 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final int queueSize;
     private final Integer bufferSize;
 
-    public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, CompressionType compressionType, String clusterName, boolean isHostedVespa)
+    public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, CompressionType compressionType, Optional<String> clusterName, boolean isHostedVespa)
     {
-        this(logType, compressionType,
-                String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
-                null, null, isHostedVespa,
-                capitalize(logType.name()) + "." + clusterName, -1,
+        // In hosted Vespa we do not use the clusterName when setting up application ContainerCluster logging
+        this(logType,
+                compressionType,
+                clusterName.isEmpty() ? String.format("logs/vespa/qrs/%s.%s", capitalize(logType.name()), "%Y%m%d%H%M%S") :
+                                        String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S"),
+                null,
+                null,
+                isHostedVespa,
+                clusterName.isEmpty() ? capitalize(logType.name()) :
+                                        capitalize(logType.name()) + "." + clusterName.get(),
+                -1,
                 ((cluster instanceof ApplicationContainerCluster) ? 4*1024*1024 : null));
     }
 

@@ -11,6 +11,8 @@ import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
 import com.yahoo.vespa.model.container.component.AccessLogComponent.CompressionType;
 
+import java.util.Optional;
+
 /**
  * Container that should be running on same host as the logserver. Sets up a handler for getting logs from logserver.
  * Only in use in hosted Vespa.
@@ -21,7 +23,7 @@ public class LogserverContainer extends Container {
         super(parent, "" + 0, 0, deployState);
         LogserverContainerCluster cluster = (LogserverContainerCluster) parent;
         addComponent(new AccessLogComponent(
-                cluster, AccessLogType.jsonAccessLog, CompressionType.GZIP, cluster.getName(), true));
+                cluster, AccessLogType.jsonAccessLog, CompressionType.GZIP, Optional.of(cluster.getName()), true));
     }
 
     @Override
