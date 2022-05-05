@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.rendering;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.provider.ListenableFreezableClass;
 import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.processing.Processor;
@@ -23,8 +22,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotSame;
@@ -400,41 +397,6 @@ public class AsynchronousSectionedRendererTest {
         @Override
         public void addDataListener(Runnable runnable) {
             throw new RuntimeException("Not supported");
-        }
-
-        @Override
-        @SuppressWarnings("removal")
-        public ListenableFuture<DataList<StringData>> complete() {
-            return new ListenableFuture<>() {
-                @Override
-                public void addListener(Runnable runnable, Executor executor) {
-                }
-
-                @Override
-                public boolean cancel(boolean b) {
-                    return false;
-                }
-
-                @Override
-                public boolean isCancelled() {
-                    return false;
-                }
-
-                @Override
-                public boolean isDone() {
-                    return true;
-                }
-
-                @Override
-                public DataList<StringData> get()  {
-                    return StringDataList.this;
-                }
-
-                @Override
-                public DataList<StringData> get(long l, TimeUnit timeUnit) {
-                    return StringDataList.this;
-                }
-            };
         }
 
         @Override

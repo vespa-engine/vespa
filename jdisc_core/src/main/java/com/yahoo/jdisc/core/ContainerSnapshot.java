@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
-import com.google.inject.Key;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.Request;
@@ -35,14 +34,6 @@ class ContainerSnapshot extends AbstractResource implements Container {
         this.serverBindings = serverBindings;
         this.clientBindings = clientBindings;
         this.containerReference = container.refer(context);
-    }
-
-    /** @deprecated Use {@link #getInstance(Class)} instead. */
-    @Override
-    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove
-    @SuppressWarnings("removal")
-    public <T> T getInstance(Key<T> key) {
-        return container.guiceInjector().getInstance(key);
     }
 
     @Override
