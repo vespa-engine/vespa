@@ -105,7 +105,7 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
                     search::engine::SearchClient &client)
 {
     // We continue to allow searches if the node is in Maintenance mode
-    if (_closed || (!_nodeUp && !_nodeMaintenance)) {
+    if (_closed || (!_nodeUp && !_nodeMaintenance.load(std::memory_order_relaxed))) {
         auto ret = std::make_unique<search::engine::SearchReply>();
         ret->setDistributionKey(_distributionKey);
 
@@ -190,7 +190,7 @@ MatchEngine::setNodeUp(bool nodeUp)
 void
 MatchEngine::setNodeMaintenance(bool nodeMaintenance)
 {
-    _nodeMaintenance = nodeMaintenance;
+    _nodeMaintenance.store(nodeMaintenance, std::memory_order_relaxed);
     if (nodeMaintenance) {
         _nodeUp.store(false, std::memory_order_relaxed);
     }
