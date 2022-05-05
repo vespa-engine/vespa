@@ -12,7 +12,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * <p>This class extends the {@link AbstractContentOutputStream}, and forwards all write() and close() calls to a {@link
  * FastContentWriter}. This means that once {@link #close()} has been called, the asynchronous completion of all pending
- * operations can be awaited using the ListenableFuture interface of this class. Any asynchronous failure will be
+ * operations can be awaited using the {@link Future} interface of this class. Any asynchronous failure will be
  * rethrown when calling either of the get() methods on this class.</p>
  * <p>Please notice that the Future implementation of this class will NEVER complete unless {@link #close()} has been
  * called.</p>
