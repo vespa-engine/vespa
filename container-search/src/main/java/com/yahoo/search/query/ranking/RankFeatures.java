@@ -191,8 +191,12 @@ public class RankFeatures implements Cloneable {
         return JSON.encode(features);
     }
 
+    // See also QueryPropertyAliases
     public static boolean isFeatureName(String fullPropertyName) {
-        return fullPropertyName.startsWith("ranking.features.") || fullPropertyName.startsWith("rankfeature.");
+        return fullPropertyName.startsWith("ranking.features.") ||
+               fullPropertyName.startsWith("rankfeature.") ||
+               fullPropertyName.startsWith("featureoverride.") ||
+               fullPropertyName.startsWith("input.");
     }
 
 }
