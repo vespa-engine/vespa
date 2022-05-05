@@ -21,7 +21,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public final class SchemaInfo implements SchemaInfoConfig.Producer {
+public final class SchemaInfo extends Derived implements SchemaInfoConfig.Producer {
 
     private final Schema schema;
 
@@ -41,6 +41,9 @@ public final class SchemaInfo implements SchemaInfoConfig.Producer {
     }
 
     public String name() { return schema.getName(); }
+
+    @Override
+    public String getDerivedName() { return "schema-info"; }
 
     public Schema fullSchema() { return schema; }
 
