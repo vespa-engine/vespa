@@ -905,10 +905,9 @@ public class UpgraderTest {
         tester.controllerTester().upgradeSystem(version0);
 
         // Create an application with pinned platform version.
-        var context = tester.newDeploymentContext();
+        var context = tester.newDeploymentContext().submit().deploy();
         tester.deploymentTrigger().forceChange(context.instanceId(), Change.empty().withPin());
 
-        context.submit().deploy();
         assertFalse(context.instance().change().hasTargets());
         assertTrue(context.instance().change().isPinned());
         assertEquals(3, context.instance().deployments().size());

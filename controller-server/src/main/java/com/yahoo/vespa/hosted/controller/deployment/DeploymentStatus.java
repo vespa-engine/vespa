@@ -211,6 +211,11 @@ public class DeploymentStatus {
 
     /** The set of jobs that need to run for the given changes to be considered complete. */
     public boolean hasCompleted(InstanceName instance, Change change) {
+        if ( ! application.deploymentSpec().requireInstance(instance).concerns(prod)) {
+            if (newestTested(instance, run -> run.versions().targetRevision()).map(change::downgrades).orElse(false)) return true;
+            if (newestTested(instance, run -> run.versions().targetPlatform()).map(change::downgrades).orElse(false)) return true;
+        }
+
         return jobsToRun(Map.of(instance, change), false).isEmpty();
     }
 
@@ -247,6 +252,14 @@ public class DeploymentStatus {
                                               .deployments().get(job.type().zone()));
     }
 
+    private <T extends Comparable<T>> Optional<T> newestTested(InstanceName instance, Function<Run, T> runMapper) {
+        return instanceJobs().get(application.id().instance(instance))
+                             .type(systemTest, stagingTest)
+                             .asList().stream().flatMap(jobs -> jobs.runs().values().stream())
+                             .filter(Run::hasSucceeded)
+                             .map(runMapper)
+                             .max(naturalOrder());
+    }
     /**
      * The change to a revision which all dependencies of the given instance has completed,
      * which does not downgrade any deployments in the instance,
@@ -263,16 +276,20 @@ public class DeploymentStatus {
         int nextRisk = 0;
         int skippedCumulativeRisk = 0;
         Instant readySince = now;
+
+        Optional<RevisionId> newestRevision = application.productionDeployments()
+                                                         .getOrDefault(instance, List.of()).stream()
+                                                         .map(Deployment::revision).max(naturalOrder());
         Change candidate = Change.empty();
         for (ApplicationVersion version : application.revisions().deployable(ascending)) {
             // A revision is only a candidate if it upgrades, and does not downgrade, this instance.
             Change change = Change.of(version.id());
-            if (application.productionDeployments().getOrDefault(instance, List.of()).stream()
-                           .anyMatch(deployment -> change.downgrades(deployment.revision()))) continue;
-            if ( ! application.require(instance).change().revision().map(change::upgrades).orElse(true)) continue;
-            if (hasCompleted(instance, change))
+            if (     newestRevision.isPresent() && change.downgrades(newestRevision.get())
+                || ! application.require(instance).change().revision().map(change::upgrades).orElse(true)
+                ||   hasCompleted(instance, change)) {
                 if (ascending) continue;    // Keep looking for the next revision which is an upgrade, or ...
                 else return Change.empty(); // ... if the latest is already complete, there's nothing outstanding.
+            }
 
             // This revision contains something new, so start aggregating the risk score.
             skippedCumulativeRisk += version.risk();
