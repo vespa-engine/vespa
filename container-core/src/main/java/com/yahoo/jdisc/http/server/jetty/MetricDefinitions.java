@@ -50,8 +50,6 @@ class MetricDefinitions {
     static final String RESPONSES_3XX = "http.status.3xx";
     static final String RESPONSES_4XX = "http.status.4xx";
     static final String RESPONSES_5XX = "http.status.5xx";
-    @Deprecated(forRemoval = true, since = "7") static final String RESPONSES_401 = "http.status.401";
-    @Deprecated(forRemoval = true, since = "7") static final String RESPONSES_403 = "http.status.403";
 
     static final String STARTED_MILLIS = "serverStartedMillis";
 
