@@ -317,9 +317,7 @@ class HttpResponseStatisticsCollector extends HandlerWrapper implements Graceful
         @SuppressWarnings("removal")
         private static Collection<String> metricNames(Request req) {
             int code = req.getResponse().getStatus();
-            if (code == 401) return Set.of(MetricDefinitions.RESPONSES_401, MetricDefinitions.RESPONSES_4XX);
-            else if (code == 403) return Set.of(MetricDefinitions.RESPONSES_403, MetricDefinitions.RESPONSES_4XX);
-            else if (code < 200) return Set.of(MetricDefinitions.RESPONSES_1XX);
+            if (code < 200) return Set.of(MetricDefinitions.RESPONSES_1XX);
             else if (code < 300) return Set.of(MetricDefinitions.RESPONSES_2XX);
             else if (code < 400) return Set.of(MetricDefinitions.RESPONSES_3XX);
             else if (code < 500) return Set.of(MetricDefinitions.RESPONSES_4XX);
