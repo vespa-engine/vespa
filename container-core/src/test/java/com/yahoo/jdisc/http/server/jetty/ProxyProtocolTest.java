@@ -21,11 +21,13 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
+import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -66,7 +68,7 @@ class ProxyProtocolTest {
         sendJettyClientRequest(driver, certificateFile, new V2.Tag(proxiedRemoteAddress, proxiedRemotePort));
         assertTrue(driver.close());
 
-        assertEquals(2, requestLogMock.entries().size());
+        assertLogSize(2, requestLogMock.entries());
         assertLogEntryHasRemote(requestLogMock.entries().get(0), proxiedRemoteAddress, proxiedRemotePort);
         assertLogEntryHasRemote(requestLogMock.entries().get(1), proxiedRemoteAddress, proxiedRemotePort);
         Assertions.assertThat(connectionLog.logEntries()).hasSize(2);
@@ -86,7 +88,7 @@ class ProxyProtocolTest {
         sendJettyClientRequest(driver, certificateFile, new V2.Tag(proxiedRemoteAddress, 12345));
         assertTrue(driver.close());
 
-        assertEquals(3, requestLogMock.entries().size());
+        assertLogSize(3, requestLogMock.entries());
         assertLogEntryHasRemote(requestLogMock.entries().get(0), "127.0.0.1", 0);
         assertLogEntryHasRemote(requestLogMock.entries().get(1), proxiedRemoteAddress, 0);
         assertLogEntryHasRemote(requestLogMock.entries().get(2), proxiedRemoteAddress, 0);
@@ -111,6 +113,7 @@ class ProxyProtocolTest {
 
         int clientPort = Integer.parseInt(response.getHeaders().get("Jdisc-Local-Port"));
         assertNotEquals(proxyLocalPort, clientPort);
+        assertLogSize(1, connectionLog.logEntries());
         assertNotEquals(proxyLocalPort, connectionLog.logEntries().get(0).localPort().get().intValue());
     }
 
@@ -168,6 +171,9 @@ class ProxyProtocolTest {
         clientSslCtxFactory.setSslContext(new SslContextBuilder().withTrustStore(certificateFile).build());
 
         HttpClient client = new HttpClient(clientSslCtxFactory);
+        client.setConnectTimeout(60*1000);
+        client.setStopTimeout(60*1000);
+        client.setIdleTimeout(60*1000);
         client.start();
         return client;
     }
@@ -193,4 +199,11 @@ class ProxyProtocolTest {
     }
 
 
+    private static void assertLogSize(int expectedItems, Collection<?> items) {
+        for (int attempt = 0; attempt < 10; attempt++) {
+            if (items.size() >= expectedItems) break;
+            uncheckInterrupted(() -> Thread.sleep(200));
+        }
+        Assertions.assertThat(items).hasSize(expectedItems);
+    }
 }
