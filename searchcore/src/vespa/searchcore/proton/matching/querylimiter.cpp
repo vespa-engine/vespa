@@ -19,7 +19,7 @@ void
 QueryLimiter::grabToken(const Doom & doom)
 {
     std::unique_lock<std::mutex> guard(_lock);
-    while ((_maxThreads > 0) && (_activeThreads >= _maxThreads) && !doom.hard_doom()) {
+    for (auto max_threads = get_max_threads(); (max_threads > 0) && (_activeThreads >= max_threads) && !doom.hard_doom(); max_threads = get_max_threads()) {
         vespalib::duration left = doom.hard_left();
         if (left > vespalib::duration::zero()) {
             _cond.wait_for(guard, left);
@@ -49,18 +49,20 @@ QueryLimiter::QueryLimiter() :
 void
 QueryLimiter::configure(int maxThreads, double coverage, uint32_t minHits)
 {
-    _maxThreads = maxThreads;
-    _coverage = coverage;
-    _minHits = minHits;
+    std::lock_guard<std::mutex> guard(_lock);
+    _maxThreads.store(maxThreads, std::memory_order_relaxed);
+    _coverage.store(coverage, std::memory_order_relaxed);
+    _minHits.store(minHits, std::memory_order_relaxed);
+    _cond.notify_all();
 }
 
 QueryLimiter::Token::UP
 QueryLimiter::getToken(const Doom & doom, uint32_t numDocs, uint32_t numHits, bool hasSorting, bool hasGrouping)
 {
-    if (_maxThreads > 0) {
+    if (get_max_threads() > 0) {
         if (hasSorting || hasGrouping) {
-            if (numHits > _minHits) {
-                if (numDocs * _coverage < numHits) {
+            if (numHits > get_min_hits()) {
+                if (numDocs * get_coverage() < numHits) {
                     return std::make_unique<LimitedToken>(doom, *this);
                 }
             }
