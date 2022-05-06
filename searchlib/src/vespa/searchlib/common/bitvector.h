@@ -42,7 +42,7 @@ public:
     bool operator == (const BitVector &right) const;
     const void * getStart() const { return _words; }
     void * getStart() { return _words; }
-    Index size() const { return _sz; }
+    Index size() const { return vespalib::atomic::load_ref_relaxed(_sz); }
     Index sizeBytes() const { return numBytes(getActiveSize()); }
     Word load_word(Index widx) const { return vespalib::atomic::load_ref_relaxed(_words[widx]); }
     void store_word(Index widx, Word word) { return vespalib::atomic::store_ref_relaxed(_words[widx], word); }
