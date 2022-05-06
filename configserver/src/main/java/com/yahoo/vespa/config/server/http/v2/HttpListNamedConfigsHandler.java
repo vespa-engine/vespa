@@ -4,7 +4,7 @@ package com.yahoo.vespa.config.server.http.v2;
 import java.util.Optional;
 import java.util.Set;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
