@@ -25,8 +25,13 @@ using namespace search::fef;
 using namespace search::fef::indexproperties;
 using document::TensorDataType;
 using vespalib::eval::ValueType;
+using vespalib::eval::Value;
 using vespalib::Issue;
 using search::fef::FeatureType;
+using search::fef::AnyWrapper;
+using search::fef::Anything;
+
+using ValueWrapper = AnyWrapper<Value::UP>;
 
 namespace search::features {
 
@@ -54,6 +59,15 @@ feature_t asFeature(const vespalib::string &str) {
         }
     }
     return val;
+}
+
+// query(foo):
+// query.value.foo -> decoded tensor value 'foo'
+vespalib::string make_value_key(const vespalib::string &base, const vespalib::string &sub_key) {
+    vespalib::string key(base);
+    key.append(".value.");
+    key.append(sub_key);
+    return key;
 }
 
 } // namespace search::features::<unnamed>
@@ -86,6 +100,7 @@ QueryBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
     _key = params[0].getValue();
     _key2 = "$";
     _key2.append(_key);
+    _stored_value_key = make_value_key(getBaseName(), _key);
 
     vespalib::string key3;
     key3.append("query(");
@@ -114,10 +129,9 @@ QueryBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 
 namespace {
 
-FeatureExecutor &
-createTensorExecutor(const IQueryEnvironment &env,
-                     const vespalib::string &queryKey,
-                     const ValueType &valueType, vespalib::Stash &stash)
+Value::UP make_tensor_value(const IQueryEnvironment &env,
+                            const vespalib::string &queryKey,
+                            const ValueType &valueType)
 {
     Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
@@ -125,27 +139,42 @@ createTensorExecutor(const IQueryEnvironment &env,
         vespalib::nbostream stream(value.data(), value.size());
         try {
             auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
-            if (!TensorDataType::isAssignableType(valueType, tensor->type())) {
+            if (TensorDataType::isAssignableType(valueType, tensor->type())) {
+                return tensor;
+            } else {
                 Issue::report("Query feature type is '%s' but other tensor type is '%s'",
                               valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
-                return ConstantTensorExecutor::createEmpty(valueType, stash);
             }
-            return ConstantTensorExecutor::create(std::move(tensor), stash);
         } catch (const vespalib::eval::DecodeValueException &e) {
             Issue::report("Query feature has invalid binary format: %s", e.what());
-            return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
     }
-    return ConstantTensorExecutor::createEmpty(valueType, stash);
+    return {};
 }
 
+}
+
+void
+QueryBlueprint::prepareSharedState(const fef::IQueryEnvironment &env, fef::IObjectStore &store) const
+{
+    if (!_stored_value_key.empty() && (store.get(_stored_value_key) == nullptr)) {
+        auto value = make_tensor_value(env, _key, _valueType);
+        if (value) {
+            store.add(_stored_value_key, std::make_unique<ValueWrapper>(std::move(value)));
+        }
+    }
 }
 
 FeatureExecutor &
 QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
     if (_valueType.has_dimensions()) {
-        return createTensorExecutor(env, _key, _valueType, stash);
+        if (const Anything *wrapped_value = env.getObjectStore().get(_stored_value_key)) {
+            if (const Value *value = ValueWrapper::getValue(*wrapped_value).get()) {
+                return stash.create<ConstantTensorRefExecutor>(*value);
+            }
+        }
+        return ConstantTensorExecutor::createEmpty(_valueType, stash);
     } else {
         std::vector<feature_t> values;
         Property p = env.getProperties().lookup(_key);

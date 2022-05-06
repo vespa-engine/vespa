@@ -17,6 +17,7 @@ class QueryBlueprint : public fef::Blueprint {
 private:
     vespalib::string _key;  // 'foo'
     vespalib::string _key2; // '$foo'
+    vespalib::string _stored_value_key;
     feature_t _defaultValue;
     vespalib::eval::ValueType _valueType;
 
@@ -30,6 +31,7 @@ public:
         return fef::ParameterDescriptions().desc().string();
     }
     bool setup(const fef::IIndexEnvironment &env, const fef::ParameterList &params) override;
+    void prepareSharedState(const fef::IQueryEnvironment &env, fef::IObjectStore &store) const override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
