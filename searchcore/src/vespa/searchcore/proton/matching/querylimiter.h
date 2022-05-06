@@ -40,9 +40,13 @@ private:
     int _activeThreads;
 
     // These are updated asynchronously at reconfig.
-    volatile int      _maxThreads;
-    volatile double   _coverage;
-    volatile uint32_t _minHits;
+    std::atomic<int>      _maxThreads;
+    std::atomic<double>   _coverage;
+    std::atomic<uint32_t> _minHits;
+
+    [[nodiscard]] int get_max_threads() const noexcept { return _maxThreads.load(std::memory_order_relaxed); }
+    [[nodiscard]] double get_coverage() const noexcept { return _coverage.load(std::memory_order_relaxed); }
+    [[nodiscard]] uint32_t get_min_hits() const noexcept { return _minHits.load(std::memory_order_relaxed); }
 };
 
 }
