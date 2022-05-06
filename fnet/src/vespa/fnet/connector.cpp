@@ -20,14 +20,15 @@ FNET_Connector::FNET_Connector(FNET_TransportThread *owner,
     : FNET_IOComponent(owner, server_socket.get_fd(), spec, /* time-out = */ false),
       _streamer(streamer),
       _serverAdapter(serverAdapter),
-      _server_socket(std::move(server_socket))
+      _server_socket(std::move(server_socket)),
+      _cached_port(_server_socket.address().port())
 {
 }
 
 
 uint32_t
 FNET_Connector::GetPortNumber() const {
-    return _server_socket.address().port();
+    return _cached_port;
 }
 
 
