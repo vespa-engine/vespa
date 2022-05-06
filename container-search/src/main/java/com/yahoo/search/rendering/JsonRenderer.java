@@ -126,18 +126,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private Deque<Integer> renderedChildren;
     static class FieldConsumerSettings {
         boolean debugRendering = false;
-        boolean jsonDeepMaps = false;
-        boolean jsonWsets = false;
-        boolean jsonMapsAll = false;
+        boolean jsonDeepMaps = true;
+        boolean jsonWsets = true;
+        boolean jsonMapsAll = true;
         boolean jsonWsetsAll = false;
         boolean tensorShortForm = false;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
-            this.jsonDeepMaps = false;
-            this.jsonWsets = false;
-            this.jsonMapsAll = false;
-            this.jsonWsetsAll = false;
+            this.jsonDeepMaps = true;
+            this.jsonWsets = true;
+            this.jsonMapsAll = true;
+            this.jsonWsetsAll = true;
             this.tensorShortForm = false;
         }
         void getSettings(Query q) {
@@ -147,11 +147,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
             var props = q.properties();
             this.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
-            this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, false);
-            this.jsonWsets = props.getBoolean(WRAP_WSETS, false);
+            this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, true);
+            this.jsonWsets = props.getBoolean(WRAP_WSETS, true);
             // we may need more fine tuning, but for now use the same query parameters here:
-            this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, false);
-            this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, false);
+            this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
+            this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
             this.tensorShortForm = q.getPresentation().getTensorShortForm();
         }
     }
