@@ -186,6 +186,8 @@ public:
     const T *end() const { return (_data + _size); }
     T &operator[](size_t idx) { return _data[idx]; }
     const T &operator[](size_t idx) const { return _data[idx]; }
+    T *data() noexcept { return _data; }
+    const T *data() const noexcept { return _data; }
     T &back() { return _data[_size - 1]; }
     const T &back() const { return _data[_size - 1]; }
     void clear() {
