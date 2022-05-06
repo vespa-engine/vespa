@@ -92,7 +92,6 @@
             container-disc-jar-with-dependencies.jar,
             model-evaluation-jar-with-dependencies.jar,
             model-integration-jar-with-dependencies.jar,
-            vespajlib.jar
           </discPreInstallBundle>
         </configuration>
       </plugin>
