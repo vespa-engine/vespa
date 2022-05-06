@@ -14,19 +14,21 @@ namespace vespalib {
 template <typename T>
 class ArrayRef {
 public:
-    ArrayRef() noexcept : _v(nullptr), _sz(0) { }
-    ArrayRef(T * v, size_t sz) noexcept : _v(v), _sz(sz) { }
+    constexpr ArrayRef() noexcept : _v(nullptr), _sz(0) { }
+    constexpr ArrayRef(T * v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
-    ArrayRef(std::vector<T, A> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    ArrayRef(std::vector<T, A> & v) noexcept : _v(v.data()), _sz(v.size()) { }
     template<size_t N>
-    ArrayRef(SmallVector<T, N> &v) noexcept :  _v(&v[0]), _sz(v.size()) { }
-    ArrayRef(Array<T> &v) noexcept : _v(&v[0]), _sz(v.size()) { }
-    T & operator [] (size_t i) { return _v[i]; }
-    const T & operator [] (size_t i) const { return _v[i]; }
-    size_t size() const { return _sz; }
-    bool empty() const { return _sz == 0; }
-    T *begin() { return _v; }
-    T *end() { return _v + _sz; }
+    ArrayRef(SmallVector<T, N> &v) noexcept :  _v(v.data()), _sz(v.size()) { }
+    ArrayRef(Array<T> &v) noexcept : _v(v.data()), _sz(v.size()) { }
+    T & operator [] (size_t i) noexcept { return _v[i]; }
+    const T & operator [] (size_t i) const noexcept { return _v[i]; }
+    T * data() noexcept { return _v; }
+    const T * data() const noexcept { return _v; }
+    [[nodiscard]] size_t size() const noexcept { return _sz; }
+    [[nodiscard]] bool empty() const noexcept { return _sz == 0; }
+    T *begin() noexcept { return _v; }
+    T *end() noexcept { return _v + _sz; }
 private:
     T    * _v;
     size_t _sz;
@@ -35,21 +37,21 @@ private:
 template <typename T>
 class ConstArrayRef {
 public:
-    ConstArrayRef(const T *v, size_t sz) noexcept : _v(v), _sz(sz) { }
+    constexpr ConstArrayRef(const T *v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
-    ConstArrayRef(const std::vector<T, A> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    ConstArrayRef(const std::vector<T, A> & v) noexcept : _v(v.data()), _sz(v.size()) { }
     template<size_t N>
-    ConstArrayRef(const SmallVector<T, N> &v) noexcept :  _v(&v[0]), _sz(v.size()) { }
-    ConstArrayRef(const ArrayRef<T> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
-    ConstArrayRef(const Array<T> &v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    ConstArrayRef(const SmallVector<T, N> &v) noexcept :  _v(v.data()), _sz(v.size()) { }
+    ConstArrayRef(const ArrayRef<T> & v) noexcept : _v(v.data()), _sz(v.size()) { }
+    ConstArrayRef(const Array<T> &v) noexcept : _v(v.data()), _sz(v.size()) { }
     constexpr ConstArrayRef() noexcept : _v(nullptr), _sz(0) {}
-    const T & operator [] (size_t i) const { return _v[i]; }
-    size_t size() const { return _sz; }
-    bool empty() const { return _sz == 0; }
-    const T *cbegin() const { return _v; }
-    const T *cend() const { return _v + _sz; }
-    const T *begin() const { return _v; }
-    const T *end() const { return _v + _sz; }
+    const T & operator [] (size_t i) const noexcept { return _v[i]; }
+    [[nodiscard]] size_t size() const noexcept { return _sz; }
+    [[nodiscard]] bool empty() const noexcept { return _sz == 0; }
+    const T *cbegin() const noexcept { return _v; }
+    const T *cend() const noexcept { return _v + _sz; }
+    const T *begin() const noexcept { return _v; }
+    const T *end() const noexcept { return _v + _sz; }
     const T *data() const noexcept { return _v; }
 private:
     const T *_v;
@@ -59,7 +61,7 @@ private:
 // const-cast for array references; use with care
 template <typename T>
 ArrayRef<T> unconstify(const ConstArrayRef<T> &ref) {
-    return ArrayRef<T>(const_cast<T*>(&ref[0]), ref.size());
+    return ArrayRef<T>(const_cast<T*>(ref.data()), ref.size());
 }
 
 }
