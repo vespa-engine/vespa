@@ -33,7 +33,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, CompressionType compressionType, String clusterName, boolean isHostedVespa)
     {
         this(logType, compressionType,
-                String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
+                String.format("logs/vespa/access/%s.%s.%s", capitalize(logType.name()), clusterName, "%Y%m%d%H%M%S"),
                 null, null, isHostedVespa,
                 capitalize(logType.name()) + "." + clusterName, -1,
                 ((cluster instanceof ApplicationContainerCluster) ? 4*1024*1024 : null));

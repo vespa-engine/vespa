@@ -23,12 +23,12 @@ public class SyncFileInfoTest {
     private static final FileSystem fileSystem = TestFileSystem.create();
 
     private static final URI nodeArchiveUri = URI.create("s3://vespa-data-bucket/vespa/music/main/h432a/");
-    private static final Path accessLogPath1 = fileSystem.getPath("/opt/vespa/logs/qrs/access.log.20210211");
-    private static final Path accessLogPath2 = fileSystem.getPath("/opt/vespa/logs/qrs/access.log.20210212.zst");
-    private static final Path accessLogPath3 = fileSystem.getPath("/opt/vespa/logs/qrs/access-json.log.20210213.zst");
-    private static final Path accessLogPath4 = fileSystem.getPath("/opt/vespa/logs/qrs/JsonAccessLog.default.20210214.zst");
-    private static final Path connectionLogPath1 = fileSystem.getPath("/opt/vespa/logs/qrs/ConnectionLog.default.20210210");
-    private static final Path connectionLogPath2 = fileSystem.getPath("/opt/vespa/logs/qrs/ConnectionLog.default.20210212.zst");
+    private static final Path accessLogPath1 = fileSystem.getPath("/opt/vespa/logs/access/access.log.20210211");
+    private static final Path accessLogPath2 = fileSystem.getPath("/opt/vespa/logs/access/access.log.20210212.zst");
+    private static final Path accessLogPath3 = fileSystem.getPath("/opt/vespa/logs/access/access-json.log.20210213.zst");
+    private static final Path accessLogPath4 = fileSystem.getPath("/opt/vespa/logs/access/JsonAccessLog.default.20210214.zst");
+    private static final Path connectionLogPath1 = fileSystem.getPath("/opt/vespa/logs/access/ConnectionLog.default.20210210");
+    private static final Path connectionLogPath2 = fileSystem.getPath("/opt/vespa/logs/access/ConnectionLog.default.20210212.zst");
     private static final Path vespaLogPath1 = fileSystem.getPath("/opt/vespa/logs/vespa.log");
     private static final Path vespaLogPath2 = fileSystem.getPath("/opt/vespa/logs/vespa.log-2021-02-12");
 
