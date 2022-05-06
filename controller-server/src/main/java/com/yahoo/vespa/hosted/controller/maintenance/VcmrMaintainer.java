@@ -214,6 +214,10 @@ public class VcmrMaintainer extends ControllerMaintainer {
             return hostAction.withState(State.PENDING_RETIREMENT);
         }
 
+        if (isFailed(node)) {
+            return hostAction.withState(State.NONE);
+        }
+
         return hostAction;
     }
 
@@ -258,6 +262,11 @@ public class VcmrMaintainer extends ControllerMaintainer {
     private boolean isOutOfSync(Node node, HostAction action) {
         return action.getState() == State.RETIRED && node.state() != Node.State.parked ||
                 action.getState() == State.RETIRING && !node.wantToRetire();
+    }
+
+    private boolean isFailed(Node node) {
+        return node.state() == Node.State.failed ||
+                node.state() == Node.State.breakfixed;
     }
 
     private Map<ZoneId, List<Node>> nodesByZone() {
