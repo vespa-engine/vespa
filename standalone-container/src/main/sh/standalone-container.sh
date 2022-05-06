@@ -137,6 +137,10 @@ StartCommand() {
     cd "$VESPA_HOME" || Fail "Cannot cd to $VESPA_HOME"
 
     fixlimits
+
+    # If JAVA_HOME is set in the environment, the sourcing of common-env.sh
+    # elsewhere in this file ensures $JAVA_HOME/bin is first in PATH, so 'java'
+    # may be invoked w/o path.  In any case, checkjava verifies bare 'java'.
     checkjava
 
     FixDataDirectory "$(dirname "$pidfile")"
