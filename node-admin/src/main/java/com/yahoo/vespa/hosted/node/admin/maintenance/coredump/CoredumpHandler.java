@@ -91,8 +91,10 @@ public class CoredumpHandler {
         // TODO (freva): Remove after 7.584
         UnixUser vespaUser = context.users().vespa();
         UnixPath processingPath = new UnixPath(containerProcessingPath);
-        if (processingPath.getOwnerId() != vespaUser.uid()) processingPath.setOwnerId(vespaUser.uid());
-        if (processingPath.getGroupId() != vespaUser.gid()) processingPath.setGroupId(vespaUser.gid());
+        processingPath.getAttributesIfExists().ifPresent(attr -> {
+            if (attr.ownerId() != vespaUser.uid()) processingPath.setOwnerId(vespaUser.uid());
+            if (attr.groupId() != vespaUser.gid()) processingPath.setGroupId(vespaUser.gid());
+        });
 
         updateMetrics(context, containerCrashPath);
 
