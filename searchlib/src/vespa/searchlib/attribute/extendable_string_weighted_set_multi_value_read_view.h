@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
+#include <vespa/vespalib/util/array.h>
 
 namespace search::attribute {
 
