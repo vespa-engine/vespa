@@ -29,9 +29,6 @@ import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.NotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
@@ -71,23 +68,25 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
+            Optional<String> userId = Optional.ofNullable(request.getJDiscRequest().getUserPrincipal()).map(Principal::getName);
+            if (userId.isEmpty())
+                return ErrorResponse.unauthorized("Must be authenticated to use this API");
+
             Path path = new Path(request.getUri());
-            String userId = userIdOrThrow(request);
             switch (request.getMethod()) {
                 case GET:
-                    return handleGET(request, path, userId);
+                    return handleGET(request, path, userId.get());
                 case PATCH:
-                    return handlePATCH(request, path, userId);
+                    return handlePATCH(request, path, userId.get());
                 case DELETE:
-                    return handleDELETE(path, userId);
+                    return handleDELETE(path, userId.get());
                 case POST:
-                    return handlePOST(path, request, userId);
+                    return handlePOST(path, request, userId.get());
                 default:
                     return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
-        } catch (NotFoundException e) {
-            return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
-        } catch (IllegalArgumentException e) {
+        }
+        catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (Exception e) {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
@@ -142,8 +141,8 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse handlePOST(Path path, HttpRequest request, String userId) {
         if (path.matches("/billing/v1/invoice")) return createBill(request, userId);
-        if (path.matches("/billing/v1/invoice/{invoice-id}/status")) return setBillStatus(request, path.get("invoice-id"));
-        if (path.matches("/billing/v1/invoice/tenant/{tenant}/line-item")) return addLineItem(request, path.get("tenant"));
+        if (path.matches("/billing/v1/invoice/{invoice-id}/status")) return setBillStatus(request, path.get("invoice-id"), userId);
+        if (path.matches("/billing/v1/invoice/tenant/{tenant}/line-item")) return addLineItem(request, path.get("tenant"), userId);
         return ErrorResponse.notFoundError("Nothing at " + path);
 
     }
@@ -227,20 +226,20 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         tc.setString("collection", collection.name());
     }
 
-    private HttpResponse addLineItem(HttpRequest request, String tenant) {
+    private HttpResponse addLineItem(HttpRequest request, String tenant, String userId) {
         Inspector inspector = inspectorOrThrow(request);
         billingController.addLineItem(
                 TenantName.from(tenant),
                 getInspectorFieldOrThrow(inspector, "description"),
                 new BigDecimal(getInspectorFieldOrThrow(inspector, "amount")),
-                userIdOrThrow(request));
+                userId);
         return new MessageResponse("Added line item for tenant " + tenant);
     }
 
-    private HttpResponse setBillStatus(HttpRequest request, String billId) {
+    private HttpResponse setBillStatus(HttpRequest request, String billId, String userId) {
         Inspector inspector = inspectorOrThrow(request);
         String status = getInspectorFieldOrThrow(inspector, "status");
-        billingController.updateBillStatus(Bill.Id.of(billId), userIdOrThrow(request), status);
+        billingController.updateBillStatus(Bill.Id.of(billId), userId, status);
         return new MessageResponse("Updated status of invoice " + billId);
     }
 
@@ -456,19 +455,13 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         try {
             return SlimeUtils.jsonToSlime(request.getData().readAllBytes()).get();
         } catch (IOException e) {
-            throw new BadRequestException("Failed to parse request body");
+            throw new IllegalArgumentException("Failed to parse request body");
         }
-    }
-
-    private static String userIdOrThrow(HttpRequest request) {
-        return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal())
-                .map(Principal::getName)
-                .orElseThrow(() -> new ForbiddenException("Must be authenticated to use this API"));
     }
 
     private static String getInspectorFieldOrThrow(Inspector inspector, String field) {
         if (!inspector.field(field).valid())
-            throw new BadRequestException("Field " + field + " cannot be null");
+            throw new IllegalArgumentException("Field " + field + " cannot be null");
         return inspector.field(field).asString();
     }
 
