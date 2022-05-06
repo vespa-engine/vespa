@@ -4,6 +4,7 @@
 
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <atomic>
 
 namespace proton {
 
@@ -13,7 +14,7 @@ private:
     const vespalib::string  _domainName;
     const search::SerialNum _first;
     const search::SerialNum _last;
-    search::SerialNum       _current;
+    std::atomic<search::SerialNum> _current;
 
 public:
     typedef std::unique_ptr<TlsReplayProgress> UP;
@@ -27,18 +28,18 @@ public:
           _current(first)
     {
     }
-    const vespalib::string &getDomainName() const { return _domainName; }
-    search::SerialNum getFirst() const { return _first; }
-    search::SerialNum getLast() const { return _last; }
-    search::SerialNum getCurrent() const { return _current; }
-    float getProgress() const {
+    const vespalib::string &getDomainName() const noexcept { return _domainName; }
+    search::SerialNum getFirst() const noexcept { return _first; }
+    search::SerialNum getLast() const noexcept { return _last; }
+    search::SerialNum getCurrent() const noexcept { return _current.load(std::memory_order_relaxed); }
+    float getProgress() const noexcept {
         if (_first == _last) {
             return 1.0;
         } else {
-            return ((float)(_current - _first)/float(_last - _first));
+            return ((float)(getCurrent() - _first)/float(_last - _first));
         }
     }
-    void updateCurrent(search::SerialNum current) { _current = current; }
+    void updateCurrent(search::SerialNum current) noexcept { _current.store(current, std::memory_order_relaxed); }
 };
 
 } // namespace proton
