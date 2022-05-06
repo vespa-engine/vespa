@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -87,7 +88,7 @@ public enum Step {
                             .filter(among::contains)
                             .flatMap(pre -> Stream.concat(Stream.of(pre),
                                                           pre.allPrerequisites(among).stream()))
-                            .sorted()
+                            .sorted(reverseOrder())
                             .distinct()
                             .collect(toList());
     }
