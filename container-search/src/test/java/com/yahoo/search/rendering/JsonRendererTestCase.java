@@ -1309,6 +1309,11 @@ public class JsonRendererTestCase {
         r.setTotalHitCount(1L);
         String summary = render(r);
         assertEqualJson(expected.toString(), summary);
+        r = new Result(new Query("/?"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        summary = render(r);
+        assertEqualJson(expected.toString(), summary);
 
         r = new Result(new Query("/?renderer.json.jsonMaps=false"));
         expected = dataFromSimplified(
