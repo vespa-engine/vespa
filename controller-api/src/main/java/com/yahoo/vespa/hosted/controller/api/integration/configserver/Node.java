@@ -57,6 +57,7 @@ public class Node {
     private final String clusterId;
     private final ClusterType clusterType;
     private final String group;
+    private final int index;
     private final boolean retired;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
@@ -79,7 +80,7 @@ public class Node {
                  Optional<Instant> wantedFirmwareCheck, ServiceState serviceState, Optional<Instant> suspendedSince,
                  long restartGeneration, long wantedRestartGeneration, long rebootGeneration,
                  long wantedRebootGeneration, int cost, int failCount, Optional<String> flavor, String clusterId,
-                 ClusterType clusterType, String group, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
+                 ClusterType clusterType, String group, int index, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
                  boolean wantToRebuild, boolean down, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
                  DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, String> reports,
                  List<Event> history, Set<String> ipAddresses, Set<String> additionalIpAddresses,
@@ -111,6 +112,7 @@ public class Node {
         this.clusterType = Objects.requireNonNull(clusterType, "clusterType must be non-null");
         this.retired = retired;
         this.group = Objects.requireNonNull(group, "group must be non-null");
+        this.index = index;
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
         this.reservedTo = Objects.requireNonNull(reservedTo, "reservedTo must be non-null");
@@ -263,9 +265,10 @@ public class Node {
     }
 
     /** The group of this node, empty string if unallocated */
-    public String group() {
-        return group;
-    }
+    public String group() { return group; }
+
+    /** The membership index of this node */
+    public int index() { return index; }
 
     /** Whether this node has been requested to retire */
     public boolean wantToRetire() {
@@ -283,9 +286,7 @@ public class Node {
     }
 
     /** Whether this node is currently down */
-    public boolean down() {
-        return down;
-    }
+    public boolean down() { return down; }
 
     /** The tenant this has been reserved to, if any */
     public Optional<TenantName> reservedTo() { return reservedTo; }
@@ -376,7 +377,7 @@ public class Node {
         combined,
         unknown
     }
-    
+
     /** Known nope environments */
     public enum Environment {
         bareMetal,
@@ -470,6 +471,7 @@ public class Node {
         private String clusterId = "";
         private ClusterType clusterType = ClusterType.unknown;
         private String group = "";
+        private int index = 0;
         private boolean retired = false;
         private boolean wantToRetire = false;
         private boolean wantToDeprovision = false;
@@ -516,6 +518,7 @@ public class Node {
             this.clusterId = node.clusterId;
             this.clusterType = node.clusterType;
             this.group = node.group;
+            this.index = node.index;
             this.retired = node.retired;
             this.wantToRetire = node.wantToRetire;
             this.wantToDeprovision = node.wantToDeprovision;
@@ -676,6 +679,11 @@ public class Node {
             return this;
         }
 
+        public Builder index(int index) {
+            this.index = index;
+            return this;
+        }
+
         public Builder retired(boolean retired) {
             this.retired = retired;
             return this;
@@ -755,7 +763,7 @@ public class Node {
             return new Node(id, hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration,
-                            wantedRebootGeneration, cost, failCount, flavor, clusterId, clusterType, group, retired,
+                            wantedRebootGeneration, cost, failCount, flavor, clusterId, clusterType, group, index, retired,
                             wantToRetire, wantToDeprovision, wantToRebuild, down, reservedTo, exclusiveTo, wantedDockerImage,
                             currentDockerImage, reports, history, ipAddresses, additionalIpAddresses,
                             additionalHostnames, switchHostname, modelName, environment);

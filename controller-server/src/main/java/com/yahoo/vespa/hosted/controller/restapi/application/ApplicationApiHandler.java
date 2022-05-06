@@ -29,6 +29,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.io.IOUtils;
+import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.restapi.ByteArrayResponse;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
@@ -72,7 +73,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
-import com.yahoo.jdisc.http.filter.security.misc.User;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
@@ -1120,6 +1120,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
             nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());
             nodeObject.setString("group", node.group());
+            nodeObject.setLong("index", node.index());
         }
         return new SlimeJsonResponse(slime);
     }
