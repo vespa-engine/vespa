@@ -18,12 +18,11 @@ import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.OwnedStructDataType;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.ApplicationBuilder;
+import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.parser.ParseException;
 import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
@@ -55,7 +54,7 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private static final int STD_INDENT = 4;
 
-    @Component
+    @Parameter( defaultValue = "${project}", readonly = true )
     private MavenProject project;
 
     /**
