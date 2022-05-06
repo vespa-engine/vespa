@@ -19,7 +19,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
@@ -40,9 +39,10 @@ import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,7 +55,6 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -390,12 +389,13 @@ public class JobController {
      * Throws TimeoutException if some step in this job is still being run.
      */
     public void finish(RunId id) throws TimeoutException {
-        List<Mutex> locks = new ArrayList<>();
+        Deque<Mutex> locks = new ArrayDeque<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
             Run unlockedRun = run(id).get();
+            locks.push(curator.lock(id.application(), id.type(), report));
             for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
-                locks.add(curator.lock(id.application(), id.type(), step));
+                locks.push(curator.lock(id.application(), id.type(), step));
 
             locked(id, run -> {
                 // If run should be reset, just return here.
