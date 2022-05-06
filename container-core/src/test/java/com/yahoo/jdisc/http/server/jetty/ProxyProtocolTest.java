@@ -161,6 +161,7 @@ class ProxyProtocolTest {
             throw new AssertionError("Failed to send request, see log for details");
         } finally {
             client.stop();
+            client.destroy();
         }
     }
 
