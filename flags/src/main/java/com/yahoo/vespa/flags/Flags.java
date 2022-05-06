@@ -409,6 +409,13 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_YUM_PROXY_V2 = defineFeatureFlag(
+            "use-yumproxy-v2", false,
+            List.of("mortent"), "2022-05-05", "2022-06-01",
+            "Use yumproxy-v2",
+            "Takes effect on host admin restart",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
