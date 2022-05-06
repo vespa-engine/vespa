@@ -190,8 +190,8 @@ vespa-run-as-vespa-user vespa-runserver -s ${VESPA_SERVICE_NAME} -r 30 -p $pidfi
 	-Djdisc.export.packages= \
 	-Djdisc.cache.path=$bundlecachedir \
 	-Djdisc.bundle.path=${VESPA_HOME}/lib/jars \
-	-Djdisc.logger.enabled=false \
-	-Djdisc.logger.level=ALL \
+	-Djdisc.logger.enabled=true \
+	-Djdisc.logger.level=WARNING \
 	-Djdisc.logger.tag=${VESPA_SERVICE_NAME} \
 	-Dfile.encoding=UTF-8 \
 	-Dzookeeper_log_file_prefix=${ZOOKEEPER_LOG_FILE_PREFIX} \
