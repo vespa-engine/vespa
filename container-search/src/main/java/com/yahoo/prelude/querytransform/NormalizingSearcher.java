@@ -3,7 +3,7 @@ package com.yahoo.prelude.querytransform;
 
 import java.util.*;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.prelude.Index;

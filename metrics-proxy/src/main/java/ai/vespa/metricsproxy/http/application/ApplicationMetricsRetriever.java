@@ -4,7 +4,7 @@ package ai.vespa.metricsproxy.http.application;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import org.apache.hc.client5.http.ConnectTimeoutException;
 import org.apache.hc.client5.http.config.RequestConfig;

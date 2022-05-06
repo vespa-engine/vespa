@@ -2,7 +2,7 @@
 package com.yahoo.vespa.orchestrator.resources;
 
 import ai.vespa.http.HttpURL.Path;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.jdisc.Response;

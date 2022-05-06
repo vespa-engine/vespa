@@ -3,7 +3,7 @@ package ai.vespa.reindexing.http;
 
 import ai.vespa.reindexing.Reindexing;
 import ai.vespa.reindexing.ReindexingCurator;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ZookeepersConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;

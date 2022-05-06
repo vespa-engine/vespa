@@ -7,7 +7,7 @@ import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.TestDescriptor;
 import ai.vespa.hosted.cd.InconclusiveTestException;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;

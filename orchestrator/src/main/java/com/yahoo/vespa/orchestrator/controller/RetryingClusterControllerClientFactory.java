@@ -4,7 +4,7 @@ package com.yahoo.vespa.orchestrator.controller;
 import ai.vespa.hosted.client.AbstractHttpClient;
 import ai.vespa.hosted.client.HttpClient;
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.vespa.applicationmodel.HostName;
 import org.apache.hc.core5.http.message.BasicHeader;

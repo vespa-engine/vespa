@@ -3,7 +3,7 @@ package ai.vespa.models.evaluation;
 
 import com.yahoo.api.annotations.Beta;
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.vespa.config.search.RankProfilesConfig;

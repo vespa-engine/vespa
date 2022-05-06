@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter.security.cors;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.AbstractResource;
 import com.yahoo.jdisc.http.filter.DiscFilterResponse;
 import com.yahoo.jdisc.http.filter.RequestView;

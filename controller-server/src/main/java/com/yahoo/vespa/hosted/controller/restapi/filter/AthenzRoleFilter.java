@@ -2,7 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.filter;
 
 import com.auth0.jwt.JWT;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
