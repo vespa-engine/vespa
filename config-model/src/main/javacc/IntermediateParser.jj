@@ -2476,7 +2476,7 @@ Tensor tensorValue(TensorType type) :
     Tensor.Builder builder = Tensor.Builder.of(type);
 }
 {
-    ( mappedTensorValue(builder) | indexedTensorValue(builder) )
+    ( mappedTensorValue(builder) | indexedTensorValues(new TensorAddress.Builder(TensorType.empty).build(), builder) )
     { return builder.build(); }
 }
 
@@ -2486,28 +2486,47 @@ void mappedTensorValue(Tensor.Builder builder) : {}
     "{" ( mappedTensorBlock(builder) )* ( <COMMA> (<NL>)* mappedTensorBlock(builder) )* "}"
 }
 
-void indexedTensorValue(Tensor.Builder builder) : {}
-{
-    "[" ( indexedTensorCell(builder) )* ( <COMMA> (<NL>)* indexedTensorCell(builder) )* "]"
-}
 
 void mappedTensorBlock(Tensor.Builder builder) :
 {
     TensorAddress address;
-    double value;
 }
 {
-    address = tensorAddress(builder.type()) <COLON> (<NL>)* value = tensorCellValue()
-    { builder.cell(address, value); }
+    address = tensorAddress(builder.type()) <COLON> (<NL>)*
+    ( mappedTensorCellValue(address, builder) | indexedTensorValues(address, builder) )
 }
 
-void indexedTensorCell(Tensor.Builder builder) :
+void indexedTensorValues(TensorAddress partialAddress, Tensor.Builder builder) :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+{
+    "[" ( indexedTensorValue(values) )* ( <COMMA> (<NL>)* indexedTensorValue(values) )* "]"
+    {
+        for (int i = 0; i < values.size(); i++ ) {
+            TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
+            addressBuilder.add(String.valueOf(i));
+            builder.cell(addressBuilder.build(), values.get(i));
+        }
+    }
+}
+
+void indexedTensorValue(List<Double> values) :
+{
+    Number value;
+}
+{
+    value = consumeNumber()
+    { values.add(value.doubleValue()); }
+}
+
+void mappedTensorCellValue(TensorAddress address, Tensor.Builder builder) :
 {
     double value;
 }
 {
     value = tensorCellValue()
-    { builder.cell(value); }
+    { builder.cell(address, value); }
 }
 
 TensorAddress tensorAddress(TensorType type) :
