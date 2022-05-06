@@ -2197,15 +2197,23 @@ void secondPhaseItem(RankProfile profile) :
 }
 
 /** Consumes an inputs block of a rank profile. */
-void inputs(RankProfile profile) :
+void inputs(RankProfile profile) : {}
+{
+    <INPUTS> <LBRACE> (<NL>)*
+      ( input(profile) (<NL>)*) *
+    <RBRACE>
+}
+
+void input(RankProfile profile) :
 {
     Reference reference;
     TensorType type;
 }
 {
-    <INPUTS> <LBRACE> (<NL>)*
-      ( reference = queryFeature() type = inputType(reference) { profile.addInput(reference, type); } (<NL>)*) *
-    <RBRACE>
+    reference = queryFeature() type = inputType(reference)
+    {
+        profile.addInput(reference, type);
+    }
 }
 
 TensorType inputType(Reference reference) :

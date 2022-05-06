@@ -1,9 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-// Duplicate Schema parser - work in progress
-// @author arnej27959
-// NOTE: When grammar is changed, also change integration/intellij/src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf
-
 options {
     UNICODE_INPUT = true;
     CACHE_TOKENS  = false;
@@ -44,6 +40,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TensorAddress;
 
 import java.util.Optional;
 import java.util.Map;
@@ -55,6 +52,8 @@ import java.util.logging.Level;
 /**
  * The schema parser
  *
+ * NOTE: When this grammar is changed, also change integration/intellij/src/main/bnf/ai/vespa/intellij/schema/parser/sd.bnf
+ *
  * @author bratseth
  */
 public class IntermediateParser {
@@ -62,9 +61,7 @@ public class IntermediateParser {
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
 
-    /**
-     * Creates a parser
-     */
+    /** Creates a parser. */
     public IntermediateParser(SimpleCharStream stream,
                               DeployLogger deployLogger,
                               ModelContext.Properties properties)
@@ -341,7 +338,8 @@ TOKEN :
 | < URI: "uri" >
 | < IDENTIFIER:           ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])* >
 | < IDENTIFIER_WITH_DASH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])* >
-| < QUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
+| < DOUBLEQUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
+| < SINGLEQUOTEDSTRING: "'" ( ~["'"] )* "'" >
 | < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
 | < DOUBLE: ("-")? (["0"-"9"])+ "." (["0"-"9"])+ >
 | < INTEGER: ("-")? (["0"-"9"])+ >
@@ -353,8 +351,8 @@ TOKEN :
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
 | < VARIABLE: "$" <IDENTIFIER> >
-| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<QUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
-| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<QUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
+| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
 }
 
 // Declare a special skip token for comments.
@@ -2068,8 +2066,23 @@ void inputs(ParsedRankProfile profile) :
 }
 {
     <INPUTS> <LBRACE> (<NL>)*
-      ( reference = queryFeature() type = inputType(reference) { profile.addInput(reference, type); } (<NL>)*) *
+      ( input(profile) (<NL>)*) *
     <RBRACE>
+}
+
+void input(ParsedRankProfile profile) :
+{
+    Reference reference;
+    TensorType type;
+    Tensor defaultValue = null;
+}
+{
+    reference = queryFeature() type = inputType(reference) ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
+    {
+        profile.addInput(reference, type);
+        if (defaultValue != null)
+            new TensorValue(defaultValue);
+    }
 }
 
 TensorType inputType(Reference reference) :
@@ -2372,7 +2385,6 @@ void rankDegradationBinLow() :
     { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
-
 /**
  * This rule consumes part of a rank-degradation statement of a rank profile.
  */
@@ -2439,7 +2451,7 @@ void constantTensor(ParsedRankProfile profile, String name) :
 }
 {
     <LBRACE> (<NL>)*
-      (( tensorString = tensorValue() |
+      (( tensorString = tensorValuePrefixedByValue() |
          tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
     {
         if (tensorType != null) {
@@ -2455,7 +2467,93 @@ String constantTensorErrorMessage(String rankProfileName, String constantTensorN
     { return "For constant tensor '" + constantTensorName + "' in rank profile '" + rankProfileName + "'"; }
 }
 
-String tensorValue() :
+/**
+ * Parses a tensor written in a tensor literal form,
+ * https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form
+ */
+Tensor tensorValue(TensorType type) :
+{
+    Tensor.Builder builder = Tensor.Builder.of(type);
+}
+{
+    ( mappedTensorValue(builder) | indexedTensorValue(builder) )
+    { return builder.build(); }
+}
+
+/** A mapped or mixed tensor value. */
+void mappedTensorValue(Tensor.Builder builder) : {}
+{
+    "{" ( mappedTensorBlock(builder) )* ( <COMMA> (<NL>)* mappedTensorBlock(builder) )* "}"
+}
+
+void indexedTensorValue(Tensor.Builder builder) : {}
+{
+    "[" ( indexedTensorCell(builder) )* ( <COMMA> (<NL>)* indexedTensorCell(builder) )* "]"
+}
+
+void mappedTensorBlock(Tensor.Builder builder) :
+{
+    TensorAddress address;
+    double value;
+}
+{
+    address = tensorAddress(builder.type()) <COLON> (<NL>)* value = tensorCellValue()
+    { builder.cell(address, value); }
+}
+
+void indexedTensorCell(Tensor.Builder builder) :
+{
+    double value;
+}
+{
+    value = tensorCellValue()
+    { builder.cell(value); }
+}
+
+TensorAddress tensorAddress(TensorType type) :
+{
+    TensorAddress.Builder builder = new TensorAddress.Builder(type);
+    String label;
+}
+{
+    (
+        label = tensorAddressLabel() { builder.add(label); }
+        |
+        ( "{" ( tensorAddressElement(builder) )* ( <COMMA> tensorAddressElement(builder) )* "}" )
+    )
+    { return builder.build(); }
+}
+
+void tensorAddressElement(TensorAddress.Builder builder) :
+{
+    String dimension;
+    String label;
+}
+{
+    dimension = identifier() <COLON> (<NL>)* label = tensorAddressLabel()
+    { builder.add(dimension, label); }
+}
+
+String tensorAddressLabel() :
+{
+    String label;
+}
+{
+    ( label = identifier() | label = quotedString() )
+    { return label; }
+}
+
+double tensorCellValue() :
+{
+    Number value;
+}
+{
+    value = consumeNumber()
+    { return value.doubleValue(); }
+}
+
+/** Undocumented syntax for supplying a tensor constant value by a string prefixed by "value" */
+String tensorValuePrefixedByValue() :
 {
     String tensor;
 }
@@ -2701,39 +2799,28 @@ String string() : { }
  * unescaping of the content, it simply removes the first and last character of the image. However, the token itself can
  * contain anything but a double quote.
  *
- * @return The unquoted token image.
+ * @return the unquoted token image
  */
 String quotedString() : { }
 {
-    <QUOTEDSTRING> { return token.image.substring(1, token.image.length() - 1); }
+    ( <DOUBLEQUOTEDSTRING> | <SINGLEQUOTEDSTRING> )
+    { return token.image.substring(1, token.image.length() - 1); }
 }
 
-/**
- * This rule consumes a boolean value.
- *
- * @return The consumed boolean value.
- */
+/** A boolean value. */
 Boolean bool() : { }
 {
     ( ( <ON>  | <TRUE> )  { return true; } |
       ( <OFF> | <FALSE> ) { return false; } )
 }
 
-/**
- * This rule consumes an integer token and returns its numeric value.
- *
- * @return The consumed integer value.
- */
+/** Consumes an integer token and returns its numeric value. */
 int integer() : { }
 {
     <INTEGER> { return Integer.parseInt(token.image); }
 }
 
-/**
- * This rule consumes a long or integer token and returns its numeric value.
- *
- * @return The consumed long value.
- */
+/** Consumes a long or integer token and returns its numeric value. */
 long consumeLong() : { }
 {
     ( <INTEGER> { return Long.parseLong(token.image); } |
@@ -2741,11 +2828,7 @@ long consumeLong() : { }
     )
 }
 
-/**
- * This rule consumes a floating-point token and returns its numeric value.
- *
- * @return The consumed value.
- */
+/** Consumes a floating-point token and returns its numeric value. */
 double consumeFloat() : { }
 {
     <DOUBLE> { return Double.valueOf(token.image); }
@@ -2759,9 +2842,7 @@ Number consumeNumber() :
     (num = consumeFloat() | num = consumeLong()) { return num; }
 }
 
-/**
- * This rule consumes an opening brace with leading and trailing newline tokens.
- */
+/** Consumes an opening brace with leading and trailing newline tokens. */
 void lbrace() : { }
 {
     (<NL>)* <LBRACE> (<NL>)*

@@ -168,7 +168,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
     }
 
-    /** Supports building of a tensor address */
+    /** Builder of a tensor address */
     public static class Builder {
 
         private final TensorType type;
@@ -181,6 +181,18 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         private Builder(TensorType type, String[] labels) {
             this.type = type;
             this.labels = labels;
+        }
+
+        /**
+         * Adds the label to the only dimension of this.
+         *
+         * @throws IllegalArgumentException if this does not have exactly one dimension
+         */
+        public Builder add(String label) {
+            if (type.rank() != 1)
+                throw new IllegalArgumentException("Cannot add a label without explicit dimension to a tensor of type " + type);
+            add(type.dimensions().get(0).name(), label);
+            return this;
         }
 
         /**
@@ -202,6 +214,9 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         public Builder copy() {
             return new Builder(type, Arrays.copyOf(labels, labels.length));
         }
+
+        /** Returns the type of the tensor this address is being built for. */
+        public TensorType type() { return type; }
 
         public TensorAddress build() {
             for (int i = 0; i < labels.length; i++)

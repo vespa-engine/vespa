@@ -21,6 +21,9 @@ public class SchemaInfoTestCase {
                 "      query(bar) tensor(key{},x[1000])" +
                 "      query(myDouble1) double" +
                 "      query(myDouble2) tensor()" +
+                "      query(myMap) tensor(key{}): { label1:1.0,\n \"label2\": 2.0, 'label3': 3.0 }" +
+                "      query(myVector) tensor(x[3]):\n\n[1 ,2.0,3]" +
+ //               "      query(myMixed) tensor(key{},x[2]): { key1:[-1.0, 1.1], key2: [1,2]}" +
                 "    }" +
                 "  }";
         List<String> schemas = List.of("type1", "type2");
@@ -48,15 +51,14 @@ public class SchemaInfoTestCase {
                 tester.assertRankProfile(schema, 5, "rankfeatures", false, true);
                 var inputs = tester.assertRankProfile(schema, 6, "inputs", false, false);
 
-                assertEquals(4, inputs.input().size());
-                assertEquals("query(foo)", inputs.input(0).name());
-                assertEquals("tensor<float>(x[10])", inputs.input(0).type());
-                assertEquals("query(bar)", inputs.input(1).name());
-                assertEquals("tensor(key{},x[1000])", inputs.input(1).type());
-                assertEquals("query(myDouble1)", inputs.input(2).name());
-                assertEquals("tensor()", inputs.input(2).type());
-                assertEquals("query(myDouble2)", inputs.input(3).name());
-                assertEquals("tensor()", inputs.input(3).type());
+                assertEquals(6, inputs.input().size());
+                assertInput("query(foo)", "tensor<float>(x[10])", inputs.input(0));
+                assertInput("query(bar)", "tensor(key{},x[1000])", inputs.input(1));
+                assertInput("query(myDouble1)", "tensor()", inputs.input(2));
+                assertInput("query(myDouble2)", "tensor()", inputs.input(3));
+                assertInput("query(myMap)", "tensor(key{})", inputs.input(4));
+                assertInput("query(myVector)", "tensor(x[3])", inputs.input(5));
+ //               assertInput("query(myMixed)", "tensor(key{},x[2])", inputs.input(5));
 
                 assertEquals(2, schema.summaryclass().size());
                 assertEquals("default", schema.summaryclass(0).name());
@@ -69,6 +71,11 @@ public class SchemaInfoTestCase {
                 assertEquals("type2", schema.name());
             }
         }
+    }
+
+    private void assertInput(String name, String type, SchemaInfoConfig.Schema.Rankprofile.Input input) {
+        assertEquals(name, input.name());
+        assertEquals(type, input.type());
     }
 
 }

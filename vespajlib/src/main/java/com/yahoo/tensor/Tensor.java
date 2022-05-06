@@ -533,7 +533,7 @@ public interface Tensor {
                 return IndexedTensor.Builder.of(type, dimensionSizes);
         }
 
-        /** Returns the type this is building */
+        /** Returns the type of the tensor this is building */
         TensorType type();
 
         /** Return a cell builder */
@@ -577,6 +577,9 @@ public interface Tensor {
                 addressBuilder.add(dimension, label);
                 return this;
             }
+
+            /** Returns the type of the tensor this cell is build for. */
+            public TensorType type() { return tensorBuilder.type(); }
 
             public CellBuilder label(String dimension, long label) {
                 return label(dimension, String.valueOf(label));

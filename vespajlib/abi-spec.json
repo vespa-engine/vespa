@@ -1092,6 +1092,7 @@
     ],
     "methods": [
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder label(java.lang.String, java.lang.String)",
+      "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder label(java.lang.String, long)",
       "public com.yahoo.tensor.Tensor$Builder value(double)",
       "public com.yahoo.tensor.Tensor$Builder value(float)"
@@ -1256,8 +1257,10 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder copy()",
+      "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.TensorAddress build()"
     ],
     "fields": []
