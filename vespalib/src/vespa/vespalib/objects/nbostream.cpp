@@ -41,7 +41,7 @@ nbostream::nbostream(const void * buf, size_t sz) :
 
 nbostream::nbostream(Alloc && buf, size_t sz) :
     _wbuf(std::move(buf), sz),
-    _rbuf(&_wbuf[0], sz),
+    _rbuf(_wbuf.data(), sz),
     _rp(0),
     _wp(sz),
     _state(ok),
@@ -60,7 +60,7 @@ nbostream::nbostream(const nbostream & rhs) :
 {
     extend(rhs.size());
     _wp = rhs.size();
-    memcpy(&_wbuf[0], &rhs._rbuf[rhs._rp], _wp);
+    memcpy(_wbuf.data(), &rhs._rbuf[rhs._rp], _wp);
 }
 
 nbostream::nbostream(nbostream && rhs) noexcept
@@ -76,10 +76,10 @@ nbostream::nbostream(nbostream && rhs) noexcept
     rhs._rbuf = ConstBufferRef();
     if (!_longLivedBuffer && (_wbuf.capacity() == 0)) {
         _wbuf.resize(roundUp2inN(_rbuf.size()));
-        memcpy(&_wbuf[0], &_rbuf[_rp], size());
+        memcpy(_wbuf.data(), &_rbuf[_rp], size());
         _wp = size();
         _rp = 0;
-        _rbuf = ConstBufferRef(&_wbuf[0], _wbuf.capacity());
+        _rbuf = ConstBufferRef(_wbuf.data(), _wbuf.capacity());
     }
 }
 
@@ -120,7 +120,7 @@ void nbostream::reserve(size_t sz)
 
 void nbostream::compact()
 {
-    memmove(&_wbuf[0], &_rbuf[_rp], left());
+    memmove(_wbuf.data(), &_rbuf[_rp], left());
     _wp = left();
     _rp = 0;
 }
@@ -148,7 +148,7 @@ void nbostream::swap(Buffer & buf) {
     }
     _wbuf.resize(size());
     _wbuf.swap(buf);
-    _rbuf = ConstBufferRef(&_wbuf[0], _wbuf.capacity());
+    _rbuf = ConstBufferRef(_wbuf.data(), _wbuf.capacity());
     _wp = _wbuf.size();
     _rp = 0;
     _state = ok;
