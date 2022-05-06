@@ -7,6 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -2145,6 +2146,125 @@ public class DeploymentTriggerTest {
         app.deploy();
         assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version2, app.application().revisions().get(tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+    }
+
+    @Test
+    public void testInstanceWithOnlySystemTest() {
+        String spec = "<deployment>\n" +
+                      "  <instance id='tests'>" +
+                      "    <test />\n" +
+                      "    <upgrade revision-target='next' />" +
+                      "  </instance>\n" +
+                      "  <instance id='main'>\n" +
+                      "    <prod>\n" +
+                      "      <region>us-east-3</region>\n" +
+                      "    </prod>\n" +
+                      "    <upgrade revision-target='next' />" +
+                      "  </instance>\n" +
+                      "</deployment>\n";
+        ApplicationPackage appPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
+        DeploymentContext tests = tester.newDeploymentContext("tenant", "application", "tests");
+        DeploymentContext main = tester.newDeploymentContext("tenant", "application", "main");
+        Version version1 = new Version("7");
+        tester.controllerTester().upgradeSystem(version1);
+        tests.submit(appPackage).deploy();
+        Optional<RevisionId> revision1 = tests.lastSubmission();
+        JobId systemTestJob = new JobId(tests.instanceId(), systemTest);
+        JobId stagingTestJob = new JobId(tests.instanceId(), stagingTest);
+        JobId mainJob = new JobId(main.instanceId(), productionUsEast3);
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
+
+        // Versions 2 and 3 become available.
+        // Tests instance fails on 2, then update to 3.
+        // Version 2 should not be a target for either instance.
+        // Version 2 should also not be possible to set as a forced target for the tests instance.
+        Version version2 = new Version("8");
+        tester.controllerTester().upgradeSystem(version2);
+        tester.upgrader().run();
+        tester.triggerJobs();
+
+        assertEquals(Change.of(version2), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        Version version3 = new Version("9");
+        tester.controllerTester().upgradeSystem(version3);
+        tests.failDeployment(systemTest);
+        tester.upgrader().run();
+
+        assertEquals(Change.of(version3), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        tests.runJob(systemTest);
+        tester.upgrader().run();
+        tests.runJob(stagingTest);
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.of(version3), main.instance().change());
+        assertEquals(Set.of(mainJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        main.runJob(productionUsEast3);
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
+
+        tester.deploymentTrigger().forceChange(tests.instanceId(), Change.of(version2));
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
+
+        // Revisions 2 and 3 become available.
+        // Tests instance fails on 2, then update to 3.
+        // Revision 2 should not be a target for either instance.
+        // Revision 2 should also not be possible to set as a forced target for the tests instance.
+        tests.submit(appPackage);
+        Optional<RevisionId> revision2 = tests.lastSubmission();
+
+        assertEquals(Change.of(revision2.get()), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        tests.submit(appPackage);
+        Optional<RevisionId> revision3 = tests.lastSubmission();
+
+        assertEquals(Change.of(revision2.get()), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        tests.failDeployment(systemTest);
+        tester.outstandingChangeDeployer().run();
+
+        assertEquals(Change.of(revision3.get()), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        tests.runJob(systemTest);
+        tester.outstandingChangeDeployer().run();
+        tester.outstandingChangeDeployer().run();
+        tests.runJob(stagingTest);
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.of(revision3.get()), main.instance().change());
+        assertEquals(Set.of(mainJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        main.runJob(productionUsEast3);
+        tester.outstandingChangeDeployer().run();
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
+
+        tester.deploymentTrigger().forceChange(tests.instanceId(), Change.of(revision2.get()));
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
     }
 
 }

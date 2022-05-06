@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
-import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.ClusterSpec.Id;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -20,19 +19,20 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException.ErrorCode;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.SourceRevision;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud.Status;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner.Timeouts;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
@@ -50,9 +50,11 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded;
@@ -110,7 +112,7 @@ public class DeploymentContext {
             .parallel("us-west-1", "us-east-3")
             .emailRole("author")
             .emailAddress("b@a")
-            .build());
+            .build())::get;
 
     private static final Supplier<ApplicationPackage> publicCdApplicationPackage = Suppliers.memoize(() -> new ApplicationPackageBuilder()
             .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
@@ -119,7 +121,7 @@ public class DeploymentContext {
             .emailRole("author")
             .emailAddress("b@a")
             .trust(generateCertificate())
-            .build());
+            .build())::get;
 
     public static final SourceRevision defaultSourceRevision = new SourceRevision("repository1", "master", "commit1");
 
@@ -268,7 +270,7 @@ public class DeploymentContext {
     /** Add a routing policy for this in given zone, with status set to inactive */
     public DeploymentContext addInactiveRoutingPolicy(ZoneId zone) {
         var clusterId = "default-inactive";
-        var id = new RoutingPolicyId(instanceId, ClusterSpec.Id.from(clusterId), zone);
+        var id = new RoutingPolicyId(instanceId, Id.from(clusterId), zone);
         var policies = new LinkedHashMap<>(tester.controller().routing().policies().read(instanceId).asMap());
         policies.put(id, new RoutingPolicy(id, HostName.of("lb-host"),
                                            Optional.empty(),
@@ -330,7 +332,7 @@ public class DeploymentContext {
     /** Fail current deployment in given job */
     public DeploymentContext nodeAllocationFailure(JobType type) {
         return failDeployment(type,
-                              new ConfigServerException(ConfigServerException.ErrorCode.NODE_ALLOCATION_FAILURE,
+                              new ConfigServerException(ErrorCode.NODE_ALLOCATION_FAILURE,
                                                         "Node allocation failure",
                                                         "Failed to deploy application"));
     }
@@ -359,7 +361,7 @@ public class DeploymentContext {
         if (messagePart.isPresent()) {
             Optional<Step> firstFailing = run.stepStatuses().entrySet().stream()
                                              .filter(kv -> kv.getValue() == failed)
-                                             .map(Map.Entry::getKey)
+                                             .map(Entry::getKey)
                                              .findFirst();
             assertTrue("Found failing step", firstFailing.isPresent());
             Optional<RunLog> details = jobs.details(id);
@@ -490,7 +492,7 @@ public class DeploymentContext {
         triggerJobs();
         RunId id = currentRun(job).id();
         doDeploy(job);
-        tester.clock().advance(InternalStepRunner.Timeouts.of(tester.controller().system()).noNodesDown().plusSeconds(1));
+        tester.clock().advance(Timeouts.of(tester.controller().system()).noNodesDown().plusSeconds(1));
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
@@ -504,7 +506,7 @@ public class DeploymentContext {
         RunId id = currentRun(job).id();
         doDeploy(job);
         doUpgrade(job);
-        tester.clock().advance(InternalStepRunner.Timeouts.of(tester.controller().system()).noNodesDown().plusSeconds(1));
+        tester.clock().advance(Timeouts.of(tester.controller().system()).noNodesDown().plusSeconds(1));
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasFailed());
         assertTrue(jobs.run(id).get().hasEnded());
@@ -574,15 +576,15 @@ public class DeploymentContext {
             tester.configServer().nodeRepository().doUpgrade(deployment, Optional.empty(), tester.configServer().application(job.application(), zone).get().version().get());
             configServer().convergeServices(id.application(), zone);
             runner.advance(currentRun(job));
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
 
             // All installation is complete and endpoints are ready, so setup may begin.
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.startStagingSetup));
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installInitialReal));
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.startStagingSetup));
 
             assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endStagingSetup));
-            tester.cloud().set(TesterCloud.Status.SUCCESS);
+            tester.cloud().set(Status.SUCCESS);
             runner.advance(currentRun(job));
             assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.endStagingSetup));
         }
@@ -618,11 +620,11 @@ public class DeploymentContext {
         configServer().convergeServices(id.application(), zone);
         runner.advance(currentRun(job));
         if (job.type().environment().isManuallyDeployed()) {
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
             assertTrue(jobs.run(id).get().hasEnded());
             return;
         }
-        assertEquals("Status of " + id, Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals("Status of " + id, succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
     }
 
     /** Installs tester and starts tests. */
@@ -647,12 +649,12 @@ public class DeploymentContext {
 
         // All installation is complete and endpoints are ready, so tests may begin.
         if (job.type().isDeployment())
-            assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
-        assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
-        assertEquals(Step.Status.succeeded, jobs.run(id).get().stepStatuses().get(Step.startTests));
+            assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.installTester));
+        assertEquals(succeeded, jobs.run(id).get().stepStatuses().get(Step.startTests));
 
         assertEquals(unfinished, jobs.run(id).get().stepStatuses().get(Step.endTests));
-        tester.cloud().set(TesterCloud.Status.SUCCESS);
+        tester.cloud().set(Status.SUCCESS);
         runner.advance(currentRun(job));
         assertTrue(jobs.run(id).get().hasEnded());
         assertFalse(jobs.run(id).get().hasFailed());

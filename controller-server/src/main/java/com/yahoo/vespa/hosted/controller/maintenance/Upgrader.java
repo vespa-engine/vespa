@@ -101,7 +101,8 @@ public class Upgrader extends ControllerMaintainer {
             cancelUpgradesOf(outdated.upgrading(), "Upgrading to outdated versions");
 
             // Prefer the newest target for each instance.
-            remaining = remaining.not().matching(eligible.asList()::contains);
+            remaining = remaining.not().matching(eligible.asList()::contains)
+                                 .not().hasCompleted(Change.of(version));
             for (ApplicationId id : outdated.and(eligible.not().upgrading()).not().changingRevision())
                 targets.put(id, version);
         }
