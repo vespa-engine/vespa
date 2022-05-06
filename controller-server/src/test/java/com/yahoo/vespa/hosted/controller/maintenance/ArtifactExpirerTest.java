@@ -26,8 +26,8 @@ public class ArtifactExpirerTest {
         ArtifactRegistryMock registry = tester.controllerTester().serviceRegistry().artifactRegistry(CloudName.defaultName()).orElseThrow();
 
         Instant instant = tester.clock().instant();
-        Artifact image0 = new Artifact("image0", "registry.example.com", "vespa/vespa", "7.4", instant, Version.fromString("7.1"));
-        Artifact image1 = new Artifact("image1", "registry.example.com", "vespa/vespa", "7.4-amd64", instant, Version.fromString("7.2"));
+        Artifact image0 = new Artifact("image0", "registry.example.com", "vespa/vespa", "7.1", instant, Version.fromString("7.1"));
+        Artifact image1 = new Artifact("image1", "registry.example.com", "vespa/vespa", "7.2-amd64", instant, Version.fromString("7.2"));
         Artifact image2 = new Artifact("image2", "registry.example.com", "vespa/vespa", "7.4-amd64", instant, Version.fromString("7.4"));
         registry.add(image0)
                 .add(image1)

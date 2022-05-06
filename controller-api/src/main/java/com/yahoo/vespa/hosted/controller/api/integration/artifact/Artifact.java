@@ -5,7 +5,6 @@ import com.yahoo.component.Version;
 
 import java.time.Instant;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * A registry artifact (e.g. container image or RPM)
@@ -15,25 +14,16 @@ import java.util.Optional;
 public class Artifact {
 
     private final String id;
-    private final Optional<String> registry;
-    private final Optional<String> repository;
-    private final Optional<String> tag;
+    private final String registry;
+    private final String repository;
+    private final String tag;
     private final Instant createdAt;
     private final Version version;
 
     public Artifact(String id, String registry, String repository, String tag, Instant createdAt, Version version) {
         this.id = Objects.requireNonNull(id);
-        this.registry = Optional.of(registry);
-        this.repository = Optional.of(repository);
-        this.tag = Optional.of(tag);
-        this.createdAt = Objects.requireNonNull(createdAt);
-        this.version = Objects.requireNonNull(version);
-    }
-
-    public Artifact(String id, Instant createdAt, Optional<String> tag, Version version) {
-        this.id = Objects.requireNonNull(id);
-        this.registry = Optional.empty();
-        this.repository = Optional.empty();
+        this.registry = Objects.requireNonNull(registry);
+        this.repository = Objects.requireNonNull(repository);
         this.tag = Objects.requireNonNull(tag);
         this.createdAt = Objects.requireNonNull(createdAt);
         this.version = Objects.requireNonNull(version);
@@ -45,17 +35,17 @@ public class Artifact {
     }
 
     /** The registry holding this artifact */
-    public Optional<String> registry() {
+    public String registry() {
         return registry;
     }
 
     /** Repository of this artifact */
-    public Optional<String> repository() {
+    public String repository() {
         return repository;
     }
 
     /** Tag of this artifact */
-    public Optional<String> tag() {
+    public String tag() {
         return tag;
     }
 
@@ -89,7 +79,6 @@ public class Artifact {
 
     @Override
     public String toString() {
-        String name = repository.isPresent() ? registry.get() + "/" + repository.get() : id;
-        return "artifact " + name + " [version=" + version.toFullString() + ",createdAt=" + createdAt + tag.map(t -> ",tag=" + t).orElse("") + "]";
+        return "artifact " + registry + "/" + repository + " [version=" + version.toFullString() + ",createdAt=" + createdAt + ",tag=" + tag + "]";
     }
 }

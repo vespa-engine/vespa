@@ -12,7 +12,7 @@ import java.util.List;
 public interface ArtifactRegistry {
 
     /** Delete all given artifacts */
-    void deleteAll(List<Artifact> images);
+    void deleteAll(List<Artifact> artifacts);
 
     /** Returns a list of all artifacts in this system */
     List<Artifact> list();

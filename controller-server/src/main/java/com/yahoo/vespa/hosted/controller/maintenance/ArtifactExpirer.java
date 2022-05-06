@@ -37,18 +37,18 @@ public class ArtifactExpirer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
+        VersionStatus versionStatus = controller().readVersionStatus();
         return controller().clouds().stream()
                 .flatMapToDouble(cloud ->
                     controller().serviceRegistry().artifactRegistry(cloud).stream()
-                            .mapToDouble(artifactRegistry -> maintain(cloud, artifactRegistry)))
+                            .mapToDouble(artifactRegistry -> maintain(versionStatus, cloud, artifactRegistry)))
                 .average()
                 .orElse(1);
     }
 
-    private double maintain(CloudName cloudName, ArtifactRegistry artifactRegistry) {
+    private double maintain(VersionStatus versionStatus, CloudName cloudName, ArtifactRegistry artifactRegistry) {
         try {
             Instant now = controller().clock().instant();
-            VersionStatus versionStatus = controller().readVersionStatus();
             List<Artifact> artifactsToExpire = artifactRegistry.list().stream()
                     .filter(artifact -> isExpired(artifact, now, versionStatus))
                     .collect(Collectors.toList());

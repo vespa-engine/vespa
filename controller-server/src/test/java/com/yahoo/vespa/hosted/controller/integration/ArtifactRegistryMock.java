@@ -15,9 +15,9 @@ import java.util.stream.Collectors;
  */
 public class ArtifactRegistryMock implements ArtifactRegistry {
 
-    private static final Comparator<Artifact> comparator = Comparator.comparing((Artifact artifact) -> artifact.registry().orElse(""))
-                                                                           .thenComparing(artifact -> artifact.repository().orElse(""))
-                                                                           .thenComparing(Artifact::version);
+    private static final Comparator<Artifact> comparator = Comparator.comparing(Artifact::registry)
+                                                                     .thenComparing(Artifact::repository)
+                                                                     .thenComparing(Artifact::version);
 
     private final Map<String, Artifact> images = new HashMap<>();
 
@@ -27,8 +27,8 @@ public class ArtifactRegistryMock implements ArtifactRegistry {
     }
 
     @Override
-    public void deleteAll(List<Artifact> images) {
-        images.forEach(image -> this.images.remove(image.id()));
+    public void deleteAll(List<Artifact> artifacts) {
+        artifacts.forEach(image -> this.images.remove(image.id()));
     }
 
     @Override
