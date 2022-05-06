@@ -28,7 +28,7 @@ HnswGraph::make_node_for_document(uint32_t docid, uint32_t num_levels)
     // A document cannot be added twice.
     assert(!get_node_ref(docid).valid());
     // Note: The level array instance lives as long as the document is present in the index.
-    vespalib::Array<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
+    std::vector<AtomicEntryRef> levels(num_levels, AtomicEntryRef());
     auto node_ref = nodes.add(levels);
     node_refs[docid].store_release(node_ref);
     if (docid >= node_refs_size.load(std::memory_order_relaxed)) {

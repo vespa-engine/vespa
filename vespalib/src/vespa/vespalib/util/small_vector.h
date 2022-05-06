@@ -4,10 +4,8 @@
 
 #include "alloc.h"
 #include "traits.h"
-#include <string.h>
-#include <cstdint>
+#include <cstring>
 #include <cassert>
-#include <memory>
 #include <iterator>
 
 namespace vespalib {

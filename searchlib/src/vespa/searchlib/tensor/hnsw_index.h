@@ -17,6 +17,7 @@
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/reusable_set_pool.h>
+#include <vespa/vespalib/stllike/allocator.h>
 
 namespace search::tensor {
 
@@ -87,10 +88,9 @@ protected:
 
     using LinkStore = HnswGraph::LinkStore;
     using LinkArrayRef = HnswGraph::LinkArrayRef;
-    using LinkArray = vespalib::Array<uint32_t>;
+    using LinkArray = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 
     using LevelArrayRef = HnswGraph::LevelArrayRef;
-    using LevelArray = vespalib::Array<AtomicEntryRef>;
 
     using TypedCells = vespalib::eval::TypedCells;
 
