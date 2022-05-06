@@ -295,8 +295,8 @@ exec $numactlcmd $envcmd java \
         -Djdisc.export.packages=${jdisc_export_packages} \
         -Djdisc.cache.path="$bundlecachedir" \
         -Djdisc.bundle.path="${VESPA_HOME}/lib/jars" \
-        -Djdisc.logger.enabled=false \
-        -Djdisc.logger.level=ALL \
+        -Djdisc.logger.enabled=true \
+        -Djdisc.logger.level=WARNING \
         -Djdisc.logger.tag="${VESPA_CONFIG_ID}" \
         -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger \
         -Dvespa.log.control.dir="${VESPA_LOG_CONTROL_DIR}" \
