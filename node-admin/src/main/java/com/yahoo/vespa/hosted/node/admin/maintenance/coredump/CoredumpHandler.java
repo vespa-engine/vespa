@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixUser;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
@@ -84,8 +85,16 @@ public class CoredumpHandler {
 
 
     public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier, boolean throwIfCoreBeingWritten) {
-        ContainerPath containerCrashPath = context.paths().of(crashPatchInContainer);
+        ContainerPath containerCrashPath = context.paths().of(crashPatchInContainer, context.users().vespa());
         ContainerPath containerProcessingPath = containerCrashPath.resolve(PROCESSING_DIRECTORY_NAME);
+
+        // TODO (freva): Remove after 7.584
+        UnixUser vespaUser = context.users().vespa();
+        UnixPath processingPath = new UnixPath(containerProcessingPath);
+        processingPath.getAttributesIfExists().ifPresent(attr -> {
+            if (attr.ownerId() != vespaUser.uid()) processingPath.setOwnerId(vespaUser.uid());
+            if (attr.groupId() != vespaUser.gid()) processingPath.setGroupId(vespaUser.gid());
+        });
 
         updateMetrics(context, containerCrashPath);
 
