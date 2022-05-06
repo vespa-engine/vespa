@@ -180,7 +180,7 @@ class BucketMoveJob::StartMove : public storage::spi::BucketTask {
 public:
     using IDestructorCallbackSP = std::shared_ptr<vespalib::IDestructorCallback>;
     StartMove(std::shared_ptr<BucketMoveJob> job, BucketMover::MoveKeys keys, IDestructorCallbackSP opsTracker)
-        : _job(job),
+        : _job(std::move(job)),
           _keys(std::move(keys)),
           _opsTracker(std::move(opsTracker))
     {}
@@ -197,9 +197,9 @@ public:
     }
 
 private:
-    std::shared_ptr<BucketMoveJob>  _job;
-    BucketMover::MoveKeys             _keys;
-    IDestructorCallbackSP             _opsTracker;
+    std::shared_ptr<BucketMoveJob> _job;
+    BucketMover::MoveKeys          _keys;
+    IDestructorCallbackSP          _opsTracker;
 };
 
 void
