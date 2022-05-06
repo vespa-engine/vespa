@@ -39,6 +39,7 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorAddress;
 
@@ -2476,7 +2477,7 @@ Tensor tensorValue(TensorType type) :
     Tensor.Builder builder = Tensor.Builder.of(type);
 }
 {
-    ( mappedTensorValue(builder) | indexedTensorValues(new TensorAddress.Builder(TensorType.empty).build(), builder) )
+    ( mappedTensorValue(builder) | indexedTensorValues(builder) )
     { return builder.build(); }
 }
 
@@ -2489,19 +2490,35 @@ void mappedTensorValue(Tensor.Builder builder) : {}
 
 void mappedTensorBlock(Tensor.Builder builder) :
 {
-    TensorAddress address;
+    TensorAddress mappedAddress;
 }
 {
-    address = tensorAddress(builder.type()) <COLON> (<NL>)*
-    ( mappedTensorCellValue(address, builder) | indexedTensorValues(address, builder) )
+    mappedAddress = tensorAddress(builder.type().mappedSubtype()) <COLON> (<NL>)*
+    ( mappedTensorCellValue(mappedAddress, builder) | indexedTensorBlockValues(mappedAddress, builder) )
 }
 
-void indexedTensorValues(TensorAddress partialAddress, Tensor.Builder builder) :
+void indexedTensorBlockValues(TensorAddress sparseAddress, Tensor.Builder builder) :
 {
-    List<Double> values = new ArrayList<Double>();
+    List<Double> values;
 }
 {
-    "[" ( indexedTensorValue(values) )* ( <COMMA> (<NL>)* indexedTensorValue(values) )* "]"
+    values = arrayTensorValues()
+    {
+        MixedTensor.BoundBuilder boundBuilder = (MixedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.block(sparseAddress, arrayValues);
+    }
+}
+
+void indexedTensorValues(Tensor.Builder builder) :
+{
+    List<Double> values;
+}
+{
+    values = arrayTensorValues()
     {
         for (int i = 0; i < values.size(); i++ ) {
             TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
@@ -2509,6 +2526,15 @@ void indexedTensorValues(TensorAddress partialAddress, Tensor.Builder builder) :
             builder.cell(addressBuilder.build(), values.get(i));
         }
     }
+}
+
+List<Double> arrayTensorValues() :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+{
+    "[" ( indexedTensorValue(values) )* ( <COMMA> (<NL>)* indexedTensorValue(values) )* "]"
+    { return values; }
 }
 
 void indexedTensorValue(List<Double> values) :
