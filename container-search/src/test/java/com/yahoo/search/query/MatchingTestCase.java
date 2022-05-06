@@ -26,10 +26,10 @@ public class MatchingTestCase {
     @Test
     public void testQueryOverrides() {
         Query query = new Query("?query=test" +
-                "&ranking.matching.termwiselimit=0.7" +
-                "&ranking.matching.numthreadspersearch=17" +
-                "&ranking.matching.numsearchpartitions=13" +
-                "&ranking.matching.minhitsperthread=3" +
+                "&ranking.matching.termwiseLimit=0.7" +
+                "&ranking.matching.numThreadsPerSearch=17" +
+                "&ranking.matching.numSearchPartitions=13" +
+                "&ranking.matching.minHitsPerThread=3" +
                 "&ranking.matching.postFilterThreshold=0.8" +
                 "&ranking.matching.approximateThreshold=0.3");
         assertEquals(Double.valueOf(0.7), query.getRanking().getMatching().getTermwiseLimit());
@@ -46,6 +46,20 @@ public class MatchingTestCase {
         assertEquals("3", query.getRanking().getProperties().get("vespa.matching.minhitsperthread").get(0));
         assertEquals("0.8", query.getRanking().getProperties().get("vespa.matching.global_filter.upper_limit").get(0));
         assertEquals("0.3", query.getRanking().getProperties().get("vespa.matching.global_filter.lower_limit").get(0));
+    }
+
+    @Test
+    public void testBackwardsCompatibleQueryOverrides() {
+        // The lowercase aliases are supported to provide backwards compatibility of the properties that was wrongly named in the first place.
+        Query query = new Query("?query=test" +
+                "&ranking.matching.termwiselimit=0.7" +
+                "&ranking.matching.numthreadspersearch=17" +
+                "&ranking.matching.numsearchpartitions=13" +
+                "&ranking.matching.minhitsperthread=3");
+        assertEquals(Double.valueOf(0.7), query.getRanking().getMatching().getTermwiseLimit());
+        assertEquals(Integer.valueOf(17), query.getRanking().getMatching().getNumThreadsPerSearch());
+        assertEquals(Integer.valueOf(13), query.getRanking().getMatching().getNumSearchPartitions());
+        assertEquals(Integer.valueOf(3), query.getRanking().getMatching().getMinHitsPerThread());
     }
 
     private void verifyException(String key, String value) {

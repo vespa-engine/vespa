@@ -18,10 +18,10 @@ public class Matching implements Cloneable {
     /** The type representing the property arguments consumed by this */
     private static final QueryProfileType argumentType;
 
-    public static final String TERMWISELIMIT = "termwiselimit";
-    public static final String NUMTHREADSPERSEARCH = "numthreadspersearch";
-    public static final String NUMSEARCHPARTITIIONS = "numsearchpartitions";
-    public static final String MINHITSPERTHREAD = "minhitsperthread";
+    public static final String TERMWISELIMIT = "termwiseLimit";
+    public static final String NUMTHREADSPERSEARCH = "numThreadsPerSearch";
+    public static final String NUMSEARCHPARTITIIONS = "numSearchPartitions";
+    public static final String MINHITSPERTHREAD = "minHitsPerThread";
     public static final String POST_FILTER_THRESHOLD = "postFilterThreshold";
     public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
 

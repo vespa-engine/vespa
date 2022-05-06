@@ -106,10 +106,10 @@ public class QueryProperties extends Properties {
             }
             else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                 Matching matching = ranking.getMatching();
-                if (key.last().equals(Matching.TERMWISELIMIT)) return matching.getTermwiseLimit();
-                if (key.last().equals(Matching.NUMTHREADSPERSEARCH)) return matching.getNumThreadsPerSearch();
-                if (key.last().equals(Matching.NUMSEARCHPARTITIIONS)) return matching.getNumSearchPartitions();
-                if (key.last().equals(Matching.MINHITSPERTHREAD)) return matching.getMinHitsPerThread();
+                if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT)) return matching.getTermwiseLimit();
+                if (equalsWithLowerCaseAlias(key.last(), Matching.NUMTHREADSPERSEARCH)) return matching.getNumThreadsPerSearch();
+                if (equalsWithLowerCaseAlias(key.last(), Matching.NUMSEARCHPARTITIIONS)) return matching.getNumSearchPartitions();
+                if (equalsWithLowerCaseAlias(key.last(), Matching.MINHITSPERTHREAD)) return matching.getMinHitsPerThread();
 
             }
             else if (key.size() > 2) {
@@ -250,13 +250,13 @@ public class QueryProperties extends Properties {
                 }
                 else if (key.size() == 3 && key.get(1).equals(Ranking.MATCHING)) {
                     Matching matching = ranking.getMatching();
-                    if (key.last().equals(Matching.TERMWISELIMIT))
+                    if (equalsWithLowerCaseAlias(key.last(), Matching.TERMWISELIMIT))
                         matching.setTermwiselimit(asDouble(value, 1.0));
-                    else if (key.last().equals(Matching.NUMTHREADSPERSEARCH))
+                    else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMTHREADSPERSEARCH))
                         matching.setNumThreadsPerSearch(asInteger(value, 1));
-                    else if (key.last().equals(Matching.NUMSEARCHPARTITIIONS))
+                    else if (equalsWithLowerCaseAlias(key.last(), Matching.NUMSEARCHPARTITIIONS))
                         matching.setNumSearchPartitions(asInteger(value, 1));
-                    else if (key.last().equals(Matching.MINHITSPERTHREAD))
+                    else if (equalsWithLowerCaseAlias(key.last(), Matching.MINHITSPERTHREAD))
                         matching.setMinHitsPerThread(asInteger(value, 0));
                     else if (key.last().equals(Matching.POST_FILTER_THRESHOLD))
                         matching.setPostFilterThreshold(asDouble(value, 1.0));
@@ -396,6 +396,11 @@ public class QueryProperties extends Properties {
     private void throwIllegalParameter(String key,String namespace) {
         throw new IllegalInputException("'" + key + "' is not a valid property in '" + namespace +
                                         "'. See the query api for valid keys starting by '" + namespace + "'.");
+    }
+
+    private boolean equalsWithLowerCaseAlias(String key, String property) {
+        // The lowercase alias is used to provide backwards compatibility of a query property that was wrongly named in the first place.
+        return key.equals(property) || key.equals(property.toLowerCase());
     }
 
     @Override
