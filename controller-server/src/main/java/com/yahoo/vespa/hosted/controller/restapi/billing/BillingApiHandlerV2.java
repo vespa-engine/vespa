@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
@@ -25,7 +26,6 @@ import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
-import javax.ws.rs.BadRequestException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -76,6 +76,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
+                .addExceptionMapper(RuntimeException.class, (__, e) -> ErrorResponse.internalServerError(e.getMessage()))
                 .build();
     }
 
@@ -329,7 +330,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     private static String getInspectorFieldOrThrow(Inspector inspector, String field) {
         if (!inspector.field(field).valid())
-            throw new BadRequestException("Field " + field + " cannot be null");
+            throw new RestApiException.BadRequest("Field " + field + " cannot be null");
         return inspector.field(field).asString();
     }
 
