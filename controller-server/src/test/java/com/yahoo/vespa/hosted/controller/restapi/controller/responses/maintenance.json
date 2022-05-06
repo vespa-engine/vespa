@@ -13,6 +13,9 @@
       "name": "ArchiveUriUpdater"
     },
     {
+      "name": "ArtifactExpirer"
+    },
+    {
       "name": "BillingDatabaseMaintainer"
     },
     {
@@ -26,9 +29,6 @@
     },
     {
       "name": "ContactInformationMaintainer"
-    },
-    {
-      "name": "ContainerImageExpirer"
     },
     {
       "name": "CostReportMaintainer"
