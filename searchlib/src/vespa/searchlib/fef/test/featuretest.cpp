@@ -69,7 +69,9 @@ FeatureTest::setup()
         LOG(error, "Failed to compile blueprint resolver.");
         return false;
     }
-
+    for (const auto &spec: _resolver->getExecutorSpecs()) {
+        spec.blueprint->prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
+    }
     _rankProgram->setup(*_match_data, _queryEnv, _overrides);
     _doneSetup = true;
     return true;

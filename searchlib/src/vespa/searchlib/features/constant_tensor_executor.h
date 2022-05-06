@@ -41,4 +41,20 @@ public:
     }
 };
 
+/**
+ * Feature executor that returns a constant tensor.
+ */
+class ConstantTensorRefExecutor : public fef::FeatureExecutor
+{
+private:
+    const vespalib::eval::Value &_tensor_ref;
+public:
+    ConstantTensorRefExecutor(const vespalib::eval::Value &tensor_ref)
+      : _tensor_ref(tensor_ref) {}
+    bool isPure() final override { return true; }
+    void execute(uint32_t) final override {
+        outputs().set_object(0, _tensor_ref);
+    }
+};
+
 }
