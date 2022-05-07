@@ -157,7 +157,7 @@ Value::UP make_tensor_value(const IQueryEnvironment &env,
 void
 QueryBlueprint::prepareSharedState(const fef::IQueryEnvironment &env, fef::IObjectStore &store) const
 {
-    if (!_stored_value_key.empty() && (store.get(_stored_value_key) == nullptr)) {
+    if (!_stored_value_key.empty() && _valueType.has_dimensions() && (store.get(_stored_value_key) == nullptr)) {
         auto value = make_tensor_value(env, _key, _valueType);
         if (value) {
             store.add(_stored_value_key, std::make_unique<ValueWrapper>(std::move(value)));
