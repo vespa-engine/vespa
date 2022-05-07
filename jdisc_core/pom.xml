@@ -255,6 +255,7 @@
                                 <argument>${project.build.directory}/dependency/annotations.jar</argument>
                                 <argument>${project.build.directory}/dependency/config-lib.jar</argument>
                                 <argument>${project.build.directory}/dependency/defaults.jar</argument>
+                                <argument>${project.build.directory}/dependency/vespajlib.jar</argument>
                                 <argument>${project.build.directory}/dependency/vespalog.jar</argument>
                                 <argument>${project.build.directory}/dependency/yolean.jar</argument>
                                 <argument>${project.build.directory}/dependency/jaxb-api.jar</argument>
