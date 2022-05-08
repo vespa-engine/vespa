@@ -20,7 +20,7 @@ public class SchemaInfoTestCase {
                 "    inputs {" +
                 "      query(foo) tensor<float>(x[10])" +
                 "      query(bar) tensor(key{},x[1000])" +
-                "      query(myDouble1) double" +
+                "      query(myDouble1) double: 0.5" +
                 "      query(myDouble2) tensor()" +
                 "      query(myMap) tensor(key{}): { label1:1.0,\n \"label2\": 2.0, 'label3': 3.0 }" +
                 "      query(myVector) tensor(x[3]):\n\n[1 ,2.0,3]" +

@@ -2476,10 +2476,18 @@ String constantTensorErrorMessage(String rankProfileName, String constantTensorN
 Tensor tensorValue(TensorType type) :
 {
     Tensor.Builder builder = Tensor.Builder.of(type);
+    Number doubleValue = null;
 }
 {
-    ( mappedTensorValue(builder) | indexedTensorValues(builder) )
-    { return builder.build(); }
+    ( mappedTensorValue(builder) | indexedTensorValues(builder) |  doubleValue = consumeNumber() )
+    {
+        if (doubleValue != null) {
+            if (type.rank() > 0)
+                throw new IllegalArgumentException("A tensor of type " + type + " cannot be a number");
+            builder.cell(doubleValue.doubleValue());
+        }
+        return builder.build();
+    }
 }
 
 /** A mapped or mixed tensor value. */
