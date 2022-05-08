@@ -39,7 +39,7 @@ public class OsgiImpl implements Osgi {
         if (initialBundles.isEmpty())
             throw new IllegalStateException("No initial bundles!");
 
-        systemBundle = getSystemBundle(initialBundles);
+        systemBundle = getSystemBundle(initialBundles, jdiscOsgi);
         alwaysCurrentBundle = firstNonFrameworkBundle(initialBundles);
         if (alwaysCurrentBundle == null)
             throw new IllegalStateException("The initial bundles only contained the framework bundle!");
@@ -76,17 +76,19 @@ public class OsgiImpl implements Osgi {
         try {
             return (Class<Object>) Class.forName(spec.classId.getName());
         } catch (ClassNotFoundException e) {
-            log.fine(() -> "Resolving class from the system bundle (jdisc core): " + spec.classId.getName());
-            try {
-                return (Class<Object>) systemBundle.loadClass(spec.classId.getName());
-            } catch (ClassNotFoundException e2) {
-                throw new IllegalArgumentException(
-                        "Could not create a component with id '" + spec.classId.getName() +
-                                "'. Tried to load class directly, since no bundle was found for spec: " + spec.bundle +
-                                ". If a bundle with the same name is installed, there is a either a version mismatch" +
-                                " or the installed bundle's version contains a qualifier string.");
+            if (hasFelixFramework()) {
+                log.fine(() -> "Resolving class from the system bundle (jdisc core): " + spec.classId.getName());
+                try {
+                    return (Class<Object>) systemBundle.loadClass(spec.classId.getName());
+                } catch (ClassNotFoundException e2) {
+                    // empty
+                }
             }
         }
+        throw new IllegalArgumentException(
+                "Could not create a component with id '" + spec.classId.getName() + "'. Tried to load class directly, " +
+                        "since no bundle was found for spec: " + spec.bundle + ". If a bundle with the same name is installed, " +
+                        "there is a either a version mismatch or the installed bundle's version contains a qualifier string.");
     }
 
     @SuppressWarnings("unchecked")
@@ -171,12 +173,13 @@ public class OsgiImpl implements Osgi {
         return jdiscOsgi.isFelixFramework();
     }
 
-    private static Bundle getSystemBundle(List<Bundle> bundles ) {
+    private static Bundle getSystemBundle(List<Bundle> bundles, OsgiFramework jdiscOsgi) {
         for (Bundle b : bundles) {
             if (b instanceof Framework)
                 return b;
         }
-        throw new IllegalStateException("No system bundle in " + bundles);
+        if (jdiscOsgi.isFelixFramework()) throw new IllegalStateException("No system bundle in " + bundles);
+        return null;
     }
 
     private static Bundle firstNonFrameworkBundle(List<Bundle> bundles) {
