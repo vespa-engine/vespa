@@ -19,11 +19,6 @@
     <!-- COMPILE scope -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>annotations</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-documentapi</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -167,6 +162,12 @@
       <groupId>com.google.inject</groupId>
       <artifactId>guice</artifactId>
       <classifier>no_aop</classifier>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>annotations</artifactId>
+      <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
