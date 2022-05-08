@@ -787,7 +787,10 @@
       "public",
       "abstract"
     ],
-    "methods": [],
+    "methods": [
+      "public com.yahoo.tensor.IndexedTensor$BoundBuilder fill(float[])",
+      "public com.yahoo.tensor.IndexedTensor$BoundBuilder fill(double[])"
+    ],
     "fields": []
   },
   "com.yahoo.tensor.IndexedTensor$Builder": {

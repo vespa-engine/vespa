@@ -438,7 +438,7 @@ public abstract class IndexedTensor implements Tensor {
             this.sizes = sizes;
         }
 
-        BoundBuilder fill(float[] values) {
+        public BoundBuilder fill(float[] values) {
             long index = 0;
             for (float value : values) {
                 cellByDirectIndex(index++, value);
@@ -446,7 +446,7 @@ public abstract class IndexedTensor implements Tensor {
             return this;
         }
 
-        BoundBuilder fill(double[] values) {
+        public BoundBuilder fill(double[] values) {
             long index = 0;
             for (double value : values) {
                 cellByDirectIndex(index++, value);

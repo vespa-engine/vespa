@@ -39,6 +39,7 @@ import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorAddress;
@@ -2499,10 +2500,10 @@ void mappedTensorBlock(Tensor.Builder builder) :
 
 void indexedTensorBlockValues(TensorAddress sparseAddress, Tensor.Builder builder) :
 {
-    List<Double> values;
+    List<Double> values = new ArrayList<Double>();
 }
 {
-    values = arrayTensorValues()
+    arrayTensorValues(values)
     {
         MixedTensor.BoundBuilder boundBuilder = (MixedTensor.BoundBuilder)builder;
         double[] arrayValues = new double[values.size()];
@@ -2515,26 +2516,26 @@ void indexedTensorBlockValues(TensorAddress sparseAddress, Tensor.Builder builde
 
 void indexedTensorValues(Tensor.Builder builder) :
 {
-    List<Double> values;
-}
-{
-    values = arrayTensorValues()
-    {
-        for (int i = 0; i < values.size(); i++ ) {
-            TensorAddress.Builder addressBuilder = new TensorAddress.Builder(builder.type());
-            addressBuilder.add(String.valueOf(i));
-            builder.cell(addressBuilder.build(), values.get(i));
-        }
-    }
-}
-
-List<Double> arrayTensorValues() :
-{
     List<Double> values = new ArrayList<Double>();
 }
 {
-    "[" ( indexedTensorValue(values) )* ( <COMMA> (<NL>)* indexedTensorValue(values) )* "]"
-    { return values; }
+    arrayTensorValues(values)
+    {
+        IndexedTensor.BoundBuilder boundBuilder = (IndexedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.fill(arrayValues);
+    }
+}
+
+/** Tensor array values. Using sub-bracketing for multiple dimensions is optional and therefore ignored here. */
+void arrayTensorValues(List<Double> values) : {}
+{
+    "[" (                 ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+        ( <COMMA> (<NL>)* ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+    "]"
 }
 
 void indexedTensorValue(List<Double> values) :

@@ -24,7 +24,9 @@ public class SchemaInfoTestCase {
                 "      query(myDouble2) tensor()" +
                 "      query(myMap) tensor(key{}): { label1:1.0,\n \"label2\": 2.0, 'label3': 3.0 }" +
                 "      query(myVector) tensor(x[3]):\n\n[1 ,2.0,3]" +
-                "      query(myMixed) tensor(key{},x[2]): { key1:[-1.0, 1.1], key2: [1,2]}" +
+                "      query(myMatrix) tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]" +
+                "      query(myMixed1) tensor(key{},x[2]): { key1:[-1.0, 1.1], key2: [1,2]}" +
+                "      query(myMixed2) tensor(k1{},k2{},x[2]): { {k1:l1,k2:l2}:[-1.0, 1.1], {k1:l1,k2:l2}: [1,2]}" +
                 "    }" +
                 "  }";
         List<String> schemas = List.of("type1", "type2");
@@ -52,14 +54,16 @@ public class SchemaInfoTestCase {
                 tester.assertRankProfile(schema, 5, "rankfeatures", false, true);
                 var inputs = tester.assertRankProfile(schema, 6, "inputs", false, false);
 
-                assertEquals(7, inputs.input().size());
+                assertEquals(9, inputs.input().size());
                 assertInput("query(foo)", "tensor<float>(x[10])", inputs.input(0));
                 assertInput("query(bar)", "tensor(key{},x[1000])", inputs.input(1));
                 assertInput("query(myDouble1)", "tensor()", inputs.input(2));
                 assertInput("query(myDouble2)", "tensor()", inputs.input(3));
                 assertInput("query(myMap)", "tensor(key{})", inputs.input(4));
                 assertInput("query(myVector)", "tensor(x[3])", inputs.input(5));
-                assertInput("query(myMixed)", "tensor(key{},x[2])", inputs.input(6));
+                assertInput("query(myMatrix)", "tensor(x[2],y[3])", inputs.input(6));
+                assertInput("query(myMixed1)", "tensor(key{},x[2])", inputs.input(7));
+                assertInput("query(myMixed2)", "tensor(k1{},k2{},x[2])", inputs.input(8));
 
                 assertEquals(2, schema.summaryclass().size());
                 assertEquals("default", schema.summaryclass(0).name());
