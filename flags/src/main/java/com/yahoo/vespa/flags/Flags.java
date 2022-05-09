@@ -396,6 +396,13 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
+            "enable-proxy-protocol-mixed-mode", true,
+            List.of("tokle"), "2022-05-09", "2022-07-01",
+            "Enable or disable proxy protocol mixed mode",
+            "Takes effect on redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
