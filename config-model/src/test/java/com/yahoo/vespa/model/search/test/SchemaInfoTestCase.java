@@ -2,8 +2,6 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.searchdefinition.FeatureNames;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
