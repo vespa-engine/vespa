@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.log;
 
-import com.yahoo.log.impl.LogUtils;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -25,7 +23,7 @@ import java.util.logging.Logger;
 @SuppressWarnings("removal")
 public class LogSetup {
 
-    private static Timer taskRunner = new Timer(true);
+    private static final Timer taskRunner = new Timer(true);
 
     /**
      * A global task thread
