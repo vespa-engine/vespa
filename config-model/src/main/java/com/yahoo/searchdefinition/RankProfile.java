@@ -24,9 +24,9 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Serializable;
@@ -116,7 +116,7 @@ public class RankProfile implements Cloneable {
     // This cache must be invalidated every time modifications are done to 'functions'.
     private CachedFunctions allFunctionsCached = null;
 
-    private Map<Reference, TensorType> inputs = new LinkedHashMap<>();
+    private Map<Reference, Input> inputs = new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
 
@@ -764,33 +764,31 @@ public class RankProfile implements Cloneable {
      * All inputs must either be declared through this or in query profile types,
      * otherwise they are assumes to be scalars.
      */
-    public void addInput(Reference reference, TensorType declaredType) {
+    public void addInput(Reference reference, Input input) {
         if (inputs.containsKey(reference)) {
-            TensorType hadType = inputs().get(reference);
-            if (! declaredType.equals(hadType))
-                throw new IllegalArgumentException("Duplicate input '" + name + "' declared with both type " +
-                                                   hadType + " and " + declaredType);
+            Input existing = inputs().get(reference);
+            if (! input.equals(existing))
+                throw new IllegalArgumentException("Duplicate input: Has both " + input + " and existing");
         }
-        inputs.put(reference, declaredType);
+        inputs.put(reference, input);
     }
 
     /** Returns the inputs of this, which also includes all inputs of the parents of this. */
     // This is less restrictive than most other constructs in allowing inputs to be defined in all parent profiles
     // because inputs are tied closer to functions than the profile itself.
-    public Map<Reference, TensorType> inputs() {
+    public Map<Reference, Input> inputs() {
         if (inputs.isEmpty() && inherited().isEmpty()) return Map.of();
         if (inherited().isEmpty()) return Collections.unmodifiableMap(inputs);
 
         // Combine
-        Map<Reference, TensorType> allInputs = new LinkedHashMap<>();
+        Map<Reference, Input> allInputs = new LinkedHashMap<>();
         for (var inheritedProfile : inherited()) {
             for (var input : inheritedProfile.inputs().entrySet()) {
-                TensorType existingType = allInputs.get(input.getKey());
-                if (existingType != null && ! existingType.equals(input.getValue()))
+                Input existing = allInputs.get(input.getKey());
+                if (existing != null && ! existing.equals(input.getValue()))
                     throw new IllegalArgumentException(this + " inherits " + inheritedProfile + " which contains " +
-                                                       input.getValue() + ", with type " + input.getValue() + "" +
-                                                       " but this input is already defined with type " + existingType +
-                                                       " in another profile this inherits");
+                                                       input.getValue() + ", but this input is already defined as " +
+                                                       existing + " in another profile this inherits");
                 allInputs.put(input.getKey(), input.getValue());
             }
         }
@@ -1050,7 +1048,8 @@ public class RankProfile implements Cloneable {
     public MapEvaluationTypeContext typeContext() { return typeContext(new QueryProfileRegistry()); }
 
     private Map<Reference, TensorType> featureTypes() {
-        Map<Reference, TensorType> featureTypes = new HashMap<>(inputs());
+        Map<Reference, TensorType> featureTypes = inputs().values().stream()
+                                                          .collect(Collectors.toMap(input -> input.name(), input -> input.type()));
         allFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         allImportedFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         return featureTypes;
@@ -1070,7 +1069,7 @@ public class RankProfile implements Cloneable {
                 TensorType type = field.getType().asTensorType();
                 Optional<Reference> feature = Reference.simple(field.getName());
                 if ( feature.isEmpty() || ! feature.get().name().equals("query")) continue;
-                if (featureTypes.containsKey(feature)) continue; // Explicit feature types (from inputs) overrides
+                if (featureTypes.containsKey(feature.get())) continue; // Explicit feature types (from inputs) overrides
 
                 TensorType existingType = context.getType(feature.get());
                 if ( ! Objects.equals(existingType, context.defaultTypeOf(feature.get())))
@@ -1388,6 +1387,46 @@ public class RankProfile implements Cloneable {
 
         public Map<String, String> getTypes() {
             return Collections.unmodifiableMap(types);
+        }
+
+    }
+
+    public static final class Input {
+
+        private final Reference name;
+        private final TensorType type;
+        private final Optional<Tensor> defaultValue;
+
+        public Input(Reference name, TensorType type, Optional<Tensor> defaultValue) {
+            this.name = name;
+            this.type = type;
+            this.defaultValue = defaultValue;
+        }
+
+        public Reference name() { return name; }
+        public TensorType type() { return type; }
+        public Optional<Tensor> defaultValue() { return defaultValue; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! (o instanceof Input)) return false;
+            Input other = (Input)o;
+            if ( ! other.name().equals(this.name())) return false;
+            if ( ! other.type().equals(this.type())) return false;
+            if ( ! other.defaultValue().equals(this.defaultValue())) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type, defaultValue);
+        }
+
+        @Override
+        public String toString() {
+            return "input '" + name + "' " + type +
+                   (defaultValue().isPresent() ? ":" + defaultValue.get().toAbbreviatedString() : "");
         }
 
     }

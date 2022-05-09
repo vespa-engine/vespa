@@ -145,23 +145,27 @@ public class MixedTensor implements Tensor {
 
     @Override
     public String toString() {
-        return toString(Long.MAX_VALUE);
+        return toString(true, true);
     }
 
     @Override
-    public String toShortString() {
-        return toString(Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    public String toString(boolean withType, boolean shortForms) {
+        return toString(withType, shortForms, Long.MAX_VALUE);
     }
 
-    private String toString(long maxCells) {
-        if (type.rank() == 0)
-            return Tensor.toStandardString(this, maxCells);
-        if (type.rank() > 1 && type.dimensions().stream().filter(d -> d.isIndexed()).anyMatch(d -> d.size().isEmpty()))
-            return Tensor.toStandardString(this, maxCells);
-        if (type.dimensions().stream().filter(d -> d.isMapped()).count() > 1)
-            return Tensor.toStandardString(this, maxCells);
+    @Override
+    public String toAbbreviatedString() {
+        return toString(true, true, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    }
 
-        return type + ":" + index.contentToString(this, maxCells);
+    private String toString(boolean withType, boolean shortForms, long maxCells) {
+        if (! shortForms
+            || type.rank() == 0
+            || type.rank() > 1 && type.dimensions().stream().filter(d -> d.isIndexed()).anyMatch(d -> d.size().isEmpty())
+            || type.dimensions().stream().filter(d -> d.isMapped()).count() > 1)
+            return Tensor.toStandardString(this, withType, shortForms, maxCells);
+
+        return (withType ? type + ":" : "") + index.contentToString(this, maxCells);
     }
 
     @Override

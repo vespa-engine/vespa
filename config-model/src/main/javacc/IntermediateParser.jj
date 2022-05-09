@@ -1851,7 +1851,7 @@ void rankProfileItem(ParsedRankProfile profile) : { }
 }
 
 /**
- * This rule consumes an inherits statement of a rank-profile.
+ * Consumes an inherits statement of a rank-profile.
  *
  * @param profile the profile to modify
  */
@@ -2080,11 +2080,7 @@ void input(ParsedRankProfile profile) :
 }
 {
     reference = queryFeature() type = inputType(reference) ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
-    {
-        profile.addInput(reference, type);
-        if (defaultValue != null)
-            new TensorValue(defaultValue);
-    }
+    { profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue))); }
 }
 
 TensorType inputType(Reference reference) :
@@ -2273,7 +2269,7 @@ void approximateThreshold(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes a rank-properties block of a rank profile. There
+ * Consumes a rank-properties block of a rank profile. There
  * is a little trick within this rule to allow the final rank property
  * to skip the terminating newline token.
  *
@@ -2286,7 +2282,7 @@ void rankProperties(ParsedRankProfile profile) : { }
 }
 
 /**
- * This rule consumes a single rank property pair for a rank profile.
+ * Consumes a single rank property pair for a rank profile.
  *
  * @param profile the rank profile to modify
  */
@@ -2300,9 +2296,9 @@ void rankProperty(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes a single rank property for a rank-properties block.
+ * Consumes a single rank property for a rank-properties block.
  *
- * @return The token image of the consumed item.
+ * @return the token image of the consumed item
  */
 String rankPropertyItem() :
 {
@@ -2319,9 +2315,9 @@ String rankPropertyItem() :
 }
 
 /**
- * This rule consumes a field-weight statement of a rank profile.
+ * Consumes a field-weight statement of a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void fieldWeight(ParsedRankProfile profile) :
 {
@@ -2334,9 +2330,9 @@ void fieldWeight(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes a rank-type statement of a rank profile.
+ * Consumes a rank-type statement of a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void fieldRankType(ParsedRankProfile profile) :
 {
@@ -2349,9 +2345,9 @@ void fieldRankType(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes a rank filter statement of a rank profile.
+ * Consumes a rank filter statement of a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void fieldRankFilter(ParsedRankProfile profile) :
 {
@@ -2363,7 +2359,7 @@ void fieldRankFilter(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes part of a rank-degradation statement of a rank profile.
+ * Consumes part of a rank-degradation statement of a rank profile.
  */
 void rankDegradationBinSize() :
 {
@@ -2376,7 +2372,7 @@ void rankDegradationBinSize() :
 
 
 /**
- * This rule consumes part of a rank-degradation statement of a rank profile.
+ * Consumes part of a rank-degradation statement of a rank profile.
  */
 void rankDegradationBinLow() :
 {
@@ -2388,7 +2384,7 @@ void rankDegradationBinLow() :
 }
 
 /**
- * This rule consumes part of a rank-degradation statement of a rank profile.
+ * Consumes part of a rank-degradation statement of a rank profile.
  */
 void rankDegradationPosbinSize() :
 {
@@ -2401,7 +2397,7 @@ void rankDegradationPosbinSize() :
 
 
 /**
- * This rule consumes part of a rank-degradation statement of a rank profile.
+ * Consumes part of a rank-degradation statement of a rank profile.
  */
 void rankDegradationItem() : { }
 {
@@ -2411,7 +2407,7 @@ void rankDegradationItem() : { }
 }
 
 /**
- * This rule consumes a rank-degradation statement of a rank profile.
+ * Consumes a rank-degradation statement of a rank profile.
  */
 void rankDegradation() :
 {

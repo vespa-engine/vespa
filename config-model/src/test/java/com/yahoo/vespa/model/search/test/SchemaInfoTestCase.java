@@ -2,12 +2,16 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.yahoo.search.config.SchemaInfoConfig;
+import com.yahoo.searchdefinition.FeatureNames;
+import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Test;
 
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class SchemaInfoTestCase {
 
@@ -26,7 +30,7 @@ public class SchemaInfoTestCase {
                 "      query(myVector) tensor(x[3]):\n\n[1 ,2.0,3]" +
                 "      query(myMatrix) tensor(x[2],y[3]):[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]" +
                 "      query(myMixed1) tensor(key{},x[2]): { key1:[-1.0, 1.1], key2: [1,2]}" +
-                "      query(myMixed2) tensor(k1{},k2{},x[2]): { {k1:l1,k2:l2}:[-1.0, 1.1], {k1:l1,k2:l2}: [1,2]}" +
+                "      query(myMixed2) tensor(k1{},k2{},x[2]): { {k1:l1,k2:l1}:[-1.0, 1.1], {k1:l1,k2:l2}: [1,2]}" +
                 "    }" +
                 "  }";
         List<String> schemas = List.of("type1", "type2");
@@ -39,6 +43,8 @@ public class SchemaInfoTestCase {
     private void assertSchemaInfo(String configId, VespaModel model, SchemaTester tester) {
         {
             SchemaInfoConfig schemaInfoConfig = model.getConfig(SchemaInfoConfig.class, configId);
+            RankProfilesConfig rankProfilesConfig = model.getConfig(RankProfilesConfig.class, "test/search/cluster.test/type1");
+
             assertEquals(2, schemaInfoConfig.schema().size());
 
             { // type1
@@ -52,18 +58,20 @@ public class SchemaInfoTestCase {
                 tester.assertRankProfile(schema, 3, "summaryfeatures", true, false);
                 tester.assertRankProfile(schema, 4, "inheritedsummaryfeatures", true, false);
                 tester.assertRankProfile(schema, 5, "rankfeatures", false, true);
-                var inputs = tester.assertRankProfile(schema, 6, "inputs", false, false);
 
-                assertEquals(9, inputs.input().size());
-                assertInput("query(foo)", "tensor<float>(x[10])", inputs.input(0));
-                assertInput("query(bar)", "tensor(key{},x[1000])", inputs.input(1));
-                assertInput("query(myDouble1)", "tensor()", inputs.input(2));
-                assertInput("query(myDouble2)", "tensor()", inputs.input(3));
-                assertInput("query(myMap)", "tensor(key{})", inputs.input(4));
-                assertInput("query(myVector)", "tensor(x[3])", inputs.input(5));
-                assertInput("query(myMatrix)", "tensor(x[2],y[3])", inputs.input(6));
-                assertInput("query(myMixed1)", "tensor(key{},x[2])", inputs.input(7));
-                assertInput("query(myMixed2)", "tensor(k1{},k2{},x[2])", inputs.input(8));
+                var schemaInfoProfile = tester.assertRankProfile(schema, 6, "inputs", false, false);
+                assertEquals(9, schemaInfoProfile.input().size());
+                var rankProfilesProfile = rankProfilesConfig.rankprofile().get(6);
+                assertEquals("inputs", rankProfilesProfile.name());
+                assertInput("query(foo)", "tensor<float>(x[10])", null, 0, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(bar)", "tensor(key{},x[1000])", null, 1, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myDouble1)", "tensor()", "0.5", 2, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myDouble2)", "tensor()", null, 3, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMap)", "tensor(key{})", "{{key:label1}:1.0, {key:label2}:2.0, {key:label3}:3.0}", 4, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myVector)", "tensor(x[3])", "{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}", 5, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMatrix)", "tensor(x[2],y[3])", "{{x:0,y:0}:1.0, {x:0,y:1}:2.0, {x:0,y:2}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0, {x:1,y:2}:6.0}", 6, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMixed1)", "tensor(key{},x[2])", "{{key:key1,x:0}:-1.0, {key:key1,x:1}:1.1, {key:key2,x:0}:1.0, {key:key2,x:1}:2.0}", 7, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMixed2)", "tensor(k1{},k2{},x[2])", "{{k1:l1,k2:l1,x:0}:-1.0, {k1:l1,k2:l1,x:1}:1.1, {k1:l1,k2:l2,x:0}:1.0, {k1:l1,k2:l2,x:1}:2.0}", 8, schemaInfoProfile, rankProfilesProfile);
 
                 assertEquals(2, schema.summaryclass().size());
                 assertEquals("default", schema.summaryclass(0).name());
@@ -78,9 +86,23 @@ public class SchemaInfoTestCase {
         }
     }
 
-    private void assertInput(String name, String type, SchemaInfoConfig.Schema.Rankprofile.Input input) {
-        assertEquals(name, input.name());
-        assertEquals(type, input.type());
+    private void assertInput(String name, String type, String defaultValue,
+                             int index,
+                             SchemaInfoConfig.Schema.Rankprofile schemaInfoProfile,
+                             RankProfilesConfig.Rankprofile rankProfilesProfile) {
+        assertEquals(name, schemaInfoProfile.input(index).name());
+        assertEquals(type, schemaInfoProfile.input(index).type());
+        if (defaultValue != null) {
+            boolean found = false;
+            for (var property : rankProfilesProfile.fef().property()) {
+                if (property.name().equals(name)) {
+                    assertEquals(defaultValue, property.value());
+                    found = true;
+                }
+            }
+            if ( ! found)
+                fail("Missing property " + name);
+        }
     }
 
 }

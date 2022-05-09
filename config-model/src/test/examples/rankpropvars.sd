@@ -55,13 +55,11 @@ document music {
     }
 
     field artist type string {
-      ## index-to: a
       indexing: index | summary
     }
 
     field year type int {
       indexing: attribute | summary
-      ## index-to: y
     }
 
     field url type uri {}

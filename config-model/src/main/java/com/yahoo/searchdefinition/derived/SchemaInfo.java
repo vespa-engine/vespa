@@ -6,6 +6,7 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
@@ -15,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Information about a schema.
@@ -100,7 +102,7 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
             for (var input : rankProfile.inputs().entrySet()) {
                 var inputConfig = new SchemaInfoConfig.Schema.Rankprofile.Input.Builder();
                 inputConfig.name(input.getKey().toString());
-                inputConfig.type(input.getValue().toString());
+                inputConfig.type(input.getValue().type().toString());
                 rankProfileConfig.input(inputConfig);
             }
             schemaBuilder.rankprofile(rankProfileConfig);
@@ -113,7 +115,7 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
         private final String name;
         private final boolean hasSummaryFeatures;
         private final boolean hasRankFeatures;
-        private final Map<Reference, TensorType> inputs;
+        private final Map<Reference, RankProfile.Input> inputs;
 
         public RankProfileInfo(RankProfile profile) {
             this.name = profile.name();
@@ -125,7 +127,7 @@ public final class SchemaInfo extends Derived implements SchemaInfoConfig.Produc
         public String name() { return name; }
         public boolean hasSummaryFeatures() { return hasSummaryFeatures; }
         public boolean hasRankFeatures() { return hasRankFeatures; }
-        public Map<Reference, TensorType> inputs() { return inputs; }
+        public Map<Reference, RankProfile.Input> inputs() { return inputs; }
 
     }
 

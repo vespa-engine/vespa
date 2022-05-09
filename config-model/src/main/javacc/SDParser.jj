@@ -2212,7 +2212,7 @@ void input(RankProfile profile) :
 {
     reference = queryFeature() type = inputType(reference)
     {
-        profile.addInput(reference, type);
+        profile.addInput(reference, new RankProfile.Input(reference, type, Optional.empty()));
     }
 }
 

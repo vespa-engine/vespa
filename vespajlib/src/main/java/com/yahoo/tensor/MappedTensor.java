@@ -72,11 +72,18 @@ public class MappedTensor implements Tensor {
     public int hashCode() { return cells.hashCode(); }
 
     @Override
-    public String toString() { return Tensor.toStandardString(this, Long.MAX_VALUE); }
+    public String toString() { return toString(true, true); }
 
     @Override
-    public String toShortString() {
-        return Tensor.toStandardString(this, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    public String toString(boolean withType, boolean shortForms) { return toString(withType, shortForms, Long.MAX_VALUE); }
+
+    @Override
+    public String toAbbreviatedString() {
+        return toString(true, true, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    }
+
+    private String toString(boolean withType, boolean shortForms, long maxCells) {
+        return Tensor.toStandardString(this, withType, shortForms, maxCells);
     }
 
     @Override

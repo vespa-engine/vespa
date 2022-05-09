@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
+import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile.MutateOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -52,7 +53,7 @@ class ParsedRankProfile extends ParsedBlock {
     private final Map<String, String> fieldsRankType = new LinkedHashMap<>();
     private final Map<String, List<String>> rankProperties = new LinkedHashMap<>();
     private final Map<String, Value> constants = new LinkedHashMap<>();
-    private final Map<Reference, TensorType> inputs = new LinkedHashMap<>();
+    private final Map<Reference, RankProfile.Input> inputs = new LinkedHashMap<>();
 
     ParsedRankProfile(String name) {
         super(name, "rank-profile");
@@ -83,7 +84,7 @@ class ParsedRankProfile extends ParsedBlock {
     Map<String, String> getFieldsWithRankType() { return Collections.unmodifiableMap(fieldsRankType); }
     Map<String, List<String>> getRankProperties() { return Collections.unmodifiableMap(rankProperties); }
     Map<String, Value> getConstants() { return Collections.unmodifiableMap(constants); }
-    Map<Reference, TensorType> getInputs() { return Collections.unmodifiableMap(inputs); }
+    Map<Reference, RankProfile.Input> getInputs() { return Collections.unmodifiableMap(inputs); }
 
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
@@ -110,9 +111,9 @@ class ParsedRankProfile extends ParsedBlock {
         constants.put(name, value);
     }
 
-    void addInput(Reference name, TensorType type) {
+    void addInput(Reference name, RankProfile.Input input) {
         verifyThat(! inputs.containsKey(name), "already has input", name);
-        inputs.put(name, type);
+        inputs.put(name, input);
     }
 
     void addFieldRankFilter(String field, boolean filter) {
