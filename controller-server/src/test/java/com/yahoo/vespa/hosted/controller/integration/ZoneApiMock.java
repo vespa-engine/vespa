@@ -35,15 +35,15 @@ public class ZoneApiMock implements ZoneApi {
     }
 
     public static ZoneApiMock fromId(String id) {
-        return newBuilder().withId(id).build();
+        return from(ZoneId.from(id));
     }
 
     public static ZoneApiMock from(Environment environment, RegionName region) {
-        return newBuilder().with(ZoneId.from(environment, region)).build();
+        return from(ZoneId.from(environment, region));
     }
 
-    public static ZoneApiMock from(ZoneId zone) {
-        return newBuilder().with(zone).build();
+    public static ZoneApiMock from(ZoneId id) {
+        return newBuilder().with(id).build();
     }
 
     @Override
@@ -80,7 +80,7 @@ public class ZoneApiMock implements ZoneApi {
 
         private SystemName systemName = SystemName.defaultSystem();
         private ZoneId id = ZoneId.defaultId();
-        private ZoneId virtualId ;
+        private ZoneId virtualId = null;
         private CloudName cloudName = CloudName.defaultName();
         private String cloudNativeRegionName = id.region().value();
 

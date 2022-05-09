@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -51,7 +52,7 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     /**
      * This sets the default list of zones contained in this. If your test need a particular set of zones, use
-     * {@link #setZones(List)}  instead of changing the default set.}
+     * {@link #setZones(List)}  instead of changing the default set.
      */
     public ZoneRegistryMock(SystemName system) {
         this.system = system;
@@ -153,6 +154,21 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     @Override
     public ZoneFilter zones() {
         return ZoneFilterMock.from(zones, zoneRoutingMethods, reprovisionToUpgradeOs);
+    }
+
+    @Override
+    public ZoneFilter zonesIncludingSystem() {
+        var fullZones = new ArrayList<ZoneApi>(1 + zones.size());
+        fullZones.add(systemAsZone());
+        fullZones.addAll(zones);
+        return ZoneFilterMock.from(fullZones, zoneRoutingMethods, reprovisionToUpgradeOs);
+    }
+
+    private ZoneApiMock systemAsZone() {
+        return ZoneApiMock.newBuilder()
+                          .with(ZoneId.from("prod.us-east-1"))
+                          .withVirtualId(ZoneId.from("prod.controller"))
+                          .build();
     }
 
     @Override
