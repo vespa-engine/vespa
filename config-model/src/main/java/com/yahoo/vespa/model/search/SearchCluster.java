@@ -120,7 +120,7 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
             for (var input : rankProfile.inputs().entrySet()) {
                 var inputConfig = new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder();
                 inputConfig.name(input.getKey().toString());
-                inputConfig.type(input.getValue().toString());
+                inputConfig.type(input.getValue().type().toString());
                 rankProfileConfig.input(inputConfig);
             }
             docDbBuilder.rankprofile(rankProfileConfig);

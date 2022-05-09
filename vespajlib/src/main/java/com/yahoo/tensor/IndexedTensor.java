@@ -219,21 +219,26 @@ public abstract class IndexedTensor implements Tensor {
     }
 
     @Override
-    public String toString() { return toString(Long.MAX_VALUE); }
+    public String toString() { return toString(true, true); }
 
     @Override
-    public String toShortString() {
-        return toString(Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    public String toString(boolean withType, boolean shortForms) {
+        return toString(withType, shortForms, Long.MAX_VALUE);
     }
 
-    private String toString(long maxCells) {
-        if (type.rank() == 0) return Tensor.toStandardString(this, maxCells);
-        if (type.dimensions().stream().anyMatch(d -> d.size().isEmpty()))
-            return Tensor.toStandardString(this, maxCells);
+    @Override
+    public String toAbbreviatedString() {
+        return toString(true, true, Math.max(2, 10 / (type().dimensions().stream().filter(d -> d.isMapped()).count() + 1)));
+    }
+
+    private String toString(boolean withType, boolean shortForms, long maxCells) {
+        if (! shortForms || type.rank() == 0 || type.dimensions().stream().anyMatch(d -> d.size().isEmpty()))
+            return Tensor.toStandardString(this, withType, shortForms, maxCells);
 
         Indexes indexes = Indexes.of(dimensionSizes);
-
-        StringBuilder b = new StringBuilder(type.toString()).append(":");
+        StringBuilder b = new StringBuilder();
+        if (withType)
+            b.append(type).append(":");
         indexedBlockToString(this, indexes, maxCells, b);
         return b.toString();
     }
@@ -438,7 +443,7 @@ public abstract class IndexedTensor implements Tensor {
             this.sizes = sizes;
         }
 
-        BoundBuilder fill(float[] values) {
+        public BoundBuilder fill(float[] values) {
             long index = 0;
             for (float value : values) {
                 cellByDirectIndex(index++, value);
@@ -446,7 +451,7 @@ public abstract class IndexedTensor implements Tensor {
             return this;
         }
 
-        BoundBuilder fill(double[] values) {
+        public BoundBuilder fill(double[] values) {
             long index = 0;
             for (double value : values) {
                 cellByDirectIndex(index++, value);

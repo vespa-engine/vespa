@@ -202,6 +202,7 @@ TOKEN :
 | < INDEXING: "indexing" >
 | < SUMMARYTO: "summary-to" >
 | < DOCUMENTSUMMARY: "document-summary" >
+| <DOUBLE_KEYWORD: "double" >
 | < RANKTYPE: "rank-type" >
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
@@ -296,7 +297,7 @@ TOKEN :
 | < PAGED: "paged" >
 | < FASTSEARCH: "fast-search" >
 | < HUGE: "huge" >
-| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])+ ")" >
+| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
 | < COMPRESSION: "compression" >
@@ -2196,15 +2197,36 @@ void secondPhaseItem(RankProfile profile) :
 }
 
 /** Consumes an inputs block of a rank profile. */
-void inputs(RankProfile profile) :
+void inputs(RankProfile profile) : {}
+{
+    <INPUTS> <LBRACE> (<NL>)*
+      ( input(profile) (<NL>)*) *
+    <RBRACE>
+}
+
+void input(RankProfile profile) :
 {
     Reference reference;
     TensorType type;
 }
 {
-    <INPUTS> <LBRACE> (<NL>)*
-      ( reference = queryFeature() type = tensorType("Type of " + reference) { profile.addInput(reference, type); } (<NL>)*) *
-    <RBRACE>
+    reference = queryFeature() type = inputType(reference)
+    {
+        profile.addInput(reference, new RankProfile.Input(reference, type, Optional.empty()));
+    }
+}
+
+TensorType inputType(Reference reference) :
+{
+    TensorType type;
+}
+{
+    (
+      ( type = tensorType("Type of " + reference) )
+      |
+      ( <DOUBLE_KEYWORD> { type = TensorType.empty; } )
+    )
+    { return type; }
 }
 
 Reference queryFeature() :
@@ -2408,10 +2430,13 @@ void rankProperty(RankProfile profile) :
  */
 String rankPropertyItem() :
 {
-    String image, ret = "";
+    String image;
+    String ret = "";
+    Token dToken;
 }
 {
-    ( ( image = identifierWithDash()              { ret += image; }
+    ( ( image = identifierWithDash() { ret += image; }
+        | dToken = <DOUBLE> { ret += dToken.image; }
         | image = quotedString()                  { ret += image; }
         | ( "(" | ")" | <DOT> | <COMMA> )         { ret += token.image; } )+ )
     { return ret; }
@@ -2542,10 +2567,10 @@ void constants(RankProfile profile) :
 
 void constantValue(RankProfile profile, String name) :
 {
-    String value;
+    Token value;
 }
 {
-    <COLON> value = identifier() { profile.addConstant(name, Value.parse(value)); }
+    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> ) { profile.addConstant(name, Value.parse(value.image)); }
 }
 
 void constantTensor(RankProfile profile, String name) :
@@ -2596,7 +2621,7 @@ TensorType tensorType(String errorMessage) :
     String tensorTypeString;
 }
 {
-    ( <TENSOR_TYPE> ) { tensorTypeString = token.image; }
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
     {
         TensorType tensorType;
         try {
@@ -2693,7 +2718,7 @@ String identifier() : { }
       | <DIRECT>
       | <DOCUMENT>
       | <DOCUMENTSUMMARY>
-      | <DOUBLE>
+      | <DOUBLE_KEYWORD>
       | <DYNAMIC>
       | <ENABLEBITVECTORS>
       | <ENABLEONLYBITVECTOR>

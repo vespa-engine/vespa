@@ -77,7 +77,7 @@ search neuralnet {
             query(W_1)   tensor(hidden[9],out[9])
             query(b_1)   tensor(out[9])
             query(W_out) tensor(out[9])
-            query(b_out) tensor(out[1])
+            query(b_out) tensor(out[1]):[1.0]
         }
 
     }

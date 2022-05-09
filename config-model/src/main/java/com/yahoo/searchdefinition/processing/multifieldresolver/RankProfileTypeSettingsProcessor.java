@@ -97,7 +97,8 @@ public class RankProfileTypeSettingsProcessor extends Processor {
     private void addQueryFeatureTypeToRankProfiles(Reference queryFeature, TensorType queryFeatureType) {
         for (RankProfile profile : rankProfileRegistry.all()) {
             if (! profile.inputs().containsKey(queryFeature)) // declared inputs have precedence
-                profile.addInput(queryFeature, queryFeatureType);
+                profile.addInput(queryFeature,
+                                 new RankProfile.Input(queryFeature, queryFeatureType, Optional.empty()));
         }
     }
 

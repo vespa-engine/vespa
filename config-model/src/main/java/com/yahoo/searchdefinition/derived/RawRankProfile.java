@@ -145,7 +145,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
          */
         private final NativeRankTypeDefinitionSet nativeRankTypeDefinitions = new NativeRankTypeDefinitionSet("default");
         private final Map<String, String> attributeTypes;
-        private final Map<Reference, TensorType> inputs;
+        private final Map<Reference, RankProfile.Input> inputs;
         private final Set<String> filterFields = new java.util.LinkedHashSet<>();
         private final String rankprofileName;
 
@@ -426,10 +426,16 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Map.Entry<String, String> attributeType : attributeTypes.entrySet()) {
                 properties.add(new Pair<>("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue()));
             }
-            for (Map.Entry<Reference, TensorType> input : inputs.entrySet()) {
-                if (FeatureNames.isQueryFeature(input.getKey()))
-                    properties.add(new Pair<>("vespa.type.query." + input.getKey().arguments().expressions().get(0),
-                                              input.getValue().toString()));
+            for (var input : inputs.values()) {
+                if (FeatureNames.isQueryFeature(input.name())) {
+                    properties.add(new Pair<>("vespa.type.query." + input.name().arguments().expressions().get(0),
+                                              input.type().toString()));
+                    if (input.defaultValue().isPresent())
+                        properties.add(new Pair<>(input.name().toString(),
+                                                  input.type().rank() == 0 ?
+                                                  String.valueOf(input.defaultValue().get().asDouble()) :
+                                                  input.defaultValue().get().toString(false, false)));
+                }
             }
             if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");
             distributeLargeExpressionsAsFiles(properties, largeRankExpressions);

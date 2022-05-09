@@ -147,7 +147,7 @@ public class QueryProfileProperties extends Properties {
 
     private String toShortString(Object value) {
         if ( ! (value instanceof Tensor)) return value.toString();
-        return ((Tensor)value).toShortString();
+        return ((Tensor)value).toAbbreviatedString();
     }
 
     private Object convertByType(CompoundName name, Object value, Map<String, String> context) {

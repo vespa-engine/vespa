@@ -28,7 +28,8 @@ search rankproperties {
       expression: match
     }
     rank-properties {
-      $test:"foo"
+      $test1:"foo"
+      query(test2): 12.3
       #$weight:1
     }
   }

@@ -7,6 +7,7 @@ import java.util.List;
 
 /**
  * For testing purposes only.
+ *
  * @author geirst
  */
 public class ApplicationPackageUtils {

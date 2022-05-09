@@ -787,7 +787,10 @@
       "public",
       "abstract"
     ],
-    "methods": [],
+    "methods": [
+      "public com.yahoo.tensor.IndexedTensor$BoundBuilder fill(float[])",
+      "public com.yahoo.tensor.IndexedTensor$BoundBuilder fill(double[])"
+    ],
     "fields": []
   },
   "com.yahoo.tensor.IndexedTensor$Builder": {
@@ -903,7 +906,8 @@
       "public java.util.Map cells()",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public java.lang.String toString()",
-      "public java.lang.String toShortString()",
+      "public java.lang.String toString(boolean, boolean)",
+      "public java.lang.String toAbbreviatedString()",
       "public boolean equals(java.lang.Object)",
       "public bridge synthetic com.yahoo.tensor.Tensor withType(com.yahoo.tensor.TensorType)"
     ],
@@ -954,7 +958,8 @@
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public int hashCode()",
       "public java.lang.String toString()",
-      "public java.lang.String toShortString()",
+      "public java.lang.String toString(boolean, boolean)",
+      "public java.lang.String toAbbreviatedString()",
       "public boolean equals(java.lang.Object)"
     ],
     "fields": []
@@ -1046,7 +1051,8 @@
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public int hashCode()",
       "public java.lang.String toString()",
-      "public java.lang.String toShortString()",
+      "public java.lang.String toString(boolean, boolean)",
+      "public java.lang.String toAbbreviatedString()",
       "public boolean equals(java.lang.Object)",
       "public long denseSubspaceSize()",
       "public static com.yahoo.tensor.TensorType createPartialType(com.yahoo.tensor.TensorType$Value, java.util.List)"
@@ -1092,6 +1098,7 @@
     ],
     "methods": [
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder label(java.lang.String, java.lang.String)",
+      "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.Tensor$Builder$CellBuilder label(java.lang.String, long)",
       "public com.yahoo.tensor.Tensor$Builder value(double)",
       "public com.yahoo.tensor.Tensor$Builder value(float)"
@@ -1233,9 +1240,11 @@
       "public java.util.List largest()",
       "public java.util.List smallest()",
       "public abstract java.lang.String toString()",
-      "public abstract java.lang.String toShortString()",
-      "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor, long)",
-      "public static java.lang.String contentToString(com.yahoo.tensor.Tensor, long)",
+      "public abstract java.lang.String toString(boolean, boolean)",
+      "public abstract java.lang.String toAbbreviatedString()",
+      "public java.lang.String toShortString()",
+      "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor, boolean, boolean, long)",
+      "public static java.lang.String valueToString(com.yahoo.tensor.Tensor, boolean, long)",
       "public abstract boolean equals(java.lang.Object)",
       "public abstract int hashCode()",
       "public static boolean equals(com.yahoo.tensor.Tensor, com.yahoo.tensor.Tensor)",
@@ -1256,8 +1265,10 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder copy()",
+      "public com.yahoo.tensor.TensorType type()",
       "public com.yahoo.tensor.TensorAddress build()"
     ],
     "fields": []
