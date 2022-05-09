@@ -153,8 +153,9 @@ public class RankSetupValidator extends Validator {
 
         // Assist verify-ranksetup in finding the actual ONNX model files
         writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getSchema().onnxModels().asMap().values());
-        writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getSchema().rankExpressionFiles().asMap().values());
+        writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getSchema().rankExpressionFiles().expressions());
 
+        config.sort(String::compareTo);
         String configContent = config.isEmpty() ? "" : StringUtilities.implodeMultiline(config);
         IOUtils.writeFile(dir + "verify-ranksetup.cfg", configContent, false);
     }
