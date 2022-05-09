@@ -18,6 +18,7 @@ class FastOS_FileInterface;
 namespace search {
 
 class PartialBitVector;
+class AllocatedBitVector;
 
 class BitVector : protected BitWord
 {
@@ -253,11 +254,6 @@ public:
         return getFileBytes(size());
     }
 
-    virtual void resize(Index newLength);
-
-    virtual GenerationHeldBase::UP grow(Index newLength, Index newCapacity);
-    GenerationHeldBase::UP grow(Index newLength) { return grow(newLength, newLength); }
-
     /**
      * This will create the appropriate vector.
      *
@@ -271,7 +267,6 @@ public:
     static UP create(const BitVector & org, Index start, Index end);
     static UP create(Index numberOfElements);
     static UP create(const BitVector & rhs);
-    static UP create(Index newSize, Index newCapacity, GenerationHolder &generationHolder);
 protected:
     using Alloc = vespalib::alloc::Alloc;
     VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end);
@@ -384,14 +379,14 @@ protected:
     friend vespalib::nbostream &
     operator<<(vespalib::nbostream &out, const BitVector &bv);
     friend vespalib::nbostream &
-    operator>>(vespalib::nbostream &in, BitVector &bv);
+    operator>>(vespalib::nbostream &in, AllocatedBitVector &bv);
 };
 
 vespalib::nbostream &
 operator<<(vespalib::nbostream &out, const BitVector &bv);
 
 vespalib::nbostream &
-operator>>(vespalib::nbostream &in, BitVector &bv);
+operator>>(vespalib::nbostream &in, AllocatedBitVector &bv);
 
 template <typename T>
 void BitVector::andNotWithT(T it) {

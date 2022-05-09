@@ -2,7 +2,6 @@
 
 #include "bitvector.h"
 #include "allocatedbitvector.h"
-#include "growablebitvector.h"
 #include "partialbitvector.h"
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/hwaccelrated/iaccelrated.h>
@@ -299,18 +298,6 @@ BitVector::hasTrueBitsInternal() const
 }
 
 //////////////////////////////////////////////////////////////////////
-// Set new length. Destruction of content
-//////////////////////////////////////////////////////////////////////
-void
-BitVector::resize(Index)
-{
-    LOG_ABORT("should not be reached");
-}
-GenerationHeldBase::UP
-BitVector::grow(Index, Index )
-{
-    LOG_ABORT("should not be reached");
-}
 
 size_t
 BitVector::getFileBytes(Index bits)
@@ -383,12 +370,6 @@ BitVector::create(const BitVector & rhs)
     return std::make_unique<AllocatedBitVector>(rhs);
 }
 
-BitVector::UP
-BitVector::create(Index numberOfElements, Index newCapacity, GenerationHolder &generationHolder)
-{
-    return std::make_unique<GrowableBitVector>(numberOfElements, newCapacity, generationHolder);
-}
-
 MMappedBitVector::MMappedBitVector(Index numberOfElements, FastOS_FileInterface &file,
                                    int64_t offset, Index doccount) :
     BitVector()
@@ -425,7 +406,7 @@ operator<<(nbostream &out, const BitVector &bv)
 
 
 nbostream &
-operator>>(nbostream &in, BitVector &bv)
+operator>>(nbostream &in, AllocatedBitVector &bv)
 {
     uint64_t size;
     uint64_t cachedHits;

@@ -2,6 +2,7 @@
 
 #include "lidvectorcontext.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <cassert>
 
@@ -9,6 +10,7 @@
 LOG_SETUP(".proton.feedoperation.lidvectorcontext");
 
 using search::BitVector;
+using search::AllocatedBitVector;
 
 namespace proton {
 
@@ -73,7 +75,7 @@ LidVectorContext::deserialize(vespalib::nbostream &is)
     LOG(debug, "deserialize: format = %d", format);
     // Use of bitvector when > 1/32 of docs
     if (format == BITVECTOR) {
-        BitVector::UP bitVector = BitVector::create(_docIdLimit);
+        auto bitVector = std::make_unique<AllocatedBitVector>(_docIdLimit);
         is >> *bitVector;
         uint32_t sz(bitVector->size());
         assert(sz == _docIdLimit);

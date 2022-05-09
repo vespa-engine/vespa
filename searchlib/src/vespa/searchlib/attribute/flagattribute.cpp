@@ -122,7 +122,7 @@ void FlagAttributeT<B>::setNewValues(DocId doc, const std::vector<typename B::WT
         BitVector * bv = _bitVectors[offset];
         if (bv == nullptr) {
             assert(_bitVectorSize >= this->getNumDocs());
-            _bitVectorStore[offset] = BitVector::create(_bitVectorSize);
+            _bitVectorStore[offset] = std::make_shared<GrowableBitVector>(_bitVectorSize, _bitVectorSize, _bitVectorHolder);
             _bitVectors[offset] = _bitVectorStore[offset].get();
             bv = _bitVectors[offset];
             ensureGuardBit(*bv);
@@ -139,7 +139,7 @@ FlagAttributeT<B>::setNewBVValue(DocId doc, multivalue::ValueType_t<typename B::
     BitVector * bv = _bitVectors[offset];
     if (bv == nullptr) {
         assert(_bitVectorSize >= this->getNumDocs());
-        _bitVectorStore[offset] = BitVector::create(_bitVectorSize);
+        _bitVectorStore[offset] = std::make_shared<GrowableBitVector>(_bitVectorSize, _bitVectorSize, _bitVectorHolder);
         _bitVectors[offset] = _bitVectorStore[offset].get();
         bv = _bitVectors[offset];
         ensureGuardBit(*bv);
@@ -210,11 +210,11 @@ FlagAttributeT<B>::resizeBitVectors(uint32_t neededSize)
 {
     const GrowStrategy & gs = this->getConfig().getGrowStrategy();
     uint32_t newSize = neededSize + (neededSize * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
-    for (BitVector * bv : _bitVectors) {
+    for (size_t i(0), m(_bitVectors.size()); i < m; i++) {
+        BitVector *bv = _bitVectors[i];
         if (bv != nullptr) {
-            vespalib::GenerationHeldBase::UP hold(bv->grow(newSize));
+            _bitVectorStore[i]->extend(newSize);
             ensureGuardBit(*bv);
-            _bitVectorHolder.hold(std::move(hold));
         }
     }
     _bitVectorSize = newSize;
