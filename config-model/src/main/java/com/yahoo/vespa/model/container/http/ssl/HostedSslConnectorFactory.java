@@ -25,16 +25,17 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     private final boolean enforceClientAuth;
     private final boolean enforceHandshakeClientAuth;
     private final Collection<String> tlsCiphersOverride;
+    private final boolean enableProxyProtocolMixedMode;
 
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver and default hosted Vespa truststore.
      */
     public static HostedSslConnectorFactory withProvidedCertificate(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth,
-            Collection<String> tlsCiphersOverride) {
+            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth);
-        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, tlsCiphersOverride);
+        return new HostedSslConnectorFactory(sslProvider, false, enforceHandshakeClientAuth, tlsCiphersOverride, enableProxyProtocolMixedMode);
     }
 
     /**
@@ -42,25 +43,28 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
      */
     public static HostedSslConnectorFactory withProvidedCertificateAndTruststore(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, String tlsCaCertificates,
-            Collection<String> tlsCiphersOverride) {
+            Collection<String> tlsCiphersOverride, boolean enableProxyProtocolMixedMode) {
         ConfiguredDirectSslProvider sslProvider = createConfiguredDirectSslProvider(
                 serverName, endpointCertificateSecrets, /*tlsCaCertificatesPath*/null, tlsCaCertificates, false);
-        return new HostedSslConnectorFactory(sslProvider, true, false, tlsCiphersOverride);
+        return new HostedSslConnectorFactory(sslProvider, true, false, tlsCiphersOverride, enableProxyProtocolMixedMode);
     }
 
     /**
      * Create connector factory that uses the default certificate and truststore provided by Vespa (through Vespa-global TLS configuration).
      */
-    public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String serverName, Collection<String> tlsCiphersOverride) {
-        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false, tlsCiphersOverride);
+    public static HostedSslConnectorFactory withDefaultCertificateAndTruststore(String serverName, Collection<String> tlsCiphersOverride,
+                                                                                boolean enableProxyProtocolMixedMode) {
+        return new HostedSslConnectorFactory(new DefaultSslProvider(serverName), true, false, tlsCiphersOverride, enableProxyProtocolMixedMode);
     }
 
     private HostedSslConnectorFactory(SslProvider sslProvider, boolean enforceClientAuth,
-                                      boolean enforceHandshakeClientAuth, Collection<String> tlsCiphersOverride) {
+                                      boolean enforceHandshakeClientAuth, Collection<String> tlsCiphersOverride,
+                                      boolean enableProxyProtocolMixedMode) {
         super(new Builder("tls4443", 4443).sslProvider(sslProvider));
         this.enforceClientAuth = enforceClientAuth;
         this.enforceHandshakeClientAuth = enforceHandshakeClientAuth;
         this.tlsCiphersOverride = tlsCiphersOverride;
+        this.enableProxyProtocolMixedMode = enableProxyProtocolMixedMode;
     }
 
     private static ConfiguredDirectSslProvider createConfiguredDirectSslProvider(
@@ -94,7 +98,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         }
 
         connectorBuilder
-                .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(true))
+                .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(enableProxyProtocolMixedMode))
                 .idleTimeout(Duration.ofSeconds(30).toSeconds())
                 .maxConnectionLife(Duration.ofSeconds(45).toSeconds());
     }
