@@ -7,7 +7,34 @@
 namespace search {
 
 using vespalib::GenerationHeldBase;
+using vespalib::GenerationHeldAlloc;
 using vespalib::GenerationHolder;
+
+GenerationHeldBase::UP
+GrowableBitVector::grow(Index newSize, Index newCapacity)
+{
+    assert(newCapacity >= newSize);
+    GenerationHeldBase::UP ret;
+    if (newCapacity != capacity()) {
+        AllocatedBitVector tbv(newSize, newCapacity, _alloc.get(), size(), &_alloc);
+        if (newSize > size()) {
+            tbv.clearBitAndMaintainCount(size());  // Clear old guard bit.
+        }
+        ret = std::make_unique<GenerationHeldAlloc<Alloc>>(_alloc);
+        swap(tbv);
+    } else {
+        if (newSize > size()) {
+            Range clearRange(size(), newSize);
+            setSize(newSize);
+            clearIntervalNoInvalidation(clearRange);
+        } else {
+            clearIntervalNoInvalidation(Range(newSize, size()));
+            setSize(newSize);
+            updateCount();
+        }
+    }
+    return ret;
+}
 
 GrowableBitVector::GrowableBitVector(Index newSize, Index newCapacity,
                                      GenerationHolder &generationHolder,

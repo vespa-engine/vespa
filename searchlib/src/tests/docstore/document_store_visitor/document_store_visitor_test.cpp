@@ -5,7 +5,7 @@
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/common/allocatedbitvector.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
@@ -95,7 +95,7 @@ public:
     uint32_t _visitCount;
     uint32_t _visitRmCount;
     uint32_t _docIdLimit;
-    BitVector::UP _valid;
+    std::unique_ptr<AllocatedBitVector> _valid;
     bool _before;
 
     MyVisitorBase(DocumentTypeRepo &repo, uint32_t docIdLimit, bool before);
@@ -106,7 +106,7 @@ MyVisitorBase::MyVisitorBase(DocumentTypeRepo &repo, uint32_t docIdLimit, bool b
       _visitCount(0u),
       _visitRmCount(0u),
       _docIdLimit(docIdLimit),
-      _valid(BitVector::create(docIdLimit)),
+      _valid(std::make_unique<AllocatedBitVector>(docIdLimit)),
       _before(before)
 {
 }
@@ -216,7 +216,7 @@ struct Fixture
     std::unique_ptr<LogDocumentStore> _store;
     uint64_t _syncToken;
     uint32_t _docIdLimit;
-    BitVector::UP _valid;
+    std::unique_ptr<AllocatedBitVector> _valid;
 
     Fixture();
     ~Fixture();
@@ -246,7 +246,7 @@ Fixture::Fixture()
       _store(),
       _syncToken(0u),
       _docIdLimit(0u),
-      _valid(BitVector::create(0u))
+      _valid(std::make_unique<AllocatedBitVector>(0u))
 {
     rmdir();
     mkdir();

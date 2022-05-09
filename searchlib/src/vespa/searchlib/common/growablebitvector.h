@@ -16,6 +16,8 @@ public:
     bool shrink(Index newCapacity);
     bool extend(Index newCapacity);
 private:
+    GenerationHeldBase::UP grow(Index newLength, Index newCapacity);
+
     VESPA_DLL_LOCAL bool hold(GenerationHeldBase::UP v);
     GenerationHolder &_generationHolder;
 };
