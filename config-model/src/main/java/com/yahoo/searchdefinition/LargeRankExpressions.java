@@ -3,9 +3,10 @@ package com.yahoo.searchdefinition;
 
 import com.yahoo.config.application.api.FileRegistry;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 public class LargeRankExpressions {
     private final Map<String, RankExpressionBody> expressions = new ConcurrentHashMap<>();
@@ -36,9 +37,9 @@ public class LargeRankExpressions {
     }
     public int limit() { return limit; }
 
-    /** Returns a read-only map of the ranking constants in this indexed by name */
-    public Map<String, RankExpressionBody> asMap() {
-        return Collections.unmodifiableMap(expressions);
+    /** Returns a read-only list of ranking constants ordered by name */
+    public Collection<RankExpressionBody> expressions() {
+        return expressions.values().stream().sorted().collect(Collectors.toUnmodifiableList());
     }
 
 }

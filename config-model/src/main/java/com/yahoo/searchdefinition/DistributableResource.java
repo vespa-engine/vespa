@@ -8,7 +8,7 @@ import com.yahoo.path.Path;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 
-public class DistributableResource {
+public class DistributableResource implements Comparable <DistributableResource> {
 
     public enum PathType { FILE, URI, BLOB }
 
@@ -87,4 +87,8 @@ public class DistributableResource {
         return "resource '" + name + " of type '" + pathType + "' with ref '" + fileReference + "'";
     }
 
+    @Override
+    public int compareTo(DistributableResource o) {
+        return name.compareTo(o.getName());
+    }
 }
