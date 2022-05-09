@@ -37,6 +37,9 @@ public interface ZoneRegistry {
     /** Returns a list containing the id of all zones in this registry */
     ZoneFilter zones();
 
+    /** Returns a list containing the id of all zones in this registry, including the system. */
+    ZoneFilter zonesIncludingSystem();
+
     /** Returns the default region for the given environment, if one is configured */
     Optional<RegionName> getDefaultRegion(Environment environment);
 

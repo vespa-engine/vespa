@@ -48,10 +48,10 @@ public class ArchiveAccessMaintainerTest {
         assertEquals(Set.of(tenant1role), archiveService.authorizedIamRolesForKey.get(testBucket.keyArn()));
 
         var expected = Map.of("archive.bucketCount",
-                tester.controller().zoneRegistry().zones().all().ids().stream()
-                        .collect(Collectors.toMap(
-                                zone -> Map.of("zone", zone.value()),
-                                zone -> zone.equals(testZone) ? 1d : 0d)));
+                              tester.controller().zoneRegistry().zonesIncludingSystem().all().ids().stream()
+                                    .collect(Collectors.toMap(
+                                            zone -> Map.of("zone", zone.value()),
+                                            zone -> zone.equals(testZone) ? 1d : 0d)));
 
         assertEquals(expected, metric.metrics());
     }

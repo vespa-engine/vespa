@@ -35,7 +35,7 @@ public interface ZoneList extends ZoneFilter {
 
     /** Returns the ZoneIds of all zones in this list. */
     default List<ZoneId> ids() {
-        return zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
+        return zones().stream().map(ZoneApi::getVirtualId).collect(Collectors.toList());
     }
 
 }
