@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.test.file.TestFileSystem;
 import org.junit.Test;
 
@@ -9,6 +10,7 @@ import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Optional;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression.NONE;
@@ -31,6 +33,8 @@ public class SyncFileInfoTest {
     private static final Path connectionLogPath2 = fileSystem.getPath("/opt/vespa/logs/qrs/ConnectionLog.default.20210212.zst");
     private static final Path vespaLogPath1 = fileSystem.getPath("/opt/vespa/logs/vespa.log");
     private static final Path vespaLogPath2 = fileSystem.getPath("/opt/vespa/logs/vespa.log-2021-02-12");
+    private static final Path zkLogPath0 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.0.log");
+    private static final Path zkLogPath1 = fileSystem.getPath("/opt/vespa/logs/zookeeper.configserver.1.log");
 
     @Test
     public void access_logs() {
@@ -63,6 +67,16 @@ public class SyncFileInfoTest {
 
         assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, true);
         assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, false);
+    }
+
+    @Test
+    public void zookeeper_logs() {
+        assertForLogFile(zkLogPath0, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log.zst", ZSTD, Duration.ofHours(1), true);
+        assertForLogFile(zkLogPath0, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log.zst", ZSTD, Duration.ZERO, false);
+
+        new UnixPath(zkLogPath1).createParents().createNewFile().setLastModifiedTime(Instant.parse("2022-05-09T14:22:11Z"));
+        assertForLogFile(zkLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-09.14-22-11.zst", ZSTD, true);
+        assertForLogFile(zkLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/zookeeper/zookeeper.log-2022-05-09.14-22-11.zst", ZSTD, false);
     }
 
     private static void assertForLogFile(Path srcPath, String destination, SyncFileInfo.Compression compression, boolean rotatedOnly) {

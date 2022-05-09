@@ -2,10 +2,13 @@
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -14,6 +17,9 @@ import java.util.Optional;
  * @author freva
  */
 public class SyncFileInfo {
+
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd.HH-mm-ss").withZone(ZoneOffset.UTC);
 
     private final Path source;
     private final URI destination;
@@ -53,12 +59,19 @@ public class SyncFileInfo {
         String filename = logFile.getFileName().toString();
         Compression compression;
         String dir = null;
+        String remoteFilename = logFile.getFileName().toString();
         Duration minDurationBetweenSync = null;
 
         if (filename.startsWith("vespa.log")) {
             dir = "logs/vespa/";
             compression = Compression.ZSTD;
             minDurationBetweenSync = filename.length() == 9 ? rotatedOnly ? Duration.ofHours(1) : Duration.ZERO : null;
+        } else if (filename.startsWith("zookeeper.") && filename.endsWith(".log")) {
+            compression = Compression.ZSTD;
+            dir = "logs/zookeeper/";
+            remoteFilename = filename.endsWith(".0.log") ? "zookeeper.log" :
+                    "zookeeper.log-" + DATE_TIME_FORMATTER.format(new UnixPath(logFile).getLastModifiedTime());
+            minDurationBetweenSync = filename.endsWith(".0.log") ? rotatedOnly ? Duration.ofHours(1) : Duration.ZERO : null;
         } else {
             compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;
             if (rotatedOnly && compression != Compression.NONE)
@@ -71,7 +84,7 @@ public class SyncFileInfo {
 
         if (dir == null) return Optional.empty();
         return Optional.of(new SyncFileInfo(
-                logFile, uri.resolve(dir + logFile.getFileName() + compression.extension), compression, defaultTags(owner),
+                logFile, uri.resolve(dir + remoteFilename + compression.extension), compression, defaultTags(owner),
                 minDurationBetweenSync));
     }
 
