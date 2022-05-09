@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -46,13 +47,15 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
     @Override
     protected double maintain() {
         // Count buckets - so we can alert if we get close to the account limit of 1000
-        zoneRegistry.zones().all().ids().forEach(zoneId ->
-                metric.set(bucketCountMetricName, archiveBucketDb.buckets(zoneId).size(),
-                        metric.createContext(Map.of("zone", zoneId.value()))));
+        Stream.concat(Stream.of(zoneRegistry.systemZone().getVirtualId()),
+                      zoneRegistry.zones().all().ids().stream())
+              .forEach(zoneId -> metric.set(bucketCountMetricName, archiveBucketDb.buckets(zoneId).size(),
+                                            metric.createContext(Map.of("zone", zoneId.value()))));
 
-
-        zoneRegistry.zones().controllerUpgraded().zones().forEach(z -> {
-                    ZoneId zoneId = z.getId();
+        Stream.concat(Stream.of(zoneRegistry.systemZone()),
+                      zoneRegistry.zones().controllerUpgraded().zones().stream())
+              .forEach(z -> {
+                    ZoneId zoneId = z.getVirtualId();
                     try {
                         var tenantArchiveAccessRoles = cloudTenantArchiveExternalAccessRoles();
                         archiveBucketDb.buckets(zoneId).forEach(archiveBucket ->

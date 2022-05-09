@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -48,10 +49,11 @@ public class ArchiveAccessMaintainerTest {
         assertEquals(Set.of(tenant1role), archiveService.authorizedIamRolesForKey.get(testBucket.keyArn()));
 
         var expected = Map.of("archive.bucketCount",
-                tester.controller().zoneRegistry().zones().all().ids().stream()
-                        .collect(Collectors.toMap(
-                                zone -> Map.of("zone", zone.value()),
-                                zone -> zone.equals(testZone) ? 1d : 0d)));
+                              Stream.concat(Stream.of(tester.controller().zoneRegistry().systemZone().getVirtualId()),
+                                            tester.controller().zoneRegistry().zones().all().ids().stream())
+                                    .collect(Collectors.toMap(
+                                            zone -> Map.of("zone", zone.value()),
+                                            zone -> zone.equals(testZone) ? 1d : 0d)));
 
         assertEquals(expected, metric.metrics());
     }
