@@ -8,6 +8,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author Bjorn Borud
  * @author arnej27959
  * @author bjorncs
+ * TODO remove "public" keyword, should be package private
  */
 public class LogUtils {
     public static boolean empty(String s) {
