@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.core;
 
+import com.yahoo.log.LogSetup;
 import com.yahoo.yolean.system.CatchSignals;
 
 import java.util.Arrays;
@@ -20,6 +21,7 @@ public class StandaloneMain {
     static {
         // force load slf4j to avoid other logging frameworks from initializing before it
         org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        LogSetup.initVespaLogging("Container");
     }
 
     public StandaloneMain() {

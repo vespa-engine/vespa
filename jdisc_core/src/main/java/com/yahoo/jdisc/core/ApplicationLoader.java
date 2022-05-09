@@ -16,7 +16,6 @@ import com.yahoo.jdisc.application.OsgiHeader;
 import com.yahoo.jdisc.service.ContainerNotReadyException;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.statistics.ContainerWatchdogMetrics;
-import com.yahoo.log.impl.InitializeLog;
 import com.yahoo.log.LogSetup;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -48,7 +47,6 @@ public class ApplicationLoader implements BootstrapLoader, ContainerActivator, C
     private ApplicationInUseTracker applicationInUseTracker;
 
     public ApplicationLoader(OsgiFramework osgiFramework, Iterable<? extends Module> guiceModules) {
-        InitializeLog.init();
         this.osgiFramework = osgiFramework;
         this.guiceModules.install(new ApplicationEnvironmentModule(this));
         this.guiceModules.installAll(guiceModules);
