@@ -110,6 +110,7 @@ public class NodeAdminImpl implements NodeAdmin {
 
         if (!isSuspended) {
             Runtime runtime = Runtime.getRuntime();
+            runtime.gc();
             long freeMemory = runtime.freeMemory();
             long totalMemory = runtime.totalMemory();
             long usedMemory = totalMemory - freeMemory;
