@@ -393,15 +393,8 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
     }
 
     private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold) throws ParseException {
-        verifyApproximateNearestNeighborThresholdSettings(postFilterThreshold, approximateThreshold, false);
-        verifyApproximateNearestNeighborThresholdSettings(postFilterThreshold, approximateThreshold, true);
-    }
-
-    private void verifyApproximateNearestNeighborThresholdSettings(Double postFilterThreshold, Double approximateThreshold,
-                                                                   boolean experimentalSdParsing) throws ParseException {
         var rankProfileRegistry = new RankProfileRegistry();
         var props = new TestProperties();
-        props.setExperimentalSdParsing(experimentalSdParsing);
         var queryProfileRegistry = new QueryProfileRegistry();
         var builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry, props);
         builder.addSchema(createSDWithRankProfileThresholds(postFilterThreshold, approximateThreshold));

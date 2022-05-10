@@ -110,7 +110,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean persistenceThrottlingOfMergeFeedOps() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useQrserverServiceName() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean avoidRenamingSummaryFeatures() { return false; }
-        @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return false; }
+        @ModelFeatureFlag(owners = {"arnej"}) default boolean experimentalSdParsing() { return true; } // TODO: Remove after June 2022
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableBitVectors() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }

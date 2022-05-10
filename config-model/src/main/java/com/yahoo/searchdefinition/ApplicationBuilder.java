@@ -10,26 +10,19 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.searchdefinition.parser.ConvertSchemaCollection;
 import com.yahoo.searchdefinition.parser.IntermediateCollection;
-import com.yahoo.searchdefinition.parser.IntermediateParser;
 import com.yahoo.searchdefinition.parser.ParseException;
-import com.yahoo.searchdefinition.parser.SDParser;
-import com.yahoo.searchdefinition.parser.SimpleCharStream;
-import com.yahoo.searchdefinition.parser.TokenMgrException;
 import com.yahoo.searchdefinition.processing.Processor;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Reader;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +36,8 @@ import java.util.Set;
  * 1) Add all schemas, using the addXXX() methods,
  * 2) provide the available rank types and rank expressions, using the setRankXXX() methods,
  * 3) invoke the {@link #build} method
+ *
+ * @author bratseth
  */
 public class ApplicationBuilder {
 
@@ -149,13 +144,8 @@ public class ApplicationBuilder {
      * @throws ParseException thrown if the file does not contain a valid search definition
      */
     public void addSchemaFile(String fileName) throws IOException, ParseException {
-        if (properties.featureFlags().experimentalSdParsing()) {
-            var parsedName = mediator.addSchemaFromFile(fileName);
-            addRankProfileFiles(parsedName);
-            return;
-        }
-        File file = new File(fileName);
-        addSchema(IOUtils.readFile(file));
+        var parsedName = mediator.addSchemaFromFile(fileName);
+        addRankProfileFiles(parsedName);
     }
 
     /**
@@ -165,37 +155,12 @@ public class ApplicationBuilder {
      * @param reader the reader whose content to import
      */
     public void addSchema(NamedReader reader) {
-        if (properties.featureFlags().experimentalSdParsing()) {
-            try {
-                var parsedName = mediator.addSchemaFromReader(reader);
-                addRankProfileFiles(parsedName);
-            } catch (ParseException e) {
-                throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
-            }
-            return;
-        }
         try {
-            Schema schema = createSchema(IOUtils.readAll(reader));
-            add(schema);
-            String schemaName = schema.getName();
-            String schemaFileName = stripSuffix(reader.getName(), ApplicationPackage.SD_NAME_SUFFIX);
-            if ( ! schemaFileName.equals(schemaName)) {
-                throw new IllegalArgumentException("The file containing schema '" + schemaName + "' must be named '" +
-                                                   schemaName + ApplicationPackage.SD_NAME_SUFFIX + "', not " + reader.getName());
-            }
+            var parsedName = mediator.addSchemaFromReader(reader);
+            addRankProfileFiles(parsedName);
         } catch (ParseException e) {
             throw new IllegalArgumentException("Could not parse schema file '" + reader.getName() + "'", e);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Could not read schema file '" + reader.getName() + "'", e);
-        } finally {
-            closeIgnoreException(reader.getReader());
         }
-    }
-
-    private static String stripSuffix(String readerName, String suffix) {
-        if ( ! readerName.endsWith(suffix))
-            throw new IllegalArgumentException("Schema '" + readerName + "' does not end with " + suffix);
-        return readerName.substring(0, readerName.length() - suffix.length());
     }
 
     /**
@@ -204,12 +169,8 @@ public class ApplicationBuilder {
      * @param schemaString the content of the schema
      */
     public void addSchema(String schemaString) throws ParseException {
-        if (properties.featureFlags().experimentalSdParsing()) {
-            var parsed = mediator.addSchemaFromString(schemaString);
-            addRankProfileFiles(parsed.name());
-            return;
-        }
-        add(createSchema(schemaString));
+        var parsed = mediator.addSchemaFromString(schemaString);
+        addRankProfileFiles(parsed.name());
     }
 
     /**
@@ -227,47 +188,8 @@ public class ApplicationBuilder {
         return schema;
     }
 
-    private Schema createSchema(String schemaString) throws ParseException {
-        Schema schema = parseSchema(schemaString);
-        addRankProfileFiles(schema);
-        return schema;
-    }
-
-    private Schema parseSchema(String schemaString) throws ParseException {
-        if (properties.featureFlags().experimentalSdParsing()) {
-            throw new IllegalArgumentException("should use new parser only");
-        }
-        SimpleCharStream stream = new SimpleCharStream(schemaString);
-        try {
-            return parserOf(stream).schema(documentTypeManager);
-        } catch (TokenMgrException e) {
-            throw new ParseException("Unknown symbol: " + e.getMessage());
-        } catch (ParseException pe) {
-            throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
-        }
-    }
-
-    private void addRankProfileFiles(Schema schema) {
-        if (applicationPackage == null) return;
-
-        if (properties.featureFlags().experimentalSdParsing()) {
-            throw new IllegalArgumentException("should use new parser only");
-        }
-
-        Path legacyRankProfilePath = ApplicationPackage.SEARCH_DEFINITIONS_DIR.append(schema.getName());
-        for (NamedReader reader : applicationPackage.getFiles(legacyRankProfilePath, ".profile"))
-            parseRankProfile(reader, schema);
-
-        Path rankProfilePath = ApplicationPackage.SCHEMAS_DIR.append(schema.getName());
-        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile"))
-            parseRankProfile(reader, schema);
-    }
-
     private void addRankProfileFiles(String schemaName) throws ParseException {
         if (applicationPackage == null) return;
-        if (! properties.featureFlags().experimentalSdParsing()) {
-            throw new IllegalArgumentException("should use old parser only");
-        }
 
         Path legacyRankProfilePath = ApplicationPackage.SEARCH_DEFINITIONS_DIR.append(schemaName);
         for (NamedReader reader : applicationPackage.getFiles(legacyRankProfilePath, ".profile")) {
@@ -280,34 +202,6 @@ public class ApplicationBuilder {
         }
     }
 
-    /** Parses the rank profile of the given reader and adds it to the rank profile registry for this schema. */
-    private void parseRankProfile(NamedReader reader, Schema schema) {
-        if (properties.featureFlags().experimentalSdParsing()) {
-            throw new IllegalArgumentException("should use new parser only");
-        }
-        try {
-            SimpleCharStream stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
-            try {
-                parserOf(stream).rankProfile(schema);
-            } catch (TokenMgrException e) {
-                throw new ParseException("Unknown symbol: " + e.getMessage());
-            } catch (ParseException pe) {
-                throw new ParseException(stream.formatException(Exceptions.toMessageString(pe)));
-            }
-        }
-        catch (IOException e) {
-            throw new IllegalArgumentException("Could not read rank profile " + reader.getName(), e);
-        }
-        catch (ParseException e) {
-            throw new IllegalArgumentException("Could not parse rank profile " + reader.getName(), e);
-        }
-    }
-
-    private SDParser parserOf(SimpleCharStream stream) {
-        return new SDParser(stream, applicationPackage, fileRegistry, deployLogger, properties,
-                            rankProfileRegistry, documentsOnly);
-    }
-
     /**
      * Processes and finalizes the schemas of this.
      *
@@ -315,19 +209,16 @@ public class ApplicationBuilder {
      */
     public Application build(boolean validate) {
         if (application != null) throw new IllegalStateException("Application already built");
-        if (properties.featureFlags().experimentalSdParsing()) {
-            var converter = new ConvertSchemaCollection(mediator,
-                                                        documentTypeManager,
-                                                        applicationPackage,
-                                                        fileRegistry,
-                                                        deployLogger,
-                                                        properties,
-                                                        rankProfileRegistry,
-                                                        documentsOnly);
-            for (var schema : converter.convertToSchemas()) {
-                add(schema);
-            }
-        }
+        var converter = new ConvertSchemaCollection(mediator,
+                                                    documentTypeManager,
+                                                    applicationPackage,
+                                                    fileRegistry,
+                                                    deployLogger,
+                                                    properties,
+                                                    rankProfileRegistry,
+                                                    documentsOnly);
+        for (var schema : converter.convertToSchemas())
+            add(schema);
         application = new Application(applicationPackage,
                                       schemas,
                                       rankProfileRegistry,
@@ -618,10 +509,4 @@ public class ApplicationBuilder {
 
     public DeployLogger getDeployLogger() { return deployLogger; }
 
-    @SuppressWarnings("EmptyCatchBlock")
-    private static void closeIgnoreException(Reader reader) {
-        try {
-            reader.close();
-        } catch(Exception e) {}
-    }
 }
