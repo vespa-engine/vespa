@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.plugin.classanalysis;
 
+import com.google.common.collect.ComputationException;
+import com.google.common.collect.ImmutableList;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Base;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.ClassAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Derived;
@@ -8,6 +10,8 @@ import com.yahoo.container.plugin.classanalysis.sampleclasses.DummyAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Fields;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface1;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface2;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.RecordWithOverride;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.SwitchStatement;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.MethodInvocation;
 import com.yahoo.osgi.annotation.ExportPackage;
@@ -161,5 +165,24 @@ public class AnalyzeClassTest {
         //Uses com/coremedia/iso/Utf8.class from com.googlecode.mp4parser:isoparser:1.0-RC-1
         assertTrue(Analyze.analyzeClass(classFile("class/Utf8")).getReferencedClasses()
                 .contains("org.aspectj.weaver.MethodDeclarationLineNumber"));
+    }
+
+    @Test
+    public void switch_statements_are_analyzed() {
+        var referencedClasses = analyzeClass(SwitchStatement.class).getReferencedClasses();
+        assertTrue(referencedClasses.contains(name(ImmutableList.class)));
+        assertTrue(referencedClasses.contains(name(IllegalArgumentException.class)));
+    }
+
+    @Test
+    public void records_are_analyzed() {
+        var referencedClasses = analyzeClass(RecordWithOverride.class).getReferencedClasses();
+        assertTrue(referencedClasses.containsAll(List.of(
+                name(java.util.List.class),
+                name(Byte.class),
+                name(ImmutableList.class),
+                name(IllegalArgumentException.class)
+        )));
+
     }
 }
