@@ -191,7 +191,7 @@ StartCommand() {
         -Djdisc.export.packages= \
         -Djdisc.cache.path="$bundlecachedir" \
         -Djdisc.bundle.path="$VESPA_HOME/lib/jars" \
-        -Djdisc.logger.enabled=true \
+        -Djdisc.logger.enabled=false \
         -Djdisc.logger.level=WARNING \
         -Djdisc.logger.tag="$service" \
         -Dfile.encoding=UTF-8 \
