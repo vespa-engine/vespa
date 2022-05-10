@@ -326,7 +326,7 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     private void assertSmallConstant(String name, TensorType type, RankProfileSearchFixture search) {
-        Value value = search.compiledRankProfile("my_profile").getConstants().get(name);
+        var value = search.compiledRankProfile("my_profile").getConstants().get(name);
         assertNotNull(value);
         assertEquals(type, value.type());
     }

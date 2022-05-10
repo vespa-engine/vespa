@@ -14,7 +14,7 @@ import java.util.List;
  * Helper for converting ParsedRankProfile etc to RankProfile with settings
  *
  * @author arnej27959
- **/
+ */
 public class ConvertParsedRanking {
 
     private final RankProfileRegistry rankProfileRegistry;
@@ -36,27 +36,17 @@ public class ConvertParsedRanking {
     }
 
     void convertRankProfile(Schema schema, ParsedRankProfile parsed) {
-        final RankProfile profile = makeRankProfile(schema, parsed.name());
-        assert(profile != null);
-        for (String name : parsed.getInherited()) {
+        RankProfile profile = makeRankProfile(schema, parsed.name());
+        for (String name : parsed.getInherited())
             profile.inherit(name);
-        }
+
         parsed.isStrict().ifPresent(value -> profile.setStrict(value));
 
-        for (var entry : parsed.getConstants().entrySet()) {
-            String name = entry.getKey();
-            Value value = entry.getValue();
-            if (value instanceof TensorValue) {
-                var tensor = (TensorValue) value;
-                profile.addConstantTensor(name, tensor);
-            } else {
-                profile.addConstant(name, value);
-            }
-        }
+        for (var constant : parsed.getConstants().entrySet())
+            profile.addConstant(constant.getKey(), constant.getValue());
 
-        for (var input : parsed.getInputs().entrySet()) {
+        for (var input : parsed.getInputs().entrySet())
             profile.addInput(input.getKey(), input.getValue());
-        }
 
         for (var func : parsed.getFunctions()) {
             String name = func.name();
