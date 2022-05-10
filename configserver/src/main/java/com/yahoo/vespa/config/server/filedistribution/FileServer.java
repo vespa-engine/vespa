@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.filedistribution;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -22,12 +22,12 @@ import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
 import com.yahoo.yolean.Exceptions;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,6 +40,9 @@ import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUti
 public class FileServer {
 
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
+
+    // Set this low, to make sure we don't wait for a long time trying to download file
+    private static final Duration timeout = Duration.ofSeconds(10);
 
     private final FileDirectory root;
     private final ExecutorService executor;
@@ -157,11 +160,22 @@ public class FileServer {
     public void serveFile(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
         if (executor instanceof ThreadPoolExecutor)
             log.log(Level.FINE, () -> "Active threads: " + ((ThreadPoolExecutor) executor).getActiveCount());
-        executor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver));
+
+        log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target());
+        Instant deadline = Instant.now().plus(timeout);
+        executor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver, deadline));
     }
 
-    private void serveFileInternal(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
-        log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target());
+    private void serveFileInternal(String fileReference,
+                                   boolean downloadFromOtherSourceIfNotFound,
+                                   Request request,
+                                   Receiver receiver,
+                                   Instant deadline) {
+        if (Instant.now().isAfter(deadline)) {
+            log.log(Level.INFO, () -> "Deadline exceeded for request for file reference '" + fileReference + "' from " + request.target() +
+                    " , giving up");
+            return;
+        }
 
         boolean fileExists;
         try {
@@ -215,11 +229,12 @@ public class FileServer {
 
     private static FileDownloader createFileDownloader(List<String> configServers) {
         Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
+
         return new FileDownloader(configServers.isEmpty()
                                           ? FileDownloader.emptyConnectionPool()
                                           : createConnectionPool(configServers, supervisor),
                                   supervisor,
-                                  Duration.ofSeconds(10)); // set this low, to make sure we don't wait a for a long time in this thread
+                                  timeout);
     }
 
     private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {
