@@ -32,7 +32,6 @@ import java.util.logging.Logger;
 public class FelixFramework implements OsgiFramework {
 
     private static final Logger log = Logger.getLogger(FelixFramework.class.getName());
-    private final OsgiLogManager logHandler = OsgiLogManager.newInstance();
     private final OsgiLogService logService = new OsgiLogService();
     private final ConsoleLogManager logListener;
     private final Felix felix;
@@ -55,7 +54,6 @@ public class FelixFramework implements OsgiFramework {
         BundleContext ctx = felix.getBundleContext();
         collisionHook.start(ctx);
         logService.start(ctx);
-        logHandler.install(ctx);
         if (logListener != null) {
             logListener.install(ctx);
         }
@@ -69,7 +67,6 @@ public class FelixFramework implements OsgiFramework {
             if (logListener != null) {
                 logListener.uninstall();
             }
-            logHandler.uninstall();
             logService.stop();
             collisionHook.stop();
         }
