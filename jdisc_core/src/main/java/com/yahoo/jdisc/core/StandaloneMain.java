@@ -21,7 +21,6 @@ public class StandaloneMain {
     static {
         // force load slf4j to avoid other logging frameworks from initializing before it
         org.slf4j.LoggerFactory.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-        LogSetup.initVespaLogging("Container");
     }
 
     public StandaloneMain() {
