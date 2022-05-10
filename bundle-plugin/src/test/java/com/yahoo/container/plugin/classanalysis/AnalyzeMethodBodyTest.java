@@ -27,52 +27,52 @@ import static org.junit.Assert.assertTrue;
 public class AnalyzeMethodBodyTest {
 
     @Test
-    public void require_that_class_of_locals_are_included() {
+    public void class_of_locals_are_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Base.class)));
     }
 
     @Test
-    public void require_that_class_of_locals_in_static_method_are_included() {
+    public void class_of_locals_in_static_method_are_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Derived.class)));
     }
 
     @Test
-    public void require_that_field_references_are_included() {
+    public void field_references_are_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().containsAll(List.of(name(java.util.List.class), name(Fields.class))));
     }
 
     @Test
-    public void require_that_class_owning_field_is_included() {
+    public void class_owning_field_is_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(System.class)));
     }
 
     @Test
-    public void require_that_class_containing_method_is_included() {
+    public void class_containing_method_is_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(PrintStream.class)));
     }
 
     @Test
-    public void require_that_element_of_new_multidimensional_array_is_included() {
+    public void element_of_new_multidimensional_array_is_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Interface1.class)));
     }
 
     @Test
-    public void require_that_basic_arrays_are_not_included() {
+    public void basic_arrays_are_not_included() {
         assertFalse(analyzeClass(Methods.class).getReferencedClasses().contains("int[]"));
     }
 
     @Test
-    public void require_that_container_generic_parameters_are_included() {
+    public void container_generic_parameters_are_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Dummy.class)));
     }
 
     @Test
-    public void require_that_functional_interface_usage_is_included() {
+    public void functional_interface_usage_is_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(Interface3.class)));
     }
 
     @Test
-    public void require_that_class_owning_method_handler_is_included() {
+    public void class_owning_method_handler_is_included() {
         assertTrue(analyzeClass(Methods.class).getReferencedClasses().contains(name(ClassWithMethod.class)));
     }
 }
