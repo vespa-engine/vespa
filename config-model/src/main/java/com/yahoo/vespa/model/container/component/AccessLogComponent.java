@@ -6,6 +6,7 @@ import com.yahoo.container.core.AccessLogConfig.FileHandler.CompressionFormat;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.vespa.model.VespaVersion;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
@@ -36,8 +37,10 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         // In hosted Vespa we do not use the clusterName when setting up application ContainerCluster logging
         this(logType,
                 compressionType,
-                clusterName.isEmpty() ? String.format("logs/vespa/qrs/%s.%s", capitalize(logType.name()), "%Y%m%d%H%M%S") :
-                                        String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S"),
+                clusterName.isEmpty() ? String.format("logs/vespa/access/%s.%s", capitalize(logType.name()), "%Y%m%d%H%M%S") :
+                                        // TODO: Clean up after Vespa 8
+                                        VespaVersion.major == 7 ? String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S") :
+                                                                  String.format("logs/vespa/access/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S"),
                 null,
                 null,
                 isHostedVespa,
