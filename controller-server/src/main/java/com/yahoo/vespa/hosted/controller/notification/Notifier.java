@@ -72,10 +72,11 @@ public class Notifier {
     }
 
     private boolean skipSource(NotificationSource source) {
-        // Limit sources to production systems only. Dev and test systems cause too much noise at the moment.
-        if (source.zoneId().map(z -> z.environment() != Environment.prod).orElse(false)) {
-            return true;
-        } else if (source.jobType().map(t -> !t.isProduction()).orElse(false)) {
+        // Do not dispatch notification for dev and perf environments
+        if (source.zoneId()
+                .map(z -> z.environment())
+                .map(e -> e == Environment.dev || e == Environment.perf)
+                .orElse(false)) {
             return true;
         }
         return false;
