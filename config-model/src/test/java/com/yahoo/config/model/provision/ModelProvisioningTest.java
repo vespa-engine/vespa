@@ -89,7 +89,7 @@ public class ModelProvisioningTest {
                         "    <component id='injected' />" +
                         "  </handler>" +
                         "  <nodes count='2' preload='lib/blablamalloc.so'>" +
-                        "    <jvm allocated-memory='45%' gc-options='-XX:+UseParNewGC' options='-verbosegc' />" +
+                        "    <jvm allocated-memory='45%' gc-options='-XX:+UseParNewGC' options='-Xlog:gc' />" +
                         "  </nodes>" +
                         "</container>" +
                         "</services>";
@@ -139,8 +139,8 @@ public class ModelProvisioningTest {
         assertEquals(getDefaults().underVespaHome("lib64/vespa/malloc/libvespamalloc.so"), mydisc.getContainers().get(2).getPreLoad());
         assertEquals(Optional.empty(), mydisc.getMemoryPercentage());
 
-        assertEquals("-verbosegc", mydisc2.getContainers().get(0).getJvmOptions());
-        assertEquals("-verbosegc", mydisc2.getContainers().get(1).getJvmOptions());
+        assertEquals("-Xlog:gc", mydisc2.getContainers().get(0).getJvmOptions());
+        assertEquals("-Xlog:gc", mydisc2.getContainers().get(1).getJvmOptions());
         assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(0).getPreLoad());
         assertEquals("lib/blablamalloc.so", mydisc2.getContainers().get(1).getPreLoad());
         assertEquals(Optional.of(45), mydisc2.getMemoryPercentage());
