@@ -69,10 +69,10 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
         Schema s = builder.getSchema();
 
         RankProfile parent = rankProfileRegistry.get(s, "parent").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        assertEquals("7 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7 < attribute(a), 1, 2) == 0))",
+        assertEquals("7.0 * (3 + attribute(a) + attribute(b) * (attribute(a) * 3 + if (7.0 < attribute(a), 1, 2) == 0))",
                      parent.getFirstPhaseRanking().getRoot().toString());
         RankProfile child = rankProfileRegistry.get(s, "child").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        assertEquals("7 * (9 + attribute(a))",
+        assertEquals("7.0 * (9 + attribute(a))",
                      child.getFirstPhaseRanking().getRoot().toString());
     }
 

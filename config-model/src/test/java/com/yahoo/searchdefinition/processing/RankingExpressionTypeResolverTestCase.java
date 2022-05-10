@@ -63,7 +63,7 @@ public class RankingExpressionTypeResolverTestCase {
         try {
             ApplicationBuilder builder = new ApplicationBuilder();
             builder.addSchema(joinLines(
-                    "search test {",
+                    "schema test {",
                     "  document test { ",
                     "    field a type tensor(d0[3]) {",
                     "      indexing: attribute",
@@ -80,18 +80,12 @@ public class RankingExpressionTypeResolverTestCase {
                     "      expression: reduce(attribute(a),sum,d0)+y_tensor+my_func+other_func",
                     "    }",
                     "    constants {",
-                    "      x_tensor {",
+                    "      x_tensor {", // legacy form
                     "        type: tensor(x{})",
                     "        value: { {x:bar}:17 }",
                     "      }",
-                    "      y_tensor {",
-                    "        type: tensor(y{})",
-                    "        value: { {y:foo}:42 }",
-                    "      }",
-                    "      z_tensor {",
-                    "        type: tensor(z{})",
-                    "        value: { {z:qux}:666 }",
-                    "      }",
+                    "      y_tensor tensor(y{}):{{y:foo}:42 }",
+                    "      z_tensor tensor(z{}):{qux:666}",
                     "    }",
                     "  }",
                     "}"

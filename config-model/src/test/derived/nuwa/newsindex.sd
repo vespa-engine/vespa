@@ -512,7 +512,7 @@ search newsindex {
     }
 
     constants {
-      sourcerank: 1
+      sourcerank double: 1
     }
   }
 
@@ -601,8 +601,8 @@ search newsindex {
     }
 
     constants {
-      time_rewards: 900
-      maxAge: 604800
+      time_rewards double: 900
+      maxAge double: 604800
       scale: 86400
     }
 

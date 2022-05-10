@@ -131,23 +131,23 @@ public class RankProfile implements Cloneable {
 
     private Boolean strict;
 
-    /** Global onnx models not tied to a search definition */
+    /** Global onnx models not tied to a schema */
     private final OnnxModels onnxModels;
     private final RankingConstants rankingConstants;
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
 
     /**
-     * Creates a new rank profile for a particular search definition
+     * Creates a new rank profile for a particular schema
      *
      * @param name                the name of the new profile
-     * @param schema              the search definition owning this profile
+     * @param schema              the schema owning this profile
      * @param rankProfileRegistry the {@link com.yahoo.searchdefinition.RankProfileRegistry} to use for storing
      *                            and looking up rank profiles.
      */
     public RankProfile(String name, Schema schema, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
-        this.schema = Objects.requireNonNull(schema, "search cannot be null");
+        this.schema = Objects.requireNonNull(schema, "schema cannot be null");
         this.onnxModels = null;
         this.rankingConstants = rankingConstants;
         this.rankProfileRegistry = rankProfileRegistry;

@@ -166,9 +166,7 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
                 "    }\n" +
                 "    rank-profile base {\n" +
                 "        constants {\n" +
-                "            base_constant_tensor {\n" +
-                "                value: { {x:0}:0 }\n" +
-                "            }\n" +
+                "            base_constant_tensor tensor(x[1]):[0]\n"+
                 "        }\n" +
                 "        function base_tensor() {\n" +
                 "            expression: constant(base_constant_tensor)\n" +
@@ -176,9 +174,7 @@ public class TensorTransformTestCase extends AbstractSchemaTestCase {
                 "    }\n" +
                 "    rank-profile test inherits base {\n" +
                 "        constants {\n" +
-                "            test_constant_tensor {\n" +
-                "                value: { {x:0}:1 }\n" +
-                "            }\n" +
+                "            test_constant_tensor tensor(x[1]):[1]" +
                 "        }\n" +
                 "        function returns_tensor_with_arg(arg1) {\n" +
                 "            expression: 2.0 * arg1\n" +
