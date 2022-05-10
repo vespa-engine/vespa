@@ -450,7 +450,8 @@ public class QueryTestCase {
         testProfile.set("d","e", null);
         testProfile.set("u","11", null);
         testProfile.set("foo.bar", "wiz", null);
-        Query q = new Query(QueryTestCase.httpEncode("?query=a:>5&a=b&traceLevel=5&sources=a,b&u=12&foo.bar2=wiz2&c.d=foo&queryProfile=test"),testProfile.compile(null));
+        Query q = new Query(QueryTestCase.httpEncode("?query=a:>5&a=b&traceLevel=5&sources=a,b&u=12&foo.bar2=wiz2&c.d=foo&queryProfile=test"),
+                            testProfile.compile(null));
         String trace = q.getContext(false).getTrace().toString();
         String[] traceLines = trace.split("\n");
     }
@@ -471,11 +472,19 @@ public class QueryTestCase {
     }
 
     @Test
-    public void testSimpleQueryParsing () {
+    public void testSimpleQueryParsing() {
         Query q = new Query("/search?query=foobar&offset=10&hits=20");
-        assertEquals("foobar",q.getModel().getQueryTree().toString());
+        assertEquals("foobar", q.getModel().getQueryTree().toString());
         assertEquals(10,q.getOffset());
         assertEquals(20,q.getHits());
+    }
+
+    /** "input.*" is an alias for "ranking.feature.*", but just "input" is not */
+    @Test
+    public void testPrefixAlias() {
+        Query q = new Query("/search?query=foobar&input=foo",
+                            new QueryProfile("test").compile(null));
+        assertEquals("foo", q.properties().get("input"));
     }
 
     /** Test that GET parameter names are case in-sensitive */
