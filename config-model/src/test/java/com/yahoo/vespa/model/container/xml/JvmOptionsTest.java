@@ -254,7 +254,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
 
         // Valid options, should not log anything
         verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
-        verifyLoggingOfJvmOptions(true, "options", "-verbose:gc");
+        verifyLoggingOfJvmOptions(true, "options", "-Xlog:gc");
         verifyLoggingOfJvmOptions(true, "options", "-Djava.library.path=/opt/vespa/lib64:/home/y/lib64");
         verifyLoggingOfJvmOptions(true, "options", "-XX:-OmitStackTraceInFastThrow");
         verifyLoggingOfJvmOptions(false, "options", "-Xms2G");
