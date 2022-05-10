@@ -17,7 +17,7 @@ public class MultiStructTestCase extends AbstractExportingTestCase {
     @Test
     public void testDocTypeConfigs() throws Exception {
         var logger = new TestableDeployLogger();
-        var props = new TestProperties().setExperimentalSdParsing(false);
+        var props = new TestProperties();
         ApplicationBuilder builder = ApplicationBuilder.createFromDirectory
             ("src/test/derived/multi_struct/", new MockFileRegistry(), logger, props);
         derive("multi_struct", builder, builder.getSchema("shop"));

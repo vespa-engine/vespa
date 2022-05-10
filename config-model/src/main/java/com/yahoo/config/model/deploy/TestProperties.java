@@ -76,7 +76,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = true;
-    private boolean experimentalSdParsing = true;
     private boolean enableBitVectors = false;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
@@ -133,7 +132,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
-    @Override public boolean experimentalSdParsing() { return this.experimentalSdParsing; }
     @Override public boolean enableBitVectors() { return this.enableBitVectors; }
     @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
 
@@ -348,11 +346,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setAvoidRenamingSummaryFeatures(boolean value) {
         this.avoidRenamingSummaryFeatures = value;
-        return this;
-    }
-
-    public TestProperties setExperimentalSdParsing(boolean value) {
-        this.experimentalSdParsing = value;
         return this;
     }
 

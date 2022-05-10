@@ -25,7 +25,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testPositionArray() throws IOException, ParseException {
         assertCorrectDeriving("position_array",
-                              new TestProperties().setExperimentalSdParsing(true).setUseV8GeoPositions(true));
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
@@ -49,7 +49,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testPositionSummary() throws IOException, ParseException {
         assertCorrectDeriving("position_summary",
-                              new TestProperties().setExperimentalSdParsing(true).setUseV8GeoPositions(true));
+                              new TestProperties().setUseV8GeoPositions(true));
     }
 
     @Test
@@ -115,7 +115,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testAvoidRenamingRankingExpression() throws IOException, ParseException {
         assertCorrectDeriving("renamedfeatures", "foo",
-                              new TestProperties().setExperimentalSdParsing(true).setAvoidRenamingSummaryFeatures(true),
+                              new TestProperties().setAvoidRenamingSummaryFeatures(true),
                               new TestableDeployLogger());
     }
 

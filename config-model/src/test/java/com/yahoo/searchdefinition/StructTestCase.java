@@ -2,7 +2,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.searchdefinition.derived.Deriver;
@@ -22,7 +21,7 @@ public class StructTestCase extends AbstractSchemaTestCase {
     @Test
     public void testStruct() throws IOException {
         assertConfigFile("src/test/examples/structresult.cfg",
-                         new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")).toString() + "\n");
+                         new DocumentmanagerConfig(Deriver.getDocumentManagerConfig("src/test/examples/struct.sd")) + "\n");
     }
 
     @Test
@@ -49,21 +48,11 @@ public class StructTestCase extends AbstractSchemaTestCase {
     }
 
     /**
-     * Declaring a struct before a document will fail, no doc type to add it to. 
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testStructOutsideDocumentIllegal() throws IOException, ParseException {
-        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(false));
-        builder.addSchemaFile("src/test/examples/structoutsideofdocument.sd");
-    }
-
-    /**
      * Declaring a struct before a document should work
      */
     @Test
     public void testStructOutsideDocumentLegal() throws IOException, ParseException {
-        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(true));
-        builder.addSchemaFile("src/test/examples/structoutsideofdocument.sd");
+        new ApplicationBuilder().addSchemaFile("src/test/examples/structoutsideofdocument.sd");
     }
 
 }

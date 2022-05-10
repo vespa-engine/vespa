@@ -16,8 +16,9 @@ public class MultipleSummariesTestCase extends AbstractSchemaTestCase {
 
     @Test
     public void testArrayImporting() throws IOException, ParseException {
-        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(true));
+        var builder = new ApplicationBuilder(new TestProperties());
         builder.addSchemaFile("src/test/examples/multiplesummaries.sd");
         builder.build(true);
     }
+
 }

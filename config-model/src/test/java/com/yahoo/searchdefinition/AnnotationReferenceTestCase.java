@@ -5,9 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
-import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.config.model.deploy.TestProperties;
 import org.junit.Test;
 
@@ -43,30 +41,25 @@ public class AnnotationReferenceTestCase {
     
     @Test
     public void noAnnotationReferenceInDocument() throws Exception {
-        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(true));
+        var builder = new ApplicationBuilder(new TestProperties());
         builder.addSchema(sd);
         builder.build(true);
         var doc = builder.getSchema().getDocument();
         checkForAnnRef(doc);
         var complex = doc.findAnnotation("complex");
-        System.err.println("annotation: "+complex);
         var dt = complex.getDataType();
-        System.err.println("associated datatype: "+dt);
         assertTrue(dt instanceof StructDataType);
         var struct = (StructDataType)dt;
         var field = struct.getField("owner");
-        System.err.println("owner field: "+field);
         assertTrue(field.getDataType() instanceof AnnotationReferenceDataType);
     }
 
     void checkForAnnRef(SDDocumentType doc) {
         for (var child : doc.getTypes()) {
-            System.err.println("Check child ["+child+"] of parent "+doc);
             checkForAnnRef(child);
         }
         for (Field field : doc.fieldSet()) {
             DataType fieldType = field.getDataType();
-            System.err.println("datatype "+fieldType+" in field  "+field+" in doc "+doc);
             assertFalse(fieldType instanceof AnnotationReferenceDataType);
         }
     }

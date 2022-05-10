@@ -5,7 +5,6 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
-import com.yahoo.searchdefinition.DocumentGraphValidator;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.ApplicationBuilder;
 import com.yahoo.searchdefinition.document.SDDocumentType;
@@ -31,17 +30,17 @@ public class ReferenceFieldTestCase {
     public void reference_fields_are_parsed_from_search_definition() throws ParseException {
         ApplicationBuilder builder = new ApplicationBuilder();
         String campaignSdContent =
-                "search campaign {\n" +
+                "schema campaign {\n" +
                 "  document campaign {\n" +
                 "  }\n" +
                 "}";
         String salespersonSdContent =
-                "search salesperson {\n" +
+                "schema salesperson {\n" +
                 "  document salesperson {\n" +
                 "  }\n" +
                 "}";
         String adSdContent =
-                "search ad {\n" +
+                "schema ad {\n" +
                 "  document ad {\n" +
                 "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
                 "    field salesperson_ref type reference<salesperson> { indexing: attribute }\n" +
@@ -58,37 +57,15 @@ public class ReferenceFieldTestCase {
 
     @Test
     public void cyclic_document_dependencies_are_detected() throws ParseException {
-        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(false));
+        var builder = new ApplicationBuilder(new TestProperties());
         String campaignSdContent =
-                "search campaign {\n" +
+                "schema campaign {\n" +
                         "  document campaign {\n" +
                         "    field ad_ref type reference<ad> { indexing: attribute }\n" +
                         "  }\n" +
                         "}";
         String adSdContent =
-                "search ad {\n" +
-                        "  document ad {\n" +
-                        "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
-                        "  }\n" +
-                        "}";
-        builder.addSchema(campaignSdContent);
-        builder.addSchema(adSdContent);
-        exceptionRule.expect(DocumentGraphValidator.DocumentGraphException.class);
-        exceptionRule.expectMessage("Document dependency cycle detected: campaign->ad->campaign.");
-        builder.build(true);
-    }
-
-    @Test
-    public void cyclic_document_dependencies_are_detected_new_parser() throws ParseException {
-        var builder = new ApplicationBuilder(new TestProperties().setExperimentalSdParsing(true));
-        String campaignSdContent =
-                "search campaign {\n" +
-                        "  document campaign {\n" +
-                        "    field ad_ref type reference<ad> { indexing: attribute }\n" +
-                        "  }\n" +
-                        "}";
-        String adSdContent =
-                "search ad {\n" +
+                "schema ad {\n" +
                         "  document ad {\n" +
                         "    field campaign_ref type reference<campaign> { indexing: attribute }\n" +
                         "  }\n" +

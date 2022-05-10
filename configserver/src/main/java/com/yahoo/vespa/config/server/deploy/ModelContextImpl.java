@@ -204,7 +204,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean persistenceThrottlingOfMergeFeedOps;
         private final boolean useQrserverServiceName;
         private final boolean avoidRenamingSummaryFeatures;
-        private final boolean experimentalSdParsing;
         private final boolean enableBitVectors;
         private final Architecture adminClusterArchitecture;
         private final boolean enableProxyProtocolMixedMode;
@@ -249,7 +248,6 @@ public class ModelContextImpl implements ModelContext {
             this.persistenceThrottlingOfMergeFeedOps = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS);
             this.useQrserverServiceName = flagValue(source, appId, version, Flags.USE_QRSERVER_SERVICE_NAME);
             this.avoidRenamingSummaryFeatures = flagValue(source, appId, version, Flags.AVOID_RENAMING_SUMMARY_FEATURES);
-            this.experimentalSdParsing = flagValue(source, appId, version, Flags.EXPERIMENTAL_SD_PARSING);
             this.enableBitVectors = flagValue(source, appId, version, Flags.ENABLE_BIT_VECTORS);
             this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
@@ -296,7 +294,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
         @Override public boolean useQrserverServiceName() { return useQrserverServiceName; }
         @Override public boolean avoidRenamingSummaryFeatures() { return avoidRenamingSummaryFeatures; }
-        @Override public boolean experimentalSdParsing() { return experimentalSdParsing; }
         @Override public boolean enableBitVectors() { return this.enableBitVectors; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }

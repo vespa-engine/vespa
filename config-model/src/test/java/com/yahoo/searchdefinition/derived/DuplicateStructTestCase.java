@@ -12,16 +12,8 @@ public class DuplicateStructTestCase extends AbstractExportingTestCase {
     @Test
     public void exact_duplicate_struct_works() throws Exception {
         assertCorrectDeriving("duplicate_struct", "foobar",
-                              new TestProperties()
-                              .setExperimentalSdParsing(false),
+                              new TestProperties(),
                               new TestableDeployLogger());
     }
 
-    @Test
-    public void exact_duplicate_struct_works_new() throws Exception {
-        assertCorrectDeriving("duplicate_struct", "foobar",
-                              new TestProperties()
-                              .setExperimentalSdParsing(true),
-                              new TestableDeployLogger());
-    }
 }

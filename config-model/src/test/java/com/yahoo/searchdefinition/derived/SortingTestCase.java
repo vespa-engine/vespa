@@ -13,15 +13,10 @@ import java.io.IOException;
  * @author baldersheim
  */
 public class SortingTestCase extends AbstractExportingTestCase {
-    @Test
-    public void testDocumentDeriving() throws IOException, ParseException {
-        assertCorrectDeriving("sorting",
-                              new TestProperties().setExperimentalSdParsing(false));
-    }
 
     @Test
     public void testDocumentDerivingNewParser() throws IOException, ParseException {
-        assertCorrectDeriving("sorting",
-                              new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("sorting", new TestProperties());
     }
+
 }

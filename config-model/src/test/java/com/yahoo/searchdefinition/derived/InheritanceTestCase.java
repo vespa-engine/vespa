@@ -72,8 +72,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
         List<String> files = Arrays.asList("grandparent.sd", "mother.sd", "father.sd", "child.sd");
         File outDir = tmpDir.newFolder("out");
         for (int startIdx = 0; startIdx < files.size(); ++startIdx) {
-            var builder = new ApplicationBuilder
-                (new TestProperties().setExperimentalSdParsing(true));
+            var builder = new ApplicationBuilder(new TestProperties());
             for (int fileIdx = startIdx; fileIdx < startIdx + files.size(); ++fileIdx) {
                 String fileName = files.get(fileIdx % files.size());
                 builder.addSchemaFile(dir + fileName);
@@ -181,8 +180,7 @@ public class InheritanceTestCase extends AbstractExportingTestCase {
     public void testInheritStructDiamondNew() throws IOException, ParseException {
         String dir = "src/test/derived/declstruct/";
         List<String> files = Arrays.asList("common.sd", "foo.sd", "bar.sd", "foobar.sd");
-        var builder = new ApplicationBuilder
-            (new TestProperties().setExperimentalSdParsing(true));
+        var builder = new ApplicationBuilder(new TestProperties());
         for (String fileName : files) {
             builder.addSchemaFile(dir + fileName);
         }

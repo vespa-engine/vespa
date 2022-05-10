@@ -13,15 +13,10 @@ import java.io.IOException;
  * @author  bratseth
  */
 public class MultipleSummariesTestCase extends AbstractExportingTestCase {
-    @Test
-    public void testMultipleSummaries() throws IOException, ParseException {
-        assertCorrectDeriving("multiplesummaries",
-                              new TestProperties().setExperimentalSdParsing(false));
-    }
 
     @Test
     public void testMultipleSummariesNew() throws IOException, ParseException {
-        assertCorrectDeriving("multiplesummaries",
-                              new TestProperties().setExperimentalSdParsing(true));
+        assertCorrectDeriving("multiplesummaries", new TestProperties());
     }
+
 }

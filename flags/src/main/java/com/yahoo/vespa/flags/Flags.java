@@ -354,13 +354,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag EXPERIMENTAL_SD_PARSING = defineFeatureFlag(
-            "experimental-sd-parsing", false,
-            List.of("arnej"), "2022-03-04", "2022-12-31",
-            "Parsed schema files via intermediate format",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_BIT_VECTORS = defineFeatureFlag(
             "enable-bit-vectors", false,
             List.of("baldersheim"), "2022-05-03", "2022-12-31",
