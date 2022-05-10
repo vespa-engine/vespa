@@ -202,7 +202,17 @@ public:
 
     virtual bool supports_termwise_children() const { return false; }
     virtual bool always_needs_unpack() const { return false; }
-    virtual void set_global_filter(const GlobalFilter &global_filter);
+
+    /**
+     * Sets the global filter on the query blueprint tree.
+     *
+     * This function is implemented by leaf blueprints that want the global filter,
+     * signaled by LeafBlueprint::set_want_global_filter().
+     *
+     * @param global_filter The global filter that is calculated once per query if wanted.
+     * @param estimated_hit_ratio The estimated hit ratio of the query (in the range [0.0, 1.0]).
+     */
+    virtual void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio);
 
     virtual const State &getState() const = 0;
     const Blueprint &root() const;
@@ -302,7 +312,7 @@ public:
     void setDocIdLimit(uint32_t limit) override final;
 
     void optimize(Blueprint* &self) override final;
-    void set_global_filter(const GlobalFilter &global_filter) override;
+    void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
 
     IndexList find(const IPredicate & check) const;
     size_t childCnt() const { return _children.size(); }

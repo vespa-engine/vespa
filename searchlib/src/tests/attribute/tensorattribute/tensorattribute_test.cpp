@@ -1058,31 +1058,36 @@ using NearestNeighborBlueprintWithoutIndexFixture = NearestNeighborBlueprintFixt
 TEST_F("NN blueprint can use brute force", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint(false);
-    EXPECT_EQUAL(NNBA::BRUTE_FORCE, bp->get_algorithm());
+    EXPECT_EQUAL(NNBA::EXACT, bp->get_algorithm());
 }
 
-TEST_F("NN blueprint handles empty filter", NearestNeighborBlueprintFixture)
+TEST_F("NN blueprint handles empty filter (post-filtering)", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint();
     auto empty_filter = GlobalFilter::create();
-    bp->set_global_filter(*empty_filter);
-    EXPECT_EQUAL(3u, bp->getState().estimate().estHits);
+    bp->set_global_filter(*empty_filter, 0.6);
+    // targetHits is adjusted based on the estimated hit ratio of the query.
+    EXPECT_EQUAL(3u, bp->get_target_hits());
+    EXPECT_EQUAL(5u, bp->get_adjusted_target_hits());
+    EXPECT_EQUAL(5u, bp->getState().estimate().estHits);
     EXPECT_EQUAL(NNBA::INDEX_TOP_K, bp->get_algorithm());
 }
 
-TEST_F("NN blueprint handles strong filter", NearestNeighborBlueprintFixture)
+TEST_F("NN blueprint handles strong filter (pre-filtering)", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint();
     auto filter = search::BitVector::create(11);
     filter->setBit(3);
     filter->invalidateCachedCount();
     auto strong_filter = GlobalFilter::create(std::move(filter));
-    bp->set_global_filter(*strong_filter);
+    bp->set_global_filter(*strong_filter, 0.25);
+    EXPECT_EQUAL(3u, bp->get_target_hits());
+    EXPECT_EQUAL(3u, bp->get_adjusted_target_hits());
     EXPECT_EQUAL(1u, bp->getState().estimate().estHits);
     EXPECT_EQUAL(NNBA::INDEX_TOP_K_WITH_FILTER, bp->get_algorithm());
 }
 
-TEST_F("NN blueprint handles weak filter", NearestNeighborBlueprintFixture)
+TEST_F("NN blueprint handles weak filter (pre-filtering)", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint();
     auto filter = search::BitVector::create(11);
@@ -1094,21 +1099,25 @@ TEST_F("NN blueprint handles weak filter", NearestNeighborBlueprintFixture)
     filter->setBit(11);
     filter->invalidateCachedCount();
     auto weak_filter = GlobalFilter::create(std::move(filter));
-    bp->set_global_filter(*weak_filter);
+    bp->set_global_filter(*weak_filter, 0.6);
+    EXPECT_EQUAL(3u, bp->get_target_hits());
+    EXPECT_EQUAL(3u, bp->get_adjusted_target_hits());
     EXPECT_EQUAL(3u, bp->getState().estimate().estHits);
     EXPECT_EQUAL(NNBA::INDEX_TOP_K_WITH_FILTER, bp->get_algorithm());
 }
 
-TEST_F("NN blueprint handles strong filter triggering brute force search", NearestNeighborBlueprintFixture)
+TEST_F("NN blueprint handles strong filter triggering exact search", NearestNeighborBlueprintFixture)
 {
     auto bp = f.make_blueprint(true, 0.2);
     auto filter = search::BitVector::create(11);
     filter->setBit(3);
     filter->invalidateCachedCount();
     auto strong_filter = GlobalFilter::create(std::move(filter));
-    bp->set_global_filter(*strong_filter);
+    bp->set_global_filter(*strong_filter, 0.6);
+    EXPECT_EQUAL(3u, bp->get_target_hits());
+    EXPECT_EQUAL(3u, bp->get_adjusted_target_hits());
     EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
-    EXPECT_EQUAL(NNBA::BRUTE_FORCE_FALLBACK, bp->get_algorithm());
+    EXPECT_EQUAL(NNBA::EXACT_FALLBACK, bp->get_algorithm());
 }
 
 TEST_F("NN blueprint wants global filter when having index", NearestNeighborBlueprintFixture)

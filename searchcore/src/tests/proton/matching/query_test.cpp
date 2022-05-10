@@ -1117,16 +1117,19 @@ void Test::requireThatConstBoolBlueprintsAreCreatedCorrectly() {
 class GlobalFilterBlueprint : public SimpleBlueprint {
 public:
     std::shared_ptr<const GlobalFilter> filter;
+    double estimated_hit_ratio;
     GlobalFilterBlueprint(const SimpleResult& result,
                           bool want_global_filter)
         : search::queryeval::SimpleBlueprint(result),
-          filter()
+          filter(),
+          estimated_hit_ratio(-1.0)
     {
         set_want_global_filter(want_global_filter);
     }
     ~GlobalFilterBlueprint() {}
-    void set_global_filter(const GlobalFilter& filter_) override {
+    void set_global_filter(const GlobalFilter& filter_, double estimated_hit_ratio_) override {
         filter = filter_.shared_from_this();
+        estimated_hit_ratio = estimated_hit_ratio_;
     }
 };
 
@@ -1141,12 +1144,14 @@ Test::global_filter_is_calculated_and_handled()
         auto res = Query::handle_global_filter(bp, docid_limit, 0, 1, nullptr);
         EXPECT_FALSE(res);
         EXPECT_FALSE(bp.filter);
+        EXPECT_EQUAL(-1.0, bp.estimated_hit_ratio);
     }
     { // estimated_hit_ratio < global_filter_lower_limit
         GlobalFilterBlueprint bp(result, true);
         auto res = Query::handle_global_filter(bp, docid_limit, 0.31, 1, nullptr);
         EXPECT_FALSE(res);
         EXPECT_FALSE(bp.filter);
+        EXPECT_EQUAL(-1.0, bp.estimated_hit_ratio);
     }
     { // estimated_hit_ratio <= global_filter_upper_limit
         GlobalFilterBlueprint bp(result, true);
@@ -1154,6 +1159,7 @@ Test::global_filter_is_calculated_and_handled()
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
         EXPECT_TRUE(bp.filter->has_filter());
+        EXPECT_EQUAL(0.3, bp.estimated_hit_ratio);
 
         auto* bv = bp.filter->filter();
         EXPECT_EQUAL(3u, bv->countTrueBits());
@@ -1167,6 +1173,7 @@ Test::global_filter_is_calculated_and_handled()
         EXPECT_TRUE(res);
         EXPECT_TRUE(bp.filter);
         EXPECT_FALSE(bp.filter->has_filter());
+        EXPECT_EQUAL(0.3, bp.estimated_hit_ratio);
     }
 }
 
