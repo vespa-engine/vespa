@@ -252,7 +252,7 @@ drop_caches () {
     fi
 }
 
-no_transparent_hugepages () {
+enable_transparent_hugepages_with_background_compaction () {
     # Should probably also be done on host.
     if grep -q "release 6" /etc/redhat-release; then
         dn=/sys/kernel/mm/redhat_transparent_hugepage
