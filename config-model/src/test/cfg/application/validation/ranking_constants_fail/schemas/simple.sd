@@ -1,5 +1,6 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search simple {
+schema simple {
+
   document simple {}
 
   constant constant_tensor_1 {
@@ -26,4 +27,5 @@ search simple {
     file: tensors/constant_tensor_5.json
     type: tensor(x[33], y[10], z[46])
   }
+
 }

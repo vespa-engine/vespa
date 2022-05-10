@@ -33,6 +33,7 @@ import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.searchdefinition.document.Sorting;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.fieldoperation.IndexingOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -418,7 +419,7 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | rawAsBase64(schema)
       | searchStemming(schema)
       | importField(schema)
-      | rankingConstant(schema)
+      | rankingConstant(schema) // Deprecated: TODO: Emit warning when on Vespa 8
       | useDocument(schema)
       | rankProfile(schema)
       | documentSummary(schema)
@@ -1767,7 +1768,7 @@ void rankingConstant(ParsedSchema schema) :
 {
     ( <CONSTANT> name = identifier() lbrace()
       (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
-       | path = uriItem() { pathType = DistributableResource.PathType.URI; }
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove oin Vespa 8
        | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
       )+
       <RBRACE>
@@ -1811,7 +1812,7 @@ void rankProfile(ParsedSchema schema) :
     ( <MODEL> | <RANKPROFILE> ) name = identifierWithDash()
     { profile = new ParsedRankProfile(name); }
     [inheritsRankProfile(profile)]
-    lbrace() (rankProfileItem(profile) (<NL>)*)* <RBRACE>
+    lbrace() (rankProfileItem(schema, profile) (<NL>)*)* <RBRACE>
     {
         schema.addRankProfile(profile);
     }
@@ -1823,7 +1824,7 @@ void rankProfile(ParsedSchema schema) :
  *
  * @param profile The rank profile to modify.
  */
-void rankProfileItem(ParsedRankProfile profile) : { }
+void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
 {
     ( fieldRankType(profile)
       | fieldWeight(profile)
@@ -1844,7 +1845,7 @@ void rankProfileItem(ParsedRankProfile profile) : { }
       | secondPhase(profile)
       | rankDegradation()
       | inputs(profile)
-      | constants(profile)
+      | constants(schema, profile)
       | matchFeatures(profile)
       | summaryFeatures(profile)
       | strict(profile) )
@@ -2075,15 +2076,15 @@ void inputs(ParsedRankProfile profile) :
 void input(ParsedRankProfile profile) :
 {
     Reference reference;
-    TensorType type;
+    TensorType type = TensorType.empty;
     Tensor defaultValue = null;
 }
 {
-    reference = queryFeature() type = inputType(reference) ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
+    reference = queryFeature() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
     { profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue))); }
 }
 
-TensorType inputType(Reference reference) :
+TensorType valueType(Reference reference) :
 {
     TensorType type;
 
@@ -2423,17 +2424,54 @@ void rankDegradation() :
 /**
  * Consumes a set of constants available in ranking expressions in the enclosing profile.
  */
-void constants(ParsedRankProfile profile) :
+void constants(ParsedSchema schema, ParsedRankProfile profile) :
 {
     String name;
 }
 {
     <CONSTANTS> <LBRACE> (<NL>)*
-      ( name = identifier() ( constantValue(profile, name) |
-                              constantTensor(profile, name) ) (<NL>)* )*
+    ( constant(schema, profile) (<NL>)* )*
     <RBRACE>
 }
 
+void constant(ParsedSchema schema, ParsedRankProfile profile) :
+{
+    Reference reference = null;
+    TensorType type = TensorType.empty;
+    Tensor value = null;
+    String valuePath = null;
+}
+{
+    (
+      reference = constantName()
+      (
+        LOOKAHEAD(4) ( ( type = valueType(reference) )? <COLON> (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
+        {
+            if (value != null)
+                profile.addConstant(reference.simpleArgument().get(), type.rank() == 0 ? Value.of(value.asDouble()) : Value.of(value));
+            else
+                schema.addRankingConstant(new RankingConstant(reference.simpleArgument().get(), type, valuePath, DistributableResource.PathType.FILE)); // TODO JON: Move to RankProfile
+        }
+        )
+        | // Deprecated forms (TODO: Add warning on Vespa 8):
+        ( constantValue(profile, reference.simpleArgument().get()) | constantTensor(profile, reference.simpleArgument().get()) )
+      )
+    )
+}
+
+/** Returns the reference "constant(name)" for both "constant(name)" and "name". */
+Reference constantName() :
+{
+    String name;
+}
+{
+    ( <CONSTANT> "(" name = identifier() ")" )
+    |
+    name = identifier()
+    { return FeatureNames.asConstantFeature(name); }
+}
+
+// Deprecated form
 void constantValue(ParsedRankProfile profile, String name) :
 {
     Token value;
@@ -2442,6 +2480,7 @@ void constantValue(ParsedRankProfile profile, String name) :
     <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> ) { profile.addConstant(name, Value.parse(value.image)); }
 }
 
+// Deprecated form
 void constantTensor(ParsedRankProfile profile, String name) :
 {
     String tensorString = "";

@@ -85,7 +85,7 @@ search neuralnet {
     rank-profile defaultRankProfile inherits default {
 
         constants {
-            maxSignedSixtyFourBitInteger: 9223372036854775807
+            maxSignedSixtyFourBitInteger double: 9223372036854775807
         }
 
          function log10_1p(x) {

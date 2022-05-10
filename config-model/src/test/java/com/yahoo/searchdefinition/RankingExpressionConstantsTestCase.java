@@ -27,7 +27,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         QueryProfileRegistry queryProfileRegistry = new QueryProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
-                "search test {\n" +
+                "schema test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
                         "            indexing: index \n" +
@@ -36,8 +36,8 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    \n" +
                         "    rank-profile parent {\n" +
                         "        constants {\n" +
-                        "            p1: 7 \n" +
-                        "            p2: 0 \n" +
+                        "            p1 double: 7 \n" +
+                        "            p2 double: 0 \n" +
                         "        }\n" +
                         "        first-phase {\n" +
                         "            expression: p2 * (1.3 + p1 )\n" +
@@ -93,7 +93,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
-                "search test {\n" +
+                "schema test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
                         "            indexing: index \n" +
@@ -152,7 +152,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder builder = new ApplicationBuilder(rankProfileRegistry);
         builder.addSchema(
-                "search test {\n" +
+                "schema test {\n" +
                         "    document test { \n" +
                         "        field a type string { \n" +
                         "            indexing: index \n" +
