@@ -27,8 +27,15 @@ else
 fi
 CONTAINER_HOME="${VESPA_HOME}/var/jdisc_container/${DISCRIMINATOR}/"
 
-ZOOKEEPER_LOG_FILE_PREFIX="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}"
-rm -f ZOOKEEPER_LOG_FILE_PREFIX*lck
+if [[ "$VESPA_SERVICE_NAME" = "container" || "$VESPA_SERVICE_NAME" = "container-clustercontroller" || "$VESPA_SERVICE_NAME" = "qrserver" ]]; then
+    ZOOKEEPER_LOG_FILE_PREFIX="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}"
+    rm -f $ZOOKEEPER_LOG_FILE_PREFIX*lck
+    zookeeper_log_file_property="-Dzookeeper_log_file_prefix=${ZOOKEEPER_LOG_FILE_PREFIX}"
+# TODO: Temporary, remove else clause after 2022-05-20
+else
+    ZOOKEEPER_LOG_FILE_PREFIX="${VESPA_HOME}/logs/vespa/zookeeper.${VESPA_SERVICE_NAME}"
+    rm -f $ZOOKEEPER_LOG_FILE_PREFIX*
+fi
 
 # common setup
 export VESPA_LOG_TARGET=file:${VESPA_HOME}/logs/vespa/vespa.log
@@ -300,7 +307,7 @@ exec $numactlcmd $envcmd java \
         -Djdisc.logger.tag="${VESPA_CONFIG_ID}" \
         -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger \
         -Dvespa.log.control.dir="${VESPA_LOG_CONTROL_DIR}" \
-        -Dzookeeper_log_file_prefix="${ZOOKEEPER_LOG_FILE_PREFIX}" \
+        ${zookeeper_log_file_property} \
         -Dfile.encoding=UTF-8 \
         -cp "$CP" \
         "$@" \
