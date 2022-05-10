@@ -2805,7 +2805,6 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
     private static String routingMethodString(RoutingMethod method) {
         switch (method) {
             case exclusive: return "exclusive";
-            case shared: return "shared";
             case sharedLayer4: return "sharedLayer4";
         }
         throw new IllegalArgumentException("Unknown routing method " + method);

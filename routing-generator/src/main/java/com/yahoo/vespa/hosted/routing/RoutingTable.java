@@ -10,7 +10,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
-
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -23,6 +22,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpoints.RoutingMethod.Enum.sharedLayer4;
 
 /**
  * A routing table for a hosted Vespa zone. This holds the details necessary for the routing layer to route traffic to
@@ -127,10 +128,9 @@ public class RoutingTable {
     }
 
     private static RoutingMethod routingMethodFrom(LbServicesConfig.Tenants.Applications.Endpoints endpoint) {
-        switch (endpoint.routingMethod()) {
-            case shared: return RoutingMethod.shared;
-            case sharedLayer4: return RoutingMethod.sharedLayer4;
-        }
+        if (endpoint.routingMethod() == sharedLayer4)
+            return RoutingMethod.sharedLayer4;
+
         throw new IllegalArgumentException("Unhandled routing method: " + endpoint.routingMethod());
     }
 

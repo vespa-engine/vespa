@@ -8,9 +8,6 @@ package com.yahoo.config.provision.zone;
  */
 public enum RoutingMethod {
 
-    /** Routing happens through shared routing layer */
-    shared,
-
     /** Routing happens through a dedicated layer 4 load balancer */
     exclusive,
 
@@ -24,7 +21,7 @@ public enum RoutingMethod {
 
     /** Returns whether this method routes requests through a shared routing layer */
     public boolean isShared() {
-        return this == shared || this == sharedLayer4;
+        return this == sharedLayer4;
     }
 
 }
