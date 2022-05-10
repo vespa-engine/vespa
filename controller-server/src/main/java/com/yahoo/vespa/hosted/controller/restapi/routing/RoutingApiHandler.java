@@ -369,7 +369,6 @@ public class RoutingApiHandler extends AuditLoggingRequestHandler {
 
     private static String asString(RoutingMethod method) {
         switch (method) {
-            case shared: return "shared";
             case exclusive: return "exclusive";
             case sharedLayer4: return "sharedLayer4";
             default: return "unknown";
