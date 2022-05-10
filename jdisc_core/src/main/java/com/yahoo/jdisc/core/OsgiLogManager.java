@@ -13,6 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * TODO: unused, remove (not public api)
+ *
  * @author Simon Thoresen Hult
  */
 class OsgiLogManager implements LogService {
