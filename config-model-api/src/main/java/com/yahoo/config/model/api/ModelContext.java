@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
@@ -157,6 +158,9 @@ public interface ModelContext {
 
         default List<String> zoneDnsSuffixes() { return List.of(); }
         List<String> environmentVariables();
+
+        default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
+
     }
 
     @Retention(RetentionPolicy.RUNTIME)

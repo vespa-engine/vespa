@@ -12,6 +12,7 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -23,6 +24,7 @@ import com.yahoo.vespa.config.server.deploy.ZooKeeperClient;
 import com.yahoo.vespa.config.server.deploy.ZooKeeperDeployer;
 import com.yahoo.vespa.config.server.filedistribution.AddFileInterface;
 import com.yahoo.vespa.config.server.filedistribution.MockFileManager;
+import com.yahoo.vespa.config.server.tenant.CloudAccountSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
@@ -63,6 +65,7 @@ public class SessionZooKeeperClient {
     private static final String QUOTA_PATH = "quota";
     private static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
     private static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
+    private static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
 
     private final Curator curator;
     private final TenantName tenantName;
@@ -208,6 +211,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(OPERATOR_CERTIFICATES_PATH);
     }
 
+    private Path cloudAccountPath() {
+        return sessionPath.append(CLOUD_ACCOUNT_PATH);
+    }
+
     public void writeVespaVersion(Version version) {
        curator.set(versionPath(), Utf8.toBytes(version.toString()));
     }
@@ -307,6 +314,17 @@ public class SessionZooKeeperClient {
                       .map(SlimeUtils::jsonToSlime)
                       .map(slime -> OperatorCertificateSerializer.fromSlime(slime.get()))
                       .orElse(List.of());
+    }
+
+    public void writeCloudAccount(Optional<CloudAccount> cloudAccount) {
+        if (cloudAccount.isPresent()) {
+            byte[] data = uncheck(() -> SlimeUtils.toJsonBytes(CloudAccountSerializer.toSlime(cloudAccount.get())));
+            curator.set(cloudAccountPath(), data);
+        }
+    }
+
+    public Optional<CloudAccount> readCloudAccount() {
+        return curator.getData(cloudAccountPath()).map(SlimeUtils::jsonToSlime).map(slime -> CloudAccountSerializer.fromSlime(slime.get()));
     }
 
     /**

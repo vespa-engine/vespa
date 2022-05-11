@@ -19,6 +19,7 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
@@ -364,6 +365,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> tlsCiphersOverride;
         private final List<String> zoneDnsSuffixes;
         private final List<String> environmentVariables;
+        private final Optional<CloudAccount> cloudAccount;
 
         public Properties(ApplicationId applicationId,
                           Version nodeVespaVersion,
@@ -378,7 +380,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
-                          List<X509Certificate> operatorCertificates) {
+                          List<X509Certificate> operatorCertificates,
+                          Optional<CloudAccount> cloudAccount) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, nodeVespaVersion);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -406,6 +409,7 @@ public class ModelContextImpl implements ModelContext {
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
             this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.cloudAccount = cloudAccount;
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -489,6 +493,11 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public List<String> environmentVariables() { return environmentVariables; }
+
+        @Override
+        public Optional<CloudAccount> cloudAccount() {
+            return cloudAccount;
+        }
 
     }
 
