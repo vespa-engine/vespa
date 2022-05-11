@@ -8,12 +8,13 @@
     <version>7-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
-  <artifactId>zookeeper-server</artifactId>
+  <artifactId>zookeeper-server-parent</artifactId>
   <packaging>pom</packaging>
   <version>7-SNAPSHOT</version>
   <modules>
     <module>zookeeper-server-common</module>
-    <module>zookeeper-server-3.7.0</module>
+    <module>zookeeper-server</module>
+    <module>zookeeper-server-3.7.1</module>
   </modules>
   <dependencies>
     <dependency>
