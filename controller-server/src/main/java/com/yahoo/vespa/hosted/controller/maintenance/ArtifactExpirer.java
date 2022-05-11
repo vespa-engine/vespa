@@ -53,7 +53,7 @@ public class ArtifactExpirer extends ControllerMaintainer {
                     .filter(artifact -> isExpired(artifact, now, versionStatus))
                     .collect(Collectors.toList());
             if (!artifactsToExpire.isEmpty()) {
-                log.log(Level.INFO, "Expiring " + artifactsToExpire.size() + " artifacts: " + artifactsToExpire);
+                log.log(Level.INFO, "Expiring " + artifactsToExpire.size() + " artifacts in " + cloudName + ": " + artifactsToExpire);
                 artifactRegistry.deleteAll(artifactsToExpire);
             }
             return 1;
