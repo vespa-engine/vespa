@@ -75,6 +75,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new RetriggerMaintainer(controller, intervals.retriggerMaintainer));
         maintainers.add(new UserManagementMaintainer(controller, intervals.userManagementMaintainer, controller.serviceRegistry().roleMaintainer()));
         maintainers.add(new BillingDatabaseMaintainer(controller, intervals.billingDatabaseMaintainer));
+        maintainers.add(new MeteringMonitorMaintainer(controller, intervals.meteringMonitorMaintainer, controller.serviceRegistry().resourceDatabase(), metric));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -131,6 +132,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration retriggerMaintainer;
         private final Duration userManagementMaintainer;
         private final Duration billingDatabaseMaintainer;
+        private final Duration meteringMonitorMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -164,6 +166,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.retriggerMaintainer = duration(1, MINUTES);
             this.userManagementMaintainer = duration(12, HOURS);
             this.billingDatabaseMaintainer = duration(5, MINUTES);
+            this.meteringMonitorMaintainer = duration(30, MINUTES);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

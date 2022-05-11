@@ -1,14 +1,16 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
-import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -27,6 +29,8 @@ public interface ResourceDatabaseClient {
     List<ResourceSnapshot> getRawSnapshotHistoryForTenant(TenantName tenantName, YearMonth yearMonth);
 
     Set<TenantName> getTenants();
+
+    Map<ApplicationId, Set<ZoneId>> getLastSnapshots();
 
     default List<ResourceUsage> getResourceSnapshotsForMonth(TenantName tenantName, YearMonth month) {
         return getResourceSnapshotsForPeriod(tenantName, getMonthStartTimeStamp(month), getMonthEndTimeStamp(month));

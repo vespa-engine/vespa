@@ -1,8 +1,10 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 
@@ -11,7 +13,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,6 +34,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     PlanRegistry planRegistry;
     Map<TenantName, Plan> planMap = new HashMap<>();
     List<ResourceSnapshot> resourceSnapshots = new ArrayList<>();
+    Map<ApplicationId, Set<ZoneId>> lastSnapshots = new HashMap<>();
     private boolean hasRefreshedMaterializedView = false;
 
     public ResourceDatabaseClientMock(PlanRegistry planRegistry) {
@@ -126,11 +128,20 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
         hasRefreshedMaterializedView = true;
     }
 
+    @Override
+    public Map<ApplicationId, Set<ZoneId>> getLastSnapshots() {
+        return lastSnapshots;
+    }
+
     public void setPlan(TenantName tenant, Plan plan) {
         planMap.put(tenant, plan);
     }
 
     public boolean hasRefreshedMaterializedView() {
         return hasRefreshedMaterializedView;
+    }
+
+    public void setLastSnapshots(Map<ApplicationId, Set<ZoneId>> lastSnapshots) {
+        this.lastSnapshots = lastSnapshots;
     }
 }
