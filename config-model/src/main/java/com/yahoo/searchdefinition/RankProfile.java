@@ -116,12 +116,11 @@ public class RankProfile implements Cloneable {
 
     private Map<Reference, Input> inputs = new LinkedHashMap<>();
 
+    private Map<Reference, Constant> constants = new HashMap<>();
+
     private Set<String> filterFields = new HashSet<>();
 
     private final RankProfileRegistry rankProfileRegistry;
-
-    /** Constants in ranking expressions */
-    private Map<String, Constant> constants = new HashMap<>();
 
     private final TypeSettings attributeTypes = new TypeSettings();
 
@@ -416,15 +415,15 @@ public class RankProfile implements Cloneable {
         return finalSettings;
     }
 
-    public void addConstant(String name, Constant value) {
+    public void addConstant(Reference name, Constant value) {
         constants.put(name, value);
     }
 
     /** Returns an unmodifiable view of the constants available in this */
-    public Map<String, Constant> getConstants() {
+    public Map<Reference, Constant> getConstants() {
         if (inherited().isEmpty()) return new HashMap<>(constants);
 
-        Map<String, Constant> allConstants = new HashMap<>();
+        Map<Reference, Constant> allConstants = new HashMap<>();
         for (var inheritedProfile : inherited()) {
             for (var constant : inheritedProfile.getConstants().entrySet()) {
                 if (allConstants.containsKey(constant.getKey()))
@@ -960,9 +959,9 @@ public class RankProfile implements Cloneable {
         allFunctionsCached = null;
     }
 
-    private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<String, Constant> constants) {
-        for (Map.Entry<String, RankingExpressionFunction> functionEntry : functions.entrySet()) {
-            if (constants.containsKey(functionEntry.getKey()))
+    private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<Reference, Constant> constants) {
+        for (var functionEntry : functions.entrySet()) {
+            if (constants.containsKey(FeatureNames.asConstantFeature(functionEntry.getKey())))
                 throw new IllegalArgumentException("Cannot have both a constant and function named '" +
                                                    functionEntry.getKey() + "'");
         }
@@ -1007,7 +1006,7 @@ public class RankProfile implements Cloneable {
                                               QueryProfileRegistry queryProfiles,
                                               Map<Reference, TensorType> featureTypes,
                                               ImportedMlModels importedModels,
-                                              Map<String, Constant> constants,
+                                              Map<Reference, Constant> constants,
                                               Map<String, RankingExpressionFunction> inlineFunctions,
                                               ExpressionTransforms expressionTransforms) {
         if (function == null) return null;
@@ -1048,7 +1047,7 @@ public class RankProfile implements Cloneable {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
 
         // Add small and large constants, respectively
-        getConstants().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.type()));
+        getConstants().forEach((k, v) -> context.setType(k, v.type()));
         rankingConstants().asMap().forEach((k, v) -> context.setType(FeatureNames.asConstantFeature(k), v.getTensorType()));
 
         // Add query features from all rank profile types

@@ -33,7 +33,7 @@ public class RankProfileTransformContext extends TransformContext {
                                        QueryProfileRegistry queryProfiles,
                                        Map<Reference, TensorType> featureTypes,
                                        ImportedMlModels importedModels,
-                                       Map<String, RankProfile.Constant> constants,
+                                       Map<Reference, RankProfile.Constant> constants,
                                        Map<String, RankProfile.RankingExpressionFunction> inlineFunctions) {
         super(valuesOf(constants), rankProfile.typeContext(queryProfiles, featureTypes));
         this.rankProfile = rankProfile;
@@ -48,7 +48,7 @@ public class RankProfileTransformContext extends TransformContext {
     public Map<String, RankProfile.RankingExpressionFunction> inlineFunctions() { return inlineFunctions; }
     public Map<String, String> rankProperties() { return rankProperties; }
 
-    private static Map<String, Value> valuesOf(Map<String, RankProfile.Constant> constants) {
+    private static Map<String, Value> valuesOf(Map<Reference, RankProfile.Constant> constants) {
         return constants.values().stream()
                         .filter(constant -> constant.value().isPresent())
                         .collect(Collectors.toMap(constant -> constant.name().simpleArgument().get(),

@@ -265,8 +265,8 @@ public class ConvertedModel {
 
     private static Map<String, ExpressionFunction> convertStored(ModelStore store, RankProfile profile) {
         for (Pair<String, Tensor> constant : store.readSmallConstants()) {
-            profile.addConstant(constant.getFirst(),
-                                new RankProfile.Constant(FeatureNames.asConstantFeature(constant.getFirst()), constant.getSecond()));
+            var name = FeatureNames.asConstantFeature(constant.getFirst());
+            profile.addConstant(name, new RankProfile.Constant(name, constant.getSecond()));
         }
 
         for (RankingConstant constant : store.readLargeConstants()) {
@@ -298,8 +298,8 @@ public class ConvertedModel {
                                                String constantValueString) {
         Tensor constantValue = Tensor.from(constantValueString);
         store.writeSmallConstant(constantName, constantValue);
-        profile.addConstant(constantName,
-                            new RankProfile.Constant(FeatureNames.asConstantFeature(constantName), constantValue));
+        Reference name = FeatureNames.asConstantFeature(constantName);
+        profile.addConstant(name, new RankProfile.Constant(name, constantValue));
     }
 
     private static void transformLargeConstant(ModelStore store,

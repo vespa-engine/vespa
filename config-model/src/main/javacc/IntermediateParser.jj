@@ -2448,7 +2448,7 @@ void constant(ParsedSchema schema, ParsedRankProfile profile) :
         LOOKAHEAD(4) ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
         {
             if (value != null)
-                profile.addConstant(name.simpleArgument().get(), new RankProfile.Constant(name, value));
+                profile.addConstant(name, new RankProfile.Constant(name, value));
             else
                 schema.addRankingConstant(new RankingConstant(name.simpleArgument().get(), type, valuePath, DistributableResource.PathType.FILE)); // TODO JON: Move to RankProfile
         }
@@ -2478,7 +2478,7 @@ void constantValue(ParsedRankProfile profile, Reference name) :
 }
 {
     <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
-    { profile.addConstant(name.simpleArgument().get(), new RankProfile.Constant(name, Tensor.from(value.image))); }
+    { profile.addConstant(name, new RankProfile.Constant(name, Tensor.from(value.image))); }
 }
 
 // Deprecated form
@@ -2491,7 +2491,7 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
     <LBRACE> (<NL>)*
       (( tensorString = tensorValuePrefixedByValue() |
          type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
-    { profile.addConstant(name.simpleArgument().get(),
+    { profile.addConstant(name,
                           new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));
     }
 }
