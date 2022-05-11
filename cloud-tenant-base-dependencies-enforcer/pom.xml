@@ -252,6 +252,7 @@
                                         <include>org.eclipse.jetty.http2:http2-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-java-server:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-client:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-continuation:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-jmx:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-security:[${jetty.version}]:jar:test</include>
