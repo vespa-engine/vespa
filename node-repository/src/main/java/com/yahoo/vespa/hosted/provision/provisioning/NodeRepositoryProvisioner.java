@@ -119,7 +119,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
         return nodeResources.isUnspecified()
-                ? capacityPolicies.defaultNodeResources(cluster.type(), applicationId)
+                ? capacityPolicies.defaultNodeResources(cluster, applicationId)
                 : nodeResources;
     }
 
@@ -180,7 +180,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
         var initial = requested.minResources();
         if (initial.nodeResources().isUnspecified())
-            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec.type(), applicationId));
+            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec, applicationId));
         return initial;
     }
 

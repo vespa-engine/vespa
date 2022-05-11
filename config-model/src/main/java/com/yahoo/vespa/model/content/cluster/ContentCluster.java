@@ -51,7 +51,6 @@ import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.Tuning;
 import org.w3c.dom.Element;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -62,8 +61,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 
-import static com.yahoo.config.provision.NodeResources.DiskSpeed;
-import static com.yahoo.config.provision.NodeResources.StorageType;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -328,17 +325,14 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             }
         }
 
-        public static final NodeResources clusterControllerResources = new NodeResources(0.25, 1.14, 10, 0.3, DiskSpeed.any, StorageType.any);
-
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement,
                                                                                 Admin admin,
                                                                                 ConfigModelContext context,
                                                                                 DeployState deployState,
                                                                                 String clusterName) {
             if (admin.getClusterControllers() == null) {
-                NodeResources nodeResources = clusterControllerResources.with(deployState.featureFlags().adminClusterArchitecture());
                 NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
-                                                                                       nodeResources,
+                                                                                       NodeResources.unspecified(),
                                                                                        contentElement,
                                                                                        context);
                 Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
