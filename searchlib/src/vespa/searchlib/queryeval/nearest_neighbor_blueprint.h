@@ -21,15 +21,16 @@ namespace search::queryeval {
 class NearestNeighborBlueprint : public ComplexLeafBlueprint {
 public:
     enum class Algorithm {
-        BRUTE_FORCE,
-        BRUTE_FORCE_FALLBACK,
+        EXACT,
+        EXACT_FALLBACK,
         INDEX_TOP_K,
         INDEX_TOP_K_WITH_FILTER
     };
 private:
     const tensor::ITensorAttribute& _attr_tensor;
     std::unique_ptr<vespalib::eval::Value> _query_tensor;
-    uint32_t _target_num_hits;
+    uint32_t _target_hits;
+    uint32_t _adjusted_target_hits;
     bool _approximate;
     uint32_t _explore_additional_hits;
     double _distance_threshold;
@@ -50,7 +51,7 @@ public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              const tensor::ITensorAttribute& attr_tensor,
                              std::unique_ptr<vespalib::eval::Value> query_tensor,
-                             uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits,
+                             uint32_t target_hits, bool approximate, uint32_t explore_additional_hits,
                              double distance_threshold,
                              double global_filter_lower_limit,
                              double global_filter_upper_limit);
@@ -59,8 +60,9 @@ public:
     ~NearestNeighborBlueprint();
     const tensor::ITensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
     const vespalib::eval::Value& get_query_tensor() const { return *_query_tensor; }
-    uint32_t get_target_num_hits() const { return _target_num_hits; }
-    void set_global_filter(const GlobalFilter &global_filter) override;
+    uint32_t get_target_hits() const { return _target_hits; }
+    uint32_t get_adjusted_target_hits() const { return _adjusted_target_hits; }
+    void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;
     Algorithm get_algorithm() const { return _algorithm; }
     double get_distance_threshold() const { return _distance_threshold; }
 

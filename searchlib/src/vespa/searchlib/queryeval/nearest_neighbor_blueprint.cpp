@@ -56,10 +56,10 @@ to_string(NearestNeighborBlueprint::Algorithm algorithm)
 {
     using NNBA = NearestNeighborBlueprint::Algorithm;
     switch (algorithm) {
-        case NNBA::BRUTE_FORCE: return "brute force";
-        case NNBA::BRUTE_FORCE_FALLBACK: return "brute force fallback";
+        case NNBA::EXACT: return "exact";
+        case NNBA::EXACT_FALLBACK: return "exact fallback";
         case NNBA::INDEX_TOP_K: return "index top k";
-        case NNBA::INDEX_TOP_K_WITH_FILTER: return "index top k using global filter";
+        case NNBA::INDEX_TOP_K_WITH_FILTER: return "index top k using filter";
     }
     return "unknown";
 }
@@ -69,7 +69,7 @@ to_string(NearestNeighborBlueprint::Algorithm algorithm)
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::ITensorAttribute& attr_tensor,
                                                    std::unique_ptr<Value> query_tensor,
-                                                   uint32_t target_num_hits,
+                                                   uint32_t target_hits,
                                                    bool approximate,
                                                    uint32_t explore_additional_hits,
                                                    double distance_threshold,
@@ -78,16 +78,17 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
       _query_tensor(std::move(query_tensor)),
-      _target_num_hits(target_num_hits),
+      _target_hits(target_hits),
+      _adjusted_target_hits(target_hits),
       _approximate(approximate),
       _explore_additional_hits(explore_additional_hits),
       _distance_threshold(std::numeric_limits<double>::max()),
       _global_filter_lower_limit(global_filter_lower_limit),
       _global_filter_upper_limit(global_filter_upper_limit),
       _fallback_dist_fun(),
-      _distance_heap(target_num_hits),
+      _distance_heap(target_hits),
       _found_hits(),
-      _algorithm(Algorithm::BRUTE_FORCE),
+      _algorithm(Algorithm::EXACT),
       _global_filter(GlobalFilter::create()),
       _global_filter_set(false),
       _global_filter_hits(),
@@ -120,26 +121,30 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
 NearestNeighborBlueprint::~NearestNeighborBlueprint() = default;
 
 void
-NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
+NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio)
 {
     _global_filter = global_filter.shared_from_this();
     _global_filter_set = true;
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (_approximate && nns_index) {
         uint32_t est_hits = _attr_tensor.get_num_docs();
-        if (_global_filter->has_filter()) {
-            uint32_t max_hits = _global_filter->filter()->countTrueBits();
-            double max_hit_ratio = static_cast<double>(max_hits) / est_hits;
-            if (max_hit_ratio < _global_filter_lower_limit) {
-                _algorithm = Algorithm::BRUTE_FORCE_FALLBACK;
+        if (_global_filter->has_filter()) { // pre-filtering case
+            _global_filter_hits = _global_filter->filter()->countTrueBits();
+            _global_filter_hit_ratio = static_cast<double>(_global_filter_hits.value()) / est_hits;
+            if (_global_filter_hit_ratio.value() < _global_filter_lower_limit) {
+                _algorithm = Algorithm::EXACT_FALLBACK;
             } else {
-                est_hits = std::min(est_hits, max_hits);
+                est_hits = std::min(est_hits, _global_filter_hits.value());
             }
-            _global_filter_hits = max_hits;
-            _global_filter_hit_ratio = max_hit_ratio;
+        } else { // post-filtering case
+            // The goal is to expose 'targetHits' hits to first-phase ranking.
+            // We try to achieve this by adjusting targetHits based on the estimated hit ratio of the query before post-filtering.
+            if (estimated_hit_ratio > 0.0) {
+                _adjusted_target_hits = static_cast<double>(_target_hits) / estimated_hit_ratio;
+            }
         }
-        if (_algorithm != Algorithm::BRUTE_FORCE_FALLBACK) {
-            est_hits = std::min(est_hits, _target_num_hits);
+        if (_algorithm != Algorithm::EXACT_FALLBACK) {
+            est_hits = std::min(est_hits, _adjusted_target_hits);
             setEstimate(HitEstimate(est_hits, false));
             perform_top_k(nns_index);
         }
@@ -150,7 +155,7 @@ void
 NearestNeighborBlueprint::perform_top_k(const search::tensor::NearestNeighborIndex* nns_index)
 {
     auto lhs = _query_tensor->cells();
-    uint32_t k = _target_num_hits;
+    uint32_t k = _adjusted_target_hits;
     if (_global_filter->has_filter()) {
         auto filter = _global_filter->filter();
         _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits, _distance_threshold);
@@ -180,7 +185,8 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     ComplexLeafBlueprint::visitMembers(visitor);
     visitor.visitString("attribute_tensor", _attr_tensor.getTensorType().to_spec());
     visitor.visitString("query_tensor", _query_tensor->type().to_spec());
-    visitor.visitInt("target_num_hits", _target_num_hits);
+    visitor.visitInt("target_hits", _target_hits);
+    visitor.visitInt("adjusted_target_hits", _adjusted_target_hits);
     visitor.visitInt("explore_additional_hits", _explore_additional_hits);
     visitor.visitBool("wanted_approximate", _approximate);
     visitor.visitBool("has_index", _attr_tensor.nearest_neighbor_index());

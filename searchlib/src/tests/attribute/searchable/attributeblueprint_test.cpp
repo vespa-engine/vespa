@@ -374,7 +374,7 @@ expect_nearest_neighbor_blueprint(const vespalib::string& attribute_tensor_type_
     const auto& nearest = downcast<const NearestNeighborBlueprint>(*result);
     EXPECT_EQ(attribute_tensor_type_spec, nearest.get_attribute_tensor().getTensorType().to_spec());
     EXPECT_EQ(converted_query_tensor, spec_from_value(nearest.get_query_tensor()));
-    EXPECT_EQ(7u, nearest.get_target_num_hits());
+    EXPECT_EQ(7u, nearest.get_target_hits());
 }
 
 TEST(AttributeBlueprintTest, nearest_neighbor_blueprint_is_created_by_attribute_blueprint_factory)
