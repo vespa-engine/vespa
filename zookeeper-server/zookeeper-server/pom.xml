@@ -4,11 +4,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <groupId>com.yahoo.vespa</groupId>
-    <artifactId>zookeeper-server</artifactId>
+    <artifactId>zookeeper-server-parent</artifactId>
     <version>7-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>zookeeper-server-3.7.0</artifactId>
+  <artifactId>zookeeper-server</artifactId>
   <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
   <properties>
