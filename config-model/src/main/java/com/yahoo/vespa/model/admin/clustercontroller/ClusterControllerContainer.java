@@ -25,6 +25,7 @@ import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.PlatformBundles;
 
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -66,7 +67,7 @@ public class ClusterControllerContainer extends Container implements
                    CLUSTERCONTROLLER_BUNDLE);
         addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
                                             AccessLogComponent.CompressionType.GZIP,
-                                            "controller",
+                                            Optional.of("controller"),
                                             deployState.isHosted()));
 
         // TODO: Why are bundles added here instead of in the cluster?

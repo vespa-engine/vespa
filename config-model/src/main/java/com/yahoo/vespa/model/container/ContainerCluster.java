@@ -550,7 +550,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void addDefaultSearchAccessLog() {
         var compressionType = isHostedVespa ? AccessLogComponent.CompressionType.ZSTD : AccessLogComponent.CompressionType.GZIP;
-        addComponent(new AccessLogComponent(this, AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, getName(), isHostedVespa));
+        // In hosted Vespa with one application container per node we do not use the container name to distinguish log files
+        Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
+        addComponent(new AccessLogComponent(this, AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, clusterName, isHostedVespa));
     }
 
     @Override

@@ -60,7 +60,7 @@ public class MetricsProxyContainer extends Container implements
         addNodeSpecificComponents();
         addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
                 AccessLogComponent.CompressionType.ZSTD,
-                "metrics-proxy",
+                Optional.of("metrics-proxy"),
                 deployState.isHosted()));
     }
 
