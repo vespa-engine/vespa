@@ -4,7 +4,6 @@ package com.yahoo.searchdefinition.derived;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
@@ -50,11 +49,12 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                         ApplicationBuilder builder,
                                         DeployLogger logger) throws IOException {
         DerivedConfiguration config = new DerivedConfiguration(builder.getSchema(schemaName),
-                                                               new DeployState.Builder().properties(properties)
-                                                                                        .deployLogger(logger)
-                                                                                        .rankProfileRegistry(builder.getRankProfileRegistry())
-                                                                                        .queryProfiles(builder.getQueryProfileRegistry())
-                                                                                        .build());
+                                                               logger,
+                                                               properties,
+                                                               builder.getRankProfileRegistry(),
+                                                               builder.getQueryProfileRegistry(),
+                                                               new ImportedMlModels(),
+                                                               new InThreadExecutorService());
         return export(dirName, builder, config);
     }
 
@@ -108,10 +108,10 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
     }
 
     protected DerivedConfiguration assertCorrectDeriving(String dirName,
-                                                         String schemaName,
+                                                         String searchDefinitionName,
                                                          TestProperties properties,
                                                          DeployLogger logger) throws IOException, ParseException {
-        DerivedConfiguration derived = derive(dirName, schemaName, properties, logger);
+        DerivedConfiguration derived = derive(dirName, searchDefinitionName, properties, logger);
         assertCorrectConfigFiles(dirName);
         return derived;
     }

@@ -3,7 +3,6 @@ package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
@@ -61,12 +60,16 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            LargeRankExpressions largeRankExpressions,
                            OnnxModels onnxModels,
                            AttributeFields attributeFields,
-                           DeployState deployState) {
+                           RankProfileRegistry rankProfileRegistry,
+                           QueryProfileRegistry queryProfiles,
+                           ImportedMlModels importedModels,
+                           ModelContext.Properties deployProperties,
+                           ExecutorService executor) {
         setName(schema == null ? "default" : schema.getName());
         this.rankingConstants = rankingConstants;
         this.largeRankExpressions = largeRankExpressions;
         this.onnxModels = onnxModels;  // as ONNX models come from parsing rank expressions
-        deriveRankProfiles(schema, attributeFields, deployState);
+        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, schema, attributeFields, deployProperties, executor);
     }
 
     private boolean areDependenciesReady(RankProfile rank, RankProfileRegistry registry) {
@@ -75,34 +78,28 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                (rank.schema() != null && rank.inheritedNames().stream().allMatch(name -> registry.resolve(rank.schema().getDocument(), name) != null));
     }
 
-    private void deriveRankProfiles(Schema schema,
+    private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
+                                    QueryProfileRegistry queryProfiles,
+                                    ImportedMlModels importedModels,
+                                    Schema schema,
                                     AttributeFields attributeFields,
-                                    DeployState deployState) {
+                                    ModelContext.Properties deployProperties,
+                                    ExecutorService executor) {
         if (schema != null) { // profiles belonging to a search have a default profile
-            RawRankProfile rawRank = new RawRankProfile(deployState.rankProfileRegistry().get(schema, "default"),
-                                                        largeRankExpressions,
-                                                        deployState.getQueryProfiles().getRegistry(),
-                                                        deployState.getImportedModels(),
-                                                        attributeFields,
-                                                        deployState.getProperties());
+            RawRankProfile rawRank = new RawRankProfile(rankProfileRegistry.get(schema, "default"),
+                    largeRankExpressions, queryProfiles, importedModels, attributeFields, deployProperties);
             rankProfiles.put(rawRank.getName(), rawRank);
         }
 
         Map<String, RankProfile> remaining = new LinkedHashMap<>();
-        deployState.rankProfileRegistry().rankProfilesOf(schema).forEach(rank -> remaining.put(rank.name(), rank));
+        rankProfileRegistry.rankProfilesOf(schema).forEach(rank -> remaining.put(rank.name(), rank));
         remaining.remove("default");
         while (!remaining.isEmpty()) {
             List<RankProfile> ready = new ArrayList<>();
             remaining.forEach((name, rank) -> {
-                if (areDependenciesReady(rank, deployState.rankProfileRegistry())) ready.add(rank);
+                if (areDependenciesReady(rank, rankProfileRegistry)) ready.add(rank);
             });
-            processRankProfiles(ready,
-                                deployState.getQueryProfiles().getRegistry(),
-                                deployState.getImportedModels(),
-                                schema,
-                                attributeFields,
-                                deployState.getProperties(),
-                                deployState.getExecutor());
+            processRankProfiles(ready, queryProfiles, importedModels, schema, attributeFields, deployProperties, executor);
             ready.forEach(rank -> remaining.remove(rank.name()));
         }
     }

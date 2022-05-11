@@ -49,30 +49,30 @@ public class QueryProfileRegistry extends ComponentRegistry<QueryProfile> {
      * which has a type which allows path mahting is used. If there is no such profile, null is returned.
      */
     public QueryProfile findQueryProfile(String idString) {
-        if (idString == null) return getComponent("default");
-        ComponentSpecification id = new ComponentSpecification(idString);
-        QueryProfile profile = getComponent(id);
-        if (profile != null) return profile;
+        if (idString==null) return getComponent("default");
+        ComponentSpecification id=new ComponentSpecification(idString);
+        QueryProfile profile=getComponent(id);
+        if (profile!=null) return profile;
 
         return findPathParentQueryProfile(new ComponentSpecification(idString));
     }
 
     private QueryProfile findPathParentQueryProfile(ComponentSpecification id) {
         // Try the name with "/" appended - should have the same semantics with path matching
-        QueryProfile slashedProfile = getComponent(new ComponentSpecification(id.getName() + "/", id.getVersionSpecification()));
-        if (slashedProfile != null && slashedProfile.getType() != null && slashedProfile.getType().getMatchAsPath())
+        QueryProfile slashedProfile=getComponent(new ComponentSpecification(id.getName() + "/",id.getVersionSpecification()));
+        if (slashedProfile!=null && slashedProfile.getType()!=null && slashedProfile.getType().getMatchAsPath())
             return slashedProfile;
 
         // Extract the parent (if any)
-        int slashIndex = id.getName().lastIndexOf("/");
-        if (slashIndex < 1) return null;
-        String parentName = id.getName().substring(0,slashIndex);
+        int slashIndex=id.getName().lastIndexOf("/");
+        if (slashIndex<1) return null;
+        String parentName=id.getName().substring(0,slashIndex);
 
-        ComponentSpecification parentId = new ComponentSpecification(parentName, id.getVersionSpecification());
+        ComponentSpecification parentId=new ComponentSpecification(parentName,id.getVersionSpecification());
 
-        QueryProfile pathParentProfile = getComponent(parentId);
+        QueryProfile pathParentProfile=getComponent(parentId);
 
-        if (pathParentProfile != null && pathParentProfile.getType() != null && pathParentProfile.getType().getMatchAsPath())
+        if (pathParentProfile!=null && pathParentProfile.getType()!=null && pathParentProfile.getType().getMatchAsPath())
             return pathParentProfile;
         return findPathParentQueryProfile(parentId);
     }
