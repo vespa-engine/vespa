@@ -13,7 +13,7 @@ import java.util.logging.LogRecord;
 public class AggregateTestRunner implements TestRunner {
 
     private final List<TestRunner> wrapped;
-    private volatile int current = -1;
+    private int current = -1;
     private final Object monitor = new Object();
 
     private AggregateTestRunner(List<TestRunner> testRunners) {
@@ -27,9 +27,10 @@ public class AggregateTestRunner implements TestRunner {
     @Override
     public Collection<LogRecord> getLog(long after) {
         ArrayList<LogRecord> records = new ArrayList<>();
-        for (int i = 0; i <= current && i < wrapped.size(); i++)
-            records.addAll(wrapped.get(i).getLog(after));
-
+        synchronized (monitor) {
+            for (int i = 0; i <= current && i < wrapped.size(); i++)
+                records.addAll(wrapped.get(i).getLog(after));
+        }
         return records;
     }
 
@@ -79,9 +80,10 @@ public class AggregateTestRunner implements TestRunner {
     @Override
     public TestReport getReport() {
         TestReport report = null;
-        for (int i = 0; i < current && i < wrapped.size(); i++)
-            report = merge(report, wrapped.get(i).getReport());
-
+        synchronized (monitor) {
+            for (int i = 0; i < current && i < wrapped.size(); i++)
+                report = merge(report, wrapped.get(i).getReport());
+        }
         return report;
     }
 
