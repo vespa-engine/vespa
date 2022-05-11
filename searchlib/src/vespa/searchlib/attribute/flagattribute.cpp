@@ -62,7 +62,7 @@ void FlagAttributeT<B>::clearOldValues(DocId doc)
 {
     const typename B::WType * values(nullptr);
     for (uint32_t i(0), m(this->get(doc, values)); i < m; i++) {
-        BitVector * bv = _bitVectors[getOffset(multivalue::get_value(values[i]))];
+        BitVector * bv = _bitVectors[getOffset(multivalue::get_value(values[i]))].load_relaxed();
         if (bv != nullptr) {
             bv->clearBitAndMaintainCount(doc);
         }
@@ -103,7 +103,7 @@ bool FlagAttributeT<B>::onLoad(vespalib::Executor * executor)
 {
     for (size_t i(0), m(_bitVectors.size()); i < m; i++) {
         _bitVectorStore[i].reset();
-        _bitVectors[i] = nullptr;
+        _bitVectors[i].store_relaxed(nullptr);
     }
     _bitVectorSize = 0;
     return B::onLoad(executor);
@@ -119,12 +119,12 @@ void FlagAttributeT<B>::setNewValues(DocId doc, const std::vector<typename B::WT
     for (uint32_t i(0), m(values.size()); i < m; i++) {
         typename B::WType value = values[i];
         uint32_t offset = getOffset(value);
-        BitVector * bv = _bitVectors[offset];
+        BitVector * bv = _bitVectors[offset].load_relaxed();
         if (bv == nullptr) {
             assert(_bitVectorSize >= this->getNumDocs());
             _bitVectorStore[offset] = std::make_shared<GrowableBitVector>(_bitVectorSize, _bitVectorSize, _bitVectorHolder);
-            _bitVectors[offset] = _bitVectorStore[offset].get();
-            bv = _bitVectors[offset];
+            _bitVectors[offset].store_release(&_bitVectorStore[offset]->writer());
+            bv = _bitVectors[offset].load_relaxed();
             ensureGuardBit(*bv);
         }
         bv->setBitAndMaintainCount(doc);
@@ -136,12 +136,12 @@ void
 FlagAttributeT<B>::setNewBVValue(DocId doc, multivalue::ValueType_t<typename B::WType> value)
 {
     uint32_t offset = getOffset(value);
-    BitVector * bv = _bitVectors[offset];
+    BitVector * bv = _bitVectors[offset].load_relaxed();
     if (bv == nullptr) {
         assert(_bitVectorSize >= this->getNumDocs());
         _bitVectorStore[offset] = std::make_shared<GrowableBitVector>(_bitVectorSize, _bitVectorSize, _bitVectorHolder);
-        _bitVectors[offset] = _bitVectorStore[offset].get();
-        bv = _bitVectors[offset];
+        _bitVectors[offset].store_release(&_bitVectorStore[offset]->writer());
+        bv = _bitVectors[offset].load_relaxed();
         ensureGuardBit(*bv);
     }
     bv->setBitAndMaintainCount(doc);
@@ -186,7 +186,8 @@ template <typename B>
 void
 FlagAttributeT<B>::ensureGuardBit()
 {
-    for (BitVector * bv : _bitVectors) {
+    for (const auto &wrapper: _bitVectors) {
+        BitVector *bv = wrapper.load_relaxed();
         if (bv != nullptr) {
             ensureGuardBit(*bv);
         }
@@ -197,7 +198,8 @@ template <typename B>
 void
 FlagAttributeT<B>::clearGuardBit(DocId doc)
 {
-    for (BitVector * bv : _bitVectors) {
+    for (const auto &wrapper: _bitVectors) {
+        BitVector *bv = wrapper.load_relaxed();
         if (bv != nullptr) {
             bv->clearBit(doc); // clear guard bit and start using this doc id
         }
@@ -211,9 +213,12 @@ FlagAttributeT<B>::resizeBitVectors(uint32_t neededSize)
     const GrowStrategy & gs = this->getConfig().getGrowStrategy();
     uint32_t newSize = neededSize + (neededSize * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
     for (size_t i(0), m(_bitVectors.size()); i < m; i++) {
-        BitVector *bv = _bitVectors[i];
+        BitVector *bv = _bitVectors[i].load_relaxed();
         if (bv != nullptr) {
-            _bitVectorStore[i]->extend(newSize);
+            if (_bitVectorStore[i]->extend(newSize)) {
+                _bitVectors[i].store_release(&_bitVectorStore[i]->writer());
+                bv = _bitVectors[i].load_relaxed();
+            }
             ensureGuardBit(*bv);
         }
     }

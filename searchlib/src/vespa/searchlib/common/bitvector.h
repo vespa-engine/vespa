@@ -6,7 +6,6 @@
 #include <memory>
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/atomic.h>
-#include <vespa/vespalib/util/generationholder.h>
 #include <vespa/fastos/types.h>
 
 namespace vespalib {
@@ -24,8 +23,6 @@ class BitVector : protected BitWord
 {
 public:
     using Index = BitWord::Index;
-    using GenerationHolder = vespalib::GenerationHolder;
-    using GenerationHeldBase = vespalib::GenerationHeldBase;
     using UP = std::unique_ptr<BitVector>;
     class Range {
     public:
@@ -50,12 +47,11 @@ public:
     bool testBit(Index idx) const {
         return ((load_word(wordNum(idx)) & mask(idx)) != 0);
     }
-    Index getSizeSafe() const {
+    Index getSizeAcquire() const {
         return vespalib::atomic::load_ref_acquire(_sz);
     }
-    bool testBitSafe(Index idx) const {
-        auto my_words = vespalib::atomic::load_ref_acquire(_words);
-        auto my_word = vespalib::atomic::load_ref_acquire(my_words[wordNum(idx)]);
+    bool testBitAcquire(Index idx) const {
+        auto my_word = vespalib::atomic::load_ref_acquire(_words[wordNum(idx)]);
         return (my_word & mask(idx)) != 0;
     }
     bool hasTrueBits() const {

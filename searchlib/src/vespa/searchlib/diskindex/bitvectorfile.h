@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/allocator.h>
+#include <vector>
 
 class Fast_BufferedFile;
 

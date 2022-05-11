@@ -33,7 +33,7 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary,
       _FSTC(0.0),
       _PLSTC(0.0),
       _minBvDocFreq(minBvDocFreq),
-      _gbv(nullptr),
+      _bv(nullptr),
       _baseSearchCtx(baseSearchCtx)
 {
 }

@@ -45,7 +45,7 @@ protected:
     float _FSTC;  // Filtering Search Time Constant
     float _PLSTC; // Posting List Search Time Constant
     uint32_t                _minBvDocFreq;
-    const GrowableBitVector *_gbv; // bitvector if _useBitVector has been set
+    const BitVector *_bv; // bitvector if _useBitVector has been set
     const ISearchContext    &_baseSearchCtx;
 
 

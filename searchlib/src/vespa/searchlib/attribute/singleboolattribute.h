@@ -34,7 +34,7 @@ public:
     getSearch(std::unique_ptr<QueryTermSimple> term, const attribute::SearchContextParams & params) const override;
 
     uint32_t getValueCount(DocId doc) const override {
-        return (doc >= _bv.size()) ? 0 : 1;
+        return (doc >= _bv.reader().size()) ? 0 : 1;
     }
     largeint_t getInt(DocId doc) const override {
         return static_cast<largeint_t>(getFast(doc));
@@ -81,12 +81,12 @@ public:
     int8_t get(DocId doc) const override {
         return getFast(doc);
     }
-    const BitVector & getBitVector() const { return _bv; }
+    const BitVector & getBitVector() const { return _bv.reader(); }
     void setBit(DocId doc, bool value) {
         if (value) {
-            _bv.setBitAndMaintainCount(doc);
+            _bv.writer().setBitAndMaintainCount(doc);
         } else {
-            _bv.clearBitAndMaintainCount(doc);
+            _bv.writer().clearBitAndMaintainCount(doc);
         }
     }
 protected:
@@ -99,7 +99,7 @@ private:
         return 0;
     }
     int8_t getFast(DocId doc) const {
-        return _bv.testBit(doc) ? 1 : 0;
+        return _bv.reader().testBit(doc) ? 1 : 0;
     }
     vespalib::alloc::Alloc _init_alloc;
     GrowableBitVector _bv;

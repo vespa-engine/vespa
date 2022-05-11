@@ -3,6 +3,7 @@
 #pragma once
 
 #include "multi_numeric_search_context.h"
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 
 namespace search {
 class BitVector;
@@ -20,16 +21,19 @@ template <typename T, typename M>
 class MultiNumericFlagSearchContext : public MultiNumericSearchContext<T, M>
 {
 public:
-    MultiNumericFlagSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, vespalib::ConstArrayRef<BitVector *> bit_vectors);
+    using AtomicBitVectorsRef = vespalib::ConstArrayRef<vespalib::datastore::AtomicValueWrapper<BitVector *>>;
+
+    MultiNumericFlagSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view,
+                                  AtomicBitVectorsRef bit_vectors);
 
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData * matchData, bool strict) override;
 private:
-    vespalib::ConstArrayRef<BitVector *> _bit_vectors;
+    AtomicBitVectorsRef _bit_vectors;
     bool _zeroHits;
     const BitVector* get_bit_vector(T value) const {
         static_assert(std::is_same_v<T, int8_t>, "Flag attribute search context is only supported for int8_t data type");
-        return _bit_vectors[value + 128];
+        return _bit_vectors[value + 128].load_acquire();
     }
 
     template <class SC> friend class ::search::FlagAttributeIteratorT;

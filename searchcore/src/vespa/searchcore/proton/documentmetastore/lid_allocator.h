@@ -68,10 +68,11 @@ public:
         return lid < _usedLids.size();
     }
     bool validLid(DocId lid) const {
-        return (lid < _usedLids.getSizeSafe() && _usedLids.testBit(lid));
+        auto &vector = _usedLids.getBitVector();
+        return (lid < vector.getSizeAcquire() && vector.testBitAcquire(lid));
     }
-    bool validLidSafe(DocId lid, uint32_t limit) const {
-        return (lid < limit && _usedLids.testBitSafe(lid));
+    bool validLid(DocId lid, uint32_t limit) const {
+        return (lid < limit && _usedLids.testBitAcquire(lid));
     }
     DocId getLowestFreeLid() const {
         return _freeLids.getLowest();
@@ -80,7 +81,7 @@ public:
         return _usedLids.getHighest();
     }
 
-    const search::GrowableBitVector &getActiveLids() const { return _activeLids.getBitVector(); }
+    const search::BitVector &getActiveLids() const { return _activeLids.getBitVector(); }
 };
 
 }

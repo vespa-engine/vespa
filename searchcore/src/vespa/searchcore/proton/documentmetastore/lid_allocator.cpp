@@ -181,7 +181,7 @@ namespace {
 class WhiteListBlueprint : public SimpleLeafBlueprint
 {
 private:
-    const search::GrowableBitVector &_activeLids;
+    const search::BitVector &_activeLids;
     mutable std::mutex _lock;
     mutable std::vector<search::fef::TermFieldMatchData *> _matchDataVector;
 
@@ -193,7 +193,7 @@ private:
         return createFilterSearch(strict, FilterConstraint::UPPER_BOUND);
     }
 public:
-    WhiteListBlueprint(const search::GrowableBitVector &activeLids)
+    WhiteListBlueprint(const search::BitVector &activeLids)
         : SimpleLeafBlueprint(FieldSpecBaseList()),
           _activeLids(activeLids),
           _matchDataVector()
