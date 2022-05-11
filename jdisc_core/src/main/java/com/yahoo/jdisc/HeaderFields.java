@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -264,7 +262,7 @@ public class HeaderFields implements Map<String, List<String>> {
                 list.add(new MyEntry(key, value));
             }
         }
-        return ImmutableList.copyOf(list);
+        return List.copyOf(list);
     }
 
     @Override
