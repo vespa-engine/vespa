@@ -2080,8 +2080,22 @@ void input(ParsedRankProfile profile) :
     Tensor defaultValue = null;
 }
 {
-    reference = queryFeature() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
+    reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
     { profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue))); }
+}
+
+/** Returns the reference "query(name)" for both "query(name)" and "name". */
+Reference inputName() :
+{
+    String name;
+}
+{
+    (
+        ( <QUERY> "(" name = identifier() ")" )
+        |
+        name = identifier()
+    )
+    { return FeatureNames.asQueryFeature(name); }
 }
 
 TensorType valueType(Reference reference) :
@@ -2098,19 +2112,10 @@ TensorType valueType(Reference reference) :
     { return type; }
 }
 
-Reference queryFeature() :
-{
-    String argument;
-}
-{
-    <QUERY> "(" argument = identifier() ")"
-    { return Reference.simple("query", argument); }
-}
-
 /**
- * This rule consumes a summary-features block of a rank profile.
+ * Consumes a summary-features block of a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void summaryFeatures(ParsedRankProfile profile) :
 {
@@ -2143,9 +2148,9 @@ void strict(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes a match-features block of a rank profile.
+ * Consumes a match-features block of a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void matchFeatures(ParsedRankProfile profile) :
 {
@@ -2465,9 +2470,11 @@ Reference constantName() :
     String name;
 }
 {
-    ( <CONSTANT> "(" name = identifier() ")" )
-    |
-    name = identifier()
+    (
+        ( <CONSTANT> "(" name = identifier() ")" )
+        |
+        name = identifier()
+    )
     { return FeatureNames.asConstantFeature(name); }
 }
 
