@@ -41,9 +41,6 @@ constexpr size_t MMAP_LIMIT = 256_Mi;
 namespace search {
 
 using vespalib::nbostream;
-using vespalib::GenerationHeldBase;
-using vespalib::GenerationHeldAlloc;
-using vespalib::GenerationHolder;
 
 Alloc
 BitVector::allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc)

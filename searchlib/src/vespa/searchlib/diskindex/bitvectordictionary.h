@@ -6,6 +6,7 @@
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
 
 namespace search::diskindex {
 

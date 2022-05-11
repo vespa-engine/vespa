@@ -29,16 +29,6 @@ public:
     size_t getSize() const { return _size; }
 };
 
-template<typename A>
-class GenerationHeldAlloc : public GenerationHeldBase
-{
-public:
-    GenerationHeldAlloc(A & alloc) : GenerationHeldBase(alloc.size()), _alloc() { _alloc.swap(alloc); }
-    virtual ~GenerationHeldAlloc() { }
-private:
-    A _alloc;
-};
-
 /*
  * GenerationHolder is meant to hold large elements until readers can
  * no longer access them.

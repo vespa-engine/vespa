@@ -46,7 +46,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
             const BitVectorEntry *bve = _postingList.getBitVectorEntry(_pidx);
             const GrowableBitVector *bv = bve->_bv.get();
             if (_useBitVector) {
-                _gbv = bv;
+                _bv = &bv->reader();
             } else {
                 _pidx = bve->_tree;
                 if (_pidx.valid()) { 
@@ -56,7 +56,7 @@ PostingListSearchContextT<DataT>::lookupSingle()
                         _pidx = vespalib::datastore::EntryRef();
                     }
                 } else {
-                    _gbv = bv; 
+                    _bv = &bv->reader(); 
                 }
             }
         } else {
@@ -179,8 +179,8 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         return search::BitVectorIterator::create(bv, bv->size(), *matchData, strict);
     }
     if (_uniqueValues == 1) {
-        if (_gbv != nullptr) {
-            return BitVectorIterator::create(_gbv, std::min(_gbv->size(), _docIdLimit), *matchData, strict);
+        if (_bv != nullptr) {
+            return BitVectorIterator::create(_bv, std::min(_bv->size(), _docIdLimit), *matchData, strict);
         }
         if (!_pidx.valid()) {
             return std::make_unique<EmptySearch>();
@@ -217,9 +217,9 @@ template <typename DataT>
 unsigned int
 PostingListSearchContextT<DataT>::singleHits() const
 {
-    if (_gbv) {
+    if (_bv) {
         // Some inaccuracy is expected, data changes underfeet
-        return _gbv->countTrueBits();
+        return _bv->countTrueBits();
     }
     if (!_pidx.valid()) {
         return 0u;
