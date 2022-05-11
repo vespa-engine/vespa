@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -36,20 +38,8 @@ public class DeploymentData {
     private final Quota quota;
     private final List<TenantSecretStore> tenantSecretStores;
     private final List<X509Certificate> operatorCertificates;
+    private final Optional<CloudAccount> cloudAccount;
     private final boolean dryRun;
-
-    // TODO: Remove when users have been updated to use constructor below
-    public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
-                          Set<ContainerEndpoint> containerEndpoints,
-                          Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
-                          Optional<DockerImage> dockerImageRepo,
-                          Optional<AthenzDomain> athenzDomain,
-                          Quota quota,
-                          List<TenantSecretStore> tenantSecretStores,
-                          List<X509Certificate> operatorCertificates) {
-        this(instance, zone, applicationPackage, platform, containerEndpoints, endpointCertificateMetadata,
-             dockerImageRepo, athenzDomain, quota, tenantSecretStores, operatorCertificates, false);
-    }
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
@@ -59,7 +49,7 @@ public class DeploymentData {
                           Quota quota,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
-                          boolean dryRun) {
+                          Optional<CloudAccount> cloudAccount, boolean dryRun) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
@@ -71,6 +61,7 @@ public class DeploymentData {
         this.quota = quota;
         this.tenantSecretStores = List.copyOf(requireNonNull(tenantSecretStores));
         this.operatorCertificates = List.copyOf(requireNonNull(operatorCertificates));
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.dryRun = dryRun;
     }
 
@@ -116,6 +107,10 @@ public class DeploymentData {
 
     public List<X509Certificate> operatorCertificates() {
         return operatorCertificates;
+    }
+
+    public Optional<CloudAccount> cloudAccount() {
+        return cloudAccount;
     }
 
     public boolean isDryRun() { return dryRun; }
