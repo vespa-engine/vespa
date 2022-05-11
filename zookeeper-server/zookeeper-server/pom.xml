@@ -8,7 +8,7 @@
     <version>7-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
-  <artifactId>zookeeper-server</artifactId>
+  <artifactId>zookeeper-server-3.7.0</artifactId>
   <packaging>container-plugin</packaging>
   <version>7-SNAPSHOT</version>
   <properties>
