@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.fail;
 
 /**
@@ -36,17 +37,24 @@ public class DockerImageTest {
     }
 
     @Test
+    public void registry_cannot_contain_slash() {
+        DockerImage image = DockerImage.fromString("registry.example.com/vespa/vespa");
+        assertThrows(IllegalArgumentException.class, () -> image.withRegistry("my-registry/path"));
+    }
+
+    @Test
     public void parse_invalid() {
         List<String> tests = List.of(
                 "registry.example.com",
                 "registry.example.com/",
+                "registry.example.com/repository:",
                 "foo",
                 "foo:1.2.3"
         );
         for (var value : tests) {
             try {
                 DockerImage.fromString(value);
-                fail("Expected failure");
+                fail("Expected failure for: " + value);
             } catch (IllegalArgumentException ignored) {
             }
         }
