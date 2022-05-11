@@ -1057,13 +1057,7 @@ public class YqlParserTestCase {
 
         {
             Query query = new Query("search?yql=select%20*%20from%20testtype%20where%20title%20contains%20%22%5C%5C%22");
-
-            // Cause parsing :-\
-            Chain<Searcher> searchChain = new Chain<>(new MinimalQueryInserter());
-            Execution.Context context = Execution.Context.createContextStub();
-            Execution execution = new Execution(searchChain, context);
-            execution.search(query);
-
+            new Execution(new Chain<>(new MinimalQueryInserter()), Execution.Context.createContextStub()).search(query);
             assertEquals("title:\\", query.getModel().getQueryTree().toString());
         }
     }

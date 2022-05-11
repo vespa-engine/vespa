@@ -18,9 +18,6 @@ import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformConte
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -268,7 +265,8 @@ public class ConvertedModel {
 
     private static Map<String, ExpressionFunction> convertStored(ModelStore store, RankProfile profile) {
         for (Pair<String, Tensor> constant : store.readSmallConstants()) {
-            profile.addConstant(constant.getFirst(), asValue(constant.getSecond()));
+            profile.addConstant(constant.getFirst(),
+                                new RankProfile.Constant(FeatureNames.asConstantFeature(constant.getFirst()), constant.getSecond()));
         }
 
         for (RankingConstant constant : store.readLargeConstants()) {
@@ -300,7 +298,8 @@ public class ConvertedModel {
                                                String constantValueString) {
         Tensor constantValue = Tensor.from(constantValueString);
         store.writeSmallConstant(constantName, constantValue);
-        profile.addConstant(constantName, asValue(constantValue));
+        profile.addConstant(constantName,
+                            new RankProfile.Constant(FeatureNames.asConstantFeature(constantName), constantValue));
     }
 
     private static void transformLargeConstant(ModelStore store,
@@ -439,13 +438,6 @@ public class ConvertedModel {
             for (ExpressionNode child : ((CompositeNode)node).children())
                 addFunctionNamesIn(child, names, model);
         }
-    }
-
-    private static Value asValue(Tensor tensor) {
-        if (tensor.type().rank() == 0)
-            return new DoubleValue(tensor.asDouble()); // the backend gets offended by dimensionless tensors
-        else
-            return new TensorValue(tensor);
     }
 
     @Override

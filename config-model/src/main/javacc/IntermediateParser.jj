@@ -2436,25 +2436,25 @@ void constants(ParsedSchema schema, ParsedRankProfile profile) :
 
 void constant(ParsedSchema schema, ParsedRankProfile profile) :
 {
-    Reference reference = null;
+    Reference name = null;
     TensorType type = TensorType.empty;
     Tensor value = null;
     String valuePath = null;
 }
 {
     (
-      reference = constantName()
+      name = constantName()
       (
-        LOOKAHEAD(4) ( ( type = valueType(reference) )? <COLON> (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
+        LOOKAHEAD(4) ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
         {
             if (value != null)
-                profile.addConstant(reference.simpleArgument().get(), type.rank() == 0 ? Value.of(value.asDouble()) : Value.of(value));
+                profile.addConstant(name.simpleArgument().get(), new RankProfile.Constant(name, value));
             else
-                schema.addRankingConstant(new RankingConstant(reference.simpleArgument().get(), type, valuePath, DistributableResource.PathType.FILE)); // TODO JON: Move to RankProfile
+                schema.addRankingConstant(new RankingConstant(name.simpleArgument().get(), type, valuePath, DistributableResource.PathType.FILE)); // TODO JON: Move to RankProfile
         }
         )
         | // Deprecated forms (TODO: Add warning on Vespa 8):
-        ( constantValue(profile, reference.simpleArgument().get()) | constantTensor(profile, reference.simpleArgument().get()) )
+        ( constantValue(profile, name) | constantTensor(profile, name) )
       )
     )
 }
@@ -2472,36 +2472,33 @@ Reference constantName() :
 }
 
 // Deprecated form
-void constantValue(ParsedRankProfile profile, String name) :
+void constantValue(ParsedRankProfile profile, Reference name) :
 {
     Token value;
 }
 {
-    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> ) { profile.addConstant(name, Value.parse(value.image)); }
+    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
+    { profile.addConstant(name.simpleArgument().get(), new RankProfile.Constant(name, Tensor.from(value.image))); }
 }
 
 // Deprecated form
-void constantTensor(ParsedRankProfile profile, String name) :
+void constantTensor(ParsedRankProfile profile, Reference name) :
 {
     String tensorString = "";
-    TensorType tensorType = null;
+    TensorType type = null;
 }
 {
     <LBRACE> (<NL>)*
       (( tensorString = tensorValuePrefixedByValue() |
-         tensorType = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
-    {
-        if (tensorType != null) {
-            profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorType, tensorString)));
-        } else {
-            profile.addConstantTensor(name, new TensorValue(Tensor.from(tensorString)));
-        }
+         type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
+    { profile.addConstant(name.simpleArgument().get(),
+                          new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));
     }
 }
 
-String constantTensorErrorMessage(String rankProfileName, String constantTensorName) : {}
+String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
 {
-    { return "For constant tensor '" + constantTensorName + "' in rank profile '" + rankProfileName + "'"; }
+    { return "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
 }
 
 /**

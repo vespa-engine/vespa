@@ -5,12 +5,16 @@ import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.transform.TransformContext;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Extends the transform context with rank profile information
@@ -29,9 +33,9 @@ public class RankProfileTransformContext extends TransformContext {
                                        QueryProfileRegistry queryProfiles,
                                        Map<Reference, TensorType> featureTypes,
                                        ImportedMlModels importedModels,
-                                       Map<String, Value> constants,
+                                       Map<String, RankProfile.Constant> constants,
                                        Map<String, RankProfile.RankingExpressionFunction> inlineFunctions) {
-        super(constants, rankProfile.typeContext(queryProfiles, featureTypes));
+        super(valuesOf(constants), rankProfile.typeContext(queryProfiles, featureTypes));
         this.rankProfile = rankProfile;
         this.queryProfiles = queryProfiles;
         this.importedModels = importedModels;
@@ -43,5 +47,19 @@ public class RankProfileTransformContext extends TransformContext {
     public ImportedMlModels importedModels() { return importedModels; }
     public Map<String, RankProfile.RankingExpressionFunction> inlineFunctions() { return inlineFunctions; }
     public Map<String, String> rankProperties() { return rankProperties; }
+
+    private static Map<String, Value> valuesOf(Map<String, RankProfile.Constant> constants) {
+        return constants.values().stream()
+                        .filter(constant -> constant.value().isPresent())
+                        .collect(Collectors.toMap(constant -> constant.name().simpleArgument().get(),
+                                                  constant -> asValue(constant.value().get())));
+    }
+
+    private static Value asValue(Tensor tensor) {
+        if (tensor.type().rank() == 0)
+            return DoubleValue.of(tensor.asDouble());
+        else
+            return TensorValue.of(tensor);
+    }
 
 }

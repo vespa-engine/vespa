@@ -20,8 +20,6 @@ import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.Tensor;
@@ -123,7 +121,7 @@ public class RankProfile implements Cloneable {
     private final RankProfileRegistry rankProfileRegistry;
 
     /** Constants in ranking expressions */
-    private Map<String, Value> constants = new HashMap<>();
+    private Map<String, Constant> constants = new HashMap<>();
 
     private final TypeSettings attributeTypes = new TypeSettings();
 
@@ -418,25 +416,15 @@ public class RankProfile implements Cloneable {
         return finalSettings;
     }
 
-    public void addConstant(String name, Value value) {
-        if (value instanceof TensorValue) {
-            TensorType type = value.type();
-            if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
-                throw new IllegalArgumentException("Illegal type of constant " + name + " type " + type +
-                                                   ": Dense tensor dimensions must have a size");
-        }
-        constants.put(name, value.freeze());
-    }
-
-    public void addConstantTensor(String name, TensorValue value) {
-        addConstant(name, value);
+    public void addConstant(String name, Constant value) {
+        constants.put(name, value);
     }
 
     /** Returns an unmodifiable view of the constants available in this */
-    public Map<String, Value> getConstants() {
+    public Map<String, Constant> getConstants() {
         if (inherited().isEmpty()) return new HashMap<>(constants);
 
-        Map<String, Value> allConstants = new HashMap<>();
+        Map<String, Constant> allConstants = new HashMap<>();
         for (var inheritedProfile : inherited()) {
             for (var constant : inheritedProfile.getConstants().entrySet()) {
                 if (allConstants.containsKey(constant.getKey()))
@@ -972,7 +960,7 @@ public class RankProfile implements Cloneable {
         allFunctionsCached = null;
     }
 
-    private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<String, Value> constants) {
+    private void checkNameCollisions(Map<String, RankingExpressionFunction> functions, Map<String, Constant> constants) {
         for (Map.Entry<String, RankingExpressionFunction> functionEntry : functions.entrySet()) {
             if (constants.containsKey(functionEntry.getKey()))
                 throw new IllegalArgumentException("Cannot have both a constant and function named '" +
@@ -1019,7 +1007,7 @@ public class RankProfile implements Cloneable {
                                               QueryProfileRegistry queryProfiles,
                                               Map<Reference, TensorType> featureTypes,
                                               ImportedMlModels importedModels,
-                                              Map<String, Value> constants,
+                                              Map<String, Constant> constants,
                                               Map<String, RankingExpressionFunction> inlineFunctions,
                                               ExpressionTransforms expressionTransforms) {
         if (function == null) return null;
@@ -1427,6 +1415,68 @@ public class RankProfile implements Cloneable {
         public String toString() {
             return "input '" + name + "' " + type +
                    (defaultValue().isPresent() ? ":" + defaultValue.get().toAbbreviatedString() : "");
+        }
+
+    }
+
+    public static final class Constant {
+
+        private final Reference name;
+        private final TensorType type;
+
+        // One of these are non-empty
+        private final Optional<Tensor> value;
+        private final Optional<String> valuePath;
+
+        public Constant(Reference name, Tensor value) {
+            this(name, value.type(), Optional.of(value), Optional.empty());
+        }
+
+        public Constant(Reference name, TensorType type, String valuePath) {
+            this(name, type, Optional.empty(), Optional.of(valuePath));
+        }
+
+        private Constant(Reference name, TensorType type, Optional<Tensor> value, Optional<String> valuePath) {
+            if (type.dimensions().stream().anyMatch(d -> d.isIndexed() && d.size().isEmpty()))
+                throw new IllegalArgumentException("Illegal type of constant " + name + " type " + type +
+                                                   ": Dense tensor dimensions must have a size");
+
+            this.name = name;
+            this.type = type;
+            this.value = value;
+            this.valuePath = valuePath;
+        }
+
+        public Reference name() { return name; }
+        public TensorType type() { return type; }
+
+        /** Returns the value of this, if its path is empty. */
+        public Optional<Tensor> value() { return value; }
+
+        /** Returns the path to the value of this, if its value is empty. */
+        public Optional<String> valuePath() { return valuePath; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) return true;
+            if ( ! (o instanceof Constant)) return false;
+            Constant other = (Constant)o;
+            if ( ! other.name().equals(this.name())) return false;
+            if ( ! other.type().equals(this.type())) return false;
+            if ( ! other.value().equals(this.value())) return false;
+            if ( ! other.valuePath().equals(this.valuePath())) return false;
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, type, value, valuePath);
+        }
+
+        @Override
+        public String toString() {
+            return "constant '" + name + "' " + type +
+                   (value().isPresent() ? ":" + value.get().toAbbreviatedString() : "file:" + valuePath.get());
         }
 
     }

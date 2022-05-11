@@ -52,7 +52,7 @@ class ParsedRankProfile extends ParsedBlock {
     private final Map<String, ParsedRankFunction> functions = new LinkedHashMap<>();
     private final Map<String, String> fieldsRankType = new LinkedHashMap<>();
     private final Map<String, List<String>> rankProperties = new LinkedHashMap<>();
-    private final Map<String, Value> constants = new LinkedHashMap<>();
+    private final Map<String, RankProfile.Constant> constants = new LinkedHashMap<>();
     private final Map<Reference, RankProfile.Input> inputs = new LinkedHashMap<>();
 
     ParsedRankProfile(String name) {
@@ -83,7 +83,7 @@ class ParsedRankProfile extends ParsedBlock {
     Map<String, Integer> getFieldsWithRankWeight() { return Collections.unmodifiableMap(fieldsRankWeight); }
     Map<String, String> getFieldsWithRankType() { return Collections.unmodifiableMap(fieldsRankType); }
     Map<String, List<String>> getRankProperties() { return Collections.unmodifiableMap(rankProperties); }
-    Map<String, Value> getConstants() { return Collections.unmodifiableMap(constants); }
+    Map<String, RankProfile.Constant> getConstants() { return Collections.unmodifiableMap(constants); }
     Map<Reference, RankProfile.Input> getInputs() { return Collections.unmodifiableMap(inputs); }
 
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
@@ -101,12 +101,7 @@ class ParsedRankProfile extends ParsedBlock {
         this.inheritedSummaryFeatures = other;
     }
 
-    void addConstant(String name, Value value) {
-        verifyThat(! constants.containsKey(name), "already has constant", name);
-        constants.put(name, value);
-    }
-
-    void addConstantTensor(String name, TensorValue value) {
+    void addConstant(String name, RankProfile.Constant value) {
         verifyThat(! constants.containsKey(name), "already has constant", name);
         constants.put(name, value);
     }
