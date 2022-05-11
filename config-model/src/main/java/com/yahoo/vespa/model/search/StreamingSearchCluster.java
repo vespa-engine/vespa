@@ -77,7 +77,13 @@ public class StreamingSearchCluster extends SearchCluster implements
         if ( ! schema.getName().equals(docTypeName))
             throw new IllegalArgumentException("Document type name '" + docTypeName +
                                                "' must be the same as the schema name '" + schema.getName() + "'");
-        this.schemaConfig = new DerivedConfiguration(schema, deployState);
+        this.schemaConfig = new DerivedConfiguration(schema,
+                                                     deployState.getDeployLogger(),
+                                                     deployState.getProperties(),
+                                                     deployState.rankProfileRegistry(),
+                                                     deployState.getQueryProfiles().getRegistry(),
+                                                     deployState.getImportedModels(),
+                                                     deployState.getExecutor());
     }
 
     @Override

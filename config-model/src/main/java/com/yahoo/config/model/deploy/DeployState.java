@@ -28,7 +28,6 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
-import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchdefinition.Application;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
@@ -335,8 +334,6 @@ public class DeployState implements ConfigDefinitionStore {
         private boolean accessLoggingEnabledByDefault = true;
         private Optional<DockerImage> wantedDockerImageRepo = Optional.empty();
         private Reindexing reindexing = null;
-        private RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        private QueryProfiles queryProfiles = null;
 
         public Builder() {}
 
@@ -434,21 +431,6 @@ public class DeployState implements ConfigDefinitionStore {
             return this;
         }
 
-        public Builder rankProfileRegistry(RankProfileRegistry rankProfileRegistry) {
-            this.rankProfileRegistry = rankProfileRegistry;
-            return this;
-        }
-
-        public Builder queryProfiles(QueryProfiles queryProfiles) {
-            this.queryProfiles = queryProfiles;
-            return this;
-        }
-
-        public Builder queryProfiles(QueryProfileRegistry queryProfileRegistry) {
-            this.queryProfiles = new QueryProfiles(queryProfileRegistry, logger);
-            return this;
-        }
-
         public Builder reindexing(Reindexing reindexing) { this.reindexing = Objects.requireNonNull(reindexing); return this; }
 
         public DeployState build() {
@@ -456,8 +438,8 @@ public class DeployState implements ConfigDefinitionStore {
         }
 
         public DeployState build(ValidationParameters validationParameters) {
-            if (queryProfiles == null)
-                queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
+            RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+            QueryProfiles queryProfiles = new QueryProfilesBuilder().build(applicationPackage, logger);
             SemanticRules semanticRules = new SemanticRuleBuilder().build(applicationPackage);
             Application application = new ApplicationBuilder(applicationPackage, fileRegistry, logger, properties,
                                                              rankProfileRegistry, queryProfiles.getRegistry())

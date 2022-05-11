@@ -1,8 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.derived;
 
+import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.config.ConfigInstance;
-import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.io.IOUtils;
@@ -16,6 +21,7 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.concurrent.ExecutorService;
 
 /**
  * A set of all derived configuration of a schema. Use this as a facade to individual configurations when
@@ -56,36 +62,47 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
     }
 
     DerivedConfiguration(Schema schema, RankProfileRegistry rankProfileRegistry, QueryProfileRegistry queryProfiles) {
-        this(schema, new DeployState.Builder().rankProfileRegistry(rankProfileRegistry).queryProfiles(queryProfiles).build());
+        this(schema, new BaseDeployLogger(), new TestProperties(), rankProfileRegistry, queryProfiles, new ImportedMlModels(), new InThreadExecutorService());
     }
 
     /**
-     * Creates a complete derived configuration snapshot from a schema.
+     * Creates a complete derived configuration snapshot from a search definition.
      *
-     * @param schema the schema to derive a configuration from. Derived objects will be snapshots, but this
-     *               argument is live. Which means that this object will be inconsistent if the given
-     *               schema is later modified.
+     * @param schema             the search to derive a configuration from. Derived objects will be snapshots, but this
+     *                           argument is live. Which means that this object will be inconsistent when the given
+     *                           search definition is later modified.
+     * @param deployLogger       a {@link DeployLogger} for logging when doing operations on this
+     * @param deployProperties   properties set on deploy
+     * @param rankProfileRegistry a {@link com.yahoo.searchdefinition.RankProfileRegistry}
+     * @param queryProfiles      the query profiles of this application
      */
-    public DerivedConfiguration(Schema schema, DeployState deployState) {
-        Validator.ensureNotNull("Schema", schema);
+    public DerivedConfiguration(Schema schema,
+                                DeployLogger deployLogger,
+                                ModelContext.Properties deployProperties,
+                                RankProfileRegistry rankProfileRegistry,
+                                QueryProfileRegistry queryProfiles,
+                                ImportedMlModels importedModels,
+                                ExecutorService executor) {
+        Validator.ensureNotNull("Search definition", schema);
         this.schema = schema;
-        this.queryProfiles = deployState.getQueryProfiles().getRegistry();
-        this.maxUncommittedMemory = deployState.getProperties().featureFlags().maxUnCommittedMemory();
-        this.enableBitVectors = deployState.getProperties().featureFlags().enableBitVectors();
+        this.queryProfiles = queryProfiles;
+        this.maxUncommittedMemory = deployProperties.featureFlags().maxUnCommittedMemory();
+        this.enableBitVectors = deployProperties.featureFlags().enableBitVectors();
         if ( ! schema.isDocumentsOnly()) {
             streamingFields = new VsmFields(schema);
             streamingSummary = new VsmSummary(schema);
         }
         if ( ! schema.isDocumentsOnly()) {
             attributeFields = new AttributeFields(schema);
-            summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
+            summaries = new Summaries(schema, deployLogger, deployProperties.featureFlags());
             summaryMap = new SummaryMap(schema);
             juniperrc = new Juniperrc(schema);
             rankProfileList = new RankProfileList(schema, schema.rankingConstants(), schema.rankExpressionFiles(),
-                                                  schema.onnxModels(), attributeFields, deployState);
+                                                  schema.onnxModels(), attributeFields, rankProfileRegistry,
+                                                  queryProfiles, importedModels, deployProperties, executor);
             indexingScript = new IndexingScript(schema);
             indexInfo = new IndexInfo(schema);
-            schemaInfo = new SchemaInfo(schema, deployState.rankProfileRegistry(), summaries, summaryMap);
+            schemaInfo = new SchemaInfo(schema, rankProfileRegistry, summaries, summaryMap);
             indexSchema = new IndexSchema(schema);
             importedFields = new ImportedFields(schema);
         }
