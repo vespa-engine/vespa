@@ -2,6 +2,8 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.path.Path;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
@@ -14,6 +16,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -72,21 +75,22 @@ public class SchemaTester {
         return retval.toString();
     }
 
-    ProtonConfig getProtonCfg(ContentSearchCluster cluster) {
+    ProtonConfig getProtonConfig(ContentSearchCluster cluster) {
         ProtonConfig.Builder pb = new ProtonConfig.Builder();
         cluster.getConfig(pb);
         return new ProtonConfig(pb);
     }
 
     void assertSingleSD(String mode) {
-        List<String> sds = List.of("type1");
-        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(sds, mode),
-                                                            generateSchemas("", sds)).create();
+        List<String> schemas = List.of("type1");
+        VespaModel model = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServices(schemas, mode),
+                                                            generateSchemas("", "", schemas),
+                                                            Map.of()).create();
         IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         assertEquals(1, indexedSearchCluster.getDocumentDbs().size());
         String type1Id = "test/search/cluster.test/type1";
-        ProtonConfig proton = getProtonCfg(contentSearchCluster);
+        ProtonConfig proton = getProtonConfig(contentSearchCluster);
         assertEquals(1, proton.documentdb().size());
         assertEquals("type1", proton.documentdb(0).inputdoctypename());
         assertEquals(type1Id, proton.documentdb(0).configid());
@@ -95,13 +99,29 @@ public class SchemaTester {
     VespaModel createModel(List<String> schemas) {
         return new VespaModelCreatorWithMockPkg(vespaHosts,
                                                 createVespaServices(schemas, "index"),
-                                                generateSchemas("", schemas)).create();
+                                                generateSchemas("", "", schemas),
+                                                Map.of()).create();
     }
 
     VespaModel createModelWithRankProfile(String rankProfile, List<String> schemas) {
         return new VespaModelCreatorWithMockPkg(vespaHosts,
                                                 createVespaServices(schemas, "index"),
-                                                generateSchemas(rankProfile, schemas)).create();
+                                                generateSchemas("", rankProfile, schemas),
+                                                Map.of()).create();
+    }
+
+    VespaModel createModelWithSchemaContent(String schemaContent, List<String> schemas) {
+        return new VespaModelCreatorWithMockPkg(vespaHosts,
+                                                createVespaServices(schemas, "index"),
+                                                generateSchemas(schemaContent, "", schemas),
+                                                Map.of()).create();
+    }
+
+    VespaModel createModel(String schemaContent, String rankProfile, List<String> schemas, Map<Path, String> files) {
+        return new VespaModelCreatorWithMockPkg(vespaHosts,
+                                                createVespaServices(schemas, "index"),
+                                                generateSchemas(schemaContent, rankProfile, schemas),
+                                                files).create();
     }
 
     VespaModel createModel(List<DocType> nameAndModes, String xmlTuning) {
@@ -111,27 +131,29 @@ public class SchemaTester {
     VespaModel createModelWithMode(String mode, List<String> schemas) {
         return new VespaModelCreatorWithMockPkg(vespaHosts,
                                                 createVespaServices(schemas, mode),
-                                                generateSchemas("", schemas)).create();
+                                                generateSchemas("", "", schemas),
+                                                Map.of()).create();
 
     }
 
     VespaModel createModelWithMode(String mode, List<String> schemas, DeployState.Builder builder) {
         return new VespaModelCreatorWithMockPkg(vespaHosts,
                                                 createVespaServices(schemas, mode),
-                                                generateSchemas("", schemas)).create(builder);
+                                                generateSchemas("", "", schemas),
+                                                Map.of()).create(builder);
     }
 
     VespaModel createModel(List<DocType> nameAndModes, String xmlTuning, DeployState.Builder builder) {
-        List<String> sds = new ArrayList<>(nameAndModes.size());
-        for (DocType nameAndMode : nameAndModes) {
-            sds.add(nameAndMode.getType());
-        }
+        List<String> schemas = new ArrayList<>(nameAndModes.size());
+        for (DocType nameAndMode : nameAndModes)
+            schemas.add(nameAndMode.getType());
         var creator = new VespaModelCreatorWithMockPkg(vespaHosts, createVespaServicesXml(nameAndModes, xmlTuning),
-                                                       generateSchemas("", sds));
+                                                       generateSchemas("", "", schemas),
+                                                       Map.of());
         return builder != null ? creator.create(builder) : creator.create();
     }
 
-    public static String generateSchema(String name, String field1, String field2, String rankProfile) {
+    public static String generateSchema(String name, String field1, String field2, String schemaContent, String rankProfile) {
         return "schema " + name + " {" +
                "  document " + name + " {" +
                "    field " + field1 + " type string {\n" +
@@ -146,6 +168,7 @@ public class SchemaTester {
                "      indexing: attribute \n" +
                "    }\n" +
                "  }\n" +
+               schemaContent +
                "  rank-profile staticrank inherits default {" +
                "    first-phase { expression: attribute(" + field2 + ") }" +
                "  }" +
@@ -163,18 +186,18 @@ public class SchemaTester {
                "}";
     }
 
-    public static List<String> generateSchemas(String rankProfile, String ... sdNames) {
-        return generateSchemas(rankProfile, Arrays.asList(sdNames));
+    public static List<String> generateSchemas(String schemaContent, String rankProfile, String ... schemaNames) {
+        return generateSchemas(schemaContent, rankProfile, Arrays.asList(schemaNames));
     }
 
-    public static List<String> generateSchemas(String rankProfile, List<String> sdNames) {
-        List<String> sds = new ArrayList<>();
+    public static List<String> generateSchemas(String schemaContent, String rankProfile, List<String> schemaNames) {
+        List<String> schemas = new ArrayList<>();
         int i = 0;
-        for (String sdName : sdNames) {
-            sds.add(generateSchema(sdName, "f" + (i + 1), "f" + (i + 2), rankProfile));
+        for (String sdName : schemaNames) {
+            schemas.add(generateSchema(sdName, "f" + (i + 1), "f" + (i + 2), schemaContent, rankProfile));
             i = i + 2;
         }
-        return sds;
+        return schemas;
     }
 
     DocumentdbInfoConfig.Documentdb.Rankprofile assertRankProfile(DocumentdbInfoConfig.Documentdb db,

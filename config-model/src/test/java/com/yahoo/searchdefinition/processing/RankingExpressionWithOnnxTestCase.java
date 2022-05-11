@@ -25,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -389,8 +390,8 @@ public class RankingExpressionWithOnnxTestCase {
 
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
             super(new File(applicationPackageWritableRoot.toString()),
-                    null, null, Collections.emptyList(), null,
-                    null, null, false, queryProfile, queryProfileType);
+                  null, null, List.of(), Map.of(), null,
+                  null, null, false, queryProfile, queryProfileType);
         }
 
         @Override

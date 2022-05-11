@@ -23,8 +23,8 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static com.yahoo.config.model.test.MockApplicationPackage.BOOK_SEARCHDEFINITION;
-import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SEARCHDEFINITION;
+import static com.yahoo.config.model.test.MockApplicationPackage.BOOK_SCHEMA;
+import static com.yahoo.config.model.test.MockApplicationPackage.MUSIC_SCHEMA;
 
 /**
  * @author bratseth
@@ -77,7 +77,7 @@ public class ValidationTester {
         Provisioned provisioned = hostProvisioner.startProvisionedRecording();
         ApplicationPackage newApp = new MockApplicationPackage.Builder()
                 .withServices(services)
-                .withSchemas(ImmutableList.of(MUSIC_SEARCHDEFINITION, BOOK_SEARCHDEFINITION))
+                .withSchemas(ImmutableList.of(MUSIC_SCHEMA, BOOK_SCHEMA))
                 .withValidationOverrides(validationOverrides)
                 .build();
         VespaModelCreatorWithMockPkg newModelCreator = new VespaModelCreatorWithMockPkg(newApp);

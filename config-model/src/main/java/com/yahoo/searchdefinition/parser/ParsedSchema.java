@@ -14,9 +14,12 @@ import java.util.Optional;
 /**
  * This class holds the extracted information after parsing
  * one schema (.sd) file, using simple data structures
- * as far as possible.  Do not put advanced logic here!
+ * as far as possible.
+ *
+ * Do not put advanced logic here!
+ *
  * @author arnej27959
- **/
+ */
 public class ParsedSchema extends ParsedBlock {
 
     public static class ImportedField {
@@ -39,8 +42,8 @@ public class ParsedSchema extends ParsedBlock {
     private final List<RankingConstant> rankingConstants = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
     private final List<String> inheritedByDocument = new ArrayList<>();
-    private final Map<String, ParsedSchema> resolvedInherits = new LinkedHashMap();
-    private final Map<String, ParsedSchema> allResolvedInherits = new LinkedHashMap();
+    private final Map<String, ParsedSchema> resolvedInherits = new LinkedHashMap<>();
+    private final Map<String, ParsedSchema> allResolvedInherits = new LinkedHashMap<>();
     private final Map<String, ParsedAnnotation> extraAnnotations = new LinkedHashMap<>();
     private final Map<String, ParsedDocumentSummary> docSums = new LinkedHashMap<>();
     private final Map<String, ParsedField> extraFields = new LinkedHashMap<>();

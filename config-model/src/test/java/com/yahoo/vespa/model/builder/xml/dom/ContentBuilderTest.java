@@ -32,7 +32,6 @@ import java.util.List;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
-import static com.yahoo.vespa.config.search.core.ProtonConfig.Feeding.Shared_field_writer_executor;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -770,7 +769,7 @@ public class ContentBuilderTest extends DomBuilderTest {
             DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true));
             VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                                                                     .withServices(hostedXml)
-                                                                    .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                                                                    .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
                                                                     .build())
                     .create(deployStateBuilder);
             ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
@@ -797,7 +796,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         var deployStateBuilder = new DeployState.Builder().properties(props);
         var model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withServices(hostedXml)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
                 .build())
                 .create(deployStateBuilder);
         return getProtonConfig(model.getContentClusters().values().iterator().next());
@@ -866,7 +865,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         return new MockApplicationPackage.Builder()
                 .withHosts(hosts)
                 .withServices(services)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
                 .build();
     }
 
@@ -887,7 +886,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withHosts(getHosts())
                 .withServices(combined)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
                 .build())
                 .create(deployStateBuilder);
 
@@ -907,8 +906,8 @@ public class ContentBuilderTest extends DomBuilderTest {
         VespaModel m = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                                                                 .withHosts(getHosts())
                                                                 .withServices(combined)
-                                                                .withSchemas(Arrays.asList(MockApplicationPackage.MUSIC_SEARCHDEFINITION,
-                                                                                           MockApplicationPackage.BOOK_SEARCHDEFINITION))
+                                                                .withSchemas(Arrays.asList(MockApplicationPackage.MUSIC_SCHEMA,
+                                                                                           MockApplicationPackage.BOOK_SCHEMA))
                                                                 .build())
                 .create();
 

@@ -1768,7 +1768,7 @@ void rankingConstant(ParsedSchema schema) :
 {
     ( <CONSTANT> name = identifier() lbrace()
       (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
-       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove oin Vespa 8
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove on Vespa 8
        | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
       )+
       <RBRACE>
