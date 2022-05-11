@@ -136,8 +136,10 @@ class AggregateTestRunnerTest {
                                       .build();
         first.report = report;
         assertSame(report, runner.getReport());
-
         second.report = report;
+        assertSame(report, runner.getReport());
+
+        second.future.complete(null);
         TestReport merged = runner.getReport();
         assertEquals(List.of(record1, record1), merged.logLines);
         assertEquals(List.of(failure, failure), merged.failures);
@@ -145,6 +147,7 @@ class AggregateTestRunnerTest {
         assertEquals(8, merged.ignoredCount);
         assertEquals(4, merged.failedCount);
         assertEquals(2, merged.abortedCount);
+
     }
 
     @Test
@@ -171,9 +174,9 @@ class AggregateTestRunnerTest {
         catch (Exception e) {
             TestReport.trimStackTraces(e, "org.junit.platform.launcher.core.SessionPerRequestLauncher");
             assertEquals("java.lang.RuntimeException: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:168)\n" +
+                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:171)\n" +
                          "Caused by: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:165)\n",
+                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:168)\n",
                          ExceptionUtils.getStackTraceAsString(e));
         }
     }

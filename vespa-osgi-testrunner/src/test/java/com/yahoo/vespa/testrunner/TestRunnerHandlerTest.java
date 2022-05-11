@@ -6,6 +6,7 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.test.json.JsonTestHelper;
+import com.yahoo.vespa.testrunner.TestRunner.Suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +24,6 @@ import java.util.stream.Collectors;
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -57,6 +57,7 @@ class TestRunnerHandlerTest {
 
     @Test
     public void createsCorrectTestReport() throws IOException {
+        aggregateRunner.test(Suite.SYSTEM_TEST, new byte[0]);
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/report", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
