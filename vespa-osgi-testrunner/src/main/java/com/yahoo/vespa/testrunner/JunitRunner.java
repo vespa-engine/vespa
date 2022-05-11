@@ -7,16 +7,14 @@ import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.api.TestDescriptor;
 import ai.vespa.hosted.cd.InconclusiveTestException;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.jupiter.engine.JupiterTestEngine;
-import org.junit.platform.engine.UniqueId;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.Launcher;
-import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherConfig;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
@@ -37,8 +35,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * @author mortent
@@ -163,7 +162,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     private List<Class<?>> loadClasses(Bundle bundle, TestDescriptor testDescriptor, TestDescriptor.TestCategory testCategory) {
         List<Class<?>> testClasses = testDescriptor.getConfiguredTests(testCategory).stream()
                 .map(className -> loadClass(bundle, className))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         StringBuffer buffer = new StringBuffer();
         testClasses.forEach(cl -> buffer.append("\t").append(cl.toString()).append(" / ").append(cl.getClassLoader().toString()).append("\n"));
@@ -180,24 +179,18 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     }
 
     private TestReport launchJunit(List<Class<?>> testClasses, boolean isProductionTest) {
-        LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
-                .selectors(testClasses.stream().map(DiscoverySelectors::selectClass).collect(Collectors.toList()))
-                .build();
-
-        var launcherConfig = LauncherConfig.builder()
-                .addTestEngines(new JupiterTestEngine())
-
-                .build();
-        Launcher launcher = LauncherFactory.create(launcherConfig);
-
-        // Create log listener:
         var logListener = new VespaJunitLogListener(record -> logRecords.put(record.getSequenceNumber(), record));
-        // Create a summary listener:
         var summaryListener = new SummaryGeneratingListener();
+
+        Launcher launcher = LauncherFactory.create(LauncherConfig.builder().addTestEngines(new JupiterTestEngine()).build());
         launcher.registerTestExecutionListeners(logListener, summaryListener);
 
-        // Execute request
-        launcher.execute(discoveryRequest);
+        launcher.execute(LauncherDiscoveryRequestBuilder.request()
+                                                        .selectors(testClasses.stream()
+                                                                              .map(DiscoverySelectors::selectClass)
+                                                                              .collect(toList()))
+                                                        .build());
+
         var report = summaryListener.getSummary();
         var failures = report.getFailures().stream()
                 .map(failure -> {
@@ -205,11 +198,12 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                     return new TestReport.Failure(VespaJunitLogListener.toString(failure.getTestIdentifier().getUniqueIdObject()),
                                                   failure.getException());
                 })
-                .collect(Collectors.toList());
+                .collect(toList());
         long inconclusive = isProductionTest ? failures.stream()
                                                        .filter(failure -> failure.exception() instanceof InconclusiveTestException)
                                                        .count()
                                              : 0;
+
         return TestReport.builder()
                 .withSuccessCount(report.getTestsSucceededCount())
                 .withAbortedCount(report.getTestsAbortedCount())
