@@ -38,11 +38,10 @@ import java.util.logging.Logger;
  * @author lesters
  * @deprecated Replaced by {@link VespaRecordWriter}
  */
-@SuppressWarnings({"rawtypes", "deprecation"})
 @Deprecated
-public class LegacyVespaRecordWriter extends RecordWriter {
+public class LegacyVespaRecordWriter extends RecordWriter<Object, Object> {
 
-    private final static Logger log = Logger.getLogger(LegacyVespaRecordWriter.class.getCanonicalName());
+    private final Logger log = Logger.getLogger(getClass().getCanonicalName());
 
     private boolean initialized = false;
     private com.yahoo.vespa.http.client.FeedClient feedClient;
@@ -203,7 +202,7 @@ public class LegacyVespaRecordWriter extends RecordWriter {
     }
 
 
-    static class ResultCallback implements com.yahoo.vespa.http.client.FeedClient.ResultCallback {
+    class ResultCallback implements com.yahoo.vespa.http.client.FeedClient.ResultCallback {
         final VespaCounters counters;
 
         public ResultCallback(VespaCounters counters) {
