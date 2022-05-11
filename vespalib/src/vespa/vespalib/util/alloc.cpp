@@ -353,6 +353,9 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
             store_relaxed(_G_hasHugePageFailureJustHappened, false);
         }
 #ifdef __linux__
+        if (madvise(buf, sz, MADV_HUGEPAGE) != 0) {
+            // Just an advise, not everyone will listen...
+        }
         if (sz >= _G_MMapNoCoreLimit) {
             if (madvise(buf, sz, MADV_DONTDUMP) != 0) {
                 LOG(warning, "Failed madvise(%p, %ld, MADV_DONTDUMP) = '%s'", buf, sz, FastOS_FileInterface::getLastErrorString().c_str());
