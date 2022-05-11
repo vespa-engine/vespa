@@ -21,6 +21,7 @@ import com.yahoo.config.application.api.Notifications.When;
 import com.yahoo.config.application.api.TimeWindow;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -72,6 +73,8 @@ public class DeploymentSpecXmlReader {
     private static final String athenzDomainAttribute = "athenz-domain";
     private static final String testerFlavorAttribute = "tester-flavor";
     private static final String majorVersionAttribute = "major-version";
+    private static final String globalServiceIdAttribute = "global-service-id";
+    private static final String cloudAccountAttribute = "cloud-account";
 
     private final boolean validate;
     private final Clock clock;
@@ -118,7 +121,7 @@ public class DeploymentSpecXmlReader {
         List<Step> steps = new ArrayList<>();
         List<Endpoint> applicationEndpoints = List.of();
         if ( ! containsTag(instanceTag, root)) { // deployment spec skipping explicit instance -> "default" instance
-            steps.addAll(readInstanceContent("default", root, new MutableOptional<>(), root));
+            steps.addAll(readInstanceContent("default", root, new HashMap<>(), root));
         }
         else {
             if (XML.getChildren(root).stream().anyMatch(child -> child.getTagName().equals(prodTag)))
@@ -129,9 +132,9 @@ public class DeploymentSpecXmlReader {
             for (Element child : XML.getChildren(root)) {
                 String tagName = child.getTagName();
                 if (tagName.equals(instanceTag)) {
-                    steps.addAll(readInstanceContent(child.getAttribute(idAttribute), child, new MutableOptional<>(), root));
+                    steps.addAll(readInstanceContent(child.getAttribute(idAttribute), child, new HashMap<>(), root));
                 } else {
-                    steps.addAll(readNonInstanceSteps(child, new MutableOptional<>(), root)); // (No global service id here)
+                    steps.addAll(readNonInstanceSteps(child, new HashMap<>(), root)); // (No global service id here)
                 }
             }
             applicationEndpoints = readEndpoints(root, Optional.empty(), steps);
@@ -156,7 +159,7 @@ public class DeploymentSpecXmlReader {
      */
     private List<DeploymentInstanceSpec> readInstanceContent(String instanceNameString,
                                                              Element instanceTag,
-                                                             MutableOptional<String> globalServiceId,
+                                                             Map<String, String> prodAttributes,
                                                              Element parentTag) {
         if (instanceNameString.isBlank())
             illegal("<instance> attribute 'id' must be specified, and not be blank");
@@ -183,7 +186,7 @@ public class DeploymentSpecXmlReader {
         // Values where there is no default
         List<Step> steps = new ArrayList<>();
         for (Element instanceChild : XML.getChildren(instanceTag))
-            steps.addAll(readNonInstanceSteps(instanceChild, globalServiceId, instanceChild));
+            steps.addAll(readNonInstanceSteps(instanceChild, prodAttributes, instanceChild));
         List<Endpoint> endpoints = readEndpoints(instanceTag, Optional.of(instanceNameString), steps);
 
         // Build and return instances with these values
@@ -198,32 +201,39 @@ public class DeploymentSpecXmlReader {
                                                              upgradeRollout,
                                                              minRisk, maxRisk, maxIdleHours,
                                                              changeBlockers,
-                                                             globalServiceId.asOptional(),
+                                                             Optional.ofNullable(prodAttributes.get(globalServiceIdAttribute)),
                                                              athenzService,
+                                                             Optional.ofNullable(prodAttributes.get(cloudAccountAttribute))
+                                                                     .map(CloudAccount::new),
                                                              notifications,
                                                              endpoints,
                                                              now))
                      .collect(Collectors.toList());
     }
 
-    private List<Step> readSteps(Element stepTag, MutableOptional<String> globalServiceId, Element parentTag) {
+    private List<Step> readSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag) {
         if (stepTag.getTagName().equals(instanceTag))
-            return new ArrayList<>(readInstanceContent(stepTag.getAttribute(idAttribute), stepTag, globalServiceId, parentTag));
+            return new ArrayList<>(readInstanceContent(stepTag.getAttribute(idAttribute), stepTag, prodAttributes, parentTag));
         else
-            return readNonInstanceSteps(stepTag, globalServiceId, parentTag);
+            return readNonInstanceSteps(stepTag, prodAttributes, parentTag);
 
     }
 
+
+
     // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
     @SuppressWarnings("fallthrough")
-    private List<Step> readNonInstanceSteps(Element stepTag, MutableOptional<String> globalServiceId, Element parentTag) {
+    private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
 
-        if (prodTag.equals(stepTag.getTagName()))
-            globalServiceId.set(readGlobalServiceId(stepTag));
-        else if (readGlobalServiceId(stepTag).isPresent())
-            illegal("Attribute 'global-service-id' is only valid on 'prod' tag.");
+        if (prodTag.equals(stepTag.getTagName())) {
+            readGlobalServiceId(stepTag).ifPresent(id -> prodAttributes.put(globalServiceIdAttribute, id));
+            readCloudAccount(stepTag).ifPresent(account -> prodAttributes.put(cloudAccountAttribute, account));
+        } else {
+            if (readGlobalServiceId(stepTag).isPresent()) illegal("Attribute '" + globalServiceIdAttribute + "' is only valid on 'prod' tag");
+            if (!regionTag.equals(stepTag.getTagName()) && readCloudAccount(stepTag).isPresent()) illegal("Attribute '" + cloudAccountAttribute + "' is only valid on 'prod' or 'region' tag");
+        }
 
         switch (stepTag.getTagName()) {
             case testTag:
@@ -231,10 +241,10 @@ public class DeploymentSpecXmlReader {
                           .anyMatch(node -> prodTag.equals(node.getNodeName())))
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim())));
             case stagingTag:
-                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor));
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, Optional.empty()));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
                 return XML.getChildren(stepTag).stream()
-                                               .flatMap(child -> readNonInstanceSteps(child, globalServiceId, stepTag).stream())
+                                               .flatMap(child -> readNonInstanceSteps(child, prodAttributes, stepTag).stream())
                                                .collect(Collectors.toList());
             case delayTag:
                 return List.of(new Delay(Duration.ofSeconds(longAttribute("hours", stepTag) * 60 * 60 +
@@ -242,11 +252,11 @@ public class DeploymentSpecXmlReader {
                                                             longAttribute("seconds", stepTag))));
             case parallelTag: // regions and instances may be nested within
                 return List.of(new ParallelSteps(XML.getChildren(stepTag).stream()
-                                                    .flatMap(child -> readSteps(child, globalServiceId, parentTag).stream())
+                                                    .flatMap(child -> readSteps(child, prodAttributes, parentTag).stream())
                                                     .collect(Collectors.toList())));
             case stepsTag: // regions and instances may be nested within
                 return List.of(new Steps(XML.getChildren(stepTag).stream()
-                                            .flatMap(child -> readSteps(child, globalServiceId, parentTag).stream())
+                                            .flatMap(child -> readSteps(child, prodAttributes, parentTag).stream())
                                             .collect(Collectors.toList())));
             case regionTag:
                 return List.of(readDeclaredZone(Environment.prod, athenzService, testerFlavor, stepTag));
@@ -425,13 +435,19 @@ public class DeploymentSpecXmlReader {
     private DeclaredZone readDeclaredZone(Environment environment, Optional<AthenzService> athenzService,
                                           Optional<String> testerFlavor, Element regionTag) {
         return new DeclaredZone(environment, Optional.of(RegionName.from(XML.getValue(regionTag).trim())),
-                                readActive(regionTag), athenzService, testerFlavor);
+                                readActive(regionTag), athenzService, testerFlavor,
+                                readCloudAccount(regionTag).map(CloudAccount::new));
+    }
+
+    private Optional<String> readCloudAccount(Element tag) {
+        return Optional.of(tag.getAttribute(cloudAccountAttribute))
+                       .filter(account -> !account.isEmpty());
     }
 
     private Optional<String> readGlobalServiceId(Element environmentTag) {
-        String globalServiceId = environmentTag.getAttribute("global-service-id");
+        String globalServiceId = environmentTag.getAttribute(globalServiceIdAttribute);
         if (globalServiceId.isEmpty()) return Optional.empty();
-        deprecate(environmentTag, List.of("global-service-id"), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
+        deprecate(environmentTag, List.of(globalServiceIdAttribute), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
         return Optional.of(globalServiceId);
     }
 
@@ -544,16 +560,6 @@ public class DeploymentSpecXmlReader {
 
     private static void illegal(String message) {
         throw new IllegalArgumentException(message);
-    }
-
-    private static class MutableOptional<T> {
-
-        private Optional<T> value = Optional.empty();
-
-        public void set(Optional<T> value) { this.value = value; }
-
-        public Optional<T> asOptional() { return value; }
-
     }
 
 }

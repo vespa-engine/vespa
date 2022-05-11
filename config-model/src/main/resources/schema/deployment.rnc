@@ -97,6 +97,7 @@ Prod = element prod {
    attribute global-service-id { text }? &
    attribute athenz-service { xsd:string }? &
    attribute tester-flavor { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
    Region* &
    Delay* &
    ProdTest* &
@@ -110,6 +111,7 @@ ProdTest = element test {
 Region = element region {
    attribute active { xsd:boolean }? &
    attribute athenz-service { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
    text
 }
 
