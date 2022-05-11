@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
@@ -19,9 +20,9 @@ import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -41,7 +42,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationS
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
@@ -60,9 +60,7 @@ import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
-import com.yahoo.vespa.hosted.controller.deployment.RevisionHistory;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
-import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -85,7 +83,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -93,7 +90,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -138,6 +134,8 @@ public class ApplicationController {
     private final ListFlag<String> incompatibleVersions;
     private final BillingController billingController;
 
+    private final StringFlag cloudAccountFlag;
+
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
                           FlagSource flagSource, BillingController billingController) {
         this.controller = Objects.requireNonNull(controller);
@@ -156,6 +154,7 @@ public class ApplicationController {
         endpointCertificates = new EndpointCertificates(controller,
                                                         controller.serviceRegistry().endpointCertificateProvider(),
                                                         controller.serviceRegistry().endpointCertificateValidator());
+         cloudAccountFlag = Flags.PROVISION_IN_EXTERNAL_ACCOUNT.bindTo(controller.flagSource());
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -621,11 +620,16 @@ public class ApplicationController {
                                                                    .map(SupportAccessGrant::certificate)
                                                                    .collect(toList());
 
+            // TODO(mpolden): Read this from DeploymentSpec and validate it against the valid accounts for the tenant,
+            //                as defined by PermanentFlags.EXTERNAL_ACCOUNTS
+            Optional<CloudAccount> cloudAccount = Optional.of(cloudAccountFlag.with(APPLICATION_ID, application.serializedForm()).value())
+                                                          .filter(account -> !account.isEmpty())
+                                                          .map(CloudAccount::new);
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
                                                            deploymentQuota, tenantSecretStores, operatorCertificates,
-                                                           dryRun));
+                                                           cloudAccount, dryRun));
 
             return new ActivateResult(new com.yahoo.vespa.hosted.controller.api.identifiers.RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);
