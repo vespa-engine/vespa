@@ -118,7 +118,7 @@ public class ConvertSchemaCollection {
     }
 
     private void resolveStructInheritance() {
-        List<ParsedStruct> all = new ArrayList();
+        List<ParsedStruct> all = new ArrayList<>();
         for (var schema : orderedInput) {
             var doc = schema.getDocument();
             for (var struct : doc.getStructs()) {

@@ -8,6 +8,7 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.searchdefinition.FeatureNames;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
@@ -24,6 +25,7 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -326,7 +328,7 @@ public class RankingExpressionWithOnnxTestCase {
     }
 
     private void assertSmallConstant(String name, TensorType type, RankProfileSearchFixture search) {
-        var value = search.compiledRankProfile("my_profile").getConstants().get(name);
+        var value = search.compiledRankProfile("my_profile").getConstants().get(FeatureNames.asConstantFeature(name));
         assertNotNull(value);
         assertEquals(type, value.type());
     }
@@ -388,8 +390,8 @@ public class RankingExpressionWithOnnxTestCase {
 
         StoringApplicationPackage(Path applicationPackageWritableRoot, String queryProfile, String queryProfileType) {
             super(new File(applicationPackageWritableRoot.toString()),
-                    null, null, Collections.emptyList(), null,
-                    null, null, false, queryProfile, queryProfileType);
+                  null, null, List.of(), Map.of(), null,
+                  null, null, false, queryProfile, queryProfileType);
         }
 
         @Override

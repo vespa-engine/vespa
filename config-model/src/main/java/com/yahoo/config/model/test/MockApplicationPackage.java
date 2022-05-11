@@ -6,9 +6,6 @@ import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.component.Version;
-import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.application.provider.MockFileRegistry;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
@@ -18,9 +15,6 @@ import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
-import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.ApplicationBuilder;
-import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.config.application.api.ApplicationPackage;
 
@@ -37,7 +31,9 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -53,13 +49,14 @@ public class MockApplicationPackage implements ApplicationPackage {
     public static final String DEPLOYED_BY_USER = "user";
     public static final String APPLICATION_NAME = "application";
     public static final long APPLICATION_GENERATION = 1L;
-    public static final String MUSIC_SEARCHDEFINITION = createSearchDefinition("music", "foo");
-    public static final String BOOK_SEARCHDEFINITION = createSearchDefinition("book", "bar");
+    public static final String MUSIC_SCHEMA = createSchema("music", "foo");
+    public static final String BOOK_SCHEMA = createSchema("book", "bar");
 
     private final File root;
     private final String hostsS;
     private final String servicesS;
     private final List<String> schemas;
+    private final Map<Path, MockApplicationFile> files;
     private final String schemaDir;
     private final Optional<String> deploymentSpec;
     private final Optional<String> validationOverrides;
@@ -68,6 +65,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     private final ApplicationMetaData applicationMetaData;
 
     protected MockApplicationPackage(File root, String hosts, String services, List<String> schemas,
+                                     Map<Path, MockApplicationFile> files,
                                      String schemaDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType) {
@@ -75,6 +73,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.hostsS = hosts;
         this.servicesS = services;
         this.schemas = schemas;
+        this.files = files;
         this.schemaDir = schemaDir;
         this.deploymentSpec = Optional.ofNullable(deploymentSpec);
         this.validationOverrides = Optional.ofNullable(validationOverrides);
@@ -135,7 +134,7 @@ public class MockApplicationPackage implements ApplicationPackage {
             throw new IllegalArgumentException("Expected the first line of a schema but got '" + sd + "'");
         int end = s.indexOf(' ');
         if (end < 0)
-        end = s.indexOf('}');
+            end = s.indexOf('}');
         return s.substring(0, end).trim();
     }
 
@@ -165,6 +164,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public ApplicationFile getFile(Path file) {
+        if (files.containsKey(file)) return files.get(file);
         return new MockApplicationFile(file, Path.fromString(root.toString()));
     }
 
@@ -239,6 +239,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         private String hosts = null;
         private String services = null;
         private List<String> schemas = Collections.emptyList();
+        private Map<Path, MockApplicationFile> files = new LinkedHashMap<>();
         private String schemaDir = null;
         private String deploymentSpec = null;
         private String validationOverrides = null;
@@ -282,6 +283,16 @@ public class MockApplicationPackage implements ApplicationPackage {
             return this;
         }
 
+        /** Additional (mock) files that will exist in this application package, with their content. */
+        public Builder withFiles(Map<Path, String> files) {
+            Map<Path, MockApplicationFile> mockFiles = new HashMap<>();
+            for (var file : files.entrySet())
+                mockFiles.put(file.getKey(), new MockApplicationFile(file.getKey(),
+                                                                     Path.fromString(root.toString()), file.getValue()));
+            this.files = mockFiles;
+            return this;
+        }
+
         public Builder withSchemaDir(String schemaDir) {
             this.schemaDir = schemaDir;
             return this;
@@ -313,13 +324,13 @@ public class MockApplicationPackage implements ApplicationPackage {
         }
 
         public ApplicationPackage build() {
-                return new MockApplicationPackage(root, hosts, services, schemas, schemaDir,
-                                                  deploymentSpec, validationOverrides, failOnValidateXml,
-                                                  queryProfile, queryProfileType);
+            return new MockApplicationPackage(root, hosts, services, schemas, files, schemaDir,
+                                              deploymentSpec, validationOverrides, failOnValidateXml,
+                                              queryProfile, queryProfileType);
         }
     }
 
-    public static String createSearchDefinition(String name, String fieldName) {
+    public static String createSchema(String name, String fieldName) {
         return "search " + name + " {" +
                 "  document " + name + " {" +
                 "    field " + fieldName + " type string {}" +
@@ -369,25 +380,36 @@ public class MockApplicationPackage implements ApplicationPackage {
         /** The File pointing to the actual file represented by this */
         private final File file;
 
+        /** The content of this file, or null to read it from the file system. */
+        private final String content;
+
         public MockApplicationFile(Path filePath, Path applicationPackagePath) {
+            this(filePath, applicationPackagePath, null);
+        }
+
+        private MockApplicationFile(Path filePath, Path applicationPackagePath, String content) {
             super(filePath);
             this.root = applicationPackagePath;
             file = applicationPackagePath.append(filePath).toFile();
+            this.content = content;
         }
 
         @Override
         public boolean isDirectory() {
+            if (content != null) return false;
             return file.isDirectory();
         }
 
         @Override
         public boolean exists() {
+            if (content != null) return true;
             return file.exists();
         }
 
         @Override
         public Reader createReader() {
             try {
+                if (content != null) return new StringReader(content);
                 if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
                 return IOUtils.createReader(file, "UTF-8");
             }
@@ -399,6 +421,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         @Override
         public InputStream createInputStream() {
             try {
+                if (content != null) throw new UnsupportedOperationException("Not implemented for mock file content");
                 if ( ! exists()) throw new FileNotFoundException("File '" + file + "' does not exist");
                 return new BufferedInputStream(new FileInputStream(file));
             }
@@ -416,6 +439,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         @Override
         public ApplicationFile writeFile(Reader input) {
             try {
+                if (content != null) throw new UnsupportedOperationException("Not implemented for mock file content");
                 IOUtils.writeFile(file, IOUtils.readAll(input), false);
                 return this;
             }
@@ -427,6 +451,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         @Override
         public ApplicationFile appendFile(String value) {
             try {
+                if (content != null) throw new UnsupportedOperationException("Not implemented for mock file content");
                 IOUtils.writeFile(file, value, true);
                 return this;
             }
@@ -437,7 +462,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
         @Override
         public List<ApplicationFile> listFiles(PathFilter filter) {
-            if ( ! isDirectory()) return Collections.emptyList();
+            if ( ! isDirectory()) return List.of();
             return Arrays.stream(file.listFiles()).filter(f -> filter.accept(Path.fromString(f.toString())))
                          .map(f -> new MockApplicationFile(asApplicationRelativePath(f), root))
                          .collect(Collectors.toList());
@@ -445,6 +470,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
         @Override
         public ApplicationFile delete() {
+            if (content != null) throw new UnsupportedOperationException("Not implemented for mock file content");
             file.delete();
             return this;
         }

@@ -12,6 +12,7 @@ import com.yahoo.tensor.TensorType;
  * @author bratseth
  */
 public class RankingConstant extends DistributableResource {
+
     private TensorType tensorType = null;
 
     public RankingConstant(String name) {
@@ -43,10 +44,9 @@ public class RankingConstant extends DistributableResource {
                                                ": Dense tensor dimensions must have a size");
     }
 
+    @Override
     public String toString() {
-        StringBuilder b = new StringBuilder(super.toString())
-                .append("' of type '").append(tensorType).append("'");
-        return b.toString();
+        return super.toString() + "' of type '" + tensorType + "'";
     }
 
 }

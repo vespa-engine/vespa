@@ -37,7 +37,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "    rank-profile parent {\n" +
                         "        constants {\n" +
                         "            p1 double: 7 \n" +
-                        "            p2 double: 0 \n" +
+                        "            constant(p2) double: 0 \n" +
                         "        }\n" +
                         "        first-phase {\n" +
                         "            expression: p2 * (1.3 + p1 )\n" +
@@ -52,7 +52,7 @@ public class RankingExpressionConstantsTestCase extends AbstractSchemaTestCase {
                         "        }\n" +
                         "        constants {\n" +
                         "            a: 1.0 \n" +
-                        "            b: 2 \n" +
+                        "            constant(b): 2 \n" +
                         "            c: 3.5 \n" +
                         "        }\n" +
                         "    }\n" +

@@ -1768,7 +1768,7 @@ void rankingConstant(ParsedSchema schema) :
 {
     ( <CONSTANT> name = identifier() lbrace()
       (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
-       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove oin Vespa 8
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove on Vespa 8
        | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
       )+
       <RBRACE>
@@ -2080,8 +2080,22 @@ void input(ParsedRankProfile profile) :
     Tensor defaultValue = null;
 }
 {
-    reference = queryFeature() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
+    reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type) )?
     { profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue))); }
+}
+
+/** Returns the reference "query(name)" for both "query(name)" and "name". */
+Reference inputName() :
+{
+    String name;
+}
+{
+    (
+        ( <QUERY> "(" name = identifier() ")" )
+        |
+        name = identifier()
+    )
+    { return FeatureNames.asQueryFeature(name); }
 }
 
 TensorType valueType(Reference reference) :
@@ -2098,19 +2112,10 @@ TensorType valueType(Reference reference) :
     { return type; }
 }
 
-Reference queryFeature() :
-{
-    String argument;
-}
-{
-    <QUERY> "(" argument = identifier() ")"
-    { return Reference.simple("query", argument); }
-}
-
 /**
- * This rule consumes a summary-features block of a rank profile.
+ * Consumes a summary-features block of a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void summaryFeatures(ParsedRankProfile profile) :
 {
@@ -2143,9 +2148,9 @@ void strict(ParsedRankProfile profile) :
 }
 
 /**
- * This rule consumes a match-features block of a rank profile.
+ * Consumes a match-features block of a rank profile.
  *
- * @param profile The rank profile to modify.
+ * @param profile the rank profile to modify
  */
 void matchFeatures(ParsedRankProfile profile) :
 {
@@ -2448,7 +2453,7 @@ void constant(ParsedSchema schema, ParsedRankProfile profile) :
         LOOKAHEAD(4) ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
         {
             if (value != null)
-                profile.addConstant(name.simpleArgument().get(), new RankProfile.Constant(name, value));
+                profile.addConstant(name, new RankProfile.Constant(name, value));
             else
                 schema.addRankingConstant(new RankingConstant(name.simpleArgument().get(), type, valuePath, DistributableResource.PathType.FILE)); // TODO JON: Move to RankProfile
         }
@@ -2465,9 +2470,11 @@ Reference constantName() :
     String name;
 }
 {
-    ( <CONSTANT> "(" name = identifier() ")" )
-    |
-    name = identifier()
+    (
+        ( <CONSTANT> "(" name = identifier() ")" )
+        |
+        name = identifier()
+    )
     { return FeatureNames.asConstantFeature(name); }
 }
 
@@ -2478,7 +2485,7 @@ void constantValue(ParsedRankProfile profile, Reference name) :
 }
 {
     <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
-    { profile.addConstant(name.simpleArgument().get(), new RankProfile.Constant(name, Tensor.from(value.image))); }
+    { profile.addConstant(name, new RankProfile.Constant(name, Tensor.from(value.image))); }
 }
 
 // Deprecated form
@@ -2491,7 +2498,7 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
     <LBRACE> (<NL>)*
       (( tensorString = tensorValuePrefixedByValue() |
          type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
-    { profile.addConstant(name.simpleArgument().get(),
+    { profile.addConstant(name,
                           new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));
     }
 }

@@ -5,14 +5,14 @@ import com.yahoo.config.application.api.FileRegistry;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * Constant values for ranking/model execution tied to a search definition, or globally to an application
- * package
+ * Constant values for ranking/model execution tied to a schema, or globally to an application package
  *
  * @author bratseth
  */
@@ -23,7 +23,7 @@ public class RankingConstants {
     /** The schema this belongs to, or empty if it is global */
     private final Optional<Schema> owner;
 
-    private final Map<String, RankingConstant> constants = new ConcurrentHashMap<>();
+    private final Map<String, RankingConstant> constants = new LinkedHashMap<>();
 
     public RankingConstants(FileRegistry fileRegistry, Optional<Schema> owner) {
         this.fileRegistry = fileRegistry;
@@ -36,7 +36,7 @@ public class RankingConstants {
         String name = constant.getName();
         RankingConstant prev = constants.putIfAbsent(name, constant);
         if ( prev != null )
-            throw new IllegalArgumentException("Ranking constant '" + name + "' defined twice");
+            throw new IllegalArgumentException("Constant '" + name + "' defined twice");
     }
 
     public void putIfAbsent(RankingConstant constant) {
@@ -70,7 +70,7 @@ public class RankingConstants {
         if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(constants);
         if (constants.isEmpty()) return owner.get().inherited().get().rankingConstants().asMap();
 
-        var allConstants = new HashMap<>(owner.get().inherited().get().rankingConstants().asMap());
+        var allConstants = new LinkedHashMap<>(owner.get().inherited().get().rankingConstants().asMap());
         allConstants.putAll(constants);
         return Collections.unmodifiableMap(allConstants);
     }

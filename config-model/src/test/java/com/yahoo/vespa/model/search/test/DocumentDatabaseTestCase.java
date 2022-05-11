@@ -4,12 +4,15 @@ package com.yahoo.vespa.model.search.test;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.vespa.config.search.IndexschemaConfig;
-import com.yahoo.vespa.config.search.core.ProtonConfig;
-import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.path.Path;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.config.search.IndexschemaConfig;
+import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.ProtonConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.ContentSearchCluster;
@@ -17,10 +20,11 @@ import com.yahoo.vespa.model.content.utils.DocType;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -94,7 +98,7 @@ public class DocumentDatabaseTestCase {
         var tester = new SchemaTester();
         VespaModel model = tester.createModel(nameAndModes, xmlTuning, new DeployState.Builder().properties(properties));
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
-        ProtonConfig proton = tester.getProtonCfg(contentSearchCluster);
+        ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
         assertEquals(global, proton.feeding().concurrency(), SMALL);
         assertEquals(local.size(), proton.documentdb().size());
         for (int i = 0; i < local.size(); i++) {
@@ -109,7 +113,7 @@ public class DocumentDatabaseTestCase {
                                                         DocType.create("b", "streaming"),
                                                        DocType.create("c", "store-only")), "");
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
-        ProtonConfig proton = tester.getProtonCfg(contentSearchCluster);
+        ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
         assertEquals(3, proton.documentdb().size());
         assertEquals(ProtonConfig.Documentdb.Mode.Enum.INDEX, proton.documentdb(0).mode());
         assertEquals("a", proton.documentdb(0).inputdoctypename());
@@ -124,7 +128,7 @@ public class DocumentDatabaseTestCase {
         assertEquals(nameAndModes.size(), local.size());
         VespaModel model = tester.createModel(nameAndModes, xmlTuning);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
-        ProtonConfig proton = tester.getProtonCfg(contentSearchCluster);
+        ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
         assertEquals(local.size(), proton.documentdb().size());
         for (int i = 0; i < local.size(); i++) {
             assertEquals(local.get(i).longValue(), proton.documentdb(i).allocation().initialnumdocs());
@@ -171,7 +175,7 @@ public class DocumentDatabaseTestCase {
         String type3Id = "test/search/cluster.test/type3";
         {
             assertEquals(3, indexedSearchCluster.getDocumentDbs().size());
-            ProtonConfig proton = tester.getProtonCfg(contentSearchCluster);
+            ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
             assertEquals(3, proton.documentdb().size());
             assertEquals("type1", proton.documentdb(0).inputdoctypename());
             assertEquals(type1Id, proton.documentdb(0).configid());
@@ -207,6 +211,43 @@ public class DocumentDatabaseTestCase {
             assertEquals("type2", icfg.ilscript(1).doctype());
             assertEquals("type3", icfg.ilscript(2).doctype());
         }
+    }
+
+    @Test
+    public void testRankingConstants() {
+        List<String> schemas = List.of("type1");
+        var tester = new SchemaTester();
+
+        // Use lz4 endings to avoid having to provide file content to be validated
+        String schemaConstants =
+                "  constant constant_1 {" +
+                "    file: constants/my_constant_1.json.lz4" +
+                "    type: tensor<float>(x{},y{})" +
+                "  }" +
+                "  constant constant_2 {" +
+                "    file: constants/my_constant_2.json.lz4" +
+                "    type: tensor(x[1000])" +
+                "  }";
+
+        Map<Path, String> constants = new HashMap<>();
+        constants.put(Path.fromString("constants/my_constant_1.json.lz4"), "");
+        constants.put(Path.fromString("constants/my_constant_2.json.lz4"), "");
+        var model = tester.createModel(schemaConstants, "", schemas, constants);
+        IndexedSearchCluster indexedSearchCluster = (IndexedSearchCluster)model.getSearchClusters().get(0);
+        RankingConstantsConfig.Builder b = new RankingConstantsConfig.Builder();
+        indexedSearchCluster.getDocumentDbs().get(0).getConfig(b);
+        RankingConstantsConfig config = b.build();
+        assertEquals(2, config.constant().size());
+
+        var constant1Config = config.constant().get(0);
+        assertEquals("constant_1", constant1Config.name());
+        assertEquals("constants/my_constant_1.json.lz4", constant1Config.fileref().value());
+        assertEquals("tensor<float>(x{},y{})", constant1Config.type());
+
+        var constant2Config = config.constant().get(1);
+        assertEquals("constant_2", constant2Config.name());
+        assertEquals("constants/my_constant_2.json.lz4", constant2Config.fileref().value());
+        assertEquals("tensor(x[1000])", constant2Config.type());
     }
 
     @Test
@@ -300,7 +341,7 @@ public class DocumentDatabaseTestCase {
         var model = tester.createModelWithMode(mode, sds, builder);
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
 
-        ProtonConfig proton = tester.getProtonCfg(contentSearchCluster);
+        ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
         assertEquals(sds.size(), proton.documentdb().size());
         for (int i = 0; i < sds.size(); i++) {
             assertEquals(sds.get(i), proton.documentdb(i).inputdoctypename());

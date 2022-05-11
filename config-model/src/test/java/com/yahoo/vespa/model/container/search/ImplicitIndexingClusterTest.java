@@ -54,7 +54,7 @@ public class ImplicitIndexingClusterTest {
 
         return new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withServices("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + servicesXml)
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SCHEMA)
                 .build())
                 .create(deployStateBuilder);
     }

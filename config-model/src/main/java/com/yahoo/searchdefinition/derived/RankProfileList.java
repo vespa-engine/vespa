@@ -50,7 +50,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     }
 
     /**
-     * Creates a rank profile
+     * Creates a rank profile list
      *
      * @param schema the schema this is a rank profile from
      * @param attributeFields the attribute fields to create a ranking for

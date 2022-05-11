@@ -80,7 +80,7 @@ public class ConvertParsedSchemas {
         this.typeConverter = new ConvertParsedTypes(orderedInput, docMan);
     }
 
-    private Map<String, SDDocumentType> convertedDocuments = new LinkedHashMap();
+    private final Map<String, SDDocumentType> convertedDocuments = new LinkedHashMap<>();
 
     public List<Schema> convertToSchemas() {
         typeConverter.convert(false);
