@@ -6,6 +6,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 
@@ -67,6 +68,7 @@ public class PrepareParamsTest {
         assertTrue(prepareParams.vespaVersion().isEmpty());
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
         assertTrue(prepareParams.containerEndpoints().isEmpty());
+        assertTrue(prepareParams.cloudAccount().isEmpty());
     }
 
     @Test
@@ -188,6 +190,13 @@ public class PrepareParamsTest {
         new Injector().inject(secretStoreSlime.get(), new ObjectInserter(root.get(), PrepareParams.TENANT_SECRET_STORES_PARAM_NAME));
         PrepareParams prepareParamsJson = PrepareParams.fromJson(SlimeUtils.toJsonBytes(root), TenantName.from("foo"), Duration.ofSeconds(60));
         assertPrepareParamsEqual(prepareParams, prepareParamsJson);
+    }
+
+    @Test
+    public void testCloudAccount() {
+        String json = "{\"cloudAccount\": {\"id\": \"012345678912\"}}";
+        PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
+        assertEquals(new CloudAccount("012345678912"), params.cloudAccount().get());
     }
 
     private void assertPrepareParamsEqual(PrepareParams urlParams, PrepareParams jsonParams) {

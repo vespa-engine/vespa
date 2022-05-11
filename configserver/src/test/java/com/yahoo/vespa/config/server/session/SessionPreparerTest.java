@@ -9,11 +9,13 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.CertificateNotReadyException;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -339,6 +341,25 @@ public class SessionPreparerTest {
         preparer = createPreparer(HostProvisionerProvider.withProvisioner(new MockProvisioner().transientFailureOnPrepare(), true));
         var params = new PrepareParams.Builder().applicationId(applicationId("test")).build();
         prepare(new File("src/test/resources/deploy/hosted-app"), params);
+    }
+
+    @Test
+    public void require_that_cloud_account_is_written() throws Exception {
+        TestModelFactory modelFactory = new TestModelFactory(version123);
+        preparer = createPreparer(new ModelFactoryRegistry(List.of(modelFactory)), HostProvisionerProvider.empty());
+        ApplicationId applicationId = applicationId("test");
+        CloudAccount expected = new CloudAccount("012345678912");
+        PrepareParams params = new PrepareParams.Builder().applicationId(applicationId)
+                                                          .cloudAccount(expected)
+                                                          .build();
+        prepare(new File("src/test/resources/deploy/hosted-app"), params);
+
+        SessionZooKeeperClient zkClient = createSessionZooKeeperClient();
+        assertEquals(expected, zkClient.readCloudAccount().get());
+
+        ModelContext modelContext = modelFactory.getModelContext();
+        Optional<CloudAccount> accountFromModel = modelContext.properties().cloudAccount();
+        assertEquals(Optional.of(expected), accountFromModel);
     }
 
     private List<ContainerEndpoint> readContainerEndpoints(ApplicationId applicationId) {
