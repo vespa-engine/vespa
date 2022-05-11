@@ -12,3 +12,6 @@ queueSize int default=10000
 
 # Buffer size for the output stream has a default of 256k
 bufferSize int default=262144
+
+# In hosted Vespa we do not use the clusterId in file names for application containers
+useClusterIdInFileName bool default=true
