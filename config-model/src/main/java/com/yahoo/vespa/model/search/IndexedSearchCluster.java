@@ -189,13 +189,7 @@ public class IndexedSearchCluster extends SearchCluster
         for (SchemaInfo spec : schemas().values()) {
             if (spec.fullSchema() instanceof DocumentOnlySchema) continue;
             DocumentDatabase db = new DocumentDatabase(this, spec.fullSchema().getName(),
-                                                       new DerivedConfiguration(spec.fullSchema(),
-                                                                                deployState.getDeployLogger(),
-                                                                                deployState.getProperties(),
-                                                                                deployState.rankProfileRegistry(),
-                                                                                deployState.getQueryProfiles().getRegistry(),
-                                                                                deployState.getImportedModels(),
-                                                                                deployState.getExecutor()));
+                                                       new DerivedConfiguration(spec.fullSchema(), deployState));
             documentDbs.add(db);
         }
     }
