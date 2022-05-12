@@ -1,6 +1,7 @@
 package com.yahoo.vespa.testrunner;
 
-import com.yahoo.vespa.testrunner.TestRunner.Suite;
+import com.yahoo.vespa.test.samples.FailingInstantiationTest;
+import com.yahoo.vespa.testrunner.TestRunner.Status;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.EngineExecutionListener;
@@ -33,12 +34,14 @@ class JunitRunnerTest {
     void test() throws ExecutionException, InterruptedException {
         AtomicReference<byte[]> testRuntime = new AtomicReference<>();
         JunitRunner runner = new JunitRunner(testRuntime::set,
-                                            __ -> List.of(HtmlLoggerTest.class),
+                                            __ -> List.of(FailingInstantiationTest.class),
                                             this::execute);
 
-        runner.test(Suite.SYSTEM_TEST, new byte[0]).get();
-        assertEquals(1, runner.getReport().successCount);
-        assertEquals(0, runner.getReport().failedCount);
+        runner.test(null, null).get();
+        assertEquals(Status.FAILURE, runner.getStatus());
+        assertEquals(0, runner.getReport().successCount);
+        assertEquals("java.lang.NumberFormatException: For input string: \"\"",
+                     runner.getReport().failures.get(0).exception().toString());
     }
 
 
