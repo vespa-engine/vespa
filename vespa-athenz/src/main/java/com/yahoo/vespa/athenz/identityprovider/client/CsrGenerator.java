@@ -16,6 +16,7 @@ import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
 import static com.yahoo.security.SubjectAlternativeName.Type.IP_ADDRESS;
 import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.UNIFORM_RESOURCE_IDENTIFIER;
 
 /**
  * Generates a {@link Pkcs10Csr} for an instance.
@@ -47,7 +48,8 @@ public class CsrGenerator {
                                 instanceIdentity.getName(),
                                 instanceIdentity.getDomainName().replace(".", "-"),
                                 dnsSuffix))
-                .addSubjectAlternativeName(DNS_NAME, getIdentitySAN(instanceId));
+                .addSubjectAlternativeName(DNS_NAME, getIdentitySanDns(instanceId))
+                .addSubjectAlternativeName(UNIFORM_RESOURCE_IDENTIFIER, getIdentitySanUri(instanceId));
         ipAddresses.forEach(ip ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP_ADDRESS, ip)));
         return pkcs10CsrBuilder.build();
     }
@@ -58,12 +60,17 @@ public class CsrGenerator {
                                      KeyPair keyPair) {
         X500Principal principal = new X500Principal(String.format("OU=%s, cn=%s:role.%s", providerService, role.domain().getName(), role.roleName()));
         return Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
-                .addSubjectAlternativeName(DNS_NAME, getIdentitySAN(instanceId))
+                .addSubjectAlternativeName(DNS_NAME, getIdentitySanDns(instanceId))
+                .addSubjectAlternativeName(UNIFORM_RESOURCE_IDENTIFIER, getIdentitySanUri(instanceId))
                 .addSubjectAlternativeName(RFC822_NAME, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix))
                 .build();
     }
 
-    private String getIdentitySAN(VespaUniqueInstanceId instanceId) {
+    private String getIdentitySanDns(VespaUniqueInstanceId instanceId) {
         return String.format("%s.instanceid.athenz.%s", instanceId.asDottedString(), dnsSuffix);
+    }
+
+    private String getIdentitySanUri(VespaUniqueInstanceId instanceId) {
+        return String.format("athenz://instanceid/%s/%s", providerService, instanceId.asDottedString());
     }
 }
