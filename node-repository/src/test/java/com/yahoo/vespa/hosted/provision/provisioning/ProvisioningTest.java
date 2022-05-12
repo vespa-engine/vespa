@@ -7,9 +7,6 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.ClusterSpec.Group;
-import com.yahoo.config.provision.ClusterSpec.Id;
-import com.yahoo.config.provision.ClusterSpec.Type;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -40,7 +37,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
@@ -53,7 +49,6 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -1023,22 +1018,6 @@ public class ProvisioningTest {
         SystemState state = prepare(application, 1, 1, 1, 1, nodeResources, tester);
         assertEquals(4, state.allHosts.size());
         tester.activate(application, state.allHosts);
-    }
-
-    @Test
-    public void test_versioned_resources() {
-        ClusterSpec.Builder spec = ClusterSpec.specification(Type.container, Id.from("id")).group(Group.from(0));
-        Map<Version, NodeResources> resources = Map.of(new Version("7"), new NodeResources(2, 2, 2, 2),
-                                                       new Version("8"), new NodeResources(3, 3, 3, 3),
-                                                       new Version("6"), new NodeResources(1, 1, 1, 1));
-
-        assertThrows(NullPointerException.class,
-                     () -> CapacityPolicies.versioned(spec.vespaVersion("5.0").build(), resources));
-        assertEquals(new NodeResources(1, 1, 1, 1), CapacityPolicies.versioned(spec.vespaVersion("6.0").build(), resources));
-        assertEquals(new NodeResources(2, 2, 2, 2), CapacityPolicies.versioned(spec.vespaVersion("7.0").build(), resources));
-        assertEquals(new NodeResources(2, 2, 2, 2), CapacityPolicies.versioned(spec.vespaVersion("7.1").build(), resources));
-        assertEquals(new NodeResources(3, 3, 3, 3), CapacityPolicies.versioned(spec.vespaVersion("8.0").build(), resources));
-        assertEquals(new NodeResources(3, 3, 3, 3), CapacityPolicies.versioned(spec.vespaVersion("9.0").build(), resources));
     }
 
     private SystemState prepare(ApplicationId application, int container0Size, int container1Size, int content0Size,
