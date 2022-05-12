@@ -14,6 +14,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     binary_hamming_distance.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
+    cgroup_resource_limits.cpp
     classname.cpp
     compress.cpp
     compressor.cpp
@@ -50,6 +51,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     rcuvector.cpp
     regexp.cpp
     require.cpp
+    resource_limits.cpp
     reusable_set.cpp
     reusable_set_handle.cpp
     reusable_set_pool.cpp

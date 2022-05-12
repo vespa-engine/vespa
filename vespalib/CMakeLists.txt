@@ -13,6 +13,7 @@ vespa_define_module(
     src/apps/make_fixture_macros
     src/apps/vespa-detect-hostname
     src/apps/vespa-drop-file-from-cache
+    src/apps/vespa-resource-limits
     src/apps/vespa-tsan-digest
     src/apps/vespa-validate-hostname
 
@@ -146,6 +147,7 @@ vespa_define_module(
     src/tests/typify
     src/tests/unwind_message
     src/tests/util/bfloat16
+    src/tests/util/cgroup_resource_limits
     src/tests/util/file_area_freelist
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
