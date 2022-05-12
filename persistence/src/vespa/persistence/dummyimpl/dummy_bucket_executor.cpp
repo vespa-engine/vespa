@@ -14,7 +14,9 @@ DummyBucketExecutor::DummyBucketExecutor(size_t numExecutors)
     : _executor(std::make_unique<vespalib::ThreadStackExecutor>(numExecutors, 0x10000)),
       _lock(),
       _cond(),
-      _inFlight()
+      _inFlight(),
+      _defer_tasks(false),
+      _deferred_tasks()
 {
 }
 
@@ -24,6 +26,15 @@ DummyBucketExecutor::~DummyBucketExecutor() {
 
 void
 DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) {
+    if (!_defer_tasks) {
+        internal_execute_no_defer(bucket, std::move(task));
+    } else {
+        _deferred_tasks.emplace_back(bucket, std::move(task));
+    }
+}
+
+void
+DummyBucketExecutor::internal_execute_no_defer(const Bucket& bucket, std::unique_ptr<BucketTask> task) {
     auto failed = _executor->execute(makeLambdaTask([this, bucket, bucketTask=std::move(task)]() {
         {
             std::unique_lock guard(_lock);
@@ -42,6 +53,44 @@ DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> 
     if (failed) {
         failed->run();
     }
+}
+
+void
+DummyBucketExecutor::defer_new_tasks() {
+    std::lock_guard guard(_lock);
+    _defer_tasks = true;
+}
+
+void
+DummyBucketExecutor::schedule_all_deferred_tasks() {
+    DeferredTasks to_run;
+    {
+        std::lock_guard guard(_lock);
+        assert(_defer_tasks);
+        _deferred_tasks.swap(to_run);
+    }
+    for (auto& bucket_and_task : to_run) {
+        internal_execute_no_defer(bucket_and_task.first, std::move(bucket_and_task.second));
+    }
+}
+
+size_t
+DummyBucketExecutor::num_deferred_tasks() const noexcept {
+    std::lock_guard guard(_lock);
+    return _deferred_tasks.size();
+}
+
+void
+DummyBucketExecutor::schedule_single_deferred_task() {
+    std::pair<Bucket, std::unique_ptr<BucketTask>> bucket_and_task;
+    {
+        std::lock_guard guard(_lock);
+        assert(_defer_tasks);
+        assert(!_deferred_tasks.empty());
+        bucket_and_task = std::move(_deferred_tasks.front());
+        _deferred_tasks.pop_front();
+    }
+    internal_execute_no_defer(bucket_and_task.first, std::move(bucket_and_task.second));
 }
 
 void

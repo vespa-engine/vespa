@@ -294,7 +294,7 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps)
     EXPECT_EQ(0, numPending());
     EXPECT_EQ(7u, docsMoved().size());
     EXPECT_EQ(3u, bucketsModified().size());
-    EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);
+    ASSERT_EQ(_ready.bucket(2), bucketsModified()[0]);
     EXPECT_EQ(_notReady.bucket(3), bucketsModified()[1]);
     EXPECT_EQ(_notReady.bucket(4), bucketsModified()[2]);
 }
@@ -481,6 +481,36 @@ TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_be_moved_to_rea
     EXPECT_EQ(_notReady.bucket(3), bucketsModified()[0]);
 }
 
+TEST_F(ControllerFixture, bucket_change_notification_is_not_lost_with_concurrent_bucket_movers)
+{
+    addReady(_ready.bucket(1));
+    _bmj->recompute(); // Bucket 1 should be (and is) ready, bucket 2 is ready (but should not be).
+    _bucketExecutor.defer_new_tasks(); // Don't execute immediately, we need to force multiple pending moves
+    masterExecute([this]() {
+        deactivateBucket(_ready.bucket(2));
+        _bmj->scanAndMove(4, 3);
+        // New deactivation received from above prior to completion of scan. This can happen since
+        // moves are asynchronous and the distributor can send new (de-)activations before the old move is done.
+        // In our case, we've enforced that another move is already pending in the bucket executor.
+        deactivateBucket(_ready.bucket(2));
+        _bmj->scanAndMove(4, 3);
+    });
+    sync();
+    ASSERT_EQ(_bucketExecutor.num_deferred_tasks(), 2u);
+    _bucketExecutor.schedule_single_deferred_task();
+    sync();
+    // We have to fake that moving a document marks it as not found in the source sub DB.
+    // This doesn't automatically happen when using mocks. The most important part is that
+    // we ensure that moving isn't erroneously tested as if it were idempotent.
+    for (const auto& move : docsMoved()) {
+        failRetrieveForLid(move.getPrevLid());
+    }
+    _bucketExecutor.schedule_single_deferred_task();
+    sync();
+    EXPECT_TRUE(_bmj->done());
+    ASSERT_EQ(1u, bucketsModified().size());
+    EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);
+}
 
 TEST_F(ControllerFixture, require_that_notifyCreateBucket_causes_bucket_to_be_reconsidered_by_job)
 {
