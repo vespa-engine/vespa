@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.searchdefinition.derived.FileDistributedConstants;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -21,8 +21,8 @@ public class DefaultRankProfile extends RankProfile {
      * @param rankProfileRegistry the {@link com.yahoo.searchdefinition.RankProfileRegistry}
      *                            to use for storing and looking up rank profiles
      */
-    public DefaultRankProfile(Schema schema, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
-        super("default", schema, rankProfileRegistry, rankingConstants);
+    public DefaultRankProfile(Schema schema, RankProfileRegistry rankProfileRegistry) {
+        super("default", schema, rankProfileRegistry);
     }
 
     /** Ignore self inheriting of default as some applications may use that for historical reasons. */
