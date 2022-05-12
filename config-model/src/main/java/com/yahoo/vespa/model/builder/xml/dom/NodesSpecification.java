@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -56,12 +57,16 @@ public class NodesSpecification {
     /** The ID of the cluster referencing this node specification, if any */
     private final Optional<String> combinedId;
 
+    /** The cloud account to use for nodes in this spec, if any */
+    private final Optional<CloudAccount> cloudAccount;
+
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
-                               Optional<String> combinedId) {
+                               Optional<String> combinedId,
+                               Optional<CloudAccount> cloudAccount) {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("Min resources must be larger or equal to max resources, but " +
                                                max + " is smaller than " + min);
@@ -83,10 +88,12 @@ public class NodesSpecification {
         this.exclusive = exclusive;
         this.dockerImageRepo = dockerImageRepo;
         this.combinedId = combinedId;
+        this.cloudAccount = cloudAccount;
     }
 
     private static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
-                                             ModelElement nodesElement, Optional<DockerImage> dockerImageRepo) {
+                                             ModelElement nodesElement, Optional<DockerImage> dockerImageRepo,
+                                             Optional<CloudAccount> cloudAccount) {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
         var resources = toResources(resolvedElement);
@@ -98,7 +105,8 @@ public class NodesSpecification {
                                       canFail,
                                       resolvedElement.booleanAttribute("exclusive", false),
                                       dockerImageToUse(resolvedElement, dockerImageRepo),
-                                      combinedId);
+                                      combinedId,
+                                      cloudAccount);
     }
 
     private static Pair<ClusterResources, ClusterResources> toResources(ModelElement nodesElement) {
@@ -125,7 +133,8 @@ public class NodesSpecification {
                       ! context.getDeployState().getProperties().isBootstrap(),
                       context.getDeployState().getWantedNodeVespaVersion(),
                       nodesElement,
-                      context.getDeployState().getWantedDockerImageRepo());
+                      context.getDeployState().getWantedDockerImageRepo(),
+                      context.getDeployState().getProperties().cloudAccount());
     }
 
     /**
@@ -154,7 +163,8 @@ public class NodesSpecification {
                                   ! context.getDeployState().getProperties().isBootstrap(),
                                   context.getDeployState().getWantedNodeVespaVersion(),
                                   nodesElement,
-                                  context.getDeployState().getWantedDockerImageRepo()));
+                                  context.getDeployState().getWantedDockerImageRepo(),
+                                  context.getDeployState().getProperties().cloudAccount()));
     }
 
     /**
@@ -169,7 +179,8 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      Optional.empty());
+                                      Optional.empty(),
+                                      context.getDeployState().getProperties().cloudAccount());
     }
 
     /** Returns a requirement from <code>count</code> dedicated nodes in one group */
@@ -182,7 +193,8 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      Optional.empty());
+                                      Optional.empty(),
+                                      context.getDeployState().getProperties().cloudAccount());
     }
 
     /**
@@ -206,7 +218,8 @@ public class NodesSpecification {
                                       ! context.getDeployState().getProperties().isBootstrap(),
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
-                                      Optional.empty());
+                                      Optional.empty(),
+                                      context.getDeployState().getProperties().cloudAccount());
     }
 
     public ClusterResources minResources() { return min; }
@@ -239,7 +252,7 @@ public class NodesSpecification {
                                          .dockerImageRepository(dockerImageRepo)
                                          .stateful(stateful)
                                          .build();
-        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail), logger);
+        return hostSystem.allocateHosts(cluster, Capacity.from(min, max, required, canFail, cloudAccount), logger);
     }
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {

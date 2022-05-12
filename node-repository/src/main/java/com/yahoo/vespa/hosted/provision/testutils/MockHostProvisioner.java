@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.testutils;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
@@ -56,7 +57,8 @@ public class MockHostProvisioner implements HostProvisioner {
     @Override
     public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
                                                 ApplicationId applicationId, Version osVersion, HostSharing sharing,
-                                                Optional<ClusterSpec.Type> clusterType) {
+                                                Optional<ClusterSpec.Type> clusterType,
+                                                Optional<CloudAccount> cloudAccount) {
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
                                                                    .findFirst()
                                                                    .orElseThrow(() -> new NodeAllocationException("No host flavor matches " + resources)));
@@ -67,11 +69,12 @@ public class MockHostProvisioner implements HostProvisioner {
                                           hostHostname,
                                           hostFlavor,
                                           hostType,
-                                          Optional.empty(),
+                                          sharing == HostSharing.exclusive ? Optional.of(applicationId) : Optional.empty(),
                                           Optional.empty(),
                                           createAddressesForHost(hostType, hostFlavor, index),
                                           resources,
-                                          osVersion));
+                                          osVersion,
+                                          cloudAccount));
         }
         provisionedHosts.addAll(hosts);
         return hosts;

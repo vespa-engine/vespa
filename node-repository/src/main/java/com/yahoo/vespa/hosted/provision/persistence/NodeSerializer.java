@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -98,6 +99,7 @@ public class NodeSerializer {
     private static final String exclusiveToClusterTypeKey = "exclusiveToClusterType";
     private static final String switchHostnameKey = "switchHostname";
     private static final String trustedCertificatesKey = "trustedCertificates";
+    private static final String cloudAccountKey = "cloudAccount";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -191,6 +193,7 @@ public class NodeSerializer {
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
         trustedCertificatesToSlime(node.trustedCertificates(), object.setArray(trustedCertificatesKey));
+        node.cloudAccount().ifPresent(cloudAccount -> object.setString(cloudAccountKey, cloudAccount.value()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -287,7 +290,8 @@ public class NodeSerializer {
                         SlimeUtils.optionalString(object.field(exclusiveToApplicationIdKey)).map(ApplicationId::fromSerializedForm),
                         SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),
                         SlimeUtils.optionalString(object.field(switchHostnameKey)),
-                        trustedCertificatesFromSlime(object));
+                        trustedCertificatesFromSlime(object),
+                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::new));
     }
 
     private Status statusFromSlime(Inspector object) {

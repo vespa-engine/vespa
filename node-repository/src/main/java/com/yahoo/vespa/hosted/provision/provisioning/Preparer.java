@@ -76,8 +76,8 @@ class Preparer {
             if (requestedNodes.rejectNonActiveParent()) {
                 NodeList activeHosts = allNodesAndHosts.nodes().state(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
                 accepted = accepted.stream()
-                        .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
-                        .collect(Collectors.toList());
+                                   .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
+                                   .collect(Collectors.toList());
             }
 
             replace(acceptedNodes, accepted);
