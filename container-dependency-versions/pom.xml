@@ -88,6 +88,23 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- Empty artifact for gradle projects, see the artifact's pom.xml -->
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>listenablefuture</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Annotations with retention Runtime. Remove exclusion if needed. -->
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Annotation with retention class only -->
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>animal-sniffer-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>com.google.inject.extensions</groupId>
@@ -389,8 +406,8 @@
         <felix.version>7.0.1</felix.version>
         <felix.log.version>1.0.1</felix.log.version>
         <findbugs.version>1.3.9</findbugs.version>
-        <guava.version>20.0</guava.version>
-        <guice.version>3.0</guice.version>
+        <guava.version>27.1-jre</guava.version>
+        <guice.version>4.2.3</guice.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
