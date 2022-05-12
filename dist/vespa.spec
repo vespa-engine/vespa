@@ -784,6 +784,7 @@ fi
 %exclude %{_prefix}/libexec/vespa/vespa-curl-wrapper
 %dir %attr(1777,-,-) %{_prefix}/logs
 %dir %attr(1777,%{_vespa_user},-) %{_prefix}/logs/vespa
+%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/access
 %dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/configserver
 %dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/node-admin
 %dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/search
