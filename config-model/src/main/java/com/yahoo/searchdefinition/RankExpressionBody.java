@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.application.api.FileRegistry;
 
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -25,7 +26,7 @@ public class RankExpressionBody extends DistributableResource {
         }
     }
 
-    public void register(FileRegistry fileRegistry) {
+    void register(FileRegistry fileRegistry) {
         register(fileRegistry, blob);
     }
 

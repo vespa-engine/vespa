@@ -30,7 +30,7 @@ public class RankingConstantTest {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(rankProfileRegistry);
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  rank-profile my_rank_profile {",
                 "    first-phase {",
@@ -46,12 +46,12 @@ public class RankingConstantTest {
         schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
 
-        Iterator<RankProfile.Constant> constantIterator = schema.constants().values().iterator();
-        RankProfile.Constant constant = constantIterator.next();
-        assertEquals(TENSOR_NAME, constant.name().simpleArgument().get());
-        assertEquals(TENSOR_FILE, constant.valuePath().get());
-        assertEquals(TENSOR_TYPE, constant.type().toString());
-        assertEquals(DistributableResource.PathType.FILE, constant.pathType().get());
+        Iterator<RankingConstant> constantIterator = schema.rankingConstants().asMap().values().iterator();
+        RankingConstant constant = constantIterator.next();
+        assertEquals(TENSOR_NAME, constant.getName());
+        assertEquals(TENSOR_FILE, constant.getFileName());
+        assertEquals(TENSOR_TYPE, constant.getType());
+        assertEquals(RankingConstant.PathType.FILE, constant.getPathType());
 
         assertFalse(constantIterator.hasNext());
     }
@@ -63,7 +63,7 @@ public class RankingConstantTest {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("must have a type");
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  constant foo {",
                 "    file: bar.baz",
@@ -79,7 +79,7 @@ public class RankingConstantTest {
         thrown.expect(IllegalArgumentException.class);
         thrown.expectMessage("must have a file");
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x[])",
@@ -93,7 +93,7 @@ public class RankingConstantTest {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(rankProfileRegistry);
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
@@ -103,8 +103,8 @@ public class RankingConstantTest {
         ));
         schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
-        RankProfile.Constant constant = schema.constants().values().iterator().next();
-        assertEquals("simplename", constant.valuePath().get());
+        RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
+        assertEquals("simplename", constant.getFileName());
     }
 
     @Test
@@ -112,7 +112,7 @@ public class RankingConstantTest {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(rankProfileRegistry);
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
@@ -122,9 +122,9 @@ public class RankingConstantTest {
         ));
         schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
-        RankProfile.Constant constant = schema.constants().values().iterator().next();
-        assertEquals(DistributableResource.PathType.URI, constant.pathType().get());
-        assertEquals("http://somewhere.far.away/in/another-galaxy", constant.valuePath().get());
+        RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("http://somewhere.far.away/in/another-galaxy", constant.getUri());
     }
 
     @Test
@@ -132,7 +132,7 @@ public class RankingConstantTest {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(rankProfileRegistry);
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
@@ -142,9 +142,9 @@ public class RankingConstantTest {
         ));
         schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
-        RankProfile.Constant constant = schema.constants().values().iterator().next();
-        assertEquals(DistributableResource.PathType.URI, constant.pathType().get());
-        assertEquals("https://somewhere.far.away:4443/in/another-galaxy", constant.valuePath().get());
+        RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("https://somewhere.far.away:4443/in/another-galaxy", constant.getUri());
     }
 
     @Test
@@ -152,7 +152,7 @@ public class RankingConstantTest {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(rankProfileRegistry);
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
@@ -162,9 +162,9 @@ public class RankingConstantTest {
         ));
         schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
-        RankProfile.Constant constant = schema.constants().values().iterator().next();
-        assertEquals(DistributableResource.PathType.URI, constant.pathType().get());
-        assertEquals("http://somewhere.far.away:4080/in/another-galaxy", constant.valuePath().get());
+        RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("http://somewhere.far.away:4080/in/another-galaxy", constant.getUri());
     }
 
     @Test
@@ -172,7 +172,7 @@ public class RankingConstantTest {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
         ApplicationBuilder schemaBuilder = new ApplicationBuilder(rankProfileRegistry);
         schemaBuilder.addSchema(joinLines(
-                "schema test {",
+                "search test {",
                 "  document test { }",
                 "  constant foo {",
                 "    type: tensor(x{})",
@@ -182,9 +182,9 @@ public class RankingConstantTest {
         ));
         schemaBuilder.build(true);
         Schema schema = schemaBuilder.getSchema();
-        RankProfile.Constant constant = schema.constants().values().iterator().next();
-        assertEquals(DistributableResource.PathType.URI, constant.pathType().get());
-        assertEquals("http:somewhere.far.away/in/another-galaxy", constant.valuePath().get());
+        RankingConstant constant = schema.rankingConstants().asMap().values().iterator().next();
+        assertEquals(RankingConstant.PathType.URI, constant.getPathType());
+        assertEquals("http:somewhere.far.away/in/another-galaxy", constant.getUri());
     }
 
     @Test
@@ -196,7 +196,7 @@ public class RankingConstantTest {
                 "<URI_PATH> ...";
         try {
             schemaBuilder.addSchema(joinLines(
-                    "schema test {",
+                    "search test {",
                     "  document test { }",
                     "  constant foo {",
                     "    type: tensor(x{})",

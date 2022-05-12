@@ -189,10 +189,10 @@ public class SchemaTestCase {
         assertNotNull(builder.getRankProfileRegistry().get(child1, "parent_profile"));
         assertNotNull(builder.getRankProfileRegistry().get(child1, "child1_profile"));
         assertEquals("parent_profile", builder.getRankProfileRegistry().get(child1, "child1_profile").inheritedNames().get(0));
-        assertNotNull(child1.constants().get(FeatureNames.asConstantFeature("parent_constant")));
-        assertNotNull(child1.constants().get(FeatureNames.asConstantFeature("child1_constant")));
-        assertTrue(child1.constants().containsKey(FeatureNames.asConstantFeature("parent_constant")));
-        assertTrue(child1.constants().containsKey(FeatureNames.asConstantFeature("child1_constant")));
+        assertNotNull(child1.rankingConstants().get("parent_constant"));
+        assertNotNull(child1.rankingConstants().get("child1_constant"));
+        assertTrue(child1.rankingConstants().asMap().containsKey("parent_constant"));
+        assertTrue(child1.rankingConstants().asMap().containsKey("child1_constant"));
         assertNotNull(child1.onnxModels().get("parent_model"));
         assertNotNull(child1.onnxModels().get("child1_model"));
         assertTrue(child1.onnxModels().asMap().containsKey("parent_model"));
@@ -224,10 +224,10 @@ public class SchemaTestCase {
         assertNotNull(builder.getRankProfileRegistry().get(child2, "parent_profile"));
         assertNotNull(builder.getRankProfileRegistry().get(child2, "child2_profile"));
         assertEquals("parent_profile", builder.getRankProfileRegistry().get(child2, "child2_profile").inheritedNames().get(0));
-        assertNotNull(child2.constants().get(FeatureNames.asConstantFeature("parent_constant")));
-        assertNotNull(child2.constants().get(FeatureNames.asConstantFeature("child2_constant")));
-        assertTrue(child2.constants().containsKey(FeatureNames.asConstantFeature("parent_constant")));
-        assertTrue(child2.constants().containsKey(FeatureNames.asConstantFeature("child2_constant")));
+        assertNotNull(child2.rankingConstants().get("parent_constant"));
+        assertNotNull(child2.rankingConstants().get("child2_constant"));
+        assertTrue(child2.rankingConstants().asMap().containsKey("parent_constant"));
+        assertTrue(child2.rankingConstants().asMap().containsKey("child2_constant"));
         assertNotNull(child2.onnxModels().get("parent_model"));
         assertNotNull(child2.onnxModels().get("child2_model"));
         assertTrue(child2.onnxModels().asMap().containsKey("parent_model"));
@@ -317,8 +317,8 @@ public class SchemaTestCase {
         builder.build(true);
         var application = builder.application();
 
-        assertInheritedFromParent(application.schemas().get("child"), builder.getRankProfileRegistry());
-        assertInheritedFromParent(application.schemas().get("grandchild"), builder.getRankProfileRegistry());
+        assertInheritedFromParent(application.schemas().get("child"), application, builder.getRankProfileRegistry());
+        assertInheritedFromParent(application.schemas().get("grandchild"), application, builder.getRankProfileRegistry());
     }
 
     @Test
@@ -419,15 +419,15 @@ public class SchemaTestCase {
         }
     }
 
-    private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {
+    private void assertInheritedFromParent(Schema schema, Application application, RankProfileRegistry rankProfileRegistry) {
         assertEquals("pf1", schema.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, schema.getStemming());
         assertEquals(Stemming.BEST, schema.getIndex("parent_index").getStemming());
         assertNotNull(schema.getField("parent_field"));
         assertNotNull(schema.getExtraField("parent_field"));
         assertNotNull(rankProfileRegistry.get(schema, "parent_profile"));
-        assertNotNull(schema.constants().get(FeatureNames.asConstantFeature("parent_constant")));
-        assertTrue(schema.constants().containsKey(FeatureNames.asConstantFeature("parent_constant")));
+        assertNotNull(schema.rankingConstants().get("parent_constant"));
+        assertTrue(schema.rankingConstants().asMap().containsKey("parent_constant"));
         assertNotNull(schema.onnxModels().get("parent_model"));
         assertTrue(schema.onnxModels().asMap().containsKey("parent_model"));
         assertNotNull(schema.getSummary("parent_summary"));
