@@ -153,7 +153,7 @@ public abstract class ServerProviderConformanceTest {
             final Module... config)
             throws Throwable {
         runTest(adapter,
-                Modules.override(Modules.combine()).with(newBindingSetSelector("unknown")),
+                Modules.override(Modules.EMPTY_MODULE).with(newBindingSetSelector("unknown")),
                 RequestType.WITHOUT_CONTENT,
                 new TestRequestHandler() {
 
@@ -170,7 +170,7 @@ public abstract class ServerProviderConformanceTest {
             final Module... config)
             throws Throwable {
         runTest(adapter,
-                Modules.override(Modules.combine()).with(newBindingSetSelector(null)),
+                Modules.override(Modules.EMPTY_MODULE).with(newBindingSetSelector(null)),
                 RequestType.WITHOUT_CONTENT,
                 new TestRequestHandler() {
 
