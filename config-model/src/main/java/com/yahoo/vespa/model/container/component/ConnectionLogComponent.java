@@ -10,21 +10,26 @@ public class ConnectionLogComponent extends SimpleComponent implements Connectio
 
     private final String logDirectoryName;
     private final String clusterName;
+    private final boolean isHostedVespa;
 
     public ConnectionLogComponent(ContainerCluster<?> cluster, Class<? extends ConnectionLog> cls, String logDirectoryName) {
-        this(cls, logDirectoryName, cluster.getName());
+        this(cls, logDirectoryName, cluster.getName(), cluster.isHostedVespa());
     }
 
-    public ConnectionLogComponent(Class<? extends ConnectionLog> cls, String logDirectoryName, String clusterName) {
+    public ConnectionLogComponent(Class<? extends ConnectionLog> cls, String logDirectoryName, String clusterName, boolean isHostedVespa) {
         super(cls.getName());
         this.logDirectoryName = logDirectoryName;
         this.clusterName = clusterName;
+        this.isHostedVespa = isHostedVespa;
     }
 
     @Override
     public void getConfig(ConnectionLogConfig.Builder builder) {
         builder.cluster(clusterName);
         builder.logDirectoryName(logDirectoryName);
+        if (isHostedVespa) {
+            builder.useClusterIdInFileName(false);
+        }
         builder.queueSize(-1);
     }
 }

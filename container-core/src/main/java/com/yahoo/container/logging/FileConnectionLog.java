@@ -15,7 +15,7 @@ public class FileConnectionLog extends AbstractComponent implements ConnectionLo
     @Inject
     public FileConnectionLog(ConnectionLogConfig config) {
         logHandler = new ConnectionLogHandler(config.logDirectoryName(), config.bufferSize(), config.cluster(),
-                queueSize(config), new JsonConnectionLogWriter());
+                queueSize(config), new JsonConnectionLogWriter(), config.useClusterIdInFileName());
     }
 
     private static int queueSize(ConnectionLogConfig config) {
