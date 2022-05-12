@@ -203,6 +203,19 @@ buildTransportConfig() {
     return fnet::TransportConfig(std::max(1u, std::min(4u, numProcs/8)));
 }
 
+class Transport {
+public:
+    Transport(const fnet::TransportConfig & config)
+        : _transport(config)
+    {}
+    ~Transport() {
+        _transport.ShutDown(true);
+    }
+    FNET_Transport & transport() { return _transport; }
+private:
+    FNET_Transport _transport;
+};
+
 }
 
 void
@@ -268,10 +281,9 @@ App::main(int argc, char **argv)
         setupSignals();
         setup_fadvise();
         FastOS_ThreadPool threadPool(128_Ki);
-        FNET_Transport transport(buildTransportConfig());
-        transport.Start(&threadPool);
-        startAndRun(threadPool, transport, argc, argv);
-        transport.ShutDown(true);
+        Transport transport(buildTransportConfig());
+        transport.transport().Start(&threadPool);
+        startAndRun(threadPool, transport.transport(), argc, argv);
     } catch (const vespalib::InvalidCommandLineArgumentsException &e) {
         LOG(warning, "Invalid commandline arguments: '%s'", e.what());
         return 1;
