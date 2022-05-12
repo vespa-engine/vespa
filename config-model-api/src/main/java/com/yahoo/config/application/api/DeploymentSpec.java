@@ -5,6 +5,7 @@ import com.yahoo.collections.Comparables;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -362,22 +363,27 @@ public class DeploymentSpec {
         private final boolean active;
         private final Optional<AthenzService> athenzService;
         private final Optional<String> testerFlavor;
+        private final Optional<CloudAccount> cloudAccount;
 
         public DeclaredZone(Environment environment) {
-            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty());
+            this(environment, Optional.empty(), false, Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         public DeclaredZone(Environment environment, Optional<RegionName> region, boolean active,
-                            Optional<AthenzService> athenzService, Optional<String> testerFlavor) {
+                            Optional<AthenzService> athenzService, Optional<String> testerFlavor,
+                            Optional<CloudAccount> cloudAccount) {
             if (environment != Environment.prod && region.isPresent())
                 illegal("Non-prod environments cannot specify a region");
             if (environment == Environment.prod && region.isEmpty())
                 illegal("Prod environments must be specified with a region");
-            this.environment = environment;
-            this.region = region;
+            if (environment != Environment.prod && cloudAccount.isPresent())
+                illegal("Non-prod environments cannot specify cloud account");
+            this.environment = Objects.requireNonNull(environment);
+            this.region = Objects.requireNonNull(region);
             this.active = active;
-            this.athenzService = athenzService;
-            this.testerFlavor = testerFlavor;
+            this.athenzService = Objects.requireNonNull(athenzService);
+            this.testerFlavor = Objects.requireNonNull(testerFlavor);
+            this.cloudAccount = Objects.requireNonNull(cloudAccount);
         }
 
         public Environment environment() { return environment; }
@@ -391,6 +397,10 @@ public class DeploymentSpec {
         public Optional<String> testerFlavor() { return testerFlavor; }
 
         public Optional<AthenzService> athenzService() { return athenzService; }
+
+        public Optional<CloudAccount> cloudAccount() {
+            return cloudAccount;
+        }
 
         @Override
         public List<DeclaredZone> zones() { return Collections.singletonList(this); }
