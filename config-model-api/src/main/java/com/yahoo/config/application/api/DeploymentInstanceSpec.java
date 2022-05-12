@@ -227,6 +227,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
 
     /** Returns the cloud account to use for given environment and region, if any */
     public Optional<CloudAccount> cloudAccount(Environment environment, RegionName region) {
+        if (!environment.isProduction()) return Optional.empty();
         return zones().stream()
                       .filter(zone -> zone.concerns(environment, Optional.of(region)))
                       .findFirst()
