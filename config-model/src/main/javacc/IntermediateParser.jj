@@ -24,7 +24,6 @@ import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.MatchType;
@@ -1774,7 +1773,9 @@ void rankingConstant(ParsedSchema schema) :
       <RBRACE>
     )
     {
-        schema.addRankingConstant(new RankingConstant(name, type, path, pathType));
+        if (type == null) throw new IllegalArgumentException("constant '" + name + "' must have a type");
+        if (path == null) throw new IllegalArgumentException("constant '" + name + "' must have a file");
+        schema.add(new RankProfile.Constant(FeatureNames.asConstantFeature(name), type, path, pathType));
     }
 }
 
@@ -2453,9 +2454,9 @@ void constant(ParsedSchema schema, ParsedRankProfile profile) :
         LOOKAHEAD(4) ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
         {
             if (value != null)
-                profile.addConstant(name, new RankProfile.Constant(name, value));
+                profile.add(new RankProfile.Constant(name, value));
             else
-                schema.addRankingConstant(new RankingConstant(name.simpleArgument().get(), type, valuePath, DistributableResource.PathType.FILE)); // TODO JON: Move to RankProfile
+                profile.add(new RankProfile.Constant(name, type, valuePath));
         }
         )
         | // Deprecated forms (TODO: Add warning on Vespa 8):
@@ -2485,7 +2486,7 @@ void constantValue(ParsedRankProfile profile, Reference name) :
 }
 {
     <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
-    { profile.addConstant(name, new RankProfile.Constant(name, Tensor.from(value.image))); }
+    { profile.add(new RankProfile.Constant(name, Tensor.from(value.image))); }
 }
 
 // Deprecated form
@@ -2498,8 +2499,7 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
     <LBRACE> (<NL>)*
       (( tensorString = tensorValuePrefixedByValue() |
          type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
-    { profile.addConstant(name,
-                          new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));
+    { profile.add(new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));
     }
 }
 

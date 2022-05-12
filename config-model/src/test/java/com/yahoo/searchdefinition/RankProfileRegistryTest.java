@@ -36,7 +36,7 @@ public class RankProfileRegistryTest {
     public void testRankProfileDuplicateNameIsIllegal() {
         Schema schema = new Schema("foo", MockApplicationPackage.createEmpty());
         RankProfileRegistry rankProfileRegistry = RankProfileRegistry.createRankProfileRegistryWithBuiltinRankProfiles(schema);
-        RankProfile barRankProfile = new RankProfile("bar", schema, rankProfileRegistry, schema.rankingConstants());
+        RankProfile barRankProfile = new RankProfile("bar", schema, rankProfileRegistry);
         rankProfileRegistry.add(barRankProfile);
         rankProfileRegistry.add(barRankProfile);
     }
@@ -48,7 +48,7 @@ public class RankProfileRegistryTest {
 
         for (String rankProfileName : RankProfileRegistry.overridableRankProfileNames) {
             assertNull(rankProfileRegistry.get(schema, rankProfileName).getFunctions().get("foo"));
-            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, schema, rankProfileRegistry, schema.rankingConstants());
+            RankProfile rankProfileWithAddedFunction = new RankProfile(rankProfileName, schema, rankProfileRegistry);
             rankProfileWithAddedFunction.addFunction(new ExpressionFunction("foo", RankingExpression.from("1+2")), true);
             rankProfileRegistry.add(rankProfileWithAddedFunction);
             assertNotNull(rankProfileRegistry.get(schema, rankProfileName).getFunctions().get("foo"));
