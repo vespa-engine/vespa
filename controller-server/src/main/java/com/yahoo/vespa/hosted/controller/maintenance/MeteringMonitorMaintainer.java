@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -47,7 +46,7 @@ public class MeteringMonitorMaintainer extends ControllerMaintainer {
                     var applicationId = entry.getKey();
                     var expectedZones = entry.getValue();
                     var actualZones = lastSnapshots.getOrDefault(applicationId, Set.of());
-                    if (expectedZones.equals(actualZones))
+                    if (verifyProdZones(expectedZones, actualZones))
                         return false;
                     logger.warning(
                             String.format("Metering discrepancy detected for application %s\n" +
@@ -63,7 +62,6 @@ public class MeteringMonitorMaintainer extends ControllerMaintainer {
         return 1;
     }
 
-
     private Map<ApplicationId, Set<ZoneId>> activeDeployments() {
         return controller().applications().asList()
                 .stream()
@@ -73,5 +71,13 @@ public class MeteringMonitorMaintainer extends ControllerMaintainer {
                         Instance::id,
                         instance -> instance.deployments().keySet()
                 ));
+    }
+
+    /**
+     * Verify prod zones, as test zones have fleeting deployment status
+     */
+    private boolean verifyProdZones(Set<ZoneId> expectedZones, Set<ZoneId> actualZones) {
+        return expectedZones.stream()
+                .noneMatch(zone -> zone.environment().isProduction() && !actualZones.contains(zone));
     }
 }
