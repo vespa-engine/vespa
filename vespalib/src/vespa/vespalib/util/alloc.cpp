@@ -411,10 +411,21 @@ void MMapAllocator::free(PtrAndSize alloc) const {
 void MMapAllocator::sfree(PtrAndSize alloc)
 {
     if (alloc.first != nullptr) {
-        int retval = madvise(alloc.first, alloc.second, MADV_DONTNEED);
-        assert(retval == 0);
-        retval = munmap(alloc.first, alloc.second);
-        assert(retval == 0);
+        int madvise_retval = madvise(alloc.first, alloc.second, MADV_DONTNEED);
+        if (madvise_retval != 0) {
+            std::error_code ec(errno, std::system_category());
+            if (errno == EINVAL) {
+                LOG(debug, "madvise(%p, %lx)=%d, errno=%s", alloc.first, alloc.second, madvise_retval, ec.message().c_str());
+            } else {
+                LOG(warning, "madvise(%p, %lx)=%d, errno=%s", alloc.first, alloc.second, madvise_retval, ec.message().c_str());
+            }
+        }
+        int munmap_retval = munmap(alloc.first, alloc.second);
+        if (munmap_retval != 0) {
+            std::error_code ec(errno, std::system_category());
+            LOG(warning, "munmap(%p, %lx)=%d, errno=%s", alloc.first, alloc.second, munmap_retval, ec.message().c_str());
+            abort();
+        }
         if (alloc.second >= _G_MMapLogLimit) {
             std::lock_guard guard(_G_lock);
             MMapInfo info = _G_HugeMappings[alloc.first];
