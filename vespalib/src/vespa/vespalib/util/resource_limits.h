@@ -7,7 +7,11 @@
 namespace vespalib {
 
 /*
- * Class for getting resource limits.
+ * Class for getting resource limits. Memory limit is first sampled by
+ * using sysconf to get page size and number of physical pages.
+ * Cpu limit is first sampled by calling std::thread::hardware_concurrency().
+ * Both limits can be adjusted downwards by applying some of the cgroup limits
+ * for the current process, cf. CGroupResourceLimits).
  */
 class ResourceLimits {
     uint64_t _memory;
