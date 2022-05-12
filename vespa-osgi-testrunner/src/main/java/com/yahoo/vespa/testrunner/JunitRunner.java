@@ -4,27 +4,21 @@ package com.yahoo.vespa.testrunner;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.SystemInfo;
 import ai.vespa.cloud.Zone;
-import ai.vespa.hosted.api.TestDescriptor;
 import ai.vespa.hosted.cd.InconclusiveTestException;
 import ai.vespa.hosted.cd.internal.TestRuntimeProvider;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.vespa.defaults.Defaults;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
-import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.core.LauncherConfig;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
-import org.osgi.framework.Bundle;
-import org.osgi.framework.BundleContext;
 
-import java.io.IOException;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -32,10 +26,11 @@ import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
@@ -47,8 +42,9 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
     private static final Logger logger = Logger.getLogger(JunitRunner.class.getName());
 
     private final SortedMap<Long, LogRecord> logRecords = new ConcurrentSkipListMap<>();
-    private final BundleContext bundleContext;
     private final TestRuntimeProvider testRuntimeProvider;
+    private final Function<Suite, List<Class<?>>> classLoader;
+    private final BiConsumer<LauncherDiscoveryRequest, TestExecutionListener[]> testExecutor;
     private volatile CompletableFuture<TestReport> execution;
 
     @Inject
@@ -56,45 +52,21 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                        JunitTestRunnerConfig config,
                        TestRuntimeProvider testRuntimeProvider,
                        SystemInfo systemInfo) {
-        this.testRuntimeProvider = testRuntimeProvider;
-        this.bundleContext = getUnrestrictedBundleContext(osgiFramework);
+        this(testRuntimeProvider,
+             new TestBundleLoader(osgiFramework)::loadTestClasses,
+             (discoveryRequest, listeners) -> LauncherFactory.create(LauncherConfig.builder()
+                                                                                   .addTestEngines(new JupiterTestEngine())
+                                                                                   .build()).execute(discoveryRequest, listeners));
+
         uglyHackSetCredentialsRootSystemProperty(config, systemInfo.zone());
     }
 
-    // Hack to retrieve bundle context that allows access to other bundles
-    private static BundleContext getUnrestrictedBundleContext(OsgiFramework framework) {
-        try {
-            BundleContext restrictedBundleContext = framework.bundleContext();
-            var field = restrictedBundleContext.getClass().getDeclaredField("wrapped");
-            field.setAccessible(true);
-            return  (BundleContext) field.get(restrictedBundleContext);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    // TODO(bjorncs|tokle) Propagate credentials root without system property. Ideally move knowledge about path to test-runtime implementations
-    private static void uglyHackSetCredentialsRootSystemProperty(JunitTestRunnerConfig config, Zone zone) {
-        Optional<String> credentialsRoot;
-        if (config.useAthenzCredentials()) {
-            credentialsRoot = Optional.of(Defaults.getDefaults().underVespaHome("var/vespa/sia"));
-        } else if (zone.environment() != Environment.prod){
-            // Only set credentials in non-prod zones where not available
-            credentialsRoot = Optional.of(config.artifactsPath().toString());
-        } else {
-            credentialsRoot = Optional.empty();
-        }
-        credentialsRoot.ifPresent(root -> System.setProperty("vespa.test.credentials.root", root));
-    }
-
-    private static TestDescriptor.TestCategory toCategory(TestRunner.Suite testProfile) {
-        switch(testProfile) {
-            case SYSTEM_TEST: return TestDescriptor.TestCategory.systemtest;
-            case STAGING_SETUP_TEST: return TestDescriptor.TestCategory.stagingsetuptest;
-            case STAGING_TEST: return TestDescriptor.TestCategory.stagingtest;
-            case PRODUCTION_TEST: return TestDescriptor.TestCategory.productiontest;
-            default: throw new RuntimeException("Unknown test profile: " + testProfile.name());
-        }
+    JunitRunner(TestRuntimeProvider testRuntimeProvider,
+                       Function<Suite, List<Class<?>>> classLoader,
+                       BiConsumer<LauncherDiscoveryRequest, TestExecutionListener[]> testExecutor) {
+        this.classLoader = classLoader;
+        this.testExecutor = testExecutor;
+        this.testRuntimeProvider = testRuntimeProvider;
     }
 
     @Override
@@ -104,19 +76,8 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         }
         try {
             logRecords.clear();
-            Optional<Bundle> testBundle = findTestBundle();
-            if (testBundle.isEmpty()) {
-                execution = CompletableFuture.completedFuture(null);
-                return execution;
-            }
-
             testRuntimeProvider.initialize(testConfig);
-            Optional<TestDescriptor> testDescriptor = loadTestDescriptor(testBundle.get());
-            if (testDescriptor.isEmpty()) {
-                throw new RuntimeException("Could not find test descriptor");
-            }
-            execution = CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), toCategory(suite)),
-                                                                        suite == Suite.PRODUCTION_TEST));
+            execution = CompletableFuture.supplyAsync(() -> launchJunit(suite));
         } catch (Exception e) {
             execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }
@@ -135,84 +96,45 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                                        .build();
     }
 
-    private Optional<Bundle> findTestBundle() {
-        return Stream.of(bundleContext.getBundles())
-                     .filter(this::isTestBundle)
-                     .findAny();
-    }
 
-    private boolean isTestBundle(Bundle bundle) {
-        var testBundleHeader = bundle.getHeaders().get("X-JDisc-Test-Bundle-Version");
-        return testBundleHeader != null && ! testBundleHeader.isBlank();
-    }
+    private TestReport launchJunit(Suite suite) {
+        List<Class<?>> testClasses = classLoader.apply(suite);
+        if (testClasses == null)
+            return  null;
 
-    private Optional<TestDescriptor> loadTestDescriptor(Bundle bundle) {
-        URL resource = bundle.getEntry(TestDescriptor.DEFAULT_FILENAME);
-        TestDescriptor testDescriptor;
-        try {
-            var jsonDescriptor = IOUtils.readAll(resource.openStream(), Charset.defaultCharset()).trim();
-            testDescriptor = TestDescriptor.fromJsonString(jsonDescriptor);
-            logger.info("Test classes in bundle: " + testDescriptor);
-            return Optional.of(testDescriptor);
-        } catch (IOException e) {
-            return Optional.empty();
-        }
-    }
+        VespaJunitLogListener logListener = new VespaJunitLogListener(record -> logRecords.put(record.getSequenceNumber(), record));
+        SummaryGeneratingListener summaryListener = new SummaryGeneratingListener();
+        LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
+                                                                                   .selectors(testClasses.stream()
+                                                                                                         .map(DiscoverySelectors::selectClass)
+                                                                                                         .collect(toList()))
+                                                                                   .build();
 
-    private List<Class<?>> loadClasses(Bundle bundle, TestDescriptor testDescriptor, TestDescriptor.TestCategory testCategory) {
-        List<Class<?>> testClasses = testDescriptor.getConfiguredTests(testCategory).stream()
-                .map(className -> loadClass(bundle, className))
-                .collect(toList());
-
-        StringBuffer buffer = new StringBuffer();
-        testClasses.forEach(cl -> buffer.append("\t").append(cl.toString()).append(" / ").append(cl.getClassLoader().toString()).append("\n"));
-        logger.info("Loaded testClasses: \n" + buffer);
-        return testClasses;
-    }
-
-    private Class<?> loadClass(Bundle bundle, String className) {
-        try {
-            return bundle.loadClass(className);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Could not find class: " + className + " in bundle " + bundle.getSymbolicName(), e);
-        }
-    }
-
-    private TestReport launchJunit(List<Class<?>> testClasses, boolean isProductionTest) {
-        var logListener = new VespaJunitLogListener(record -> logRecords.put(record.getSequenceNumber(), record));
-        var summaryListener = new SummaryGeneratingListener();
-
-        Launcher launcher = LauncherFactory.create(LauncherConfig.builder().addTestEngines(new JupiterTestEngine()).build());
-        launcher.registerTestExecutionListeners(logListener, summaryListener);
-
-        launcher.execute(LauncherDiscoveryRequestBuilder.request()
-                                                        .selectors(testClasses.stream()
-                                                                              .map(DiscoverySelectors::selectClass)
-                                                                              .collect(toList()))
-                                                        .build());
+        testExecutor.accept(discoveryRequest, new TestExecutionListener[] { logListener, summaryListener });
 
         var report = summaryListener.getSummary();
         var failures = report.getFailures().stream()
-                .map(failure -> {
-                    TestReport.trimStackTraces(failure.getException(), JunitRunner.class.getName());
-                    return new TestReport.Failure(VespaJunitLogListener.toString(failure.getTestIdentifier().getUniqueIdObject()),
-                                                  failure.getException());
-                })
-                .collect(toList());
-        long inconclusive = isProductionTest ? failures.stream()
-                                                       .filter(failure -> failure.exception() instanceof InconclusiveTestException)
-                                                       .count()
-                                             : 0;
+                             .map(failure -> {
+                                 TestReport.trimStackTraces(failure.getException(), JunitRunner.class.getName());
+                                 return new TestReport.Failure(VespaJunitLogListener.toString(failure.getTestIdentifier().getUniqueIdObject()),
+                                                               failure.getException());
+                             })
+                             .collect(toList());
 
+        // TODO: move to aggregator.
+        long inconclusive = suite == Suite.PRODUCTION_TEST ? failures.stream()
+                                                                     .filter(failure -> failure.exception() instanceof InconclusiveTestException)
+                                                                     .count()
+                                                           : 0;
         return TestReport.builder()
-                .withSuccessCount(report.getTestsSucceededCount())
-                .withAbortedCount(report.getTestsAbortedCount())
-                .withIgnoredCount(report.getTestsSkippedCount())
-                .withFailedCount(report.getTestsFailedCount() - inconclusive)
-                .withInconclusiveCount(inconclusive)
-                .withFailures(failures)
-                .withLogs(logRecords.values())
-                .build();
+                         .withSuccessCount(report.getTestsSucceededCount())
+                         .withAbortedCount(report.getTestsAbortedCount())
+                         .withIgnoredCount(report.getTestsSkippedCount())
+                         .withFailedCount(report.getTestsFailedCount() - inconclusive)
+                         .withInconclusiveCount(inconclusive)
+                         .withFailures(failures)
+                         .withLogs(logRecords.values())
+                         .build();
     }
 
     @Override
@@ -246,6 +168,20 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         } else {
             return null;
         }
+    }
+
+    // TODO(bjorncs|tokle) Propagate credentials root without system property. Ideally move knowledge about path to test-runtime implementations
+    private static void uglyHackSetCredentialsRootSystemProperty(JunitTestRunnerConfig config, Zone zone) {
+        Optional<String> credentialsRoot;
+        if (config.useAthenzCredentials()) {
+            credentialsRoot = Optional.of(Defaults.getDefaults().underVespaHome("var/vespa/sia"));
+        } else if (zone.environment() != Environment.prod){
+            // Only set credentials in non-prod zones where not available
+            credentialsRoot = Optional.of(config.artifactsPath().toString());
+        } else {
+            credentialsRoot = Optional.empty();
+        }
+        credentialsRoot.ifPresent(root -> System.setProperty("vespa.test.credentials.root", root));
     }
 
 }
