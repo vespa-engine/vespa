@@ -219,10 +219,7 @@ public class DeploymentSpecXmlReader {
 
     }
 
-
-
     // Consume the given tag as 0-N steps. 0 if it is not a step, >1 if it contains multiple nested steps that should be flattened
-    @SuppressWarnings("fallthrough")
     private List<Step> readNonInstanceSteps(Element stepTag, Map<String, String> prodAttributes, Element parentTag) {
         Optional<AthenzService> athenzService = mostSpecificAttribute(stepTag, athenzServiceAttribute).map(AthenzService::from);
         Optional<String> testerFlavor = mostSpecificAttribute(stepTag, testerFlavorAttribute);
@@ -238,8 +235,10 @@ public class DeploymentSpecXmlReader {
         switch (stepTag.getTagName()) {
             case testTag:
                 if (Stream.iterate(stepTag, Objects::nonNull, Node::getParentNode)
-                          .anyMatch(node -> prodTag.equals(node.getNodeName())))
+                          .anyMatch(node -> prodTag.equals(node.getNodeName()))) {
                     return List.of(new DeclaredTest(RegionName.from(XML.getValue(stepTag).trim())));
+                }
+                return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, Optional.empty()));
             case stagingTag:
                 return List.of(new DeclaredZone(Environment.from(stepTag.getTagName()), Optional.empty(), false, athenzService, testerFlavor, Optional.empty()));
             case prodTag: // regions, delay and parallel may be nested within, but we can flatten them
