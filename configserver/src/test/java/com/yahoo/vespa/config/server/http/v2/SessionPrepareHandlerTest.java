@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -291,7 +292,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     @Test
     public void test_docker_image_repository() {
         long sessionId = createSession(applicationId());
-        String dockerImageRepository = "foo.bar.com:4443/baz";
+        String dockerImageRepository = "foo.bar.com:4443/baz/qux";
         request(HttpRequest.Method.PUT, sessionId, Map.of("dockerImageRepository", dockerImageRepository,
                                                           "applicationName", applicationId().application().value()));
         applicationRepository.activate(tenantRepository.getTenant(tenant), sessionId, timeoutBudget, false);

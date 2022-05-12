@@ -135,7 +135,7 @@ public class RealNodeRepositoryTest {
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
-                        .withDockerImage(DockerImage.fromString("registry.example.com/image-1:6.2.3")));
+                        .withDockerImage(DockerImage.fromString("registry.example.com/repo/image-1:6.2.3")));
     }
 
     @Test

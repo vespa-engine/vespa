@@ -22,7 +22,7 @@ public class RestartTest {
 
     @Test
     public void test() {
-        DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage:1.2.3");
+        DockerImage dockerImage = DockerImage.fromString("registry.example.com/repo/image:1.2.3");
         try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             String hostname = "host1.test.yahoo.com";
             NodeSpec nodeSpec = NodeSpec.Builder.testSpec(hostname).wantedDockerImage(dockerImage).build();
