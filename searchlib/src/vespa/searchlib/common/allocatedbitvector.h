@@ -41,8 +41,6 @@ public:
     AllocatedBitVector(const BitVector &other);
     AllocatedBitVector(const AllocatedBitVector &other);
     ~AllocatedBitVector() override;
-    AllocatedBitVector &operator=(const AllocatedBitVector &other);
-    AllocatedBitVector &operator=(const BitVector &other);
 
     /**
      * Query the size of the bit vector.
@@ -67,14 +65,8 @@ protected:
 private:
     friend class BitVectorTest;
     friend class GrowableBitVector;
-    void swap(AllocatedBitVector & rhs) {
-        std::swap(_capacityBits, rhs._capacityBits);
-        _alloc.swap(rhs._alloc);
-        BitVector::swap(rhs);
-    }
 
     AllocatedBitVector(const BitVector &other, std::pair<Index, Index> size_capacity);
 };
 
 } // namespace search
-
