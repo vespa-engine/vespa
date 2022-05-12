@@ -152,7 +152,6 @@ configure_vespa_malloc () {
             tryfile="${VESPA_HOME}/${pre}/${suf}"
             if [ -f "$tryfile" ]; then
                 LD_PRELOAD="$tryfile"
-                log_debug_message "Using LD_PRELOAD='$tryfile'"
                 if [ "$VESPA_USE_HUGEPAGES" ]; then
                     export VESPA_MALLOC_HUGEPAGES="$VESPA_USE_HUGEPAGES"
                     log_debug_message "enabling hugepages for '$0-bin'."
@@ -163,10 +162,19 @@ configure_vespa_malloc () {
     fi
 }
 
+configure_preload() {
+    if [ "$PRELOAD" ]; then
+        LD_PRELOAD="$LD_PRELOAD:$PRELOAD"
+    fi
+}
+
 configure_valgrind
 configure_huge_pages
 configure_use_madvise
 configure_vespa_malloc
+configure_preload
+
+log_debug_message "Using LD_PRELOAD='$LD_PRELOAD'"
 
 if $no_valgrind ; then
     numactl=$(get_numa_ctl_cmd)
