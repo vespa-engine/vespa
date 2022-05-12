@@ -186,11 +186,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                                               new LargeRankExpressions(deployState.getFileRegistry()),
                                               new OnnxModels(deployState.getFileRegistry(), Optional.empty()),
                                               AttributeFields.empty,
-                                              deployState.rankProfileRegistry(),
-                                              deployState.getQueryProfiles().getRegistry(),
-                                              deployState.getImportedModels(),
-                                              deployState.getProperties(),
-                                              deployState.getExecutor());
+                                              deployState);
 
         HostSystem hostSystem = root.hostSystem();
         if (complete) { // create a completed, frozen model
