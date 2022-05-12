@@ -24,9 +24,6 @@ public class DockerImage {
         this.registry = Objects.requireNonNull(registry, "registry must be non-null");
         this.repository = Objects.requireNonNull(repository, "repository must be non-null");
         this.tag = Objects.requireNonNull(tag, "tag must be non-null");
-
-        if (tag.isPresent() && tag.get().isBlank())
-            throw new IllegalArgumentException("Set tag cannot be empty");
     }
 
     /** Returns the registry-part of this, i.e. the host/port of the registry. */
@@ -61,8 +58,6 @@ public class DockerImage {
 
     /** Returns a copy of this with registry set to given value */
     public DockerImage withRegistry(String registry) {
-        if (registry.indexOf('/') >= 0)
-            throw new IllegalArgumentException("Registry cannot container '/'");
         return new DockerImage(registry, repository, tag);
     }
 
@@ -91,6 +86,10 @@ public class DockerImage {
         return Objects.hash(registry, repository, tag);
     }
 
+    public static DockerImage from(String registry, String repository) {
+        return new DockerImage(registry, repository, Optional.empty());
+    }
+
     public static DockerImage fromString(String s) {
         if (s.isEmpty()) return EMPTY;
 
@@ -99,13 +98,14 @@ public class DockerImage {
 
         String registry = s.substring(0, firstPathSeparator);
         String repository = s.substring(firstPathSeparator + 1);
+        if (repository.isEmpty()) throw new IllegalArgumentException("Repository must be non-empty in '" + s + "'");
 
         int tagStart = repository.indexOf(':');
-        Optional<String> tag = tagStart < 0 ? Optional.empty() : Optional.of(repository.substring(tagStart + 1));
+        if (tagStart < 0) return new DockerImage(registry, repository, Optional.empty());
 
-        if (tagStart >= 0) repository = repository.substring(0, tagStart);
-        if (repository.isEmpty()) throw new IllegalArgumentException("Repository must be non-empty in '" + s + "'");
-        return new DockerImage(registry, repository, tag);
+        String tag = repository.substring(tagStart + 1);
+        repository = repository.substring(0, tagStart);
+        return new DockerImage(registry, repository, Optional.of(tag));
     }
 
 }
