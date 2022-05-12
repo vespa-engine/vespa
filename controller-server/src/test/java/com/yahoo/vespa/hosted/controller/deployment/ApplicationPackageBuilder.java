@@ -66,6 +66,7 @@ public class ApplicationPackageBuilder {
     private boolean explicitSystemTest = false;
     private boolean explicitStagingTest = false;
     private Version compileVersion = Version.fromString("6.1");
+    private String cloudAccount = null;
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
@@ -256,6 +257,11 @@ public class ApplicationPackageBuilder {
         }
     }
 
+    public ApplicationPackageBuilder cloudAccount(String cloudAccount) {
+        this.cloudAccount = cloudAccount;
+        return this;
+    }
+
     private byte[] deploymentSpec() {
         StringBuilder xml = new StringBuilder();
         xml.append("<deployment version='1.0' ");
@@ -284,6 +290,11 @@ public class ApplicationPackageBuilder {
             if (globalServiceId != null) {
                 xml.append(" global-service-id='");
                 xml.append(globalServiceId);
+                xml.append("'");
+            }
+            if (cloudAccount != null) {
+                xml.append(" cloud-account='");
+                xml.append(cloudAccount);
                 xml.append("'");
             }
             xml.append(">\n");

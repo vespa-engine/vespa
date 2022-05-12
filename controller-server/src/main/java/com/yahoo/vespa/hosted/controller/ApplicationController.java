@@ -22,7 +22,6 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -134,8 +133,6 @@ public class ApplicationController {
     private final ListFlag<String> incompatibleVersions;
     private final BillingController billingController;
 
-    private final StringFlag cloudAccountFlag;
-
     ApplicationController(Controller controller, CuratorDb curator, AccessControl accessControl, Clock clock,
                           FlagSource flagSource, BillingController billingController) {
         this.controller = Objects.requireNonNull(controller);
@@ -154,7 +151,6 @@ public class ApplicationController {
         endpointCertificates = new EndpointCertificates(controller,
                                                         controller.serviceRegistry().endpointCertificateProvider(),
                                                         controller.serviceRegistry().endpointCertificateValidator());
-         cloudAccountFlag = Flags.PROVISION_IN_EXTERNAL_ACCOUNT.bindTo(controller.flagSource());
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -619,12 +615,9 @@ public class ApplicationController {
             List<X509Certificate> operatorCertificates = controller.supportAccess().activeGrantsFor(deployment).stream()
                                                                    .map(SupportAccessGrant::certificate)
                                                                    .collect(toList());
-
-            // TODO(mpolden): Read this from DeploymentSpec and validate it against the valid accounts for the tenant,
-            //                as defined by PermanentFlags.EXTERNAL_ACCOUNTS
-            Optional<CloudAccount> cloudAccount = Optional.of(cloudAccountFlag.with(APPLICATION_ID, application.serializedForm()).value())
-                                                          .filter(account -> !account.isEmpty())
-                                                          .map(CloudAccount::new);
+            Optional<CloudAccount> cloudAccount = applicationPackage.deploymentSpec()
+                                                                    .instance(application.instance())
+                                                                    .flatMap(spec -> spec.cloudAccount(zone.environment(), zone.region()));
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,

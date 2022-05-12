@@ -4,10 +4,11 @@ package com.yahoo.vespa.hosted.controller.integration;
 import ai.vespa.http.DomainName;
 import ai.vespa.http.HttpURL.Path;
 import ai.vespa.http.HttpURL.Query;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -16,7 +17,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
@@ -49,7 +49,6 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -94,6 +93,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<DeploymentId, Set<ContainerEndpoint>> containerEndpoints = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
+    private final Map<DeploymentId, CloudAccount> cloudAccounts = new HashMap<>();
     private List<ProtonMetrics> protonMetrics;
 
     private Version lastPrepareVersion = null;
@@ -279,6 +279,10 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         return Collections.unmodifiableMap(containerEndpoints);
     }
 
+    public Optional<CloudAccount> cloudAccount(DeploymentId deployment) {
+        return Optional.ofNullable(cloudAccounts.get(deployment));
+    }
+
     public Set<String> containerEndpointNames(DeploymentId deployment) {
         return containerEndpoints.getOrDefault(deployment, Set.of()).stream()
                                  .map(ContainerEndpoint::names)
@@ -389,6 +393,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             provision(id.zoneId(), id.applicationId(), cluster);
 
         this.containerEndpoints.put(id, deployment.containerEndpoints());
+        deployment.cloudAccount().ifPresent(account -> this.cloudAccounts.put(id, account));
 
         if (!deferLoadBalancerProvisioning.contains(id.zoneId().environment())) {
             putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
