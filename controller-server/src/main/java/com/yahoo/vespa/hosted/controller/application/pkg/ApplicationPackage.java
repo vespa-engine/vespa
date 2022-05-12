@@ -98,6 +98,7 @@ public class ApplicationPackage {
      * it must not be further changed by the caller.
      * If 'requireFiles' is true, files needed by deployment orchestration must be present.
      */
+    @SuppressWarnings("deprecation") // for Hashing.sha1()
     public ApplicationPackage(byte[] zippedContent, boolean requireFiles) {
         this.zippedContent = Objects.requireNonNull(zippedContent, "The application package content cannot be null");
         this.contentHash = Hashing.sha1().hashBytes(zippedContent).toString();
@@ -240,6 +241,7 @@ public class ApplicationPackage {
     }
 
     // Hashes all files and settings that require a deployment to be forwarded to configservers
+    @SuppressWarnings("deprecation") // for Hashing.sha1()
     private String calculateBundleHash(byte[] zippedContent) {
         Predicate<String> entryMatcher = name -> ! name.endsWith(deploymentFile) && ! name.endsWith(buildMetaFile);
         SortedMap<String, Long> crcByEntry = new TreeMap<>();
@@ -261,6 +263,7 @@ public class ApplicationPackage {
                       .hash().toString();
     }
 
+    @SuppressWarnings("deprecation") // for Hashing.sha1()
     public static String calculateHash(byte[] bytes) {
         return Hashing.sha1().newHasher()
                       .putBytes(bytes)
