@@ -25,54 +25,66 @@ public class RankingConstants {
 
     private final Map<String, RankingConstant> constants = new LinkedHashMap<>();
 
+    private final Object mutex = new Object();
+
     public RankingConstants(FileRegistry fileRegistry, Optional<Schema> owner) {
         this.fileRegistry = fileRegistry;
         this.owner = owner;
     }
 
     public void add(RankingConstant constant) {
-        constant.validate();
-        constant.register(fileRegistry);
-        String name = constant.getName();
-        RankingConstant prev = constants.putIfAbsent(name, constant);
-        if ( prev != null )
-            throw new IllegalArgumentException("Constant '" + name + "' defined twice");
+        synchronized (mutex) {
+            constant.validate();
+            constant.register(fileRegistry);
+            String name = constant.getName();
+            RankingConstant prev = constants.putIfAbsent(name, constant);
+            if (prev != null)
+                throw new IllegalArgumentException("Constant '" + name + "' defined twice");
+        }
     }
 
     public void putIfAbsent(RankingConstant constant) {
-        constant.validate();
-        constant.register(fileRegistry);
-        String name = constant.getName();
-        constants.putIfAbsent(name, constant);
+        synchronized (mutex) {
+            constant.validate();
+            constant.register(fileRegistry);
+            String name = constant.getName();
+            constants.putIfAbsent(name, constant);
+        }
     }
 
     public void computeIfAbsent(String name, Function<? super String, ? extends RankingConstant> createConstant) {
-        constants.computeIfAbsent(name, key -> {
-            RankingConstant constant = createConstant.apply(key);
-            constant.validate();
-            constant.register(fileRegistry);
-            return constant;
-        });
+        synchronized (mutex) {
+            constants.computeIfAbsent(name, key -> {
+                RankingConstant constant = createConstant.apply(key);
+                constant.validate();
+                constant.register(fileRegistry);
+                return constant;
+            });
+        }
     }
 
     /** Returns the ranking constant with the given name, or null if not present */
     public RankingConstant get(String name) {
-        var constant = constants.get(name);
-        if (constant != null) return constant;
-        if (owner.isPresent() && owner.get().inherited().isPresent())
-            return owner.get().inherited().get().rankingConstants().get(name);
-        return null;
+        synchronized (mutex) {
+            var constant = constants.get(name);
+            if (constant != null) return constant;
+            if (owner.isPresent() && owner.get().inherited().isPresent())
+                return owner.get().inherited().get().rankingConstants().get(name);
+            return null;
+        }
     }
 
     /** Returns a read-only map of the ranking constants in this indexed by name */
     public Map<String, RankingConstant> asMap() {
-        // Shortcuts
-        if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(constants);
-        if (constants.isEmpty()) return owner.get().inherited().get().rankingConstants().asMap();
+        synchronized (mutex) {
+            // Shortcuts
+            if (owner.isEmpty() || owner.get().inherited().isEmpty()) return Collections.unmodifiableMap(constants);
+            if (constants.isEmpty()) return owner.get().inherited().get().rankingConstants().asMap();
 
-        var allConstants = new LinkedHashMap<>(owner.get().inherited().get().rankingConstants().asMap());
-        allConstants.putAll(constants);
-        return Collections.unmodifiableMap(allConstants);
+            var allConstants = new LinkedHashMap<>(owner.get().inherited().get().rankingConstants().asMap());
+            allConstants.putAll(constants);
+            return Collections.unmodifiableMap(allConstants);
+        }
     }
 
 }
