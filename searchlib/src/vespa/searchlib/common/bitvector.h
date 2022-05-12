@@ -207,17 +207,6 @@ public:
         _numTrueBits.store(invalidCount(), std::memory_order_relaxed);
     }
 
-    void swap(BitVector & rhs) {
-        auto my_words = _words;
-        vespalib::atomic::store_ref_release(_words, rhs._words);
-        vespalib::atomic::store_ref_release(rhs._words, my_words);
-        std::swap(_startOffset, rhs._startOffset);
-        std::swap(_sz, rhs._sz);
-        Index tmp = rhs._numTrueBits;
-        rhs._numTrueBits = _numTrueBits.load(std::memory_order_relaxed);
-        _numTrueBits.store(tmp, std::memory_order_relaxed);
-    }
-
     /**
      * Count bits in partial bitvector [..>.
      *
@@ -393,4 +382,3 @@ void BitVector::andNotWithT(T it) {
 }
 
 } // namespace search
-
