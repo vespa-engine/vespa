@@ -413,6 +413,7 @@ public class RoutingController {
 
     /** Create a common name based on a hash of given application. This must be less than 64 characters long. */
     private static String commonNameHashOf(ApplicationId application, SystemName system) {
+        @SuppressWarnings("deprecation") // for Hashing.sha1()
         HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
         return 'v' + base32 + Endpoint.internalDnsSuffix(system);
