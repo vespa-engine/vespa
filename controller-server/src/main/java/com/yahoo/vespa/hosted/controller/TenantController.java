@@ -184,7 +184,7 @@ public class TenantController {
             }
 
             if (forget) curator.removeTenant(tenant);
-            else curator.writeTenant(new DeletedTenant(tenant, oldTenant.createdAt(), controller.clock().instant()));
+            else curator.writeTenant(new DeletedTenant(oldTenant.id(), tenant, oldTenant.createdAt(), controller.clock().instant()));
         }
     }
 

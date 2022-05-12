@@ -6,6 +6,7 @@ import ai.vespa.hosted.api.RequestSigner;
 import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -69,7 +70,8 @@ public class SignatureFilterTest {
         filter = new SignatureFilter(tester.controller());
         signer = new RequestSigner(privateKey, id.serializedForm(), tester.clock());
 
-        tester.curator().writeTenant(new CloudTenant(appId.tenant(),
+        tester.curator().writeTenant(new CloudTenant(TenantId.create(),
+                                                     appId.tenant(),
                                                      Instant.EPOCH,
                                                      LastLoginInfo.EMPTY,
                                                      Optional.empty(),
@@ -115,7 +117,8 @@ public class SignatureFilterTest {
                                                   tester.clock().instant()));
 
         // Signed request gets a developer role when a matching developer key is stored for the tenant.
-        tester.curator().writeTenant(new CloudTenant(appId.tenant(),
+        tester.curator().writeTenant(new CloudTenant(TenantId.create(),
+                                                     appId.tenant(),
                                                      Instant.EPOCH,
                                                      LastLoginInfo.EMPTY,
                                                      Optional.empty(),

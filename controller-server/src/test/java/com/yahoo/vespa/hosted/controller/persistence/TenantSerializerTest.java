@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.persistence;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 import com.google.common.collect.ImmutableBiMap;
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
@@ -53,17 +54,33 @@ public class TenantSerializerTest {
     @Test
     public void athenz_tenant() {
         AthenzTenant tenant = AthenzTenant.create(TenantName.from("athenz-tenant"),
-                                                  new AthenzDomain("domain1"),
-                                                  new Property("property1"),
-                                                  Optional.of(new PropertyId("1")),
-                                                  Instant.ofEpochMilli(1234L));
+                new AthenzDomain("domain1"),
+                new Property("property1"),
+                Optional.of(new PropertyId("1")),
+                Instant.ofEpochMilli(1234L));
         AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.id(), serialized.id());
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.domain(), serialized.domain());
         assertEquals(tenant.property(), serialized.property());
         assertTrue(serialized.propertyId().isPresent());
         assertEquals(tenant.propertyId(), serialized.propertyId());
         assertEquals(tenant.createdAt(), serialized.createdAt());
+    }
+
+    @Test
+    public void empty_id_tenant() {
+        AthenzTenant tenant = new AthenzTenant(TenantId.from(""),
+                TenantName.from("athenz-tenant"),
+                new AthenzDomain("domain1"),
+                new Property("property"),
+                Optional.empty(),
+                Optional.empty(),
+                Instant.ofEpochMilli(1234L),
+                new LastLoginInfo(Map.of()));
+
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.id(), serialized.id());
     }
 
     @Test
@@ -80,7 +97,8 @@ public class TenantSerializerTest {
 
     @Test
     public void athenz_tenant_with_contact() {
-        AthenzTenant tenant = new AthenzTenant(TenantName.from("athenz-tenant"),
+        AthenzTenant tenant = new AthenzTenant(TenantId.create(),
+                                               TenantName.from("athenz-tenant"),
                                                new AthenzDomain("domain1"),
                                                new Property("property1"),
                                                Optional.of(new PropertyId("1")),
@@ -93,7 +111,8 @@ public class TenantSerializerTest {
 
     @Test
     public void cloud_tenant() {
-        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+        CloudTenant tenant = new CloudTenant(TenantId.create(),
+                                             TenantName.from("elderly-lady"),
                                              Instant.ofEpochMilli(1234L),
                                              lastLoginInfo(123L, 456L, null),
                                              Optional.of(new SimplePrincipal("foobar-user")),
@@ -104,6 +123,7 @@ public class TenantSerializerTest {
                                              Optional.empty()
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(tenant.id(), serialized.name());
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
         assertEquals(tenant.developerKeys(), serialized.developerKeys());
@@ -112,7 +132,8 @@ public class TenantSerializerTest {
 
     @Test
     public void cloud_tenant_with_info() {
-        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+        CloudTenant tenant = new CloudTenant(TenantId.create(),
+                TenantName.from("elderly-lady"),
                 Instant.EPOCH,
                 lastLoginInfo(null, 789L, 654L),
                 Optional.of(new SimplePrincipal("foobar-user")),
@@ -187,6 +208,7 @@ public class TenantSerializerTest {
     @Test
     public void deleted_tenant() {
         DeletedTenant tenant = new DeletedTenant(
+                TenantId.create(),
                 TenantName.from("tenant1"), Instant.ofEpochMilli(1234L), Instant.ofEpochMilli(2345L));
         DeletedTenant serialized = (DeletedTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());

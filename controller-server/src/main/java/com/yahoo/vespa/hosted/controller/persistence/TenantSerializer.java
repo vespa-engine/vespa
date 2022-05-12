@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.persistence;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.ArrayTraverser;
@@ -79,11 +80,13 @@ public class TenantSerializer {
     private static final String archiveAccessRoleField = "archiveAccessRole";
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
+    private static final String idField = "id";
 
     public Slime toSlime(Tenant tenant) {
         Slime slime = new Slime();
         Cursor tenantObject = slime.setObject();
         tenantObject.setString(nameField, tenant.name().value());
+        tenantObject.setString(idField, tenant.id().value());
         tenantObject.setString(typeField, valueOf(tenant.type()));
         tenantObject.setLong(createdAtField, tenant.createdAt().toEpochMilli());
         toSlime(tenant.lastLoginInfo(), tenantObject.setObject(lastLoginInfoField));
@@ -158,17 +161,19 @@ public class TenantSerializer {
 
     private AthenzTenant athenzTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        TenantId id = TenantId.from(tenantObject.field(idField).asString());
         AthenzDomain domain = new AthenzDomain(tenantObject.field(athenzDomainField).asString());
         Property property = new Property(tenantObject.field(propertyField).asString());
         Optional<PropertyId> propertyId = SlimeUtils.optionalString(tenantObject.field(propertyIdField)).map(PropertyId::new);
         Optional<Contact> contact = contactFrom(tenantObject.field(contactField));
         Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
-        return new AthenzTenant(name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
+        return new AthenzTenant(id, name, domain, property, propertyId, contact, createdAt, lastLoginInfo);
     }
 
     private CloudTenant cloudTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        TenantId id = TenantId.from(tenantObject.field(idField).asString());
         Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
         LastLoginInfo lastLoginInfo = lastLoginInfoFromSlime(tenantObject.field(lastLoginInfoField));
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
@@ -176,14 +181,15 @@ public class TenantSerializer {
         TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
         List<TenantSecretStore> tenantSecretStores = secretStoresFromSlime(tenantObject.field(secretStoresField));
         Optional<String> archiveAccessRole = SlimeUtils.optionalString(tenantObject.field(archiveAccessRoleField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
+        return new CloudTenant(id, name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
     }
 
     private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
         TenantName name = TenantName.from(tenantObject.field(nameField).asString());
+        TenantId id = TenantId.from(tenantObject.field(idField).asString());
         Instant createdAt = SlimeUtils.instant(tenantObject.field(createdAtField));
         Instant deletedAt = SlimeUtils.instant(tenantObject.field(deletedAtField));
-        return new DeletedTenant(name, createdAt, deletedAt);
+        return new DeletedTenant(id, name, createdAt, deletedAt);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {

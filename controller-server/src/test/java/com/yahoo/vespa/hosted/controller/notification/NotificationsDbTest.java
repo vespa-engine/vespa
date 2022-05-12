@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableBiMap;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
@@ -49,7 +50,8 @@ public class NotificationsDbTest {
 
     private static final TenantName tenant = TenantName.from("tenant1");
     private static final String email = "user1@example.com";
-    private static final CloudTenant cloudTenant = new CloudTenant(tenant,
+    private static final CloudTenant cloudTenant = new CloudTenant(TenantId.create(),
+            tenant,
             Instant.now(),
             LastLoginInfo.EMPTY,
             Optional.empty(),

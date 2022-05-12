@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 
 import java.time.Instant;
@@ -16,8 +17,8 @@ public class DeletedTenant extends Tenant {
 
     private final Instant deletedAt;
 
-    public DeletedTenant(TenantName name, Instant createdAt, Instant deletedAt) {
-        super(name, createdAt, LastLoginInfo.EMPTY, Optional.empty());
+    public DeletedTenant(TenantId id, TenantName name, Instant createdAt, Instant deletedAt) {
+        super(id, name, createdAt, LastLoginInfo.EMPTY, Optional.empty());
         this.deletedAt = Objects.requireNonNull(deletedAt, "deletedAt must be non-null");
     }
 

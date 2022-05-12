@@ -12,6 +12,7 @@ import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -1267,7 +1268,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               403);
 
         // Create legacy tenant name containing underscores
-        tester.controller().curator().writeTenant(new AthenzTenant(TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
+        tester.controller().curator().writeTenant(new AthenzTenant(TenantId.create(), TenantName.from("my_tenant"), ATHENZ_TENANT_DOMAIN,
                 new Property("property1"), Optional.empty(), Optional.empty(), Instant.EPOCH, LastLoginInfo.EMPTY));
 
         // POST (add) a Athenz tenant with dashes duplicates existing one with underscores

@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.tenant;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableBiMap;
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
@@ -31,10 +32,10 @@ public class CloudTenant extends Tenant {
     private final Optional<String> archiveAccessRole;
 
     /** Public for the serialization layer — do not use! */
-    public CloudTenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator,
-                       BiMap<PublicKey, Principal> developerKeys, TenantInfo info,
+    public CloudTenant(TenantId id, TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo,
+                       Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info,
                        List<TenantSecretStore> tenantSecretStores, Optional<String> archiveAccessRole) {
-        super(name, createdAt, lastLoginInfo, Optional.empty());
+        super(id, name, createdAt, lastLoginInfo, Optional.empty());
         this.creator = creator;
         this.developerKeys = developerKeys;
         this.info = Objects.requireNonNull(info);
@@ -49,8 +50,8 @@ public class CloudTenant extends Tenant {
 
     /** Creates a tenant with the given name, provided it passes validation. */
     public static CloudTenant create(TenantName tenantName, Instant createdAt, Principal creator) {
-        return new CloudTenant(requireName(tenantName),
-                               createdAt,
+        return new CloudTenant(TenantId.create(), requireName(tenantName),
+                createdAt,
                                LastLoginInfo.EMPTY,
                                Optional.ofNullable(creator),
                                ImmutableBiMap.of(), TenantInfo.empty(), List.of(), Optional.empty());

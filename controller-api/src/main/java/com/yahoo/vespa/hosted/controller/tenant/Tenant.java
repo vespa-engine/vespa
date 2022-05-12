@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 
@@ -16,11 +17,13 @@ import java.util.Optional;
 public abstract class Tenant {
 
     private final TenantName name;
+    private final TenantId id;
     private final Instant createdAt;
     private final LastLoginInfo lastLoginInfo;
     private final Optional<Contact> contact;
 
-    Tenant(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Contact> contact) {
+    Tenant(TenantId id, TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Contact> contact) {
+        this.id = id;
         this.name = name;
         this.createdAt = createdAt;
         this.lastLoginInfo = lastLoginInfo;
@@ -30,6 +33,11 @@ public abstract class Tenant {
     /** Name of this tenant */
     public TenantName name() {
         return name;
+    }
+
+    /** ID of this tenant */
+    public TenantId id() {
+        return id;
     }
 
     /** Instant when the tenant was created */

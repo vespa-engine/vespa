@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
+import com.yahoo.config.provision.TenantId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -26,9 +27,9 @@ public class AthenzTenant extends Tenant {
      * This should only be used by serialization.
      * Use {@link #create(TenantName, AthenzDomain, Property, Optional, Instant)}.
      * */
-    public AthenzTenant(TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
+    public AthenzTenant(TenantId id, TenantName name, AthenzDomain domain, Property property, Optional<PropertyId> propertyId,
                         Optional<Contact> contact, Instant createdAt, LastLoginInfo lastLoginInfo) {
-        super(name, createdAt, lastLoginInfo, contact);
+        super(id, name, createdAt, lastLoginInfo, contact);
         this.domain = Objects.requireNonNull(domain, "domain must be non-null");
         this.property = Objects.requireNonNull(property, "property must be non-null");
         this.propertyId = Objects.requireNonNull(propertyId, "propertyId must be non-null");
@@ -62,7 +63,7 @@ public class AthenzTenant extends Tenant {
     /** Create a new Athenz tenant */
     public static AthenzTenant create(TenantName name, AthenzDomain domain, Property property,
                                       Optional<PropertyId> propertyId, Instant createdAt) {
-        return new AthenzTenant(requireName(name), domain, property, propertyId, Optional.empty(), createdAt, LastLoginInfo.EMPTY);
+        return new AthenzTenant(TenantId.create(), requireName(name), domain, property, propertyId, Optional.empty(), createdAt, LastLoginInfo.EMPTY);
     }
 
     @Override
