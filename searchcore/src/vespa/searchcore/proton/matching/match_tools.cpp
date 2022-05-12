@@ -70,13 +70,6 @@ extractDiversityParams(const RankSetup &rankSetup, const Properties &rankPropert
                            AttributeLimiter::toDiversityCutoffStrategy(DiversityCutoffStrategy::lookup(rankProperties, rankSetup.getDiversityCutoffStrategy())));
 }
 
-AttributeBlueprintParams
-extractAttributeBlueprintParams(const RankSetup& rank_setup, const Properties &rankProperties)
-{
-    return AttributeBlueprintParams(GlobalFilterLowerLimit::lookup(rankProperties, rank_setup.get_global_filter_lower_limit()),
-                                    GlobalFilterUpperLimit::lookup(rankProperties, rank_setup.get_global_filter_upper_limit()));
-}
-
 } // namespace proton::matching::<unnamed>
 
 void
@@ -181,7 +174,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const Properties           & featureOverrides,
                   bool                         is_search)
     : _queryLimiter(queryLimiter),
-      _requestContext(doom, attributeContext, rankProperties, extractAttributeBlueprintParams(rankSetup, rankProperties)),
+      _global_filter_params(extract_global_filter_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
+      _requestContext(doom, attributeContext, rankProperties, _global_filter_params),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
@@ -208,9 +202,10 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         _query.fetchPostings();
         if (is_search) {
-            double lower_limit = GlobalFilterLowerLimit::lookup(rankProperties, rankSetup.get_global_filter_lower_limit());
-            double upper_limit = GlobalFilterUpperLimit::lookup(rankProperties, rankSetup.get_global_filter_upper_limit());
-            _query.handle_global_filter(searchContext.getDocIdLimit(), lower_limit, upper_limit, trace);
+            _query.handle_global_filter(searchContext.getDocIdLimit(),
+                                        _global_filter_params.global_filter_lower_limit,
+                                        _global_filter_params.global_filter_upper_limit,
+                                        trace);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
@@ -307,6 +302,23 @@ const StringStringMap &
 MatchToolsFactory::get_feature_rename_map() const
 {
     return _rankSetup.get_feature_rename_map();
+}
+
+AttributeBlueprintParams
+MatchToolsFactory::extract_global_filter_params(const search::fef::RankSetup& rank_setup,
+                                                const search::fef::Properties& rank_properties,
+                                                uint32_t active_docids,
+                                                uint32_t docid_limit)
+{
+    double lower_limit = GlobalFilterLowerLimit::lookup(rank_properties, rank_setup.get_global_filter_lower_limit());
+    double upper_limit = GlobalFilterUpperLimit::lookup(rank_properties, rank_setup.get_global_filter_upper_limit());
+
+    // Note that we count the reserved docid 0 as active.
+    // This ensures that when searchable-copies=1, the ratio is 1.0.
+    double active_hit_ratio = std::min(active_docids + 1, docid_limit) / static_cast<double>(docid_limit);
+
+    return {lower_limit * active_hit_ratio,
+            upper_limit * active_hit_ratio};
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

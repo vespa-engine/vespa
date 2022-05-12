@@ -1,42 +1,44 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/globalid.h>
-#include <initializer_list>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchcore/proton/test/bucketfactory.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/i_constant_value_repo.h>
+#include <vespa/searchcore/proton/matching/match_context.h>
+#include <vespa/searchcore/proton/matching/match_params.h>
+#include <vespa/searchcore/proton/matching/match_tools.h>
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/featureset.h>
-#include <vespa/searchlib/engine/docsumrequest.h>
-#include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/engine/docsumreply.h>
+#include <vespa/searchlib/engine/docsumrequest.h>
 #include <vespa/searchlib/engine/searchreply.h>
-#include <vespa/searchlib/test/mock_attribute_context.h>
-#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/engine/searchrequest.h>
 #include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/ranksetup.h>
+#include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
-#include <vespa/vespalib/util/simple_thread_bundle.h>
-#include <vespa/searchcore/proton/matching/match_params.h>
-#include <vespa/searchcore/proton/matching/match_tools.h>
-#include <vespa/searchcore/proton/matching/match_context.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value_codec.h>
+#include <vespa/searchlib/test/mock_attribute_context.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <vespa/vespalib/util/testclock.h>
+#include <initializer_list>
 
 #include <vespa/log/log.h>
 LOG_SETUP("matching_test");
@@ -47,6 +49,7 @@ using namespace search::aggregation;
 using namespace search::attribute;
 using namespace search::engine;
 using namespace search::expression;
+using namespace search::fef::indexproperties::matching;
 using namespace search::fef;
 using namespace search::grouping;
 using namespace search::index;
@@ -55,13 +58,12 @@ using namespace search::queryeval;
 using namespace search;
 
 using search::attribute::test::MockAttributeContext;
+using search::fef::indexproperties::hitcollector::HeapSize;
 using search::index::schema::DataType;
 using storage::spi::Timestamp;
-using search::fef::indexproperties::hitcollector::HeapSize;
-
-using vespalib::nbostream;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
+using vespalib::nbostream;
 
 void inject_match_phase_limiting(Properties &setup, const vespalib::string &attribute, size_t max_hits, bool descending)
 {
@@ -1100,6 +1102,51 @@ TEST("require that docsum matcher can extract matching elements from single attr
     ASSERT_EQUAL(list.size(), 2u);
     EXPECT_EQUAL(list[0], 2u);
     EXPECT_EQUAL(list[1], 3u);
+}
+
+struct GlobalFilterParamsFixture {
+   BlueprintFactory factory;
+   search::fef::test::IndexEnvironment index_env;
+   RankSetup rank_setup;
+   Properties rank_properties;
+    GlobalFilterParamsFixture(double lower_limit, double upper_limit)
+       : factory(),
+         index_env(),
+         rank_setup(factory, index_env),
+         rank_properties()
+   {
+       rank_setup.set_global_filter_lower_limit(lower_limit);
+       rank_setup.set_global_filter_upper_limit(upper_limit);
+   }
+   void set_query_properties(vespalib::stringref lower_limit, vespalib::stringref upper_limit) {
+       rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
+       rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);
+   }
+   AttributeBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) {
+       return MatchToolsFactory::extract_global_filter_params(rank_setup, rank_properties, active_docids, docid_limit);
+   }
+};
+
+TEST_F("global filter params are extracted from rank profile", GlobalFilterParamsFixture(0.2, 0.8))
+{
+    auto params = f.extract();
+    EXPECT_EQUAL(0.2, params.global_filter_lower_limit);
+    EXPECT_EQUAL(0.8, params.global_filter_upper_limit);
+}
+
+TEST_F("global filter params are extracted from query", GlobalFilterParamsFixture(0.2, 0.8))
+{
+    f.set_query_properties("0.15", "0.75");
+    auto params = f.extract();
+    EXPECT_EQUAL(0.15, params.global_filter_lower_limit);
+    EXPECT_EQUAL(0.75, params.global_filter_upper_limit);
+}
+
+TEST_F("global filter params are scaled with active hit ratio", GlobalFilterParamsFixture(0.2, 0.8))
+{
+    auto params = f.extract(5, 10);
+    EXPECT_EQUAL(0.12, params.global_filter_lower_limit);
+    EXPECT_EQUAL(0.48, params.global_filter_upper_limit);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
