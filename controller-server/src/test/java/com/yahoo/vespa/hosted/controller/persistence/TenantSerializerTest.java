@@ -7,6 +7,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.net.URI;
 import java.security.PublicKey;
 import java.time.Instant;
@@ -69,18 +71,10 @@ public class TenantSerializerTest {
     }
 
     @Test
-    public void empty_id_tenant() {
-        AthenzTenant tenant = new AthenzTenant(TenantId.from(""),
-                TenantName.from("athenz-tenant"),
-                new AthenzDomain("domain1"),
-                new Property("property"),
-                Optional.empty(),
-                Optional.empty(),
-                Instant.ofEpochMilli(1234L),
-                new LastLoginInfo(Map.of()));
-
-        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(serializer.toSlime(tenant));
-        assertEquals(tenant.id(), serialized.id());
+    public void empty_id_tenant() throws IOException {
+        String input = "{\"name\":\"athenz-tenant\",\"type\":\"athenz\",\"createdAt\":1234,\"lastLoginInfo\":{},\"athenzDomain\":\"domain1\",\"property\":\"property\"}";
+        AthenzTenant serialized = (AthenzTenant) serializer.tenantFrom(SlimeUtils.jsonToSlime(input));
+        assertEquals(TenantId.from(""), serialized.id());
     }
 
     @Test
