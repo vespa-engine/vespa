@@ -87,6 +87,10 @@ struct ExecFixture
     void setQueryTensorType(const vespalib::string &queryFeatureName, const vespalib::string &type) {
         type::QueryFeature::set(test.getIndexEnv().getProperties(), queryFeatureName, type);
     }
+    void setQueryTensorDefault(const vespalib::string &tensorName, const vespalib::string &expr) {
+        vespalib::string key = "query(" + tensorName + ")";
+        test.getIndexEnv().getProperties().add(key, expr);
+    }
     void setupAttributeVectors() {
         std::vector<AttributePtr> attrs;
         attrs.push_back(createTensorAttribute("tensorattr", "tensor(x{})"));
@@ -149,6 +153,8 @@ struct ExecFixture
                                               .add({{"x", "0"},{"y", "1"}}, 13 )
                                               .add({{"x", "1"},{"y", "0"}}, 17 )));
         setQueryTensorType("null", "tensor(q{})");
+        setQueryTensorType("with_default", "tensor(x[3])");
+        setQueryTensorDefault("with_default", "tensor(x[3])(x+1)");
     }
     const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
@@ -185,6 +191,15 @@ TEST_F("require that tensor from query can be extracted as tensor in query featu
                  .add({{"q", "f"}}, 17)
                  .add({{"q", "d"}}, 11)
                  .add({{"q", "e"}}, 13), spec_from_value(f.execute()));
+}
+
+TEST_F("require that tensor from query can have default value",
+       ExecFixture("query(with_default)"))
+{
+    EXPECT_EQUAL(TensorSpec("tensor(x[3])")
+                 .add({{"x", 0}}, 1)
+                 .add({{"x", 1}}, 2)
+                 .add({{"x", 2}}, 3), spec_from_value(f.execute()));
 }
 
 TEST_F("require that empty tensor is created if attribute does not exists",
