@@ -21,8 +21,8 @@ public class MultiContainerTest {
 
     @Test
     public void test() {
-        DockerImage image1 = DockerImage.fromString("registry.example.com/image1");
-        DockerImage image2 = DockerImage.fromString("registry.example.com/image2");
+        DockerImage image1 = DockerImage.fromString("registry.example.com/repo/image1");
+        DockerImage image2 = DockerImage.fromString("registry.example.com/repo/image2");
         try (ContainerTester tester = new ContainerTester(List.of(image1, image2))) {
             addAndWaitForNode(tester, "host1.test.yahoo.com", image1);
             NodeSpec nodeSpec2 = addAndWaitForNode(tester, "host2.test.yahoo.com", image2);
