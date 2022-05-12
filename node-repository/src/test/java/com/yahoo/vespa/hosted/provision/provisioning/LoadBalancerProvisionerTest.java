@@ -5,6 +5,7 @@ import ai.vespa.http.DomainName;
 import com.google.common.collect.Iterators;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -306,6 +308,17 @@ public class LoadBalancerProvisionerTest {
             tester.activate(app1, preparedHosts);
         }
         assertReals(app1, container1, Node.State.active);
+    }
+
+    @Test
+    public void load_balancer_with_custom_cloud_account() {
+        ClusterResources resources = new ClusterResources(3, 1, nodeResources);
+        CloudAccount cloudAccount = new CloudAccount("012345678912");
+        Capacity capacity = Capacity.from(resources, resources, false, true, Optional.of(cloudAccount));
+        tester.activate(app1, prepare(app1, capacity, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("c1"))));
+        LoadBalancerList loadBalancers = tester.nodeRepository().loadBalancers().list();
+        assertEquals(1, loadBalancers.size());
+        assertEquals(cloudAccount, loadBalancers.first().get().instance().get().cloudAccount().get());
     }
 
     private void assertReals(ApplicationId application, ClusterSpec.Id cluster, Node.State... states) {

@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import ai.vespa.http.DomainName;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 
@@ -11,11 +10,11 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * This implementation of {@link LoadBalancerService} returns the load balancer(s) that exists by default in the shared
+ * This implementation of {@link LoadBalancerService} returns the load balancer(s) that exist by default in the shared
  * routing layer.
  *
- * Since such load balancers always exist, we can return the hostname of the routing layer VIP and the networks of the
- * proxy nodes directly. Nothing has to be provisioned.
+ * Since such load balancers always exist, we can return the hostname of the routing layer VIP directly. Nothing has to
+ * be provisioned.
  *
  * @author ogronnesby
  */
@@ -33,11 +32,12 @@ public class SharedLoadBalancerService implements LoadBalancerService {
                                         Optional.empty(),
                                         Set.of(4443),
                                         Set.of(),
-                                        spec.reals());
+                                        spec.reals(),
+                                        spec.cloudAccount());
     }
 
     @Override
-    public void remove(ApplicationId application, ClusterSpec.Id cluster) {
+    public void remove(LoadBalancer loadBalancer) {
         // Do nothing, we have no external state to modify
     }
 

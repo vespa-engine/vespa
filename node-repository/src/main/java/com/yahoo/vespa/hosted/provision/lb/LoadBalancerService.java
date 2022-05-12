@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.lb;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 
@@ -22,8 +21,8 @@ public interface LoadBalancerService {
      */
     LoadBalancerInstance create(LoadBalancerSpec spec, boolean force);
 
-    /** Permanently remove load balancer for given application cluster */
-    void remove(ApplicationId application, ClusterSpec.Id cluster);
+    /** Permanently remove given load balancer */
+    void remove(LoadBalancer loadBalancer);
 
     /** Returns the protocol supported by this load balancer service */
     Protocol protocol();
