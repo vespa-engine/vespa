@@ -71,8 +71,13 @@
                                         <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:[2.5.4, ${jackson2.version}]:jar:provided</include>
                                         <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:[2.5.4, ${jackson2.version}]:jar:provided</include>
 
+                                        <!-- guava with dependencies -->
                                         <include>com.google.code.findbugs:jsr305:[${findbugs.version}]:jar:provided</include>
                                         <include>com.google.guava:guava:[${guava.version}]:jar:provided</include>
+                                        <include>com.google.errorprone:error_prone_annotations:[2.2.0]:jar:provided</include>
+                                        <include>com.google.guava:failureaccess:[1.0.1]:jar:provided</include>
+                                        <include>com.google.j2objc:j2objc-annotations:[1.1]:jar:provided</include>
+
                                         <include>com.google.inject.extensions:guice-assistedinject:[${guice.version}]:jar:provided</include>
                                         <include>com.google.inject.extensions:guice-multibindings:[${guice.version}]:jar:provided</include>
                                         <include>com.google.inject:guice:[${guice.version}]:jar:provided:no_aop</include>
