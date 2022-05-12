@@ -9,7 +9,8 @@ import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
 import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchlib.rankingexpression.Reference;
+import com.yahoo.searchdefinition.RankingConstant;
+import com.yahoo.searchdefinition.RankingConstants;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.Schema;
@@ -18,8 +19,6 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,14 +38,14 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     private static final Logger log = Logger.getLogger(RankProfileList.class.getName());
 
     private final Map<String, RawRankProfile> rankProfiles = new java.util.LinkedHashMap<>();
-    private final FileDistributedConstants constants;
+    private final RankingConstants rankingConstants;
     private final LargeRankExpressions largeRankExpressions;
     private final OnnxModels onnxModels;
 
     public static final RankProfileList empty = new RankProfileList();
 
     private RankProfileList() {
-        constants = new FileDistributedConstants(null, List.of());
+        rankingConstants = new RankingConstants(null, Optional.empty());
         largeRankExpressions = new LargeRankExpressions(null);
         onnxModels = new OnnxModels(null, Optional.empty());
     }
@@ -58,42 +57,17 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
      * @param attributeFields the attribute fields to create a ranking for
      */
     public RankProfileList(Schema schema,
-                           Map<Reference, RankProfile.Constant> constantsFromSchema,
+                           RankingConstants rankingConstants,
                            LargeRankExpressions largeRankExpressions,
                            OnnxModels onnxModels,
                            AttributeFields attributeFields,
                            DeployState deployState) {
         setName(schema == null ? "default" : schema.getName());
-        this.constants = deriveFileDistributedConstants(schema, constantsFromSchema, deployState);
+        this.rankingConstants = rankingConstants;
         this.largeRankExpressions = largeRankExpressions;
         this.onnxModels = onnxModels;  // as ONNX models come from parsing rank expressions
         deriveRankProfiles(schema, attributeFields, deployState);
     }
-
-    private static FileDistributedConstants deriveFileDistributedConstants(Schema schema,
-                                                                           Map<Reference, RankProfile.Constant> constantsFromSchema,
-                                                                           DeployState deployState) {
-        Map<Reference, RankProfile.Constant> allFileConstants = new HashMap<>();
-        addFileConstants(constantsFromSchema.values(), allFileConstants, schema != null ? schema.toString() : "global");
-        for (var profile : deployState.rankProfileRegistry().rankProfilesOf(schema))
-            addFileConstants(profile.getConstants().values(), allFileConstants, profile.toString());
-        return new FileDistributedConstants(deployState.getFileRegistry(), allFileConstants.values());
-    }
-
-    private static void addFileConstants(Collection<RankProfile.Constant> source,
-                                         Map<Reference, RankProfile.Constant> destination,
-                                         String sourceName) {
-        for (var constant : source) {
-            if (constant.valuePath().isEmpty()) continue;
-            var existing = destination.get(constant.name());
-            if ( existing != null && ! constant.equals(existing))
-                throw new IllegalArgumentException("Duplicate " + constant + " in " + sourceName +
-                                                   ": Value reference constants must be unique across all rank profiles");
-            destination.put(constant.name(), constant);
-        }
-    }
-
-    public FileDistributedConstants constants() { return constants; }
 
     private boolean areDependenciesReady(RankProfile rank, RankProfileRegistry registry) {
         return rank.inheritedNames().isEmpty() ||
@@ -104,7 +78,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     private void deriveRankProfiles(Schema schema,
                                     AttributeFields attributeFields,
                                     DeployState deployState) {
-        if (schema != null) { // profiles belonging to a schema have a default profile
+        if (schema != null) { // profiles belonging to a search have a default profile
             RawRankProfile rawRank = new RawRankProfile(deployState.rankProfileRegistry().get(schema, "default"),
                                                         largeRankExpressions,
                                                         deployState.getQueryProfiles().getRegistry(),
@@ -132,7 +106,6 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
             ready.forEach(rank -> remaining.remove(rank.name()));
         }
     }
-
     private void processRankProfiles(List<RankProfile> ready,
                                      QueryProfileRegistry queryProfiles,
                                      ImportedMlModels importedModels,
@@ -187,7 +160,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     }
 
     public void getConfig(RankingConstantsConfig.Builder builder) {
-        for (var constant : constants.asMap().values()) {
+        for (RankingConstant constant : rankingConstants.asMap().values()) {
             if ("".equals(constant.getFileReference()))
                 log.warning("Illegal file reference " + constant); // Let tests pass ... we should find a better way
             else

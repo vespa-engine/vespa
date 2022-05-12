@@ -5,6 +5,8 @@ import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.document.RankType;
+import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
+import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 
 import java.util.List;
 
@@ -30,7 +32,7 @@ public class ConvertParsedRanking {
         if (name.equals("default")) {
             return rankProfileRegistry.get(schema, "default");
         }
-        return new RankProfile(name, schema, rankProfileRegistry);
+        return new RankProfile(name, schema, rankProfileRegistry, schema.rankingConstants());
     }
 
     void convertRankProfile(Schema schema, ParsedRankProfile parsed) {
@@ -40,8 +42,8 @@ public class ConvertParsedRanking {
 
         parsed.isStrict().ifPresent(value -> profile.setStrict(value));
 
-        for (var constant : parsed.getConstants().values())
-            profile.add(constant);
+        for (var constant : parsed.getConstants().entrySet())
+            profile.addConstant(constant.getKey(), constant.getValue());
 
         for (var input : parsed.getInputs().entrySet())
             profile.addInput(input.getKey(), input.getValue());
