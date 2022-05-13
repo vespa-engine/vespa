@@ -88,19 +88,19 @@ public class CapacityPolicies {
                                                    .value());
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
-                return versioned(clusterSpec, Map.of(new Version("1"), new NodeResources(0.25, 1.14, 10, 0.3)))
+                return versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.25, 1.14, 10, 0.3)))
                         .with(architecture);
             }
 
             return (zone.getCloud().dynamicProvisioning() && ! sharedHosts.apply(clusterSpec.type())
-                    ? versioned(clusterSpec, Map.of(new Version("1"), new NodeResources(0.5, 4, 50, 0.3)))
-                    : versioned(clusterSpec, Map.of(new Version("1"), new NodeResources(0.5, 2, 50, 0.3))))
+                    ? versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.5, 4, 50, 0.3)))
+                    : versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.5, 2, 50, 0.3))))
                     .with(architecture);
         }
 
         return zone.getCloud().dynamicProvisioning()
-               ? versioned(clusterSpec, Map.of(new Version("1"), new NodeResources(2.0, 8, 50, 0.3)))
-               : versioned(clusterSpec, Map.of(new Version("1"), new NodeResources(1.5, 8, 50, 0.3)));
+               ? versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(2.0, 8, 50, 0.3)))
+               : versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(1.5, 8, 50, 0.3)));
     }
 
     /** Returns the resources for the newest version not newer than that requested in the cluster spec. */
