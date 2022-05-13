@@ -34,7 +34,7 @@ public class ConstantValidator extends Validator {
         }
 
         if (exceptionMessageCollector.exceptionsOccurred)
-            throw new TensorValidationException(exceptionMessageCollector.combinedMessage);
+            throw new IllegalArgumentException(exceptionMessageCollector.combinedMessage);
     }
 
     private void validate(RankProfile.Constant constant,
@@ -42,8 +42,8 @@ public class ConstantValidator extends Validator {
                           ExceptionMessageCollector exceptionMessageCollector) {
         try {
             validate(constant, applicationPackage);
-        } catch (InvalidConstantTensorException | FileNotFoundException ex) {
-            exceptionMessageCollector.add(ex, constant.name().toString(), constant.valuePath().get());
+        } catch (InvalidConstantTensorException | FileNotFoundException exception) {
+            exceptionMessageCollector.add(constant, exception);
         }
     }
 
@@ -73,16 +73,10 @@ public class ConstantValidator extends Validator {
             this.combinedMessage = messagePrelude;
         }
 
-        public ExceptionMessageCollector add(Throwable throwable, String rcName, String rcFilename) {
+        public void add(RankProfile.Constant constant, Exception exception) {
             exceptionsOccurred = true;
-            combinedMessage += String.format("\nRanking constant '%s' (%s): %s", rcName, rcFilename, throwable.getMessage());
-            return this;
-        }
-    }
-
-    static class TensorValidationException extends IllegalArgumentException {
-        TensorValidationException(String message) {
-            super(message);
+            combinedMessage += "\n" + constant.name() + " " + constant.type() + ": file:" + constant.valuePath().get() +
+                               ": " + exception.getMessage();
         }
     }
 

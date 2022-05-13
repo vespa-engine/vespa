@@ -4,8 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
 import org.junit.Test;
 
-import static com.yahoo.vespa.model.application.validation.ConstantValidator.TensorValidationException;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 public class ConstantValidatorTest {
@@ -20,11 +19,16 @@ public class ConstantValidatorTest {
         try {
             new VespaModelCreatorWithFilePkg("src/test/cfg/application/validation/ranking_constants_fail/").create();
             fail();
-        } catch (TensorValidationException e) {
-            assertTrue(e.getMessage().contains("Ranking constant 'constant(constant_tensor_2)' (tensors/constant_tensor_2.json): Tensor label is not a string (VALUE_NUMBER_INT)"));
-            assertTrue(e.getMessage().contains("Ranking constant 'constant(constant_tensor_3)' (tensors/constant_tensor_3.json): Tensor dimension 'cd' does not exist"));
-            assertTrue(e.getMessage().contains("Ranking constant 'constant(constant_tensor_4)' (tensors/constant_tensor_4.json): Tensor dimension 'z' does not exist"));
+        } catch (IllegalArgumentException e) {
+            String[] lines = e.getMessage().split("\n");
+            assertStartsWith("constant(constant_tensor_2) tensor(x[6]): file:tensors/constant_tensor_2.json: Tensor label is not a string", lines[1]);
+            assertStartsWith("constant(constant_tensor_3) tensor(cpp{},d{}): file:tensors/constant_tensor_3.json: Tensor dimension 'cd' does not exist", lines[2]);
+            assertStartsWith("constant(constant_tensor_4) tensor(x{},y{}): file:tensors/constant_tensor_4.json: Tensor dimension 'z' does not exist", lines[3]);
         }
+    }
+
+    private void assertStartsWith(String prefix, String value) {
+        assertEquals(prefix, value.substring(0, prefix.length()));
     }
 
 }
