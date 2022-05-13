@@ -23,9 +23,9 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
 
-import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Helper for testing of imported models.
