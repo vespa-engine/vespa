@@ -42,3 +42,10 @@ vespa_add_library(vespammap
     DEPENDS
     dl
 )
+vespa_add_library(vespa_load_as_huge
+    SOURCES
+    $<TARGET_OBJECTS:vespamalloc_load_as_huge>
+    INSTALL lib64/vespa/malloc
+    DEPENDS
+    dl
+)
