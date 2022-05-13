@@ -19,7 +19,6 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Stemming;
 import com.yahoo.searchdefinition.document.TemporaryImportedFields;
 import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
-import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
@@ -86,9 +85,7 @@ public class Schema implements ImmutableSchema {
     /** External rank expression files of this */
     private final LargeRankExpressions largeRankExpressions;
 
-    /** Constants that will be available in all rank profiles. */
-    // TODO: Remove on Vespa 9: Should always be in a rank profile
-    private final Map<Reference, RankProfile.Constant> constants = new LinkedHashMap<>();
+    private final RankingConstants rankingConstants;
 
     private final OnnxModels onnxModels;
 
@@ -150,6 +147,7 @@ public class Schema implements ImmutableSchema {
         this.properties = properties;
         this.documentsOnly = documentsOnly;
         largeRankExpressions = new LargeRankExpressions(fileRegistry);
+        rankingConstants = new RankingConstants(fileRegistry, Optional.of(this));
         onnxModels = new OnnxModels(fileRegistry, Optional.of(this));
     }
 
@@ -226,19 +224,8 @@ public class Schema implements ImmutableSchema {
     @Override
     public LargeRankExpressions rankExpressionFiles() { return largeRankExpressions; }
 
-    public void add(RankProfile.Constant constant) {
-        constants.put(constant.name(), constant);
-    }
-
     @Override
-    public Map<Reference, RankProfile.Constant> constants() {
-        if (inherited().isEmpty()) return Collections.unmodifiableMap(constants);
-        if (constants.isEmpty()) return inherited().get().constants();
-
-        Map<Reference, RankProfile.Constant> allConstants = new LinkedHashMap<>(inherited().get().constants());
-        allConstants.putAll(constants);
-        return allConstants;
-    }
+    public RankingConstants rankingConstants() { return rankingConstants; }
 
     @Override
     public OnnxModels onnxModels() { return onnxModels; }

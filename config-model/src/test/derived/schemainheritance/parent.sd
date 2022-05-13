@@ -23,9 +23,10 @@ schema parent {
         indexing: input pf1 | lowercase | index | attribute | summary
     }
     rank-profile parent_profile {
-        constants {
-            parent_constant tensor<float>(x{},y{}): file:constants/my_constant_tensor_file.json
-        }
+    }
+    constant parent_constant {
+        file: constants/my_constant_tensor_file.json
+        type: tensor<float>(x{},y{})
     }
     onnx-model parent_model {
         file: small_constants_and_functions.onnx

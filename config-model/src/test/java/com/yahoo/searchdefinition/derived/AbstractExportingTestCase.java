@@ -71,7 +71,6 @@ public abstract class AbstractExportingTestCase extends AbstractSchemaTestCase {
                                              .produce(builder.getModel(), new DocumentmanagerConfig.Builder()), path);
         DerivedConfiguration.exportDocuments(new DocumentTypes().produce(builder.getModel(), new DocumenttypesConfig.Builder()), path);
         DerivedConfiguration.exportQueryProfiles(builder.getQueryProfileRegistry(), path);
-        config.exportConstants(path);
         return config;
     }
 

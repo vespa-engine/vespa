@@ -77,7 +77,7 @@ public class Validation {
         new NoPrefixForIndexes().validate(model, deployState);
         new DeploymentSpecValidator().validate(model, deployState);
         new ValidationOverridesValidator().validate(model, deployState);
-        new ConstantValidator().validate(model, deployState);
+        new RankingConstantsValidator().validate(model, deployState);
         new SecretStoreValidator().validate(model, deployState);
         new EndpointCertificateSecretsValidator().validate(model, deployState);
         new AccessControlFilterValidator().validate(model, deployState);

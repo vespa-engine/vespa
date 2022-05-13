@@ -101,9 +101,9 @@ class ParsedRankProfile extends ParsedBlock {
         this.inheritedSummaryFeatures = other;
     }
 
-    void add(RankProfile.Constant constant) {
-        verifyThat(! constants.containsKey(constant.name()), "already has constant", constant.name());
-        constants.put(constant.name(), constant);
+    void addConstant(Reference name, RankProfile.Constant value) {
+        verifyThat(! constants.containsKey(name), "already has constant", name);
+        constants.put(name, value);
     }
 
     void addInput(Reference name, RankProfile.Input input) {
