@@ -5,6 +5,5 @@ vespa_add_library(fastlib_fast
     DEPENDS
     fastlib_text
     fastlib_io
-    fastlib_util
     fastlib_fast_testsuite
 )

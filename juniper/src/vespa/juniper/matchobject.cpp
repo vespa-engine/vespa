@@ -5,7 +5,7 @@
 #include "juniperdebug.h"
 #include "result.h"
 #include "charutil.h"
-#include <vespa/fastlib/util/wildcard_match.h>
+#include "wildcard_match.h"
 #include <stack>
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.matchobject");
