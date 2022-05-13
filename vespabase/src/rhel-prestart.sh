@@ -103,7 +103,7 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  libexec/vespa/plugins/qrs
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/configserver
-fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/access
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/qrs
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/search
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp/vespa
