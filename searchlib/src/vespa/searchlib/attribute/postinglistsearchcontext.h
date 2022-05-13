@@ -89,8 +89,6 @@ protected:
         return (numHits > 1000) &&
             (calculateFilteringCost() < calculatePostingListCost(numHits));
     }
-
-public:
 };
 
 
