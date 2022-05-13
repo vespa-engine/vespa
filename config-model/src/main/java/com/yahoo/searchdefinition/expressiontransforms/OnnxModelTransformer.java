@@ -61,7 +61,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
         Arguments arguments = feature.getArguments();
         if (arguments.isEmpty())
             throw new IllegalArgumentException("An " + featureName + " feature must take an argument referring to a " +
-                    "onnx-model config or an ONNX file.");
+                                               "onnx-model config or an ONNX file.");
         if (arguments.expressions().size() > 3)
             throw new IllegalArgumentException("An " + featureName + " feature can have at most 3 arguments.");
 
@@ -84,7 +84,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
         String output = getModelOutput(feature.reference(), defaultOutput);
         if (! onnxModel.getOutputMap().containsValue(output)) {
             throw new IllegalArgumentException(featureName + " argument '" + output +
-                    "' output not found in model '" + onnxModel.getFileName() + "'");
+                                               "' output not found in model '" + onnxModel.getFileName() + "'");
         }
         return new ReferenceNode("onnxModel", List.of(new ReferenceNode(modelConfigName)), output);
     }
@@ -95,7 +95,7 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
             if (expr instanceof ReferenceNode) {  // refers to onnx-model config
                 return expr.toString();
             }
-            if (expr instanceof ConstantNode) {  // refers to an file path
+            if (expr instanceof ConstantNode) {  // refers to a file path
                 return asValidIdentifier(expr);
             }
         }

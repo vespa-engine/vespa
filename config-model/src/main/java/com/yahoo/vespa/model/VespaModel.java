@@ -323,7 +323,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     private OnnxModels onnxModelInfoFromSource(ImportedMlModel model, FileRegistry fileRegistry) {
         OnnxModels onnxModels = new OnnxModels(fileRegistry, Optional.empty());
-        if (model.modelType().equals(ImportedMlModel.ModelType.ONNX)) {
+        if (model.modelType() == ImportedMlModel.ModelType.ONNX) {
             String path = model.source();
             String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
             if (path.startsWith(applicationPath)) {

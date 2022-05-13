@@ -2,6 +2,7 @@
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -27,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -74,23 +76,30 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                                                                            Map<Reference, RankProfile.Constant> constantsFromSchema,
                                                                            DeployState deployState) {
         Map<Reference, RankProfile.Constant> allFileConstants = new HashMap<>();
-        addFileConstants(constantsFromSchema.values(), allFileConstants, schema != null ? schema.toString() : "[global]");
+        addFileConstants(constantsFromSchema.values(), allFileConstants, schema != null ? schema.toString() : "[global]", deployState.getDeployLogger());
         for (var profile : deployState.rankProfileRegistry().rankProfilesOf(schema))
-            addFileConstants(profile.constants().values(), allFileConstants, profile.toString());
+            addFileConstants(profile.constants().values(), allFileConstants, profile.toString(), deployState.getDeployLogger());
         for (var profile : deployState.rankProfileRegistry().rankProfilesOf(null))
-            addFileConstants(profile.constants().values(), allFileConstants, profile.toString());
+            addFileConstants(profile.constants().values(), allFileConstants, profile.toString(), deployState.getDeployLogger());
         return new FileDistributedConstants(deployState.getFileRegistry(), allFileConstants.values());
     }
 
     private static void addFileConstants(Collection<RankProfile.Constant> source,
                                          Map<Reference, RankProfile.Constant> destination,
-                                         String sourceName) {
+                                         String sourceName,
+                                         DeployLogger logger) {
         for (var constant : source) {
             if (constant.valuePath().isEmpty()) continue;
             var existing = destination.get(constant.name());
-            if ( existing != null && ! constant.equals(existing))
-                throw new IllegalArgumentException("Duplicate " + constant + " in " + sourceName +
-                                                   ": Value reference constants must be unique across all rank profiles");
+            if ( existing != null && ! constant.equals(existing)) {
+                String message = "Duplicate constants: " + sourceName + " have " + constant +
+                                 ", but we already have " + existing +
+                                 ": Value reference constants must be unique across all rank profiles and models";
+                if (! constant.type().equals(existing.type()))
+                    throw new IllegalArgumentException(message);
+                else // different paths are allowed
+                    logger.logApplicationPackage(Level.WARNING, message);
+            }
             destination.put(constant.name(), constant);
         }
     }

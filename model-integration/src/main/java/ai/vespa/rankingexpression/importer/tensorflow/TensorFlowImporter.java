@@ -76,8 +76,8 @@ public class TensorFlowImporter extends ModelImporter {
                 log.fine("Conversion to ONNX with opset " + opset + " failed. Reason: " + res.getSecond());
                 outputOfLastConversionAttempt = res.getSecond();
             }
-            throw new IllegalArgumentException("Unable to convert TensorFlow model in '" + modelDir + "' to ONNX. " +
-                    "Reason: " + outputOfLastConversionAttempt);
+            throw new IllegalArgumentException("Unable to convert TensorFlow model in '" + modelDir + "' to ONNX: " +
+                                               outputOfLastConversionAttempt);
         } catch (IOException e) {
             throw new IllegalArgumentException("Conversion from TensorFlow to ONNX failed for '" + modelDir + "'");
         } finally {
