@@ -1,12 +1,15 @@
 package com.yahoo.vespa.test.samples;
 
 import com.yahoo.vespa.testrunner.Expect;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 @Expect(error = 2)
-public class FailingInstantiationTest {
+public class FailingBeforeAllAssertionTest {
 
-    final int i = Integer.parseInt("");
+    @BeforeAll
+    void fail() { Assertions.fail(); }
 
     @Test
     void test() { }

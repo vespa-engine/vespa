@@ -4,6 +4,7 @@ package com.yahoo.vespa.testrunner;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.LogRecord;
 
 import static com.yahoo.vespa.testrunner.TestRunner.Status.FAILURE;
@@ -11,6 +12,7 @@ import static com.yahoo.vespa.testrunner.TestRunner.Status.INCONCLUSIVE;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.NO_TESTS;
 import static com.yahoo.vespa.testrunner.TestRunner.Status.SUCCESS;
 import static java.util.Arrays.copyOf;
+import static java.util.stream.Collectors.joining;
 
 /**
  * @author mortent
@@ -41,6 +43,38 @@ public class TestReport {
 
     public TestRunner.Status status() {
         return (failures.size() > 0 || failedCount > 0) ? FAILURE : inconclusiveCount > 0 ? INCONCLUSIVE : successCount > 0 ? SUCCESS : NO_TESTS;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TestReport that = (TestReport) o;
+        return    successCount == that.successCount
+               && failedCount == that.failedCount
+               && inconclusiveCount == that.inconclusiveCount
+               && ignoredCount == that.ignoredCount
+               && abortedCount == that.abortedCount;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(successCount, failedCount, inconclusiveCount, ignoredCount, abortedCount);
+    }
+
+    @Override
+    public String toString() {
+        return "success: " + successCount + "\n" +
+               "failed: " + failedCount + "\n" +
+               "inconclusive: " + inconclusiveCount + "\n" +
+               "ignored: " + ignoredCount + "\n" +
+               "aborted: " + abortedCount + "\n" +
+               (failures.isEmpty() ? "" : failures.stream()
+                                                  .map(Failure::toString)
+                                                  .collect(joining("\n    ", "failures:\n    ", "\n"))) +
+               (logLines.isEmpty() ? "" : logLines.stream()
+                                                  .map(record -> String.format("    %7s: %s", record.getLevel(), record.getMessage().replaceAll("\n", "\n                 ")))
+                                                  .collect(joining("\n", "log records:\n", "\n")));
     }
 
     public static Builder builder(){
@@ -116,6 +150,11 @@ public class TestReport {
 
         public Throwable exception() {
             return exception;
+        }
+
+        @Override
+        public String toString() {
+            return testId + ": " + exception;
         }
 
     }
