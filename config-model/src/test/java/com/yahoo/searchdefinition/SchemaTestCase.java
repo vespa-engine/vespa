@@ -122,10 +122,9 @@ public class SchemaTestCase {
                 "      indexing: input pf1 | lowercase | index | attribute | summary" +
                 "  }" +
                 "  rank-profile child1_profile inherits parent_profile {" +
-                "  }" +
-                "  constant child1_constant {" +
-                "    file: constants/my_constant_tensor_file.json" +
-                "    type: tensor<float>(x{},y{})" +
+                "    constants {" +
+                "      child1_constant tensor<float>(x{},y{}): file:constants/my_constant_tensor_file.json" +
+                "    }" +
                 "  }" +
                 "  onnx-model child1_model {" +
                 "    file: models/my_model.onnx" +
@@ -188,11 +187,13 @@ public class SchemaTestCase {
         assertNotNull(child1.getExtraField("child1_field"));
         assertNotNull(builder.getRankProfileRegistry().get(child1, "parent_profile"));
         assertNotNull(builder.getRankProfileRegistry().get(child1, "child1_profile"));
+        var child1profile = builder.getRankProfileRegistry().get(child1, "child1_profile");
         assertEquals("parent_profile", builder.getRankProfileRegistry().get(child1, "child1_profile").inheritedNames().get(0));
         assertNotNull(child1.constants().get(FeatureNames.asConstantFeature("parent_constant")));
-        assertNotNull(child1.constants().get(FeatureNames.asConstantFeature("child1_constant")));
+        assertNotNull(child1profile.constants().get(FeatureNames.asConstantFeature("child1_constant")));
         assertTrue(child1.constants().containsKey(FeatureNames.asConstantFeature("parent_constant")));
-        assertTrue(child1.constants().containsKey(FeatureNames.asConstantFeature("child1_constant")));
+        assertTrue(child1profile.constants().containsKey(FeatureNames.asConstantFeature("child1_constant")));
+        assertTrue(child1profile.constants().containsKey(FeatureNames.asConstantFeature("parent_constant")));
         assertNotNull(child1.onnxModels().get("parent_model"));
         assertNotNull(child1.onnxModels().get("child1_model"));
         assertTrue(child1.onnxModels().asMap().containsKey("parent_model"));

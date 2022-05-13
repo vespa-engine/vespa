@@ -27,10 +27,6 @@ schema parent {
             parent_constant tensor<float>(x{},y{}): file:constants/my_constant_tensor_file.json
         }
     }
-#    constant parent_constant { (old syntax equivalent to the above)
-#        file: constants/my_constant_tensor_file.json
-#        type: tensor<float>(x{},y{})
-#    }
     onnx-model parent_model {
         file: small_constants_and_functions.onnx
     }
