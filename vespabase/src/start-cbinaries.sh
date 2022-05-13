@@ -153,7 +153,7 @@ configure_vespa_malloc () {
             if [ -f "$tryfile" ]; then
                 LD_PRELOAD="$tryfile"
                 if [ "$VESPA_LOAD_CODE_AS_HUGEPAGES" ]; then
-                    LD_PRELOAD="$LD_PRELOAD:"${VESPA_HOME}/${pre}/vespa/malloc/libvespa_load_as_huge.so"
+                    LD_PRELOAD="$LD_PRELOAD:${VESPA_HOME}/${pre}/vespa/malloc/libvespa_load_as_huge.so"
                 fi
                 if [ "$VESPA_USE_HUGEPAGES" ]; then
                     export VESPA_MALLOC_HUGEPAGES="$VESPA_USE_HUGEPAGES"
