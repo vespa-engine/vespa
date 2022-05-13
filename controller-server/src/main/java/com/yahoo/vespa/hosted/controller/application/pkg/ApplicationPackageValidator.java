@@ -6,11 +6,16 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Endpoint;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.ListFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
@@ -24,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -34,9 +40,11 @@ import java.util.stream.Collectors;
 public class ApplicationPackageValidator {
 
     private final Controller controller;
+    private final ListFlag<String> cloudAccountsFlag;
 
     public ApplicationPackageValidator(Controller controller) {
         this.controller = Objects.requireNonNull(controller, "controller must be non-null");
+        this.cloudAccountsFlag = PermanentFlags.CLOUD_ACCOUNTS.bindTo(controller.flagSource());
     }
 
     /**
@@ -46,6 +54,7 @@ public class ApplicationPackageValidator {
      */
     public void validate(Application application, ApplicationPackage applicationPackage, Instant instant) {
         validateSteps(applicationPackage.deploymentSpec());
+        validateCloudAccounts(application, applicationPackage.deploymentSpec());
         validateEndpointRegions(applicationPackage.deploymentSpec());
         validateEndpointChange(application, applicationPackage, instant);
         validateCompactedEndpoint(applicationPackage);
@@ -143,6 +152,25 @@ public class ApplicationPackageValidator {
                                            "deployment.xml will remove " + removedEndpoints +
                                            (newEndpoints.isEmpty() ? "" : " and add " + newEndpoints) +
                                            ". " + ValidationOverrides.toAllowMessage(validationId));
+    }
+
+    /** Verify that declared cloud accounts are allowed to be used by the tenant */
+    private void validateCloudAccounts(Application application, DeploymentSpec deploymentSpec) {
+        TenantName tenant = application.id().tenant();
+        Set<CloudAccount> validAccounts = cloudAccountsFlag.with(FetchVector.Dimension.TENANT_ID, tenant.value())
+                                                           .value().stream()
+                                                           .map(CloudAccount::new)
+                                                           .collect(Collectors.toSet());
+        for (var spec : deploymentSpec.instances()) {
+            for (var zone : spec.zones()) {
+                if (!zone.environment().isProduction()) continue;
+                Optional<CloudAccount> cloudAccount = spec.cloudAccount(zone.environment(), zone.region().get());
+                if (cloudAccount.isEmpty()) continue;
+                if (validAccounts.contains(cloudAccount.get())) continue;
+                throw new IllegalArgumentException("Cloud account '" + cloudAccount.get().value() +
+                                                   "' is not valid for tenant '" + tenant + "'");
+            }
+        }
     }
 
     /** Returns whether newEndpoints contains all destinations in endpoints */
