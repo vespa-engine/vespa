@@ -7,6 +7,7 @@
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/resource_limits.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/alloc.h>
 #include <filesystem>
@@ -40,21 +41,21 @@ sampleDiskSizeBytes(const std::string &pathStr, const HwInfoSampler::Config &cfg
 }
 
 uint64_t
-sampleMemorySizeBytes(const HwInfoSampler::Config &cfg)
+sampleMemorySizeBytes(const HwInfoSampler::Config &cfg, const vespalib::ResourceLimits& resource_limits)
 {
     if (cfg.memorySizeBytes != 0) {
         return cfg.memorySizeBytes;
     }
-    return sysconf(_SC_PHYS_PAGES) * sysconf(_SC_PAGESIZE);
+    return resource_limits.memory();
 }
 
 uint32_t
-sampleCpuCores(const HwInfoSampler::Config &cfg)
+sampleCpuCores(const HwInfoSampler::Config &cfg, const vespalib::ResourceLimits& resource_limits)
 {
     if (cfg.cpuCores != 0) {
         return cfg.cpuCores;
     }
-    return std::thread::hardware_concurrency();
+    return resource_limits.cpu();
 }
 
 std::unique_ptr<HwinfoConfig>
@@ -119,11 +120,12 @@ HwInfoSampler::HwInfoSampler(const vespalib::string &path,
       _diskWriteSpeed(0.0)
 {
     setDiskWriteSpeed(path, config);
+    auto resource_limits = vespalib::ResourceLimits::create();
     setup(HwInfo::Disk(sampleDiskSizeBytes(path, config),
                        (_diskWriteSpeed < config.slowWriteSpeedLimit),
                        config.diskShared),
-          HwInfo::Memory(sampleMemorySizeBytes(config)),
-          HwInfo::Cpu(sampleCpuCores(config)));
+          HwInfo::Memory(sampleMemorySizeBytes(config, resource_limits)),
+          HwInfo::Cpu(sampleCpuCores(config, resource_limits)));
 }
 
 HwInfoSampler::~HwInfoSampler() = default;
