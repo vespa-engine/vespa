@@ -85,6 +85,7 @@ private:
     };
 
     vespalib::CpuUtil                      _cpu_util;
+    HwInfo                                 _hw_info;
     FastOS_ThreadPool                    & _threadPool;
     FNET_Transport                       & _transport;
     const config::ConfigUri                _configUri;
