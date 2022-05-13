@@ -42,10 +42,8 @@ public:
     void * getStart() { return _words; }
     Index size() const { return vespalib::atomic::load_ref_relaxed(_sz); }
     Index sizeBytes() const { return numBytes(getActiveSize()); }
-    Word load_word(Index widx) const { return vespalib::atomic::load_ref_relaxed(_words[widx]); }
-    void store_word(Index widx, Word word) { return vespalib::atomic::store_ref_relaxed(_words[widx], word); }
     bool testBit(Index idx) const {
-        return ((load_word(wordNum(idx)) & mask(idx)) != 0);
+        return ((load(_words[wordNum(idx)]) & mask(idx)) != 0);
     }
     Index getSizeAcquire() const {
         return vespalib::atomic::load_ref_acquire(_sz);
@@ -123,10 +121,10 @@ public:
     Index getPrevTrueBit(Index start) const {
         Index index(wordNum(start));
         const Word *words(_words);
-        Word t(words[index] & ~endBits(start));
+        Word t(load(words[index]) & ~endBits(start));
 
         while(t == 0 && index > getStartWordNum()) {
-           t = words[--index];
+            t = load(words[--index]);
         }
 
         return (t != 0)
@@ -144,13 +142,13 @@ public:
         vespalib::atomic::store_ref_release(_sz, sz);
     }
     void setBit(Index idx) {
-        store_word(wordNum(idx), _words[wordNum(idx)] | mask(idx));
+        store(_words[wordNum(idx)], _words[wordNum(idx)] | mask(idx));
     }
     void clearBit(Index idx) {
-        store_word(wordNum(idx), _words[wordNum(idx)] & ~ mask(idx));
+        store(_words[wordNum(idx)], _words[wordNum(idx)] & ~ mask(idx));
     }
     void flipBit(Index idx) {
-        _words[wordNum(idx)] ^= mask(idx);
+        store(_words[wordNum(idx)], _words[wordNum(idx)] ^ mask(idx));
     }
 
     void andWith(const BitVector &right);
@@ -277,6 +275,8 @@ protected:
     static Alloc allocatePaddedAndAligned(Index start, Index end, Index capacity, const Alloc* init_alloc = nullptr);
 
 private:
+    Word load(const Word &word) const { return vespalib::atomic::load_ref_relaxed(word); }
+    void store(Word &word, Word value) { return vespalib::atomic::store_ref_relaxed(word, value); }
     friend PartialBitVector;
     const Word * getWordIndex(Index index) const { return static_cast<const Word *>(getStart()) + wordNum(index); }
     Word * getWordIndex(Index index) { return static_cast<Word *>(getStart()) + wordNum(index); }
@@ -319,8 +319,8 @@ private:
 
         Index index(wordNum(start));
         Index lastIndex(wordNum(last));
-        Word word(conv(_words[index]) & checkTab(start));
-        for ( ; index < lastIndex; word = conv(_words[++index])) {
+        Word word(conv(load(_words[index])) & checkTab(start));
+        for ( ; index < lastIndex; word = conv(load(_words[++index]))) {
             foreach_bit(func, word, index << numWordBits());
         }
         foreach_bit(func, word & ~endBits(last), lastIndex << numWordBits());
@@ -329,14 +329,14 @@ private:
     Index getNextBit(WordConverter conv, Index start) const {
         Index index(wordNum(start));
         const Word *words(_words);
-        Word t(conv(words[index]) & checkTab(start));
+        Word t(conv(load(words[index])) & checkTab(start));
 
         // In order to avoid a test an extra guard bit is added
         // after the bitvector as a termination.
         // Also bitvector will normally at least 1 bit set per 32 bits.
         // So that is what we should expect.
         while (__builtin_expect(t == 0, false)) {
-            t = conv(words[++index]);
+            t = conv(load(words[++index]));
         }
 
         return (index << numWordBits()) + vespalib::Optimized::lsbIdx(t);
