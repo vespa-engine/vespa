@@ -80,6 +80,52 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     }
 
     @Test
+    public void tenant_info_profile() {
+        var request = request("/application/v4/tenant/scoober/info/profile", GET)
+                .roles(Set.of(Role.reader(tenantName)));
+        tester.assertResponse(request, "{}", 200);
+
+        var updateRequest = request("/application/v4/tenant/scoober/info/profile", PUT)
+                .data("{\"contact\":{\"name\":\"Some Name\",\"email\":\"foo@example.com\"},\"tenant\":{\"company\":\"Scoober, Inc.\",\"website\":\"https://example.com/\"}}")
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
+
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"Some Name\",\"email\":\"foo@example.com\"},\"tenant\":{\"company\":\"\",\"website\":\"https://example.com/\"}}", 200);
+    }
+
+    @Test
+    public void tenant_info_billing() {
+        var request = request("/application/v4/tenant/scoober/info/billing", GET)
+                .roles(Set.of(Role.reader(tenantName)));
+        tester.assertResponse(request, "{}", 200);
+
+        var fullAddress = "{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}";
+        var fullBillingContact = "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\"},\"address\":" + fullAddress + "}";
+
+        var updateRequest = request("/application/v4/tenant/scoober/info/billing", PUT)
+                .data(fullBillingContact)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
+
+        tester.assertResponse(request, "{\"contact\":{\"name\":\"name\",\"email\":\"foo@example\",\"phone\":\"phone\"},\"address\":{\"addressLines\":\"addressLines\",\"postalCodeOrZip\":\"postalCodeOrZip\",\"city\":\"city\",\"stateRegionProvince\":\"stateRegionProvince\",\"country\":\"country\"}}", 200);
+    }
+
+    @Test
+    public void tenant_info_contacts() {
+        var request = request("/application/v4/tenant/scoober/info/contacts", GET)
+                .roles(Set.of(Role.reader(tenantName)));
+        tester.assertResponse(request, "{\"contacts\":[]}", 200);
+
+
+        var fullContacts = "{\"contacts\":[{\"audiences\":[\"tenant\"],\"email\":\"contact1@example.com\"},{\"audiences\":[\"notifications\"],\"email\":\"contact2@example.com\"},{\"audiences\":[\"tenant\",\"notifications\"],\"email\":\"contact3@example.com\"}]}";
+        var updateRequest = request("/application/v4/tenant/scoober/info/contacts", PUT)
+                .data(fullContacts)
+                .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(updateRequest, "{\"message\":\"Tenant info updated\"}", 200);
+        tester.assertResponse(request, fullContacts, 200);
+    }
+
+    @Test
     public void tenant_info_workflow() {
         var infoRequest =
                 request("/application/v4/tenant/scoober/info", GET)

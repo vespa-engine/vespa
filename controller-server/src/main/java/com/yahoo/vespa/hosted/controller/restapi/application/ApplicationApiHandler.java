@@ -150,6 +150,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Scanner;
 import java.util.StringJoiner;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -245,6 +246,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/request/operator")) return accessRequests(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return tenantInfoProfile(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return tenantInfoBilling(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return tenantInfoContacts(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(request, Optional.of(path.get("tenant")), false);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
@@ -298,6 +302,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/access/approve/operator")) return approveAccessRequest(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/managed/operator")) return addManagedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return putTenantInfo(path.get("tenant"), request, this::putTenantInfoProfile);
+        if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return putTenantInfo(path.get("tenant"), request, this::putTenantInfoBilling);
+        if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return putTenantInfo(path.get("tenant"), request, this::putTenantInfoContacts);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
@@ -500,6 +507,27 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
     }
 
+    private HttpResponse tenantInfoProfile(String tenantName, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .filter(tenant -> tenant.type() == Tenant.Type.cloud)
+                .map(tenant -> tenantInfoProfile((CloudTenant)tenant))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
+    }
+
+    private HttpResponse tenantInfoBilling(String tenantName, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .filter(tenant -> tenant.type() == Tenant.Type.cloud)
+                .map(tenant -> tenantInfoBilling((CloudTenant)tenant))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
+    }
+
+    private HttpResponse tenantInfoContacts(String tenantName, HttpRequest request) {
+        return controller.tenants().get(TenantName.from(tenantName))
+                .filter(tenant -> tenant.type() == Tenant.Type.cloud)
+                .map(tenant -> tenantInfoContacts((CloudTenant) tenant))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
+    }
+
     private SlimeJsonResponse tenantInfo(TenantInfo info, HttpRequest request) {
         Slime slime = new Slime();
         Cursor infoCursor = slime.setObject();
@@ -515,6 +543,141 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
 
         return new SlimeJsonResponse(slime);
+    }
+
+    private SlimeJsonResponse tenantInfoProfile(CloudTenant cloudTenant) {
+        var slime = new Slime();
+        var root = slime.setObject();
+        var info = cloudTenant.info();
+
+        if (!info.isEmpty()) {
+            var contact = root.setObject("contact");
+            contact.setString("name", info.contact().name());
+            contact.setString("email", info.contact().email());
+
+            var tenant = root.setObject("tenant");
+            tenant.setString("company", info.name());
+            tenant.setString("website", info.website());
+
+            toSlime(info.address(), root); // will create "address" on the parent
+        }
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private SlimeJsonResponse putTenantInfo(String tenantName, HttpRequest request, BiFunction<CloudTenant, Inspector, SlimeJsonResponse> handler) {
+        return controller.tenants().get(tenantName)
+                .map(tenant -> handler.apply((CloudTenant) tenant, toSlime(request.getData()).get()))
+                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
+    }
+
+    private SlimeJsonResponse putTenantInfoProfile(CloudTenant cloudTenant, Inspector inspector) {
+        var info = cloudTenant.info();
+
+        var mergedContact = TenantContact.empty()
+                .withName(getString(inspector.field("contact").field("name"), info.contact().name()))
+                .withEmail(getString(inspector.field("contact").field("email"), info.contact().email()));
+
+        var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.address());
+
+        var mergedInfo = info
+                .withName(getString(inspector.field("tenant").field("name"), info.name()))
+                .withWebsite(getString(inspector.field("tenant").field("website"), info.website()))
+                .withContact(mergedContact)
+                .withAddress(mergedAddress);
+
+        validateMergedTenantInfo(mergedInfo);
+
+        controller.tenants().lockOrThrow(cloudTenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withInfo(mergedInfo);
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("Tenant info updated");
+    }
+
+    private SlimeJsonResponse tenantInfoBilling(CloudTenant cloudTenant) {
+        var slime = new Slime();
+        var root = slime.setObject();
+        var info = cloudTenant.info();
+
+        if (!info.isEmpty()) {
+            var billingContact = info.billingContact();
+
+            var contact = root.setObject("contact");
+            contact.setString("name", billingContact.contact().name());
+            contact.setString("email", billingContact.contact().email());
+            contact.setString("phone", billingContact.contact().phone());
+
+            toSlime(billingContact.address(), root); // will create "address" on the parent
+        }
+
+        return new SlimeJsonResponse(slime);
+    }
+
+    private SlimeJsonResponse putTenantInfoBilling(CloudTenant cloudTenant, Inspector inspector) {
+        var info = cloudTenant.info();
+        var contact = info.billingContact().contact();
+        var address = info.billingContact().address();
+
+        var mergedContact = updateTenantInfoContact(inspector.field("contact"), contact);
+        var mergedAddress = updateTenantInfoAddress(inspector.field("address"), info.billingContact().address());
+
+        var mergedBilling = info.billingContact()
+                .withContact(mergedContact)
+                .withAddress(mergedAddress);
+
+        var mergedInfo = info.withBilling(mergedBilling);
+
+        // Store changes
+        controller.tenants().lockOrThrow(cloudTenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withInfo(mergedInfo);
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("Tenant info updated");
+    }
+
+    private SlimeJsonResponse tenantInfoContacts(CloudTenant cloudTenant) {
+        var slime = new Slime();
+        var root = slime.setObject();
+        toSlime(cloudTenant.info().contacts(), root);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private SlimeJsonResponse putTenantInfoContacts(CloudTenant cloudTenant, Inspector inspector) {
+        var mergedInfo = cloudTenant.info()
+                .withContacts(updateTenantInfoContacts(inspector.field("contacts"), cloudTenant.info().contacts()));
+
+        // Store changes
+        controller.tenants().lockOrThrow(cloudTenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withInfo(mergedInfo);
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("Tenant info updated");
+    }
+
+    private void validateMergedTenantInfo(TenantInfo mergedInfo) {
+        // Assert that we have a valid tenant info
+        if (mergedInfo.contact().name().isBlank()) {
+            throw new IllegalArgumentException("'contactName' cannot be empty");
+        }
+        if (mergedInfo.contact().email().isBlank()) {
+            throw new IllegalArgumentException("'contactEmail' cannot be empty");
+        }
+        if (! mergedInfo.contact().email().contains("@")) {
+            // email address validation is notoriously hard - we should probably just try to send a
+            // verification email to this address.  checking for @ is a simple best-effort.
+            throw new IllegalArgumentException("'contactEmail' needs to be an email address");
+        }
+        if (! mergedInfo.website().isBlank()) {
+            try {
+                new URL(mergedInfo.website());
+            } catch (MalformedURLException e) {
+                throw new IllegalArgumentException("'website' needs to be a valid address");
+            }
+        }
     }
 
     private void toSlime(TenantAddress address, Cursor parentCursor) {
@@ -602,25 +765,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .withBilling(updateTenantInfoBillingContact(insp.field("billingContact"), oldInfo.billingContact()))
                 .withContacts(updateTenantInfoContacts(insp.field("contacts"), oldInfo.contacts()));
 
-        // Assert that we have a valid tenant info
-        if (mergedInfo.contact().name().isBlank()) {
-            throw new IllegalArgumentException("'contactName' cannot be empty");
-        }
-        if (mergedInfo.contact().email().isBlank()) {
-            throw new IllegalArgumentException("'contactEmail' cannot be empty");
-        }
-        if (! mergedInfo.contact().email().contains("@")) {
-            // email address validation is notoriously hard - we should probably just try to send a
-            // verification email to this address.  checking for @ is a simple best-effort.
-            throw new IllegalArgumentException("'contactEmail' needs to be an email address");
-        }
-        if (! mergedInfo.website().isBlank()) {
-            try {
-                new URL(mergedInfo.website());
-            } catch (MalformedURLException e) {
-                throw new IllegalArgumentException("'website' needs to be a valid address");
-            }
-        }
+        validateMergedTenantInfo(mergedInfo);
 
         // Store changes
         controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
