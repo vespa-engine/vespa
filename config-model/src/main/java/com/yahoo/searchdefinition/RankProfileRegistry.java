@@ -31,8 +31,8 @@ public class RankProfileRegistry {
 
     public static RankProfileRegistry createRankProfileRegistryWithBuiltinRankProfiles(Schema schema) {
         RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry));
-        rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry));
+        rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
+        rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry, schema.rankingConstants()));
         return rankProfileRegistry;
     }
 

@@ -2,9 +2,8 @@
 package com.yahoo.searchdefinition.parser;
 
 import com.yahoo.searchdefinition.OnnxModel;
-import com.yahoo.searchdefinition.RankProfile;
+import com.yahoo.searchdefinition.RankingConstant;
 import com.yahoo.searchdefinition.document.Stemming;
-import com.yahoo.searchlib.rankingexpression.Reference;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,7 +16,7 @@ import java.util.Optional;
  * one schema (.sd) file, using simple data structures
  * as far as possible.
  *
- * Do not put complicated logic here!
+ * Do not put advanced logic here!
  *
  * @author arnej27959
  */
@@ -40,7 +39,7 @@ public class ParsedSchema extends ParsedBlock {
     private Stemming defaultStemming = null;
     private final List<ImportedField> importedFields = new ArrayList<>();
     private final List<OnnxModel> onnxModels = new ArrayList<>();
-    private final Map<Reference, RankProfile.Constant> constants = new LinkedHashMap<>();
+    private final List<RankingConstant> rankingConstants = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
     private final List<String> inheritedByDocument = new ArrayList<>();
     private final Map<String, ParsedSchema> resolvedInherits = new LinkedHashMap<>();
@@ -71,12 +70,12 @@ public class ParsedSchema extends ParsedBlock {
     List<ParsedFieldSet> getFieldSets() { return List.copyOf(fieldSets.values()); }
     List<ParsedIndex> getIndexes() { return List.copyOf(extraIndexes.values()); }
     List<ParsedStruct> getStructs() { return List.copyOf(extraStructs.values()); }
+    List<RankingConstant> getRankingConstants() { return List.copyOf(rankingConstants); }
     List<String> getInherited() { return List.copyOf(inherited); }
     List<String> getInheritedByDocument() { return List.copyOf(inheritedByDocument); }
     List<ParsedRankProfile> getRankProfiles() { return List.copyOf(rankProfiles.values()); }
     List<ParsedSchema> getResolvedInherits() { return List.copyOf(resolvedInherits.values()); }
     List<ParsedSchema> getAllResolvedInherits() { return List.copyOf(allResolvedInherits.values()); }
-    List<RankProfile.Constant> getConstants() { return List.copyOf(constants.values()); }
 
     void addAnnotation(ParsedAnnotation annotation) {
         String annName = annotation.name();
@@ -133,8 +132,8 @@ public class ParsedSchema extends ParsedBlock {
         rankProfiles.put(rpName, profile);
     }
 
-    void add(RankProfile.Constant constant) {
-        constants.put(constant.name(), constant);
+    void addRankingConstant(RankingConstant constant) {
+        rankingConstants.add(constant);
     }
 
     void addStruct(ParsedStruct struct) {
