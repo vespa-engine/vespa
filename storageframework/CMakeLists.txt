@@ -8,11 +8,9 @@ vespa_define_module(
 
     LIBS
     src/vespa/storageframework
-    src/vespa/storageframework/defaultimplementation
     src/vespa/storageframework/defaultimplementation/clock
     src/vespa/storageframework/defaultimplementation/component
     src/vespa/storageframework/defaultimplementation/thread
-    src/vespa/storageframework/generic
     src/vespa/storageframework/generic/clock
     src/vespa/storageframework/generic/component
     src/vespa/storageframework/generic/metric
