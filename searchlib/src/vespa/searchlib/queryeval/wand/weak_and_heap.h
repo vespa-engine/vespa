@@ -3,6 +3,7 @@
 
 #include "wand_parts.h"
 #include <vespa/vespalib/util/priority_queue.h>
+#include <atomic>
 #include <mutex>
 
 namespace search::queryeval {
@@ -34,11 +35,11 @@ public:
      **/
     uint32_t getScoresToTrack() const { return _scoresToTrack; }
 
-    score_t getMinScore() const { return _minScore; }
+    score_t getMinScore() const { return _minScore.load(std::memory_order_relaxed); }
 protected:
-    void setMinScore(score_t minScore) { _minScore = minScore; }
+    void setMinScore(score_t minScore) { _minScore.store(minScore, std::memory_order_relaxed); }
 private:
-    score_t        _minScore;
+    std::atomic<score_t> _minScore;
     const uint32_t _scoresToTrack;
 };
 
