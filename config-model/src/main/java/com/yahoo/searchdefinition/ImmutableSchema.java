@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 import java.io.Reader;
@@ -34,7 +35,7 @@ public interface ImmutableSchema {
     ApplicationPackage applicationPackage();
     DeployLogger getDeployLogger();
     ModelContext.Properties getDeployProperties();
-    RankingConstants rankingConstants();
+    Map<Reference, RankProfile.Constant> constants();
     LargeRankExpressions rankExpressionFiles();
     OnnxModels onnxModels();
     Stream<ImmutableSDField> allImportedFields();

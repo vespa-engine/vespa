@@ -52,7 +52,7 @@ public class RankProfileTestCase extends AbstractSchemaTestCase {
         a.setRankType(RankType.IDENTITY);
         document.addField("b", DataType.STRING);
         schema.addDocument(document);
-        RankProfile child = new RankProfile("child", schema, rankProfileRegistry, schema.rankingConstants());
+        RankProfile child = new RankProfile("child", schema, rankProfileRegistry);
         child.inherit("default");
         rankProfileRegistry.add(child);
 

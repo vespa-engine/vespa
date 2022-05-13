@@ -38,7 +38,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         SDField field1 = document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
         field1.setLiteralBoost(20);
-        RankProfile other = new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
+        RankProfile other = new RankProfile("other", schema, rankProfileRegistry);
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
@@ -70,7 +70,7 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         schema.addDocument(document);
         SDField field1 = document.addField("a", DataType.STRING);
         field1.parseIndexingScript("{ index }");
-        RankProfile other = new RankProfile("other", schema, rankProfileRegistry, schema.rankingConstants());
+        RankProfile other = new RankProfile("other", schema, rankProfileRegistry);
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 

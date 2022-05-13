@@ -12,6 +12,7 @@ import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Schema;
 import com.yahoo.searchdefinition.derived.validation.Validation;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 import java.io.IOException;
@@ -81,7 +82,7 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
             summaries = new Summaries(schema, deployState.getDeployLogger(), deployState.getProperties().featureFlags());
             summaryMap = new SummaryMap(schema);
             juniperrc = new Juniperrc(schema);
-            rankProfileList = new RankProfileList(schema, schema.rankingConstants(), schema.rankExpressionFiles(),
+            rankProfileList = new RankProfileList(schema, schema.constants(), schema.rankExpressionFiles(),
                                                   schema.onnxModels(), attributeFields, deployState);
             indexingScript = new IndexingScript(schema);
             indexInfo = new IndexInfo(schema);
@@ -125,6 +126,12 @@ public class DerivedConfiguration implements AttributesConfig.Producer {
 
     public static void exportQueryProfiles(QueryProfileRegistry queryProfileRegistry, String toDirectory) throws IOException {
         exportCfg(new QueryProfiles(queryProfileRegistry, (level, message) -> {}).getConfig(), toDirectory + "/" + "query-profiles.cfg");
+    }
+
+    public void exportConstants(String toDirectory) throws IOException {
+        RankingConstantsConfig.Builder b = new RankingConstantsConfig.Builder();
+        rankProfileList.getConfig(b);
+        exportCfg(b.build(), toDirectory + "/" + "ranking-constants.cfg");
     }
 
     private static void exportCfg(ConfigInstance instance, String fileName) throws IOException {

@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition;
 
+import com.yahoo.searchdefinition.derived.FileDistributedConstants;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.parser.ParseException;
 
@@ -11,8 +12,8 @@ import com.yahoo.searchlib.rankingexpression.parser.ParseException;
  */
 public class UnrankedRankProfile extends RankProfile {
 
-    public UnrankedRankProfile(Schema schema, RankProfileRegistry rankProfileRegistry, RankingConstants rankingConstants) {
-        super("unranked", schema, rankProfileRegistry, rankingConstants);
+    public UnrankedRankProfile(Schema schema, RankProfileRegistry rankProfileRegistry) {
+        super("unranked", schema, rankProfileRegistry);
         try {
             RankingExpression exp = new RankingExpression("value(0)");
             this.setFirstPhaseRanking(exp);
