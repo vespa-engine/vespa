@@ -88,7 +88,9 @@ public class CapacityPolicies {
                                                    .value());
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
-                return versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.25, 1.14, 10, 0.3)))
+                return versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.25, 1.14, 10, 0.3),
+                                                     new Version("7.586.50"), new NodeResources(0.25, 1.333, 10, 0.3),
+                                                     new Version("7.586.54"), new NodeResources(0.25, 1.14, 10, 0.3)))
                         .with(architecture);
             }
 
