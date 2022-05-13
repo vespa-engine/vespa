@@ -14,6 +14,8 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/issue.h>
 #include <cerrno>
@@ -26,6 +28,11 @@ using namespace search::fef::indexproperties;
 using document::TensorDataType;
 using vespalib::eval::ValueType;
 using vespalib::eval::Value;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Function;
+using vespalib::eval::InterpretedFunction;
+using vespalib::eval::NodeTypes;
+using vespalib::eval::SimpleObjectParams;
 using vespalib::Issue;
 using search::fef::FeatureType;
 using search::fef::AnyWrapper;
@@ -61,6 +68,29 @@ feature_t asFeature(const vespalib::string &str) {
     return val;
 }
 
+// Create an empty tensor of the given type.
+Value::UP empty_tensor(const ValueType &type) {
+    const auto &factory = vespalib::eval::FastValueBuilderFactory::get();
+    return vespalib::eval::value_from_spec(TensorSpec(type.to_spec()), factory);
+}
+
+// Create a tensor value by evaluating a self-contained expression.
+Value::UP as_tensor(const vespalib::string &expr, const ValueType &wanted_type) {
+    const auto &factory = vespalib::eval::FastValueBuilderFactory::get();
+    auto fun = Function::parse(expr);
+    if (!fun->has_error() && (fun->num_params() == 0)) {
+        NodeTypes types = NodeTypes(*fun, {});
+        ValueType res_type = types.get_type(fun->root());
+        if (res_type == wanted_type) {
+            SimpleObjectParams params({});
+            InterpretedFunction ifun(factory, *fun, types);
+            InterpretedFunction::Context ctx(ifun);
+            return factory.copy(ifun.eval(ctx, params));
+        }
+    }
+    return {};
+}
+
 // query(foo):
 // query.value.foo -> decoded tensor value 'foo'
 vespalib::string make_value_key(const vespalib::string &base, const vespalib::string &sub_key) {
@@ -72,12 +102,39 @@ vespalib::string make_value_key(const vespalib::string &base, const vespalib::st
 
 } // namespace search::features::<unnamed>
 
-QueryBlueprint::QueryBlueprint() :
-    Blueprint("query"),
+Property
+QueryBlueprint::config_lookup(const IIndexEnvironment &env) const
+{
+    const auto &props = env.getProperties();
+    auto res = props.lookup(getName()); // query(foo)
+    if (!res.found()) {
+        res = props.lookup(_old_key); // $foo
+    }
+    return res;
+}
+
+Property
+QueryBlueprint::request_lookup(const IQueryEnvironment &env) const
+{
+    const auto &props = env.getProperties();
+    auto res = props.lookup(getName()); // query(foo)
+    if (!res.found()) {
+        res = props.lookup(_key); // foo
+    }
+    if (!res.found()) {
+        res = props.lookup(_old_key); // $foo
+    }
+    return res;
+}
+
+QueryBlueprint::QueryBlueprint()
+  : Blueprint("query"),
     _key(),
-    _key2(),
-    _defaultValue(0),
-    _valueType(ValueType::double_type())
+    _old_key(),
+    _stored_value_key(),
+    _type(ValueType::double_type()),
+    _default_number_value(),
+    _default_object_value()
 {
 }
 
@@ -98,42 +155,41 @@ bool
 QueryBlueprint::setup(const IIndexEnvironment &env, const ParameterList &params)
 {
     _key = params[0].getValue();
-    _key2 = "$";
-    _key2.append(_key);
+    _old_key = "$";
+    _old_key.append(_key);
     _stored_value_key = make_value_key(getBaseName(), _key);
-
-    vespalib::string key3;
-    key3.append("query(");
-    key3.append(_key);
-    key3.append(")");
-    Property p = env.getProperties().lookup(key3);
-    if (!p.found()) {
-        p = env.getProperties().lookup(_key2);
-    }
-    if (p.found()) {
-        _defaultValue = asFeature(p.get());
-    }
-    vespalib::string queryFeatureType = type::QueryFeature::lookup(env.getProperties(), _key);
-    if (!queryFeatureType.empty()) {
-        _valueType = ValueType::from_spec(queryFeatureType);
-        if (_valueType.is_error()) {
-            LOG(error, "%s: invalid type: '%s'", getName().c_str(), queryFeatureType.c_str());
+    vespalib::string type_str = type::QueryFeature::lookup(env.getProperties(), _key);
+    if (!type_str.empty()) {
+        _type = ValueType::from_spec(type_str);
+        if (_type.is_error()) {
+            return fail("invalid type: '%s'", type_str.c_str());
         }
     }
-    FeatureType output_type = _valueType.is_double()
-                              ? FeatureType::number()
-                              : FeatureType::object(_valueType);
+    Property p = config_lookup(env);
+    if (_type.is_double()) {
+        if (p.found()) {
+            _default_number_value = asFeature(p.get());
+        }
+    } else {
+        if (p.found()) {
+            _default_object_value = as_tensor(p.get(), _type);
+            if (_default_object_value.get() == nullptr) {
+                return fail("could not create default tensor value of type '%s' from the expression '%s'",
+                            _type.to_spec().c_str(), p.get().c_str());
+            }
+        } else {
+            _default_object_value = empty_tensor(_type);
+        }
+    }
+    FeatureType output_type = _type.is_double() ? FeatureType::number() : FeatureType::object(_type);
     describeOutput("out", "The value looked up in query properties using the given key.", output_type);
-    return !_valueType.is_error();
+    assert(_type.has_dimensions() == (_default_object_value.get() != nullptr));
+    return true;
 }
 
 namespace {
 
-Value::UP make_tensor_value(const IQueryEnvironment &env,
-                            const vespalib::string &queryKey,
-                            const ValueType &valueType)
-{
-    Property prop = env.getProperties().lookup(queryKey);
+Value::UP decode_tensor_value(Property prop, const ValueType &valueType) {
     if (prop.found() && !prop.get().empty()) {
         const vespalib::string &value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
@@ -157,9 +213,8 @@ Value::UP make_tensor_value(const IQueryEnvironment &env,
 void
 QueryBlueprint::prepareSharedState(const fef::IQueryEnvironment &env, fef::IObjectStore &store) const
 {
-    if (!_stored_value_key.empty() && _valueType.has_dimensions() && (store.get(_stored_value_key) == nullptr)) {
-        auto value = make_tensor_value(env, _key, _valueType);
-        if (value) {
+    if (!_stored_value_key.empty() && _type.has_dimensions() && (store.get(_stored_value_key) == nullptr)) {
+        if (auto value = decode_tensor_value(request_lookup(env), _type)) {
             store.add(_stored_value_key, std::make_unique<ValueWrapper>(std::move(value)));
         }
     }
@@ -168,23 +223,19 @@ QueryBlueprint::prepareSharedState(const fef::IQueryEnvironment &env, fef::IObje
 FeatureExecutor &
 QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    if (_valueType.has_dimensions()) {
+    if (_type.has_dimensions()) {
         if (const Anything *wrapped_value = env.getObjectStore().get(_stored_value_key)) {
             if (const Value *value = ValueWrapper::getValue(*wrapped_value).get()) {
                 return stash.create<ConstantTensorRefExecutor>(*value);
             }
         }
-        return ConstantTensorExecutor::createEmpty(_valueType, stash);
+        return stash.create<ConstantTensorRefExecutor>(*_default_object_value);
     } else {
-        std::vector<feature_t> values;
-        Property p = env.getProperties().lookup(_key);
-        if (!p.found()) {
-            p = env.getProperties().lookup(_key2);
-        }
+        auto p = request_lookup(env);
         if (p.found()) {
             return stash.create<SingleValueExecutor>(asFeature(p.get()));
         } else {
-            return stash.create<SingleValueExecutor>(_defaultValue);
+            return stash.create<SingleValueExecutor>(_default_number_value);
         }
     }
 }

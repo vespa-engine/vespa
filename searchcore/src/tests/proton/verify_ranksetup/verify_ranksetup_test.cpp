@@ -94,6 +94,12 @@ struct Setup {
     void property(const std::string &name, const std::string &val) {
         properties[name] = val;
     }
+    void query_feature_type(const std::string &name, const std::string &type) {
+        property(fmt("vespa.type.query.%s", name.c_str()), type);
+    }
+    void query_feature_default_value(const std::string &name, const std::string &expr) {
+        property(fmt("query(%s)", name.c_str()), expr);
+    }
     void rank_expr(const std::string &name, const std::string &expr) {
         property(fmt("rankingExpression(%s).rankingScript", name.c_str()), expr);
     }
@@ -457,6 +463,32 @@ TEST_F("require that broken fragile model without dry-run passes verification", 
     f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
     f.rank_expr("in2", "tensor<float>(a[3]):[3,4,31515]");
     f.verify_valid({"onnx(unfragile)"});
+}
+
+//-----------------------------------------------------------------------------
+
+TEST_F("require that query tensor can have default value", SimpleSetup()) {
+    f.query_feature_type("foo", "tensor(x[3])");
+    f.query_feature_default_value("foo", "tensor(x[3])(x+1)");
+    f.verify_valid({"query(foo)"});
+}
+
+TEST_F("require that query tensor default value must have appropriate type", SimpleSetup()) {
+    f.query_feature_type("foo", "tensor(y[3])");
+    f.query_feature_default_value("foo", "tensor(x[3])(x+1)");
+    f.verify_invalid({"query(foo)"});
+}
+
+TEST_F("require that query tensor default value must be a valid expression", SimpleSetup()) {
+    f.query_feature_type("foo", "tensor(x[3])");
+    f.query_feature_default_value("foo", "this expression is not parseable");
+    f.verify_invalid({"query(foo)"});
+}
+
+TEST_F("require that query tensor default value expression does not need parameters", SimpleSetup()) {
+    f.query_feature_type("foo", "tensor(x[3])");
+    f.query_feature_default_value("foo", "externalSymbol");
+    f.verify_invalid({"query(foo)"});
 }
 
 //-----------------------------------------------------------------------------
