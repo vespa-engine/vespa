@@ -76,9 +76,9 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
         Map<Reference, RankProfile.Constant> allFileConstants = new HashMap<>();
         addFileConstants(constantsFromSchema.values(), allFileConstants, schema != null ? schema.toString() : "[global]");
         for (var profile : deployState.rankProfileRegistry().rankProfilesOf(schema))
-            addFileConstants(profile.getConstants().values(), allFileConstants, profile.toString());
+            addFileConstants(profile.constants().values(), allFileConstants, profile.toString());
         for (var profile : deployState.rankProfileRegistry().rankProfilesOf(null))
-            addFileConstants(profile.getConstants().values(), allFileConstants, profile.toString());
+            addFileConstants(profile.constants().values(), allFileConstants, profile.toString());
         return new FileDistributedConstants(deployState.getFileRegistry(), allFileConstants.values());
     }
 

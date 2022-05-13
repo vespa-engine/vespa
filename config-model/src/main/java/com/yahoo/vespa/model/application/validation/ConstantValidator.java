@@ -19,7 +19,50 @@ import java.io.FileNotFoundException;
  *
  * @author Vegard Sjonfjell
  */
-public class RankingConstantsValidator extends Validator {
+public class ConstantValidator extends Validator {
+
+    @Override
+    public void validate(VespaModel model, DeployState deployState) {
+        var exceptionMessageCollector = new ExceptionMessageCollector("Invalid constant tensor file(s):");
+        for (Schema schema : deployState.getSchemas()) {
+            for (var constant : schema.constants().values())
+                validate(constant, deployState.getApplicationPackage(), exceptionMessageCollector);
+            for (var profile : deployState.rankProfileRegistry().rankProfilesOf(schema)) {
+                for (var constant : profile.constants().values())
+                    validate(constant, deployState.getApplicationPackage(), exceptionMessageCollector);
+            }
+        }
+
+        if (exceptionMessageCollector.exceptionsOccurred)
+            throw new TensorValidationException(exceptionMessageCollector.combinedMessage);
+    }
+
+    private void validate(RankProfile.Constant constant,
+                          ApplicationPackage applicationPackage,
+                          ExceptionMessageCollector exceptionMessageCollector) {
+        try {
+            validate(constant, applicationPackage);
+        } catch (InvalidConstantTensorException | FileNotFoundException ex) {
+            exceptionMessageCollector.add(ex, constant.name().toString(), constant.valuePath().get());
+        }
+    }
+
+    private void validate(RankProfile.Constant rankingConstant, ApplicationPackage application) throws FileNotFoundException {
+        // Only validate file backed constants:
+        if (rankingConstant.valuePath().isEmpty()) return;
+        if (rankingConstant.pathType().get() != DistributableResource.PathType.FILE) return;
+
+        String constantFile = rankingConstant.valuePath().get();
+        if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(FilesApplicationPackage.preprocessed)
+            && constantFile.startsWith(FilesApplicationPackage.preprocessed)) {
+            constantFile = constantFile.substring(FilesApplicationPackage.preprocessed.length());
+        }
+
+        ApplicationFile tensorApplicationFile = application.getFile(Path.fromString(constantFile));
+        new ConstantTensorJsonValidator().validate(constantFile,
+                                                   rankingConstant.type(),
+                                                   tensorApplicationFile.createReader());
+    }
 
     private static class ExceptionMessageCollector {
 
@@ -41,43 +84,6 @@ public class RankingConstantsValidator extends Validator {
         TensorValidationException(String message) {
             super(message);
         }
-    }
-
-    @Override
-    public void validate(VespaModel model, DeployState deployState) {
-        ApplicationPackage applicationPackage = deployState.getApplicationPackage();
-        ExceptionMessageCollector exceptionMessageCollector = new ExceptionMessageCollector("Invalid constant tensor file(s):");
-
-        for (Schema schema : deployState.getSchemas()) {
-            for (RankProfile.Constant rc : schema.constants().values()) {
-                try {
-                    validateRankingConstant(rc, applicationPackage);
-                } catch (InvalidConstantTensorException | FileNotFoundException ex) {
-                    exceptionMessageCollector.add(ex, rc.name().toString(), rc.valuePath().get());
-                }
-            }
-        }
-
-        if (exceptionMessageCollector.exceptionsOccurred) {
-            throw new TensorValidationException(exceptionMessageCollector.combinedMessage);
-        }
-    }
-
-    private void validateRankingConstant(RankProfile.Constant rankingConstant, ApplicationPackage application) throws FileNotFoundException {
-        // Only validate file backed constants:
-        if (rankingConstant.valuePath().isEmpty()) return;
-        if (rankingConstant.pathType().get() != DistributableResource.PathType.FILE) return;
-
-        String constantFile = rankingConstant.valuePath().get();
-        if (application.getFileReference(Path.fromString("")).getAbsolutePath().endsWith(FilesApplicationPackage.preprocessed)
-            && constantFile.startsWith(FilesApplicationPackage.preprocessed)) {
-            constantFile = constantFile.substring(FilesApplicationPackage.preprocessed.length());
-        }
-
-        ApplicationFile tensorApplicationFile = application.getFile(Path.fromString(constantFile));
-        new ConstantTensorJsonValidator().validate(constantFile,
-                                                   rankingConstant.type(),
-                                                   tensorApplicationFile.createReader());
     }
 
 }

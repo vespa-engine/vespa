@@ -318,7 +318,7 @@ public class ConvertedModel {
         }
         else {
             var constantReference = FeatureNames.asConstantFeature(constantName);
-            if ( ! profile.getConstants().containsKey(constantReference)) {
+            if ( ! profile.constants().containsKey(constantReference)) {
                 Path constantPath = store.writeLargeConstant(constantName, constantValue);
                 profile.add(new RankProfile.Constant(constantReference, constantValue.type(), constantPath.toString()));
             }

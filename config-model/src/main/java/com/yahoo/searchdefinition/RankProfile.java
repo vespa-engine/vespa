@@ -412,10 +412,10 @@ public class RankProfile implements Cloneable {
     }
 
     /** Returns an unmodifiable view of the constants available in this */
-    public Map<Reference, Constant> getConstants() {
+    public Map<Reference, Constant> constants() {
         Map<Reference, Constant> allConstants = new HashMap<>();
         for (var inheritedProfile : inherited()) {
-            for (var constant : inheritedProfile.getConstants().values()) {
+            for (var constant : inheritedProfile.constants().values()) {
                 if (allConstants.containsKey(constant.name()))
                     throw new IllegalArgumentException(constant + "' is present in " +
                                                        inheritedProfile + " inherited by " +
@@ -935,7 +935,7 @@ public class RankProfile implements Cloneable {
     }
 
     private void compileThis(QueryProfileRegistry queryProfiles, ImportedMlModels importedModels) {
-        checkNameCollisions(getFunctions(), getConstants());
+        checkNameCollisions(getFunctions(), constants());
         ExpressionTransforms expressionTransforms = new ExpressionTransforms();
 
         Map<Reference, TensorType> featureTypes = featureTypes();
@@ -943,8 +943,8 @@ public class RankProfile implements Cloneable {
         Map<String, RankingExpressionFunction> inlineFunctions =
                 compileFunctions(this::getInlineFunctions, queryProfiles, featureTypes, importedModels, Collections.emptyMap(), expressionTransforms);
 
-        firstPhaseRanking = compile(this.getFirstPhase(), queryProfiles, featureTypes, importedModels, getConstants(), inlineFunctions, expressionTransforms);
-        secondPhaseRanking = compile(this.getSecondPhase(), queryProfiles, featureTypes, importedModels, getConstants(), inlineFunctions, expressionTransforms);
+        firstPhaseRanking = compile(this.getFirstPhase(), queryProfiles, featureTypes, importedModels, constants(), inlineFunctions, expressionTransforms);
+        secondPhaseRanking = compile(this.getSecondPhase(), queryProfiles, featureTypes, importedModels, constants(), inlineFunctions, expressionTransforms);
 
         // Function compiling second pass: compile all functions and insert previously compiled inline functions
         // TODO: This merges all functions from inherited profiles too and erases inheritance information. Not good.
@@ -979,7 +979,7 @@ public class RankProfile implements Cloneable {
         while (null != (entry = findUncompiledFunction(functions.get(), compiledFunctions.keySet()))) {
             RankingExpressionFunction rankingExpressionFunction = entry.getValue();
             RankingExpressionFunction compiled = compile(rankingExpressionFunction, queryProfiles, featureTypes,
-                                                         importedModels, getConstants(), inlineFunctions,
+                                                         importedModels, constants(), inlineFunctions,
                                                          expressionTransforms);
             compiledFunctions.put(entry.getKey(), compiled);
         }
@@ -1039,7 +1039,7 @@ public class RankProfile implements Cloneable {
                                                 Map<Reference, TensorType> featureTypes) {
         MapEvaluationTypeContext context = new MapEvaluationTypeContext(getExpressionFunctions(), featureTypes);
 
-        getConstants().forEach((k, v) -> context.setType(k, v.type()));
+        constants().forEach((k, v) -> context.setType(k, v.type()));
 
         // Add query features from all rank profile types
         for (QueryProfileType queryProfileType : queryProfiles.getTypeRegistry().allComponents()) {

@@ -2,14 +2,13 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
-import static com.yahoo.vespa.model.application.validation.RankingConstantsValidator.TensorValidationException;
+import static com.yahoo.vespa.model.application.validation.ConstantValidator.TensorValidationException;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class RankingConstantsValidatorTest {
+public class ConstantValidatorTest {
 
     @Test
     public void ensure_that_valid_ranking_constants_do_not_fail() {
