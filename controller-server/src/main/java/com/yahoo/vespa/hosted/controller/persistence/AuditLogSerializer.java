@@ -8,6 +8,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,6 +58,8 @@ public class AuditLogSerializer {
                     methodFrom(entryObject.field(methodField)),
                     entryObject.field(resourceField).asString(),
                     SlimeUtils.optionalString(entryObject.field(dataField))
+                              .map(s -> s.getBytes(StandardCharsets.UTF_8))
+                              .orElseGet(() -> new byte[0])
             ));
         });
         return new AuditLog(entries);

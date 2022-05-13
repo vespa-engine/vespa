@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.auditlog;
 
-import com.google.common.base.CharMatcher;
 import com.google.common.collect.Ordering;
 
 import java.time.Instant;
@@ -10,7 +9,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 /**
  * This represents the audit log of a hosted Vespa system. The audit log contains manual actions performed through
@@ -66,7 +64,7 @@ public class AuditLog {
         private final String resource;
         private final Optional<String> data;
 
-        public Entry(Instant at, String principal, Method method, String resource, Optional<String> data) {
+        public Entry(Instant at, String principal, Method method, String resource, byte[] data) {
             this.at = Objects.requireNonNull(at, "at must be non-null");
             this.principal = Objects.requireNonNull(principal, "principal must be non-null");
             this.method = Objects.requireNonNull(method, "method must be non-null");
@@ -112,16 +110,27 @@ public class AuditLog {
             DELETE
         }
 
-        private static Optional<String> sanitize(Optional<String> data) {
-            Objects.requireNonNull(data, "data must be non-null");
-            return data.filter(Predicate.not(String::isBlank))
-                       .filter(CharMatcher.ascii()::matchesAllOf)
-                       .map(v -> {
-                           if (v.length() > maxDataLength) {
-                               return v.substring(0, maxDataLength);
-                           }
-                           return v;
-                       });
+        private static Optional<String> sanitize(byte[] data) {
+            StringBuilder sb = new StringBuilder();
+            for (byte b : data) {
+                char c = (char) b;
+                if (!printableAscii(c) && !tabOrLineBreak(c)) {
+                    return Optional.empty();
+                }
+                sb.append(c);
+                if (sb.length() == maxDataLength) {
+                    break;
+                }
+            }
+            return Optional.of(sb.toString()).filter(s -> !s.isEmpty());
+        }
+
+        private static boolean printableAscii(char c) {
+            return c >= 32 && c <= 126;
+        }
+
+        private static boolean tabOrLineBreak(char c) {
+            return c == 9 || c == 10 || c == 13;
         }
 
     }
