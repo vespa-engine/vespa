@@ -10,6 +10,7 @@
 #include <vespa/config/print/asciiconfigreader.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config-stor-distribution.h>
+#include <algorithm>
 #include <cmath>
 #include <cassert>
 
