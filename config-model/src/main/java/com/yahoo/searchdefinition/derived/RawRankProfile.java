@@ -53,14 +53,20 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     private final String name;
     private final Compressor.Compression compressedProperties;
 
+    /**  The compiled profile this is created from. */
+    private final RankProfile compiled;
+
     /** Creates a raw rank profile from the given rank profile. */
     public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
                           QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
         this.name = rankProfile.name();
-        compressedProperties = compress(new Deriver(rankProfile.compile(queryProfiles, importedModels), attributeFields, deployProperties, queryProfiles)
+        compiled = rankProfile.compile(queryProfiles, importedModels);
+        compressedProperties = compress(new Deriver(compiled, attributeFields, deployProperties, queryProfiles)
                                                 .derive(largeExpressions));
     }
+
+    public RankProfile compiled() { return compiled; }
 
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
         StringBuilder b = new StringBuilder();
