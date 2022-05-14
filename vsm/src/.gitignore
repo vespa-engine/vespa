@@ -1,0 +1,4 @@
+*.dsp
+Makefile.ini
+config_command.sh
+project.dsw
