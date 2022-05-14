@@ -3,6 +3,6 @@ vespa_add_executable(streamingvisitors_searchvisitor_test_app TEST
     SOURCES
     searchvisitor_test.cpp
     DEPENDS
-    streamingvisitors_searchvisitor
+    streamingvisitors
 )
 vespa_add_test(NAME streamingvisitors_searchvisitor_test_app COMMAND streamingvisitors_searchvisitor_test_app)
