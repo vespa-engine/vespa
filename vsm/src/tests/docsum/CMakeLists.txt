@@ -3,6 +3,6 @@ vespa_add_executable(vsm_docsum_test_app TEST
     SOURCES
     docsum.cpp
     DEPENDS
-    streamingvisitors
+    vsm
 )
 vespa_add_test(NAME vsm_docsum_test_app COMMAND vsm_docsum_test_app)

@@ -1,0 +1,5 @@
+bin
+lib
+/target
+/pom.xml.build
+Makefile

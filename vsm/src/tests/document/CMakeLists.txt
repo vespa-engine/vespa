@@ -3,6 +3,6 @@ vespa_add_executable(vsm_document_test_app TEST
     SOURCES
     document.cpp
     DEPENDS
-    streamingvisitors
+    vsm
 )
 vespa_add_test(NAME vsm_document_test_app COMMAND vsm_document_test_app)
