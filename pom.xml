@@ -121,6 +121,7 @@
         <module>standalone-container</module>
         <module>statistics</module>
         <module>storage</module>
+        <module>streamingvisitors</module>
         <module>tenant-base</module>
         <module>tenant-cd-api</module>
         <module>tenant-cd-commons</module>
@@ -143,7 +144,6 @@
         <module>vespa_jersey2</module>
         <module>vespajlib</module>
         <module>vespalog</module>
-        <module>vsm</module>
         <module>yolean</module>
         <module>zkfacade</module>
         <module>zookeeper-client-common</module>

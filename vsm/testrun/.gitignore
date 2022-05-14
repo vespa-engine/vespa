@@ -1,7 +1,0 @@
-test-report.html
-test-report.html.*
-test.*.*.file.*
-test.*.*.files.html
-tmp.*
-/test.*.*.result
-Makefile
