@@ -147,18 +147,14 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "index highlight spec: '%s'", spec.c_str());
 
     // create dynamic docsum writer
-    std::unique_ptr<DynamicDocsumWriter>
-        writer(new DynamicDocsumWriter(resCfg.release(), kwExtractor.release()));
+    auto writer = std::make_unique<DynamicDocsumWriter>(resCfg.release(), kwExtractor.release());
 
     // configure juniper (used when configuring DynamicDocsumConfig)
-    std::unique_ptr<juniper::Juniper> juniper;
-    {
-        _juniperProps.reset(new JuniperProperties(*juniperrc));
-        juniper.reset(new juniper::Juniper(_juniperProps.get(), &_wordFolder));
-    }
+    _juniperProps = std::make_unique<JuniperProperties>(*juniperrc);
+    auto juniper = std::make_unique<juniper::Juniper>(_juniperProps.get(), &_wordFolder);
 
     // create new docsum tools
-    std::unique_ptr<DocsumTools> docsumTools(new DocsumTools(std::move(writer)));
+    auto docsumTools = std::make_unique<DocsumTools>(std::move(writer));
     docsumTools->setJuniper(std::move(juniper));
 
     // configure dynamic docsum writer
