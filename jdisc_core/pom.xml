@@ -83,19 +83,7 @@
             <artifactId>guice-assistedinject</artifactId>
             <scope>compile</scope>
             <exclusions>
-                <!-- Depends on AOP version of Guice 3.0, which is not Java 8 compatible -->
-                <exclusion>
-                    <groupId>com.google.inject</groupId>
-                    <artifactId>guice</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-multibindings</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <!-- Depends on AOP version of Guice 3.0, which is not Java 8 compatible -->
+                <!-- Depends on AOP version of Guice, which is not Java 8 compatible -->
                 <exclusion>
                     <groupId>com.google.inject</groupId>
                     <artifactId>guice</artifactId>
@@ -245,7 +233,6 @@
                                 <argument>__REPLACE_VERSION__${project.build.directory}/dependency/guava.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-no_aop.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-assistedinject.jar</argument>
-                                <argument>${project.build.directory}/dependency/guice-multibindings.jar</argument>
                                 <argument>${project.build.directory}/dependency/javax.annotation-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/org.apache.felix.log.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-api.jar</argument>
