@@ -35,7 +35,6 @@ import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.OnnxModels;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.derived.FileDistributedConstants;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.RankProfileList;
 import com.yahoo.searchdefinition.document.SDField;
