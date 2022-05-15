@@ -15,7 +15,6 @@ vespa_define_module(
     messagebus
     documentapi
     persistence
-    searchcorespi
     searchsummary
     fileacquirer
 
@@ -41,6 +40,9 @@ vespa_define_module(
     src/vespa/searchcore/proton/server
     src/vespa/searchcore/proton/summaryengine
     src/vespa/searchcore/proton/test
+    src/vespa/searchcorespi
+    src/vespa/searchcorespi/flush
+    src/vespa/searchcorespi/index
 
     APPS
     src/apps/proton
@@ -158,6 +160,8 @@ vespa_define_module(
     src/tests/proton/statusreport
     src/tests/proton/summaryengine
     src/tests/proton/verify_ranksetup
+    src/tests/index/disk_indexes
+    src/tests/index/index_disk_layout
 
     TEST_DEPENDS
     messagebus_messagebus-test
