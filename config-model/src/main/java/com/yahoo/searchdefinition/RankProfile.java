@@ -430,6 +430,9 @@ public class RankProfile implements Cloneable {
         return allConstants;
     }
 
+    /** Returns an unmodifiable view of the constants declared in this */
+    public Map<Reference, Constant> declaredConstants() { return Collections.unmodifiableMap(constants); }
+
     public void addAttributeType(String attributeName, String attributeType) {
         attributeTypes.addType(attributeName, attributeType);
     }
