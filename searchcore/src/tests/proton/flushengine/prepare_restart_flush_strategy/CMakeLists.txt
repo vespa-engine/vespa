@@ -3,8 +3,8 @@ vespa_add_executable(searchcore_flushengine_prepare_restart_flush_strategy_test_
     SOURCES
     prepare_restart_flush_strategy_test.cpp
     DEPENDS
-    searchcorespi
     searchcore_flushengine
+    searchcore_test
 )
 vespa_add_test(
     NAME searchcore_flushengine_prepare_restart_flush_strategy_test_app
