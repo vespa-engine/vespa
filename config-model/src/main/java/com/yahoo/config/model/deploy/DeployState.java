@@ -41,7 +41,6 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.vespa.model.container.search.QueryProfilesBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRuleBuilder;
 import com.yahoo.vespa.model.container.search.SemanticRules;
-import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -218,7 +217,7 @@ public class DeployState implements ConfigDefinitionStore {
         for (var entry : importedModels.getSkippedModels().entrySet()) {
             // TODO: Vespa 8: Throw IllegalArgumentException instead
             deployLogger.logApplicationPackage(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
-                                                              "occurred during import: " + entry.getValue());
+                                                              "occurred during import. Error: " + entry.getValue());
         }
         return importedModels;
     }

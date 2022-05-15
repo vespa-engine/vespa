@@ -20,30 +20,54 @@ import java.util.function.Function;
  */
 public class FileDistributedConstants {
 
-    private final Map<String, DistributableConstant> constants;
+    private final FileRegistry fileRegistry;
+
+    private final Map<String, DistributableConstant> constants = new LinkedHashMap<>();
 
     public FileDistributedConstants(FileRegistry fileRegistry, Collection<RankProfile.Constant> constants) {
-        Map<String, DistributableConstant> distributableConstants = new LinkedHashMap<>();
+        this.fileRegistry = fileRegistry;
         for (var constant : constants) {
-            if ( ! constant.valuePath().isPresent()) continue;
-
-            var distributableConstant = new DistributableConstant(constant.name().simpleArgument().get(),
-                                                                  constant.type(),
-                                                                  constant.valuePath().get(),
-                                                                  constant.pathType().get());
-            distributableConstant.validate();
-            distributableConstant.register(fileRegistry);
-            distributableConstants.put(distributableConstant.getName(), distributableConstant);
+            if (constant.valuePath().isPresent())
+                add(new DistributableConstant(constant.name().simpleArgument().get(),
+                                              constant.type(),
+                                              constant.valuePath().get(),
+                                              constant.pathType().get()));
         }
-        this.constants = Collections.unmodifiableMap(distributableConstants);
+    }
+
+    public void add(DistributableConstant constant) {
+        constant.validate();
+        constant.register(fileRegistry);
+        String name = constant.getName();
+        DistributableConstant prev = constants.putIfAbsent(name, constant);
+        if ( prev != null )
+            throw new IllegalArgumentException("Constant '" + name + "' defined twice");
+    }
+
+    public void putIfAbsent(DistributableConstant constant) {
+        constant.validate();
+        constant.register(fileRegistry);
+        String name = constant.getName();
+        constants.putIfAbsent(name, constant);
+    }
+
+    public void computeIfAbsent(String name, Function<? super String, ? extends DistributableConstant> createConstant) {
+        constants.computeIfAbsent(name, key -> {
+            DistributableConstant constant = createConstant.apply(key);
+            constant.validate();
+            constant.register(fileRegistry);
+            return constant;
+        });
     }
 
     /** Returns a read-only map of the constants in this indexed by name. */
-    public Map<String, DistributableConstant> asMap() { return constants; }
+    public Map<String, DistributableConstant> asMap() {
+        return Collections.unmodifiableMap(constants);
+    }
 
     public static class DistributableConstant extends DistributableResource {
 
-        private final TensorType tensorType;
+        private TensorType tensorType;
 
         public DistributableConstant(String name, TensorType type, String fileName) {
             this(name, type, fileName, PathType.FILE);
@@ -53,6 +77,10 @@ public class FileDistributedConstants {
             super(name, fileName, pathType);
             this.tensorType = type;
             validate();
+        }
+
+        public void setType(TensorType type) {
+            this.tensorType = type;
         }
 
         public TensorType getTensorType() { return tensorType; }

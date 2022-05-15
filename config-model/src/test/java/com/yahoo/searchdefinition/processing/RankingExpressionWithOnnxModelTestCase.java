@@ -8,7 +8,6 @@ import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
-import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.DocumentDatabase;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
@@ -58,15 +57,6 @@ public class RankingExpressionWithOnnxModelTestCase {
 
     private void assertGeneratedConfig(VespaModel vespaModel) {
         DocumentDatabase db = ((IndexedSearchCluster)vespaModel.getSearchClusters().get(0)).getDocumentDbs().get(0);
-
-        RankingConstantsConfig.Builder rankingConstantsConfigBuilder = new RankingConstantsConfig.Builder();
-        db.getConfig(rankingConstantsConfigBuilder);
-        var rankingConstantsConfig = rankingConstantsConfigBuilder.build();
-        assertEquals(1, rankingConstantsConfig.constant().size());
-        assertEquals("my_constant", rankingConstantsConfig.constant(0).name());
-        assertEquals("tensor(d0[2])", rankingConstantsConfig.constant(0).type());
-        assertEquals("files/constant.json", rankingConstantsConfig.constant(0).fileref().value());
-
         OnnxModelsConfig.Builder builder = new OnnxModelsConfig.Builder();
         ((OnnxModelsConfig.Producer) db).getConfig(builder);
         OnnxModelsConfig config = new OnnxModelsConfig(builder);
