@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.ml;
 
-import com.yahoo.config.FileReference;
 import com.yahoo.config.model.ApplicationPackageTester;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import com.yahoo.config.model.deploy.DeployState;
@@ -23,9 +22,9 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
 
+import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Helper for testing of imported models.
@@ -74,8 +73,6 @@ public class ImportedModelTester {
             assertNotNull(constant);
             assertEquals(constantName, constant.getName());
             assertTrue(constant.getFileName().endsWith(constantApplicationPackagePath.toString()));
-
-            assertTrue(model.fileReferences().contains(new FileReference(constant.getFileName())));
 
             if (expectedSize.isPresent()) {
                 Path constantPath = applicationDir.append(constantApplicationPackagePath);
