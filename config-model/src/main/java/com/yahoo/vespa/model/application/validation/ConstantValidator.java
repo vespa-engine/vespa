@@ -28,7 +28,7 @@ public class ConstantValidator extends Validator {
             for (var constant : schema.constants().values())
                 validate(constant, deployState.getApplicationPackage(), exceptionMessageCollector);
             for (var profile : deployState.rankProfileRegistry().rankProfilesOf(schema)) {
-                for (var constant : profile.constants().values())
+                for (var constant : profile.declaredConstants().values())
                     validate(constant, deployState.getApplicationPackage(), exceptionMessageCollector);
             }
         }
