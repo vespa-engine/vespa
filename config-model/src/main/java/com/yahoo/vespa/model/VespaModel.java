@@ -45,7 +45,6 @@ import com.yahoo.vespa.model.InstanceResolver.PackagePrefix;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
-import com.yahoo.vespa.model.clients.Clients;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -617,10 +616,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                             "collisions in the config.)");
         }
         id2producer.put(configId, descendant);
-    }
-
-    public Clients getClients() {
-        return configModelRepo.getClients();
     }
 
     public List<SearchCluster> getSearchClusters() {

@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.metrics.MetricsmanagerConfig;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
 import com.yahoo.vespa.config.content.core.StorServerConfig;
 import com.yahoo.vespa.config.content.core.StorStatusConfig;
@@ -16,7 +15,7 @@ import com.yahoo.vespa.model.application.validation.RestartConfigs;
  * Common class for config producers for storage and distributor nodes.
  */
 @RestartConfigs({StorCommunicationmanagerConfig.class, StorStatusConfig.class,
-                 StorServerConfig.class, LoadTypeConfig.class, MetricsmanagerConfig.class})
+                 StorServerConfig.class, MetricsmanagerConfig.class})
 public abstract class ContentNode extends AbstractService
         implements StorCommunicationmanagerConfig.Producer, StorStatusConfig.Producer, StorServerConfig.Producer {
 
