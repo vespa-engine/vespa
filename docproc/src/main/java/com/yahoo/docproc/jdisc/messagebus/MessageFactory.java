@@ -6,7 +6,6 @@ import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.PutDocumentMessage;
@@ -26,20 +25,17 @@ class MessageFactory {
 
     private final static Logger log = Logger.getLogger(MessageFactory.class.getName());
     private final Message requestMsg;
-    private final LoadType loadType; // TODO: Remove on Vespa 8
     private final DocumentProtocol.Priority priority; // TODO: Remove on Vespa 8
 
     @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public MessageFactory(DocumentMessage requestMsg) {
         this.requestMsg = requestMsg;
-        loadType = requestMsg.getLoadType();
         priority = requestMsg.getPriority(); // TODO: Remove on Vespa 8
     }
 
     @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public DocumentMessage fromDocumentOperation(Processing processing, DocumentOperation documentOperation) {
         DocumentMessage message = newMessage(documentOperation);
-        message.setLoadType(loadType);
         message.setPriority(priority); // TODO: Remove on Vespa 8
         message.setRoute(requestMsg.getRoute());
         message.setTimeReceivedNow();
@@ -48,7 +44,6 @@ class MessageFactory {
         log.log(Level.FINE, () -> "Created '" + message.getClass().getName() +
                                   "', route = '" + message.getRoute() +
                                   "', priority = '" + message.getPriority().name() + // TODO: Remove on Vespa 8
-                                  "', load type = '" + message.getLoadType() +
                                   "', trace level = '" + message.getTrace().getLevel() +
                                   "', time remaining = '" + message.getTimeRemaining() + "'.");
         return message;

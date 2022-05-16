@@ -4,7 +4,6 @@ package com.yahoo.documentapi;
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.ThrottlePolicy;
 import com.yahoo.messagebus.routing.Route;
@@ -47,7 +46,6 @@ public class VisitorParameters extends Parameters {
     private int maxBucketsPerVisitor = 1;
     private boolean dynamicallyIncreaseMaxBucketsPerVisitor = false;
     private float dynamicMaxBucketsIncreaseFactor = 2;
-    private LoadType loadType = LoadType.DEFAULT; // TODO: Remove on Vespa 8
     private DocumentProtocol.Priority priority = null;
     private int traceLevel = 0;
     private boolean skipBucketsOnFatalErrors = false;
@@ -96,7 +94,6 @@ public class VisitorParameters extends Parameters {
         setMaxFirstPassHits(params.getMaxFirstPassHits());
         setMaxTotalHits(params.getMaxTotalHits());
         setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
-        setLoadType(params.getLoadType());
         setPriority(params.getPriority());
         setDynamicallyIncreaseMaxBucketsPerVisitor(
                 params.getDynamicallyIncreaseMaxBucketsPerVisitor());
@@ -190,8 +187,6 @@ public class VisitorParameters extends Parameters {
     public DocumentProtocol.Priority getPriority() {
         if (priority != null) {
             return priority;
-        } else if (loadType != null) {
-            return loadType.getPriority();
         } else {
             return DocumentProtocol.Priority.NORMAL_3;
         }
@@ -321,22 +316,6 @@ public class VisitorParameters extends Parameters {
 
     public void setPriority(DocumentProtocol.Priority priority) {
         this.priority = priority;
-    }
-
-    /**
-     * @deprecated load types are deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public void setLoadType(LoadType loadType) {
-        this.loadType = loadType;
-    }
-
-    /**
-     * @deprecated load types are deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public LoadType getLoadType() {
-        return loadType;
     }
 
     public boolean skipBucketsOnFatalErrors() { return skipBucketsOnFatalErrors; }

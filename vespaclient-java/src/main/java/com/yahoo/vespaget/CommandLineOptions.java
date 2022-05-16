@@ -37,7 +37,6 @@ public class CommandLineOptions {
     public static final String NORETRY_OPTION = "noretry";
     public static final String TRACE_OPTION = "trace";
     public static final String PRIORITY_OPTION = "priority";
-    public static final String LOADTYPE_OPTION = "loadtype";
     public static final String JSONOUTPUT_OPTION = "jsonoutput";
     public static final String XMLOUTPUT_OPTION = "xmloutput";
 
@@ -123,12 +122,6 @@ public class CommandLineOptions {
                 .longOpt(PRIORITY_OPTION)
                 .argName("priority").build());
 
-        options.addOption(Option.builder("l")
-                .hasArg(true)
-                .desc("Load type (default \"\").")
-                .longOpt(LOADTYPE_OPTION)
-                .argName("loadtype").build());
-
         options.addOption(Option.builder("j")
                 .hasArg(false)
                 .desc("JSON output (default format)")
@@ -163,7 +156,6 @@ public class CommandLineOptions {
             String route = cl.getOptionValue(ROUTE_OPTION, "");
             String configId = cl.getOptionValue(CONFIGID_OPTION, "");
             boolean help = cl.hasOption(HELP_OPTION);
-            String loadtype = cl.getOptionValue(LOADTYPE_OPTION, "");
             boolean noRetry = cl.hasOption(NORETRY_OPTION);
             boolean showDocSize = cl.hasOption(SHOWDOCSIZE_OPTION);
             boolean jsonOutput = cl.hasOption(JSONOUTPUT_OPTION);
@@ -211,7 +203,6 @@ public class CommandLineOptions {
                     .setFieldSet(fieldSet)
                     .setHelp(help)
                     .setPrintIdsOnly(printIdsOnly)
-                    .setLoadTypeName(loadtype)
                     .setNoRetry(noRetry)
                     .setCluster(cluster)
                     .setRoute(route)

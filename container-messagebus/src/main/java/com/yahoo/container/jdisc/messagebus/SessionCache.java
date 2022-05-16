@@ -6,7 +6,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUtil;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.jdisc.ReferencedResource;
@@ -28,7 +27,6 @@ import com.yahoo.messagebus.shared.SharedIntermediateSession;
 import com.yahoo.messagebus.shared.SharedMessageBus;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.vespa.config.content.DistributionConfig;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.yolean.concurrent.Memoized;
 
 import java.util.HashMap;
@@ -72,17 +70,13 @@ public final class SessionCache extends AbstractComponent {
                         DocumentProtocolPoliciesConfig policiesConfig,
                         DistributionConfig distributionConfig) {
         this(nets::net, containerMbusConfig, documentTypeManager,
-             null/*TODO: Remove on Vespa 8*/, messagebusConfig, policiesConfig, distributionConfig);
+             messagebusConfig, policiesConfig, distributionConfig);
 
     }
 
-    /**
-     * @deprecated load types are deprecated. Use constructor without LoadTypeSet instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
     public SessionCache(Supplier<NetworkMultiplexer> net, ContainerMbusConfig containerMbusConfig,
                         DocumentTypeManager documentTypeManager,
-                        LoadTypeConfig loadTypeConfig, MessagebusConfig messagebusConfig,
+                        MessagebusConfig messagebusConfig,
                         DocumentProtocolPoliciesConfig policiesConfig,
                         DistributionConfig distributionConfig) {
         this(net,
