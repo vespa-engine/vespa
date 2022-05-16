@@ -101,7 +101,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli", "geirst"}) default boolean unorderedMergeChaining() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default int maxCompactBuffers() { return 1; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean failDeploymentWithInvalidJvmOptions() { return false; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.587") default boolean failDeploymentWithInvalidJvmOptions() { return true; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean enableServerOcspStapling() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default String mergeThrottlingPolicy() { throw new UnsupportedOperationException("TODO specify default value"); }
