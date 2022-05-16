@@ -7,7 +7,6 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.searchlib.TranslogserverConfig;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespa.config.content.StorFilestorConfig;
 import com.yahoo.vespa.config.content.core.StorBucketmoverConfig;
 import com.yahoo.vespa.config.content.core.StorCommunicationmanagerConfig;
@@ -44,7 +43,7 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 @RestartConfigs({ProtonConfig.class, MetricsmanagerConfig.class, TranslogserverConfig.class,
                  StorFilestorConfig.class, StorBucketmoverConfig.class,
                  StorCommunicationmanagerConfig.class, StorStatusConfig.class,
-                 StorServerConfig.class, LoadTypeConfig.class})
+                 StorServerConfig.class})
 public class SearchNode extends AbstractService implements
         SearchInterface,
         ProtonConfig.Producer,
