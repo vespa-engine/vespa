@@ -7,8 +7,6 @@ import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
@@ -76,13 +74,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     public interface VisitorSessionFactory {
         VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
-
-        /**
-         * @deprecated load types are deprecated
-         */
-        @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-        LoadTypeSet getLoadTypeSet();
     }
 
     public VdsVisitor(Query query, String searchCluster, Route route,
@@ -140,15 +131,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         }
         params.visitInconsistentBuckets(true);
         params.setPriority(DocumentProtocol.Priority.VERY_HIGH);
-
-        // TODO remove on Vespa 8
-        if (query.properties().getString(streamingLoadtype) != null) {
-            LoadType loadType = visitorSessionFactory.getLoadTypeSet().getNameMap().get(query.properties().getString(streamingLoadtype));
-            if (loadType != null) {
-                params.setLoadType(loadType);
-                params.setPriority(loadType.getPriority());
-            }
-        }
 
         if (query.properties().getString(streamingPriority) != null) {
             params.setPriority(DocumentProtocol.getPriorityByName(

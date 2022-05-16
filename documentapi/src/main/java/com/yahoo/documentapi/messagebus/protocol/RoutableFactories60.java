@@ -9,7 +9,6 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentSerializer;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.messagebus.Routable;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
@@ -70,18 +69,17 @@ public abstract class RoutableFactories60 {
             }
             DocumentMessage msg = (DocumentMessage)obj;
             out.putByte(null, (byte)(msg.getPriority().getValue())); // TODO: encode default value on Vespa 8
-            out.putInt(null, msg.getLoadType().getId());
+            out.putInt(null, 0); // Ignored load type. 0 is legacy "default" load type ID.
             return doEncode(msg, out);
         }
 
         @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-        public Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes) {
+        public Routable decode(DocumentDeserializer in) {
             byte pri = in.getByte(null); // TODO: ignore on Vespa 8
-            int loadType = in.getInt(null);
+            in.getInt(null); // Ignored load type
             DocumentMessage msg = doDecode(in);
             if (msg != null) {
                 msg.setPriority(DocumentProtocol.getPriority(pri));
-                msg.setLoadType(loadTypes.getIdMap().get(loadType)); // TODO: ignore on Vespa 8
             }
             return msg;
         }
@@ -132,7 +130,7 @@ public abstract class RoutableFactories60 {
         }
 
         @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-        public Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes) {
+        public Routable decode(DocumentDeserializer in) {
             byte pri = in.getByte(null);
             DocumentReply reply = doDecode(in);
             if (reply != null) {
