@@ -117,6 +117,7 @@ void DistributorStripePool::start(const std::vector<TickableStripe*>& stripes) {
     if (_single_threaded_test_mode) {
         return; // We want all the control structures in place, but none of the actual OS threads.
     }
+    std::unique_lock lock(_mutex); // Ensure _threads is visible to all started threads
     for (auto& s : _stripes) {
         _threads.emplace_back(_thread_pool.NewThread(s.get()));
     }
