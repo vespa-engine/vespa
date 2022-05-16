@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -57,7 +58,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
-    private final MeteringClient meteringClient;
+    private final ResourceDatabaseClient resourceClient;
     private final CuratorDb curator;
     private final SystemName systemName;
     private final Metric metric;
@@ -71,11 +72,11 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     public ResourceMeterMaintainer(Controller controller,
                                    Duration interval,
                                    Metric metric,
-                                   MeteringClient meteringClient) {
+                                   ResourceDatabaseClient resourceClient) {
         super(controller, interval);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
-        this.meteringClient = meteringClient;
+        this.resourceClient = resourceClient;
         this.curator = controller.curator();
         this.systemName = controller.serviceRegistry().zoneRegistry().system();
         this.metric = metric;
@@ -124,13 +125,13 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     private void reportResourceSnapshots(Collection<ResourceSnapshot> resourceSnapshots) {
-        meteringClient.consume(resourceSnapshots);
+        resourceClient.writeResourceSnapshots(resourceSnapshots);
 
         updateMeteringMetrics(resourceSnapshots);
 
         try (var lock = curator.lockMeteringRefreshTime()) {
             if (needsRefresh(curator.readMeteringRefreshTime())) {
-                meteringClient.refresh();
+                resourceClient.refreshMaterializedView();
                 curator.writeMeteringRefreshTime(clock.millis());
             }
         } catch (TimeoutException ignored) {
