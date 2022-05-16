@@ -16,8 +16,6 @@ VESPA_THREAD_STACK_TAG(proton_warmup_executor)
 
 namespace proton {
 
-using SharedFieldWriterExecutor = ThreadingServiceConfig::ProtonConfig::Feeding::SharedFieldWriterExecutor;
-
 SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfig& cfg,
                                                FNET_Transport& transport,
                                                storage::spi::BucketExecutor& bucket_executor)
@@ -35,18 +33,16 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
       _clock(_invokeService.nowRef())
 {
     const auto& fw_cfg = cfg.field_writer_config();
-    if (fw_cfg.shared_field_writer() == SharedFieldWriterExecutor::DOCUMENT_DB) {
-        _field_writer = vespalib::SequencedTaskExecutor::create(CpuUsage::wrap(proton_field_writer_executor, CpuUsage::Category::WRITE),
-                                                                fw_cfg.indexingThreads() * 3,
-                                                                fw_cfg.defaultTaskLimit(),
-                                                                fw_cfg.is_task_limit_hard(),
-                                                                fw_cfg.optimize(),
-                                                                fw_cfg.kindOfwatermark());
-        if (fw_cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT) {
-            _invokeRegistrations.push_back(_invokeService.registerInvoke([executor = _field_writer.get()]() {
-                executor->wakeup();
-            }));
-        }
+    _field_writer = vespalib::SequencedTaskExecutor::create(CpuUsage::wrap(proton_field_writer_executor, CpuUsage::Category::WRITE),
+                                                            fw_cfg.indexingThreads() * 3,
+                                                            fw_cfg.defaultTaskLimit(),
+                                                            fw_cfg.is_task_limit_hard(),
+                                                            fw_cfg.optimize(),
+                                                            fw_cfg.kindOfwatermark());
+    if (fw_cfg.optimize() == vespalib::Executor::OptimizeFor::THROUGHPUT) {
+        _invokeRegistrations.push_back(_invokeService.registerInvoke([executor = _field_writer.get()]() {
+            executor->wakeup();
+        }));
     }
 }
 

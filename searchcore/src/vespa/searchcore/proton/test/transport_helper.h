@@ -33,9 +33,12 @@ public:
     TransportAndExecutor(size_t num_threads);
     ~TransportAndExecutor() override;
     vespalib::Executor & shared() { return *_sharedExecutor; }
+    vespalib::ISequencedTaskExecutor& field_writer() { return *_field_writer; }
     void shutdown() override;
 private:
     std::unique_ptr<vespalib::Executor> _sharedExecutor;
+    std::unique_ptr<vespalib::ISequencedTaskExecutor> _field_writer;
+
 };
 
 class TransportAndExecutorService : public TransportAndExecutor {
