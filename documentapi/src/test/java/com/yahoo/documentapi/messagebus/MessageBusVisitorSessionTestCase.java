@@ -14,7 +14,6 @@ import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.VisitorDataQueue;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorResponse;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -524,9 +523,6 @@ public class MessageBusVisitorSessionTestCase {
         if (msg.getMaxBucketsPerVisitor() != 1) {
             sb.append("max buckets per visitor=").append(msg.getMaxBucketsPerVisitor()).append("\n");
         }
-        if (msg.getLoadType() != LoadType.DEFAULT) {
-            sb.append("load type=").append(msg.getLoadType().getName()).append("\n");
-        }
         if (msg.getPriority() != DocumentProtocol.Priority.NORMAL_3) { // TODO: remove on Vespa 8
             sb.append("priority=").append(msg.getPriority()).append("\n");
         }
@@ -742,7 +738,6 @@ public class MessageBusVisitorSessionTestCase {
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
         params.setFieldSet(DocIdOnly.NAME);
-        params.setLoadType(new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3)); // TODO: Remove on Vespa 8
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
         params.setTraceLevel(9);
@@ -772,7 +767,6 @@ public class MessageBusVisitorSessionTestCase {
                 "]\n" +
                 "route=extraterrestrial/highway\n" +
                 "max buckets per visitor=55\n" +
-                "load type=samnmax\n" +
                 "priority=HIGHEST\n" +
                 "visitor library=CoolVisitor\n" +
                 "trace level=9\n" +
