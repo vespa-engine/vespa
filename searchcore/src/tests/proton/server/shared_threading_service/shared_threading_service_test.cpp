@@ -26,7 +26,6 @@ make_proton_config(double concurrency)
     builder.flush.maxconcurrent = 1;
 
     builder.feeding.concurrency = concurrency;
-    builder.feeding.sharedFieldWriterExecutor = ProtonConfig::Feeding::SharedFieldWriterExecutor::DOCUMENT_DB;
     builder.indexing.tasklimit = 255;
     return builder;
 }
@@ -65,7 +64,7 @@ public:
                 transport.transport(), bucket_executor);
     }
     SequencedTaskExecutor* field_writer() {
-        return dynamic_cast<SequencedTaskExecutor*>(service->field_writer());
+        return dynamic_cast<SequencedTaskExecutor*>(&service->field_writer());
     }
 };
 

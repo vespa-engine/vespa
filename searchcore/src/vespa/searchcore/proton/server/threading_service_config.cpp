@@ -15,16 +15,14 @@ ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
                                                int32_t defaultTaskLimit_,
                                                OptimizeFor optimize_,
                                                uint32_t kindOfWatermark_,
-                                               vespalib::duration reactionTime_,
-                                               SharedFieldWriterExecutor shared_field_writer_)
+                                               vespalib::duration reactionTime_)
     : _indexingThreads(indexingThreads_),
       _master_task_limit(master_task_limit_),
       _defaultTaskLimit(std::abs(defaultTaskLimit_)),
       _is_task_limit_hard(defaultTaskLimit_ >= 0),
       _optimize(optimize_),
       _kindOfWatermark(kindOfWatermark_),
-      _reactionTime(reactionTime_),
-      _shared_field_writer(shared_field_writer_)
+      _reactionTime(reactionTime_)
 {
 }
 
@@ -60,13 +58,12 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
                                   cfg.indexing.tasklimit,
                                   selectOptimization(cfg.indexing.optimize),
                                   cfg.indexing.kindOfWatermark,
-                                  vespalib::from_s(cfg.indexing.reactiontime),
-                                  cfg.feeding.sharedFieldWriterExecutor);
+                                  vespalib::from_s(cfg.indexing.reactiontime));
 }
 
 ThreadingServiceConfig
-ThreadingServiceConfig::make(uint32_t indexingThreads, SharedFieldWriterExecutor shared_field_writer_) {
-    return ThreadingServiceConfig(indexingThreads, 0, 100, OptimizeFor::LATENCY, 0, 10ms, shared_field_writer_);
+ThreadingServiceConfig::make(uint32_t indexingThreads) {
+    return ThreadingServiceConfig(indexingThreads, 0, 100, OptimizeFor::LATENCY, 0, 10ms);
 }
 
 void
@@ -85,8 +82,7 @@ ThreadingServiceConfig::operator==(const ThreadingServiceConfig &rhs) const
         _is_task_limit_hard == rhs._is_task_limit_hard &&
         _optimize == rhs._optimize &&
         _kindOfWatermark == rhs._kindOfWatermark &&
-        _reactionTime == rhs._reactionTime &&
-        _shared_field_writer == rhs._shared_field_writer;
+        _reactionTime == rhs._reactionTime;
 }
 
 }

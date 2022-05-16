@@ -24,19 +24,14 @@ private:
     FNET_Transport                                     & _transport;
     const vespalib::Clock                              & _clock;
     vespalib::ThreadStackExecutor                        _masterExecutor;
-    ThreadingServiceConfig::SharedFieldWriterExecutor    _shared_field_writer;
     std::atomic<uint32_t>                                _master_task_limit;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
     SyncableExecutorThreadService                        _masterService;
     ExecutorThreadService                                _indexService;
-    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldInverter;
-    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _indexFieldWriter;
-    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _attributeFieldWriter;
-    std::unique_ptr<vespalib::ISequencedTaskExecutor>    _field_writer;
-    vespalib::ISequencedTaskExecutor*                    _index_field_inverter_ptr;
-    vespalib::ISequencedTaskExecutor*                    _index_field_writer_ptr;
-    vespalib::ISequencedTaskExecutor*                    _attribute_field_writer_ptr;
+    vespalib::ISequencedTaskExecutor&                    _index_field_inverter;
+    vespalib::ISequencedTaskExecutor&                    _index_field_writer;
+    vespalib::ISequencedTaskExecutor&                    _attribute_field_writer;
     std::vector<Registration>                            _invokeRegistrations;
 
 public:
@@ -44,13 +39,16 @@ public:
     /**
      * Convenience constructor used in unit tests.
      */
-    ExecutorThreadingService(vespalib::Executor& sharedExecutor, FNET_Transport & transport,
-                             const vespalib::Clock & clock, uint32_t num_treads = 1);
+    ExecutorThreadingService(vespalib::Executor& sharedExecutor,
+                             FNET_Transport& transport,
+                             const vespalib::Clock& clock,
+                             vespalib::ISequencedTaskExecutor& field_writer,
+                             uint32_t num_treads = 1);
 
     ExecutorThreadingService(vespalib::Executor& sharedExecutor,
                              FNET_Transport & transport,
                              const vespalib::Clock & clock,
-                             vespalib::ISequencedTaskExecutor* field_writer,
+                             vespalib::ISequencedTaskExecutor& field_writer,
                              vespalib::InvokeService * invokeService,
                              const ThreadingServiceConfig& cfg,
                              uint32_t stackSize = 128 * 1024);

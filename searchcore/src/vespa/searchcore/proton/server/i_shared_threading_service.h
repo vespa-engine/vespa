@@ -39,11 +39,8 @@ public:
 
     /**
      * Returns the sequenced executor used to write index and attribute fields in a document db.
-     *
-     * This is a nullptr if the field writer is not shared across all document dbs.
-     * TODO: Make this a reference when it is always shared.
      */
-    virtual vespalib::ISequencedTaskExecutor* field_writer() = 0;
+    virtual vespalib::ISequencedTaskExecutor& field_writer() = 0;
 
     /**
      * Returns an InvokeService intended for regular wakeup calls.

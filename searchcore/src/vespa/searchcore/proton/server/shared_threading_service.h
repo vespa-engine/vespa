@@ -36,7 +36,7 @@ public:
 
     vespalib::ThreadExecutor& warmup() override { return *_warmup; }
     vespalib::ThreadExecutor& shared() override { return *_shared; }
-    vespalib::ISequencedTaskExecutor* field_writer() override { return _field_writer.get(); }
+    vespalib::ISequencedTaskExecutor& field_writer() override { return *_field_writer; }
     vespalib::InvokeService & invokeService() override { return _invokeService; }
     FNET_Transport & transport() override { return _transport; }
     storage::spi::BucketExecutor& bucket_executor() override { return _bucket_executor; }

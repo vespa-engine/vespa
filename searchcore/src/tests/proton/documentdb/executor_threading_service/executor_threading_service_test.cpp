@@ -9,7 +9,6 @@
 using namespace proton;
 using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
-using SharedFieldWriterExecutor = ThreadingServiceConfig::SharedFieldWriterExecutor;
 
 VESPA_THREAD_STACK_TAG(my_field_writer_executor)
 
@@ -30,13 +29,13 @@ public:
           service()
     {
     }
-    void setup(uint32_t indexing_threads, SharedFieldWriterExecutor shared_field_writer) {
+    void setup(uint32_t indexing_threads) {
         service = std::make_unique<ExecutorThreadingService>(_transport.shared(),
                                                              _transport.transport(),
                                                              _transport.clock(),
-                                                             field_writer_executor.get(),
+                                                             *field_writer_executor,
                                                              nullptr,
-                                                             ThreadingServiceConfig::make(indexing_threads, shared_field_writer));
+                                                             ThreadingServiceConfig::make(indexing_threads));
     }
     SequencedTaskExecutor* index_inverter() {
         return to_concrete_type(service->indexFieldInverter());
@@ -59,36 +58,9 @@ assert_executor(SequencedTaskExecutor* exec, uint32_t exp_executors, uint32_t ex
     EXPECT_EQ(exp_task_limit, exec->first_executor()->getTaskLimit());
 }
 
-TEST_F(ExecutorThreadingServiceTest, no_shared_field_writer_executor)
-{
-    setup(4, SharedFieldWriterExecutor::NONE);
-    EXPECT_NE(index_inverter(), index_writer());
-    EXPECT_NE(index_writer(), attribute_writer());
-    assert_executor(index_inverter(), 4, 100);
-    assert_executor(index_writer(), 4, 100);
-    assert_executor(attribute_writer(), 4, 100);
-}
-
-TEST_F(ExecutorThreadingServiceTest, shared_executor_for_index_field_writers)
-{
-    setup(4, SharedFieldWriterExecutor::INDEX);
-    EXPECT_EQ(index_inverter(), index_writer());
-    EXPECT_NE(index_inverter(), attribute_writer());
-    assert_executor(index_inverter(), 8, 100);
-    assert_executor(attribute_writer(), 4, 100);
-}
-
-TEST_F(ExecutorThreadingServiceTest, shared_executor_for_index_and_attribute_field_writers)
-{
-    setup(4, SharedFieldWriterExecutor::INDEX_AND_ATTRIBUTE);
-    EXPECT_EQ(index_inverter(), index_writer());
-    EXPECT_EQ(index_inverter(), attribute_writer());
-    assert_executor(index_inverter(), 12, 100);
-}
-
 TEST_F(ExecutorThreadingServiceTest, shared_field_writer_specified_from_the_outside)
 {
-    setup(4, SharedFieldWriterExecutor::DOCUMENT_DB);
+    setup(4);
     EXPECT_EQ(field_writer(), index_inverter());
     EXPECT_EQ(field_writer(), index_writer());
     EXPECT_EQ(field_writer(), attribute_writer());
@@ -97,7 +69,7 @@ TEST_F(ExecutorThreadingServiceTest, shared_field_writer_specified_from_the_outs
 
 TEST_F(ExecutorThreadingServiceTest, tasks_limits_can_be_updated)
 {
-    setup(4, SharedFieldWriterExecutor::NONE);
+    setup(4);
     service->set_task_limits(5, 7, 11);
     EXPECT_EQ(5, service->master_task_limit());
     EXPECT_EQ(7, service->index().getTaskLimit());
