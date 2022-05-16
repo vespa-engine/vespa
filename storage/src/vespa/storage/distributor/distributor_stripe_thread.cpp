@@ -47,7 +47,7 @@ void DistributorStripeThread::signal_wants_park() noexcept {
     assert(!should_park_relaxed());
     _should_park.store(true, std::memory_order_relaxed);
     if (_waiting_for_event) {
-        _event_cond.notify_one(); // TODO after unlock?
+        _event_cond.notify_one();
     }
 }
 
@@ -55,7 +55,7 @@ void DistributorStripeThread::unpark_thread() noexcept {
     std::lock_guard lock(_mutex);
     assert(should_park_relaxed());
     _should_park.store(false, std::memory_order_relaxed);
-    _park_cond.notify_one(); // TODO after unlock?
+    _park_cond.notify_one();
 }
 
 void DistributorStripeThread::wait_until_event_notified_or_timed_out() noexcept {
