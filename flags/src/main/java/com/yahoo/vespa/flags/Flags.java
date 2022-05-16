@@ -267,13 +267,6 @@ public class Flags {
                 "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS = defineFeatureFlag(
-            "fail-deployment-with-invalid-jvm-options", true,
-            List.of("hmusum"), "2021-12-20", "2022-06-01",
-            "Whether to fail deployments with invalid JVM options in services.xml",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_SERVER_OCSP_STAPLING = defineFeatureFlag(
             "enable-server-ocsp-stapling", false,
             List.of("bjorncs"), "2021-12-17", "2022-06-01",
