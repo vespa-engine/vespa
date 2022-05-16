@@ -4,7 +4,6 @@ package com.yahoo.documentapi.messagebus.protocol.test;
 import com.yahoo.component.Version;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.Routable;
 import org.junit.Test;
@@ -19,7 +18,6 @@ import static org.junit.Assert.*;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public abstract class MessagesTestBase {
 
     protected enum Language {
@@ -29,12 +27,10 @@ public abstract class MessagesTestBase {
     protected static final Set<Language> LANGUAGES = EnumSet.allOf(Language.class);
 
     protected final DocumentTypeManager docMan = new DocumentTypeManager();
-    protected final LoadTypeSet loadTypes = new LoadTypeSet(); // TODO remove on Vespa 8
-    protected final DocumentProtocol protocol = new DocumentProtocol(docMan, null, loadTypes);
+    protected final DocumentProtocol protocol = new DocumentProtocol(docMan, null);
 
     public MessagesTestBase() {
         DocumentTypeManagerConfigurer.configure(docMan, "file:./test/cfg/testdoc.cfg");
-        loadTypes.addLoadType(34, "foo", DocumentProtocol.Priority.NORMAL_2);
     }
 
     @Test
