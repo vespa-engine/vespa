@@ -53,9 +53,8 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
         return transformFeature(feature, context.rankProfile());
     }
 
-    public static ExpressionNode transformFeature(ReferenceNode feature, RankProfile rankProfile) {
-        ImmutableSchema search = rankProfile.schema();
-        final String featureName = feature.getName();
+    public static ExpressionNode transformFeature(ReferenceNode feature, RankProfile profile) {
+        String featureName = feature.getName();
         if ( ! featureName.equals("onnxModel") && ! featureName.equals("onnx")) return feature;
 
         Arguments arguments = feature.getArguments();
@@ -71,11 +70,11 @@ public class OnnxModelTransformer extends ExpressionTransformer<RankProfileTrans
         // ONNX file that was transformed to Vespa ranking expressions. We then assume it is in the model store.
 
         String modelConfigName = getModelConfigName(feature.reference());
-        OnnxModel onnxModel = search.onnxModels().get(modelConfigName);
+        OnnxModel onnxModel = profile.onnxModels().get(modelConfigName);
         if (onnxModel == null) {
             String path = asString(arguments.expressions().get(0));
             ModelName modelName = new ModelName(null, Path.fromString(path), true);
-            ConvertedModel convertedModel = ConvertedModel.fromStore(search.applicationPackage(), modelName, path, rankProfile);
+            ConvertedModel convertedModel = ConvertedModel.fromStore(profile.schema().applicationPackage(), modelName, path, profile);
             FeatureArguments featureArguments = new FeatureArguments(arguments);
             return convertedModel.expression(featureArguments, null);
         }

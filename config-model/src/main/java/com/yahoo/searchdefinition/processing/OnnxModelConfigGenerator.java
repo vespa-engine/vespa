@@ -23,7 +23,7 @@ import java.util.Map;
  *
  *     onnx("files/model.onnx", "path/to/output:1")
  *
- * And generates an "onnx-model" configuration as if it was defined in the schema:
+ * And generates an "onnx-model" configuration as if it was defined in the profile:
  *
  *   onnx-model files_model_onnx {
  *       file:  "files/model.onnx"
@@ -45,31 +45,31 @@ public class OnnxModelConfigGenerator extends Processor {
         if (documentsOnly) return;
         for (RankProfile profile : rankProfileRegistry.rankProfilesOf(schema)) {
             if (profile.getFirstPhaseRanking() != null) {
-                process(profile.getFirstPhaseRanking().getRoot());
+                process(profile.getFirstPhaseRanking().getRoot(),  profile);
             }
             if (profile.getSecondPhaseRanking() != null) {
-                process(profile.getSecondPhaseRanking().getRoot());
+                process(profile.getSecondPhaseRanking().getRoot(), profile);
             }
             for (Map.Entry<String, RankProfile.RankingExpressionFunction> function : profile.getFunctions().entrySet()) {
-                process(function.getValue().function().getBody().getRoot());
+                process(function.getValue().function().getBody().getRoot(), profile);
             }
             for (ReferenceNode feature : profile.getSummaryFeatures()) {
-                process(feature);
+                process(feature, profile);
             }
         }
     }
 
-    private void process(ExpressionNode node) {
+    private void process(ExpressionNode node, RankProfile profile) {
         if (node instanceof ReferenceNode) {
-            process((ReferenceNode)node);
+            process((ReferenceNode)node, profile);
         } else if (node instanceof CompositeNode) {
             for (ExpressionNode child : ((CompositeNode) node).children()) {
-                process(child);
+                process(child, profile);
             }
         }
     }
 
-    private void process(ReferenceNode feature) {
+    private void process(ReferenceNode feature, RankProfile profile) {
         if (feature.getName().equals("onnxModel") || feature.getName().equals("onnx")) {
             if (feature.getArguments().size() > 0) {
                 if (feature.getArguments().expressions().get(0) instanceof ConstantNode) {
@@ -85,9 +85,9 @@ public class OnnxModelConfigGenerator extends Processor {
                         }
                     }
 
-                    OnnxModel onnxModel = schema.onnxModels().get(modelConfigName);
+                    OnnxModel onnxModel = profile.onnxModels().get(modelConfigName);
                     if (onnxModel == null)
-                        schema.add(new OnnxModel(modelConfigName, path));
+                        profile.add(new OnnxModel(modelConfigName, path));
                 }
             }
         }

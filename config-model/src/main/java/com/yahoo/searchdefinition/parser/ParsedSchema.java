@@ -123,7 +123,7 @@ public class ParsedSchema extends ParsedBlock {
         extraIndexes.put(idxName, index);
     }
 
-    void addOnnxModel(OnnxModel model) {
+    void add(OnnxModel model) {
         onnxModels.add(model);
     }
 

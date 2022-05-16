@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchdefinition.parser;
 
+import com.yahoo.searchdefinition.OnnxModel;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
 import com.yahoo.searchdefinition.RankProfile.MutateOperation;
@@ -54,6 +55,7 @@ class ParsedRankProfile extends ParsedBlock {
     private final Map<String, List<String>> rankProperties = new LinkedHashMap<>();
     private final Map<Reference, RankProfile.Constant> constants = new LinkedHashMap<>();
     private final Map<Reference, RankProfile.Input> inputs = new LinkedHashMap<>();
+    private final List<OnnxModel> onnxModels = new ArrayList<>();
 
     ParsedRankProfile(String name) {
         super(name, "rank-profile");
@@ -85,6 +87,7 @@ class ParsedRankProfile extends ParsedBlock {
     Map<String, List<String>> getRankProperties() { return Collections.unmodifiableMap(rankProperties); }
     Map<Reference, RankProfile.Constant> getConstants() { return Collections.unmodifiableMap(constants); }
     Map<Reference, RankProfile.Input> getInputs() { return Collections.unmodifiableMap(inputs); }
+    List<OnnxModel> getOnnxModels() { return List.copyOf(onnxModels); }
 
     Optional<String> getInheritedSummaryFeatures() { return Optional.ofNullable(this.inheritedSummaryFeatures); }
     Optional<String> getSecondPhaseExpression() { return Optional.ofNullable(this.secondPhaseExpression); }
@@ -109,6 +112,10 @@ class ParsedRankProfile extends ParsedBlock {
     void addInput(Reference name, RankProfile.Input input) {
         verifyThat(! inputs.containsKey(name), "already has input", name);
         inputs.put(name, input);
+    }
+
+    void add(OnnxModel model) {
+        onnxModels.add(model);
     }
 
     void addFieldRankFilter(String field, boolean filter) {

@@ -158,7 +158,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     private static FileDistributedOnnxModels deriveFileDistributedOnnxModels(Schema schema,
                                                                              Collection<RawRankProfile> rankProfiles,
                                                                              DeployState deployState) {
-        Map<String, OnnxModel> allModels = new HashMap<>();
+        Map<String, OnnxModel> allModels = new LinkedHashMap<>();
         addOnnxModels(schema != null ? schema.onnxModels().values() : List.of(),
                       allModels,
                       schema != null ? schema.toString() : "[global]");

@@ -116,9 +116,9 @@ public class RankProfile implements Cloneable {
 
     private Map<Reference, Input> inputs = new LinkedHashMap<>();
 
-    private Map<Reference, Constant> constants = new HashMap<>();
+    private Map<Reference, Constant> constants = new LinkedHashMap<>();
 
-    private Map<String, OnnxModel> onnxModels = new HashMap<>();
+    private Map<String, OnnxModel> onnxModels = new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
 
