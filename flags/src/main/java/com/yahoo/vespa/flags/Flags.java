@@ -230,7 +230,7 @@ public class Flags {
 
     public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
             "jdk-version", "11",
-            List.of("hmusum"), "2021-10-25", "2022-05-15",
+            List.of("hmusum"), "2021-10-25", "2022-06-01",
             "JDK version to use on host and inside containers. Note application-id dimension only applies for container, " +
                     "while hostname and node type applies for host.",
             "Takes effect on restart for Docker container and on next host-admin tick for host",
@@ -269,7 +269,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS = defineFeatureFlag(
             "fail-deployment-with-invalid-jvm-options", true,
-            List.of("hmusum"), "2021-12-20", "2022-05-15",
+            List.of("hmusum"), "2021-12-20", "2022-06-01",
             "Whether to fail deployments with invalid JVM options in services.xml",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
