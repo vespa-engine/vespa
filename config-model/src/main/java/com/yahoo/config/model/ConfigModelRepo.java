@@ -16,7 +16,6 @@ import com.yahoo.path.Path;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.builder.VespaModelBuilder;
-import com.yahoo.vespa.model.clients.Clients;
 import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.routing.Routing;
 import org.w3c.dom.Document;
@@ -242,15 +241,6 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
                 modelsOfModelClass.add((T)model);
         }
         return modelsOfModelClass;
-    }
-
-    public Clients getClients() {
-        for (ConfigModel m : configModels) {
-            if (m instanceof Clients) {
-                return (Clients)m;
-            }
-        }
-        return null;
     }
 
     public Routing getRouting() {

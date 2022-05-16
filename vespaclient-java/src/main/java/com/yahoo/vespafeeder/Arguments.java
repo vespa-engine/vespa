@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespafeeder;
 
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.feedapi.DummySessionFactory;
 import com.yahoo.feedapi.MessageBusSessionFactory;
 import com.yahoo.feedapi.MessagePropertyProcessor;
