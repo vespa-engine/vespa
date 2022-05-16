@@ -7,8 +7,6 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.fs4.DocsumPacket;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
@@ -87,12 +85,6 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
         @Override
         public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
             return access.createVisitorSession(params);
-        }
-
-        @Override
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-        public LoadTypeSet getLoadTypeSet() {
-            return ((MessageBusDocumentAccess) access.delegate()).getParams().getLoadTypes();
         }
 
         @Override
