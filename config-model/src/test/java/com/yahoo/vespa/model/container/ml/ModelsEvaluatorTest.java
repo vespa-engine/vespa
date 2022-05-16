@@ -18,8 +18,7 @@ import static org.junit.Assume.assumeTrue;
 public class ModelsEvaluatorTest {
 
     @Test
-    public void testModelsEvaluatorTester() {
-        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+    public void testModelsEvaluator() {
         ModelsEvaluator modelsEvaluator = ModelsEvaluatorTester.create("src/test/cfg/application/stateless_eval");
         assertEquals(3, modelsEvaluator.models().size());
 
