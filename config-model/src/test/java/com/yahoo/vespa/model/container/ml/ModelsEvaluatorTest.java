@@ -19,6 +19,10 @@ public class ModelsEvaluatorTest {
 
     @Test
     public void testModelsEvaluator() {
+        // Assumption fails but test passes on Intel macs
+        // Assumption fails and test fails on ARM64
+        assumeTrue(OnnxEvaluator.isRuntimeAvailable());
+
         ModelsEvaluator modelsEvaluator = ModelsEvaluatorTester.create("src/test/cfg/application/stateless_eval");
         assertEquals(3, modelsEvaluator.models().size());
 
