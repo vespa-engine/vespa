@@ -4,13 +4,10 @@ package com.yahoo.feedapi;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.routing.Route;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespaclient.config.FeederConfig;
 
 import java.util.logging.Level;
@@ -33,21 +30,10 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
     private String defaultDocprocChain = null;
     private boolean defaultAbortOnDocumentError = true;
     private boolean defaultAbortOnSendError = true;
-    private final LoadTypeSet loadTypes; // TODO remove on Vespa 8
     private boolean configChanged = false;
 
     public MessagePropertyProcessor(FeederConfig config) {
-        loadTypes = new LoadTypeSet();
         configure(config);
-    }
-
-    /**
-     * @deprecated load types are deprecated. Use constructor without LoadTypeConfig instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public MessagePropertyProcessor(FeederConfig config, LoadTypeConfig loadTypeCfg) {
-        loadTypes = new LoadTypeSet();
-        configure(config, loadTypeCfg);
     }
 
     public void setRoute(String routeOverride) {
@@ -60,7 +46,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         String priorityParam = null;
         String abortOnDocErrorParam = null;
         String abortOnFeedErrorParam = null;
-        String loadTypeStr = null;
         String traceStr = null;
         String createIfNonExistentParam = null;
         Double totalTimeoutParam = null;
@@ -81,7 +66,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             traceStr = request.getProperty("tracelevel");
             abortOnDocErrorParam = request.getProperty("abortondocumenterror");
             abortOnFeedErrorParam = request.getProperty("abortonfeederror");
-            loadTypeStr = request.getProperty("loadtype");
             createIfNonExistentParam = request.getProperty("createifnonexistent");
         }
 
@@ -109,16 +93,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             priority = DocumentProtocol.getPriorityByName(priorityParam);
         }
 
-        LoadType loadType = null;
-        if (loadTypes != null && loadTypeStr != null) {
-            loadType = loadTypes.getNameMap().get(loadTypeStr);
-        }
-
-        if (loadType == null) {
-            loadType = LoadType.DEFAULT;
-        }
-
-        return new PropertySetter(route, timeout, totalTimeout, priority, loadType, retry, abortOnDocumentError, abortOnFeedError, createIfNonExistent, traceStr != null ? Integer.parseInt(traceStr) : 0);
+        return new PropertySetter(route, timeout, totalTimeout, priority, retry, abortOnDocumentError, abortOnFeedError, createIfNonExistent, traceStr != null ? Integer.parseInt(traceStr) : 0);
     }
 
     public long getDefaultTimeoutMillis() { return defaultTimeoutMillis; }
@@ -133,23 +108,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
 
     synchronized FeederOptions getFeederOptions() {
         return feederOptions;
-    }
-
-    /**
-     * @deprecated load types are deprecated. configure without LoadTypeConfig instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public synchronized void configure(FeederConfig config, LoadTypeConfig loadTypeConfig) {
-        loadTypes.configure(loadTypeConfig);
-        configure(config);
-    }
-
-    /**
-     * @deprecated load types are deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    LoadTypeSet getLoadTypes() {
-        return loadTypes;
     }
 
     public synchronized void configure(FeederConfig config) {
@@ -191,17 +149,15 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         private boolean abortOnDocumentError;
         private boolean abortOnFeedError;
         private boolean createIfNonExistent;
-        private LoadType loadType; // TODO remove on Vespa 8
         private int traceLevel;
 
-        PropertySetter(Route route, long timeout, long totalTimeout, DocumentProtocol.Priority priority, LoadType loadType,
+        PropertySetter(Route route, long timeout, long totalTimeout, DocumentProtocol.Priority priority,
                        boolean retryEnabled, boolean abortOnDocumentError, boolean abortOnFeedError,
                        boolean createIfNonExistent, int traceLevel) {
             this.route = route;
             this.timeout = timeout;
             this.totalTimeout = totalTimeout;
             this.priority = priority;
-            this.loadType = loadType;
             this.retryEnabled = retryEnabled;
             this.abortOnDocumentError = abortOnDocumentError;
             this.abortOnFeedError = abortOnFeedError;
@@ -252,11 +208,6 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
             msg.setTimeRemaining(getTimeRemaining());
             msg.setRetryEnabled(retryEnabled);
             msg.getTrace().setLevel(Math.max(getFeederOptions().getTraceLevel(), traceLevel));
-
-            if (loadType != null) {
-                ((DocumentMessage) msg).setLoadType(loadType);
-                ((DocumentMessage) msg).setPriority(loadType.getPriority());
-            }
 
             if (priority != null) {
                 ((DocumentMessage) msg).setPriority(priority);

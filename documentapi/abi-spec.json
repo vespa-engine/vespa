@@ -931,8 +931,6 @@
       "public void setTraceLevel(int)",
       "public int getTraceLevel()",
       "public void setPriority(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
-      "public void setLoadType(com.yahoo.documentapi.messagebus.loadtypes.LoadType)",
-      "public com.yahoo.documentapi.messagebus.loadtypes.LoadType getLoadType()",
       "public boolean skipBucketsOnFatalErrors()",
       "public void skipBucketsOnFatalErrors(boolean)",
       "public void slice(int, int)",
@@ -1132,8 +1130,6 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void <init>(com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)",
-      "public com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet getLoadTypes()",
       "public java.lang.String getRoutingConfigId()",
       "public com.yahoo.documentapi.messagebus.MessageBusParams setRoutingConfigId(java.lang.String)",
       "public java.lang.String getProtocolConfigId()",
@@ -1795,8 +1791,6 @@
       "public void swapState(com.yahoo.messagebus.Routable)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriority()",
       "public void setPriority(com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority)",
-      "public com.yahoo.documentapi.messagebus.loadtypes.LoadType getLoadType()",
-      "public void setLoadType(com.yahoo.documentapi.messagebus.loadtypes.LoadType)",
       "public int getApproxSize()",
       "public com.yahoo.text.Utf8String getProtocol()"
     ],
@@ -1846,10 +1840,8 @@
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriority(int)",
       "public static com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriorityByName(java.lang.String)",
       "public void <init>(com.yahoo.document.DocumentTypeManager)",
-      "public void <init>(com.yahoo.document.DocumentTypeManager, java.lang.String)",
       "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig, com.yahoo.vespa.config.content.DistributionConfig)",
-      "public void <init>(com.yahoo.document.DocumentTypeManager, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet, com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig, com.yahoo.vespa.config.content.DistributionConfig)",
-      "public void <init>(com.yahoo.document.DocumentTypeManager, java.lang.String, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)",
+      "public void <init>(com.yahoo.document.DocumentTypeManager, java.lang.String)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol putRoutingPolicyFactory(java.lang.String, com.yahoo.documentapi.messagebus.protocol.RoutingPolicyFactory)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol putRoutableFactory(int, com.yahoo.documentapi.messagebus.protocol.RoutableFactory, com.yahoo.component.VersionSpecification)",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol putRoutableFactory(int, com.yahoo.documentapi.messagebus.protocol.RoutableFactory, java.util.List)",
@@ -2701,7 +2693,7 @@
       "protected abstract boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentMessage, com.yahoo.document.serialization.DocumentSerializer)",
       "protected abstract com.yahoo.documentapi.messagebus.protocol.DocumentMessage doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "public boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
-      "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)"
+      "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
     ],
     "fields": []
   },
@@ -2717,7 +2709,7 @@
       "protected abstract boolean doEncode(com.yahoo.documentapi.messagebus.protocol.DocumentReply, com.yahoo.document.serialization.DocumentSerializer)",
       "protected abstract com.yahoo.documentapi.messagebus.protocol.DocumentReply doDecode(com.yahoo.document.serialization.DocumentDeserializer)",
       "public boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
-      "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)"
+      "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
     ],
     "fields": []
   },
@@ -3127,8 +3119,7 @@
     ],
     "methods": [
       "public abstract boolean encode(com.yahoo.messagebus.Routable, com.yahoo.document.serialization.DocumentSerializer)",
-      "public abstract com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)",
-      "public com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
+      "public abstract com.yahoo.messagebus.Routable decode(com.yahoo.document.serialization.DocumentDeserializer)"
     ],
     "fields": []
   },

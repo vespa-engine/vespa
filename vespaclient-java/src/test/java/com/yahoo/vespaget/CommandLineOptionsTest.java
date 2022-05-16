@@ -66,7 +66,6 @@ public class CommandLineOptionsTest {
         assertFalse(params.noRetry);
         assertEquals(0, params.traceLevel);
         assertEquals(DocumentProtocol.Priority.NORMAL_2, params.priority);
-        assertTrue(params.loadTypeName.isEmpty());
     }
 
     @Test
@@ -80,7 +79,6 @@ public class CommandLineOptionsTest {
                 "--noretry",
                 "--trace", "1",
                 "--priority", Integer.toString(DocumentProtocol.Priority.HIGH_3.getValue()),
-                "--loadtype", "dummyloadtype",
                 "id:1", "id:2"
         );
 
@@ -92,7 +90,6 @@ public class CommandLineOptionsTest {
         assertTrue(params.noRetry);
         assertEquals(1, params.traceLevel);
         assertEquals(DocumentProtocol.Priority.HIGH_3, params.priority);
-        assertEquals("dummyloadtype", params.loadTypeName);
 
         Iterator<String> documentsIds = params.documentIds;
         assertEquals("id:1", documentsIds.next());
