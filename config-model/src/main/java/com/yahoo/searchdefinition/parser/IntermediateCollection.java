@@ -46,7 +46,7 @@ public class IntermediateCollection {
 
     public ParsedSchema addSchemaFromString(String input) throws ParseException {
         var stream = new SimpleCharStream(input);
-        var parser = new IntermediateParser(stream, deployLogger, modelProperties);
+        var parser = new SchemaParser(stream, deployLogger, modelProperties);
         try {
             var schema = parser.schema();
             if (parsedSchemas.containsKey(schema.name())) {
@@ -132,7 +132,7 @@ public class IntermediateCollection {
                 throw new IllegalArgumentException("No schema named: " + schemaName);
             }
             var stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
-            var parser = new IntermediateParser(stream, deployLogger, modelProperties);
+            var parser = new SchemaParser(stream, deployLogger, modelProperties);
             try {
                 parser.rankProfile(schema);
             } catch (ParseException pe) {

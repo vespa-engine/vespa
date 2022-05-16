@@ -10,20 +10,22 @@ import java.io.File;
 
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 
 /**
  * @author arnej
  */
-public class IntermediateParserTestCase {
+public class SchemaParserTestCase {
 
     ParsedSchema parseString(String input) throws Exception {
         var deployLogger = new BaseDeployLogger();
         var modelProperties = new TestProperties();
         var stream = new SimpleCharStream(input);
         try {
-            var parser = new IntermediateParser(stream, deployLogger, modelProperties);
+            var parser = new SchemaParser(stream, deployLogger, modelProperties);
             return parser.schema();
         } catch (ParseException pe) {
             throw new ParseException(stream.formatException(pe.getMessage()));
@@ -60,7 +62,7 @@ public class IntermediateParserTestCase {
     }
 
     @Test
-    public void multiple_documents_disallowed() throws Exception {
+    public void multiple_documents_disallowed() {
         String input = joinLines
                 ("schema foo {",
                  "  document foo {",
@@ -85,11 +87,10 @@ public class IntermediateParserTestCase {
     }
 
     void checkFileParses(String fileName) throws Exception {
-        System.err.println("TRY parsing: "+fileName);
         var schema = parseFile(fileName);
-        assertTrue(schema != null);
-        assertTrue(schema.name() != null);
-        assertTrue(! schema.name().equals(""));
+        assertNotNull(schema);
+        assertNotNull(schema.name());
+        assertNotEquals("", schema.name());
     }
 
     @Test

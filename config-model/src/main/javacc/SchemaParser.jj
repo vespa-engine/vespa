@@ -9,7 +9,7 @@ options {
     USER_CHAR_STREAM = true;
 }
 
-PARSER_BEGIN(IntermediateParser)
+PARSER_BEGIN(SchemaParser)
 
 package com.yahoo.searchdefinition.parser;
 
@@ -58,13 +58,13 @@ import java.util.logging.Level;
  *
  * @author bratseth
  */
-public class IntermediateParser {
+public class SchemaParser {
 
     private DeployLogger deployLogger;
     private ModelContext.Properties properties;
 
     /** Creates a parser. */
-    public IntermediateParser(SimpleCharStream stream,
+    public SchemaParser(SimpleCharStream stream,
                               DeployLogger deployLogger,
                               ModelContext.Properties properties)
     {
@@ -122,7 +122,7 @@ public class IntermediateParser {
     }
 }
 
-PARSER_END(IntermediateParser)
+PARSER_END(SchemaParser)
 
 
 // --------------------------------------------------------------------------------
