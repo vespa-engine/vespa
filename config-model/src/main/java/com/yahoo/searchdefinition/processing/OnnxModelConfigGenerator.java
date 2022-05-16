@@ -86,10 +86,8 @@ public class OnnxModelConfigGenerator extends Processor {
                     }
 
                     OnnxModel onnxModel = schema.onnxModels().get(modelConfigName);
-                    if (onnxModel == null) {
-                        onnxModel = new OnnxModel(modelConfigName, path);
-                        schema.onnxModels().add(onnxModel);
-                    }
+                    if (onnxModel == null)
+                        schema.add(new OnnxModel(modelConfigName, path));
                 }
             }
         }

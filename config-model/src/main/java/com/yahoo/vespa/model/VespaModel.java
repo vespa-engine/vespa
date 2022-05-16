@@ -32,7 +32,7 @@ import com.yahoo.container.QrConfig;
 import com.yahoo.path.Path;
 import com.yahoo.searchdefinition.LargeRankExpressions;
 import com.yahoo.searchdefinition.OnnxModel;
-import com.yahoo.searchdefinition.OnnxModels;
+import com.yahoo.searchdefinition.derived.FileDistributedOnnxModels;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.derived.AttributeFields;
@@ -175,11 +175,9 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         VespaModelBuilder builder = new VespaDomBuilder();
         root = builder.getRoot(VespaModel.ROOT_CONFIGID, deployState, this);
 
-        createGlobalRankProfiles(deployState, deployState.getFileRegistry());
+        createGlobalRankProfiles(deployState);
         rankProfileList = new RankProfileList(null, // null search -> global
-                                              Map.of(),
                                               new LargeRankExpressions(deployState.getFileRegistry()),
-                                              new OnnxModels(deployState.getFileRegistry(), Optional.empty()),
                                               AttributeFields.empty,
                                               deployState);
 
@@ -274,7 +272,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * Creates a rank profile not attached to any search definition, for each imported model in the application package,
      * and adds it to the given rank profile registry.
      */
-    private void createGlobalRankProfiles(DeployState deployState, FileRegistry fileRegistry) {
+    private void createGlobalRankProfiles(DeployState deployState) {
         var importedModels = deployState.getImportedModels().all();
         DeployLogger deployLogger = deployState.getDeployLogger();
         RankProfileRegistry rankProfileRegistry = deployState.rankProfileRegistry();
@@ -283,8 +281,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         if ( ! importedModels.isEmpty()) { // models/ directory is available
             for (ImportedMlModel model : importedModels) {
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
-                OnnxModels onnxModels = onnxModelInfoFromSource(model, fileRegistry);
-                RankProfile profile = new RankProfile(model.name(), applicationPackage, deployLogger, rankProfileRegistry, onnxModels);
+                RankProfile profile = new RankProfile(model.name(), applicationPackage, deployLogger, rankProfileRegistry);
+                addOnnxModelInfoFromSource(model, profile);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
                     ConvertedModel convertedModel = ConvertedModel.fromSource(applicationPackage, new ModelName(model.name()),
@@ -300,8 +298,8 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
                 String modelName = generatedModelDir.getPath().last();
                 if (modelName.contains(".")) continue; // Name space: Not a global profile
                 // Due to automatic naming not guaranteeing unique names, there must be a 1-1 between OnnxModels and global RankProfiles.
-                OnnxModels onnxModels = onnxModelInfoFromStore(modelName, fileRegistry);
-                RankProfile profile = new RankProfile(modelName, applicationPackage, deployLogger, rankProfileRegistry, onnxModels);
+                RankProfile profile = new RankProfile(modelName, applicationPackage, deployLogger, rankProfileRegistry);
+                addOnnxModelInfoFromStore(modelName, profile);
                 rankProfileRegistry.add(profile);
                 futureModels.add(deployState.getExecutor().submit(() -> {
                     ConvertedModel convertedModel = ConvertedModel.fromStore(applicationPackage, new ModelName(modelName), modelName, profile);
@@ -320,27 +318,23 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         new Processing().processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
     }
 
-    private OnnxModels onnxModelInfoFromSource(ImportedMlModel model, FileRegistry fileRegistry) {
-        OnnxModels onnxModels = new OnnxModels(fileRegistry, Optional.empty());
+    private void addOnnxModelInfoFromSource(ImportedMlModel model, RankProfile profile) {
         if (model.modelType() == ImportedMlModel.ModelType.ONNX) {
             String path = model.source();
             String applicationPath = this.applicationPackage.getFileReference(Path.fromString("")).toString();
             if (path.startsWith(applicationPath)) {
                 path = path.substring(applicationPath.length() + 1);
             }
-            loadOnnxModelInfo(onnxModels, model.name(), path);
+            addOnnxModelInfo(model.name(), path, profile);
         }
-        return onnxModels;
     }
 
-    private OnnxModels onnxModelInfoFromStore(String modelName, FileRegistry fileRegistry) {
+    private void addOnnxModelInfoFromStore(String modelName, RankProfile profile) {
         String path = ApplicationPackage.MODELS_DIR.append(modelName + ".onnx").toString();
-        OnnxModels onnxModels = new OnnxModels(fileRegistry, Optional.empty());
-        loadOnnxModelInfo(onnxModels, modelName, path);
-        return onnxModels;
+        addOnnxModelInfo(modelName, path, profile);
     }
 
-    private void loadOnnxModelInfo(OnnxModels onnxModels, String name, String path) {
+    private void addOnnxModelInfo(String name, String path, RankProfile profile) {
         boolean modelExists = OnnxModelInfo.modelExists(path, this.applicationPackage);
         if ( ! modelExists) {
             path = ApplicationPackage.MODELS_DIR.append(path).toString();
@@ -351,7 +345,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
             if (onnxModelInfo.getModelPath() != null) {
                 OnnxModel onnxModel = new OnnxModel(name, onnxModelInfo.getModelPath());
                 onnxModel.setModelInfo(onnxModelInfo);
-                onnxModels.add(onnxModel);
+                profile.add(onnxModel);
             }
         }
     }

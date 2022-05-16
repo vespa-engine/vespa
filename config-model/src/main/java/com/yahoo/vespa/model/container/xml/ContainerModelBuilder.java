@@ -598,7 +598,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element onnxElement = XML.getChild(modelEvaluationElement, "onnx");
         Element modelsElement = XML.getChild(onnxElement, "models");
         for (Element modelElement : XML.getChildren(modelsElement, "model") ) {
-            OnnxModel onnxModel = profiles.getOnnxModels().get(modelElement.getAttribute("name"));
+            OnnxModel onnxModel = profiles.getOnnxModels().asMap().get(modelElement.getAttribute("name"));
             if (onnxModel == null)
                 continue; // Skip if model is not found
             onnxModel.setStatelessExecutionMode(getStringValue(modelElement, "execution-mode", null));

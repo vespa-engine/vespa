@@ -196,8 +196,8 @@ public class SchemaTestCase {
         assertTrue(child1profile.constants().containsKey(FeatureNames.asConstantFeature("parent_constant")));
         assertNotNull(child1.onnxModels().get("parent_model"));
         assertNotNull(child1.onnxModels().get("child1_model"));
-        assertTrue(child1.onnxModels().asMap().containsKey("parent_model"));
-        assertTrue(child1.onnxModels().asMap().containsKey("child1_model"));
+        assertTrue(child1.onnxModels().containsKey("parent_model"));
+        assertTrue(child1.onnxModels().containsKey("child1_model"));
         assertNotNull(child1.getSummary("parent_summary"));
         assertNotNull(child1.getSummary("child1_summary"));
         assertEquals("parent_summary", child1.getSummary("child1_summary").inherited().get().getName());
@@ -231,8 +231,8 @@ public class SchemaTestCase {
         assertTrue(child2.constants().containsKey(FeatureNames.asConstantFeature("child2_constant")));
         assertNotNull(child2.onnxModels().get("parent_model"));
         assertNotNull(child2.onnxModels().get("child2_model"));
-        assertTrue(child2.onnxModels().asMap().containsKey("parent_model"));
-        assertTrue(child2.onnxModels().asMap().containsKey("child2_model"));
+        assertTrue(child2.onnxModels().containsKey("parent_model"));
+        assertTrue(child2.onnxModels().containsKey("child2_model"));
         assertNotNull(child2.getSummary("parent_summary"));
         assertNotNull(child2.getSummary("child2_summary"));
         assertEquals("parent_summary", child2.getSummary("child2_summary").inherited().get().getName());
@@ -430,7 +430,7 @@ public class SchemaTestCase {
         assertNotNull(schema.constants().get(FeatureNames.asConstantFeature("parent_constant")));
         assertTrue(schema.constants().containsKey(FeatureNames.asConstantFeature("parent_constant")));
         assertNotNull(schema.onnxModels().get("parent_model"));
-        assertTrue(schema.onnxModels().asMap().containsKey("parent_model"));
+        assertTrue(schema.onnxModels().containsKey("parent_model"));
         assertNotNull(schema.getSummary("parent_summary"));
         assertTrue(schema.getSummaries().containsKey("parent_summary"));
         assertNotNull(schema.getSummaryField("pf1"));
