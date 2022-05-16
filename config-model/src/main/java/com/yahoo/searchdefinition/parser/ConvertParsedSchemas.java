@@ -207,12 +207,10 @@ public class ConvertParsedSchemas {
         if (documentsOnly) {
             return; // skip ranking-only content, not used for document type generation
         }
-        for (var constant : parsed.getConstants()) {
+        for (var constant : parsed.getConstants())
             schema.add(constant);
-        }
-        for (var onnxModel : parsed.getOnnxModels()) {
-            schema.onnxModels().add(onnxModel);
-        }
+        for (var onnxModel : parsed.getOnnxModels())
+            schema.add(onnxModel);
         rankProfileRegistry.add(new DefaultRankProfile(schema, rankProfileRegistry));
         rankProfileRegistry.add(new UnrankedRankProfile(schema, rankProfileRegistry));
         var rankConverter = new ConvertParsedRanking(rankProfileRegistry);

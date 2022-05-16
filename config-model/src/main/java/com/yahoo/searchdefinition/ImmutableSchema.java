@@ -4,6 +4,7 @@ package com.yahoo.searchdefinition;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
+import com.yahoo.searchdefinition.derived.FileDistributedOnnxModels;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
@@ -37,7 +38,7 @@ public interface ImmutableSchema {
     ModelContext.Properties getDeployProperties();
     Map<Reference, RankProfile.Constant> constants();
     LargeRankExpressions rankExpressionFiles();
-    OnnxModels onnxModels();
+    Map<String, OnnxModel> onnxModels();
     Stream<ImmutableSDField> allImportedFields();
     SDDocumentType getDocument();
     ImmutableSDField getField(String name);

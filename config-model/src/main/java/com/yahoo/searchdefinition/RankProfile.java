@@ -116,7 +116,9 @@ public class RankProfile implements Cloneable {
 
     private Map<Reference, Input> inputs = new LinkedHashMap<>();
 
-    private Map<Reference, Constant> constants = new HashMap<>();
+    private Map<Reference, Constant> constants = new LinkedHashMap<>();
+
+    private Map<String, OnnxModel> onnxModels = new LinkedHashMap<>();
 
     private Set<String> filterFields = new HashSet<>();
 
@@ -128,8 +130,6 @@ public class RankProfile implements Cloneable {
 
     private Boolean strict;
 
-    /** Global onnx models not tied to a schema */
-    private final OnnxModels onnxModels;
     private final ApplicationPackage applicationPackage;
     private final DeployLogger deployLogger;
 
@@ -144,7 +144,6 @@ public class RankProfile implements Cloneable {
     public RankProfile(String name, Schema schema, RankProfileRegistry rankProfileRegistry) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.schema = Objects.requireNonNull(schema, "schema cannot be null");
-        this.onnxModels = null;
         this.rankProfileRegistry = rankProfileRegistry;
         this.applicationPackage = schema.applicationPackage();
         this.deployLogger = schema.getDeployLogger();
@@ -156,11 +155,10 @@ public class RankProfile implements Cloneable {
      * @param name  the name of the new profile
      */
     public RankProfile(String name, ApplicationPackage applicationPackage, DeployLogger deployLogger,
-                       RankProfileRegistry rankProfileRegistry, OnnxModels onnxModels) {
+                       RankProfileRegistry rankProfileRegistry) {
         this.name = Objects.requireNonNull(name, "name cannot be null");
         this.schema = null;
         this.rankProfileRegistry = rankProfileRegistry;
-        this.onnxModels = onnxModels;
         this.applicationPackage = applicationPackage;
         this.deployLogger = deployLogger;
     }
@@ -173,10 +171,6 @@ public class RankProfile implements Cloneable {
     /** Returns the application this is part of */
     public ApplicationPackage applicationPackage() {
         return applicationPackage;
-    }
-
-    public Map<String, OnnxModel> onnxModels() {
-        return schema != null ? schema.onnxModels().asMap() : onnxModels.asMap();
     }
 
     private Stream<ImmutableSDField> allFields() {
@@ -411,6 +405,9 @@ public class RankProfile implements Cloneable {
         constants.put(constant.name(), constant);
     }
 
+    /** Returns an unmodifiable view of the constants declared in this */
+    public Map<Reference, Constant> declaredConstants() { return Collections.unmodifiableMap(constants); }
+
     /** Returns an unmodifiable view of the constants available in this */
     public Map<Reference, Constant> constants() {
         Map<Reference, Constant> allConstants = new HashMap<>();
@@ -430,8 +427,31 @@ public class RankProfile implements Cloneable {
         return allConstants;
     }
 
-    /** Returns an unmodifiable view of the constants declared in this */
-    public Map<Reference, Constant> declaredConstants() { return Collections.unmodifiableMap(constants); }
+    public void add(OnnxModel model) {
+        onnxModels.put(model.getName(), model);
+    }
+
+    /** Returns an unmodifiable map of the onnx models declared in this. */
+    public Map<String, OnnxModel> declaredOnnxModels() { return onnxModels; }
+
+    /** Returns an unmodifiable map of the onnx models available in this. */
+    public Map<String, OnnxModel> onnxModels() {
+        Map<String, OnnxModel> allModels = new HashMap<>();
+        for (var inheritedProfile : inherited()) {
+            for (var model : inheritedProfile.onnxModels().values()) {
+                if (allModels.containsKey(model.getName()))
+                    throw new IllegalArgumentException(model + "' is present in " +
+                                                       inheritedProfile + " inherited by " +
+                                                       this + ", but is also present in another profile inherited by it");
+                allModels.put(model.getName(), model);
+            }
+        }
+
+        if (schema != null)
+            allModels.putAll(schema.onnxModels());
+        allModels.putAll(onnxModels);
+        return allModels;
+    }
 
     public void addAttributeType(String attributeName, String attributeType) {
         attributeTypes.addType(attributeName, attributeType);
@@ -1064,10 +1084,8 @@ public class RankProfile implements Cloneable {
         }
 
         // Add output types for ONNX models
-        for (Map.Entry<String, OnnxModel> entry : onnxModels().entrySet()) {
-            String modelName = entry.getKey();
-            OnnxModel model = entry.getValue();
-            Arguments args = new Arguments(new ReferenceNode(modelName));
+        for (var model : onnxModels().values()) {
+            Arguments args = new Arguments(new ReferenceNode(model.getName()));
             Map<String, TensorType> inputTypes = resolveOnnxInputTypes(model, context);
 
             TensorType defaultOutputType = model.getTensorType(model.getDefaultOutput(), inputTypes);

@@ -21,14 +21,6 @@ search test {
         output "path/to/output:0": out
     }
 
-    onnx-model another_model {
-        file:  files/model.onnx
-        input  first_input: attribute(document_field)
-        input  "second/input:0": constant(my_constant)
-        input  "third_input": another_function
-        output "path/to/output:2": out
-    }
-
     onnx-model dynamic_model {
         file:  files/dynamic_model.onnx
         input  input: my_function
@@ -71,6 +63,13 @@ search test {
         }
         first-phase {
             expression: 1
+        }
+        onnx-model another_model {
+            file:  files/model.onnx
+            input  first_input: attribute(document_field)
+            input  "second/input:0": constant(my_constant)
+            input  "third_input": another_function
+            output "path/to/output:2": out
         }
         summary-features {
             onnx(another_model).out

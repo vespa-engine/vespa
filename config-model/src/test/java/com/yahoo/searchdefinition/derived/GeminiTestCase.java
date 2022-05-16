@@ -19,7 +19,7 @@ public class GeminiTestCase extends AbstractExportingTestCase {
     @Test
     public void testRanking2() throws IOException, ParseException {
         DerivedConfiguration c = assertCorrectDeriving("gemini2");
-        RawRankProfile p = c.getRankProfileList().getRankProfile("test");
+        RawRankProfile p = c.getRankProfileList().getRankProfiles().get("test");
         Map<String, String> ranking = removePartKeySuffixes(asMap(p.configProperties()));
         assertEquals("attribute(right)", resolve(lookup("toplevel", ranking), ranking));
     }

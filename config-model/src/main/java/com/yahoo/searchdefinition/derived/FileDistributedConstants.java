@@ -5,12 +5,12 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.searchdefinition.DistributableResource;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Constant values for ranking/model execution tied to a rank profile,
@@ -40,6 +40,15 @@ public class FileDistributedConstants {
 
     /** Returns a read-only map of the constants in this indexed by name. */
     public Map<String, DistributableConstant> asMap() { return constants; }
+
+    public void getConfig(RankingConstantsConfig.Builder builder) {
+        for (var constant : constants.values()) {
+            builder.constant(new RankingConstantsConfig.Constant.Builder()
+                                     .name(constant.getName())
+                                     .fileref(constant.getFileReference())
+                                     .type(constant.getType()));
+        }
+    }
 
     public static class DistributableConstant extends DistributableResource {
 

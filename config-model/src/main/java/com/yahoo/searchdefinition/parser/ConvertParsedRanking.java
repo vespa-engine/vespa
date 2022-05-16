@@ -43,6 +43,9 @@ public class ConvertParsedRanking {
         for (var constant : parsed.getConstants().values())
             profile.add(constant);
 
+        for (var onnxModel : parsed.getOnnxModels())
+            profile.add(onnxModel);
+
         for (var input : parsed.getInputs().entrySet())
             profile.addInput(input.getKey(), input.getValue());
 

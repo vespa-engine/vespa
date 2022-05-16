@@ -25,7 +25,7 @@ public class ConstantValidator extends Validator {
     public void validate(VespaModel model, DeployState deployState) {
         var exceptionMessageCollector = new ExceptionMessageCollector("Invalid constant tensor file(s):");
         for (Schema schema : deployState.getSchemas()) {
-            for (var constant : schema.constants().values())
+            for (var constant : schema.declaredConstants().values())
                 validate(constant, deployState.getApplicationPackage(), exceptionMessageCollector);
             for (var profile : deployState.rankProfileRegistry().rankProfilesOf(schema)) {
                 for (var constant : profile.declaredConstants().values())

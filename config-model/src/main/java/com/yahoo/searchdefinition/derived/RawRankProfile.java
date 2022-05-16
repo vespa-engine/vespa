@@ -483,7 +483,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
 
         private void deriveOnnxModelFunctionsAndFeatures(RankProfile rankProfile) {
             if (rankProfile.schema() == null) return;
-            if (rankProfile.schema().onnxModels().asMap().isEmpty()) return;
+            if (rankProfile.onnxModels().isEmpty()) return;
             replaceOnnxFunctionInputs(rankProfile);
             replaceImplicitOnnxConfigFeatures(summaryFeatures, rankProfile);
             replaceImplicitOnnxConfigFeatures(matchFeatures, rankProfile);
@@ -492,7 +492,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private void replaceOnnxFunctionInputs(RankProfile rankProfile) {
             Set<String> functionNames = rankProfile.getFunctions().keySet();
             if (functionNames.isEmpty()) return;
-            for (OnnxModel onnxModel: rankProfile.schema().onnxModels().asMap().values()) {
+            for (OnnxModel onnxModel: rankProfile.onnxModels().values()) {
                 for (Map.Entry<String, String> mapping : onnxModel.getInputMap().entrySet()) {
                     String source = mapping.getValue();
                     if (functionNames.contains(source)) {

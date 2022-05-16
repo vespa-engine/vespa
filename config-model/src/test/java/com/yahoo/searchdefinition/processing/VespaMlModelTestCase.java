@@ -68,7 +68,7 @@ public class VespaMlModelTestCase {
 
     private String rankConfigOf(String rankProfileName, VespaModel model) {
         StringBuilder b = new StringBuilder();
-        RawRankProfile profile = model.rankProfileList().getRankProfile(rankProfileName);
+        RawRankProfile profile = model.rankProfileList().getRankProfiles().get(rankProfileName);
         for (var property : profile.configProperties())
             b.append(property.getFirst()).append(" : ").append(property.getSecond()).append("\n");
         return b.toString();
