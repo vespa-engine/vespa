@@ -10,7 +10,6 @@ import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.messagebus.network.NetworkMultiplexer;
 import com.yahoo.messagebus.shared.NullNetwork;
 import com.yahoo.vespa.config.content.DistributionConfig;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -36,12 +35,10 @@ public class MbusClientProviderTest {
         testClient(new SessionConfig(builder));
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private void testClient(SessionConfig config) {
         SessionCache cache = new SessionCache(() -> NetworkMultiplexer.dedicated(new NullNetwork()),
                                               new ContainerMbusConfig.Builder().build(),
                                               new DocumentTypeManager(new DocumentmanagerConfig.Builder().build()),
-                                              new LoadTypeConfig.Builder().build(),
                                               new MessagebusConfig.Builder().build(),
                                               new DocumentProtocolPoliciesConfig.Builder().build(),
                                               new DistributionConfig.Builder().build());

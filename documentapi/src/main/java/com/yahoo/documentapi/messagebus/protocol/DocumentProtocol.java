@@ -6,7 +6,6 @@ import com.yahoo.component.Version;
 import com.yahoo.component.VersionSpecification;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Protocol;
 import com.yahoo.messagebus.Reply;
@@ -32,7 +31,6 @@ import static java.util.Objects.requireNonNull;
  *
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class DocumentProtocol implements Protocol {
 
     private static final Logger log = Logger.getLogger(DocumentProtocol.class.getName());
@@ -240,39 +238,21 @@ public class DocumentProtocol implements Protocol {
     }
 
     public DocumentProtocol(DocumentTypeManager docMan) {
-        this(docMan, null, new LoadTypeSet());
-    }
-
-    public DocumentProtocol(DocumentTypeManager docMan, String configId) {
-        this(docMan, configId, new LoadTypeSet());
+        this(docMan, null);
     }
 
     public DocumentProtocol(DocumentTypeManager documentTypeManager,
                             DocumentProtocolPoliciesConfig policiesConfig,
                             DistributionConfig distributionConfig) {
-        this(requireNonNull(documentTypeManager), null, new LoadTypeSet(),
+        this(requireNonNull(documentTypeManager), null,
              requireNonNull(policiesConfig), requireNonNull(distributionConfig));
     }
 
-    /**
-     * @deprecated load types are deprecated. Use constructor without LoadTypeSet instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public DocumentProtocol(DocumentTypeManager documentTypeManager, LoadTypeSet loadTypes,
-                            DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
-        this(requireNonNull(documentTypeManager), null, requireNonNull(loadTypes),
-             requireNonNull(policiesConfig), requireNonNull(distributionConfig));
+    public DocumentProtocol(DocumentTypeManager docMan, String configId) {
+        this(docMan, configId == null ? "client" : configId, null, null);
     }
 
-    /**
-     * @deprecated load types are deprecated. Use constructor without LoadTypeSet instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public DocumentProtocol(DocumentTypeManager docMan, String configId, LoadTypeSet set) {
-        this(docMan, configId == null ? "client" : configId, set, null, null);
-    }
-
-    private DocumentProtocol(DocumentTypeManager docMan, String configId, LoadTypeSet set,
+    private DocumentProtocol(DocumentTypeManager docMan, String configId,
                              DocumentProtocolPoliciesConfig policiesConfig, DistributionConfig distributionConfig) {
         if (docMan != null)
             this.docMan = docMan;
@@ -280,7 +260,7 @@ public class DocumentProtocol implements Protocol {
             this.docMan = new DocumentTypeManager();
             DocumentTypeManagerConfigurer.configure(this.docMan, configId);
         }
-        this.routableRepository = new RoutableRepository(set);
+        this.routableRepository = new RoutableRepository();
 
         // When adding factories to this list, please KEEP THEM ORDERED alphabetically like they are now.
         putRoutingPolicyFactory("AND", new RoutingPolicyFactories.AndPolicyFactory());
