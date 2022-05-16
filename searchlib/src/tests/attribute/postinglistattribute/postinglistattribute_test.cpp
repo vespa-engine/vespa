@@ -11,6 +11,7 @@
 #include <vespa/searchlib/attribute/multinumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.h>
 #include <vespa/searchlib/attribute/multistringpostattribute.h>
+#include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
@@ -148,13 +149,13 @@ protected:
     void checkPostingList(const VectorType & vec, const std::vector<BufferType> & values, const Range & range);
 
     template <typename BufferType>
-    void checkSearch(bool useBitVector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd);
+    void checkSearch(bool useBitVector, bool need_unpack, bool has_btree, bool has_bitvector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd);
 
     template <typename VectorType, typename BufferType>
     void testPostingList(const AttributePtr& ptr1, uint32_t numDocs, const std::vector<BufferType>& values);
     void testPostingList();
-    void testPostingList(bool enableBitVector);
-    void testPostingList(bool enableBitVector, uint32_t numDocs, uint32_t numUniqueValues);
+    void testPostingList(bool enableBitVector, bool enable_only_bitvector);
+    void testPostingList(bool enableBitVector, bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues);
 
     template <typename AttributeType, typename ValueType>
     void checkPostingList(AttributeType & vec, ValueType value, DocSet expected);
@@ -461,26 +462,44 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
 
         auto find_result = dict.find_posting_list(enumStore.make_comparator(values[i]), dict.get_frozen_root());
         ASSERT_TRUE(find_result.first.valid());
+        bool has_bitvector = VectorType::PostingList::isBitVector(postingList.getTypeId(find_result.second));
 
         typename VectorType::PostingList::Iterator postings;
         postings = postingList.begin(find_result.second);
-
-        uint32_t doc = docBegin;
         uint32_t numHits(0);
-        for (; postings.valid(); ++postings) {
-            EXPECT_EQ(doc++, postings.getKey());
-            numHits++;
+        bool has_btree = postings.valid();
+        if (postings.valid()) {
+            uint32_t doc = docBegin;
+            for (; postings.valid(); ++postings) {
+                EXPECT_EQ(doc++, postings.getKey());
+                numHits++;
+            }
+            EXPECT_EQ(doc, docEnd);
+        } else {
+            EXPECT_TRUE(has_bitvector && vec.getConfig().getEnableOnlyBitVector());
+            numHits = postingList.getBitVectorEntry(find_result.second)->_bv->reader().countTrueBits();
         }
-        EXPECT_EQ(doc, docEnd);
-        checkSearch(false, vec, values[i], numHits, docBegin, docEnd);
-        checkSearch(true, vec, values[i], numHits, docBegin, docEnd);
+        if (has_bitvector) {
+            uint32_t doc = docBegin;
+            uint32_t bv_num_hits = 0;
+            auto& bv = postingList.getBitVectorEntry(find_result.second)->_bv->reader();
+            for (auto lid = bv.getFirstTrueBit(); lid < bv.size(); lid = bv.getNextTrueBit(lid + 1)) {
+                EXPECT_EQ(doc++, lid);
+                ++bv_num_hits;
+            }
+            EXPECT_EQ(doc, docEnd);
+            EXPECT_EQ(numHits, bv_num_hits);
+        }
+        checkSearch(false, true, has_btree, has_bitvector, vec, values[i], numHits, docBegin, docEnd);
+        checkSearch(true, true, has_btree, has_bitvector, vec, values[i], numHits, docBegin, docEnd);
+        checkSearch(false, false, has_btree, has_bitvector, vec, values[i], numHits, docBegin, docEnd);
     }
 }
 
 
 template <typename BufferType>
 void
-PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd)
+PostingListAttributeTest::checkSearch(bool useBitVector, bool need_unpack, bool has_btree, bool has_bitvector, const AttributeVector & vec, const BufferType & term, uint32_t numHits, uint32_t docBegin, uint32_t docEnd)
 {
     SearchContextPtr sc = getSearch(vec, term, false, attribute::SearchContextParams().useBitVector(useBitVector));
     EXPECT_FALSE( ! sc );
@@ -494,7 +513,11 @@ PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector &
         docBegin++;
     }
     TermFieldMatchData tfmd;
+    if (!need_unpack) {
+        tfmd.tagAsNotNeeded();
+    }
     auto it = sc->createIterator(&tfmd, true);
+    EXPECT_EQ((useBitVector || !has_btree || !need_unpack) && has_bitvector, it->isBitVector());
     it->initFullRange();
     EXPECT_TRUE(it->seekFirst(docBegin));
     EXPECT_EQ(docBegin, it->getDocId());
@@ -571,19 +594,20 @@ PostingListAttributeTest::testPostingList(const AttributePtr& ptr1, uint32_t num
 void
 PostingListAttributeTest::testPostingList()
 {
-    testPostingList(false);
-    testPostingList(true);
+    testPostingList(false, false);
+    testPostingList(true, false);
+    testPostingList(true, true);
 }
 
 void
-PostingListAttributeTest::testPostingList(bool enableBitVector)
+PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only_bitvector)
 {
-    testPostingList(enableBitVector, 1000, 50);
-    testPostingList(enableBitVector, 2000, 10); // This should force bitvector
+    testPostingList(enableBitVector, enable_only_bitvector, 1000, 50);
+    testPostingList(enableBitVector, enable_only_bitvector, 2000, 10); // This should force bitvector
 }
 
 void
-PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs, uint32_t numUniqueValues)
+PostingListAttributeTest::testPostingList(bool enableBitVector, bool enable_only_bitvector, uint32_t numDocs, uint32_t numUniqueValues)
 {
 
     { // IntegerAttribute
@@ -595,6 +619,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("sint32", cfg);
             testPostingList<Int32PostingListAttribute>(ptr1, numDocs, values);
         }
@@ -602,6 +627,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("aint32", cfg);
             testPostingList<Int32ArrayPostingListAttribute>(ptr1, numDocs, values);
         }
@@ -609,6 +635,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::INT32, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("wsint32", cfg);
             testPostingList<Int32WsetPostingListAttribute>(ptr1, numDocs, values);
         }
@@ -623,6 +650,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::FLOAT, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("sfloat", cfg);
             testPostingList<FloatPostingListAttribute>(ptr1, numDocs, values);
         }
@@ -630,6 +658,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::FLOAT, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("afloat", cfg);
             testPostingList<FloatArrayPostingListAttribute>(ptr1, numDocs, values);
         }
@@ -637,6 +666,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::FLOAT, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("wsfloat", cfg);
             testPostingList<FloatWsetPostingListAttribute>(ptr1, numDocs, values);
         }
@@ -657,6 +687,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("sstr", cfg);
             testPostingList<StringPostingListAttribute>(ptr1, numDocs, charValues);
         }
@@ -664,6 +695,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("astr", cfg);
             testPostingList<StringArrayPostingListAttribute>(ptr1, numDocs, charValues);
         }
@@ -671,6 +703,7 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::STRING, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
+            cfg.setEnableOnlyBitVector(enable_only_bitvector);
             AttributePtr ptr1 = create_attribute("wsstr", cfg);
             testPostingList<StringWsetPostingListAttribute>(ptr1, numDocs, charValues);
         }
