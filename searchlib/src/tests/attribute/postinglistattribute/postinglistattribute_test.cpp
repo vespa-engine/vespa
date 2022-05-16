@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/document/update/arithmeticvalueupdate.h>
@@ -14,6 +14,7 @@
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/fastos/file.h>
@@ -21,6 +22,12 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP("postinglistattribute_test");
+
+namespace {
+
+vespalib::string tmp_dir("tmp");
+
+}
 
 using std::shared_ptr;
 
@@ -72,16 +79,16 @@ assertIterator(const std::string &exp, SearchIterator &it,
 {
     std::stringstream ss;
     toStr(ss, it, md);
-    if (!EXPECT_EQUAL(exp, ss.str()))
-        return false;
-    return true;
+    bool retval = true;
+    EXPECT_EQ(exp, ss.str()) << (retval = false, "");
+    return retval;
 }
 
 using AttributePtr = AttributeVector::SP;
 
-class PostingListAttributeTest : public vespalib::TestApp
+class PostingListAttributeTest : public ::testing::Test
 {
-private:
+protected:
     typedef IntegerAttribute::largeint_t     largeint_t;
     typedef std::set<AttributeVector::DocId> DocSet;
 
@@ -171,8 +178,6 @@ private:
     void testStringFold();
     void testDupValuesInIntArray();
     void testDupValuesInStringArray();
-public:
-    int Main() override;
 };
 
 template <>
@@ -379,9 +384,9 @@ PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &
     SearchContextPtr sc = getSearch<StringAttribute>(sa);
     sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    if (!EXPECT_TRUE(assertIterator(exp, *sb)))
-        return false;
-    return true;
+    bool retval = true;
+    EXPECT_TRUE(assertIterator(exp, *sb)) << (retval = false, "");
+    return retval;
 }
 
 
@@ -392,9 +397,9 @@ PostingListAttributeTest::assertSearch(const std::string &exp, StringAttribute &
     SearchContextPtr sc = getSearch<StringAttribute, std::string>(sa, key, false);
     sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
-        return false;
-    return true;
+    bool retval = true;
+    EXPECT_TRUE(assertIterator(exp, *sb, &md)) << (retval = false, "");
+    return retval;
 }
 
 bool
@@ -404,9 +409,9 @@ PostingListAttributeTest::assertSearch(const std::string &exp, IntegerAttribute 
     SearchContextPtr sc = getSearch<IntegerAttribute, int32_t>(ia, key, false);
     sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     SearchBasePtr sb = sc->createIterator(&md, true);
-    if (!EXPECT_TRUE(assertIterator(exp, *sb, &md)))
-        return false;
-    return true;
+    bool retval = true;
+    EXPECT_TRUE(assertIterator(exp, *sb, &md)) << (retval = false, "");
+    return retval;
 }
 
 
@@ -463,10 +468,10 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         uint32_t doc = docBegin;
         uint32_t numHits(0);
         for (; postings.valid(); ++postings) {
-            EXPECT_EQUAL(doc++, postings.getKey());
+            EXPECT_EQ(doc++, postings.getKey());
             numHits++;
         }
-        EXPECT_EQUAL(doc, docEnd);
+        EXPECT_EQ(doc, docEnd);
         checkSearch(false, vec, values[i], numHits, docBegin, docEnd);
         checkSearch(true, vec, values[i], numHits, docBegin, docEnd);
     }
@@ -481,7 +486,7 @@ PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector &
     EXPECT_FALSE( ! sc );
     sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
     size_t approx = sc->approximateHits();
-    EXPECT_EQUAL(numHits, approx);
+    EXPECT_EQ(numHits, approx);
     if (docBegin == 0) {
         // Approximation does not know about the special 0
         // But the iterator does....
@@ -492,7 +497,7 @@ PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector &
     auto it = sc->createIterator(&tfmd, true);
     it->initFullRange();
     EXPECT_TRUE(it->seekFirst(docBegin));
-    EXPECT_EQUAL(docBegin, it->getDocId());
+    EXPECT_EQ(docBegin, it->getDocId());
     size_t hits(0);
     uint32_t lastDocId = it->getDocId();
     while (! it->isAtEnd()) {
@@ -500,15 +505,22 @@ PostingListAttributeTest::checkSearch(bool useBitVector, const AttributeVector &
         it->seek(lastDocId+1);
         hits++;
     }
-    EXPECT_EQUAL(numHits, hits);
-    EXPECT_GREATER_EQUAL(approx, hits);
-    EXPECT_EQUAL(docEnd, lastDocId+1);
+    EXPECT_EQ(numHits, hits);
+    EXPECT_GE(approx, hits);
+    EXPECT_EQ(docEnd, lastDocId+1);
+}
+
+
+AttributePtr
+create_attribute(const vespalib::stringref name, const Config& cfg)
+{
+    return AttributeFactory::createAttribute(tmp_dir + "/" + name, cfg);
 }
 
 AttributePtr
 create_as(const AttributeVector& attr, const std::string& name_suffix)
 {
-    return AttributeFactory::createAttribute(attr.getName() + name_suffix, attr.getConfig());
+    return create_attribute(attr.getName() + name_suffix, attr.getConfig());
 }
 
 template <typename VectorType, typename BufferType>
@@ -583,21 +595,21 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sint32", cfg);
+            AttributePtr ptr1 = create_attribute("sint32", cfg);
             testPostingList<Int32PostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("aint32", cfg);
+            AttributePtr ptr1 = create_attribute("aint32", cfg);
             testPostingList<Int32ArrayPostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::INT32, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("wsint32", cfg);
+            AttributePtr ptr1 = create_attribute("wsint32", cfg);
             testPostingList<Int32WsetPostingListAttribute>(ptr1, numDocs, values);
         }
     }
@@ -611,21 +623,21 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::FLOAT, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sfloat", cfg);
+            AttributePtr ptr1 = create_attribute("sfloat", cfg);
             testPostingList<FloatPostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("afloat", cfg);
+            AttributePtr ptr1 = create_attribute("afloat", cfg);
             testPostingList<FloatArrayPostingListAttribute>(ptr1, numDocs, values);
         }
         {
             Config cfg(Config(BasicType::FLOAT, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("wsfloat", cfg);
+            AttributePtr ptr1 = create_attribute("wsfloat", cfg);
             testPostingList<FloatWsetPostingListAttribute>(ptr1, numDocs, values);
         }
     }
@@ -645,21 +657,21 @@ PostingListAttributeTest::testPostingList(bool enableBitVector, uint32_t numDocs
             Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sstr", cfg);
+            AttributePtr ptr1 = create_attribute("sstr", cfg);
             testPostingList<StringPostingListAttribute>(ptr1, numDocs, charValues);
         }
         {
             Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("astr", cfg);
+            AttributePtr ptr1 = create_attribute("astr", cfg);
             testPostingList<StringArrayPostingListAttribute>(ptr1, numDocs, charValues);
         }
         {
             Config cfg(Config(BasicType::STRING, CollectionType::WSET));
             cfg.setFastSearch(true);
             cfg.setEnableBitVectors(enableBitVector);
-            AttributePtr ptr1 = AttributeFactory::createAttribute("wsstr", cfg);
+            AttributePtr ptr1 = create_attribute("wsstr", cfg);
             testPostingList<StringWsetPostingListAttribute>(ptr1, numDocs, charValues);
         }
     }
@@ -681,7 +693,7 @@ PostingListAttributeTest::checkPostingList(AttributeType & vec, ValueType value,
     DocSet::iterator docBegin = expected.begin();
     DocSet::iterator docEnd = expected.end();
     for (; postings.valid(); ++postings) {
-        EXPECT_EQUAL(*docBegin++, postings.getKey());
+        EXPECT_EQ(*docBegin++, postings.getKey());
     }
     EXPECT_TRUE(docBegin == docEnd);
 }
@@ -789,14 +801,14 @@ PostingListAttributeTest::testArithmeticValueUpdate()
     { // IntegerAttribute
         Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("sint32", cfg);
+        AttributePtr ptr = create_attribute("sint32", cfg);
         testArithmeticValueUpdate<Int32PostingListAttribute, largeint_t>(ptr);
     }
 
     { // FloatingPointAttribute
         Config cfg(Config(BasicType::FLOAT, CollectionType::SINGLE));
         cfg.setFastSearch(true);
-        AttributePtr ptr = AttributeFactory::createAttribute("sfloat", cfg);
+        AttributePtr ptr = create_attribute("sfloat", cfg);
         testArithmeticValueUpdate<FloatPostingListAttribute, double>(ptr);
     }
 }
@@ -823,7 +835,7 @@ PostingListAttributeTest::testReload(const AttributePtr & ptr1, const AttributeP
     ValueType buffer[1];
     for (uint32_t doc = 0; doc < 5; ++doc) {
         EXPECT_TRUE(ptr2->get(doc, buffer, 1) == 1);
-        EXPECT_EQUAL(buffer[0], value);
+        EXPECT_EQ(buffer[0], value);
     }
 }
 
@@ -834,13 +846,13 @@ PostingListAttributeTest::testReload()
         Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
         cfg.setFastSearch(true);
         {
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sint32_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sint32_2", cfg);
+            AttributePtr ptr1 = create_attribute("sint32_1", cfg);
+            AttributePtr ptr2 = create_attribute("sint32_2", cfg);
             testReload<Int32PostingListAttribute, largeint_t>(ptr1, ptr2, 100);
         }
         {
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sint32_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sint32_2", cfg);
+            AttributePtr ptr1 = create_attribute("sint32_1", cfg);
+            AttributePtr ptr2 = create_attribute("sint32_2", cfg);
             testReload<Int32PostingListAttribute, largeint_t>(ptr1, ptr2, 0);
         }
     }
@@ -849,13 +861,13 @@ PostingListAttributeTest::testReload()
         Config cfg(Config(BasicType::FLOAT, CollectionType::SINGLE));
         cfg.setFastSearch(true);
         {
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sfloat_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sfloat_2", cfg);
+            AttributePtr ptr1 = create_attribute("sfloat_1", cfg);
+            AttributePtr ptr2 = create_attribute("sfloat_2", cfg);
             testReload<FloatPostingListAttribute, double>(ptr1, ptr2, 100);
         }
         {
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sfloat_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sfloat_2", cfg);
+            AttributePtr ptr1 = create_attribute("sfloat_1", cfg);
+            AttributePtr ptr2 = create_attribute("sfloat_2", cfg);
             testReload<FloatPostingListAttribute, double>(ptr1, ptr2, 0);
         }
     }
@@ -864,13 +876,13 @@ PostingListAttributeTest::testReload()
         Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
         cfg.setFastSearch(true);
         {
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sstr_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sstr_2", cfg);
+            AttributePtr ptr1 = create_attribute("sstr_1", cfg);
+            AttributePtr ptr2 = create_attribute("sstr_2", cfg);
             testReload<StringPostingListAttribute, vespalib::string>(ptr1, ptr2, "unique");
         }
         {
-            AttributePtr ptr1 = AttributeFactory::createAttribute("sstr_1", cfg);
-            AttributePtr ptr2 = AttributeFactory::createAttribute("sstr_2", cfg);
+            AttributePtr ptr1 = create_attribute("sstr_1", cfg);
+            AttributePtr ptr2 = create_attribute("sstr_2", cfg);
             testReload<StringPostingListAttribute, vespalib::string>(ptr1, ptr2, "");
         }
     }
@@ -893,18 +905,18 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
 
     if (ptr1->hasMultiValue()) {
         if (trimmed == 2u) {
-            EXPECT_EQUAL(3, mmpi->getMinWeight());
+            EXPECT_EQ(3, mmpi->getMinWeight());
         } else {
-            EXPECT_EQUAL(-3, mmpi->getMinWeight());
+            EXPECT_EQ(-3, mmpi->getMinWeight());
         }
-        EXPECT_EQUAL(3, mmpi->getMaxWeight());
+        EXPECT_EQ(3, mmpi->getMaxWeight());
     } else {
-        EXPECT_EQUAL(1, mmpi->getMinWeight());
-        EXPECT_EQUAL(1, mmpi->getMaxWeight());
+        EXPECT_EQ(1, mmpi->getMinWeight());
+        EXPECT_EQ(1, mmpi->getMaxWeight());
     }
 
     sb->seek(1u);
-    EXPECT_EQUAL(1u, sb->getDocId());
+    EXPECT_EQ(1u, sb->getDocId());
 
     sc = getSearch2<VectorType>(as<VectorType>(ptr1));
     sc->fetchPostings(queryeval::ExecuteInfo::TRUE);
@@ -921,14 +933,14 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
 
         if (ptr1->hasMultiValue()) {
             if (trimmed == 0) {
-                EXPECT_EQUAL(12, mmpi->getMinWeight());
+                EXPECT_EQ(12, mmpi->getMinWeight());
             } else {
-                EXPECT_EQUAL(14, mmpi->getMinWeight());
+                EXPECT_EQ(14, mmpi->getMinWeight());
             }
-            EXPECT_EQUAL(14, mmpi->getMaxWeight());
+            EXPECT_EQ(14, mmpi->getMaxWeight());
         } else {
-            EXPECT_EQUAL(1, mmpi->getMinWeight());
-            EXPECT_EQUAL(1, mmpi->getMaxWeight());
+            EXPECT_EQ(1, mmpi->getMinWeight());
+            EXPECT_EQ(1, mmpi->getMaxWeight());
         }
     }
 
@@ -936,7 +948,7 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, uint32_t trimmed)
     if (trimmed == 2u) {
         EXPECT_TRUE(sb->isAtEnd());
     } else {
-        EXPECT_EQUAL(7u, sb->getDocId());
+        EXPECT_EQ(7u, sb->getDocId());
     }
 }
 
@@ -948,19 +960,29 @@ PostingListAttributeTest::testMinMax(AttributePtr &ptr1, AttributePtr &ptr2)
     addDocs(ptr1, numDocs);
     populate(as<VectorType>(ptr1));
     
-    TEST_DO(testMinMax<VectorType>(ptr1, 0u));
+    {
+        SCOPED_TRACE("after populate");
+        testMinMax<VectorType>(ptr1, 0u);
+    }
     ASSERT_TRUE(ptr1->save(ptr2->getBaseFileName()));
     ASSERT_TRUE(ptr2->load());
-    testMinMax<VectorType>(ptr2, 0u);
+    {
+        SCOPED_TRACE("after save and load");
+        testMinMax<VectorType>(ptr2, 0u);
+    }
 
     ptr2->clearDoc(20);
     ptr2->clearDoc(25);
     ptr2->commit();
-    TEST_DO(testMinMax<VectorType>(ptr2, 1u));
+    {
+        SCOPED_TRACE("after 1 trim round");
+        testMinMax<VectorType>(ptr2, 1u);
+    }
 
     ptr2->clearDoc(7);
     ptr2->commit();
-    TEST_DO(testMinMax<VectorType>(ptr2, 2u));
+    SCOPED_TRACE("after 2 trim rounds");
+    testMinMax<VectorType>(ptr2, 2u);
     
 }
 
@@ -970,29 +992,29 @@ PostingListAttributeTest::testMinMax()
     {
         Config cfg(Config(BasicType::INT32, CollectionType::SINGLE));
         cfg.setFastSearch(true);
-        AttributePtr ptr1 = AttributeFactory::createAttribute("sint32_1", cfg);
-        AttributePtr ptr2 = AttributeFactory::createAttribute("sint32_2", cfg);
+        AttributePtr ptr1 = create_attribute("sint32_1", cfg);
+        AttributePtr ptr2 = create_attribute("sint32_2", cfg);
         testMinMax<IntegerAttribute>(ptr1, ptr2);
     }
     {
         Config cfg(Config(BasicType::INT32, CollectionType::WSET));
         cfg.setFastSearch(true);
-        AttributePtr ptr1 = AttributeFactory::createAttribute("wsint32_1", cfg);
-        AttributePtr ptr2 = AttributeFactory::createAttribute("wsint32_2", cfg);
+        AttributePtr ptr1 = create_attribute("wsint32_1", cfg);
+        AttributePtr ptr2 = create_attribute("wsint32_2", cfg);
         testMinMax<IntegerAttribute>(ptr1, ptr2);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
         cfg.setFastSearch(true);
-        AttributePtr ptr1 = AttributeFactory::createAttribute("sstr_1", cfg);
-        AttributePtr ptr2 = AttributeFactory::createAttribute("sstr_2", cfg);
+        AttributePtr ptr1 = create_attribute("sstr_1", cfg);
+        AttributePtr ptr2 = create_attribute("sstr_2", cfg);
         testMinMax<StringAttribute>(ptr1, ptr2);
     }
     {
         Config cfg(Config(BasicType::STRING, CollectionType::WSET));
         cfg.setFastSearch(true);
-        AttributePtr ptr1 = AttributeFactory::createAttribute("wsstr_1", cfg);
-        AttributePtr ptr2 = AttributeFactory::createAttribute("wsstr_2", cfg);
+        AttributePtr ptr1 = create_attribute("wsstr_1", cfg);
+        AttributePtr ptr2 = create_attribute("wsstr_2", cfg);
         testMinMax<StringAttribute>(ptr1, ptr2);
     }
 }
@@ -1003,7 +1025,7 @@ PostingListAttributeTest::testStringFold()
 {
     Config cfg(Config(BasicType::STRING, CollectionType::SINGLE));
     cfg.setFastSearch(true);
-    AttributePtr ptr1 = AttributeFactory::createAttribute("sstr_1", cfg);
+    AttributePtr ptr1 = create_attribute("sstr_1", cfg);
 
     addDocs(ptr1, 6);
 
@@ -1046,7 +1068,7 @@ PostingListAttributeTest::testDupValuesInIntArray()
 {
     Config cfg(Config(BasicType::INT32, CollectionType::ARRAY));
     cfg.setFastSearch(true);
-    AttributePtr ptr1 = AttributeFactory::createAttribute("aint32_3", cfg);
+    AttributePtr ptr1 = create_attribute("aint32_3", cfg);
     addDocs(ptr1, 6);
 
     IntegerAttribute &ia(asInt(ptr1));
@@ -1071,7 +1093,7 @@ PostingListAttributeTest::testDupValuesInStringArray()
 {
     Config cfg(Config(BasicType::STRING, CollectionType::ARRAY));
     cfg.setFastSearch(true);
-    AttributePtr ptr1 = AttributeFactory::createAttribute("astr_3", cfg);
+    AttributePtr ptr1 = create_attribute("astr_3", cfg);
     addDocs(ptr1, 6);
 
     StringAttribute &sa(asString(ptr1));
@@ -1102,22 +1124,50 @@ PostingListAttributeTest::testDupValuesInStringArray()
 }
 
 
-int
-PostingListAttributeTest::Main()
+TEST_F(PostingListAttributeTest, test_posting_list)
 {
-    TEST_INIT("postinglistattribute_test");
-
     testPostingList();
+}
+
+TEST_F(PostingListAttributeTest, test_arithmetic_value_update)
+{
     testArithmeticValueUpdate();
+}
+
+TEST_F(PostingListAttributeTest, test_reload)
+{
     testReload();
+}
+
+TEST_F(PostingListAttributeTest, test_min_max)
+{
     testMinMax();
+}
+
+TEST_F(PostingListAttributeTest, test_string_fold)
+{
     testStringFold();
+}
+
+TEST_F(PostingListAttributeTest, test_dup_values_in_int_array)
+{
     testDupValuesInIntArray();
+}
+
+TEST_F(PostingListAttributeTest, test_dup_values_in_string_array)
+{
     testDupValuesInStringArray();
-
-    TEST_DONE();
 }
 
 }
 
-TEST_APPHOOK(search::PostingListAttributeTest);
+int
+main(int argc, char* argv[])
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    vespalib::rmdir(tmp_dir, true);
+    vespalib::mkdir(tmp_dir, true);
+    int retval = RUN_ALL_TESTS();
+    vespalib::rmdir(tmp_dir, true);
+    return retval;
+}
