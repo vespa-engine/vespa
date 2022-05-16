@@ -440,7 +440,7 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                         properties.add(new Pair<>(input.name().toString(),
                                                   input.type().rank() == 0 ?
                                                   String.valueOf(input.defaultValue().get().asDouble()) :
-                                                  input.defaultValue().get().toString(false, false)));
+                                                  input.defaultValue().get().toString(true, false)));
                 }
             }
             if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");

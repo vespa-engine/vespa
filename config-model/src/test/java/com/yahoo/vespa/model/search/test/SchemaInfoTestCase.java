@@ -65,11 +65,11 @@ public class SchemaInfoTestCase {
                 assertInput("query(bar)", "tensor(key{},x[1000])", null, 1, schemaInfoProfile, rankProfilesProfile);
                 assertInput("query(myDouble1)", "tensor()", "0.5", 2, schemaInfoProfile, rankProfilesProfile);
                 assertInput("query(myDouble2)", "tensor()", null, 3, schemaInfoProfile, rankProfilesProfile);
-                assertInput("query(myMap)", "tensor(key{})", "{{key:label1}:1.0, {key:label2}:2.0, {key:label3}:3.0}", 4, schemaInfoProfile, rankProfilesProfile);
-                assertInput("query(myVector)", "tensor(x[3])", "{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}", 5, schemaInfoProfile, rankProfilesProfile);
-                assertInput("query(myMatrix)", "tensor(x[2],y[3])", "{{x:0,y:0}:1.0, {x:0,y:1}:2.0, {x:0,y:2}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0, {x:1,y:2}:6.0}", 6, schemaInfoProfile, rankProfilesProfile);
-                assertInput("query(myMixed1)", "tensor(key{},x[2])", "{{key:key1,x:0}:-1.0, {key:key1,x:1}:1.1, {key:key2,x:0}:1.0, {key:key2,x:1}:2.0}", 7, schemaInfoProfile, rankProfilesProfile);
-                assertInput("query(myMixed2)", "tensor(k1{},k2{},x[2])", "{{k1:l1,k2:l1,x:0}:-1.0, {k1:l1,k2:l1,x:1}:1.1, {k1:l1,k2:l2,x:0}:1.0, {k1:l1,k2:l2,x:1}:2.0}", 8, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMap)", "tensor(key{})", "tensor(key{}):{{key:label1}:1.0, {key:label2}:2.0, {key:label3}:3.0}", 4, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myVector)", "tensor(x[3])", "tensor(x[3]):{{x:0}:1.0, {x:1}:2.0, {x:2}:3.0}", 5, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMatrix)", "tensor(x[2],y[3])", "tensor(x[2],y[3]):{{x:0,y:0}:1.0, {x:0,y:1}:2.0, {x:0,y:2}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0, {x:1,y:2}:6.0}", 6, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMixed1)", "tensor(key{},x[2])", "tensor(key{},x[2]):{{key:key1,x:0}:-1.0, {key:key1,x:1}:1.1, {key:key2,x:0}:1.0, {key:key2,x:1}:2.0}", 7, schemaInfoProfile, rankProfilesProfile);
+                assertInput("query(myMixed2)", "tensor(k1{},k2{},x[2])", "tensor(k1{},k2{},x[2]):{{k1:l1,k2:l1,x:0}:-1.0, {k1:l1,k2:l1,x:1}:1.1, {k1:l1,k2:l2,x:0}:1.0, {k1:l1,k2:l2,x:1}:2.0}", 8, schemaInfoProfile, rankProfilesProfile);
 
                 assertEquals(2, schema.summaryclass().size());
                 assertEquals("default", schema.summaryclass(0).name());
