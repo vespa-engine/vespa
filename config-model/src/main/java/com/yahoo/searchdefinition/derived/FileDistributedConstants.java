@@ -5,12 +5,14 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.searchdefinition.DistributableResource;
 import com.yahoo.searchdefinition.RankProfile;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.logging.Logger;
 
 /**
  * Constant values for ranking/model execution tied to a rank profile,
@@ -20,6 +22,7 @@ import java.util.function.Function;
  */
 public class FileDistributedConstants {
 
+    private static final Logger log = Logger.getLogger(FileDistributedConstants.class.getName());
     private final Map<String, DistributableConstant> constants;
 
     public FileDistributedConstants(FileRegistry fileRegistry, Collection<RankProfile.Constant> constants) {
@@ -40,6 +43,18 @@ public class FileDistributedConstants {
 
     /** Returns a read-only map of the constants in this indexed by name. */
     public Map<String, DistributableConstant> asMap() { return constants; }
+
+    public void getConfig(RankingConstantsConfig.Builder builder) {
+        for (var constant : constants.values()) {
+            if ("".equals(constant.getFileReference()))
+                log.warning("Illegal file reference " + constant); // Let tests pass ... we should find a better way
+            else
+                builder.constant(new RankingConstantsConfig.Constant.Builder()
+                                         .name(constant.getName())
+                                         .fileref(constant.getFileReference())
+                                         .type(constant.getType()));
+        }
+    }
 
     public static class DistributableConstant extends DistributableResource {
 

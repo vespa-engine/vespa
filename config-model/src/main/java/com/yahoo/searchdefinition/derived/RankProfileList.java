@@ -2,7 +2,6 @@
 package com.yahoo.searchdefinition.derived;
 
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -29,7 +28,6 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -199,15 +197,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
     }
 
     public void getConfig(RankingConstantsConfig.Builder builder) {
-        for (var constant : constants.asMap().values()) {
-            if ("".equals(constant.getFileReference()))
-                log.warning("Illegal file reference " + constant); // Let tests pass ... we should find a better way
-            else
-                builder.constant(new RankingConstantsConfig.Constant.Builder()
-                                         .name(constant.getName())
-                                         .fileref(constant.getFileReference())
-                                         .type(constant.getType()));
-        }
+        constants.getConfig(builder);
     }
 
     public void getConfig(OnnxModelsConfig.Builder builder) {

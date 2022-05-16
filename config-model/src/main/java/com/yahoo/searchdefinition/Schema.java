@@ -218,7 +218,7 @@ public class Schema implements ImmutableSchema {
      */
     public void addDocument(SDDocumentType document) {
         if (documentType != null) {
-            throw new IllegalArgumentException("Searchdefinition cannot have more than one document");
+            throw new IllegalArgumentException("Schema cannot have more than one document");
         }
         documentType = document;
     }
