@@ -11,8 +11,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.logging.Logger;
 
 /**
  * Constant values for ranking/model execution tied to a rank profile,
@@ -22,7 +20,6 @@ import java.util.logging.Logger;
  */
 public class FileDistributedConstants {
 
-    private static final Logger log = Logger.getLogger(FileDistributedConstants.class.getName());
     private final Map<String, DistributableConstant> constants;
 
     public FileDistributedConstants(FileRegistry fileRegistry, Collection<RankProfile.Constant> constants) {
@@ -46,13 +43,10 @@ public class FileDistributedConstants {
 
     public void getConfig(RankingConstantsConfig.Builder builder) {
         for (var constant : constants.values()) {
-            if ("".equals(constant.getFileReference()))
-                log.warning("Illegal file reference " + constant); // Let tests pass ... we should find a better way
-            else
-                builder.constant(new RankingConstantsConfig.Constant.Builder()
-                                         .name(constant.getName())
-                                         .fileref(constant.getFileReference())
-                                         .type(constant.getType()));
+            builder.constant(new RankingConstantsConfig.Constant.Builder()
+                                     .name(constant.getName())
+                                     .fileref(constant.getFileReference())
+                                     .type(constant.getType()));
         }
     }
 
