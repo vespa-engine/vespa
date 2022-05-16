@@ -19,7 +19,6 @@ public:
     using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 private:
-    uint32_t           _indexingThreads;
     uint32_t           _master_task_limit;
     uint32_t           _defaultTaskLimit;
     bool               _is_task_limit_hard;
@@ -28,14 +27,13 @@ private:
     vespalib::duration _reactionTime;         // Maximum reaction time to new tasks
 
 private:
-    ThreadingServiceConfig(uint32_t indexingThreads_, uint32_t master_task_limit_, int32_t defaultTaskLimit_,
+    ThreadingServiceConfig(uint32_t master_task_limit_, int32_t defaultTaskLimit_,
                            OptimizeFor optimize_, uint32_t kindOfWatermark_, vespalib::duration reactionTime_);
 
 public:
-    static ThreadingServiceConfig make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo);
-    static ThreadingServiceConfig make(uint32_t indexingThreads);
+    static ThreadingServiceConfig make(const ProtonConfig& cfg);
+    static ThreadingServiceConfig make();
     void update(const ThreadingServiceConfig& cfg);
-    uint32_t indexingThreads() const { return _indexingThreads; }
     uint32_t master_task_limit() const { return _master_task_limit; }
     uint32_t defaultTaskLimit() const { return _defaultTaskLimit; }
     bool is_task_limit_hard() const { return _is_task_limit_hard; }

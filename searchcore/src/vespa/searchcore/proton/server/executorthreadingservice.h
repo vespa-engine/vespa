@@ -42,8 +42,7 @@ public:
     ExecutorThreadingService(vespalib::Executor& sharedExecutor,
                              FNET_Transport& transport,
                              const vespalib::Clock& clock,
-                             vespalib::ISequencedTaskExecutor& field_writer,
-                             uint32_t num_treads = 1);
+                             vespalib::ISequencedTaskExecutor& field_writer);
 
     ExecutorThreadingService(vespalib::Executor& sharedExecutor,
                              FNET_Transport & transport,

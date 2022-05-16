@@ -39,9 +39,8 @@ VESPA_THREAD_STACK_TAG(summary_executor)
 ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor& sharedExecutor,
                                                    FNET_Transport& transport,
                                                    const vespalib::Clock& clock,
-                                                   vespalib::ISequencedTaskExecutor& field_writer,
-                                                   uint32_t num_treads)
-    : ExecutorThreadingService(sharedExecutor, transport, clock, field_writer, nullptr, ThreadingServiceConfig::make(num_treads))
+                                                   vespalib::ISequencedTaskExecutor& field_writer)
+    : ExecutorThreadingService(sharedExecutor, transport, clock, field_writer, nullptr, ThreadingServiceConfig::make())
 {}
 
 ExecutorThreadingService::ExecutorThreadingService(vespalib::Executor & sharedExecutor,

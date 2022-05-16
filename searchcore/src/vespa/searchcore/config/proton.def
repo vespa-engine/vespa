@@ -129,7 +129,8 @@ indexing.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart
 ## Control io options during read both under dump and fusion.
 indexing.read.io enum {NORMAL, DIRECTIO} default=DIRECTIO restart
 
-## Control number of threads used for indexing
+## Overrides the number of threads used for writing fields across all document dbs.
+## See feeding.concurrency for details.
 indexing.threads int default=1 restart
 
 ## Option to specify what is most important during indexing.
@@ -294,15 +295,8 @@ documentdb[].visibilitydelay double default=0.0
 ## Whether this document type is globally distributed or not.
 documentdb[].global bool default=false
 ## A number between 0.0 and 1.0 that specifies the concurrency when handling feed operations.
-## When set to 1.0 all cores on the cpu is utilized.
-##
-## 3 thread pools used for various aspect of feeding are configured based on this setting:
-##   1) Writing changes to attribute fields
-##   2) Inverting index fields
-##   3) Writing changes to index fields
-##
-## The number of threads in each of pools is calculated as:
-##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
+## Deprecated and ignored after the shared field writer is used across all document dbs. See feeding.concurrency for details.
+## TODO: Remove this setting when the config-model is no longer using it.
 documentdb[].feeding.concurrency double default=0.2
 
 ## Minimum initial size for any per document tables.
@@ -493,17 +487,15 @@ hwinfo.cpu.cores int default = 0 restart
 ## A number between 0.0 and 1.0 that specifies the concurrency when handling feed operations.
 ## When set to 1.0 all cores on the cpu is utilized.
 ##
-## 4 thread pools used for various aspect of feeding are configured based on this setting:
-##   1) Compressing and compacting documents
-##   2) Writing changes to attribute fields
-##   3) Inverting index fields
-##   4) Writing changes to index fields
+## 3 thread pools used for various aspect of feeding are configured based on this setting:
+##   1) Basic shared thread pool. E.g. used for compressing and compacting documents.
+##   2) Warmup thread pool. Used for disk index warmup.
+##   3) Field writer thread pool. Used for writing data to document fields:
+##     - Inverting index fields
+##     - Writing changes to index fields
+##     - Writing changes to attribute fields
 ##
-## The number of threads in pool 1 is calculated as:
-##   max(ceil(hwinfo.cpu.cores * feeding.concurrency), summary.log.numthreads)
-## The number of threads in each of pools 2-4 is calculated as:
-##   max(ceil((hwinfo.cpu.cores * feeding.concurrency)/3), indexing.threads)
-## Deprecated -> Use documentdb.feeding.concurrency
+## See shared_threading_service_config.cpp for details on how the thread pool sizes are calculated.
 feeding.concurrency double default = 0.2 restart
 
 ## Maximum number of pending tasks for the master thread in each document db.

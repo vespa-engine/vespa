@@ -10,14 +10,12 @@ using ProtonConfig = ThreadingServiceConfig::ProtonConfig;
 using OptimizeFor = vespalib::Executor::OptimizeFor;
 
 
-ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
-                                               uint32_t master_task_limit_,
+ThreadingServiceConfig::ThreadingServiceConfig(uint32_t master_task_limit_,
                                                int32_t defaultTaskLimit_,
                                                OptimizeFor optimize_,
                                                uint32_t kindOfWatermark_,
                                                vespalib::duration reactionTime_)
-    : _indexingThreads(indexingThreads_),
-      _master_task_limit(master_task_limit_),
+    : _master_task_limit(master_task_limit_),
       _defaultTaskLimit(std::abs(defaultTaskLimit_)),
       _is_task_limit_hard(defaultTaskLimit_ >= 0),
       _optimize(optimize_),
@@ -27,14 +25,6 @@ ThreadingServiceConfig::ThreadingServiceConfig(uint32_t indexingThreads_,
 }
 
 namespace {
-
-uint32_t
-calculateIndexingThreads(const ProtonConfig::Indexing & indexing, double concurrency, const HwInfo::Cpu &cpuInfo)
-{
-    double scaledCores = cpuInfo.cores() * concurrency;
-    uint32_t indexingThreads = std::max((int32_t)std::ceil(scaledCores / 3), indexing.threads);
-    return std::max(indexingThreads, 1u);
-}
 
 OptimizeFor
 selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
@@ -50,11 +40,9 @@ selectOptimization(ProtonConfig::Indexing::Optimize optimize) {
 }
 
 ThreadingServiceConfig
-ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const HwInfo::Cpu &cpuInfo)
+ThreadingServiceConfig::make(const ProtonConfig& cfg)
 {
-    uint32_t indexingThreads = calculateIndexingThreads(cfg.indexing, concurrency, cpuInfo);
-    return ThreadingServiceConfig(indexingThreads,
-                                  cfg.feeding.masterTaskLimit,
+    return ThreadingServiceConfig(cfg.feeding.masterTaskLimit,
                                   cfg.indexing.tasklimit,
                                   selectOptimization(cfg.indexing.optimize),
                                   cfg.indexing.kindOfWatermark,
@@ -62,8 +50,8 @@ ThreadingServiceConfig::make(const ProtonConfig &cfg, double concurrency, const 
 }
 
 ThreadingServiceConfig
-ThreadingServiceConfig::make(uint32_t indexingThreads) {
-    return ThreadingServiceConfig(indexingThreads, 0, 100, OptimizeFor::LATENCY, 0, 10ms);
+ThreadingServiceConfig::make() {
+    return ThreadingServiceConfig(0, 100, OptimizeFor::LATENCY, 0, 10ms);
 }
 
 void
@@ -76,8 +64,7 @@ ThreadingServiceConfig::update(const ThreadingServiceConfig& cfg)
 bool
 ThreadingServiceConfig::operator==(const ThreadingServiceConfig &rhs) const
 {
-    return _indexingThreads == rhs._indexingThreads &&
-        _master_task_limit == rhs._master_task_limit &&
+    return _master_task_limit == rhs._master_task_limit &&
         _defaultTaskLimit == rhs._defaultTaskLimit &&
         _is_task_limit_hard == rhs._is_task_limit_hard &&
         _optimize == rhs._optimize &&
