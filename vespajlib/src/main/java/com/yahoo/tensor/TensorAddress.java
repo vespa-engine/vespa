@@ -61,8 +61,10 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     @Override
     public int hashCode() {
         int result = 1;
-        for (int i = 0; i < size(); i++)
-            result = 31 * result + label(i).hashCode();
+        for (int i = 0; i < size(); i++) {
+            if (label(i) != null)
+                result = 31 * result + label(i).hashCode();
+        }
         return result;
     }
 
@@ -73,7 +75,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         TensorAddress other = (TensorAddress)o;
         if (other.size() != this.size()) return false;
         for (int i = 0; i < this.size(); i++)
-            if ( ! this.label(i).equals(other.label(i)))
+            if ( ! Objects.equals(this.label(i), other.label(i)))
                 return false;
         return true;
     }
@@ -184,14 +186,16 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         }
 
         /**
-         * Adds the label to the only dimension of this.
+         * Adds the label to the only mapped dimension of this.
          *
          * @throws IllegalArgumentException if this does not have exactly one dimension
          */
         public Builder add(String label) {
-            if (type.rank() != 1)
-                throw new IllegalArgumentException("Cannot add a label without explicit dimension to a tensor of type " + type);
-            add(type.dimensions().get(0).name(), label);
+            var mappedSubtype = type.mappedSubtype();
+            if (mappedSubtype.rank() != 1)
+                throw new IllegalArgumentException("Cannot add a label without explicit dimension to a tensor of type " +
+                                                   type + ": Must have exactly one sparse dimension");
+            add(mappedSubtype.dimensions().get(0).name(), label);
             return this;
         }
 
