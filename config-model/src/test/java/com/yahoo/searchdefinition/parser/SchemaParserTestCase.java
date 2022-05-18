@@ -93,6 +93,7 @@ public class SchemaParserTestCase {
         assertNotEquals("", schema.name());
     }
 
+    // TODO: Many (all)? of the files below are parsed from other tests and can be removed from here
     @Test
     public void parse_various_old_sdfiles() throws Exception {
         checkFileParses("src/test/cfg/search/data/travel/schemas/TTData.sd");
@@ -180,7 +181,6 @@ public class SchemaParserTestCase {
         checkFileParses("src/test/derived/namecollision/collision.sd");
         checkFileParses("src/test/derived/namecollision/collisionstruct.sd");
         checkFileParses("src/test/derived/nearestneighbor/test.sd");
-        checkFileParses("src/test/derived/neuralnet/neuralnet.sd");
         checkFileParses("src/test/derived/newrank/newrank.sd");
         checkFileParses("src/test/derived/nuwa/newsindex.sd");
         checkFileParses("src/test/derived/orderilscripts/orderilscripts.sd");
