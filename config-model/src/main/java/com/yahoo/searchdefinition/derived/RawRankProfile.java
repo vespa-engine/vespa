@@ -432,15 +432,18 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             for (Map.Entry<String, String> attributeType : attributeTypes.entrySet()) {
                 properties.add(new Pair<>("vespa.type.attribute." + attributeType.getKey(), attributeType.getValue()));
             }
+
             for (var input : inputs.values()) {
                 if (FeatureNames.isQueryFeature(input.name())) {
-                    properties.add(new Pair<>("vespa.type.query." + input.name().arguments().expressions().get(0),
-                                              input.type().toString()));
-                    if (input.defaultValue().isPresent())
+                    if (input.type().rank() > 0) // Proton does not like representing the double type as a rank 0 tensor
+                        properties.add(new Pair<>("vespa.type.query." + input.name().arguments().expressions().get(0),
+                                                  input.type().toString()));
+                    if (input.defaultValue().isPresent()) {
                         properties.add(new Pair<>(input.name().toString(),
                                                   input.type().rank() == 0 ?
                                                   String.valueOf(input.defaultValue().get().asDouble()) :
                                                   input.defaultValue().get().toString(true, false)));
+                    }
                 }
             }
             if (properties.size() >= 1000000) throw new IllegalArgumentException("Too many rank properties");
