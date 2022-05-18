@@ -1273,18 +1273,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.tensor.TensorAddress$PartialBuilder": {
-    "superClass": "com.yahoo.tensor.TensorAddress$Builder",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.tensor.TensorType)",
-      "public com.yahoo.tensor.TensorAddress$Builder copy()"
-    ],
-    "fields": []
-  },
   "com.yahoo.tensor.TensorAddress": {
     "superClass": "java.lang.Object",
     "interfaces": [

@@ -63,8 +63,9 @@ public class Coverage {
     }
 
     public void merge(Coverage other) {
-        if (other == null) return;
-
+        if (other == null) {
+            return;
+        }
         docs += other.getDocs();
         nodes += other.getNodes();
         nodesTried += other.nodesTried;
@@ -76,17 +77,17 @@ public class Coverage {
 
         // explicitly incomplete beats doc count beats explicitly full
         switch (other.fullReason) {
-            case EXPLICITLY_FULL:
-                // do nothing
-                break;
-            case EXPLICITLY_INCOMPLETE:
-                fullReason = FullCoverageDefinition.EXPLICITLY_INCOMPLETE;
-                break;
-            case DOCUMENT_COUNT:
-                if (fullReason == FullCoverageDefinition.EXPLICITLY_FULL) {
-                    fullReason = FullCoverageDefinition.DOCUMENT_COUNT;
-                }
-                break;
+        case EXPLICITLY_FULL:
+            // do nothing
+            break;
+        case EXPLICITLY_INCOMPLETE:
+            fullReason = FullCoverageDefinition.EXPLICITLY_INCOMPLETE;
+            break;
+        case DOCUMENT_COUNT:
+            if (fullReason == FullCoverageDefinition.EXPLICITLY_FULL) {
+                fullReason = FullCoverageDefinition.DOCUMENT_COUNT;
+            }
+            break;
         }
     }
 
