@@ -18,7 +18,6 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.config.ClusterConfig;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.dispatch.Dispatcher;
 import com.yahoo.search.query.ParameterParser;
 import com.yahoo.search.result.ErrorMessage;
@@ -30,11 +29,9 @@ import com.yahoo.yolean.Exceptions;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -62,9 +59,6 @@ public class ClusterSearcher extends Searcher {
 
     // The set of document types contained in this search cluster
     private final Set<String> schemas;
-
-    // Mapping from rank profile names to schemas containing them
-    private final Map<String, Set<String>> rankProfilesz = new HashMap<>();
 
     private final long maxQueryTimeout; // in milliseconds
     private final long maxQueryCacheTimeout; // in milliseconds
