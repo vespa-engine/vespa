@@ -17,6 +17,7 @@ import com.yahoo.vespa.athenz.client.zms.ZmsClient;
 import com.yahoo.vespa.athenz.client.zms.ZmsClientException;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ApplicationId;
 
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -221,6 +222,11 @@ public class ZmsClientMock implements ZmsClient {
     @Override
     public void createOrUpdateService(AthenzService athenzService) {
         athenz.getOrCreateDomain(athenzService.getDomain()).services.put(athenzService.getName(), new AthenzDbMock.Service(false));
+    }
+
+    @Override
+    public void updateServicePublicKey(AthenzService athenzService, String publicKeyId, PublicKey publicKey) {
+
     }
 
     @Override

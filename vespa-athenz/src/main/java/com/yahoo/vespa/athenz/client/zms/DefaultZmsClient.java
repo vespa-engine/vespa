@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.client.zms;
 
+import com.yahoo.athenz.auth.util.Crypto;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.vespa.athenz.api.AthenzAssertion;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzGroup;
@@ -23,6 +25,7 @@ import com.yahoo.vespa.athenz.client.zms.bindings.ResponseListEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.RoleEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ServiceEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.ServiceListResponseEntity;
+import com.yahoo.vespa.athenz.client.zms.bindings.ServicePublicKeyEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.StatisticsEntity;
 import com.yahoo.vespa.athenz.client.zms.bindings.TenancyRequestEntity;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -35,6 +38,7 @@ import org.apache.http.message.BasicHeader;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
@@ -351,6 +355,18 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
 
         var request = RequestBuilder.put(uri)
                 .setEntity(toJsonStringEntity(serviceEntity))
+                .build();
+        execute(request, response -> readEntity(response, Void.class));
+    }
+
+    @Override
+    public void updateServicePublicKey(AthenzService athenzService, String publicKeyId, PublicKey publicKey) {
+        URI uri = zmsUrl.resolve(String.format("domain/%s/service/%s/publickey/%s",
+                athenzService.getDomainName(), athenzService.getName(), publicKeyId));
+
+        ServicePublicKeyEntity entity = new ServicePublicKeyEntity(publicKeyId, Crypto.ybase64EncodeString(KeyUtils.toPem(publicKey)));
+        HttpUriRequest request = RequestBuilder.put(uri)
+                .setEntity(toJsonStringEntity(entity))
                 .build();
         execute(request, response -> readEntity(response, Void.class));
     }

@@ -12,6 +12,7 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.api.OAuthCredentials;
 
 import java.io.Closeable;
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -69,6 +70,8 @@ public interface ZmsClient extends Closeable {
     List<AthenzService> listServices(AthenzDomain athenzDomain);
 
     void createOrUpdateService(AthenzService athenzService);
+
+    void updateServicePublicKey(AthenzService athenzService, String publicKeyId, PublicKey publicKey);
 
     void deleteService(AthenzService athenzService);
 
