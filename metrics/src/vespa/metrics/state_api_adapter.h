@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/net/metrics_producer.h>
+#include <vespa/vespalib/net/http/metrics_producer.h>
 
 namespace metrics {
 

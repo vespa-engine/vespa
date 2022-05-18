@@ -1,27 +1,20 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(staging_vespalib_vespalib_util OBJECT
     SOURCES
-    adaptive_sequenced_executor.cpp
     bits.cpp
     clock.cpp
     crc.cpp
     document_runnable.cpp
     doom.cpp
-    foregroundtaskexecutor.cpp
     growablebytebuffer.cpp
-    isequencedtaskexecutor.cpp
     jsonexception.cpp
     jsonstream.cpp
-    jsonwriter.cpp
     malloc_mmap_guard.cpp
     process_memory_stats.cpp
     programoptions.cpp
     programoptions_testutils.cpp
     rusage.cpp
-    sequencedtaskexecutor.cpp
-    sequencedtaskexecutorobserver.cpp
     shutdownguard.cpp
-    singleexecutor.cpp
     testclock.cpp
     xmlserializable.cpp
     xmlstream.cpp

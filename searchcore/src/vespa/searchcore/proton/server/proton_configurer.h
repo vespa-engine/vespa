@@ -6,7 +6,7 @@
 #include "i_proton_configurer.h"
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/vespalib/net/http/simple_component_config_producer.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
 #include <map>
 #include <mutex>

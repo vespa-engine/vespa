@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/common/hw_info.h>
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
 
@@ -18,7 +18,7 @@ private:
 public:
     HwInfoExplorer(const HwInfo& info);
 
-    virtual void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
 };
 
 }

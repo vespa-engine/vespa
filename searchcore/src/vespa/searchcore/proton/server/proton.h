@@ -19,11 +19,11 @@
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/engine/monitorapi.h>
-#include <vespa/vespalib/net/component_config_producer.h>
-#include <vespa/vespalib/net/generic_state_handler.h>
-#include <vespa/vespalib/net/json_get_handler.h>
-#include <vespa/vespalib/net/json_handler_repo.h>
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/component_config_producer.h>
+#include <vespa/vespalib/net/http/generic_state_handler.h>
+#include <vespa/vespalib/net/http/json_get_handler.h>
+#include <vespa/vespalib/net/http/json_handler_repo.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <mutex>

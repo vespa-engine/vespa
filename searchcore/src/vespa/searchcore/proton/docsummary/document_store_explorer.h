@@ -3,7 +3,7 @@
 #pragma once
 
 #include "isummarymanager.h"
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
 
@@ -18,8 +18,7 @@ private:
 public:
     DocumentStoreExplorer(ISummaryManager::SP mgr);
 
-    // Implements vespalib::StateExplorer
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
 
 } // namespace proton

@@ -8,7 +8,7 @@
 #include "model-owner.h"
 #include "rpcserver.h"
 #include "state-api.h"
-#include <vespa/vespalib/net/state_server.h>
+#include <vespa/vespalib/net/http/state_server.h>
 
 namespace config::sentinel {
 

@@ -57,11 +57,13 @@ vespa_define_module(
     src/tests/dotproduct
     src/tests/drop-file-from-cache
     src/tests/dual_merge_director
+    src/tests/encoding/base64
     src/tests/eventbarrier
     src/tests/exception_classes
     src/tests/executor
     src/tests/executor_idle_tracking
     src/tests/explore_modern_cpp
+    src/tests/fileheader
     src/tests/false
     src/tests/fiddle
     src/tests/fuzzy
@@ -76,6 +78,7 @@ vespa_define_module(
     src/tests/left_right_heap
     src/tests/make_fixture_macros
     src/tests/memory
+    src/tests/metrics
     src/tests/net/async_resolver
     src/tests/net/crypto_socket
     src/tests/net/selector
@@ -106,6 +109,8 @@ vespa_define_module(
     src/tests/rendezvous
     src/tests/require
     src/tests/runnable_pair
+    src/tests/sequencedtaskexecutor
+    src/tests/singleexecutor
     src/tests/sha1
     src/tests/shared_operation_throttler
     src/tests/shared_string_repo
@@ -118,6 +123,7 @@ vespa_define_module(
     src/tests/small_vector
     src/tests/spin_lock
     src/tests/stash
+    src/tests/state_server
     src/tests/stllike
     src/tests/stringfmt
     src/tests/sync
@@ -173,12 +179,15 @@ vespa_define_module(
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/datastore
+    src/vespa/vespalib/encoding
     src/vespa/vespalib/fuzzy
     src/vespa/vespalib/geo
     src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io
     src/vespa/vespalib/locale
+    src/vespa/vespalib/metrics
     src/vespa/vespalib/net
+    src/vespa/vespalib/net/http
     src/vespa/vespalib/net/tls
     src/vespa/vespalib/net/tls/impl
     src/vespa/vespalib/objects

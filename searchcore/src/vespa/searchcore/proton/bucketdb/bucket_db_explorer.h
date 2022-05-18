@@ -3,7 +3,7 @@
 #pragma once
 
 #include "bucket_db_owner.h"
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
 

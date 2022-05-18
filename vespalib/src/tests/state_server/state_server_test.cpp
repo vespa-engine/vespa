@@ -1,21 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/host_name.h>
-#include <vespa/vespalib/net/state_server.h>
-#include <vespa/vespalib/net/simple_health_producer.h>
-#include <vespa/vespalib/net/simple_metrics_producer.h>
-#include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/vespalib/net/http/state_server.h>
+#include <vespa/vespalib/net/http/simple_health_producer.h>
+#include <vespa/vespalib/net/http/simple_metrics_producer.h>
+#include <vespa/vespalib/net/http/simple_component_config_producer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
+#include <vespa/vespalib/net/http/slime_explorer.h>
+#include <vespa/vespalib/net/http/generic_state_handler.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/process/process.h>
-#include <vespa/vespalib/net/state_explorer.h>
-#include <vespa/vespalib/net/slime_explorer.h>
-#include <vespa/vespalib/net/generic_state_handler.h>
+#include <sys/stat.h>
 
 using namespace vespalib;
 

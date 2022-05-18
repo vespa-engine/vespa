@@ -3,7 +3,7 @@
 #pragma once
 
 #include "exclusive_attribute_read_accessor.h"
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
 
@@ -19,7 +19,7 @@ public:
     AttributeVectorExplorer(ExclusiveAttributeReadAccessor::UP attribute);
 
     // Implements vespalib::StateExplorer
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
 
 } // namespace proton
