@@ -3,8 +3,8 @@ vespa_add_library(storage_teststorageserver TEST
     SOURCES
     testvisitormessagesession.cpp
     DEPENDS
-    storage_storageserver
     storage_testcommon
+    storage
 )
 
 vespa_add_executable(storage_storageserver_gtest_runner_app TEST
@@ -21,9 +21,9 @@ vespa_add_executable(storage_storageserver_gtest_runner_app TEST
     statereportertest.cpp
     gtest_runner.cpp
     DEPENDS
-    storage_storageserver
     storage_testcommon
     storage_teststorageserver
+    storage
     GTest::GTest
 )
 

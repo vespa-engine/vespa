@@ -1,6 +1,6 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-vespa_add_library(storage_storageserver
+vespa_add_library(storage_storageserver OBJECT
     SOURCES
     bouncer.cpp
     bouncer_metrics.cpp
@@ -28,8 +28,5 @@ vespa_add_library(storage_storageserver
     storagenodecontext.cpp
     tls_statistics_metrics_wrapper.cpp
     $<TARGET_OBJECTS:storage_storageserver_rpc>
-    INSTALL lib64
     DEPENDS
-    storage
-    storage_distributor
 )

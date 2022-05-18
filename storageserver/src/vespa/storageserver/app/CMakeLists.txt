@@ -6,5 +6,5 @@ vespa_add_library(storageserver_storageapp STATIC
     servicelayerprocess.cpp
     dummyservicelayerprocess.cpp
     DEPENDS
-    storage_storageserver
+    storage
 )
