@@ -229,7 +229,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
-            "jdk-version", "11",
+            "jdk-version", "17",
             List.of("hmusum"), "2021-10-25", "2022-06-01",
             "JDK version to use on host and inside containers. Note application-id dimension only applies for container, " +
                     "while hostname and node type applies for host.",
