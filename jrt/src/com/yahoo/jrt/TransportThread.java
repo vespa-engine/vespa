@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -9,11 +8,10 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-
 /**
  * A single reactor/scheduler thread inside a potentially
  * multi-threaded {@link Transport}.
- **/
+ */
 public class TransportThread {
 
     private static final int OPEN    = 1;
@@ -192,17 +190,17 @@ public class TransportThread {
      *
      * @param problem the throwable causing the failure
      * @param context the object owning the crashing thread
-     **/
+     */
     void handleFailure(Throwable problem, Object context) {
         parent.handleFailure(problem, context);
     }
 
     /**
-     * Add a connection to the set of connections handled by this
+     * Adds a connection to the set of connections handled by this
      * TransportThread. Invoked by the {@link Connector} class.
      *
      * @param conn the connection to add
-     **/
+     */
     void addConnection(Connection conn) {
         if (!postCommand(new AddConnectionCmd(conn))) {
             perform(new CloseConnectionCmd(conn));
@@ -210,20 +208,20 @@ public class TransportThread {
     }
 
     /**
-     * Request an asynchronous close of a connection.
+     * Requests an asynchronous close of a connection.
      *
      * @param conn the connection to close
-     **/
+     */
     void closeConnection(Connection conn) {
         postCommand(new CloseConnectionCmd(conn));
     }
 
     /**
-     * Request an asynchronous enabling of write events for a
+     * Requests an asynchronous enabling of write events for a
      * connection.
      *
      * @param conn the connection to enable write events for
-     **/
+     */
     void enableWrite(Connection conn) {
         if (Thread.currentThread() == thread) {
             handleEnableWrite(conn);
@@ -237,24 +235,24 @@ public class TransportThread {
     }
 
     /**
-     * Create a {@link Task} that can be scheduled for execution in
+     * Creates a {@link Task} that can be scheduled for execution in
      * the transport thread.
      *
      * @return the newly created Task
      * @param cmd what to run when the task is executed
-     **/
+     */
     public Task createTask(Runnable cmd) {
         return new Task(scheduler, cmd);
     }
 
     /**
-     * Perform the given command in such a way that it does not run
+     * Performs the given command in such a way that it does not run
      * concurrently with the transport thread or other commands
      * performed by invoking this method. This method will continue to
      * work even after the transport thread has been shut down.
      *
      * @param cmd the command to perform
-     **/
+     */
     public void perform(Runnable cmd) {
         if (Thread.currentThread() == thread) {
             cmd.run();
@@ -269,16 +267,16 @@ public class TransportThread {
     }
 
     /**
-     * Wake up this transport thread explicitly.
-     **/
+     * Wakes up this transport thread explicitly.
+     */
     public void wakeup() {
         selector.wakeup();
     }
 
     /**
-     * Wake up this transport thread explicitly, but only if the
+     * Wakes up this transport thread explicitly, but only if the
      * calling thread is not the transport thread itself.
-     **/
+     */
     public void wakeup_if_not_self() {
         if (Thread.currentThread() != thread) {
             wakeup();
@@ -286,7 +284,7 @@ public class TransportThread {
     }
 
     /**
-     * Synchronize with the transport thread. This method will block
+     * Synchronizes with the transport thread. This method will block
      * until all commands issued before this method was invoked has
      * completed. If the transport thread has been shut down (or is in
      * the progress of being shut down) this method will instead wait
@@ -295,7 +293,7 @@ public class TransportThread {
      * method from the transport thread is not a good idea.
      *
      * @return this object, to enable chaining
-     **/
+     */
     public TransportThread sync() {
         SyncCmd cmd = new SyncCmd();
         if (postCommand(cmd)) {
@@ -366,4 +364,5 @@ public class TransportThread {
             } catch (InterruptedException e) {}
         }
     }
+
 }

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-
 import java.util.Optional;
 
 /**
@@ -10,54 +9,54 @@ import java.util.Optional;
  * side. The client side is the one initiating the connection. RPC
  * requests may be invoked across the connection from both the client
  * and the server side.
- **/
+ */
 public abstract class Target {
 
     private Object context;
 
     /**
-     * Create a Target with the given application context.
+     * Creates a Target with the given application context.
      *
      * @param context application context
-     **/
+     */
     Target(Object context) {
         this.context = context;
     }
 
     /**
-     * Create a Target without any application context.
-     **/
+     * Creates a Target without any application context.
+     */
     Target() {
         this(null);
     }
 
     /**
-     * Set the application context associated with this target.
+     * Sets the application context associated with this target.
      *
-     * @param context application context
-     **/
+     * @param context the application context
+     */
     public void setContext(Object context) {
         this.context = context;
     }
 
     /**
-     * Obtain the application context associated with this target.
+     * Obtains the application context associated with this target.
      *
-     * @return application context
-     **/
+     * @return the application context
+     */
     public Object getContext() {
         return context;
     }
 
     /**
-     * Check if this target is still valid for invocations.
+     * Checks if this target is still valid for invocations.
      *
      * @return true if this target is still valid
-     **/
+     */
     public abstract boolean isValid();
 
     /**
-     * Obtain the low-level reason behind losing the connection for
+     * Obtains the low-level reason behind losing the connection for
      * which this target is an endpoint. If the target is still valid
      * or if the target became invalid because it was closed, this
      * method will return null. In other cases this method may or may
@@ -66,11 +65,11 @@ public abstract class Target {
      * based on implementation details across platforms.
      *
      * @return exception causing connection loss or null
-     **/
+     */
     public Exception getConnectionLostReason() { return null; }
 
     /**
-     * @return the security context associated with this target, or empty if no connection or is insecure.
+     * Returns the security context associated with this target, or empty if no connection or is insecure.
      */
     public abstract Optional<SecurityContext> getSecurityContext();
 
@@ -79,7 +78,7 @@ public abstract class Target {
      * connection.
      *
      * @return true if this is a client-side target
-     **/
+     */
     public abstract boolean isClient();
 
     /**
@@ -87,7 +86,7 @@ public abstract class Target {
      * connection.
      *
      * @return true if this is a server-side target
-     **/
+     */
     public abstract boolean isServer();
 
     /**
@@ -95,7 +94,7 @@ public abstract class Target {
      *
      * @param req the request
      * @param timeout timeout in seconds
-     **/
+     */
     public abstract void invokeSync(Request req, double timeout);
 
     /**
@@ -105,7 +104,7 @@ public abstract class Target {
      * @param req the request
      * @param timeout timeout in seconds
      * @param waiter callback handler
-     **/
+     */
     public abstract void invokeAsync(Request req, double timeout,
                                      RequestWaiter waiter);
 
@@ -115,10 +114,10 @@ public abstract class Target {
      * ignored. However, the return value gives a little hint by
      * indicating whether the invocation has been attempted at all.
      *
+     * @param req the request
      * @return false if the invocation was not attempted due to the
      *         target being invalid
-     * @param req the request
-     **/
+     */
     public abstract boolean invokeVoid(Request req);
 
     /**
@@ -128,9 +127,9 @@ public abstract class Target {
      * returned. Multiple adds of the same watcher has no additional
      * effect.
      *
-     * @return true if the add operation was performed
      * @param watcher the watcher to be added
-     **/
+     * @return true if the add operation was performed
+     */
     public abstract boolean addWatcher(TargetWatcher watcher);
 
     /**
@@ -139,16 +138,17 @@ public abstract class Target {
      * and false is returned. Multiple removes of the same watcher has
      * no additional effect.
      *
-     * @return true if the remove operation was performed
      * @param watcher the watcher to be removed
+     * @return true if the remove operation was performed
      * @see #addWatcher
-     **/
+     */
     public abstract boolean removeWatcher(TargetWatcher watcher);
 
     /**
      * Close this target. Note that the close operation is
      * asynchronous. If you need to wait for the target to become
      * invalid, use the {@link Transport#sync Transport.sync} method.
-     **/
+     */
     public abstract void close();
+
 }
