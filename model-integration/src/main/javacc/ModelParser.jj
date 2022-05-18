@@ -92,6 +92,7 @@ TOKEN :
 | < DOT: "." >
 | < COMMA: "," >
 | < DOUBLE_KEYWORD: "double" >
+| < INPUTS: "inputs" >
 | < MODEL: "model" >
 | < TYPE: "type" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
@@ -156,15 +157,23 @@ void model() :
 }
 
 void modelContent() :
-{
-}
+{}
 {
     ( <NL> |
       constants() |
       largeConstant() |
       function() |
+      inputs() |
       input()
     )*
+}
+
+void inputs() :
+{}
+{
+    <INPUTS> (<NL>)* <LBRACE> (<NL>)*
+    ( input() (<NL>)* )*
+    <RBRACE>
 }
 
 /** Declared input variables (aka features). All non-scalar inputs must be declared. */
@@ -536,6 +545,7 @@ String identifier() : { }
       <DOUBLE_KEYWORD> |
       <FILE> |
       <IDENTIFIER> |
+      <INPUTS> |
       <INTEGER> |
       <MODEL> |
       <TYPE> |
