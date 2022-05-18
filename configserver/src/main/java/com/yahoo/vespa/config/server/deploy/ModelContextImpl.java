@@ -195,7 +195,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean unorderedMergeChaining;
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
-        private final boolean failDeploymentWithInvalidJvmOptions;
         private final List<String> ignoredHttpUserAgents;
         private final boolean enableServerOcspStapling;
         private final String mergeThrottlingPolicy;
@@ -240,7 +239,6 @@ public class ModelContextImpl implements ModelContext {
             this.unorderedMergeChaining = flagValue(source, appId, version, Flags.UNORDERED_MERGE_CHAINING);
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
-            this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, version, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
             this.enableServerOcspStapling = flagValue(source, appId, version, Flags.ENABLE_SERVER_OCSP_STAPLING);
             this.mergeThrottlingPolicy = flagValue(source, appId, version, Flags.MERGE_THROTTLING_POLICY);
@@ -286,7 +284,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
-        @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }

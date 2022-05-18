@@ -1115,7 +1115,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private final Element nodesElement;
         private final DeployLogger logger;
         private final boolean legacyOptions;
-        private final boolean failDeploymentWithInvalidJvmOptions;
         private final boolean isHosted;
 
         public JvmOptions(ContainerCluster<?> cluster, Element nodesElement, DeployState deployState, boolean legacyOptions) {
@@ -1123,7 +1122,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             this.nodesElement = nodesElement;
             this.logger = deployState.getDeployLogger();
             this.legacyOptions = legacyOptions;
-            this.failDeploymentWithInvalidJvmOptions = deployState.featureFlags().failDeploymentWithInvalidJvmOptions();
             this.isHosted = deployState.isHosted();
         }
 
@@ -1195,7 +1193,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             String message = "Invalid or misplaced JVM options in services.xml: " +
                     String.join(",", invalidOptions) + "." +
                     " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
-            if (failDeploymentWithInvalidJvmOptions && isHosted)
+            if (isHosted)
                 throw new IllegalArgumentException(message);
             else
                 logger.logApplicationPackage(WARNING, message);
@@ -1216,14 +1214,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         private final String jvmGcOptions;
         private final DeployLogger logger;
         private final boolean isHosted;
-        private final boolean failDeploymentWithInvalidJvmOptions;
 
         public JvmGcOptions(DeployState deployState, String jvmGcOptions) {
             this.deployState = deployState;
             this.jvmGcOptions = jvmGcOptions;
             this.logger = deployState.getDeployLogger();
             this.isHosted = deployState.isHosted();
-            this.failDeploymentWithInvalidJvmOptions = deployState.featureFlags().failDeploymentWithInvalidJvmOptions();
         }
 
         private String build() {
@@ -1261,7 +1257,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             String message = "Invalid or misplaced JVM GC options in services.xml: " +
                     String.join(",", options) + "." +
                     " See https://docs.vespa.ai/en/reference/services-container.html#jvm";
-            if (failDeploymentWithInvalidJvmOptions && isHosted)
+            if (isHosted)
                 throw new IllegalArgumentException(message);
             else
                 logger.logApplicationPackage(WARNING, message);
