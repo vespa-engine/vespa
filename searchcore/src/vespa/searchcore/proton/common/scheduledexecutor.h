@@ -8,7 +8,7 @@
 
 class FNET_Transport;
 
-namespace vespalib {
+namespace proton {
 
 class TimerTask;
 
@@ -21,9 +21,11 @@ class ScheduledExecutor
 {
 private:
     using TaskList = std::vector<std::unique_ptr<TimerTask>>;
+    using duration = vespalib::duration;
+    using Executor = vespalib::Executor;
     FNET_Transport & _transport;
-    std::mutex _lock;
-    TaskList   _taskList;
+    std::mutex       _lock;
+    TaskList         _taskList;
 
 public:
     /**

@@ -9,7 +9,6 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
-    fnet
 
     TESTS
     src/tests/array
@@ -36,7 +35,6 @@ vespa_define_module(
     src/tests/stllike
     src/tests/sequencedtaskexecutor
     src/tests/singleexecutor
-    src/tests/timer
     ${STAGING_VESPALIB_PROCESS_MEMORY_STATS_TESTDIR}
     src/tests/xmlserializable
 

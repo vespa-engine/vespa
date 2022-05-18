@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_mem_usage_sampler.h"
-#include <vespa/vespalib/util/scheduledexecutor.h>
+#include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
@@ -15,7 +15,7 @@ DiskMemUsageSampler::DiskMemUsageSampler(FNET_Transport & transport, const std::
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(vespalib::steady_clock::now()),
-      _periodicTimer(std::make_unique<vespalib::ScheduledExecutor>(transport)),
+      _periodicTimer(std::make_unique<ScheduledExecutor>(transport)),
       _lock(),
       _transient_usage_providers()
 {

@@ -5,8 +5,8 @@
 #include "document_db_maintenance_config.h"
 #include "i_blockable_maintenance_job.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
+#include <vespa/searchcore/proton/common/scheduledexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/util/scheduledexecutor.h>
 #include <vespa/fastos/thread.h>
 #include <thread>
 
@@ -51,7 +51,7 @@ MaintenanceController::MaintenanceController(FNET_Transport & transport,
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
-      _periodicTimer(std::make_unique<vespalib::ScheduledExecutor>(transport)),
+      _periodicTimer(std::make_unique<ScheduledExecutor>(transport)),
       _config(),
       _state(State::INITIALIZING),
       _docTypeName(docTypeName),
