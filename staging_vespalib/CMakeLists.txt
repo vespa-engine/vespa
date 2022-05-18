@@ -17,13 +17,10 @@ vespa_define_module(
     src/tests/clock
     src/tests/crc
     ${STAGING_VESPALIB_DIRECTIO_TESTDIR}
-    src/tests/encoding/base64
-    src/tests/fileheader
     src/tests/floatingpointtype
     src/tests/growablebytebuffer
     src/tests/json
     src/tests/memorydatastore
-    src/tests/metrics
     src/tests/objectdump
     src/tests/objects
     src/tests/objectselection
@@ -31,19 +28,12 @@ vespa_define_module(
     src/tests/programoptions
     src/tests/rusage
     src/tests/shutdownguard
-    src/tests/state_server
     src/tests/stllike
-    src/tests/sequencedtaskexecutor
-    src/tests/singleexecutor
     ${STAGING_VESPALIB_PROCESS_MEMORY_STATS_TESTDIR}
     src/tests/xmlserializable
 
     LIBS
     src/vespa/vespalib
-    src/vespa/vespalib/data
-    src/vespa/vespalib/encoding
-    src/vespa/vespalib/metrics
-    src/vespa/vespalib/net
     src/vespa/vespalib/objects
     src/vespa/vespalib/stllike
     src/vespa/vespalib/util

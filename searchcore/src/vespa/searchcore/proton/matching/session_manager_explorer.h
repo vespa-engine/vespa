@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton::matching {
 
@@ -18,9 +18,9 @@ private:
 
 public:
     SessionManagerExplorer(const SessionManager &manager) : _manager(manager) {}
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
-    virtual std::vector<vespalib::string> get_children_names() const override;
-    virtual std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    std::vector<vespalib::string> get_children_names() const override;
+    std::unique_ptr<vespalib::StateExplorer> get_child(vespalib::stringref name) const override;
 };
 
 }

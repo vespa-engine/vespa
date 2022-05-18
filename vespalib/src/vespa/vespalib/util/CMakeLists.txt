@@ -2,6 +2,7 @@
 vespa_add_library(vespalib_vespalib_util OBJECT
     SOURCES
     active.cpp
+    adaptive_sequenced_executor.cpp
     address_space.cpp
     alloc.cpp
     approx.cpp
@@ -27,13 +28,16 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     exceptions.cpp
     executor_idle_tracking.cpp
     file_area_freelist.cpp
+    foregroundtaskexecutor.cpp
     gate.cpp
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp
     hdr_abort.cpp
     host_name.cpp
+    jsonwriter.cpp
     invokeserviceimpl.cpp
+    isequencedtaskexecutor.cpp
     issue.cpp
     joinable.cpp
     latch.cpp
@@ -59,12 +63,15 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     runnable.cpp
     runnable_pair.cpp
     sequence.cpp
+    sequencedtaskexecutor.cpp
+    sequencedtaskexecutorobserver.cpp
     sha1.cpp
     shared_operation_throttler.cpp
     shared_string_repo.cpp
     sig_catch.cpp
     signalhandler.cpp
     simple_thread_bundle.cpp
+    singleexecutor.cpp
     small_vector.cpp
     stash.cpp
     string_hash.cpp

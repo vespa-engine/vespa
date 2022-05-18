@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
 
@@ -22,7 +22,7 @@ public:
     ResourceUsageExplorer(const DiskMemUsageFilter& usage_filter,
                           const ResourceUsageTracker& usage_tracker);
 
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
 
 } // namespace proton
