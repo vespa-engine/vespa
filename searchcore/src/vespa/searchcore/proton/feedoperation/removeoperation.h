@@ -9,7 +9,7 @@ namespace proton {
 class RemoveOperation : public DocumentOperation {
 protected:
     explicit RemoveOperation(Type type) : DocumentOperation(type) {}
-    RemoveOperation(Type type, document::BucketId bucketId, storage::spi::Timestamp timestamp)
+    RemoveOperation(Type type, document::BucketId bucketId, Timestamp timestamp)
         : DocumentOperation(type, bucketId, timestamp)
     {}
 public:
@@ -23,9 +23,7 @@ class RemoveOperationWithDocId : public RemoveOperation {
 
 public:
     RemoveOperationWithDocId();
-    RemoveOperationWithDocId(document::BucketId bucketId,
-                             storage::spi::Timestamp timestamp,
-                             const document::DocumentId &docId);
+    RemoveOperationWithDocId(document::BucketId bucketId, Timestamp timestamp, const document::DocumentId &docId);
     ~RemoveOperationWithDocId() override;
     const document::DocumentId &getDocumentId() const { return _docId; }
     const document::GlobalId & getGlobalId() const override { return _docId.getGlobalId(); }
@@ -43,10 +41,8 @@ class RemoveOperationWithGid : public RemoveOperation {
 
 public:
     RemoveOperationWithGid();
-    RemoveOperationWithGid(document::BucketId bucketId,
-                           storage::spi::Timestamp timestamp,
-                           const document::GlobalId & gid,
-                           vespalib::stringref docType);
+    RemoveOperationWithGid(document::BucketId bucketId, Timestamp timestamp,
+                           const document::GlobalId & gid, vespalib::stringref docType);
     ~RemoveOperationWithGid() override;
     const document::GlobalId & getGlobalId() const override { return _gid; }
     void serialize(vespalib::nbostream &os) const override;

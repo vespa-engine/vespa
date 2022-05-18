@@ -5,6 +5,6 @@ vespa_define_module(
     document
 
     LIBS
-    src/persistence
-    src/persistence/spi
+    src/vespa/persistence
+    src/vespa/persistence/spi
 )

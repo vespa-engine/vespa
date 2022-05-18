@@ -15,7 +15,7 @@ public:
 
     MoveOperation();
     MoveOperation(const document::BucketId &bucketId,
-                  const storage::spi::Timestamp &timestamp,
+                  Timestamp timestamp,
                   const DocumentSP &doc,
                   DbDocumentId sourceDbdId,
                   uint32_t targetSubDbId);

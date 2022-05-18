@@ -8,7 +8,7 @@
 
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/context.h>
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 
 namespace document { class FieldSet; }
 namespace storage::spi {

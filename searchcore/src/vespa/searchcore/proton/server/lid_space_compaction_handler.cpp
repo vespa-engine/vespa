@@ -75,7 +75,7 @@ LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetaData &d
         return MoveOperation::UP();
     }
     auto doc = _subDb.retriever()->getFullDocument(moveFromLid);
-    auto op = std::make_unique<MoveOperation>(document.bucketId, document.timestamp,
+    auto op = std::make_unique<MoveOperation>(document.bucketId, storage::spi::Timestamp(document.timestamp),
                                               std::move(doc),
                                               DbDocumentId(_subDb.sub_db_id(), moveFromLid),
                                               _subDb.sub_db_id());

@@ -13,7 +13,7 @@
 
 #pragma once
 
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 #include <vespa/document/base/globalid.h>
 
 namespace storage::spi {

@@ -61,16 +61,12 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     Result inspect(const GlobalId &gid, uint64_t prepare_serial_num) override {
         return _store.inspect(gid, prepare_serial_num);
     }
-    Result put(const GlobalId &gid,
-               const BucketId &bucketId,
-               const Timestamp &timestamp,
-               uint32_t docSize,
-               DocId lid,
-               uint64_t prepare_serial_num) override
+    Result put(const GlobalId &gid, const BucketId &bucketId, Timestamp timestamp,
+               uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override
     {
         return _store.put(gid, bucketId, timestamp, docSize, lid, prepare_serial_num);
     }
-    bool updateMetaData(DocId lid, const BucketId &bucketId, const Timestamp &timestamp) override {
+    bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override {
         return _store.updateMetaData(lid, bucketId, timestamp);
     }
     bool remove(DocId lid, uint64_t prepare_serial_num) override {
@@ -87,8 +83,7 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
     bool validLid(DocId lid) const override {
         return _store.validLid(lid);
     }
-     void removeBatch(const std::vector<DocId> &lidsToRemove,
-                             const DocId docIdLimit) override {
+     void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override {
         _store.removeBatch(lidsToRemove, docIdLimit);
     }
     const RawDocumentMetaData &getRawMetaData(DocId lid) const override {

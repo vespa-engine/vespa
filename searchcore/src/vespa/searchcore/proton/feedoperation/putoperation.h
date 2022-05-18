@@ -12,9 +12,7 @@ class PutOperation : public DocumentOperation
 
 public:
     PutOperation();
-    PutOperation(document::BucketId bucketId,
-                 storage::spi::Timestamp timestamp,
-                 DocumentSP doc);
+    PutOperation(document::BucketId bucketId, Timestamp timestamp, DocumentSP doc);
     ~PutOperation() override;
     const DocumentSP &getDocument() const { return _doc; }
     void assertValid() const;

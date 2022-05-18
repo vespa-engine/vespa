@@ -20,7 +20,7 @@
 #include "testnodestateupdater.h"
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>

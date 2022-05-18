@@ -5,7 +5,6 @@
 #include "raw_document_meta_data.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <persistence/spi/types.h>
 
 namespace proton::documentmetastore {
 
@@ -16,10 +15,10 @@ namespace proton::documentmetastore {
  **/
 struct IStore
 {
-    typedef uint32_t                DocId;
-    typedef document::GlobalId      GlobalId;
-    typedef document::BucketId      BucketId;
-    typedef storage::spi::Timestamp Timestamp;
+    using DocId = uint32_t;
+    using GlobalId = document::GlobalId;
+    using BucketId = document::BucketId;
+    using Timestamp = uint64_t;
 
     /**
      * Result after lookup in the store.
@@ -49,7 +48,7 @@ struct IStore
         }
     };
 
-    virtual ~IStore() {}
+    virtual ~IStore() = default;
 
     /**
      * Inspect the meta data associated with the given gid.
@@ -71,7 +70,7 @@ struct IStore
      **/
     virtual Result put(const GlobalId &gid,
                        const BucketId &bucketId,
-                       const Timestamp &timestamp,
+                       Timestamp timestamp,
                        uint32_t docSize,
                        DocId lid,
                        uint64_t prepare_serial_num) = 0;
@@ -83,7 +82,7 @@ struct IStore
      */
     virtual bool updateMetaData(DocId lid,
                                 const BucketId &bucketId,
-                                const Timestamp &timestamp) = 0;
+                                Timestamp timestamp) = 0;
 
     /**
      * Removes the <lid, meta data> pair with the given lid from this

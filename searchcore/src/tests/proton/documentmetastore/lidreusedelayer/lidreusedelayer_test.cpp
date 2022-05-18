@@ -67,11 +67,11 @@ public:
         return Result();
     }
 
-    Result put(const GlobalId &, const BucketId &, const Timestamp &, uint32_t, DocId, uint64_t) override {
+    Result put(const GlobalId &, const BucketId &, Timestamp , uint32_t, DocId, uint64_t) override {
         return Result();
     }
 
-    bool updateMetaData(DocId, const BucketId &, const Timestamp &) override {
+    bool updateMetaData(DocId, const BucketId &, Timestamp ) override {
         return true;
     }
 

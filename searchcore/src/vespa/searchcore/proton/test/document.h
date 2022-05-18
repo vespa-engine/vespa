@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vespa/document/fieldvalue/document.h>
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 #include <vespa/searchlib/query/base.h>
 
 namespace proton::test {

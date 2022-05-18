@@ -14,7 +14,6 @@
 #include <vespa/searchcore/proton/feedoperation/splitbucketoperation.h>
 #include <vespa/searchcore/proton/feedoperation/updateoperation.h>
 #include <vespa/searchlib/query/base.h>
-#include <persistence/spi/types.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
@@ -42,7 +41,6 @@ using document::config_builder::DocumenttypesConfigBuilderHelper;
 using document::config_builder::Struct;
 using document::config_builder::Map;
 using search::DocumentIdT;
-using storage::spi::Timestamp;
 using namespace proton;
 
 namespace {
@@ -58,6 +56,8 @@ const int32_t doc_type_id = 787121340;
 const vespalib::string type_name = "test";
 const vespalib::string header_name = type_name + ".header";
 const vespalib::string body_name = type_name + ".body";
+
+const DocumentOperation::Timestamp TS_10(10);
 
 const document::DocumentId docId("id::test::1");
 
@@ -85,7 +85,7 @@ uint32_t getDocIdSize(const DocumentId &doc_id)
 void assertDocumentOperation(DocumentOperation &op, BucketId expBucket, uint32_t expDocSize)
 {
     EXPECT_EQUAL(expBucket, op.getBucketId());
-    EXPECT_EQUAL(10u, op.getTimestamp().getValue());
+    EXPECT_EQUAL(10u, op.getTimestamp());
     EXPECT_EQUAL(expDocSize, op.getSerializedDocSize());
     EXPECT_EQUAL(1u, op.getSubDbId());
     EXPECT_EQUAL(2u, op.getLid());
@@ -138,7 +138,7 @@ TEST("require that toString() on derived classes are meaningful")
     BucketId bucket_id1(42);
     BucketId bucket_id2(43);
     BucketId bucket_id3(44);
-    Timestamp timestamp(10);
+    DocumentOperation::Timestamp timestamp(10);
     Document::SP doc(new Document);
     DbDocumentId db_doc_id;
     uint32_t sub_db_id = 1;
@@ -247,7 +247,7 @@ TEST_F("require that we can serialize and deserialize update operations", Fixtur
     BucketId bucket(toBucket(docId.getGlobalId()));
     auto upd(f.makeUpdate());
     {
-        UpdateOperation op(bucket, Timestamp(10), upd);
+        UpdateOperation op(bucket, 10, upd);
         op.serialize(stream);
     }
     {
@@ -255,7 +255,7 @@ TEST_F("require that we can serialize and deserialize update operations", Fixtur
         op.deserialize(stream, *f._repo);
         EXPECT_EQUAL(*upd, *op.getUpdate());
         EXPECT_EQUAL(bucket, op.getBucketId());
-        EXPECT_EQUAL(10u, op.getTimestamp().getValue());
+        EXPECT_EQUAL(10u, op.getTimestamp());
     }
 }
 
@@ -267,7 +267,7 @@ TEST_F("require that we can serialize and deserialize put operations", Fixture)
     uint32_t expSerializedDocSize = getDocSize(*doc);
     EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
     {
-        PutOperation op(bucket, Timestamp(10), doc);
+        PutOperation op(bucket, 10, doc);
         op.setDbDocumentId({1, 2});
         op.setPrevDbDocumentId({3, 4});
         EXPECT_EQUAL(0u, op.getSerializedDocSize());
@@ -290,7 +290,7 @@ TEST_F("require that we can serialize and deserialize move operations", Fixture)
     uint32_t expSerializedDocSize = getDocSize(*doc);
     EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
     {
-        MoveOperation op(bucket, Timestamp(10), doc, {3, 4}, 1);
+        MoveOperation op(bucket, TS_10 , doc, {3, 4}, 1);
         op.setTargetLid(2);
         EXPECT_EQUAL(0u, op.getSerializedDocSize());
         op.serialize(stream);
@@ -311,7 +311,7 @@ TEST_F("require that we can serialize and deserialize remove operations", Fixtur
     uint32_t expSerializedDocSize = getDocIdSize(docId);
     EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
     {
-        RemoveOperationWithDocId op(bucket, Timestamp(10), docId);
+        RemoveOperationWithDocId op(bucket, TS_10 , docId);
         op.setDbDocumentId({1, 2});
         op.setPrevDbDocumentId({3, 4});
         EXPECT_EQUAL(0u, op.getSerializedDocSize());
@@ -335,7 +335,7 @@ TEST_F("require that we can serialize and deserialize remove by gid operations",
     vespalib::string expDocType = "testdoc_type";
     EXPECT_NOT_EQUAL(0u, expSerializedDocSize);
     {
-        RemoveOperationWithGid op(bucket, Timestamp(10), gid, expDocType);
+        RemoveOperationWithGid op(bucket, TS_10 , gid, expDocType);
         op.setPrevDbDocumentId({3, 4});
         EXPECT_EQUAL(0u, op.getSerializedDocSize());
         op.serialize(stream);
@@ -347,7 +347,7 @@ TEST_F("require that we can serialize and deserialize remove by gid operations",
         EXPECT_EQUAL(gid, op.getGlobalId());
         EXPECT_EQUAL(expDocType, op.getDocType());
         EXPECT_EQUAL(bucket, op.getBucketId());
-        EXPECT_EQUAL(10u, op.getTimestamp().getValue());
+        EXPECT_EQUAL(10u, op.getTimestamp());
         EXPECT_EQUAL(expSerializedDocSize, op.getSerializedDocSize());
         EXPECT_FALSE( op.getValidDbdId());
         EXPECT_EQUAL(3u, op.getPrevSubDbId());

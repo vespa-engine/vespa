@@ -3,7 +3,6 @@
 
 #include "blockable_maintenance_job.h"
 #include "document_db_maintenance_config.h"
-#include <persistence/spi/types.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <vespa/vespalib/util/retain_guard.h>
 #include <atomic>
