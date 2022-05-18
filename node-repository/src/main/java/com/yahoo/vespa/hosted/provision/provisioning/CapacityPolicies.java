@@ -117,6 +117,7 @@ public class CapacityPolicies {
      * A security feature which only makes sense for prod.
      */
     public boolean decideExclusivity(Capacity capacity, boolean requestedExclusivity) {
+        if (zone.environment() == Environment.prod && capacity.cloudAccount().isPresent()) return true; // Implicit exclusive when using custom cloud account
         return requestedExclusivity && (capacity.isRequired() || zone.environment() == Environment.prod);
     }
 

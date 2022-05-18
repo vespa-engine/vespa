@@ -101,9 +101,12 @@ public interface NodeSpec {
         private CountNodeSpec(int count, NodeResources resources, boolean exclusive, boolean canFail, Optional<CloudAccount> cloudAccount) {
             this.count = count;
             this.requestedNodeResources = Objects.requireNonNull(resources, "Resources must be specified");
-            this.exclusive = exclusive || cloudAccount.isPresent(); // Implicitly exclusive if using a custom cloud account
+            this.exclusive = exclusive;
             this.canFail = canFail;
             this.cloudAccount = Objects.requireNonNull(cloudAccount);
+            if (cloudAccount.isPresent() && !exclusive) {
+                throw new IllegalArgumentException("Node spec with custom cloud account requires exclusive=true");
+            }
         }
 
         @Override
