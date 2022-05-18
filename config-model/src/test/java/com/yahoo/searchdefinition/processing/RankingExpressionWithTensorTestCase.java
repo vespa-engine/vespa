@@ -13,7 +13,7 @@ import static org.junit.Assert.fail;
 public class RankingExpressionWithTensorTestCase {
 
     @Test
-    public void requireThatSingleLineConstantTensorAndTypeCanBeParsed() throws ParseException {
+    public void requireThatSingleLineConstantMappedTensorCanBeParsed() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +
                 "    first-phase {\n" +
@@ -27,6 +27,40 @@ public class RankingExpressionWithTensorTestCase {
         f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
         f.assertRankProperty("tensor(x{},y{}):{{x:1,y:2}:1.0, {x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
         f.assertRankProperty("tensor(x{},y{})", "constant(my_tensor).type", "my_profile");
+    }
+
+    @Test
+    public void requireThatSingleLineConstantIndexedTensorCanBeParsed() throws ParseException {
+        RankProfileSearchFixture f = new RankProfileSearchFixture(
+                "  rank-profile my_profile {\n" +
+                "    first-phase {\n" +
+                "      expression: sum(my_tensor)\n" +
+                "    }\n" +
+                "    constants {\n" +
+                "      my_tensor tensor(x[3]):{ {x:0}:1, {x:1}:2, {x:2}:3 }\n" +
+                "    }\n" +
+                "  }");
+        f.compileRankProfile("my_profile");
+        f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
+        f.assertRankProperty("tensor(x[3]):[1.0, 2.0, 3.0]", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x[3])", "constant(my_tensor).type", "my_profile");
+    }
+
+    @Test
+    public void requireThatSingleLineConstantIndexedTensorShortFormCanBeParsed() throws ParseException {
+        RankProfileSearchFixture f = new RankProfileSearchFixture(
+                "  rank-profile my_profile {\n" +
+                "    first-phase {\n" +
+                "      expression: sum(my_tensor)\n" +
+                "    }\n" +
+                "    constants {\n" +
+                "      my_tensor tensor(x[3]):[1, 2, 3]\n" +
+                "    }\n" +
+                "  }");
+        f.compileRankProfile("my_profile");
+        f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
+        f.assertRankProperty("tensor(x[3]):[1.0, 2.0, 3.0]", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x[3])", "constant(my_tensor).type", "my_profile");
     }
 
     @Test
