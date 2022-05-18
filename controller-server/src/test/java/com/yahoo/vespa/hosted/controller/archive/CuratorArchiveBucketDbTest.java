@@ -32,7 +32,7 @@ public class CuratorArchiveBucketDbTest {
         assertEquals(Optional.of(URI.create("s3://existingBucket/default/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName(), true));
 
         // Assigns to existing bucket while there is space
-        IntStream.range(0, 29).forEach(i ->
+        IntStream.range(0, 4).forEach(i ->
                 assertEquals(
                         Optional.of(URI.create("s3://existingBucket/tenant" + i + "/")), bucketDb
                                 .archiveUriFor(ZoneId.defaultId(), TenantName.from("tenant" + i), true)));
@@ -47,7 +47,7 @@ public class CuratorArchiveBucketDbTest {
         assertEquals(Optional.empty(), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("newTenant"), false));
 
         // Lists all buckets by zone
-        Set<TenantName> existingBucketTenants = Streams.concat(Stream.of(TenantName.defaultName()), IntStream.range(0, 29).mapToObj(i -> TenantName.from("tenant" + i))).collect(Collectors.toUnmodifiableSet());
+        Set<TenantName> existingBucketTenants = Streams.concat(Stream.of(TenantName.defaultName()), IntStream.range(0, 4).mapToObj(i -> TenantName.from("tenant" + i))).collect(Collectors.toUnmodifiableSet());
         assertEquals(
                 Set.of(
                         new ArchiveBucket("existingBucket", "keyArn").withTenants(existingBucketTenants),
