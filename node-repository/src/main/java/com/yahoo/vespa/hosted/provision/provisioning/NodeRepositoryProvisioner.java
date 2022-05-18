@@ -97,9 +97,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
-            var actual = capacityPolicies.applyOn(requested, application);
+            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
+            Capacity actual = capacityPolicies.applyOn(requested, application, exclusive);
             ClusterResources target = decideTargetResources(application, cluster, actual);
-            boolean exclusive = capacityPolicies.decideExclusivity(actual, cluster.isExclusive());
             ensureRedundancy(target.nodes(), cluster, actual.canFail(), application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 

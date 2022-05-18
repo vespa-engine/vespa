@@ -40,15 +40,15 @@ public class CapacityPolicies {
         this.flagSource = nodeRepository.flagSource();
     }
 
-    public Capacity applyOn(Capacity capacity, ApplicationId application) {
-        return capacity.withLimits(applyOn(capacity.minResources(), capacity, application),
-                                   applyOn(capacity.maxResources(), capacity, application));
+    public Capacity applyOn(Capacity capacity, ApplicationId application, boolean exclusive) {
+        return capacity.withLimits(applyOn(capacity.minResources(), capacity, application, exclusive),
+                                   applyOn(capacity.maxResources(), capacity, application, exclusive));
     }
 
-    private ClusterResources applyOn(ClusterResources resources, Capacity capacity, ApplicationId application) {
+    private ClusterResources applyOn(ClusterResources resources, Capacity capacity, ApplicationId application, boolean exclusive) {
         int nodes = decideSize(resources.nodes(), capacity.isRequired(), application.instance().isTester());
         int groups = Math.min(resources.groups(), nodes); // cannot have more groups than nodes
-        var nodeResources = decideNodeResources(resources.nodeResources(), capacity.isRequired());
+        var nodeResources = decideNodeResources(resources.nodeResources(), capacity.isRequired(), exclusive);
         return new ClusterResources(nodes, groups, nodeResources);
     }
 
@@ -65,8 +65,8 @@ public class CapacityPolicies {
         }
     }
 
-    private NodeResources decideNodeResources(NodeResources target, boolean required) {
-        if (required) return target;
+    private NodeResources decideNodeResources(NodeResources target, boolean required, boolean exclusive) {
+        if (required || exclusive) return target;  // Cannot downsize if resources are required, or exclusively allocated
         if (target.isUnspecified()) return target; // Cannot be modified
 
         // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
