@@ -40,3 +40,13 @@ race:llvm::sys::SmartMutex<true>::lock
 
 race:re2::Prog::GetDFA
 race:re2::DFA::DFA
+
+# Non-TSAN instrumented OpenSSL may trigger warnings when many threads are attempting
+# to create TLS connections at once in a newly started process. This appears to be related
+# to implicit init-once semantics of internal OpenSSL datastructures, though the TSAN report
+# stack frames are truncated and don't show the full picture.
+# When a TSAN-instrumented OpenSSL build is used, the error does not manifest itself.
+# This implies that it's likely caused by a lack of instrumentation of atomic operations
+# (acquire-load in double-checked locking etc).
+race:ASN1_STRING_cmp
+race:ASN1_STRING_set
