@@ -17,7 +17,7 @@ class ConnectionLogHandler {
                                           String.format("logs/vespa/%s/ConnectionLog.%s", logDirectoryName, "%Y%m%d%H%M%S"),
                 "0 60 ...",
                 useClusterIdInFileName ? String.format("ConnectionLog.%s", clusterName) :
-                                          "ConnectionLog.",
+                                          "ConnectionLog",
                 queueSize,
                 "connection-logger",
                 logWriter);
