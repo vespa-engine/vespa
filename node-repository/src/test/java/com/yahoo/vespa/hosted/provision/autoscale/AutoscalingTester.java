@@ -32,7 +32,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.IntFunction;
 
@@ -314,7 +313,7 @@ class AutoscalingTester {
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
-        capacity = capacityPolicies.applyOn(capacity, applicationId);
+        capacity = capacityPolicies.applyOn(capacity, applicationId, capacityPolicies.decideExclusivity(capacity, cluster.isExclusive()));
         Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(cluster.id(), false, capacity);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
