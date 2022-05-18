@@ -145,15 +145,21 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     @Override
     public List<NamedReader> getFiles(Path dir, String fileSuffix, boolean recurse) {
+        if (dir.elements().contains(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getName()))
+            return List.of(); // No legacy paths
+        return getFiles(new File(root, dir.getName()), fileSuffix, recurse);
+    }
+
+    private List<NamedReader> getFiles(File dir, String fileSuffix, boolean recurse) {
         try {
-            if (dir.elements().contains(ApplicationPackage.SEARCH_DEFINITIONS_DIR.getName())) return List.of(); // No legacy paths
-            File dirFile = new File(root, dir.getName());
-            if ( ! dirFile.exists()) return List.of();
-            if (recurse) throw new RuntimeException("Recurse not implemented");
+            if ( ! dir.exists()) return List.of();
             List<NamedReader> readers = new ArrayList<>();
-            for (var i = Files.list(dirFile.toPath()).filter(p -> p.getFileName().toString().endsWith(fileSuffix)).iterator(); i.hasNext(); ) {
+            for (var i = Files.list(dir.toPath()).iterator(); i.hasNext(); ) {
                 var file = i.next();
-                readers.add(new NamedReader(file.toString(), IOUtils.createReader(file.toString())));
+                if (file.getFileName().toString().endsWith(fileSuffix))
+                    readers.add(new NamedReader(file.toString(), IOUtils.createReader(file.toString())));
+                else if (recurse)
+                    readers.addAll(getFiles(new File(dir, file.getFileName().toString()), fileSuffix, recurse));
             }
             return readers;
         }
