@@ -1667,15 +1667,15 @@ void indexBody(ParsedIndex index) :
     double threshold;
 }
 {
-    ( <PREFIX>                                           { index.setPrefix(true); }
-      | <ALIAS> <COLON> str = identifierWithDash()       { index.addAlias(str); }
-      | <STEMMING> <COLON> str = identifierWithDash()    { index.setStemming(Stemming.get(str)); }
-      | <ARITY> <COLON> arity = integer()                              { index.setArity(arity); }
-      | <LOWERBOUND> <COLON> num = consumeLong()                       { index.setLowerBound(num); }
-      | <UPPERBOUND> <COLON> num = consumeLong()                       { index.setUpperBound(num); }
-      | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = consumeFloat() { index.setDensePostingListThreshold(threshold); }
-      | <ENABLE_BM25>                                                  { index.setEnableBm25(true); }
-      | hnswIndex(index)                                               { }
+    ( <PREFIX>                                                       { index.setPrefix(true); }
+      | <ALIAS> <COLON> str = identifierWithDash()                   { index.addAlias(str); }
+      | <STEMMING> <COLON> str = identifierWithDash()                { index.setStemming(Stemming.get(str)); }
+      | <ARITY> <COLON> arity = integer()                            { index.setArity(arity); }
+      | <LOWERBOUND> <COLON> num = longValue()                       { index.setLowerBound(num); }
+      | <UPPERBOUND> <COLON> num = longValue()                       { index.setUpperBound(num); }
+      | <DENSEPOSTINGLISTTHRESHOLD> <COLON> threshold = floatValue() { index.setDensePostingListThreshold(threshold); }
+      | <ENABLE_BM25>                                                { index.setEnableBm25(true); }
+      | hnswIndex(index)                                             { }
     )
 }
 
@@ -1793,6 +1793,7 @@ String fileItem() :
 {
   (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = com.yahoo.path.Path.fromString(token.image).getRelative(); } { } (<NL>)*) { return path; }
 }
+
 String uriItem() :
 {
    String path;
@@ -1905,7 +1906,7 @@ String mutate_expr() :
      Number constant = null;
 }
 {
-    (("+=" | "-=" | "=") { op = token.image; } constant = consumeNumber())
+    (("+=" | "-=" | "=") { op = token.image; } constant = number())
     { return constant != null ? (op + constant) : op; }
 }
 
@@ -1977,9 +1978,9 @@ void matchPhaseItem(MatchPhaseSettings settings) :
       | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
                           | <DESCENDING> { settings.setAscending(false); } )
       | <MAXHITS> <COLON> num = integer() { settings.setMaxHits(num); }
-      | <MAXFILTERCOVERAGE> <COLON> coverage = consumeFloat() { settings.setMaxFilterCoverage(coverage); }
-      | <EVALUATION_POINT> <COLON> multiplier = consumeFloat() { settings.setEvaluationPoint(multiplier); }
-      | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = consumeFloat() { settings.setPrePostFilterTippingPoint(multiplier); }
+      | <MAXFILTERCOVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
+      | <EVALUATION_POINT> <COLON> multiplier = floatValue() { settings.setEvaluationPoint(multiplier); }
+      | <PRE_POST_FILTER_TIPPING_POINT> <COLON> multiplier = floatValue() { settings.setPrePostFilterTippingPoint(multiplier); }
     )
 }
 
@@ -2008,7 +2009,7 @@ void diversityItem(DiversitySettings settings) :
 {
     (   <ATTRIBUTE> <COLON> str = identifier() { settings.setAttribute(str); }
       | <MIN_GROUPS> <COLON> num = integer() { settings.setMinGroups(num); }
-      | <CUTOFF_FACTOR> <COLON> multiplier = consumeFloat() { settings.setCutoffFactor(multiplier); }
+      | <CUTOFF_FACTOR> <COLON> multiplier = floatValue() { settings.setCutoffFactor(multiplier); }
       | <CUTOFF_STRATEGY> <COLON>
         (   <STRICT> { settings.setCutoffStrategy(Diversity.CutoffStrategy.strict); }
           | <LOOSE>  { settings.setCutoffStrategy(Diversity.CutoffStrategy.loose); }
@@ -2038,9 +2039,9 @@ void firstPhaseItem(ParsedRankProfile profile) :
     double dropLimit;
 }
 {
-    ( expression = expression()                                 { profile.setFirstPhaseRanking(expression); }
-    | (<KEEPRANKCOUNT> <COLON> keepRankCount = integer())       { profile.setKeepRankCount(keepRankCount); }
-    | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = consumeFloat()) { profile.setRankScoreDropLimit(dropLimit); }
+    ( expression = expression()                               { profile.setFirstPhaseRanking(expression); }
+    | (<KEEPRANKCOUNT> <COLON> keepRankCount = integer())     { profile.setKeepRankCount(keepRankCount); }
+    | (<RANKSCOREDROPLIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
 }
 
@@ -2254,7 +2255,7 @@ void termwiseLimit(ParsedRankProfile profile) :
     double num;
 }
 {
-    (<TERMWISELIMIT> <COLON> num = consumeFloat()) { profile.setTermwiseLimit(num); }
+    (<TERMWISELIMIT> <COLON> num = floatValue()) { profile.setTermwiseLimit(num); }
 }
 
 /**
@@ -2267,7 +2268,7 @@ void postFilterThreshold(ParsedRankProfile profile) :
     double threshold;
 }
 {
-    (<POSTFILTERTHRESHOLD> <COLON> threshold = consumeFloat()) { profile.setPostFilterThreshold(threshold); }
+    (<POSTFILTERTHRESHOLD> <COLON> threshold = floatValue()) { profile.setPostFilterThreshold(threshold); }
 }
 
 /**
@@ -2280,7 +2281,7 @@ void approximateThreshold(ParsedRankProfile profile) :
     double threshold;
 }
 {
-    (<APPROXIMATETHRESHOLD> <COLON> threshold = consumeFloat()) { profile.setApproximateThreshold(threshold); }
+    (<APPROXIMATETHRESHOLD> <COLON> threshold = floatValue()) { profile.setApproximateThreshold(threshold); }
 }
 
 /**
@@ -2381,7 +2382,7 @@ void rankDegradationBinSize() :
     double freq;
 }
 {
-    <RPBINSIZE> <COLON> freq = consumeFloat()
+    <RPBINSIZE> <COLON> freq = floatValue()
     { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
@@ -2406,7 +2407,7 @@ void rankDegradationPosbinSize() :
     double avgOcc;
 }
 {
-    <RPPOSBINSIZE> <COLON> avgOcc = consumeFloat()
+    <RPPOSBINSIZE> <COLON> avgOcc = floatValue()
     { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
@@ -2429,7 +2430,7 @@ void rankDegradation() :
     double freq;
 }
 {
-    ( <RANKDEGRADATIONFREQ> <COLON> freq = consumeFloat()
+    ( <RANKDEGRADATIONFREQ> <COLON> freq = floatValue()
     { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
       | <RANKDEGRADATION> lbrace() ( rankDegradationItem() (<NL>)*)+ <RBRACE>
     )
@@ -2526,7 +2527,7 @@ Tensor tensorValue(TensorType type) :
     Number doubleValue = null;
 }
 {
-    ( mappedTensorValue(builder) | indexedTensorValues(builder) |  doubleValue = consumeNumber() )
+    ( mappedTensorValue(builder) | indexedTensorValues(builder) |  doubleValue = number() )
     {
         if (doubleValue != null) {
             if (type.rank() > 0)
@@ -2540,7 +2541,10 @@ Tensor tensorValue(TensorType type) :
 /** A mapped or mixed tensor value. */
 void mappedTensorValue(Tensor.Builder builder) : {}
 {
-    "{" ( mappedTensorBlock(builder) )* ( <COMMA> (<NL>)* mappedTensorBlock(builder) )* "}"
+    "{"
+    ( mappedTensorBlock(builder) )*
+    ( <COMMA> (<NL>)* mappedTensorBlock(builder) )*
+    "}"
 }
 
 
@@ -2549,11 +2553,11 @@ void mappedTensorBlock(Tensor.Builder builder) :
     TensorAddress mappedAddress;
 }
 {
-    mappedAddress = tensorAddress(builder.type().mappedSubtype()) <COLON> (<NL>)*
+    mappedAddress = tensorAddress(builder.type()) <COLON> (<NL>)*
     ( mappedTensorCellValue(mappedAddress, builder) | indexedTensorBlockValues(mappedAddress, builder) )
 }
 
-void indexedTensorBlockValues(TensorAddress sparseAddress, Tensor.Builder builder) :
+void indexedTensorBlockValues(TensorAddress mappedAddress, Tensor.Builder builder) :
 {
     List<Double> values = new ArrayList<Double>();
 }
@@ -2565,7 +2569,7 @@ void indexedTensorBlockValues(TensorAddress sparseAddress, Tensor.Builder builde
         for (int i = 0; i < values.size(); i++ ) {
             arrayValues[i] = values.get(i);
         }
-        boundBuilder.block(sparseAddress, arrayValues);
+        boundBuilder.block(mappedAddress, arrayValues);
     }
 }
 
@@ -2598,7 +2602,7 @@ void indexedTensorValue(List<Double> values) :
     Number value;
 }
 {
-    value = consumeNumber()
+    value = number()
     { values.add(value.doubleValue()); }
 }
 
@@ -2613,7 +2617,7 @@ void mappedTensorCellValue(TensorAddress address, Tensor.Builder builder) :
 
 TensorAddress tensorAddress(TensorType type) :
 {
-    TensorAddress.Builder builder = new TensorAddress.Builder(type);
+    TensorAddress.Builder builder = new TensorAddress.PartialBuilder(type);
     String label;
 }
 {
@@ -2649,7 +2653,7 @@ double tensorCellValue() :
     Number value;
 }
 {
-    value = consumeNumber()
+    value = number()
     { return value.doubleValue(); }
 }
 
@@ -2922,7 +2926,7 @@ int integer() : { }
 }
 
 /** Consumes a long or integer token and returns its numeric value. */
-long consumeLong() : { }
+long longValue() : { }
 {
     ( <INTEGER> { return Long.parseLong(token.image); } |
       <LONG>    { return Long.parseLong(token.image.substring(0, token.image.length()-1)); }
@@ -2930,17 +2934,17 @@ long consumeLong() : { }
 }
 
 /** Consumes a floating-point token and returns its numeric value. */
-double consumeFloat() : { }
+double floatValue() : { }
 {
     <DOUBLE> { return Double.valueOf(token.image); }
 }
 
-Number consumeNumber() :
+Number number() :
 {
     Number num;
 }
 {
-    (num = consumeFloat() | num = consumeLong()) { return num; }
+    ( num = floatValue() | num = longValue() ) { return num; }
 }
 
 /** Consumes an opening brace with leading and trailing newline tokens. */

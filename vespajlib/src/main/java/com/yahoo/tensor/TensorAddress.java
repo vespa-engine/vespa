@@ -171,8 +171,8 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
     /** Builder of a tensor address */
     public static class Builder {
 
-        private final TensorType type;
-        private final String[] labels;
+        final TensorType type;
+        final String[] labels;
 
         public Builder(TensorType type) {
             this(type, new String[type.dimensions().size()]);
@@ -218,13 +218,38 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         /** Returns the type of the tensor this address is being built for. */
         public TensorType type() { return type; }
 
-        public TensorAddress build() {
+        void validate() {
             for (int i = 0; i < labels.length; i++)
                 if (labels[i] == null)
                     throw new IllegalArgumentException("Missing a label for dimension " +
                                                        type.dimensions().get(i).name() + " for " + type);
+        }
+
+        public TensorAddress build() {
+            validate();
             return TensorAddress.of(labels);
         }
+
+    }
+
+    /** Builder of an address to a subset of the dimensions of a tensor type */
+    public static class PartialBuilder extends Builder {
+
+        public PartialBuilder(TensorType type) {
+            super(type);
+        }
+
+        private PartialBuilder(TensorType type, String[] labels) {
+            super(type, labels);
+        }
+
+        /** Creates a copy of this which can be modified separately */
+        public Builder copy() {
+            return new PartialBuilder(type, Arrays.copyOf(labels, labels.length));
+        }
+
+        @Override
+        void validate() { }
 
     }
 

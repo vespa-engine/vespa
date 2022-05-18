@@ -30,8 +30,11 @@ import java.util.List;
 import java.util.ArrayList;
 import ai.vespa.rankingexpression.importer.ImportedModel;
 import com.yahoo.io.IOUtils;
-import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.IndexedTensor;
+import com.yahoo.tensor.MixedTensor;
+import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 
@@ -80,8 +83,7 @@ TOKEN :
 {
   < NL: "\n" >
 | < FUNCTION: "function" >
-| < TENSOR_TYPE: "tensor(" (~["(",")"])+ ")" >
-| < TENSORVALUE: (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
+| < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
 | < LBRACE: "{" >
@@ -89,6 +91,7 @@ TOKEN :
 | < COLON: ":" >
 | < DOT: "." >
 | < COMMA: "," >
+| < DOUBLE_KEYWORD: "double" >
 | < MODEL: "model" >
 | < TYPE: "type" >
 | < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
@@ -107,8 +110,12 @@ TOKEN :
 | < FILE: "file" >
 | < URI: "uri" >
 | < IDENTIFIER:           ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_"])* >
+| < DOUBLEQUOTEDSTRING: "\"" ( ~["\""] )* "\"" >
+| < SINGLEQUOTEDSTRING: "'" ( ~["'"] )* "'" >
 | < CONTEXT: ["a"-"z","A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* >
 | < DOUBLE: ("-")? (["0"-"9"])+ "." (["0"-"9"])+ >
+| < INTEGER: ("-")? (["0"-"9"])+ >
+| < LONG: ("-")? (["0"-"9"])+"L" >
 | < STRING: (["a"-"z","A"-"Z","_","0"-"9","."])+ >
 | < FILE_PATH: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-", "/", "."])+ >
 | < HTTP: ["h","H"] ["t","T"] ["t","T"] ["p","P"] (["s","S"])? >
@@ -152,7 +159,12 @@ void modelContent() :
 {
 }
 {
-    ( <NL> | input() | constants() | largeConstant() | function() )*
+    ( <NL> |
+      constants() |
+      largeConstant() |
+      function() |
+      input()
+    )*
 }
 
 /** Declared input variables (aka features). All non-scalar inputs must be declared. */
@@ -191,46 +203,83 @@ void constants() :
 }
 {
     <CONSTANTS> <LBRACE> (<NL>)*
-      ( name = identifier() <COLON> ( constantDouble(name) | constantTensor(name) ) (<NL>)* )*
+    ( constant() (<NL>)* )*
     <RBRACE>
 }
 
-void constantDouble(String name) :
+String constantTensorErrorMessage(String constantTensorName) : {}
+{
+    { return "For constant tensor '" + constantTensorName + "' in '" + model + "'"; }
+}
+
+void constant() :
+{
+    String name = null;
+    TensorType type = TensorType.empty;
+    Tensor value = null;
+    String valuePath = null;
+}
+{
+    (
+      name = identifier() (<COLON>)?
+      (
+        LOOKAHEAD(4) ( ( type = valueType(name) )? (<COLON>)? (<NL>)* ( value = tensorValue(type) | valuePath = fileItem())
+        {
+            if (value != null) {
+                model.smallConstant(name, value);
+            }
+            else {
+                try {
+                    value = JsonFormat.decode(type, IOUtils.readFileBytes(model.relativeFile(valuePath, "constant '" + name + "'")));
+                    model.largeConstant(name, value);
+                }
+                catch (Exception e) {
+                    throw new IllegalArgumentException("Could not read constant '" + name + "'", e);
+                }
+            }
+        }
+        )
+        | // Deprecated forms (TODO: Add warning on Vespa 8):
+        ( constantValue(name) | constantTensor(name) )
+      )
+    )
+}
+
+// Deprecated form
+void constantValue(String name) :
 {
     Token value;
 }
 {
-    value = <DOUBLE> { model.smallConstant(name, Tensor.from(Double.parseDouble(value.image))); }
+    <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
+    { model.smallConstant(name, Tensor.from(value.image)); }
 }
 
+// Deprecated form
 void constantTensor(String name) :
 {
+    String tensorString = "";
+    TensorType type = null;
+}
+{
+    <LBRACE> (<NL>)*
+      (( tensorString = tensorValuePrefixedByValue() |
+         type = tensorTypeWithPrefix(constantTensorErrorMessage(name)) ) (<NL>)* )* <RBRACE>
+    { model.smallConstant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)); }
+}
+
+TensorType valueType(String name) :
+{
     TensorType type;
-    Token value;
-}
-{
-     type = tensorType("constant '" + name + "'") value = <TENSORVALUE>
-     {
-         model.smallConstant(name, Tensor.from(type, value.image.substring(1)));
-     }
-}
 
-String constantTensorErrorMessage(String model, String constantTensorName) : {}
-{
-    { return "For constant tensor '" + constantTensorName + "' in model '" + model + "'"; }
-}
-
-String tensorValue() :
-{
-    String tensor;
 }
 {
-    ( <TENSOR_VALUE_SL> { tensor = token.image.substring(token.image.indexOf(":") + 1); } |
-      <TENSOR_VALUE_ML> { tensor = token.image.substring(token.image.indexOf("{") + 1,
-                                                         token.image.lastIndexOf("}")); } )
-    {
-        return tensor;
-    }
+    (
+      ( type = tensorType("Type of " + name) )
+      |
+      ( <DOUBLE_KEYWORD> { type = TensorType.empty; } )
+    )
+    { return type; }
 }
 
 TensorType tensorType(String errorMessage) :
@@ -250,7 +299,178 @@ TensorType tensorType(String errorMessage) :
     }
 }
 
-/** Consumes a large constant. */
+/**
+ * Parses a tensor written in a tensor literal form,
+ * https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form
+ */
+Tensor tensorValue(TensorType type) :
+{
+    Tensor.Builder builder = Tensor.Builder.of(type);
+    Number doubleValue = null;
+}
+{
+    ( mappedTensorValue(builder) | indexedTensorValues(builder) |  doubleValue = number() )
+    {
+        if (doubleValue != null) {
+            if (type.rank() > 0)
+                throw new IllegalArgumentException("A tensor of type " + type + " cannot be a number");
+            builder.cell(doubleValue.doubleValue());
+        }
+        return builder.build();
+    }
+}
+
+/** A mapped or mixed tensor value. */
+void mappedTensorValue(Tensor.Builder builder) : {}
+{
+    "{"
+    ( mappedTensorBlock(builder) )*
+    ( <COMMA> (<NL>)* mappedTensorBlock(builder) )*
+    "}"
+}
+
+
+void mappedTensorBlock(Tensor.Builder builder) :
+{
+    TensorAddress mappedAddress;
+}
+{
+    mappedAddress = tensorAddress(builder.type()) <COLON> (<NL>)*
+    ( mappedTensorCellValue(mappedAddress, builder) | indexedTensorBlockValues(mappedAddress, builder) )
+}
+
+void indexedTensorBlockValues(TensorAddress mappedAddress, Tensor.Builder builder) :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+{
+    arrayTensorValues(values)
+    {
+        MixedTensor.BoundBuilder boundBuilder = (MixedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.block(mappedAddress, arrayValues);
+    }
+}
+
+void indexedTensorValues(Tensor.Builder builder) :
+{
+    List<Double> values = new ArrayList<Double>();
+}
+{
+    arrayTensorValues(values)
+    {
+        IndexedTensor.BoundBuilder boundBuilder = (IndexedTensor.BoundBuilder)builder;
+        double[] arrayValues = new double[values.size()];
+        for (int i = 0; i < values.size(); i++ ) {
+            arrayValues[i] = values.get(i);
+        }
+        boundBuilder.fill(arrayValues);
+    }
+}
+
+/** Tensor array values. Using sub-bracketing for multiple dimensions is optional and therefore ignored here. */
+void arrayTensorValues(List<Double> values) : {}
+{
+    "[" (                 ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+        ( <COMMA> (<NL>)* ( indexedTensorValue(values) | arrayTensorValues(values)) )*
+    "]"
+}
+
+void indexedTensorValue(List<Double> values) :
+{
+    Number value;
+}
+{
+    value = number()
+    { values.add(value.doubleValue()); }
+}
+
+void mappedTensorCellValue(TensorAddress address, Tensor.Builder builder) :
+{
+    double value;
+}
+{
+    value = tensorCellValue()
+    { builder.cell(address, value); }
+}
+
+TensorAddress tensorAddress(TensorType type) :
+{
+    TensorAddress.Builder builder = new TensorAddress.PartialBuilder(type);
+    String label;
+}
+{
+    (
+        label = tensorAddressLabel() { builder.add(label); }
+        |
+        ( "{" ( tensorAddressElement(builder) )* ( <COMMA> tensorAddressElement(builder) )* "}" )
+    )
+    { return builder.build(); }
+}
+
+void tensorAddressElement(TensorAddress.Builder builder) :
+{
+    String dimension;
+    String label;
+}
+{
+    dimension = identifier() <COLON> (<NL>)* label = tensorAddressLabel()
+    { builder.add(dimension, label); }
+}
+
+String tensorAddressLabel() :
+{
+    String label;
+}
+{
+    ( label = identifier() | label = quotedString() )
+    { return label; }
+}
+
+double tensorCellValue() :
+{
+    Number value;
+}
+{
+    value = number()
+    { return value.doubleValue(); }
+}
+
+/** Undocumented syntax for supplying a tensor constant value by a string prefixed by "value" */
+String tensorValuePrefixedByValue() :
+{
+    String tensor;
+}
+{
+    ( <TENSOR_VALUE_SL> { tensor = token.image.substring(token.image.indexOf(":") + 1); } |
+      <TENSOR_VALUE_ML> { tensor = token.image.substring(token.image.indexOf("{") + 1,
+                                                         token.image.lastIndexOf("}")); } )
+    {
+        return tensor;
+    }
+}
+
+TensorType tensorTypeWithPrefix(String errorMessage) :
+{
+    String tensorTypeString;
+}
+{
+    <TENSOR_TYPE> { tensorTypeString = token.image; }
+    {
+        TensorType tensorType;
+        try {
+            tensorType = TensorType.fromSpec(tensorTypeString);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
+        }
+        return tensorType;
+    }
+}
+
+/** Consumes a large constant. */ // TODO: Remove on Vespa 9
 void largeConstant() :
 {
     String name;
@@ -311,18 +531,64 @@ String expression() :
 String identifier() : { }
 {
     (
-        <IDENTIFIER>
-      | <DOUBLE>
-      | <FILE>
-      | <URI>
-      | <MODEL>
-      | <TYPE>
+      <CONSTANT> |
+      <CONSTANTS> |
+      <DOUBLE_KEYWORD> |
+      <FILE> |
+      <IDENTIFIER> |
+      <INTEGER> |
+      <MODEL> |
+      <TYPE> |
+      <URI>
     )
     { return token.image; }
+}
+
+Number number() :
+{
+    Number num;
+}
+{
+    (num = floatValue() | num = longValue() ) { return num; }
+}
+
+/** Consumes a long or integer token and returns its numeric value. */
+long longValue() : { }
+{
+    ( <INTEGER> { return Long.parseLong(token.image); } |
+      <LONG>    { return Long.parseLong(token.image.substring(0, token.image.length()-1)); }
+    )
+}
+
+/** Consumes a floating-point token and returns its numeric value. */
+double floatValue() : { }
+{
+    <DOUBLE> { return Double.valueOf(token.image); }
 }
 
 /** Consumes an opening brace with leading and trailing newline tokens. */
 void lbrace() : { }
 {
     (<NL>)* <LBRACE> (<NL>)*
+}
+
+String fileItem() :
+{
+   String path;
+}
+{
+  (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = com.yahoo.path.Path.fromString(token.image).getRelative(); } { } (<NL>)*) { return path; }
+}
+
+/**
+ * Consumes a quoted string token and returns the token image minus the quotes. This does not perform
+ * unescaping of the content, it simply removes the first and last character of the image. However, the token itself can
+ * contain anything but a double quote.
+ *
+ * @return the unquoted token image
+ */
+String quotedString() : { }
+{
+    ( <DOUBLEQUOTEDSTRING> | <SINGLEQUOTEDSTRING> )
+    { return token.image.substring(1, token.image.length() - 1); }
 }
