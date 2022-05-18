@@ -26,16 +26,13 @@ public:
     ExecutorThreadingServiceTest()
         : _transport(1),
           field_writer_executor(SequencedTaskExecutor::create(my_field_writer_executor, 3, 200)),
-          service()
-    {
-    }
-    void setup(uint32_t indexing_threads) {
-        service = std::make_unique<ExecutorThreadingService>(_transport.shared(),
+          service(std::make_unique<ExecutorThreadingService>(_transport.shared(),
                                                              _transport.transport(),
                                                              _transport.clock(),
                                                              *field_writer_executor,
                                                              nullptr,
-                                                             ThreadingServiceConfig::make(indexing_threads));
+                                                             ThreadingServiceConfig::make()))
+    {
     }
     SequencedTaskExecutor* index_inverter() {
         return to_concrete_type(service->indexFieldInverter());
@@ -60,7 +57,6 @@ assert_executor(SequencedTaskExecutor* exec, uint32_t exp_executors, uint32_t ex
 
 TEST_F(ExecutorThreadingServiceTest, shared_field_writer_specified_from_the_outside)
 {
-    setup(4);
     EXPECT_EQ(field_writer(), index_inverter());
     EXPECT_EQ(field_writer(), index_writer());
     EXPECT_EQ(field_writer(), attribute_writer());
@@ -69,7 +65,6 @@ TEST_F(ExecutorThreadingServiceTest, shared_field_writer_specified_from_the_outs
 
 TEST_F(ExecutorThreadingServiceTest, tasks_limits_can_be_updated)
 {
-    setup(4);
     service->set_task_limits(5, 7, 11);
     EXPECT_EQ(5, service->master_task_limit());
     EXPECT_EQ(7, service->index().getTaskLimit());

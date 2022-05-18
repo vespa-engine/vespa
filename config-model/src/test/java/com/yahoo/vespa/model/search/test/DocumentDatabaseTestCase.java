@@ -42,21 +42,21 @@ public class DocumentDatabaseTestCase {
 
     @Test
     public void requireThatConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency("index", "", 0.50, 0.50);
-        verifyConcurrency("streaming", "", 1.0, 0.0);
-        verifyConcurrency("store-only", "", 1.0, 0.0);
+        verifyConcurrency("index", "", 0.50);
+        verifyConcurrency("streaming", "", 1.0);
+        verifyConcurrency("store-only", "", 1.0);
     }
 
     @Test
     public void requireThatFeatureFlagConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency("index", "", 0.30, 0.30, 0.3);
-        verifyConcurrency("streaming", "", 0.6, 0.0, 0.3);
-        verifyConcurrency("store-only", "", 0.8, 0.0, 0.4);
+        verifyConcurrency("index", "", 0.30, 0.3);
+        verifyConcurrency("streaming", "", 0.6, 0.3);
+        verifyConcurrency("store-only", "", 0.8, 0.4);
     }
 
     @Test
     public void requireThatMixedModeConcurrencyIsReflectedCorrectlyForDefault() {
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0, Arrays.asList(0.50, 0.0));
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), "", 1.0);
     }
 
     @Test
@@ -64,7 +64,7 @@ public class DocumentDatabaseTestCase {
         String feedTuning = "<feeding>" +
                 "  <concurrency>0.7</concurrency>" +
                 "</feeding>\n";
-        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7, Arrays.asList(0.7, 0.0));
+        verifyConcurrency(Arrays.asList(DocType.create("a", "index"), DocType.create("b", "streaming")), feedTuning, 0.7);
     }
 
     @Test
@@ -72,25 +72,24 @@ public class DocumentDatabaseTestCase {
         String feedTuning = "<feeding>" +
                             "  <concurrency>0.7</concurrency>" +
                             "</feeding>\n";
-        verifyConcurrency("index", feedTuning, 0.7, 0.7);
-        verifyConcurrency("streaming", feedTuning, 0.7, 0.0);
-        verifyConcurrency("store-only", feedTuning, 0.7, 0.0);
+        verifyConcurrency("index", feedTuning, 0.7);
+        verifyConcurrency("streaming", feedTuning, 0.7);
+        verifyConcurrency("store-only", feedTuning, 0.7);
     }
 
-    private void verifyConcurrency(String mode, String xmlTuning, double global, double local, double featureFlagConcurrency) {
-        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), featureFlagConcurrency);
+    private void verifyConcurrency(String mode, String xmlTuning, double expectedConcurrency, double featureFlagConcurrency) {
+        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, expectedConcurrency, featureFlagConcurrency);
     }
 
-    private void verifyConcurrency(String mode, String xmlTuning, double global, double local) {
-        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, global, Arrays.asList(local), null);
+    private void verifyConcurrency(String mode, String xmlTuning, double expectedConcurrency) {
+        verifyConcurrency(Arrays.asList(DocType.create("a", mode)), xmlTuning, expectedConcurrency, null);
     }
 
-    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local) {
-        verifyConcurrency(nameAndModes, xmlTuning, global, local, null);
+    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double expectedConcurrency) {
+        verifyConcurrency(nameAndModes, xmlTuning, expectedConcurrency, null);
     }
 
-    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double global, List<Double> local, Double featureFlagConcurrency) {
-        assertEquals(nameAndModes.size(), local.size());
+    private void verifyConcurrency(List<DocType> nameAndModes, String xmlTuning, double expectedConcurrency, Double featureFlagConcurrency) {
         TestProperties properties = new TestProperties();
         if (featureFlagConcurrency != null) {
             properties.setFeedConcurrency(featureFlagConcurrency);
@@ -99,11 +98,7 @@ public class DocumentDatabaseTestCase {
         VespaModel model = tester.createModel(nameAndModes, xmlTuning, new DeployState.Builder().properties(properties));
         ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
         ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
-        assertEquals(global, proton.feeding().concurrency(), SMALL);
-        assertEquals(local.size(), proton.documentdb().size());
-        for (int i = 0; i < local.size(); i++) {
-            assertEquals(local.get(i), proton.documentdb(i).feeding().concurrency(), SMALL);
-        }
+        assertEquals(expectedConcurrency, proton.feeding().concurrency(), SMALL);
     }
 
     @Test

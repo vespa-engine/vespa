@@ -48,7 +48,7 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _schema(schema),
       _maintenance(std::make_shared<DocumentDBMaintenanceConfig>()),
       _store(),
-      _threading_service_config(std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(1))),
+      _threading_service_config(std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make())),
       _alloc_config(std::make_shared<const AllocConfig>()),
       _configId(configId),
       _docTypeName(docTypeName)

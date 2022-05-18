@@ -34,7 +34,7 @@ SharedThreadingService::SharedThreadingService(const SharedThreadingServiceConfi
 {
     const auto& fw_cfg = cfg.field_writer_config();
     _field_writer = vespalib::SequencedTaskExecutor::create(CpuUsage::wrap(proton_field_writer_executor, CpuUsage::Category::WRITE),
-                                                            fw_cfg.indexingThreads() * 3,
+                                                            cfg.field_writer_threads(),
                                                             fw_cfg.defaultTaskLimit(),
                                                             fw_cfg.is_task_limit_hard(),
                                                             fw_cfg.optimize(),

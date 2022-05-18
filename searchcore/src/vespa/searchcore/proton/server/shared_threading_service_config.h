@@ -19,12 +19,14 @@ private:
     uint32_t _shared_threads;
     uint32_t _shared_task_limit;
     uint32_t _warmup_threads;
+    uint32_t _field_writer_threads;
     ThreadingServiceConfig _field_writer_config;
 
 public:
     SharedThreadingServiceConfig(uint32_t shared_threads_in,
                                  uint32_t shared_task_limit_in,
                                  uint32_t warmup_threads_in,
+                                 uint32_t field_writer_threads_in,
                                  const ThreadingServiceConfig& field_writer_config_in);
 
     static SharedThreadingServiceConfig make(const ProtonConfig& cfg, const HwInfo::Cpu& cpu_info);
@@ -32,6 +34,7 @@ public:
     uint32_t shared_threads() const { return _shared_threads; }
     uint32_t shared_task_limit() const { return _shared_task_limit; }
     uint32_t warmup_threads() const { return _warmup_threads; }
+    uint32_t field_writer_threads() const { return _field_writer_threads; }
     const ThreadingServiceConfig& field_writer_config() const { return _field_writer_config; }
 };
 

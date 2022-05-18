@@ -17,7 +17,7 @@ using vespalib::ISequencedTaskExecutor;
 using vespalib::SequencedTaskExecutor;
 
 ProtonConfig
-make_proton_config(double concurrency)
+make_proton_config(double concurrency, uint32_t indexing_threads = 1)
 {
     ProtonConfigBuilder builder;
     // This setup requires a minimum of 4 shared threads.
@@ -27,6 +27,7 @@ make_proton_config(double concurrency)
 
     builder.feeding.concurrency = concurrency;
     builder.indexing.tasklimit = 255;
+    builder.indexing.threads = indexing_threads;
     return builder;
 }
 
@@ -38,6 +39,13 @@ expect_shared_threads(uint32_t exp_threads, uint32_t cpu_cores)
     EXPECT_EQ(exp_threads * 16, cfg.shared_task_limit());
 }
 
+void
+expect_field_writer_threads(uint32_t exp_threads, uint32_t cpu_cores, uint32_t indexing_threads = 1)
+{
+    auto cfg = SharedThreadingServiceConfig::make(make_proton_config(0.5, indexing_threads), HwInfo::Cpu(cpu_cores));
+    EXPECT_EQ(exp_threads, cfg.field_writer_threads());
+}
+
 TEST(SharedThreadingServiceConfigTest, shared_threads_are_derived_from_cpu_cores_and_feeding_concurrency)
 {
     expect_shared_threads(4, 1);
@@ -45,6 +53,21 @@ TEST(SharedThreadingServiceConfigTest, shared_threads_are_derived_from_cpu_cores
     expect_shared_threads(4, 8);
     expect_shared_threads(5, 9);
     expect_shared_threads(5, 10);
+}
+
+TEST(SharedThreadingServiceConfigTest, field_writer_threads_are_derived_from_cpu_cores_and_feeding_concurrency)
+{
+    expect_field_writer_threads(3, 1);
+    expect_field_writer_threads(3, 4);
+    expect_field_writer_threads(3, 6);
+    expect_field_writer_threads(4, 7);
+    expect_field_writer_threads(4, 8);
+    expect_field_writer_threads(5, 9);
+}
+
+TEST(SharedThreadingServiceConfigTest, field_writer_threads_can_be_overridden_in_proton_config)
+{
+    expect_field_writer_threads(4, 1, 4);
 }
 
 class SharedThreadingServiceTest : public ::testing::Test {
