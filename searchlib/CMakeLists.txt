@@ -12,7 +12,6 @@ vespa_define_module(
     fastlib_fast
     document
     config_cloudconfig
-    persistencetypes
     searchcommon
 
     EXTERNAL_DEPENDS

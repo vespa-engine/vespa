@@ -102,7 +102,7 @@ createBucketDB()
 
 void
 assertPut(const BucketId &bucketId,
-          const Timestamp &timestamp,
+          uint64_t timestamp,
           uint32_t lid,
           const GlobalId &gid,
           DocumentMetaStore &dms)

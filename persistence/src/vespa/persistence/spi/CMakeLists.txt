@@ -17,5 +17,6 @@ vespa_add_library(persistence_spi OBJECT
     result.cpp
     selection.cpp
     test.cpp
+    types.cpp
     DEPENDS
 )

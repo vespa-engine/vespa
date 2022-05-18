@@ -5,7 +5,6 @@ vespa_define_module(
     vespalog
     vespalib
     document
-    persistencetypes
     vdslib
 
     LIBS

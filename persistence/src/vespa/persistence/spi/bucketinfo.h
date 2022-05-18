@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 
 namespace vespalib { class asciistream; }
 
