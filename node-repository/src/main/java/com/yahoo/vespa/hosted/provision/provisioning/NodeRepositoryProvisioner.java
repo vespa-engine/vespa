@@ -17,9 +17,7 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -107,7 +105,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
             groups = target.groups();
             resources = getNodeResources(cluster, target.nodeResources(), application);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail());
+            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(), requested.cloudAccount());
         }
         else {
             groups = 1; // type request with multiple groups is not supported

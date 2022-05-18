@@ -9,6 +9,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
@@ -25,7 +26,6 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -99,6 +99,7 @@ public class NodeSerializer {
     private static final String exclusiveToClusterTypeKey = "exclusiveToClusterType";
     private static final String switchHostnameKey = "switchHostname";
     private static final String trustedCertificatesKey = "trustedCertificates";
+    private static final String cloudAccountKey = "cloudAccount";
 
     // Node resource fields
     private static final String flavorKey = "flavor";
@@ -192,6 +193,7 @@ public class NodeSerializer {
         node.exclusiveToApplicationId().ifPresent(applicationId -> object.setString(exclusiveToApplicationIdKey, applicationId.serializedForm()));
         node.exclusiveToClusterType().ifPresent(clusterType -> object.setString(exclusiveToClusterTypeKey, clusterType.name()));
         trustedCertificatesToSlime(node.trustedCertificates(), object.setArray(trustedCertificatesKey));
+        node.cloudAccount().ifPresent(cloudAccount -> object.setString(cloudAccountKey, cloudAccount.value()));
     }
 
     private void toSlime(Flavor flavor, Cursor object) {
@@ -275,7 +277,7 @@ public class NodeSerializer {
                                       ipAddressesFromSlime(object, ipAddressPoolKey),
                                       addressesFromSlime(object)),
                         object.field(hostnameKey).asString(),
-                        parentHostnameFromSlime(object),
+                        SlimeUtils.optionalString(object.field(parentHostnameKey)),
                         flavor,
                         statusFromSlime(object),
                         state,
@@ -283,12 +285,13 @@ public class NodeSerializer {
                         historyFromSlime(object),
                         nodeTypeFromString(object.field(nodeTypeKey).asString()),
                         Reports.fromSlime(object.field(reportsKey)),
-                        modelNameFromSlime(object),
-                        reservedToFromSlime(object.field(reservedToKey)),
-                        exclusiveToApplicationIdFromSlime(object.field(exclusiveToApplicationIdKey)),
-                        exclusiveToClusterTypeFromSlime(object.field(exclusiveToClusterTypeKey)),
-                        switchHostnameFromSlime(object.field(switchHostnameKey)),
-                        trustedCertificatesFromSlime(object));
+                        SlimeUtils.optionalString(object.field(modelNameKey)),
+                        SlimeUtils.optionalString(object.field(reservedToKey)).map(TenantName::from),
+                        SlimeUtils.optionalString(object.field(exclusiveToApplicationIdKey)).map(ApplicationId::fromSerializedForm),
+                        SlimeUtils.optionalString(object.field(exclusiveToClusterTypeKey)).map(ClusterSpec.Type::from),
+                        SlimeUtils.optionalString(object.field(switchHostnameKey)),
+                        trustedCertificatesFromSlime(object),
+                        SlimeUtils.optionalString(object.field(cloudAccountKey)).map(CloudAccount::new));
     }
 
     private Status statusFromSlime(Inspector object) {
@@ -303,12 +306,7 @@ public class NodeSerializer {
                           object.field(wantToFailKey).asBool(),
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
                                         versionFromSlime(object.field(wantedOsVersionKey))),
-                          instantFromSlime(object.field(firmwareCheckKey)));
-    }
-
-    private Optional<String> switchHostnameFromSlime(Inspector field) {
-        if (!field.valid()) return Optional.empty();
-        return Optional.of(field.asString());
+                          SlimeUtils.optionalInstant(object.field(firmwareCheckKey)));
     }
 
     private Flavor flavorFromSlime(Inspector object) {
@@ -373,35 +371,15 @@ public class NodeSerializer {
     private ClusterMembership clusterMembershipFromSlime(Inspector object) {
         return ClusterMembership.from(object.field(serviceIdKey).asString(),
                                       versionFromSlime(object.field(wantedVespaVersionKey)).get(),
-                                      containerImageRepoFromSlime(object.field(wantedContainerImageRepoKey)));
+                                      containerImageFromSlime(object.field(wantedContainerImageRepoKey)));
     }
 
     private Optional<Version> versionFromSlime(Inspector object) {
-        if ( ! object.valid()) return Optional.empty();
-        return Optional.of(Version.fromString(object.asString()));
-    }
-
-    private Optional<DockerImage> containerImageRepoFromSlime(Inspector object) {
-        if ( ! object.valid() || object.asString().isEmpty()) return Optional.empty();
-        return Optional.of(DockerImage.fromString(object.asString()));
+        return object.valid() ? Optional.of(Version.fromString(object.asString())) : Optional.empty();
     }
 
     private Optional<DockerImage> containerImageFromSlime(Inspector object) {
-        if ( ! object.valid()) return Optional.empty();
-        return Optional.of(DockerImage.fromString(object.asString()));
-    }
-
-    private Optional<Instant> instantFromSlime(Inspector object) {
-        if ( ! object.valid())
-            return Optional.empty();
-        return Optional.of(Instant.ofEpochMilli(object.asLong()));
-    }
-
-    private Optional<String> parentHostnameFromSlime(Inspector object) {
-        if (object.field(parentHostnameKey).valid())
-            return Optional.of(object.field(parentHostnameKey).asString());
-        else
-            return Optional.empty();
+        return SlimeUtils.optionalString(object).map(DockerImage::fromString);
     }
 
     private Set<String> ipAddressesFromSlime(Inspector object, String key) {
@@ -412,43 +390,15 @@ public class NodeSerializer {
 
     private List<Address> addressesFromSlime(Inspector object) {
         return SlimeUtils.entriesStream(object.field(containersKey))
-                .map(elem -> new Address(elem.field(containerHostnameKey).asString()))
-                .collect(Collectors.toList());
-    }
-
-    private Optional<String> modelNameFromSlime(Inspector object) {
-        if (object.field(modelNameKey).valid()) {
-            return Optional.of(object.field(modelNameKey).asString());
-        }
-        return Optional.empty();
-    }
-
-    private Optional<TenantName> reservedToFromSlime(Inspector object) {
-        if (! object.valid()) return Optional.empty();
-        if (object.type() != Type.STRING)
-            throw new IllegalArgumentException("Expected 'reservedTo' to be a string but is " + object);
-        return Optional.of(TenantName.from(object.asString()));
-    }
-
-    private Optional<ApplicationId> exclusiveToApplicationIdFromSlime(Inspector object) {
-        if (! object.valid()) return Optional.empty();
-        if (object.type() != Type.STRING)
-            throw new IllegalArgumentException("Expected 'exclusiveTo' to be a string but is " + object);
-        return Optional.of(ApplicationId.fromSerializedForm(object.asString()));
-    }
-
-    private Optional<ClusterSpec.Type> exclusiveToClusterTypeFromSlime(Inspector object) {
-        if (! object.valid()) return Optional.empty();
-        if (object.type() != Type.STRING)
-            throw new IllegalArgumentException("Expected 'exclusiveToClusterType' to be a string but is " + object);
-        return Optional.of(ClusterSpec.Type.from(object.asString()));
+                         .map(elem -> new Address(elem.field(containerHostnameKey).asString()))
+                         .collect(Collectors.toList());
     }
 
     private List<TrustStoreItem> trustedCertificatesFromSlime(Inspector object) {
         return SlimeUtils.entriesStream(object.field(trustedCertificatesKey))
-                .map(elem -> new TrustStoreItem(elem.field(fingerprintKey).asString(),
-                                                Instant.ofEpochMilli(elem.field(expiresKey).asLong())))
-                .collect(Collectors.toList());
+                         .map(elem -> new TrustStoreItem(elem.field(fingerprintKey).asString(),
+                                                         Instant.ofEpochMilli(elem.field(expiresKey).asLong())))
+                         .collect(Collectors.toList());
     }
 
     // ----------------- Enum <-> string mappings ----------------------------------------

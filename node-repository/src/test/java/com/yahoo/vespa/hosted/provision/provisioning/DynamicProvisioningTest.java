@@ -73,7 +73,7 @@ public class DynamicProvisioningTest {
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
         verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), NodeType.host, resources, application1,
-                Version.emptyVersion, HostSharing.any, Optional.of(ClusterSpec.Type.content));
+                Version.emptyVersion, HostSharing.any, Optional.of(ClusterSpec.Type.content), Optional.empty());
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
         assertEquals(8, tester.nodeRepository().nodes().list().size());
@@ -97,7 +97,7 @@ public class DynamicProvisioningTest {
         mockHostProvisioner(hostProvisioner, "large", 3, application3);
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, resources);
         verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), NodeType.host, resources, application3,
-                Version.emptyVersion, HostSharing.exclusive, Optional.of(ClusterSpec.Type.content));
+                Version.emptyVersion, HostSharing.exclusive, Optional.of(ClusterSpec.Type.content), Optional.empty());
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
         assertEquals(20, tester.nodeRepository().nodes().list().size());
@@ -477,7 +477,7 @@ public class DynamicProvisioningTest {
                         return provisionedHost;
                     })
                     .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any(), any(), any());
+        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any(), any(), any(), any());
     }
 
 }
