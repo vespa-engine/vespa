@@ -691,6 +691,21 @@ function(install_configserver_component NAME)
     install_symlink(lib/jars/${NAME}-${PARAM_CLASSIFIER}.jar conf/configserver-app/components/${NAME}.jar)
 endfunction()
 
+function(install_components_symlink APPNAME NAME)
+    cmake_parse_arguments(
+        PARAM
+        ""
+        "CLASSIFIER"
+        ""
+        ${ARGN}
+    )
+    if(NOT PARAM_CLASSIFIER)
+       SET(PARAM_CLASSIFIER "jar-with-dependencies")
+    endif()
+    install(DIRECTORY DESTINATION conf/${APPNAME}/components)
+    install_symlink(lib/jars/${NAME}-${PARAM_CLASSIFIER}.jar conf/${APPNAME}/components/${NAME}.jar)
+endfunction()
+
 function(add_extra_projects)
     if(EXTRA_PROJECTS)
         foreach(PROJECT ${EXTRA_PROJECTS})
