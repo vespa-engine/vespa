@@ -21,7 +21,6 @@ vespa_add_library(staging_vespalib_vespalib_util OBJECT
     sequencedtaskexecutor.cpp
     sequencedtaskexecutorobserver.cpp
     shutdownguard.cpp
-    scheduledexecutor.cpp
     singleexecutor.cpp
     testclock.cpp
     xmlserializable.cpp

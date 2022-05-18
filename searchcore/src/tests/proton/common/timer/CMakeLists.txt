@@ -3,6 +3,6 @@ vespa_add_executable(staging_vespalib_timer_test_app TEST
     SOURCES
     timer_test.cpp
     DEPENDS
-    staging_vespalib
+    searchcore_pcommon
 )
 vespa_add_test(NAME staging_vespalib_timer_test_app COMMAND staging_vespalib_timer_test_app)

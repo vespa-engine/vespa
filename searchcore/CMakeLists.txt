@@ -80,6 +80,7 @@ vespa_define_module(
     src/tests/proton/common/hw_info_sampler
     src/tests/proton/common/operation_rate_tracker
     src/tests/proton/common/state_reporter_utils
+    src/tests/proton/common/timer
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
     src/tests/proton/documentdb

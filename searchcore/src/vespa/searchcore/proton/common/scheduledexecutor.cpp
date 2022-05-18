@@ -4,7 +4,9 @@
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
 
-namespace vespalib {
+using vespalib::duration;
+
+namespace proton {
 
 using Task = vespalib::Executor::Task;
 
@@ -30,7 +32,7 @@ public:
 
     void PerformTask() override {
         _task->run();
-        Schedule(to_s(_interval));
+        Schedule(vespalib::to_s(_interval));
     }
 };
 
@@ -52,7 +54,7 @@ ScheduledExecutor::scheduleAtFixedRate(vespalib::Executor::Task::UP task, durati
     std::lock_guard guard(_lock);
     auto tTask = std::make_unique<TimerTask>(_transport.GetScheduler(), std::move(task), interval);
     _taskList.push_back(std::move(tTask));
-    _taskList.back()->Schedule(to_s(delay));
+    _taskList.back()->Schedule(vespalib::to_s(delay));
 }
 
 void
