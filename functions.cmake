@@ -664,7 +664,11 @@ function(install_java_artifact_dependencies NAME)
 endfunction()
 
 function(install_fat_java_artifact NAME)
-    install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
+    if(EXISTS "target/${NAME}-jar-with-dependencies.jar")
+       install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
+    else()
+       install(FILES "target/${NAME}-deploy.jar" DESTINATION lib/jars/)
+    endif()
 endfunction()
 
 function(install_absolute_symlink TARGET LINK)
