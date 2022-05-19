@@ -20,30 +20,23 @@ import java.util.logging.Logger;
 /**
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 class MessageFactory {
 
     private final static Logger log = Logger.getLogger(MessageFactory.class.getName());
     private final Message requestMsg;
-    private final DocumentProtocol.Priority priority; // TODO: Remove on Vespa 8
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public MessageFactory(DocumentMessage requestMsg) {
         this.requestMsg = requestMsg;
-        priority = requestMsg.getPriority(); // TODO: Remove on Vespa 8
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public DocumentMessage fromDocumentOperation(Processing processing, DocumentOperation documentOperation) {
         DocumentMessage message = newMessage(documentOperation);
-        message.setPriority(priority); // TODO: Remove on Vespa 8
         message.setRoute(requestMsg.getRoute());
         message.setTimeReceivedNow();
         message.setTimeRemaining(requestMsg.getTimeRemainingNow());
         message.getTrace().setLevel(requestMsg.getTrace().getLevel());
         log.log(Level.FINE, () -> "Created '" + message.getClass().getName() +
                                   "', route = '" + message.getRoute() +
-                                  "', priority = '" + message.getPriority().name() + // TODO: Remove on Vespa 8
                                   "', trace level = '" + message.getTrace().getLevel() +
                                   "', time remaining = '" + message.getTimeRemaining() + "'.");
         return message;
