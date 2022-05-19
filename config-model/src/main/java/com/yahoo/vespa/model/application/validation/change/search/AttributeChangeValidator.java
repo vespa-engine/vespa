@@ -5,12 +5,12 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.searchdefinition.derived.AttributeFields;
-import com.yahoo.searchdefinition.derived.IndexSchema;
-import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.Case;
-import com.yahoo.searchdefinition.document.Dictionary;
-import com.yahoo.searchdefinition.document.HnswIndexParams;
+import com.yahoo.schema.derived.AttributeFields;
+import com.yahoo.schema.derived.IndexSchema;
+import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.Dictionary;
+import com.yahoo.schema.document.HnswIndexParams;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 

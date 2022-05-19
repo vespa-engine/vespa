@@ -6,9 +6,9 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
-import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.MatchType;
+import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.ImmutableSDField;
+import com.yahoo.schema.document.MatchType;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.SearchCluster;
 

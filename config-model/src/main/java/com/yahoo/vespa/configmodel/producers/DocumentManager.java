@@ -2,26 +2,21 @@
 package com.yahoo.vespa.configmodel.producers;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
-import static com.yahoo.document.config.DocumentmanagerConfig.*;
 import com.yahoo.document.*;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
-import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.OwnedTemporaryType;
 import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.document.FieldSet;
+import com.yahoo.schema.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;

@@ -4,7 +4,7 @@ package com.yahoo.vespa;
 import com.yahoo.document.DataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.searchdefinition.Schema;
+import com.yahoo.schema.Schema;
 import org.junit.Test;
 
 import java.io.File;

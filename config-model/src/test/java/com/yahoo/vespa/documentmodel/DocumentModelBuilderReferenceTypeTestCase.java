@@ -3,8 +3,8 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.searchdefinition.ApplicationBuilder;
-import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.schema.parser.ParseException;
 import org.junit.Test;
 
 import java.io.IOException;

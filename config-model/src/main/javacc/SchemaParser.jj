@@ -11,7 +11,7 @@ options {
 
 PARSER_BEGIN(SchemaParser)
 
-package com.yahoo.searchdefinition.parser;
+package com.yahoo.schema.parser;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
@@ -19,21 +19,21 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
-import com.yahoo.searchdefinition.DistributableResource;
-import com.yahoo.searchdefinition.OnnxModel;
-import com.yahoo.searchdefinition.RankProfile.DiversitySettings;
-import com.yahoo.searchdefinition.RankProfile.MatchPhaseSettings;
-import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.document.Case;
-import com.yahoo.searchdefinition.document.MatchType;
-import com.yahoo.searchdefinition.document.MatchAlgorithm;
-import com.yahoo.searchdefinition.document.HnswIndexParams;
-import com.yahoo.searchdefinition.document.Sorting;
-import com.yahoo.searchdefinition.document.Stemming;
-import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.FeatureNames;
-import com.yahoo.searchdefinition.fieldoperation.IndexingOperation;
+import com.yahoo.schema.DistributableResource;
+import com.yahoo.schema.OnnxModel;
+import com.yahoo.schema.RankProfile.DiversitySettings;
+import com.yahoo.schema.RankProfile.MatchPhaseSettings;
+import com.yahoo.schema.RankProfile;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.Case;
+import com.yahoo.schema.document.MatchType;
+import com.yahoo.schema.document.MatchAlgorithm;
+import com.yahoo.schema.document.HnswIndexParams;
+import com.yahoo.schema.document.Sorting;
+import com.yahoo.schema.document.Stemming;
+import com.yahoo.schema.document.SDField;
+import com.yahoo.schema.FeatureNames;
+import com.yahoo.schema.fieldoperation.IndexingOperation;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;

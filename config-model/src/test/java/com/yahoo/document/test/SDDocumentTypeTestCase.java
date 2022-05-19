@@ -4,11 +4,11 @@ package com.yahoo.document.test;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DataTypeName;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.AbstractSchemaTestCase;
-import com.yahoo.searchdefinition.ApplicationBuilder;
-import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.document.SDField;
-import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.schema.AbstractSchemaTestCase;
+import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.schema.document.SDDocumentType;
+import com.yahoo.schema.document.SDField;
+import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.Test;
 

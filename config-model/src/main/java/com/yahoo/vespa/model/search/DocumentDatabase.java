@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.searchdefinition.derived.DerivedConfiguration;
+import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.ImportedFieldsConfig;
 import com.yahoo.vespa.config.search.IndexschemaConfig;

@@ -3,9 +3,9 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.searchdefinition.ApplicationBuilder;
-import com.yahoo.searchdefinition.AbstractSchemaTestCase;
-import com.yahoo.searchdefinition.parser.ParseException;
+import com.yahoo.schema.ApplicationBuilder;
+import com.yahoo.schema.AbstractSchemaTestCase;
+import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import org.junit.Test;

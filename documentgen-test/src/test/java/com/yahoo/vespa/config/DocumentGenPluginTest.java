@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.compress.CompressionType;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.Processing;
 import com.yahoo.docproc.proxy.ProxyDocument;
@@ -40,7 +39,7 @@ import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
-import com.yahoo.searchdefinition.derived.Deriver;
+import com.yahoo.schema.derived.Deriver;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.vespa.document.NodeImpl;
 import com.yahoo.vespa.document.dom.DocumentImpl;

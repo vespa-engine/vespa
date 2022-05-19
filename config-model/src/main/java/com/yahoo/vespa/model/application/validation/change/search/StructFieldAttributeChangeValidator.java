@@ -8,9 +8,9 @@ import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.searchdefinition.derived.AttributeFields;
-import com.yahoo.searchdefinition.document.Attribute;
-import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
+import com.yahoo.schema.derived.AttributeFields;
+import com.yahoo.schema.document.Attribute;
+import com.yahoo.schema.document.ComplexAttributeFieldUtils;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 
