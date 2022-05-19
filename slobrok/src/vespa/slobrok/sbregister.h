@@ -86,7 +86,7 @@ private:
     FRT_Supervisor          &_orb;
     RPCHooks                 _hooks;
     std::mutex               _lock;
-    bool                     _reqDone;
+    std::atomic<bool>        _reqDone;
     bool                     _logOnSuccess;
     std::atomic<bool>        _busy;
     SlobrokList              _slobrokSpecs;
