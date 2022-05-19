@@ -44,12 +44,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <!-- Needed by guava, which has an optional dependency on jsr305.
-      Not optional here, to avoid the need to add it to a lot of dependent modules. -->
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>jsr305</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-lib</artifactId>
       <version>${project.version}</version>
