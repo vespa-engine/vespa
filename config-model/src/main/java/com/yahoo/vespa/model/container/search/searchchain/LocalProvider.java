@@ -7,7 +7,7 @@ import com.yahoo.component.chain.model.ChainSpecification;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
-import com.yahoo.searchdefinition.derived.SchemaInfo;
+import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.search.config.ClusterConfig;

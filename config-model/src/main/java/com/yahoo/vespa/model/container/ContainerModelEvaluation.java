@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.container;
 
 import ai.vespa.models.evaluation.ModelsEvaluator;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.searchdefinition.derived.RankProfileList;
+import com.yahoo.schema.derived.RankProfileList;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;

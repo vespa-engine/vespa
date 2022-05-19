@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.searchdefinition.derived.DerivedConfiguration;
+import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;

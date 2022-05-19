@@ -6,9 +6,9 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.path.Path;
-import com.yahoo.searchdefinition.DistributableResource;
-import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchdefinition.Schema;
+import com.yahoo.schema.DistributableResource;
+import com.yahoo.schema.RankProfile;
+import com.yahoo.schema.Schema;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ConstantTensorJsonValidator.InvalidConstantTensorException;
 

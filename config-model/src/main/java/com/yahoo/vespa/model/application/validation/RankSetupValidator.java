@@ -10,7 +10,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
-import com.yahoo.searchdefinition.DistributableResource;
+import com.yahoo.schema.DistributableResource;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.search.AttributesConfig;
