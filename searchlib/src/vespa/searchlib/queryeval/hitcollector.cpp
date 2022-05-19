@@ -37,7 +37,7 @@ HitCollector::sortHitsByDocId()
 HitCollector::HitCollector(uint32_t numDocs,
                            uint32_t maxHitsSize)
     : _numDocs(numDocs),
-      _maxHitsSize(maxHitsSize),
+      _maxHitsSize(std::min(maxHitsSize, numDocs)),
       _maxDocIdVectorSize((numDocs + 31) / 32),
       _hits(),
       _hitsSortOrder(SortOrder::DOC_ID),
@@ -53,7 +53,7 @@ HitCollector::HitCollector(uint32_t numDocs,
     } else {
         _collector = std::make_unique<DocIdCollector<false>>(*this);
     }
-    _hits.reserve(maxHitsSize);
+    _hits.reserve(_maxHitsSize);
 }
 
 HitCollector::~HitCollector() = default;
