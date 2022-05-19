@@ -197,7 +197,8 @@ public class ApplicationBuilder {
         }
 
         Path rankProfilePath = ApplicationPackage.SCHEMAS_DIR.append(schemaName);
-        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile")) {
+        for (NamedReader reader : applicationPackage.getFiles(rankProfilePath, ".profile", true)) {
+            System.out.println("Got " + reader);
             mediator.addRankProfileFile(schemaName, reader);
         }
     }

@@ -106,7 +106,7 @@ public class IntermediateCollectionTestCase {
         var collection = new IntermediateCollection();
         collection.addSchemaFromFile("src/test/derived/rankprofilemodularity/test.sd");
         collection.addRankProfileFile("test", "src/test/derived/rankprofilemodularity/test/outside_schema1.profile");
-        collection.addRankProfileFile("test", readerOf("src/test/derived/rankprofilemodularity/test/outside_schema2.profile"));
+        collection.addRankProfileFile("test", readerOf("src/test/derived/rankprofilemodularity/test/subdirectory/outside_schema2.profile"));
         var schemes = collection.getParsedSchemas();
         assertEquals(schemes.size(), 1);
         var schema = schemes.get("test");
