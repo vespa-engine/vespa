@@ -32,7 +32,7 @@ vespa_add_library(searchlib
 
     INSTALL lib64
     DEPENDS
-    staging_vespalib
+    vespalib
     ${VESPA_ATOMIC_LIB}
 )
 

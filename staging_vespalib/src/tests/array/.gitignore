@@ -1,5 +1,0 @@
-/sort_benchmark
-/allocinarray_benchmark
-staging_vespalib_allocinarray_test_app
-staging_vespalib_allocinarray_benchmark_app
-staging_vespalib_sort_benchmark_app

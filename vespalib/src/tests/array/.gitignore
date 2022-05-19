@@ -1,3 +1,4 @@
 /sort_benchmark
 /allocinarray_benchmark
 vespalib_array_test_app
+vespalib_sort_benchmark_app

@@ -1,6 +1,0 @@
-.depend
-Makefile
-lrucache_test
-cache_test
-staging_vespalib_cache_test_app
-staging_vespalib_lrucache_test_app

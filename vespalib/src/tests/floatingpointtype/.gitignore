@@ -1,0 +1,4 @@
+.depend
+Makefile
+floatingpointtype_test
+vespalib_floatingpointtype_test_app
