@@ -132,10 +132,8 @@ public abstract class DocumentProcessingHandlerTestBase {
 
     protected abstract DocumentType getType();
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public boolean sendMessage(String destinationChainName, DocumentMessage msg) {
         msg.setRoute(Route.parse("test/chain." + destinationChainName + " " + remoteServer.connectionSpec()));
-        msg.setPriority(DocumentProtocol.Priority.HIGH_1); // TODO: Remove on Vespa 8
         msg.getTrace().setLevel(9);
         msg.setTimeRemaining(60 * 1000);
         return driver.client().sendMessage(msg).isAccepted();

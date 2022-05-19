@@ -34,19 +34,6 @@ public interface SyncSession extends Session {
      * Puts a document. When this method returns, the document is safely received.
      *
      * @param documentPut the DocumentPut operation
-     * @param priority the priority with which to perform this operation
-     * @deprecated specifying explicit operation priority is deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    default void put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
-        put(documentPut, parameters().withPriority(priority));
-    }
-
-    /**
-     * Puts a document. When this method returns, the document is safely received.
-     *
-     * @param documentPut the DocumentPut operation
      * @param parameters parameters for the operation
      */
     default void put(DocumentPut documentPut, DocumentOperationParameters parameters) {
@@ -63,22 +50,6 @@ public interface SyncSession extends Session {
     default Document get(DocumentId id) { return get(id, null); }
 
     /**
-     * Gets a document with an unspecified timeout
-     *
-     * @param id       the id of the document to get
-     * @param fieldSet a comma-separated list of fields to retrieve
-     * @param priority the priority with which to perform this operation
-     * @return the document with this id, or null if there is none
-     * @throws UnsupportedOperationException thrown if this does not support retrieving
-     * @deprecated specifying explicit operation priority is deprecated. Set fieldSet via
-     *             {@link #get(DocumentId, DocumentOperationParameters, Duration)} instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    default Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority) {
-        return get(id, fieldSet, priority, null);
-    }
-
-    /**
      * Gets a document with timeout.
      *
      * @param id the id of the document to get
@@ -88,21 +59,6 @@ public interface SyncSession extends Session {
      * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT}).
      */
     Document get(DocumentId id, Duration timeout);
-
-    /**
-     * Gets a document with timeout.
-     *
-     * @param id       the id of the document to get
-     * @param fieldSet a comma-separated list of fields to retrieve
-     * @param priority the priority with which to perform this operation
-     * @param timeout timeout. If timeout is null, an unspecified default will be used
-     * @return the known document having this id, or null if there is no document having this id
-     * @throws UnsupportedOperationException thrown if this access does not support retrieving
-     * @throws DocumentAccessException on any messagebus error, including timeout ({@link com.yahoo.messagebus.ErrorCode#TIMEOUT})
-     * @deprecated specifying explicit operation priority is deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout);
 
     /**
      * Gets a document with timeout.
@@ -130,18 +86,6 @@ public interface SyncSession extends Session {
      * Removes a document if it is present.
      *
      * @param documentRemove document remove operation
-     * @param priority the priority with which to perform this operation
-     * @return true if the document with this id was removed, false otherwise.
-     * @throws UnsupportedOperationException thrown if this access does not support removal
-     * @deprecated specifying explicit operation priority is deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    boolean remove(DocumentRemove documentRemove, DocumentProtocol.Priority priority);
-
-    /**
-     * Removes a document if it is present.
-     *
-     * @param documentRemove document remove operation
      * @param parameters parameters for the operation
      * @return true if the document with this id was removed, false otherwise.
      * @throws UnsupportedOperationException thrown if this access does not support removal
@@ -161,21 +105,6 @@ public interface SyncSession extends Session {
      * is not met.
      */
     boolean update(DocumentUpdate update);
-
-    /**
-     * Updates a document.
-     *
-     * @param update   the updates to perform.
-     * @param priority the priority with which to perform this operation
-     * @return false if the updates could not be applied as the document does not exist and
-     * {@link DocumentUpdate#setCreateIfNonExistent(boolean) create-if-non-existent} is not set.
-     * @throws DocumentAccessException on update error, including but not limited to: 1. timeouts,
-     * 2. the document exists but the {@link DocumentUpdate#setCondition(TestAndSetCondition) condition}
-     * is not met.
-     * @deprecated specifying explicit operation priority is deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    boolean update(DocumentUpdate update, DocumentProtocol.Priority priority);
 
     /**
      * Updates a document.
