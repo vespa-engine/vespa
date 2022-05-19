@@ -4,7 +4,6 @@ package com.yahoo.application.container.handler;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.jdisc.HeaderFields;
 
-import javax.annotation.concurrent.NotThreadSafe;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +17,6 @@ import java.util.Set;
  * @author Einar M R Rosenvinge
  * @author Simon Thoresen Hult
  */
-@NotThreadSafe
 @Beta
 public class Headers implements Map<String, List<String>> {
     private final HeaderFields h = new HeaderFields();
