@@ -15,7 +15,6 @@ vespa_add_executable(storage_filestorage_gtest_runner_app TEST
     gtest_runner.cpp
     DEPENDS
     storage
-    storageapi
     storage_testhostreporter
     storage_testpersistence_common
     GTest::GTest

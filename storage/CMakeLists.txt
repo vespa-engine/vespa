@@ -2,7 +2,6 @@
 vespa_define_module(
     DEPENDS
     vespadefaults
-    storageapi
     fastos
     fastlib_fast
     metrics
@@ -49,6 +48,11 @@ vespa_define_module(
     src/vespa/storageframework/generic/metric
     src/vespa/storageframework/generic/status
     src/vespa/storageframework/generic/thread
+    src/vespa/storageapi/app
+    src/vespa/storageapi/buckets
+    src/vespa/storageapi/mbusprot
+    src/vespa/storageapi/message
+    src/vespa/storageapi/messageapi
 
     TEST_DEPENDS
     messagebus_messagebus-test
@@ -66,6 +70,10 @@ vespa_define_module(
     src/tests/persistence
     src/tests/persistence/common
     src/tests/persistence/filestorage
+    src/tests/storageapi
+    src/tests/storageapi/buckets
+    src/tests/storageapi/mbusprot
+    src/tests/storageapi/messageapi
     src/tests/storageframework
     src/tests/storageframework/clock
     src/tests/storageframework/thread
