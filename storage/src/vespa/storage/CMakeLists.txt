@@ -20,6 +20,13 @@ vespa_add_library(storage
     $<TARGET_OBJECTS:storage_distributormaintenance>
     $<TARGET_OBJECTS:storage_distributor_bucketdb>
     $<TARGET_OBJECTS:storage_distributor>
+    $<TARGET_OBJECTS:storageframework_component>
+    $<TARGET_OBJECTS:storageframework_status>
+    $<TARGET_OBJECTS:storageframework_thread>
+    $<TARGET_OBJECTS:storageframework_clock>
+    $<TARGET_OBJECTS:storageframework_clockimpl>
+    $<TARGET_OBJECTS:storageframework_componentimpl>
+    $<TARGET_OBJECTS:storageframework_threadimpl>
     INSTALL lib64
     DEPENDS
 )
