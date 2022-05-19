@@ -13,7 +13,6 @@ vespa_define_module(
     document
     searchlib
     messagebus
-    documentapi
     persistence
     searchsummary
     fileacquirer
@@ -48,7 +47,6 @@ vespa_define_module(
     src/apps/proton
     src/apps/tests
     src/apps/verify_ranksetup
-    src/apps/vespa-dump-feed
     src/apps/vespa-feed-bm
     src/apps/vespa-gen-testdocs
     src/apps/vespa-proton-cmd
