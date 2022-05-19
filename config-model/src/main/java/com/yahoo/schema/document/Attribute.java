@@ -232,7 +232,9 @@ public final class Attribute implements Cloneable, Serializable {
     public void setEnableBitVectors(boolean enableBitVectors)    { this.enableBitVectors = enableBitVectors; }
     public void setEnableOnlyBitVector(boolean enableOnlyBitVector) { this.enableOnlyBitVector = enableOnlyBitVector; }
     public void setFastRank(boolean value) {
-        Supplier<IllegalArgumentException> badGen = () -> new IllegalArgumentException("fast-rank is only valid for tensor attributes, invalid for: "+this);
+        Supplier<IllegalArgumentException> badGen = () ->
+                new IllegalArgumentException("The " + toString() + " does not support 'fast-rank'. " +
+                        "Only supported for tensor types with at least one mapped dimension");
         var tt = tensorType.orElseThrow(badGen);
         for (var dim : tt.dimensions()) {
             if (dim.isMapped()) {
@@ -425,7 +427,7 @@ public final class Attribute implements Cloneable, Serializable {
 
     @Override
     public String toString() {
-        return "attribute '" + name + "' (" + type + ")";
+        return "attribute '" + name + "' (" + (tensorType.isPresent() ? tensorType.get() : type) + ")";
     }
 
     public Set<String> getAliases() {

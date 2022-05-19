@@ -76,6 +76,14 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
+    public void changing_fast_rank_require_restart() throws Exception {
+        new Fixture("field f1 type tensor(x{}) { indexing: attribute }",
+                "field f1 type tensor(x{}) { indexing: attribute \n attribute: fast-rank }").
+                assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
+                        "Field 'f1' changed: add attribute 'fast-rank'"));
+    }
+
+    @Test
     public void changing_btree2hash_require_restart() throws Exception {
         new Fixture("field f1 type long { indexing: attribute\n attribute: fast-search\n dictionary: btree}",
                 "field f1 type long { indexing: attribute\n attribute: fast-search\n dictionary: hash }").

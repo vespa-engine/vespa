@@ -55,6 +55,17 @@ public class TensorFieldTestCase {
     }
 
     @Test
+    public void requireThatIndexedTensorAttributeCannotBeFastRank() throws ParseException {
+        try {
+            createFromString(getSd("field f1 type tensor(x[3]) { indexing: attribute \n attribute: fast-rank }"));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("The attribute 'f1' (tensor(x[3])) does not support 'fast-rank'. Only supported for tensor types with at least one mapped dimension", e.getMessage());
+        }
+    }
+
+    @Test
     public void requireThatIllegalTensorTypeSpecThrowsException() throws ParseException {
         try {
             createFromString(getSd("field f1 type tensor(invalid) { indexing: attribute }"));

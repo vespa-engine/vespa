@@ -110,6 +110,7 @@ public class AttributeChangeValidator {
             Attribute current = currentFields.getAttribute(next.getName());
             if (current != null) {
                 validateAttributePredicate(id, current, next, Attribute::isFastSearch, "fast-search", result);
+                validateAttributePredicate(id, current, next, Attribute::isFastRank, "fast-rank", result);
                 validateAttributePredicate(id, current, next, Attribute::isFastAccess, "fast-access", result);
                 validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
                 validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
