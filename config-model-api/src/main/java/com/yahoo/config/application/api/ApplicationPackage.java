@@ -67,6 +67,7 @@ public interface ApplicationPackage {
 
     String SD_NAME_SUFFIX = ".sd";
     String RANKEXPRESSION_NAME_SUFFIX = ".expression";
+    String RANKPROFILE_NAME_SUFFIX = ".profile";
     String RULES_NAME_SUFFIX = ".sr";
     String EXT_DIR = "ext";
 
