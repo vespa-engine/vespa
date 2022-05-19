@@ -667,10 +667,6 @@ function(install_fat_java_artifact NAME)
     install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
 endfunction()
 
-function(install_deploy_java_artifact NAME)
-    install(FILES "target/${NAME}-deploy.jar" DESTINATION lib/jars/)
-endfunction()
-
 function(install_absolute_symlink TARGET LINK)
     install(CODE "execute_process(COMMAND ln -snf ${TARGET} \$ENV{DESTDIR}${CMAKE_INSTALL_PREFIX}/${LINK})")
 endfunction(install_absolute_symlink)
