@@ -11,7 +11,6 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.test.TestDriver;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -22,7 +21,6 @@ import java.util.concurrent.CountDownLatch;
 /**
  * @author Einar M R Rosenvinge
  */
-@ThreadSafe
 @Beta
 final class SynchronousRequestResponseHandler {
 
@@ -121,7 +119,7 @@ final class SynchronousRequestResponseHandler {
         }
     }
 
-    @ThreadSafe
+
     private static class BlockingResponseHandler implements ResponseHandler, ContentChannel {
         private volatile com.yahoo.jdisc.Response discResponse = null;
         private CountDownLatch closedLatch = new CountDownLatch(1);
