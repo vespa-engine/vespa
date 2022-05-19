@@ -126,17 +126,8 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     }
 
     @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public void put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
-        put(documentPut, parameters().withPriority(priority));
-    }
-
-    @Override
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public void put(DocumentPut documentPut, DocumentOperationParameters parameters) {
         PutDocumentMessage msg = new PutDocumentMessage(documentPut);
-        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_3));
         Reply reply = syncSend(msg, parameters);
         if (reply.hasErrors()) {
             throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());
@@ -149,18 +140,9 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     }
 
     @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority pri, Duration timeout) {
-        return get(id, parameters().withFieldSet(fieldSet).withPriority(pri), timeout);
-    }
-
-    @Override
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public Document get(DocumentId id, DocumentOperationParameters parameters, Duration timeout) {
         // TODO Vespa 8: change to DocumentOnly.NAME
         GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
-        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_1));
 
         Reply reply = syncSend(msg, timeout != null ? timeout : defaultTimeout, parameters);
         if (reply.hasErrors()) {
@@ -183,17 +165,8 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     }
 
     @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public boolean remove(DocumentRemove documentRemove, DocumentProtocol.Priority pri) {
-        return remove(documentRemove, parameters().withPriority(pri));
-    }
-
-    @Override
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public boolean remove(DocumentRemove documentRemove, DocumentOperationParameters parameters) {
         RemoveDocumentMessage msg = new RemoveDocumentMessage(documentRemove.getId());
-        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
         msg.setCondition(documentRemove.getCondition());
         Reply reply = syncSend(msg, parameters);
         if (reply.hasErrors()) {
@@ -211,17 +184,8 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     }
 
     @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public boolean update(DocumentUpdate update, DocumentProtocol.Priority pri) {
-        return update(update, parameters().withPriority(pri));
-    }
-
-    @Override
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public boolean update(DocumentUpdate update, DocumentOperationParameters parameters) {
         UpdateDocumentMessage msg = new UpdateDocumentMessage(update);
-        msg.setPriority(parameters.priority().orElse(DocumentProtocol.Priority.NORMAL_2));
         Reply reply = syncSend(msg, parameters);
         if (reply.hasErrors()) {
             throw new DocumentAccessException(MessageBusAsyncSession.getErrorMessage(reply), reply.getErrorCodes());
