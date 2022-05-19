@@ -664,7 +664,7 @@ function(install_java_artifact_dependencies NAME)
 endfunction()
 
 function(install_fat_java_artifact NAME)
-    if(EXISTS "target/${NAME}-jar-with-dependencies.jar")
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/target/${NAME}-jar-with-dependencies.jar")
        install(FILES "target/${NAME}-jar-with-dependencies.jar" DESTINATION lib/jars/)
     else()
        install(FILES "target/${NAME}-deploy.jar" DESTINATION lib/jars/)
