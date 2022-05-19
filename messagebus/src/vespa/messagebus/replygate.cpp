@@ -22,13 +22,13 @@ ReplyGate::handleMessage(Message::UP msg)
 void
 ReplyGate::close()
 {
-    _open = false;
+    _open.store(false, std::memory_order_relaxed);
 }
 
 void
 ReplyGate::handleReply(Reply::UP reply)
 {
-    if (_open) {
+    if (_open.load(std::memory_order_relaxed)) {
         IReplyHandler &handler = reply->getCallStack().pop(*reply);
         handler.handleReply(std::move(reply));
     } else {
