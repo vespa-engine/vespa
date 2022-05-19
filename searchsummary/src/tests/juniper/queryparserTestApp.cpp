@@ -6,7 +6,7 @@
 
 
 int main(int argc, char **argv) {
-    juniper::TestEnv te(argc, argv, TEST_PATH("../rpclient/testclient.rc").c_str());
+    juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
     QueryParserTest test;
     test.SetStream(&std::cout);
     test.Run(argc, argv);

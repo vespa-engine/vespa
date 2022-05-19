@@ -29,7 +29,7 @@ SrcTestSuite::SrcTestSuite() :
 }
 
 int main(int argc, char **argv) {
-    juniper::TestEnv te(argc, argv, TEST_PATH("../rpclient/testclient.rc").c_str());
+    juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
     SrcTestSuite suite;
     suite.Run();
     long failures = suite.Report();

@@ -34,7 +34,7 @@ test_wildcard()
 
 int main(int argc, char **argv) {
     test_wildcard();
-    juniper::TestEnv te(argc, argv, TEST_PATH("../rpclient/testclient.rc").c_str());
+    juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
     MatchObjectTest test;
     test.SetStream(&std::cout);
     test.Run(argc, argv);
