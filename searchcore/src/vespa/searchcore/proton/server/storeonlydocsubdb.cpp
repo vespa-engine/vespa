@@ -142,7 +142,11 @@ StoreOnlyDocSubDB::clearViews() {
 size_t
 StoreOnlyDocSubDB::getNumDocs() const
 {
-    return (_metaStoreCtx) ? _metaStoreCtx->get().getNumUsedLids() : 0u;
+    if (_metaStoreCtx) {
+        auto guard = _metaStoreCtx->getReadGuard();
+        return guard->get().getNumUsedLids();
+    }
+    return 0u;
 }
 
 size_t
