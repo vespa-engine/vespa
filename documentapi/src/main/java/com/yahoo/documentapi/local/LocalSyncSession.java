@@ -33,21 +33,7 @@ public class LocalSyncSession implements SyncSession {
     }
 
     @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public void put(DocumentPut documentPut, DocumentProtocol.Priority priority) {
-        access.documents.put(documentPut.getId(), documentPut.getDocument());
-    }
-
-    @Override
     public Document get(DocumentId id, Duration timeout) {
-        return access.documents.get(id);
-    }
-
-    @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public Document get(DocumentId id, String fieldSet, DocumentProtocol.Priority priority, Duration timeout) {
         return access.documents.get(id);
     }
 
@@ -61,26 +47,7 @@ public class LocalSyncSession implements SyncSession {
     }
 
     @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public boolean remove(DocumentRemove documentRemove, DocumentProtocol.Priority priority) {
-        return remove(documentRemove);
-    }
-
-    @Override
     public boolean update(DocumentUpdate update) {
-        Document document = access.documents.get(update.getId());
-        if (document == null) {
-            return false;
-        }
-        update.applyTo(document);
-        return true;
-    }
-
-    @Override
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public boolean update(DocumentUpdate update, DocumentProtocol.Priority pri) {
         Document document = access.documents.get(update.getId());
         if (document == null) {
             return false;
