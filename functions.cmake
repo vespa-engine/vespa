@@ -691,7 +691,7 @@ function(install_configserver_component NAME)
     install_symlink(lib/jars/${NAME}-${PARAM_CLASSIFIER}.jar conf/configserver-app/components/${NAME}.jar)
 endfunction()
 
-function(install_components_symlink APPNAME NAME)
+function(install_app_component_symlink APPNAME NAME)
     cmake_parse_arguments(
         PARAM
         ""
