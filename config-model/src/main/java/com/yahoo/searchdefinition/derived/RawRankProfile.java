@@ -26,6 +26,7 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -39,6 +40,7 @@ import java.util.stream.Collectors;
 
 /**
  * A rank profile derived from a search definition, containing exactly the features available natively in the server
+ * RawRankProfile has a long lifetime so do not refer objects not necessary.
  *
  * @author bratseth
  */
@@ -54,19 +56,27 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
     private final Compressor.Compression compressedProperties;
 
     /**  The compiled profile this is created from. */
-    private final RankProfile compiled;
+    private final Collection<RankProfile.Constant> constants;
+    private final Collection<OnnxModel> onnxModels;
 
     /** Creates a raw rank profile from the given rank profile. */
     public RawRankProfile(RankProfile rankProfile, LargeRankExpressions largeExpressions,
                           QueryProfileRegistry queryProfiles, ImportedMlModels importedModels,
                           AttributeFields attributeFields, ModelContext.Properties deployProperties) {
         this.name = rankProfile.name();
-        compiled = rankProfile.compile(queryProfiles, importedModels);
+        /*
+         * Forget the RankProfiles as soon as possible. They can become very large and memory hungry
+         * Especially do not refer then through any member variables due to the RawRankProfile living forever.
+         */
+        RankProfile compiled = rankProfile.compile(queryProfiles, importedModels);
+        constants = compiled.constants().values();
+        onnxModels = compiled.onnxModels().values();
         compressedProperties = compress(new Deriver(compiled, attributeFields, deployProperties, queryProfiles)
                                                 .derive(largeExpressions));
     }
 
-    public RankProfile compiled() { return compiled; }
+    public Collection<RankProfile.Constant> constants() { return constants; }
+    public Collection<OnnxModel> onnxModels() { return onnxModels; }
 
     private Compressor.Compression compress(List<Pair<String, String>> properties) {
         StringBuilder b = new StringBuilder();

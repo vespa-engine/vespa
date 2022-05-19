@@ -136,7 +136,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                          allFileConstants,
                          schema != null ? schema.toString() : "[global]");
         for (var profile : rankProfiles)
-            addFileConstants(profile.compiled().constants().values(), allFileConstants, profile.toString());
+            addFileConstants(profile.constants(), allFileConstants, profile.toString());
         return new FileDistributedConstants(deployState.getFileRegistry(), allFileConstants.values());
     }
 
@@ -163,7 +163,7 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                       allModels,
                       schema != null ? schema.toString() : "[global]");
         for (var profile : rankProfiles)
-            addOnnxModels(profile.compiled().onnxModels().values(), allModels, profile.toString());
+            addOnnxModels(profile.onnxModels(), allModels, profile.toString());
         return new FileDistributedOnnxModels(deployState.getFileRegistry(), allModels.values());
     }
 
