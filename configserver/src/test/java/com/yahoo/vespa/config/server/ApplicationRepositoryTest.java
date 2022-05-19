@@ -333,14 +333,16 @@ public class ApplicationRepositoryTest {
             assertTrue(applicationRepository.delete(applicationId()));
             assertTrue(applicationRepository.getActiveSession(applicationId()).isEmpty());
             assertEquals(Optional.empty(), sessionRepository.getRemoteSession(sessionId).applicationSet());
-            assertTrue(provisioner.removed());
+            assertEquals(1, provisioner.removeCount());
             assertEquals(tenant().getName(), provisioner.lastApplicationId().tenant());
             assertEquals(applicationId(), provisioner.lastApplicationId());
             assertTrue(curator.exists(sessionNode));
             assertEquals(Session.Status.DELETE.name(), Utf8.toString(curator.getData(sessionNode.append("sessionState")).get()));
             assertTrue(sessionFile.exists());
 
+            // Deleting a non-existent application still attempts to remove resources
             assertFalse(applicationRepository.delete(applicationId()));
+            assertEquals(2, provisioner.removeCount());
         }
 
         {
