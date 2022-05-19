@@ -45,10 +45,12 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        // Count buckets - so we can alert if we get close to the account limit of 1000
-        zoneRegistry.zonesIncludingSystem().all().ids().forEach(zoneId ->
-                metric.set(bucketCountMetricName, archiveBucketDb.buckets(zoneId).size(),
-                        metric.createContext(Map.of("zone", zoneId.value()))));
+        // Count buckets - so we can alert if we get close to the AWS account limit of 1000
+        zoneRegistry.zonesIncludingSystem().all().zones().forEach(z ->
+                metric.set(bucketCountMetricName, archiveBucketDb.buckets(z.getVirtualId()).size(),
+                        metric.createContext(Map.of(
+                                "zone", z.getVirtualId().value(),
+                                "cloud", z.getCloudName().value()))));
 
         zoneRegistry.zonesIncludingSystem().controllerUpgraded().zones().forEach(z -> {
                     ZoneId zoneId = z.getVirtualId();

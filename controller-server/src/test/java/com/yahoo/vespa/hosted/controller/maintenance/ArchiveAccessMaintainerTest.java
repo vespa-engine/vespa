@@ -50,7 +50,7 @@ public class ArchiveAccessMaintainerTest {
         var expected = Map.of("archive.bucketCount",
                               tester.controller().zoneRegistry().zonesIncludingSystem().all().ids().stream()
                                     .collect(Collectors.toMap(
-                                            zone -> Map.of("zone", zone.value()),
+                                            zone -> Map.of("zone", zone.value(), "cloud", "default"),
                                             zone -> zone.equals(testZone) ? 1d : 0d)));
 
         assertEquals(expected, metric.metrics());
