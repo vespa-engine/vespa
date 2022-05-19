@@ -27,6 +27,12 @@ vespa_add_library(storage
     $<TARGET_OBJECTS:storageframework_clockimpl>
     $<TARGET_OBJECTS:storageframework_componentimpl>
     $<TARGET_OBJECTS:storageframework_threadimpl>
+    $<TARGET_OBJECTS:storageapi_message>
+    $<TARGET_OBJECTS:storageapi_buckets>
+    $<TARGET_OBJECTS:storageapi_messageapi>
+    $<TARGET_OBJECTS:storageapi_mbusprot>
     INSTALL lib64
     DEPENDS
 )
+
+vespa_add_target_package_dependency(storage Protobuf)

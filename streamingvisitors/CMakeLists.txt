@@ -5,7 +5,6 @@ vespa_define_module(
     fastlib_fast
     vespalog
     storage
-    storageapi
     config_cloudconfig
     vespalib
     document

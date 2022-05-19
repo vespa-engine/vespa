@@ -1,9 +1,0 @@
-*.So
-*.core
-*.so
-.*.swp
-.config.log
-.depend
-Makefile
-test.vlog
-testrunner
