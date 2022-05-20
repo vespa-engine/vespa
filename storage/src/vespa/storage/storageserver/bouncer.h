@@ -57,10 +57,10 @@ private:
     void onClose() override;
     void abortCommandForUnavailableNode(api::StorageMessage&, const lib::State&);
     void rejectCommandWithTooHighClockSkew(api::StorageMessage& msg, int maxClockSkewInSeconds);
-    void abortCommandDueToClusterDown(api::StorageMessage&);
+    void abortCommandDueToClusterDown(api::StorageMessage&, const lib::State&);
     void rejectDueToInsufficientPriority(api::StorageMessage&, api::StorageMessage::Priority);
     void reject_due_to_too_few_bucket_bits(api::StorageMessage&);
-    bool clusterIsUp() const;
+    static bool clusterIsUp(const lib::State& cluster_state);
     bool isDistributor() const;
     bool isExternalLoad(const api::MessageType&) const noexcept;
     bool isExternalWriteOperation(const api::MessageType&) const noexcept;
