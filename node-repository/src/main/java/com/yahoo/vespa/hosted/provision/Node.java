@@ -492,6 +492,12 @@ public final class Node implements Nodelike {
         return this.with(newStatus).with(newHistory);
     }
 
+    /** Returns a copy of this node with wanted OS version set to given version */
+    public Node withWantedOsVersion(Optional<Version> version) {
+        if (status.osVersion().wanted().equals(version)) return this;
+        return with(status.withOsVersion(status.osVersion().withWanted(version)));
+    }
+
     /** Returns a copy of this node with firmware verified at the given instant */
     public Node withFirmwareVerifiedAt(Instant instant) {
         var newStatus = status.withFirmwareVerifiedAt(instant);

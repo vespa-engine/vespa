@@ -777,7 +777,7 @@ public class NodesV2ApiTest {
 
         // Other node type does not return wanted OS version
         Response r = tester.container().handleRequest(new Request("http://localhost:8080/nodes/v2/node/host1.yahoo.com"));
-        assertFalse("Response omits wantedOsVersions field", r.getBodyAsString().contains("wantedOsVersion"));
+        assertFalse("Response omits wantedOsVersion field", r.getBodyAsString().contains("wantedOsVersion"));
 
         // Node updates its node object after upgrading OS
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
@@ -785,6 +785,16 @@ public class NodesV2ApiTest {
                                    Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "docker-node1-os-upgrade-complete.json");
+
+        // Override wantedOsVersion
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantedOsVersion\": \"7.5.3\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantedOsVersion\": \"7.5.2\"}"),
+                                   Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
 
         // Another node upgrades
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost2.yahoo.com",
