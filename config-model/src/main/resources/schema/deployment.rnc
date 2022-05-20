@@ -7,6 +7,7 @@ start = element deployment {
    attribute major-version { text }? &
    attribute athenz-domain { xsd:string }? &
    attribute athenz-service { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
    Step
 }
 
@@ -33,6 +34,7 @@ PrimitiveStep =
 Instance = element instance {
    attribute id { xsd:string } &
    attribute athenz-service { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
    StepExceptInstance
 }
 
@@ -97,7 +99,6 @@ Prod = element prod {
    attribute global-service-id { text }? &
    attribute athenz-service { xsd:string }? &
    attribute tester-flavor { xsd:string }? &
-   attribute cloud-account { xsd:string }? &
    Region* &
    Delay* &
    ProdTest* &

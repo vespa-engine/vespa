@@ -1513,22 +1513,24 @@ public class DeploymentSpecTest {
     @Test
     public void cloudAccount() {
         StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "    <instance id='beta'>" +
-                "      <prod cloud-account='219876543210'>" +
+                "<deployment version='1.0' cloud-account='100000000000'>" +
+                "    <instance id='beta' cloud-account='200000000000'>" +
+                "      <prod>" +
                 "          <region>us-west-1</region>" +
                 "      </prod>" +
                 "    </instance>" +
                 "    <instance id='main'>" +
-                "      <prod cloud-account='012345678912'>" +
-                "          <region>us-east-1</region>" +
+                "      <prod>" +
+                "          <region cloud-account='300000000000'>us-east-1</region>" +
+                "          <region>eu-west-1</region>" +
                 "      </prod>" +
                 "    </instance>" +
                 "</deployment>"
         );
         DeploymentSpec spec = DeploymentSpec.fromXml(r);
-        assertEquals(Optional.of(new CloudAccount("219876543210")), spec.requireInstance("beta").cloudAccount(Environment.prod, RegionName.from("us-east-1")));
-        assertEquals(Optional.of(new CloudAccount("012345678912")), spec.requireInstance("main").cloudAccount(Environment.prod, RegionName.from("us-west-1")));
+        assertEquals(Optional.of(new CloudAccount("200000000000")), spec.requireInstance("beta").cloudAccount(Environment.prod, RegionName.from("us-west-1")));
+        assertEquals(Optional.of(new CloudAccount("300000000000")), spec.requireInstance("main").cloudAccount(Environment.prod, RegionName.from("us-east-1")));
+        assertEquals(Optional.of(new CloudAccount("100000000000")), spec.requireInstance("main").cloudAccount(Environment.prod, RegionName.from("eu-west-1")));
     }
 
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {

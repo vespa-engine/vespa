@@ -706,8 +706,8 @@ public class DeploymentSpecWithoutInstanceTest {
     @Test
     public void productionSpecWithCloudAccount() {
         StringReader r = new StringReader(
-                "<deployment version='1.0'>" +
-                "    <prod cloud-account='012345678912'>" +
+                "<deployment version='1.0' cloud-account='012345678912'>" +
+                "    <prod>" +
                 "        <region cloud-account='219876543210'>us-east-1</region>" +
                 "        <region>us-west-1</region>" +
                 "    </prod>" +
