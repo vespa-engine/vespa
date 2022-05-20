@@ -6,7 +6,7 @@ vespa_define_module(
     config_cloudconfig
     vespalib
     fnet
-    slobrok_slobrokserver
+    slobrok
 
     LIBS
     src/vespa/messagebus
