@@ -8,7 +8,6 @@ vespa_define_module(
     metrics
     config_cloudconfig
     fastlib_fast
-    juniper
     configdefinitions
     document
     searchlib

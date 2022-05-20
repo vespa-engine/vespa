@@ -9,7 +9,7 @@ void Usage(char* s)
 
 
 int main(int argc, char **argv) {
-    juniper::TestEnv te(argc, argv, TEST_PATH("../rpclient/testclient.rc").c_str());
+    juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
     AuxTest pta;
     pta.SetStream(&std::cout);
     pta.Run(argc, argv);

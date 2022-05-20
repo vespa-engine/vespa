@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(juniper
+vespa_add_library(searchsummary_juniper OBJECT
     SOURCES
     Matcher.cpp
     appender.cpp
@@ -25,6 +25,5 @@ vespa_add_library(juniper
     expcache.cpp
     reducematcher.cpp
     specialtokenregistry.cpp
-    INSTALL lib64
     DEPENDS
 )
