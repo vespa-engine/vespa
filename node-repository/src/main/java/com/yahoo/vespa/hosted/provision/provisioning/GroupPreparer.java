@@ -107,7 +107,8 @@ public class GroupPreparer {
                                                                                                                         application,
                                                                                                                         osVersion,
                                                                                                                         sharing,
-                                                                                                                        Optional.of(cluster.type())))
+                                                                                                                        Optional.of(cluster.type()),
+                                                                                                                        requestedNodes.cloudAccount()))
                                                                    .orElseGet(List::of);
 
                 // At this point we have started provisioning of the hosts, the first priority is to make sure that

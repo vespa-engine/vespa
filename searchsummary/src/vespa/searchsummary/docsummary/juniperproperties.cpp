@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "juniperproperties.h"
-#include <vespa/searchcommon/config/subscriptionproxyng.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespa::config::search::summary::JuniperrcConfig;
@@ -22,9 +21,7 @@ JuniperProperties::JuniperProperties(const JuniperrcConfig &cfg) :
     configure(cfg);
 }
 
-JuniperProperties::~JuniperProperties() {
-    // empty
-}
+JuniperProperties::~JuniperProperties() = default;
 
 void
 JuniperProperties::reset()
@@ -85,13 +82,6 @@ JuniperProperties::configure(const JuniperrcConfig &cfg)
         _properties[keyStem + "min_length"] = make_string("%d", override.stemMinLength);
         _properties[keyStem + "max_extend"] = make_string("%d", override.stemMaxExtend);
     }
-}
-
-void
-JuniperProperties::subscribe(const char *configId)
-{
-    SubscriptionProxyNg<JuniperProperties, JuniperrcConfig> subscriber(*this, &JuniperProperties::configure);
-    subscriber.subscribe(configId);
 }
 
 const char *

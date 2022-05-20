@@ -10,7 +10,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.io.IOUtils;
 import com.yahoo.log.InvalidLogFormatException;
 import com.yahoo.log.LogMessage;
-import com.yahoo.searchdefinition.DistributableResource;
+import com.yahoo.schema.DistributableResource;
 import com.yahoo.system.ProcessExecuter;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.search.AttributesConfig;
@@ -152,7 +152,7 @@ public class RankSetupValidator extends Validator {
         List<String> config = new ArrayList<>();
 
         // Assist verify-ranksetup in finding the actual ONNX model files
-        writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getSchema().onnxModels().asMap().values());
+        writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getRankProfileList().getOnnxModels().asMap().values());
         writeExtraVerifyRankSetupConfig(config, db.getDerivedConfiguration().getSchema().rankExpressionFiles().expressions());
 
         config.sort(String::compareTo);

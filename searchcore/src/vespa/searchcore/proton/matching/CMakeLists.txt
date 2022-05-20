@@ -43,4 +43,5 @@ vespa_add_library(searchcore_matching STATIC
     viewresolver.cpp
     DEPENDS
     searchcore_grouping
+    searchcorespi
 )

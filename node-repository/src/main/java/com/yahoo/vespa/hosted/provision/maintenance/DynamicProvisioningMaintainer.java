@@ -245,10 +245,11 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
             Version osVersion = nodeRepository().osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
             List<Node> hosts = hostProvisioner.provisionHosts(provisionIndices, NodeType.host, nodeResources,
-                    ApplicationId.defaultId(), osVersion, HostSharing.shared, Optional.empty())
-                    .stream()
-                    .map(ProvisionedHost::generateHost)
-                    .collect(Collectors.toList());
+                                                              ApplicationId.defaultId(), osVersion, HostSharing.shared,
+                                                              Optional.empty(), Optional.empty())
+                                              .stream()
+                                              .map(ProvisionedHost::generateHost)
+                                              .collect(Collectors.toList());
             nodeRepository().nodes().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             return hosts;
         } catch (NodeAllocationException | IllegalArgumentException | IllegalStateException e) {
@@ -293,7 +294,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 // build() requires a version, even though it is not (should not be) used
                 .vespaVersion(Vtag.currentVersion)
                 .build();
-        NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), nodeResources, false, true);
+        NodeSpec nodeSpec = NodeSpec.from(clusterCapacity.count(), nodeResources, false, true, Optional.empty());
         int wantedGroups = 1;
 
         NodePrioritizer prioritizer = new NodePrioritizer(nodesAndHosts, applicationId, clusterSpec, nodeSpec, wantedGroups,

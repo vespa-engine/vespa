@@ -162,46 +162,4 @@ TEST_F(SplitBitDetectorTest, zero_doc_limit_falls_back_to_one_bit_increase_on_gi
               result.toString());
 }
 
-/**
- * Not a regular unit test in itself, but more of an utility to find non-unique
- * document IDs that map to the same 58-bit bucket ID. Disabled by default since
- * it costs CPU to do this and is not necessary during normal testing.
- */
-TEST_F(SplitBitDetectorTest, DISABLED_find_bucket_collision_ids) {
-    using document::DocumentId;
-    using document::BucketId;
-
-    document::BucketIdFactory factory;
-
-    DocumentId targetId("id:foo:music:n=123456:ABCDEFGHIJKLMN");
-    BucketId targetBucket(factory.getBucketId(targetId));
-    char candidateSuffix[] = "ABCDEFGHIJKLMN";
-
-    size_t iterations = 0;
-    constexpr size_t maxIterations = 100000000;
-    while (std::next_permutation(std::begin(candidateSuffix), std::end(candidateSuffix) - 1))
-    {
-        ++iterations;
-
-        DocumentId candidateId(vespalib::make_string("id:foo:music:n=123456:%s",candidateSuffix));
-        BucketId candidateBucket(factory.getBucketId(candidateId));
-        if (targetBucket == candidateBucket) {
-            std::cerr << "\nFound a collision after " << iterations
-                      << " iterations!\n"
-                      << "target:    " << targetId << " -> " << targetBucket
-                      << "\ncollision: " << candidateId << " -> "
-                      << candidateBucket << "\n";
-            return;
-        }
-
-        if (iterations == maxIterations) {
-            std::cerr << "\nNo collision found after " << iterations
-                      << " iterations :[\n";
-            return;
-        }
-    }
-    std::cerr << "\nRan out of permutations after " << iterations
-              << " iterations!\n";
-}
-
 }

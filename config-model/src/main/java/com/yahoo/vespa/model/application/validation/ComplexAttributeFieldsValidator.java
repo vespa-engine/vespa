@@ -2,11 +2,11 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.derived.SchemaInfo;
-import com.yahoo.searchdefinition.document.ComplexAttributeFieldUtils;
-import com.yahoo.searchdefinition.document.GeoPos;
-import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.derived.SchemaInfo;
+import com.yahoo.schema.document.ComplexAttributeFieldUtils;
+import com.yahoo.schema.document.GeoPos;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.SearchCluster;
 

@@ -69,3 +69,8 @@ vespa_add_library(vespamalloc_mmap OBJECT
     mmap.cpp
     DEPENDS
 )
+vespa_add_library(vespamalloc_load_as_huge OBJECT
+    SOURCES
+    load_as_huge.cpp
+    DEPENDS
+)

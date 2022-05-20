@@ -14,7 +14,7 @@ import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.messagebus.DynamicThrottlePolicy;
-import com.yahoo.searchdefinition.derived.Deriver;
+import com.yahoo.schema.derived.Deriver;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,7 +31,6 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;

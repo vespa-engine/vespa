@@ -3,6 +3,6 @@ vespa_add_executable(streamingvisitors_querywrapper_test_app TEST
     SOURCES
     querywrapper_test.cpp
     DEPENDS
-    streamingvisitors_searchvisitor
+    streamingvisitors
 )
 vespa_add_test(NAME streamingvisitors_querywrapper_test_app COMMAND streamingvisitors_querywrapper_test_app)

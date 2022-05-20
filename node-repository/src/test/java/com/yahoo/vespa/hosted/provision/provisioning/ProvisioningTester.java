@@ -30,7 +30,6 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -153,7 +152,7 @@ public class ProvisioningTester {
     public Node node(String hostname) { return nodeRepository.nodes().node(hostname).get(); }
 
     public int decideSize(Capacity capacity, ApplicationId application) {
-        return capacityPolicies.applyOn(capacity, application).minResources().nodes();
+        return capacityPolicies.applyOn(capacity, application, false).minResources().nodes();
     }
 
     public Node patchNode(Node node, UnaryOperator<Node> patcher) {

@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/common/statusreport.h>
-#include <vespa/vespalib/net/health_producer.h>
+#include <vespa/vespalib/net/http/health_producer.h>
 
 namespace proton {
 
@@ -14,7 +14,7 @@ private:
 
 public:
     HealthAdapter(const StatusProducer &sp);
-    virtual Health getHealth() const override;
+    Health getHealth() const override;
 };
 
 } // namespace proton

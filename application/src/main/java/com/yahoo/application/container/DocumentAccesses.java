@@ -5,7 +5,7 @@ import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.documentapi.DocumentAccess;
 import com.yahoo.documentapi.DocumentAccessParams;
 import com.yahoo.documentapi.local.LocalDocumentAccess;
-import com.yahoo.searchdefinition.derived.Deriver;
+import com.yahoo.schema.derived.Deriver;
 
 import java.io.File;
 import java.util.stream.Stream;

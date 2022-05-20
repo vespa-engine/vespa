@@ -3,7 +3,7 @@ vespa_define_module(
     DEPENDS
     fastos
     storage
-    streamingvisitors_searchvisitor
+    streamingvisitors
 
     APPS
     src/apps/storaged

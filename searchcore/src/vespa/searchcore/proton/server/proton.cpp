@@ -4,6 +4,7 @@
 #include "document_db_explorer.h"
 #include "fileconfigmanager.h"
 #include "flushhandlerproxy.h"
+#include "hw_info_explorer.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
 #include "prepare_restart_handler.h"
@@ -36,7 +37,7 @@
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/io/fileutil.h>
-#include <vespa/vespalib/net/state_server.h>
+#include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/host_name.h>
@@ -211,6 +212,7 @@ Proton::Proton(FastOS_ThreadPool & threadPool, FNET_Transport & transport, const
       IPersistenceEngineOwner(),
       ComponentConfigProducer(),
       _cpu_util(),
+      _hw_info(),
       _threadPool(threadPool),
       _transport(transport),
       _configUri(configUri),
@@ -275,6 +277,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     assert( _initStarted && ! _initComplete );
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
+    _hw_info = hwInfo;
 
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
@@ -806,9 +809,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         if (_shared_service) {
             metrics.shared.update(_shared_service->shared().getStats());
             metrics.warmup.update(_shared_service->warmup().getStats());
-            if (_shared_service->field_writer()) {
-                metrics.field_writer.update(_shared_service->field_writer()->getStats());
-            }
+            metrics.field_writer.update(_shared_service->field_writer().getStats());
         }
     }
 }
@@ -896,6 +897,7 @@ const vespalib::string FLUSH_ENGINE = "flushengine";
 const vespalib::string TLS_NAME = "tls";
 const vespalib::string RESOURCE_USAGE = "resourceusage";
 const vespalib::string THREAD_POOLS = "threadpools";
+const vespalib::string HW_INFO = "hwinfo";
 
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
@@ -941,7 +943,7 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 std::vector<vespalib::string>
 Proton::get_children_names() const
 {
-    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, RESOURCE_USAGE};
+    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE};
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -966,7 +968,10 @@ Proton::get_child(vespalib::stringref name) const
                                                            (_flushEngine) ? &_flushEngine->get_executor() : nullptr,
                                                            &_executor,
                                                            (_shared_service) ? &_shared_service->warmup() : nullptr,
-                                                           (_shared_service) ? _shared_service->field_writer() : nullptr);
+                                                           (_shared_service) ? &_shared_service->field_writer() : nullptr);
+
+    } else if (name == HW_INFO) {
+        return std::make_unique<HwInfoExplorer>(_hw_info);
     }
     return Explorer_UP(nullptr);
 }

@@ -34,16 +34,6 @@ public:
     virtual ~JuniperProperties();
 
     /**
-     * This method subscribes to config from the given configuration id. This does the necessary mapping from
-     * user-friendly configuration parameters to juniper specific properties. Note that no exceptions thrown by the
-     * configuration framework are caught in this method. Please refer to the config framework for details on what to
-     * expect.
-     *
-     * @param configId The config id to subscribe to.
-     */
-    void subscribe(const char *configId);
-
-    /**
      * Implements configure callback for config subscription.
      *
      * @param cfg The configuration object.
@@ -51,7 +41,7 @@ public:
     void configure(const vespa::config::search::summary::JuniperrcConfig &cfg);
 
     // Inherit doc from IJuniperProperties.
-    const char *GetProperty(const char *name, const char *def = NULL) override;
+    const char *GetProperty(const char *name, const char *def) override;
 };
 
 }

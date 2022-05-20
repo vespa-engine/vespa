@@ -2,7 +2,7 @@
 
 #include "reconfigurable_stateserver.h"
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/net/state_server.h>
+#include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <thread>
 

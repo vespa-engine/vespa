@@ -146,7 +146,7 @@ public:
     static constexpr size_t minHeaderLen = 0x1000;
     static constexpr size_t entrySize =
         sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) +
-        sizeof(Timestamp::Type);
+        sizeof(Timestamp);
 
     DocumentMetaStore(BucketDBOwnerSP bucketDB,
                       const vespalib::string & name=getFixedName(),
@@ -167,9 +167,9 @@ public:
      * map is then re-built the same way it was originally where add()
      * was used to create the <lid, gid> pairs.
      **/
-    Result put(const GlobalId &gid, const BucketId &bucketId,
-               const Timestamp &timestamp, uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override;
-    bool updateMetaData(DocId lid, const BucketId &bucketId, const Timestamp &timestamp) override;
+    Result put(const GlobalId &gid, const BucketId &bucketId, Timestamp timestamp,
+               uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override;
+    bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override;
     bool remove(DocId lid, uint64_t prepare_serial_num) override;
 
     BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;

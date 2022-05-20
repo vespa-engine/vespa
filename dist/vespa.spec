@@ -126,7 +126,7 @@ BuildRequires: libarchive
 %if 0%{?_centos_stream}
 BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
 %else
-BuildRequires: (llvm-devel >= 12.0.0 and llvm-devel < 13)
+BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
 %else
 BuildRequires: (llvm-devel >= 12.0.1 and llvm-devel < 13)
@@ -301,7 +301,7 @@ Requires: vespa-gtest = 1.11.0
 %if 0%{?_centos_stream}
 %define _vespa_llvm_version 13
 %else
-%define _vespa_llvm_version 12
+%define _vespa_llvm_version 13
 %endif
 %else
 %define _vespa_llvm_version 12
@@ -432,7 +432,7 @@ Requires: openssl-libs
 %if 0%{?_centos_stream}
 Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
 %else
-Requires: (llvm-libs >= 12.0.0 and llvm-libs < 13)
+Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
 %else
 Requires: (llvm-libs >= 12.0.1 and llvm-libs < 13)
@@ -620,7 +620,7 @@ rm -rf %{buildroot}
 %if 0%{?installdir:1}
 cp -r %{installdir} %{buildroot}
 %if 0%{?source_base:1} && ! (0%{?amzn2} || 0%{?el7})
-find %{buildroot} -iname '*.so' -print0 | xargs --no-run-if-empty -0 -n1 /usr/lib/rpm/debugedit -b %{source_base} -d %{_builddir}/%{name}-%{version}
+find %{buildroot} -exec file {} \; | grep ': ELF ' | cut -d: -f1 | xargs --no-run-if-empty -n1 /usr/lib/rpm/debugedit -b %{source_base} -d %{_builddir}/%{name}-%{version}
 %endif
 %else
 make install DESTDIR=%{buildroot}

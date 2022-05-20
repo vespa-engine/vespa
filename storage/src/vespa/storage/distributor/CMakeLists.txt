@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-vespa_add_library(storage_distributor
+vespa_add_library(storage_distributor OBJECT
     SOURCES
     activecopy.cpp
     blockingoperationstarter.cpp
@@ -55,12 +55,5 @@ vespa_add_library(storage_distributor
     top_level_distributor.cpp
     update_metric_set.cpp
     visitormetricsset.cpp
-    $<TARGET_OBJECTS:storage_distributoroperation>
-    $<TARGET_OBJECTS:storage_distributoroperationexternal>
-    $<TARGET_OBJECTS:storage_distributoroperationidealstate>
-    $<TARGET_OBJECTS:storage_distributormaintenance>
-    $<TARGET_OBJECTS:storage_distributor_bucketdb>
-    INSTALL lib64
     DEPENDS
-    storage
 )

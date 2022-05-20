@@ -16,16 +16,14 @@ private:
     using DocumentUpdateSP = std::shared_ptr<document::DocumentUpdate>;
     DocumentUpdateSP _upd;
     UpdateOperation(Type type, const document::BucketId &bucketId,
-                    const storage::spi::Timestamp &timestamp,
-                    DocumentUpdateSP upd);
+                    Timestamp timestamp, DocumentUpdateSP upd);
     void serializeUpdate(vespalib::nbostream &os) const;
     void deserializeUpdate(vespalib::nbostream && is, const document::DocumentTypeRepo &repo);
 public:
     UpdateOperation();
     UpdateOperation(Type type);
     UpdateOperation(const document::BucketId &bucketId,
-                    const storage::spi::Timestamp &timestamp,
-                    DocumentUpdateSP upd);
+                    Timestamp timestamp, DocumentUpdateSP upd);
     ~UpdateOperation() override;
     const DocumentUpdateSP &getUpdate() const { return _upd; }
     void serialize(vespalib::nbostream &os) const override;

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/read_consistency.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>

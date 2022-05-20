@@ -3,7 +3,7 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.searchdefinition.document.TypedKey;
+import com.yahoo.schema.document.TypedKey;
 
 import java.io.Serializable;
 import java.util.*;

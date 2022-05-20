@@ -29,10 +29,10 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.io.IOUtils;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.Application;
-import com.yahoo.searchdefinition.RankProfileRegistry;
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.ApplicationBuilder;
+import com.yahoo.schema.Application;
+import com.yahoo.schema.RankProfileRegistry;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionBuilder;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
@@ -217,7 +217,7 @@ public class DeployState implements ConfigDefinitionStore {
         for (var entry : importedModels.getSkippedModels().entrySet()) {
             // TODO: Vespa 8: Throw IllegalArgumentException instead
             deployLogger.logApplicationPackage(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
-                                                              "occurred during import. Error: " + entry.getValue());
+                                                              "occurred during import: " + entry.getValue());
         }
         return importedModels;
     }

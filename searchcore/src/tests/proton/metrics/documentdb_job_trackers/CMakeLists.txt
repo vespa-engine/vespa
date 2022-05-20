@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_documentdb_job_trackers_test_app TEST
     documentdb_job_trackers_test.cpp
     DEPENDS
     searchcore_proton_metrics
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_documentdb_job_trackers_test_app COMMAND searchcore_documentdb_job_trackers_test_app)

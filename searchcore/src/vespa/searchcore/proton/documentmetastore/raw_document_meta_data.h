@@ -4,7 +4,7 @@
 
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 #include <algorithm>
 #include <atomic>
 #include <cassert>

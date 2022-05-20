@@ -62,10 +62,10 @@ DocumentOperation::assertValidBucketId(const document::GlobalId &gid) const
 vespalib::string DocumentOperation::docArgsToString() const {
     return make_string("%s, timestamp=%" PRIu64 ", dbdId=(%s), prevDbdId=(%s), "
                        "prevMarkedAsRemoved=%s, prevTimestamp=%" PRIu64 ", serialNum=%" PRIu64,
-                       _bucketId.toString().c_str(), _timestamp.getValue(),
+                       _bucketId.toString().c_str(), _timestamp,
                        _dbdId.toString().c_str(), _prevDbdId.toString().c_str(),
                        (_prevMarkedAsRemoved ? "true" : "false"),
-                       _prevTimestamp.getValue(), getSerialNum());
+                       _prevTimestamp, getSerialNum());
 }
 
 void

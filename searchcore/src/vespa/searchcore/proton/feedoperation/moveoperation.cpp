@@ -19,7 +19,7 @@ MoveOperation::MoveOperation()
 
 
 MoveOperation::MoveOperation(const BucketId &bucketId,
-                             const Timestamp &timestamp,
+                             Timestamp timestamp,
                              const Document::SP &doc,
                              DbDocumentId sourceDbdId,
                              uint32_t targetSubDbId)

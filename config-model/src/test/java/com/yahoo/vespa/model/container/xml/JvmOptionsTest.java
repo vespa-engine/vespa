@@ -148,24 +148,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatInvalidJvmGcOptionsAreLogged() throws IOException, SAXException {
-        verifyLoggingOfJvmGcOptions(true,
-                                    "-XX:+ParallelGCThreads=8 foo     bar",
-                                    "foo", "bar");
-        verifyLoggingOfJvmGcOptions(true,
-                                    "-XX:+UseCMSInitiatingOccupancyOnly foo     bar",
-                                    "-XX:+UseCMSInitiatingOccupancyOnly", "foo", "bar");
-        verifyLoggingOfJvmGcOptions(true,
-                                    "-XX:+UseConcMarkSweepGC",
-                                    "-XX:+UseConcMarkSweepGC");
-        verifyLoggingOfJvmGcOptions(true,
-                                    "$(touch /tmp/hello-from-gc-options)",
-                                    "$(touch", "/tmp/hello-from-gc-options)");
-
-        verifyLoggingOfJvmGcOptions(false,
-                                    "$(touch /tmp/hello-from-gc-options)",
-                                    "$(touch", "/tmp/hello-from-gc-options)");
-
+    public void requireThatValidJvmGcOptionsAreNotLogged() throws IOException, SAXException {
         // Valid options, should not log anything
         verifyLoggingOfJvmGcOptions(true, "-XX:+ParallelGCThreads=8");
         verifyLoggingOfJvmGcOptions(true, "-XX:MaxTenuringThreshold=15"); // No + or - after colon
@@ -175,7 +158,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     @Test
     public void requireThatInvalidJvmGcOptionsFailDeployment() throws IOException, SAXException {
         try {
-            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true).failDeploymentWithInvalidJvmOptions(true),
+            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
                     new TestLogger(),
                     "gc-options",
                     "-XX:+ParallelGCThreads=8 foo     bar");
@@ -232,26 +215,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void requireThatJvmOptionsAreLogged()  throws IOException, SAXException {
-        verifyLoggingOfJvmOptions(true,
-                                  "options",
-                                  "-Xms2G foo     bar",
-                                  "foo", "bar");
-        verifyLoggingOfJvmOptions(true,
-                                  "options",
-                                  "$(touch /tmp/hello-from-gc-options)",
-                                  "$(touch", "/tmp/hello-from-gc-options)");
-
-        verifyLoggingOfJvmOptions(true,
-                                  "options",
-                                  "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005",
-                                  "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005");
-
-        verifyLoggingOfJvmOptions(false,
-                                  "options",
-                                  "$(touch /tmp/hello-from-gc-options)",
-                                  "$(touch", "/tmp/hello-from-gc-options)");
-
+    public void requireThatValidJvmOptionsAreNotLogged() throws IOException, SAXException {
         // Valid options, should not log anything
         verifyLoggingOfJvmOptions(true, "options", "-Xms2G");
         verifyLoggingOfJvmOptions(true, "options", "-Xlog:gc");
@@ -263,7 +227,7 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     @Test
     public void requireThatInvalidJvmOptionsFailDeployment() throws IOException, SAXException {
         try {
-            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true).failDeploymentWithInvalidJvmOptions(true),
+            buildModelWithJvmOptions(new TestProperties().setHostedVespa(true),
                                      new TestLogger(),
                                      "options",
                                      "-Xms2G foo     bar");

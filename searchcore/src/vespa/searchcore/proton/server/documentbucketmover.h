@@ -4,7 +4,7 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/globalid.h>
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 #include <atomic>
 
 namespace vespalib { class IDestructorCallback; }

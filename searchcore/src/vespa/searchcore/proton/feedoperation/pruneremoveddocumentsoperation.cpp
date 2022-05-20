@@ -10,7 +10,6 @@ LOG_SETUP(".proton.feedoperation.pruneremoveddocumentsoperation");
 
 using document::DocumentTypeRepo;
 using search::DocumentIdT;
-using storage::spi::Timestamp;
 using vespalib::make_string;
 
 namespace proton {

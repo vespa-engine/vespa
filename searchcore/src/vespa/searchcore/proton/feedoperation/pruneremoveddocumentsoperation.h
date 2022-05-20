@@ -2,7 +2,6 @@
 #pragma once
 
 #include "removedocumentsoperation.h"
-#include <persistence/spi/types.h>
 #include <vespa/searchlib/query/base.h>
 
 namespace proton {

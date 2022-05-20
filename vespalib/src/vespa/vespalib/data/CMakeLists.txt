@@ -2,6 +2,7 @@
 vespa_add_library(vespalib_vespalib_data OBJECT
     SOURCES
     databuffer.cpp
+    fileheader.cpp
     input.cpp
     input_reader.cpp
     lz4_input_decoder.cpp

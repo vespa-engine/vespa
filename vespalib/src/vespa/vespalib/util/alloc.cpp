@@ -234,8 +234,13 @@ createAutoAllocatorsWithDefault() {
     return tmp;
 }
 
+AutoAllocatorsMapWithDefault &
+availableAutoAllocators() {
+    static AutoAllocatorsMapWithDefault  S_availableAutoAllocators = createAutoAllocatorsWithDefault();
+    return S_availableAutoAllocators;
+}
 
-AutoAllocatorsMapWithDefault  _G_availableAutoAllocators = createAutoAllocatorsWithDefault();
+
 alloc::HeapAllocator _G_heapAllocatorDefault;
 alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
 alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(1_Ki);
@@ -268,12 +273,12 @@ MMapAllocator::getDefault() {
 
 MemoryAllocator &
 AutoAllocator::getDefault() {
-    return *_G_availableAutoAllocators.second;
+    return *availableAutoAllocators().second;
 }
 
 MemoryAllocator &
 AutoAllocator::getAllocator(size_t mmapLimit, size_t alignment) {
-    return getAutoAllocator(_G_availableAutoAllocators.first, mmapLimit, alignment);
+    return getAutoAllocator(availableAutoAllocators().first, mmapLimit, alignment);
 }
 
 MemoryAllocator::PtrAndSize

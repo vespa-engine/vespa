@@ -80,6 +80,14 @@ search neuralnet {
             query(b_out) tensor(out[1]):[1.0]
         }
 
+        inputs {
+            query(foo): 5.5
+        }
+
+        rank-properties {
+            query(bar): 5.5
+        }
+
     }
 
     rank-profile defaultRankProfile inherits default {

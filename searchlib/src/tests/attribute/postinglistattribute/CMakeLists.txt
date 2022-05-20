@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_postinglistattribute_test_app TEST
     postinglistattribute_test.cpp
     DEPENDS
     searchlib
+    GTest::GTest
 )
-vespa_add_test(NAME searchlib_postinglistattribute_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/postinglistattribute_test.sh
-               DEPENDS searchlib_postinglistattribute_test_app)
+vespa_add_test(NAME searchlib_postinglistattribute_test_app COMMAND searchlib_postinglistattribute_test_app)

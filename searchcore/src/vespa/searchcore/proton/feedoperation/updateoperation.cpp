@@ -12,7 +12,6 @@ using document::BucketId;
 using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::DocumentUpdate;
-using storage::spi::Timestamp;
 using vespalib::make_string;
 
 namespace proton {
@@ -30,14 +29,14 @@ UpdateOperation::UpdateOperation(Type type)
 
 
 UpdateOperation::UpdateOperation(Type type, const BucketId &bucketId,
-                                 const Timestamp &timestamp, DocumentUpdate::SP upd)
+                                 Timestamp timestamp, DocumentUpdate::SP upd)
     : DocumentOperation(type, bucketId, timestamp),
       _upd(std::move(upd))
 {
 }
 
 
-UpdateOperation::UpdateOperation(const BucketId &bucketId, const Timestamp &timestamp, DocumentUpdate::SP upd)
+UpdateOperation::UpdateOperation(const BucketId &bucketId, Timestamp timestamp, DocumentUpdate::SP upd)
     : UpdateOperation(FeedOperation::UPDATE, bucketId, timestamp, std::move(upd))
 {
 }

@@ -154,6 +154,8 @@ public class NodePatcher {
                 return node.with(node.status().withVespaVersion(Version.fromString(asString(value))));
             case "currentOsVersion" :
                 return node.withCurrentOsVersion(Version.fromString(asString(value)), clock.instant());
+            case "wantedOsVersion": // Node repository manages this field internally. Setting this manually should only be used for debugging purposes
+                return node.withWantedOsVersion(value.type() == Type.NIX ? Optional.empty() : Optional.of(Version.fromString(value.asString())));
             case "currentFirmwareCheck":
                 return node.withFirmwareVerifiedAt(Instant.ofEpochMilli(asLong(value)));
             case "failCount" :

@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.provision;
 
+import java.util.Objects;
+import java.util.Optional;
+
 /**
  * A capacity request.
  *
@@ -11,14 +14,12 @@ public final class Capacity {
 
     /** Resources should stay between these values, inclusive */
     private final ClusterResources min, max;
-
     private final boolean required;
-
     private final boolean canFail;
-
     private final NodeType type;
+    private final Optional<CloudAccount> cloudAccount;
 
-    private Capacity(ClusterResources min, ClusterResources max, boolean required, boolean canFail, NodeType type) {
+    private Capacity(ClusterResources min, ClusterResources max, boolean required, boolean canFail, NodeType type, Optional<CloudAccount> cloudAccount) {
         validate(min);
         validate(max);
         if (max.smallerThan(min))
@@ -29,6 +30,7 @@ public final class Capacity {
         this.required = required;
         this.canFail = canFail;
         this.type = type;
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
     }
 
     private static void validate(ClusterResources resources) {
@@ -58,8 +60,13 @@ public final class Capacity {
      */
     public NodeType type() { return type; }
 
+    /** Returns the cloud account where this capacity is requested */
+    public Optional<CloudAccount> cloudAccount() {
+        return cloudAccount;
+    }
+
     public Capacity withLimits(ClusterResources min, ClusterResources max) {
-        return new Capacity(min, max, required, canFail, type);
+        return new Capacity(min, max, required, canFail, type, cloudAccount);
     }
 
     @Override
@@ -82,8 +89,13 @@ public final class Capacity {
         return from(resources, required, canFail, NodeType.tenant);
     }
 
+    // TODO(mpolden): Remove when config models < 7.590 are gone
     public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail) {
-        return new Capacity(min, max, required, canFail, NodeType.tenant);
+        return from(min, max, required, canFail, Optional.empty());
+    }
+
+    public static Capacity from(ClusterResources min, ClusterResources max, boolean required, boolean canFail, Optional<CloudAccount> cloudAccount) {
+        return new Capacity(min, max, required, canFail, NodeType.tenant, cloudAccount);
     }
 
     /** Creates this from a node type */
@@ -92,7 +104,7 @@ public final class Capacity {
     }
 
     private static Capacity from(ClusterResources resources, boolean required, boolean canFail, NodeType type) {
-        return new Capacity(resources, resources, required, canFail, type);
+        return new Capacity(resources, resources, required, canFail, type, Optional.empty());
     }
 
 }

@@ -3,8 +3,8 @@ package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;

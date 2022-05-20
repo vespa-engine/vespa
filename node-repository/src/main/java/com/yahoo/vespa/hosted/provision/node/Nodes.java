@@ -628,10 +628,7 @@ public class Nodes {
      * @return the nodes in their new state
      */
     public List<Node> upgradeOs(Predicate<Node> filter, Optional<Version> version) {
-        return performOn(filter, (node, lock) -> {
-            var newStatus = node.status().withOsVersion(node.status().osVersion().withWanted(version));
-            return write(node.with(newStatus), lock);
-        });
+        return performOn(filter, (node, lock) -> write(node.withWantedOsVersion(version), lock));
     }
 
     /** Retire nodes matching given filter */

@@ -6,7 +6,7 @@ import ai.vespa.reindexing.Reindexing.Trigger;
 import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
-import com.yahoo.searchdefinition.derived.Deriver;
+import com.yahoo.schema.derived.Deriver;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.reindexing.ReindexingConfig;
 import org.junit.jupiter.api.Test;

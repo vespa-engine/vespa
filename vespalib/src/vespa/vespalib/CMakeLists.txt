@@ -7,12 +7,15 @@ vespa_add_library(vespalib
     $<TARGET_OBJECTS:vespalib_vespalib_data>
     $<TARGET_OBJECTS:vespalib_vespalib_data_slime>
     $<TARGET_OBJECTS:vespalib_vespalib_datastore>
+    $<TARGET_OBJECTS:vespalib_vespalib_encoding>
     $<TARGET_OBJECTS:vespalib_vespalib_fuzzy>
     $<TARGET_OBJECTS:vespalib_vespalib_geo>
     $<TARGET_OBJECTS:vespalib_vespalib_hwaccelrated>
     $<TARGET_OBJECTS:vespalib_vespalib_io>
     $<TARGET_OBJECTS:vespalib_vespalib_locale>
+    $<TARGET_OBJECTS:vespalib_vespalib_metrics>
     $<TARGET_OBJECTS:vespalib_vespalib_net>
+    $<TARGET_OBJECTS:vespalib_vespalib_net_http>
     $<TARGET_OBJECTS:vespalib_vespalib_net_tls>
     $<TARGET_OBJECTS:vespalib_vespalib_net_tls_impl>
     $<TARGET_OBJECTS:vespalib_vespalib_objects>

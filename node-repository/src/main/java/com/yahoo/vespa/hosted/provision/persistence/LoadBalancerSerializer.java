@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.persistence;
 
 import ai.vespa.http.DomainName;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -45,6 +46,7 @@ public class LoadBalancerSerializer {
     private static final String realsField = "reals";
     private static final String ipAddressField = "ipAddress";
     private static final String portField = "port";
+    private static final String cloudAccountField = "cloudAccount";
 
     public static byte[] toJson(LoadBalancer loadBalancer) {
         Slime slime = new Slime();
@@ -66,6 +68,7 @@ public class LoadBalancerSerializer {
             realObject.setString(ipAddressField, real.ipAddress());
             realObject.setLong(portField, real.port());
         }));
+        loadBalancer.instance().flatMap(LoadBalancerInstance::cloudAccount).ifPresent(cloudAccount -> root.setString(cloudAccountField, cloudAccount.value()));
         try {
             return SlimeUtils.toJsonBytes(slime);
         } catch (IOException e) {
@@ -92,8 +95,9 @@ public class LoadBalancerSerializer {
 
         Optional<DomainName> hostname = optionalString(object.field(hostnameField), Function.identity()).filter(s -> !s.isEmpty()).map(DomainName::of);
         Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
+        Optional<CloudAccount> cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::new);
         Optional<LoadBalancerInstance> instance = hostname.map(h -> new LoadBalancerInstance(h, dnsZone, ports,
-                                                                                             networks, reals));
+                                                                                             networks, reals, cloudAccount));
 
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
                                 instance,

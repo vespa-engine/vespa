@@ -7,11 +7,10 @@
 
 class FNET_Transport;
 
-namespace vespalib { class ScheduledExecutor; }
-
 namespace proton {
 
 class ITransientResourceUsageProvider;
+class ScheduledExecutor;
 
 /*
  * Class to sample disk and memory usage used for filtering write operations.
@@ -21,7 +20,7 @@ class DiskMemUsageSampler {
     std::filesystem::path  _path;
     vespalib::duration     _sampleInterval;
     vespalib::steady_time  _lastSampleTime;
-    std::unique_ptr<vespalib::ScheduledExecutor> _periodicTimer;
+    std::unique_ptr<ScheduledExecutor> _periodicTimer;
     std::mutex            _lock;
     std::vector<std::shared_ptr<const ITransientResourceUsageProvider>> _transient_usage_providers;
 

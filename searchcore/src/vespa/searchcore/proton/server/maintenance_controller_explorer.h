@@ -3,7 +3,7 @@
 #pragma once
 
 #include "maintenancejobrunner.h"
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace proton {
 

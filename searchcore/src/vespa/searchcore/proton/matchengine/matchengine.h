@@ -6,7 +6,7 @@
 #include <vespa/searchcore/proton/common/handlermap.hpp>
 #include <vespa/searchcore/proton/common/statusreport.h>
 #include <vespa/searchlib/engine/searchapi.h>
-#include <vespa/vespalib/net/state_explorer.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <mutex>

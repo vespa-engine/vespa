@@ -7,4 +7,5 @@ vespa_add_library(searchcore_index STATIC
     indexmanager.cpp
     memoryindexwrapper.cpp
     DEPENDS
+    searchcorespi
 )

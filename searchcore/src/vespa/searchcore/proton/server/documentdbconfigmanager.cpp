@@ -248,18 +248,6 @@ find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs
     return default_document_db_config_entry;
 }
 
-std::shared_ptr<const ThreadingServiceConfig>
-build_threading_service_config(const ProtonConfig &proton_config,
-                               const HwInfo &hw_info,
-                               const vespalib::string& doc_type_name)
-{
-    auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
-    return std::make_shared<const ThreadingServiceConfig>
-        (ThreadingServiceConfig::make(proton_config,
-                                      document_db_config_entry.feeding.concurrency,
-                                      hw_info.cpu()));
-}
-
 std::shared_ptr<const AllocConfig>
 build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
 {
@@ -420,7 +408,7 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     if (newMaintenanceConfig && oldMaintenanceConfig && (*newMaintenanceConfig == *oldMaintenanceConfig)) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
-    auto new_threading_service_config = build_threading_service_config(_bootstrapConfig->getProtonConfig(), _bootstrapConfig->getHwInfo(), _docTypeName);
+    auto new_threading_service_config = std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(_bootstrapConfig->getProtonConfig()));
     if (new_threading_service_config && old_threading_service_config &&
         (*new_threading_service_config == *old_threading_service_config)) {
         new_threading_service_config = old_threading_service_config;

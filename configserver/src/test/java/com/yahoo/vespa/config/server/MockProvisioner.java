@@ -23,7 +23,7 @@ import java.util.List;
 public class MockProvisioner implements Provisioner {
 
     private boolean activated = false;
-    private boolean removed = false;
+    private int removeCount = 0;
     private boolean restarted = false;
     private ApplicationId lastApplicationId;
     private Collection<HostSpec> lastHosts;
@@ -70,7 +70,7 @@ public class MockProvisioner implements Provisioner {
         if (failureOnRemove)
             throw new IllegalStateException("Unable to remove " + transaction.application());
 
-        removed = true;
+        removeCount++;
         lastApplicationId = transaction.application();
     }
 
@@ -94,8 +94,8 @@ public class MockProvisioner implements Provisioner {
         return activated;
     }
 
-    public boolean removed() {
-        return removed;
+    public int removeCount() {
+        return removeCount;
     }
 
     public boolean restarted() {

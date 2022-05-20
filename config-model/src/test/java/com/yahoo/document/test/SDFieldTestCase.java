@@ -2,8 +2,8 @@
 package com.yahoo.document.test;
 
 import com.yahoo.document.DataType;
-import com.yahoo.searchdefinition.AbstractSchemaTestCase;
-import com.yahoo.searchdefinition.document.SDDocumentType;
+import com.yahoo.schema.AbstractSchemaTestCase;
+import com.yahoo.schema.document.SDDocumentType;
 import org.junit.Test;
 
 import static org.junit.Assert.fail;

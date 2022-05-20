@@ -50,7 +50,10 @@ public class RankFeatures implements Cloneable {
     /** Sets a tensor rank feature */
     public void put(String name, Tensor value) {
         verifyType(name, value);
-        features.put(name, value);
+        if (value.type().rank() == 0)
+            features.put(name, value.asDouble());
+        else
+            features.put(name, value);
     }
 
     private void verifyType(String name, Object value) {

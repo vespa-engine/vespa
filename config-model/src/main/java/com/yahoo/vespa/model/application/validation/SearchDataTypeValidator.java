@@ -11,10 +11,10 @@ import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.derived.SchemaInfo;
-import com.yahoo.searchdefinition.document.SDDocumentType;
-import com.yahoo.searchdefinition.document.SDField;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.derived.SchemaInfo;
+import com.yahoo.schema.document.SDDocumentType;
+import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.search.SearchCluster;
 

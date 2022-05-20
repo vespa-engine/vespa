@@ -3,9 +3,11 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import com.google.common.collect.ImmutableSortedSet;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -18,11 +20,14 @@ public class LoadBalancerSpec {
     private final ApplicationId application;
     private final ClusterSpec.Id cluster;
     private final Set<Real> reals;
+    private final Optional<CloudAccount> cloudAccount;
 
-    public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals) {
+    public LoadBalancerSpec(ApplicationId application, ClusterSpec.Id cluster, Set<Real> reals,
+                            Optional<CloudAccount> cloudAccount) {
         this.application = Objects.requireNonNull(application);
         this.cluster = Objects.requireNonNull(cluster);
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals));
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
     }
 
     /** Owner of the load balancer */
@@ -40,4 +45,8 @@ public class LoadBalancerSpec {
         return reals;
     }
 
+    /** Cloud account to use when satisfying this */
+    public Optional<CloudAccount> cloudAccount() {
+        return cloudAccount;
+    }
 }

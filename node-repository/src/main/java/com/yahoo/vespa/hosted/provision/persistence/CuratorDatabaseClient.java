@@ -208,7 +208,8 @@ public class CuratorDatabaseClient {
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
                                     node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
-                                    node.exclusiveToApplicationId(), node.exclusiveToClusterType(), node.switchHostname(), node.trustedCertificates());
+                                    node.exclusiveToApplicationId(), node.exclusiveToClusterType(), node.switchHostname(),
+                                    node.trustedCertificates(), node.cloudAccount());
             writeNode(toState, curatorTransaction, node, newNode);
             writtenNodes.add(newNode);
         }

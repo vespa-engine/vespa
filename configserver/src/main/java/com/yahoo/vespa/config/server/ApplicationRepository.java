@@ -507,7 +507,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     // ---------------- Application operations ----------------------------------------------------------------
 
     /**
-     * Deletes an application
+     * Deletes an application and associated resources
      *
      * @return true if the application was found and deleted, false if it was not present
      * @throws RuntimeException if deleting the application fails. This method is exception safe.
@@ -522,17 +522,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
         try (var applicationLock = tenantApplications.lock(applicationId)) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
-            if (activeSession.isEmpty()) return false;
-
-            try {
-                Session session = getRemoteSession(tenant, activeSession.get());
-                transaction.add(tenant.getSessionRepository().createSetStatusTransaction(session, Session.Status.DELETE));
-            } catch (NotFoundException e) {
-                log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
+            CompletionWaiter waiter;
+            if (activeSession.isPresent()) {
+                try {
+                    Session session = getRemoteSession(tenant, activeSession.get());
+                    transaction.add(tenant.getSessionRepository().createSetStatusTransaction(session, Session.Status.DELETE));
+                } catch (NotFoundException e) {
+                    log.log(Level.INFO, TenantRepository.logPre(applicationId) + "Active session exists, but has not been deleted properly. Trying to cleanup");
+                }
+                waiter = tenantApplications.createRemoveApplicationWaiter(applicationId);
+            } else {
+                // If there's no active session, we still want to clean up any resources created in a failing prepare
+                waiter = new NoopCompletionWaiter();
             }
 
             Curator curator = tenantRepository.getCurator();
-            CompletionWaiter waiter = tenantApplications.createRemoveApplicationWaiter(applicationId);
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), curator).delete(applicationId)); // TODO: Not unit tested
             // Delete any application roles
             transaction.add(new ApplicationRolesStore(curator, tenant.getPath()).delete(applicationId));
@@ -553,7 +557,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             // Wait for app being removed on other servers
             waiter.awaitCompletion(Duration.ofSeconds(30));
 
-            return true;
+            return activeSession.isPresent();
         } finally {
             applicationTransaction.ifPresent(ApplicationTransaction::close);
         }
@@ -1207,6 +1211,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         public OptionalLong sourceSessionId() {
             return sourceSessionId;
         }
+
+    }
+
+    private static class NoopCompletionWaiter implements CompletionWaiter {
+
+        @Override
+        public void awaitCompletion(Duration timeout) {}
+
+        @Override
+        public void notifyCompletion() {}
 
     }
 

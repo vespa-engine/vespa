@@ -8,8 +8,8 @@
 
 #pragma once
 
+#include "group.h"
 #include <vespa/document/bucket/bucketid.h>
-#include <vespa/vdslib/distribution/group.h>
 #include <vespa/vdslib/state/nodetype.h>
 #include <vespa/vespalib/util/exception.h>
 

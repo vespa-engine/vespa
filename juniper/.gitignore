@@ -1,7 +1,0 @@
-*.dsp
-Makefile.ini
-config_command.sh
-include
-lib
-project.dsw
-Makefile

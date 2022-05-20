@@ -1554,14 +1554,14 @@ public class ModelProvisioningTest {
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<container version='1.0'>" +
                         "  <search/>" +
-                        "  <nodes jvmargs='xyz' count='3'/>" +
+                        "  <nodes jvmargs='-DfooOption=xyz' count='3'/>" +
                         "</container>";
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
-        assertEquals("xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
+        assertEquals("-DfooOption=xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
     }
 
     @Test

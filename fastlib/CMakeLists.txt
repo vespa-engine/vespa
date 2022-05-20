@@ -11,7 +11,5 @@ vespa_define_module(
     src/vespa/fastlib/text
     src/vespa/fastlib/text/apps
     src/vespa/fastlib/text/tests
-    src/vespa/fastlib/util
-    src/vespa/fastlib/util/tests
     src/vespa/packages
 )

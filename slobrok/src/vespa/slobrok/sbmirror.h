@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/gencnt.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/fnet/frt/invoker.h>
+#include <atomic>
 
 class FRT_Target;
 
@@ -92,7 +93,7 @@ private:
     mutable std::mutex       _lock;
     bool                     _reqPending;
     bool                     _scheduled;
-    bool                     _reqDone;
+    std::atomic<bool>        _reqDone;
     bool                     _logOnSuccess;
     SpecMap                  _specs;
     vespalib::GenCnt         _specsGen;

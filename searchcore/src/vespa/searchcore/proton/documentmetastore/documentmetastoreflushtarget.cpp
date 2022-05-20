@@ -223,6 +223,7 @@ DocumentMetaStoreFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr
 uint64_t
 DocumentMetaStoreFlushTarget::getApproxBytesToWriteToDisk() const
 {
+    auto guard = _dms->getGuard();
     return _dms->getEstimatedSaveByteSize();
 }
 

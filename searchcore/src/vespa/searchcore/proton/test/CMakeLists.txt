@@ -8,6 +8,7 @@ vespa_add_library(searchcore_test STATIC
     clusterstatehandler.cpp
     documentdb_config_builder.cpp
     dummy_feed_view.cpp
+    dummy_flush_target.cpp
     mock_index_manager.cpp
     mock_shared_threading_service.cpp
     userdocumentsbuilder.cpp
@@ -17,4 +18,5 @@ vespa_add_library(searchcore_test STATIC
     DEPENDS
     searchcore_server
     searchcore_fconfig
+    searchcorespi
 )
