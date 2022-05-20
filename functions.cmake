@@ -682,7 +682,7 @@ function(install_configserver_component NAME)
     if(NOT PARAM_CLASSIFIER)
        SET(PARAM_CLASSIFIER "jar-with-dependencies")
     endif()
-    install_jar("target/${NAME}-${PARAM_CLASSIFIER}.jar")
+    install_jar("${NAME}-${PARAM_CLASSIFIER}.jar")
     install_app_component_symlink(configserver-app "${NAME}" CLASSIFIER "${PARAM_CLASSIFIER}")
 endfunction()
 
