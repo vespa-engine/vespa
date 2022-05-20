@@ -1,2 +1,2 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-install_fat_java_artifact(zookeeper-server-3.7.1)
+install_jar(zookeeper-server-3.7.1-jar-with-dependencies.jar)

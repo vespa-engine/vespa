@@ -235,7 +235,7 @@ vespa_define_module(
     src/tests/vespa-fileheader-inspect
 )
 
-install_java_artifact(searchlib)
+install_jar(searchlib.jar)
 
 vespa_install_script(src/main/sh/vespa-gbdt-converter bin)
 vespa_install_script(src/main/sh/vespa-treenet-converter bin)

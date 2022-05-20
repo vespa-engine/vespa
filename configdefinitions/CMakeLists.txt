@@ -9,4 +9,4 @@ vespa_define_module(
     src/vespa
 )
 
-install_fat_java_artifact(configdefinitions)
+install_jar(configdefinitions-jar-with-dependencies.jar)
