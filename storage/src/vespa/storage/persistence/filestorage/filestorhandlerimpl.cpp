@@ -78,7 +78,10 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
 }
 
-FileStorHandlerImpl::~FileStorHandlerImpl() = default;
+FileStorHandlerImpl::~FileStorHandlerImpl()
+{
+    waitUntilNoLocks();
+}
 
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_ptr<MergeStatus> status)
