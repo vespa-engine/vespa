@@ -11,7 +11,6 @@ vespa_define_module(
     fastlib_fast
     document
     config_cloudconfig
-    searchcommon
 
     EXTERNAL_DEPENDS
     ${VESPA_GLIBC_RT_LIB}
@@ -52,6 +51,8 @@ vespa_define_module(
     src/vespa/searchlib/transactionlog
     src/vespa/searchlib/uca
     src/vespa/searchlib/util
+    src/vespa/searchcommon/attribute
+    src/vespa/searchcommon/common
 
     APPS
     src/apps/docstore
@@ -212,6 +213,8 @@ vespa_define_module(
     src/tests/rankingexpression/intrinsic_blueprint_adapter
     src/tests/ranksetup
     src/tests/ranksetup/verify_feature
+    src/tests/searchcommon/attribute/config
+    src/tests/searchcommon/schema
     src/tests/sort
     src/tests/sortresults
     src/tests/sortspec

@@ -6,7 +6,6 @@ vespa_define_module(
     configdefinitions
     fastlib_fast
     document
-    searchcommon
     searchlib
 
     LIBS
