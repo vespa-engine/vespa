@@ -5,7 +5,6 @@ vespa_define_module(
     vespalog
     config_cloudconfig
     vespalib
-    staging_vespalib
     fnet
     slobrok_slobrokserver
 

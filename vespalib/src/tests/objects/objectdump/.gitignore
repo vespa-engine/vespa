@@ -1,0 +1,4 @@
+.depend
+Makefile
+objectdump_test
+vespalib_objectdump_test_app

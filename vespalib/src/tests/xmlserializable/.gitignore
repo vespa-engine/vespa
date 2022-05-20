@@ -1,0 +1,4 @@
+*_test
+.depend
+Makefile
+vespalib_xmlserializable_test_app

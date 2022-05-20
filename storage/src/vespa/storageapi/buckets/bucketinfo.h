@@ -14,9 +14,9 @@
 #pragma once
 
 #include <vespa/storageapi/defs.h>
-#include <vespa/vespalib/util/xmlserializable.h>
 #include <vespa/vespalib/stllike/string.h>
 
+namespace vespalib::xml { class XmlOutputStream; }
 namespace storage::api {
 
 class BucketInfo
@@ -76,7 +76,7 @@ public:
         return _metaCount == 0 && _usedFileSize == 0 && _checksum == 0;
     }
     vespalib::string toString() const;
-    void printXml(vespalib::XmlOutputStream&) const;
+    void printXml(vespalib::xml::XmlOutputStream&) const;
 };
 
 std::ostream & operator << (std::ostream & os, const BucketInfo & bucketInfo);

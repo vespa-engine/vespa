@@ -2,7 +2,6 @@
 #include "bucketinfo.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/xmlstream.h>
-#include <ostream>
 
 namespace storage::api {
 
@@ -111,7 +110,7 @@ BucketInfo::toString() const
 }
 
 void
-BucketInfo::printXml(vespalib::XmlOutputStream& xos) const
+BucketInfo::printXml(vespalib::xml::XmlOutputStream& xos) const
 {
     using namespace vespalib::xml;
     xos << XmlAttribute("checksum", _checksum, XmlAttribute::HEX)
