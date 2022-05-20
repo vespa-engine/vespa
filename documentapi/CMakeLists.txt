@@ -9,7 +9,6 @@ vespa_define_module(
     document
     slobrok
     messagebus
-    metrics
     configdefinitions
     vdslib
 
