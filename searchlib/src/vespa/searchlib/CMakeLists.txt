@@ -29,6 +29,8 @@ vespa_add_library(searchlib
     $<TARGET_OBJECTS:searchlib_tensor>
     $<TARGET_OBJECTS:searchlib_transactionlog>
     $<TARGET_OBJECTS:searchlib_util>
+    $<TARGET_OBJECTS:searchcommon_searchcommon_common>
+    $<TARGET_OBJECTS:searchcommon_searchcommon_attribute>
 
     INSTALL lib64
     DEPENDS
