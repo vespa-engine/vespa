@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-install_fat_java_artifact(config-model)
+install_jar(config-model-jar-with-dependencies.jar)
 
 vespa_install_script(src/main/perl/vespa-deploy bin)
 vespa_install_script(src/main/perl/vespa-expand-config.pl bin)

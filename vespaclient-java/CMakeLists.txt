@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-install_fat_java_artifact(vespaclient-java)
+install_jar(vespaclient-java-jar-with-dependencies.jar)
 
 vespa_install_script(src/main/sh/vespa-document-statistics.sh vespa-document-statistics bin)
 vespa_install_script(src/main/sh/vespa-stat.sh vespa-stat bin)
