@@ -3,9 +3,9 @@
 
 // Auxiliary tests for juniper - based on Juniper 1.x proximitytest.cpp
 
-#include <map>
-#include <vespa/fastlib/testsuite/test.h>
 #include "testenv.h"
+#include "test.h"
+#include <map>
 
 class AuxTest : public Test
 {

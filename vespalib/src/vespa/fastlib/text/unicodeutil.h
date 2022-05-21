@@ -6,11 +6,6 @@
 
 #include <sys/types.h>
 
-#define FASTLIB_UNICODEUTIL_USES_WORDCHARPROP
-
-
-/** utf8_t is the type of the multi-byte UTF-8 character components */
-typedef unsigned char utf8_t;
 /** ucs4_t is the type of the 4-byte UCS4 characters */
 typedef unsigned int ucs4_t;
 
@@ -21,10 +16,6 @@ typedef unsigned int ucs4_t;
  */
 class Fast_UnicodeUtil {
 private:
-    /**
-     * Table for easy lookup of UTF8 character length in bytes
-     */
-    static unsigned char _utf8header[256];
     /**
      * Is true when the tables have been initialized. Is set by
      * InitTables, and should be protected by the _initMutex before
@@ -218,14 +209,6 @@ public:
      * NB Only used in local test
      */
     static int utf8cmp(const char *s1, const ucs4_t *s2);
-
-    /**
-     * Copy an ISO-8859-1 string to an UTF-8 string.
-     * @param src The source ISO-8859-1 string.
-     * @return Pointer to a new alloacted buffer with the UTF-8 result.
-     * NB Only use in local test
-     */
-    static char *strdupLAT1(const char *src);
 
     /**
      * Test for terminal punctuation.

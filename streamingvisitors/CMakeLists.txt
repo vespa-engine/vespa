@@ -2,7 +2,6 @@
 vespa_define_module(
     DEPENDS
     fastos
-    fastlib_fast
     vespalog
     storage
     config_cloudconfig

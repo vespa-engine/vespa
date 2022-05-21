@@ -193,6 +193,8 @@ vespa_define_module(
     src/tests/wakeup
     src/tests/xmlserializable
     src/tests/zcurve
+    src/tests/fastlib/io
+    src/tests/fastlib/text
 
     LIBS
     src/vespa/vespalib
@@ -224,4 +226,7 @@ vespa_define_module(
     src/vespa/vespalib/time
     src/vespa/vespalib/trace
     src/vespa/vespalib/util
+    src/vespa/fastlib/io
+    src/vespa/fastlib/text
+    src/vespa/fastlib/text/apps
 )

@@ -8,7 +8,6 @@ vespa_define_module(
     fnet
     configdefinitions
     metrics
-    fastlib_fast
     document
     config_cloudconfig
 

@@ -3,6 +3,6 @@ vespa_add_executable(fastlib_bufferedfiletest_app TEST
     SOURCES
     bufferedfiletest.cpp
     DEPENDS
-    fastlib_io
+    vespalib
 )
 vespa_add_test(NAME fastlib_bufferedfiletest_app COMMAND fastlib_bufferedfiletest_app)

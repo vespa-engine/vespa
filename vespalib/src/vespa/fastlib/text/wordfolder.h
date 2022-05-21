@@ -6,7 +6,7 @@
 class Fast_WordFolder
 {
 public:
-    virtual ~Fast_WordFolder(void);
+    virtual ~Fast_WordFolder() = default;
     virtual const char* UCS4Tokenize(const char *buf,
                                      const char *bufend,
                                      ucs4_t *dstbuf,

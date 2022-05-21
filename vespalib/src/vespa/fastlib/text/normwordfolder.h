@@ -16,10 +16,6 @@ private:
 
     /** Features */
     static bool _doAccentRemoval;
-    static bool _doSmallToNormalKana;
-    static bool _doKatakanaToHiragana;
-    static bool _doKanaAccentCollapsing;
-    static bool _doFullwidthToBasicLatin;
     static bool _doSharpSSubstitution;
     static bool _doLigatureSubstitution;
     static bool _doMulticharExpansion;
@@ -57,8 +53,6 @@ public:
     static ucs4_t _foldCase[767]; // Up to Spacing Modifiers, inclusize (0x02FF)
     static ucs4_t _foldCaseHighAscii[256]; // Latin Extended Additional (0x1E00 - 0x1F00) (incl. vietnamese)
 private:
-    static ucs4_t _keepCase[767];
-    static ucs4_t _keepCaseHighAscii[256];
     /** Map the values from range 0x3040 (0) - 0x30FF (191). */
     static ucs4_t _kanaMap[192];
     static ucs4_t _halfwidth_fullwidthMap[240];
@@ -165,16 +159,9 @@ private:
         return Fast_UnicodeUtil::IsWordChar(c)
             || c == 0xFFF9 || c == 0xFFFA || c == 0xFFFB;
     }
-
 public:
     Fast_NormalizeWordFolder();
-    virtual ~Fast_NormalizeWordFolder();
-    virtual size_t FoldedSizeAsUTF8(const char *word) const;
-    virtual char *FoldUTF8WordToUTF8Quick(char *wordbufpos, const char *word) const;
-    virtual const char *Tokenize(const char *buf, const char *bufend, char *dstbuf,
-                                 char *dstbufend, const char*& origstart, size_t& tokenlen) const;
-    virtual const char *Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
-                                 ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const;
+    ~Fast_NormalizeWordFolder() override;
     const char* UCS4Tokenize(const char *buf, const char *bufend, ucs4_t *dstbuf,
                              ucs4_t *dstbufend, const char*& origstart, size_t& tokenlen) const override;
 };

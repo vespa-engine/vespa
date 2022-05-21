@@ -3,7 +3,6 @@ vespa_define_module(
     DEPENDS
     vespadefaults
     fastos
-    fastlib_fast
     metrics
     config_cloudconfig
     configdefinitions
