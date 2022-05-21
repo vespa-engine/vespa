@@ -154,6 +154,7 @@ public class StandaloneContainerApplication implements Application {
     public void start() {
         try {
             com.yahoo.container.Container.get().setCustomFileAcquirer(distributedFiles);
+            com.yahoo.container.Container.get().disableUrlDownloader();
             configuredApplication.start();
         } catch (Exception e) {
             com.yahoo.container.Container.resetInstance();
