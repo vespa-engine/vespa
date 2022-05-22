@@ -1,13 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-
 /* Simple prefix syntax advanced query parser for Juniper debug/testing */
 
 #include "query.h"
+#include "latintokenizer.h"
 #include <map>
 #include <string>
-#include <vespa/fastlib/text/latintokenizer.h>
 
 namespace juniper
 {

@@ -34,8 +34,8 @@
 
 #pragma once
 
-#include <ctype.h>
-#include <string.h>
+#include <cctype>
+#include <cstring>
 
 /**
 *****************************************************************************

@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "testenv.h"
+#include "suite.h"
 #include "mcandTest.h"
 #include "queryparserTest.h"
 #include "matchobjectTest.h"
 #include "auxTest.h"
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/fastlib/testsuite/suite.h>
 /**
  * The SrcTestSuite class runs all the unit tests for the src module.
  *

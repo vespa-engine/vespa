@@ -2,13 +2,9 @@
 
 #include "unicodeutil.h"
 #include <cstdlib>
-#include <cstdint>
-#include <cassert>
 
 #include "unicodeutil-charprops.cpp"
 #include "unicodeutil-lowercase.cpp"
-
-unsigned char Fast_UnicodeUtil::_utf8header[256];
 
 namespace {
 
@@ -30,16 +26,6 @@ Fast_UnicodeUtil::InitTables()
      */
     _compCharProps[(0xFF9E >> 8)][(0xFF9E & 255)] |= 32;
     _compCharProps[(0xFF9F >> 8)][(0xFF9F & 255)] |= 32;
-
-    for (uint32_t i = 0; i < 256; i++) { _utf8header[i] = 0; }
-
-    // Initialize _utf8header array
-    for (uint32_t i = 0x00; i <= 0x7F; i++) { _utf8header[i] = 1; }
-    for (uint32_t i = 0xC0; i <= 0xDF; i++) { _utf8header[i] = 2; }
-    for (uint32_t i = 0xE0; i <= 0xEF; i++) { _utf8header[i] = 3; }
-    for (uint32_t i = 0xF0; i <= 0xF7; i++) { _utf8header[i] = 4; }
-    for (uint32_t i = 0xF8; i <= 0xFB; i++) { _utf8header[i] = 5; }
-    for (uint32_t i = 0xFC; i <= 0xFD; i++) { _utf8header[i] = 6; }
 }
 
 char *
@@ -138,31 +124,6 @@ Fast_UnicodeUtil::ucs4copy(ucs4_t *dst, const char *src)
     }
     *p = 0;
     return p;
-}
-
-char *
-Fast_UnicodeUtil::strdupLAT1(const char *src)
-{
-    char *res;
-    size_t reslen;
-    ucs4_t i;
-    const unsigned char *p;
-    char *q;
-
-    reslen = 0;
-    p = reinterpret_cast<const unsigned char *>(src);
-    while ((i = *p++) != 0) {
-        reslen += utf8clen(i);
-    }
-    res = static_cast<char *>(malloc(reslen + 1));
-    p = reinterpret_cast<const unsigned char *>(src);
-    q = res;
-    while ((i = *p++) != 0) {
-        q = utf8cput(q, i);
-    }
-    assert(q == res + reslen);
-    *q = 0;
-    return res;
 }
 
 ucs4_t

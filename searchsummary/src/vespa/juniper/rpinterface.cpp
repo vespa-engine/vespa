@@ -94,12 +94,6 @@ void Juniper::FlushRewriters()
     _modifier->FlushRewriters();
 }
 
-void ReleaseConfig(Config*& config)
-{
-    delete config;
-    config = NULL;
-}
-
 
 void ReleaseQueryHandle(QueryHandle*& handle)
 {

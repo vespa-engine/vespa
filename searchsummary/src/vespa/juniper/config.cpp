@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "config.h"
-#include "IJuniperProperties.h"
 #include "rpinterface.h"
 #include "juniperdebug.h"
 #define _NEED_SUMMARY_CONFIG_IMPL
@@ -14,7 +13,7 @@ namespace juniper
 Config::Config(const char* config_name, Juniper & juniper) :
     _docsumparams(),
     _matcherparams(),
-    _sumconf(NULL),
+    _sumconf(nullptr),
     _config_name(config_name),
     _juniper(juniper)
 {
@@ -51,7 +50,7 @@ Config::Config(const char* config_name, Juniper & juniper) :
         .SetMaxMatches(max_matches)
         .SetSurroundMax(surround_max)
         .SetFallback(fallback);
-    _matcherparams.SetWantGlobalRank(true)
+    _matcherparams
         .SetStemMinLength(stem_min).SetStemMaxExtend(stem_extend)
         .SetMatchWindowSize(match_winsize)
         .SetMaxMatchCandidates(max_match_candidates)

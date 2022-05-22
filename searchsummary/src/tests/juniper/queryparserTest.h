@@ -5,9 +5,9 @@
 #pragma once
 
 #include "testenv.h"
+#include "test.h"
 #include <vespa/juniper/queryparser.h>
 #include <vespa/juniper/rewriter.h>
-#include <vespa/fastlib/testsuite/test.h>
 #include <map>
 
 /**

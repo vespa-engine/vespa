@@ -1,9 +1,0 @@
-*.dsp
-*.dsw
-*.ncb
-*.opt
-*.plg
-Makefile.ini
-config_command.bat
-config_command.sh
-output

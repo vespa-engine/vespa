@@ -4,10 +4,10 @@
  */
 #pragma once
 
-#include <map>
-#include <vespa/fastlib/testsuite/test.h>
 #include "testenv.h"
+#include "test.h"
 #include <vespa/juniper/mcand.h>
+#include <map>
 
 /**
  * The MatchCandidateTest class holds

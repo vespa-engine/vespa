@@ -2,7 +2,6 @@
 vespa_add_library(fastlib_text OBJECT
     SOURCES
     unicodeutil.cpp
-    wordfolder.cpp
     normwordfolder.cpp
     DEPENDS
 )
