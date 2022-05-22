@@ -20,8 +20,9 @@ mmap_huge(size_t sz) {
     assert ((sz % HUGEPAGE_SIZE) == 0);
     void * mem = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     assert(mem != MAP_FAILED);
-    int retval = madvise(mem, sz, MADV_HUGEPAGE);
-    assert(retval == 0);
+    if(madvise(mem, sz, MADV_HUGEPAGE) != 0) {
+        perror("load_as_huge.cpp:mmap_huge => madvise( MADV_HUGEPAGE) failed");
+    }
     return mem;
 }
 
