@@ -5,7 +5,6 @@ import com.yahoo.config.FileReference;
 
 import java.nio.ByteBuffer;
 
-
 /**
  * Utility class for a file reference with data and metadata
  *
@@ -13,7 +12,7 @@ import java.nio.ByteBuffer;
  */
 public abstract class FileReferenceData {
 
-    public enum Type {file, compressed}
+    public enum Type { file, compressed }
 
     private final FileReference fileReference;
     private final String filename;
@@ -25,17 +24,11 @@ public abstract class FileReferenceData {
         this.type = type;
     }
 
-    public FileReference fileReference() {
-        return fileReference;
-    }
+    public FileReference fileReference() {return fileReference;}
 
-    public String filename() {
-        return filename;
-    }
+    public String filename() {return filename;}
 
-    public Type type() {
-        return type;
-    }
+    public Type type() {return type;}
 
     public ByteBuffer content() {
         ByteBuffer bb = ByteBuffer.allocate((int)size());
@@ -54,7 +47,7 @@ public abstract class FileReferenceData {
 
     /**
      * Only guaranteed to be valid after all content has been consumed.
-     * @return xx64hash of content
+     * @return xxhash64 of content
      */
     public abstract long xxhash();
 
@@ -70,4 +63,8 @@ public abstract class FileReferenceData {
      *
      */
     public abstract void close();
+
+    @Override
+    public String toString() { return fileReference.value() + " (" + filename + "), " + type.name(); }
+
 }
