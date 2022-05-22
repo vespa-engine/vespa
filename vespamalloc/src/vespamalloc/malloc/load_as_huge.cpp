@@ -20,7 +20,7 @@ mmap_huge(size_t sz) {
     assert ((sz % HUGEPAGE_SIZE) == 0);
     void * mem = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     assert(mem != MAP_FAILED);
-    if(madvise(mem, sz, MADV_HUGEPAGE) != 0) {
+    if (madvise(mem, sz, MADV_HUGEPAGE) != 0) {
         perror("load_as_huge.cpp:mmap_huge => madvise( MADV_HUGEPAGE) failed");
     }
     return mem;
@@ -75,8 +75,9 @@ remap_segments(size_t base_vaddr, const Elf64_Phdr * segments, size_t count) {
         size_t sz = segments[i].p_memsz;
         last_end = dest + sz;
 
-        int madvise_retval = madvise(dest, sz, MADV_HUGEPAGE);
-        assert(madvise_retval == 0);
+        if (madvise(dest, sz, MADV_HUGEPAGE) != 0) {
+            perror("load_as_huge.cpp:mmap_huge => madvise( MADV_HUGEPAGE) failed");
+        }
         non_optimized_non_inlined_memcpy(dest, reinterpret_cast<void*>(vaddr), sz);
         int prot = PROT_READ;
         if (segments[i].p_flags & PF_X) prot|= PROT_EXEC;
