@@ -42,11 +42,6 @@
             <version>1.4.01</version>
         </dependency>
         <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.2</version>
-        </dependency>
-        <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <scope>test</scope>
@@ -233,7 +228,6 @@
                                 <argument>__REPLACE_VERSION__${project.build.directory}/dependency/guava.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-no_aop.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-assistedinject.jar</argument>
-                                <argument>${project.build.directory}/dependency/javax.annotation-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/org.apache.felix.log.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-jdk14.jar</argument>

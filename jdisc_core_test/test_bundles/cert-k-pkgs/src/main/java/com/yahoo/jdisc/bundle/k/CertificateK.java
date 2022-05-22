@@ -39,7 +39,6 @@ public class CertificateK {
     private final com.sun.security.auth.module.JndiLoginModule jndiLoginModule = null;
     private final java.security.cert.Certificate certificate = null;
     private final javax.accessibility.Accessible accessible = null;
-    private final javax.annotation.PostConstruct postConstruct = null;
     private final javax.annotation.processing.FilerException filerException = null;
     private final javax.crypto.BadPaddingException badPaddingException = null;
     private final javax.crypto.interfaces.DHKey dhKey = null;
