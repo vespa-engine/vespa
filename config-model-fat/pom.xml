@@ -72,7 +72,7 @@
             <_fixupmessages>"Classes found in the wrong directory"</_fixupmessages> <!-- Hide warnings for multi-release jars -->
             <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
             <Bundle-Version>${parsedVersion.majorVersion}.${parsedVersion.minorVersion}.${parsedVersion.incrementalVersion}</Bundle-Version>
-            <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
+            <Embed-Dependency>*;scope=compile|runtime;type=!pom</Embed-Dependency>
             <Embed-Transitive>true</Embed-Transitive>
             <Import-Package>!*</Import-Package>
             <!-- Should only import packages that meet one or more of the below criteria:
