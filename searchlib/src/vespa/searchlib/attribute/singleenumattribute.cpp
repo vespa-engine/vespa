@@ -15,10 +15,7 @@ using attribute::Config;
 
 SingleValueEnumAttributeBase::
 SingleValueEnumAttributeBase(const Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc)
-    : _enumIndices(c.getGrowStrategy().getDocsInitialCapacity(),
-                   c.getGrowStrategy().getDocsGrowPercent(),
-                   c.getGrowStrategy().getDocsGrowDelta(),
-                   genHolder, initial_alloc)
+    : _enumIndices(c.getGrowStrategy().to_generic_strategy(), genHolder, initial_alloc)
 {
 }
 

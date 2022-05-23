@@ -9,10 +9,10 @@
 namespace search::attribute {
 
 ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder, const std::atomic<uint32_t>& committedDocIdLimit)
-    : _reverseMappingIndices(genHolder),
+    : _reverseMappingIndices(vespalib::GrowStrategy(16, 1.0, 0), genHolder),
       _targetLidLimit(0),
       _reverseMapping(),
-      _targetLids(genHolder),
+      _targetLids(vespalib::GrowStrategy(16, 1.0, 0), genHolder),
       _committedDocIdLimit(committedDocIdLimit)
 {
 }

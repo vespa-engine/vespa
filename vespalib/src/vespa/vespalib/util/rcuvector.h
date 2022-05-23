@@ -46,12 +46,11 @@ protected:
 private:
     ArrayType             _data;
     std::atomic<const T*> _vector_start;
-    size_t                _growPercent;
-    size_t                _growDelta;
+    GrowStrategy          _growStrategy;
     GenerationHolderType &_genHolder;
 
     size_t calcNewSize(size_t baseSize) const {
-        size_t delta = (baseSize * _growPercent / 100) + _growDelta;
+        size_t delta = (baseSize * _growStrategy.getGrowPercent() / 100) + _growStrategy.getGrowDelta();
         return baseSize + std::max(delta, static_cast<size_t>(1));
     }
     size_t calcNewSize() const {
@@ -65,8 +64,6 @@ protected:
 
 public:
     using ValueType = T;
-    RcuVectorBase(GenerationHolderType &genHolder,
-                  const Alloc &initialAlloc = Alloc::alloc());
 
     /**
      * Construct a new vector with the given initial capacity and grow
@@ -75,10 +72,6 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVectorBase(size_t initialCapacity, size_t growPercent, size_t growDelta,
-                  GenerationHolderType &genHolder,
-                  const Alloc &initialAlloc = Alloc::alloc());
-
     RcuVectorBase(GrowStrategy growStrategy,
                   GenerationHolderType &genHolder,
                   const Alloc &initialAlloc = Alloc::alloc());
@@ -185,7 +178,6 @@ public:
      * New capacity is calculated based on old capacity and grow parameters:
      * nc = oc + (oc * growPercent / 100) + growDelta.
      **/
-    RcuVector(size_t initialCapacity, size_t growPercent, size_t growDelta);
     RcuVector(GrowStrategy growStrategy);
     ~RcuVector();
 
