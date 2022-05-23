@@ -37,7 +37,6 @@ public class Run {
     private final RunStatus status;
     private final long lastTestRecord;
     private final Instant lastVespaLogTimestamp;
-    private final Instant lastTesterLogTimestamp;
     private final Optional<Instant> noNodesDownSince;
     private final Optional<ConvergenceSummary> convergenceSummary;
     private final Optional<X509Certificate> testerCertificate;
@@ -46,9 +45,8 @@ public class Run {
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, boolean isRedeployment, Instant start, Optional<Instant> end,
-               Optional<Instant> sleepUntil, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
-               Instant lastTesterLogTimestamp, Optional<Instant> noNodesDownSince, Optional<ConvergenceSummary> convergenceSummary,
-               Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<String> reason) {
+               Optional<Instant> sleepUntil, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp, Optional<Instant> noNodesDownSince,
+               Optional<ConvergenceSummary> convergenceSummary, Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<String> reason) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -59,7 +57,6 @@ public class Run {
         this.status = status;
         this.lastTestRecord = lastTestRecord;
         this.lastVespaLogTimestamp = lastVespaLogTimestamp;
-        this.lastTesterLogTimestamp = lastTesterLogTimestamp;
         this.noNodesDownSince = noNodesDownSince;
         this.convergenceSummary = convergenceSummary;
         this.testerCertificate = testerCertificate;
@@ -70,9 +67,8 @@ public class Run {
     public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile, Optional<String> triggeredBy) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
         profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
-        return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(),
-                       Optional.empty(), running, -1, Instant.EPOCH, Instant.EPOCH, Optional.empty(), Optional.empty(),
-                       Optional.empty(), profile == JobProfile.developmentDryRun, triggeredBy);
+        return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(), Optional.empty(), running,
+                       -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty(), profile == JobProfile.developmentDryRun, triggeredBy);
     }
 
     /** Returns a new Run with the status of the given completed step set accordingly. */
@@ -87,7 +83,7 @@ public class Run {
         steps.put(step.get(), stepInfo.with(Step.Status.of(status)));
         RunStatus newStatus = hasFailed() || status == running ? this.status : status;
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, newStatus, lastTestRecord,
-                       lastVespaLogTimestamp, lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     /** Returns a new Run with a new start time*/
@@ -102,19 +98,19 @@ public class Run {
         steps.put(step.get(), stepInfo.with(startTime));
 
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     public Run finished(Instant now) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, Optional.of(now), sleepUntil, status == running ? success : status,
-                       lastTestRecord, lastVespaLogTimestamp, lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty(), dryRun, reason);
+                       lastTestRecord, lastVespaLogTimestamp, noNodesDownSince, convergenceSummary, Optional.empty(), dryRun, reason);
     }
 
     public Run aborted() {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, aborted, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     public Run reset() {
@@ -122,43 +118,43 @@ public class Run {
         Map<Step, StepInfo> reset = new EnumMap<>(steps);
         reset.replaceAll((step, __) -> StepInfo.initial(step));
         return new Run(id, reset, versions, isRedeployment, start, end, sleepUntil, running, -1, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, Optional.empty(), Optional.empty(), testerCertificate, dryRun, reason);
+                       Optional.empty(), Optional.empty(), testerCertificate, dryRun, reason);
     }
 
     public Run with(long lastTestRecord) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
     }
 
-    public Run with(Instant lastVespaLogTimestamp, Instant lastTesterLogTimestamp) {
+    public Run with(Instant lastVespaLogTimestamp) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     public Run noNodesDownSince(Instant noNodesDownSince) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate, dryRun, reason);
+                       Optional.ofNullable(noNodesDownSince), convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     public Run withSummary(ConvergenceSummary convergenceSummary) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate, dryRun, reason);
+                       noNodesDownSince, Optional.ofNullable(convergenceSummary), testerCertificate, dryRun, reason);
     }
 
     public Run with(X509Certificate testerCertificate) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, sleepUntil, status, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, Optional.of(testerCertificate), dryRun, reason);
+                       noNodesDownSince, convergenceSummary, Optional.of(testerCertificate), dryRun, reason);
     }
 
     public Run sleepingUntil(Instant instant) {
         requireActive();
         return new Run(id, steps, versions, isRedeployment, start, end, Optional.of(instant), status, lastTestRecord, lastVespaLogTimestamp,
-                       lastTesterLogTimestamp, noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
+                       noNodesDownSince, convergenceSummary, testerCertificate, dryRun, reason);
     }
 
     /** Returns the id of this run. */
@@ -239,11 +235,6 @@ public class Run {
     /** Returns the timestamp of the last Vespa log record fetched and stored for this run. */
     public Instant lastVespaLogTimestamp() {
         return lastVespaLogTimestamp;
-    }
-
-    /** Returns the timestamp of the last tester Vespa log record fetched and stored for this run. */
-    public Instant lastTesterLogTimestamp() {
-        return lastTesterLogTimestamp;
     }
 
     /** Returns since when no nodes have been allowed to be down. */
