@@ -18,6 +18,16 @@ template <typename T>
 RcuVectorHeld<T>::~RcuVectorHeld() = default;
 
 template <typename T>
+size_t RcuVectorBase<T>::calcNewSize(size_t baseSize) const {
+    size_t delta = (baseSize * _growStrategy.getGrowFactor()) + _growStrategy.getGrowDelta();
+    return baseSize + std::max(delta, static_cast<size_t>(1));
+}
+template <typename T>
+size_t RcuVectorBase<T>::calcNewSize() const {
+    return calcNewSize(_data.capacity());
+}
+
+template <typename T>
 void
 RcuVectorBase<T>::unsafe_resize(size_t n) {
     _data.resize(n);

@@ -49,13 +49,8 @@ private:
     GrowStrategy          _growStrategy;
     GenerationHolderType &_genHolder;
 
-    size_t calcNewSize(size_t baseSize) const {
-        size_t delta = (baseSize * _growStrategy.getGrowPercent() / 100) + _growStrategy.getGrowDelta();
-        return baseSize + std::max(delta, static_cast<size_t>(1));
-    }
-    size_t calcNewSize() const {
-        return calcNewSize(_data.capacity());
-    }
+    size_t calcNewSize(size_t baseSize) const;
+    size_t calcNewSize() const;
     void expand(size_t newCapacity);
     void expandAndInsert(const T & v);
     void update_vector_start();
