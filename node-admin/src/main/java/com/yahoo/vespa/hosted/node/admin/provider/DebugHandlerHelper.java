@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.hosted.node.admin.provider;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -17,7 +16,6 @@ import java.util.stream.Collectors;
  *
  * @author hakonhall
  */
-@ThreadSafe
 public class DebugHandlerHelper implements NodeAdminDebugHandler {
     private final ConcurrentMap<String, Supplier<Object>> suppliers = new ConcurrentHashMap<>();
 

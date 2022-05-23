@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import javax.annotation.concurrent.Immutable;
 
 /**
  * @author hakonhall
  */
-@Immutable
 public class IntFlag extends FlagImpl<Integer, IntFlag> {
     public IntFlag(FlagId id, int defaultValue, FetchVector vector, FlagSerializer<Integer> serializer, FlagSource source) {
         super(id, defaultValue, vector, serializer, source, IntFlag::new);

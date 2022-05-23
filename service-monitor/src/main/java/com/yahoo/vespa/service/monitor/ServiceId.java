@@ -6,15 +6,13 @@ import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
 /**
- * Identifies a service.
+ * Identifies a service. Immutable.
  *
  * @author hakon
  */
-@Immutable
 public class ServiceId {
     private final ApplicationId applicationId;
     private final ClusterId clusterId;

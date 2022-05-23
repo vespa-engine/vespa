@@ -3,7 +3,6 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.flags.json.DimensionHelper;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Objects;
@@ -16,7 +15,6 @@ import java.util.function.Consumer;
  *
  * @author hakonhall
  */
-@Immutable
 public class FetchVector {
     /**
      * Note: If this enum is changed, you must also change {@link DimensionHelper}.
