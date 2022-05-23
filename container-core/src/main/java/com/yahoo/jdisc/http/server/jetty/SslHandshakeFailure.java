@@ -1,7 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import org.eclipse.jetty.io.EofException;
+
 import javax.net.ssl.SSLHandshakeException;
+import java.io.IOException;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -33,29 +36,49 @@ enum SslHandshakeFailure {
     INVALID_CLIENT_CERT(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, // Includes mismatch of client certificate and private key
             "INVALID_CLIENT_CERTIFICATE",
-            "(PKIX path (building|validation) failed: .+)|(Invalid CertificateVerify signature)");
+            "(PKIX path (building|validation) failed: .+)|(Invalid CertificateVerify signature)"),
+    CONNECTION_CLOSED(
+            MetricDefinitions.SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED,
+            "CONNECTION_CLOSED",
+            e -> e.getCause() instanceof EofException
+                    && e.getCause().getCause() instanceof IOException
+                    && e.getCause().getCause().getMessage().equals("Broken pipe"));
 
     private final String metricName;
     private final String failureType;
-    private final Predicate<String> messageMatcher;
+    private final Predicate<SSLHandshakeException> predicate;
 
     SslHandshakeFailure(String metricName, String failureType, String messagePattern) {
+        this(metricName, failureType, new MessagePatternPredicate(messagePattern));
+    }
+
+    SslHandshakeFailure(String metricName, String failureType, Predicate<SSLHandshakeException> predicate) {
         this.metricName = metricName;
         this.failureType = failureType;
-        this.messageMatcher = Pattern.compile(messagePattern).asMatchPredicate();
+        this.predicate = predicate;
     }
 
     String metricName() { return metricName; }
     String failureType() { return failureType; }
 
     static Optional<SslHandshakeFailure> fromSslHandshakeException(SSLHandshakeException exception) {
-        String message = exception.getMessage();
-        if (message == null || message.isBlank()) return Optional.empty();
-        for (SslHandshakeFailure failure : values()) {
-            if (failure.messageMatcher.test(message)) {
-                return Optional.of(failure);
-            }
+        for (SslHandshakeFailure type : values()) {
+            if (type.predicate.test(exception)) return Optional.of(type);
         }
         return Optional.empty();
     }
+
+    private static class MessagePatternPredicate implements Predicate<SSLHandshakeException> {
+        final Pattern pattern;
+
+        MessagePatternPredicate(String pattern) { this.pattern = Pattern.compile(pattern); }
+
+        @Override
+        public boolean test(SSLHandshakeException e) {
+            String message = e.getMessage();
+            if (message == null || message.isBlank()) return false;
+            return pattern.matcher(message).matches();
+        }
+    }
+
 }
