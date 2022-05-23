@@ -168,8 +168,8 @@ public class JobRunnerTest {
         outcomes.put(endTests, testFailure);
         runner.maintain();
         assertTrue(run.get().hasFailed());
-        assertEquals(List.of(copyVespaLogs, deactivateTester), run.get().readySteps());
-        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester);
+        assertEquals(List.of(copyVespaLogs), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs);
 
         outcomes.put(copyVespaLogs, running);
         runner.maintain();
