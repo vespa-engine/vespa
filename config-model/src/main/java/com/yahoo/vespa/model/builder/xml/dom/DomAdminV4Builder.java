@@ -73,7 +73,6 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.minResources().nodes() > 1) throw new IllegalArgumentException("You can only request a single log server");
-        if (deployState.getProperties().applicationId().instance().isTester()) return; // No logserver is needed on tester applications
         if (nodesSpecification.isDedicated()) {
             Collection<HostResource> hosts = allocateHosts(admin.hostSystem(), "logserver", nodesSpecification);
             if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
@@ -92,9 +91,10 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     private NodesSpecification createNodesSpecificationForLogserver() {
         DeployState deployState = context.getDeployState();
-        if (deployState.getProperties().useDedicatedNodeForLogserver() &&
-            context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
-            deployState.isHosted())
+        if (     deployState.getProperties().useDedicatedNodeForLogserver()
+            &&   context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT
+            &&   deployState.isHosted()
+            && ! deployState.getProperties().applicationId().instance().isTester())
             return NodesSpecification.dedicated(1, context);
         else
             return NodesSpecification.nonDedicated(1, context);
