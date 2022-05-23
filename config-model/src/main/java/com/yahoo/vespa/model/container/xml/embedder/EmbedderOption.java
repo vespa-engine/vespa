@@ -75,7 +75,7 @@ public class EmbedderOption {
     }
 
     /**
-     * Transforms model options of type <x id="..." url="..." path="..." /> to the
+     * Transforms model options of type &lt;x id="..." url="..." path="..." /&gt; to the
      * required fields in the config definition.
      */
     public static class ModelOptionTransformer extends OptionTransformer {

@@ -8,17 +8,17 @@ import org.w3c.dom.NodeList;
 /**
  * Translates config in services.xml of the form
  *
- *     <embedder id="..." class="..." bundle="..." def="...">
- *         <!-- options -->
- *     </embedder>
+ *     &lt;embedder id="..." class="..." bundle="..." def="..."&gt;
+ *         &lt;!-- options --&gt;
+ *     &lt;/embedder&gt;
  *
  * to component configuration of the form
  *
- *     <component id="..." class="..." bundle="...">
- *         <config name=def>
- *             <!-- options -->
- *         </config>
- *     </component>
+ *     &lt;component id="..." class="..." bundle="..."&gt;
+ *         &lt;config name=def&gt;
+ *             &lt;!-- options --&gt;
+ *         &lt;/config&gt;
+ *     &lt;/component&gt;
  *
  * with some added interpretations based on recognizing the class.
  *
@@ -47,11 +47,11 @@ public class EmbedderConfig {
     }
 
     /**
-     * Transforms the <embedder ...> element to component configuration.
+     * Transforms the &lt;embedder ...&gt; element to component configuration.
      *
      * @param deployState the deploy state - as config generation can depend on context
-     * @param embedderSpec the XML element containing the <embedder ...>
-     * @return a new XML element containting the <component ...> configuration
+     * @param embedderSpec the XML element containing the &lt;embedder ...&gt;
+     * @return a new XML element containting the &lt;component ...&gt; configuration
      */
     public static Element transform(DeployState deployState, Element embedderSpec) {
         EmbedderConfigTransformer transformer = getEmbedderTransformer(embedderSpec, deployState.isHosted());
