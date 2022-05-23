@@ -40,15 +40,13 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
     protected double maintain() {
         Map<ZoneId, Set<TenantName>> tenantsByZone = new HashMap<>();
 
-        tenantsByZone.put(controller().zoneRegistry().systemZone().getVirtualId(),
-                          new HashSet<>(INFRASTRUCTURE_TENANTS));
+        controller().zoneRegistry().zonesIncludingSystem().reachable().zones().forEach(
+                z -> tenantsByZone.put(z.getVirtualId(), new HashSet<>(INFRASTRUCTURE_TENANTS)));
 
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.deployments().values()) {
-                    tenantsByZone
-                            .computeIfAbsent(deployment.zone(), zone -> new HashSet<>(INFRASTRUCTURE_TENANTS))
-                            .add(instance.id().tenant());
+                    tenantsByZone.get(deployment.zone()).add(instance.id().tenant());
                 }
             }
         }

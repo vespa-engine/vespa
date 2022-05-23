@@ -13,7 +13,6 @@ import java.util.stream.Collectors;
 
 /**
  * (de)serializes tenant/bucket mappings for a zone
- * <p>
  *
  * @author andreer
  */
