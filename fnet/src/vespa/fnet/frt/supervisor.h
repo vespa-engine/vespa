@@ -67,7 +67,7 @@ public:
     FRT_Target *GetTarget(const char *spec);
     FRT_Target *Get2WayTarget(const char *spec, FNET_Context connContext = FNET_Context());
     FRT_Target *GetTarget(int port);
-    FRT_RPCRequest *AllocRPCRequest(FRT_RPCRequest *tradein = nullptr);
+    static FRT_RPCRequest *AllocRPCRequest(FRT_RPCRequest *tradein = nullptr);
 
     struct SchedulerPtr {
         FNET_Scheduler *ptr;
