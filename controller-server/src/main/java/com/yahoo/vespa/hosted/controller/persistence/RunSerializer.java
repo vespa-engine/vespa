@@ -91,7 +91,7 @@ class RunSerializer {
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
-    private static final String lastTesterLogTimestampField = "lastVespaLogTimestamp";
+    private static final String lastTesterLogTimestampField = "lastTesterLogTimestamp";
     private static final String noNodesDownSinceField = "noNodesDownSince";
     private static final String convergenceSummaryField = "convergenceSummaryV2";
     private static final String testerCertificateField = "testerCertificate";
