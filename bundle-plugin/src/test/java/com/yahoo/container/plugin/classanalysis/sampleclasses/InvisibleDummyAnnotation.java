@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 
 /**
  * Input for class analysis tests.
- * @author Tony Vaagenes
+ * @author arnej
  */
-@Retention(RetentionPolicy.RUNTIME)
-public @interface DummyAnnotation {
+@Retention(RetentionPolicy.CLASS)
+public @interface InvisibleDummyAnnotation {
 }
