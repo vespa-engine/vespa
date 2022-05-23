@@ -198,8 +198,7 @@ public:
           _activeLids(activeLids),
           _matchDataVector()
     {
-        size_t numHits = _activeLids.countTrueBits();
-        setEstimate(HitEstimate(numHits, (numHits == 0)));
+        setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
     bool isWhiteList() const override { return true; }
