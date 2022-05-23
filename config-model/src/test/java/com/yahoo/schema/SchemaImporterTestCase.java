@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
-import static com.google.common.collect.testing.Helpers.assertEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -142,7 +141,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         // Rank Profiles
         RankProfile profile = rankProfileRegistry.get(schema, "default");
         assertNotNull(profile);
-        assertEmpty(profile.inheritedNames());
+        assertTrue(profile.inheritedNames().isEmpty());
         assertNull(profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE));
         assertEquals(RankType.EMPTY,
                      profile.getRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());
