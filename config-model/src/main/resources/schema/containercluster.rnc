@@ -19,6 +19,7 @@ ContainerServices =
     DocumentApi? &
     Components* &
     Component* &
+    Embedder* &
     Handler* &
     Client* &
     Server* &
@@ -101,6 +102,14 @@ SecretStore = element secret-store {
 
 ZooKeeper = element zookeeper {
     empty
+}
+
+Embedder = element embedder {
+    attribute id { string }? &
+    attribute class { xsd:Name | JavaId }? &
+    attribute bundle { xsd:Name }? &
+    attribute def { xsd:Name }? &
+    anyElement*
 }
 
 ModelEvaluation = element model-evaluation {

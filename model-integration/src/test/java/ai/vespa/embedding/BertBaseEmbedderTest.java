@@ -1,6 +1,7 @@
 package ai.vespa.embedding;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.UrlReference;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
 import com.yahoo.tensor.Tensor;
@@ -14,8 +15,6 @@ import static org.junit.Assume.assumeTrue;
 
 public class BertBaseEmbedderTest {
 
-
-
     @Test
     public void testEmbedder() {
         String vocabPath = "src/test/models/onnx/transformer/dummy_vocab.txt";
@@ -23,8 +22,10 @@ public class BertBaseEmbedderTest {
         assumeTrue(OnnxEvaluator.isRuntimeAvailable(modelPath));
 
         BertBaseEmbedderConfig.Builder builder = new BertBaseEmbedderConfig.Builder();
-        builder.tokenizerVocabUrl(new UrlReference(vocabPath));
-        builder.transformerModelUrl(new UrlReference(modelPath));
+        builder.tokenizerVocabPath(new FileReference(vocabPath));
+        builder.tokenizerVocabUrl(new UrlReference(""));
+        builder.transformerModelPath(new FileReference(modelPath));
+        builder.transformerModelUrl(new UrlReference(""));
         BertBaseEmbedder embedder = new BertBaseEmbedder(builder.build());
 
         TensorType destType = TensorType.fromSpec("tensor<float>(x[7])");

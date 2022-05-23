@@ -1,8 +1,13 @@
 
 namespace=embedding
 
+# Settings for wordpiece tokenizer
+tokenizerVocabUrl  url
+tokenizerVocabPath path
+
 # Transformer model settings
-transformerModelUrl  url  default=https://data.vespa.oath.cloud/onnx_models/sentence_all_MiniLM_L6_v2.onnx
+transformerModelUrl  url
+transformerModelPath path
 
 # Max length of token sequence model can handle
 transformerMaxTokens int default=384
@@ -23,5 +28,3 @@ onnxExecutionMode enum { parallel, sequential } default=sequential
 onnxInterOpThreads int default=1
 onnxIntraOpThreads int default=-4  # n=number of threads -> n<0: CPUs/(-n), n==0: CPUs, n>0: n
 
-# Settings for wordpiece tokenizer
-tokenizerVocabUrl  url default=https://data.vespa.oath.cloud/onnx_models/bert-base-uncased-vocab.txt
