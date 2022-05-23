@@ -273,8 +273,14 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
             // Need to convert url into actual file if 'url' type is used
             } else if (isUrlField(builder, methodName)) {
-                UrlReference url = resolveUrl(Utf8.toString(value.asUtf8()));
-                invokeSetter(builder, methodName, url);
+                String url = Utf8.toString(value.asUtf8());
+                if (url == null || url.length() == 0) {
+                    invokeSetter(builder, methodName, "");
+                } else  {
+                    UrlReference urlref = resolveUrl(Utf8.toString(value.asUtf8()));
+                    invokeSetter(builder, methodName, urlref);
+                }
+
 
             } else {
                 Object object = getValueFromInspector(value);
@@ -294,7 +300,7 @@ public class ConfigPayloadApplier<T extends ConfigInstance.Builder> {
 
     private UrlReference resolveUrl(String url) {
         if (urlDownloader == null) {
-            throw new RuntimeException("Resolving url field failed due to missing URL downloader.");
+            return new UrlReference(url);  // assuming config server - just return the actual url.
         }
         File file = urlDownloader.waitFor(new UrlReference(url), 60 * 60);
         return new UrlReference(file.getAbsolutePath());

@@ -53,5 +53,4 @@ vespa_add_library(searchcore_bmcluster STATIC
     storageserver_storageapp
     messagebus_messagebus-test
     messagebus
-    searchlib_searchlib_uca
 )

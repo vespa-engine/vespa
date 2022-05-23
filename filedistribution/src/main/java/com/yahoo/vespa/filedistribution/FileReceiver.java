@@ -1,5 +1,4 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
@@ -106,14 +105,15 @@ public class FileReceiver {
         }
 
         File close(long hash) {
-            if (hasher.getValue() != hash) {
+            if (hasher.getValue() != hash)
                 throw new RuntimeException("xxhash from content (" + currentHash + ") is not equal to xxhash in request (" + hash + ")");
-            }
+
             File file = new File(fileReferenceDir, fileName);
+            File decompressedDir = null;
             try {
                 // Unpack if necessary
                 if (fileType == FileReferenceData.Type.compressed) {
-                    File decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
+                    decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
                     CompressedFileReference.decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 } else {
@@ -130,11 +130,8 @@ public class FileReceiver {
                 log.log(Level.SEVERE, "Failed writing file: " + e.getMessage(), e);
                 throw new RuntimeException("Failed writing file: ", e);
             } finally {
-                try {
-                    Files.deleteIfExists(inprogressFile.toPath());
-                } catch (IOException e) {
-                    log.log(Level.SEVERE, "Failed deleting " + inprogressFile.getAbsolutePath() + ": " + e.getMessage(), e);
-                }
+                deletePath(inprogressFile);
+                deletePath(decompressedDir);
             }
             return file;
         }
@@ -196,12 +193,14 @@ public class FileReceiver {
             log.log(Level.SEVERE, message, e);
             throw new RuntimeException(message, e);
         } finally {
-            deleteFileOrDirectory(tempFile);
+            deletePath(tempFile);
         }
     }
 
-    private static void deleteFileOrDirectory(File path) {
+    private static void deletePath(File path) {
+        if (path == null) return;
         if ( ! path.exists()) return;
+
         try {
             if (path.isDirectory())
                 IOUtils.recursiveDeleteDir(path);

@@ -14,3 +14,4 @@ juniper_auxTest_app
 juniper_matchobjectTest_app
 juniper_mcandTest_app
 juniper_queryparserTest_app
+juniper_latintokenizertest_app

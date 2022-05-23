@@ -822,7 +822,6 @@ fi
 %dir %{_prefix}/lib64
 %{_prefix}/lib64/libfastos.so
 %{_prefix}/lib64/libfnet.so
-%{_prefix}/lib64/libstaging_vespalib.so
 %{_prefix}/lib64/libvespadefaults.so
 %{_prefix}/lib64/libvespalib.so
 %{_prefix}/lib64/libvespalog.so
@@ -835,7 +834,6 @@ fi
 %{_prefix}/lib64
 %exclude %{_prefix}/lib64/libfastos.so
 %exclude %{_prefix}/lib64/libfnet.so
-%exclude %{_prefix}/lib64/libstaging_vespalib.so
 %exclude %{_prefix}/lib64/libvespadefaults.so
 %exclude %{_prefix}/lib64/libvespalib.so
 %exclude %{_prefix}/lib64/libvespalog.so

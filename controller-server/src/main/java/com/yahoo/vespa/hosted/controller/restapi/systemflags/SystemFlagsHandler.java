@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.Path;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
+import com.yahoo.vespa.hosted.controller.api.integration.ControllerIdentityProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
@@ -30,7 +30,7 @@ public class SystemFlagsHandler extends ThreadedHttpRequestHandler {
 
     @Inject
     public SystemFlagsHandler(ZoneRegistry zoneRegistry,
-                              ServiceIdentityProvider identityProvider,
+                              ControllerIdentityProvider identityProvider,
                               Executor executor) {
         super(executor);
         this.deployer = new SystemFlagsDeployer(identityProvider, zoneRegistry.system(), FlagsTarget.getAllTargetsInSystem(zoneRegistry, true));

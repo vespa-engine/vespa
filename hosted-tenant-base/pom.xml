@@ -235,12 +235,11 @@
                             <!-- note: ordering affects how overrides are evaluated! -->
                             <testBundleScopeOverrides>
                                 ${extraTestBundleScopeOverrides},
-                                com.yahoo.vespa:application:test,
-                                com.yahoo.vespa:container-test:runtime,
                                 org.junit.jupiter:junit-jupiter-api:provided,
-                                org.opentest4j:opentest4j:test,
                                 org.junit.jupiter:junit-jupiter-engine:test,
                                 org.junit.vintage:junit-vintage-engine:test,
+                                com.yahoo.vespa:application:test,
+                                com.yahoo.vespa:container-test:runtime,
                                 com.yahoo.vespa:vespa-feed-client:runtime, <!-- prevent effective compile scope of vespa-feed-client in test bundle -->
                                 com.yahoo.vespa:vespa-feed-client-api:provided,
                                 com.yahoo.vespa:tenant-cd-api:provided

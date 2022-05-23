@@ -17,5 +17,4 @@ vespa_add_library(streamingvisitors
     $<TARGET_OBJECTS:vsm_vsmsearcher>
     INSTALL lib64
     DEPENDS
-    searchlib_searchlib_uca
 )

@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 public class Container {
 
     private volatile boolean usingCustomFileAcquirer = false;
+    private volatile boolean disabledUrlDownloader = false;
 
     private volatile ComponentRegistry<RequestHandler> requestHandlerRegistry;
     private volatile ComponentRegistry<ClientProvider> clientProviderRegistry;
@@ -132,8 +133,15 @@ public class Container {
     }
 
     public void setupUrlDownloader() {
+        if (disabledUrlDownloader) {
+            return;
+        }
         this.urlDownloader = new UrlDownloader();
         ConfigTransformer.setUrlDownloader(urlDownloader);
+    }
+
+    public void disableUrlDownloader() {
+        disabledUrlDownloader = true;
     }
 
 }

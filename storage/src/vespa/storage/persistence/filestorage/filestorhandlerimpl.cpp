@@ -78,7 +78,10 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
     _component.registerMetricUpdateHook(*this, framework::SecondTime(5));
 }
 
-FileStorHandlerImpl::~FileStorHandlerImpl() = default;
+FileStorHandlerImpl::~FileStorHandlerImpl()
+{
+    waitUntilNoLocks();
+}
 
 void
 FileStorHandlerImpl::addMergeStatus(const document::Bucket& bucket, std::shared_ptr<MergeStatus> status)
@@ -170,8 +173,13 @@ FileStorHandlerImpl::flush(bool killPendingMerges)
     LOG(debug, "All queues and bucket locks released.");
 
     if (killPendingMerges) {
+        std::map<document::Bucket, std::shared_ptr<MergeStatus>> my_merge_states;
+        {
+            std::lock_guard mergeGuard(_mergeStatesLock);
+            std::swap(_mergeStates, my_merge_states);
+        }
         api::ReturnCode code(api::ReturnCode::ABORTED, "Storage node is shutting down");
-        for (auto & entry : _mergeStates) {
+        for (auto & entry : my_merge_states) {
             MergeStatus& s(*entry.second);
             if (s.pendingGetDiff) {
                 s.pendingGetDiff->setResult(code);
@@ -186,7 +194,6 @@ FileStorHandlerImpl::flush(bool killPendingMerges)
                 _messageSender.sendReply(s.reply);
             }
         }
-        _mergeStates.clear();
     }
 }
 
@@ -1171,7 +1178,6 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
     }
-    guard.unlock();
     _cond->notify_all();
 }
 

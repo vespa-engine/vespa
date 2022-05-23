@@ -5,10 +5,10 @@ import ai.vespa.util.http.hc4.retry.DelayedConnectionLevelRetryHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.json.FlagData;
+import com.yahoo.vespa.hosted.controller.api.integration.ControllerIdentityProvider;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireErrorResponse;
 import org.apache.http.HttpEntity;
@@ -22,6 +22,7 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -55,7 +56,7 @@ class FlagsClient {
 
     private final CloseableHttpClient client;
 
-    FlagsClient(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
+    FlagsClient(ControllerIdentityProvider identityProvider, Set<FlagsTarget> targets) {
         this.client = createClient(identityProvider, targets);
     }
 
@@ -95,14 +96,16 @@ class FlagsClient {
         });
     }
 
-    private static CloseableHttpClient createClient(ServiceIdentityProvider identityProvider, Set<FlagsTarget> targets) {
+    private static CloseableHttpClient createClient(ControllerIdentityProvider identityProvider, Set<FlagsTarget> targets) {
         DelayedConnectionLevelRetryHandler retryHandler = DelayedConnectionLevelRetryHandler.Builder
                 .withExponentialBackoff(Duration.ofSeconds(1), Duration.ofSeconds(20), 5)
                 .build();
+        SSLConnectionSocketFactory connectionSocketFactory = new SSLConnectionSocketFactory(
+                identityProvider.getConfigServerSslSocketFactory(), new FlagTargetsHostnameVerifier(targets));
+
         return HttpClientBuilder.create()
                 .setUserAgent("controller-flags-v1-client")
-                .setSSLContext(identityProvider.getIdentitySslContext())
-                .setSSLHostnameVerifier(new FlagTargetsHostnameVerifier(targets))
+                .setSSLSocketFactory(connectionSocketFactory)
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout((int) Duration.ofSeconds(10).toMillis())
                                                  .setConnectionRequestTimeout((int) Duration.ofSeconds(10).toMillis())

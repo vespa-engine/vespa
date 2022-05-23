@@ -2,7 +2,6 @@
 vespa_define_module(
     DEPENDS
     vespalib
-    staging_vespalib
 
     APPS
     src/apps/analyze_onnx_model

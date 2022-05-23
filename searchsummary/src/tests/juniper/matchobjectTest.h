@@ -5,7 +5,7 @@
 #pragma once
 
 #include "testenv.h"
-#include <vespa/fastlib/testsuite/test.h>
+#include "test.h"
 #include <map>
 
 /**

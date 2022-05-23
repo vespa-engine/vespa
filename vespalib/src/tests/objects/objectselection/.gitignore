@@ -1,0 +1,4 @@
+.depend
+Makefile
+objectselection_test
+vespalib_objectselection_test_app

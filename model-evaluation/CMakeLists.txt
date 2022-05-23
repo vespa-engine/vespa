@@ -1,2 +1,2 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-install_fat_java_artifact(model-evaluation)
+install_jar(model-evaluation-jar-with-dependencies.jar)

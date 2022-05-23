@@ -1,6 +1,0 @@
-*.So
-*.exe
-*.ilk
-*.pdb
-.depend*
-Makefile

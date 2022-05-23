@@ -7,7 +7,6 @@ vespa_define_module(
     vespalib
     metrics
     config_cloudconfig
-    fastlib_fast
     configdefinitions
     document
     searchlib

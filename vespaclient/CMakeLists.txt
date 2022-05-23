@@ -9,7 +9,6 @@ vespa_define_module(
     document
     documentapi
     vespalib
-    staging_vespalib
 
     LIBS
     src/vespa/vespaclient/clusterlist

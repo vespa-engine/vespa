@@ -4,9 +4,7 @@ vespa_define_module(
     vespalog
     vespalib
     configdefinitions
-    fastlib_fast
     document
-    searchcommon
     searchlib
 
     LIBS

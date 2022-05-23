@@ -1,13 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.athenz.tls.AthenzIdentityVerifier;
+import com.yahoo.vespa.hosted.controller.api.integration.ControllerIdentityProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.yolean.concurrent.Sleeper;
 import org.apache.http.Header;
@@ -20,6 +20,7 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -29,7 +30,6 @@ import org.apache.http.protocol.HttpCoreContext;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.InputStream;
@@ -68,16 +68,15 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
     private final Sleeper sleeper;
 
     @Inject
-    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ServiceIdentityProvider sslContextProvider) {
-        this(zoneRegistry, sslContextProvider.getIdentitySslContext(), Sleeper.DEFAULT,
-             new ConnectionReuseStrategy(zoneRegistry));
+    public ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, ControllerIdentityProvider identityProvider) {
+        this(new SSLConnectionSocketFactory(identityProvider.getConfigServerSslSocketFactory(), new ControllerOrConfigserverHostnameVerifier(zoneRegistry)),
+                Sleeper.DEFAULT,
+                new ConnectionReuseStrategy(zoneRegistry));
     }
 
-    ConfigServerRestExecutorImpl(ZoneRegistry zoneRegistry, SSLContext sslContext,
+    ConfigServerRestExecutorImpl(SSLConnectionSocketFactory connectionSocketFactory,
                                  Sleeper sleeper, ConnectionReuseStrategy connectionReuseStrategy) {
-        this.client = createHttpClient(sslContext,
-                                       new ControllerOrConfigserverHostnameVerifier(zoneRegistry),
-                                       connectionReuseStrategy);
+        this.client = createHttpClient(connectionSocketFactory, connectionReuseStrategy);
         this.sleeper = sleeper;
     }
 
@@ -227,8 +226,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
         }
     }
 
-    private static CloseableHttpClient createHttpClient(SSLContext sslContext,
-                                                        HostnameVerifier hostnameVerifier,
+    private static CloseableHttpClient createHttpClient(SSLConnectionSocketFactory connectionSocketFactory,
                                                         org.apache.http.ConnectionReuseStrategy connectionReuseStrategy) {
 
         RequestConfig config = RequestConfig.custom()
@@ -237,8 +235,7 @@ public class ConfigServerRestExecutorImpl extends AbstractComponent implements C
                                             .setSocketTimeout((int) PROXY_REQUEST_TIMEOUT.toMillis()).build();
         return HttpClientBuilder.create()
                                 .setUserAgent("config-server-proxy-client")
-                                .setSSLContext(sslContext)
-                                .setSSLHostnameVerifier(hostnameVerifier)
+                                .setSSLSocketFactory(connectionSocketFactory)
                                 .setDefaultRequestConfig(config)
                                 .setMaxConnPerRoute(10)
                                 .setMaxConnTotal(500)

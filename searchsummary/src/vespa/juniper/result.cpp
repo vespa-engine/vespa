@@ -80,12 +80,12 @@ Result::Result(Config* config, QueryHandle* qhandle,
     }
 
     /* Create the new pipeline */
-    _tokenizer.reset(new JuniperTokenizer(wordfolder, NULL, 0, NULL));
+    _tokenizer = std::make_unique<JuniperTokenizer>(wordfolder, nullptr, 0, nullptr, nullptr);
 
-    _matcher.reset(new Matcher(this));
+    _matcher = std::make_unique<Matcher>(this);
     _matcher->SetProximityFactor(mp.ProximityFactor());
 
-    _registry.reset(new SpecialTokenRegistry(_matcher->getQuery()));
+    _registry = std::make_unique<SpecialTokenRegistry>(_matcher->getQuery());
 
     if (qhandle->_log_mask)
         _matcher->set_log(qhandle->_log_mask);
