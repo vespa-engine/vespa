@@ -189,7 +189,7 @@ public class JobController {
             vespaFrom = log.isEmpty() ? vespaFrom : log.get(log.size() - 1).at();
 
             Instant testerFrom = run.lastTesterLogTimestamp().isAfter(deployment.get().at()) ? run.lastTesterLogTimestamp() : deployment.get().at();
-            if (run.hasStep(deployTester)) {
+            if (run.hasStep(deployTester) && run.versions().targetPlatform().isAfter(new Version("7.589.14"))) { // todo jonmv: remove
                 List<LogEntry> testerLog = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
                                                                             .getLogs(new DeploymentId(id.tester().id(), zone),
                                                                                      Map.of("from", Long.toString(testerFrom.toEpochMilli()))),
