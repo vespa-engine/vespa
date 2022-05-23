@@ -93,7 +93,8 @@ public class JobRunnerTest {
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
         jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
-        start(jobs, id, systemTest);
+
+                    start(jobs, id, systemTest);
         try {
             start(jobs, id, systemTest);
             fail("Job is already running, so this should not be allowed!");
