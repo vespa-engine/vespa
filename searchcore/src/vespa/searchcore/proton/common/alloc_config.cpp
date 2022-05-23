@@ -17,11 +17,6 @@ AllocConfig::AllocConfig(const AllocStrategy& alloc_strategy,
 {
 }
 
-AllocConfig::AllocConfig()
-    : AllocConfig(AllocStrategy(), 1, 1)
-{
-}
-
 AllocConfig::~AllocConfig() = default;
 
 bool

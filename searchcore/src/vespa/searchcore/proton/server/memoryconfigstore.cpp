@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryconfigstore.h"
+#include "documentdbconfig.h"
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -38,12 +39,12 @@ void
 MemoryConfigStore::saveConfig(const DocumentDBConfig &config,
                               SerialNum serial)
 {
-    _maps->configs[serial].reset(new DocumentDBConfig(config));
+    _maps->configs[serial] = std::make_shared<DocumentDBConfig>(config);
     _maps->_valid.insert(serial);
 }
 void
 MemoryConfigStore::loadConfig(const DocumentDBConfig &, SerialNum serial,
-                              DocumentDBConfig::SP &loaded_config)
+                              std::shared_ptr<DocumentDBConfig> &loaded_config)
 {
     assert(hasValidSerial(serial));
     loaded_config = _maps->configs[serial];
@@ -88,7 +89,7 @@ MemoryConfigStores::getConfigStore(const std::string &type) {
     if (!_config_maps[type].get()) {
         _config_maps[type].reset(new ConfigMaps);
     }
-    return ConfigStore::UP(new MemoryConfigStore(_config_maps[type]));
+    return std::make_unique<MemoryConfigStore>(_config_maps[type]);
 }
 
 }  // namespace proton

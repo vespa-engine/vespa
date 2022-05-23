@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "documentdbconfig.h"
 #include "idocumentsubdb.h"
 #include "storeonlyfeedview.h"
 #include "summaryadapter.h"
@@ -21,6 +20,7 @@
 namespace proton {
 
 class AllocStrategy;
+class DocumentDBConfig;
 struct DocumentDBTaggedMetrics;
 class DocumentMetaStoreInitializerResult;
 class FeedHandler;

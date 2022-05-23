@@ -48,15 +48,15 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(int64_t generation,
       _schema(schema),
       _maintenance(std::make_shared<DocumentDBMaintenanceConfig>()),
       _store(),
-      _threading_service_config(std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make())),
-      _alloc_config(std::make_shared<const AllocConfig>()),
+      _threading_service_config(ThreadingServiceConfig::make()),
+      _alloc_config(AllocConfig::makeDefault()),
       _configId(configId),
       _docTypeName(docTypeName)
 { }
 
 
 DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
-     : _generation(cfg.getGeneration()),
+    : _generation(cfg.getGeneration()),
       _rankProfiles(cfg.getRankProfilesConfigSP()),
       _rankingConstants(cfg.getRankingConstantsSP()),
       _rankingExpressions(cfg.getRankingExpressionsSP()),
@@ -73,13 +73,13 @@ DocumentDBConfigBuilder::DocumentDBConfigBuilder(const DocumentDBConfig &cfg)
       _schema(cfg.getSchemaSP()),
       _maintenance(cfg.getMaintenanceConfigSP()),
       _store(cfg.getStoreConfig()),
-      _threading_service_config(cfg.get_threading_service_config_shared_ptr()),
-      _alloc_config(cfg.get_alloc_config_shared_ptr()),
+      _threading_service_config(cfg.get_threading_service_config()),
+      _alloc_config(cfg.get_alloc_config()),
       _configId(cfg.getConfigId()),
       _docTypeName(cfg.getDocTypeName())
 {}
 
-DocumentDBConfigBuilder::~DocumentDBConfigBuilder() {}
+DocumentDBConfigBuilder::~DocumentDBConfigBuilder() = default;
 
 DocumentDBConfig::SP
 DocumentDBConfigBuilder::build()

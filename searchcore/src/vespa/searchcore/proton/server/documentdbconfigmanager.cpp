@@ -248,7 +248,7 @@ find_document_db_config_entry(const ProtonConfig::DocumentdbVector& document_dbs
     return default_document_db_config_entry;
 }
 
-std::shared_ptr<const AllocConfig>
+const AllocConfig
 build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& doc_type_name)
 {
     auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
@@ -256,9 +256,8 @@ build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& do
     auto& distribution_config = proton_config.distribution;
     search::GrowStrategy grow_strategy(alloc_config.initialnumdocs, alloc_config.growfactor, alloc_config.growbias, alloc_config.multivaluegrowfactor);
     CompactionStrategy compaction_strategy(alloc_config.maxDeadBytesRatio, alloc_config.maxDeadAddressSpaceRatio, alloc_config.maxCompactBuffers, alloc_config.activeBuffersRatio);
-    return std::make_shared<const AllocConfig>
-        (AllocStrategy(grow_strategy, compaction_strategy, alloc_config.amortizecount),
-         distribution_config.redundancy, distribution_config.searchablecopies);
+    return AllocConfig(AllocStrategy(grow_strategy, compaction_strategy, alloc_config.amortizecount),
+                       distribution_config.redundancy, distribution_config.searchablecopies);
 }
 
 vespalib::string
@@ -305,8 +304,6 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     IndexschemaConfigSP newIndexschemaConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
     MaintenanceConfigSP newMaintenanceConfig;
-    std::shared_ptr<const ThreadingServiceConfig> old_threading_service_config;
-    std::shared_ptr<const AllocConfig> old_alloc_config;
     constexpr vespalib::duration file_resolve_timeout = 60min;
 
     if (!_ignoreForwardedConfig) {
@@ -332,8 +329,6 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
         newOnnxModels = current->getOnnxModelsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
-        old_threading_service_config = current->get_threading_service_config_shared_ptr();
-        old_alloc_config = current->get_alloc_config_shared_ptr();
         currentGeneration = current->getGeneration();
     }
 
@@ -408,15 +403,6 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
     if (newMaintenanceConfig && oldMaintenanceConfig && (*newMaintenanceConfig == *oldMaintenanceConfig)) {
         newMaintenanceConfig = oldMaintenanceConfig;
     }
-    auto new_threading_service_config = std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make(_bootstrapConfig->getProtonConfig()));
-    if (new_threading_service_config && old_threading_service_config &&
-        (*new_threading_service_config == *old_threading_service_config)) {
-        new_threading_service_config = old_threading_service_config;
-    }
-    auto new_alloc_config = build_alloc_config(_bootstrapConfig->getProtonConfig(), _docTypeName);
-    if (new_alloc_config && old_alloc_config &&(*new_alloc_config == *old_alloc_config)) {
-        new_alloc_config = old_alloc_config;
-    }
     auto newSnapshot = std::make_shared<DocumentDBConfig>(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
@@ -434,8 +420,8 @@ DocumentDBConfigManager::update(FNET_Transport & transport, const ConfigSnapshot
                                  schema,
                                  newMaintenanceConfig,
                                  storeConfig,
-                                 new_threading_service_config,
-                                 new_alloc_config,
+                                 ThreadingServiceConfig::make(_bootstrapConfig->getProtonConfig()),
+                                 build_alloc_config(_bootstrapConfig->getProtonConfig(), _docTypeName),
                                  _configId,
                                  _docTypeName);
     assert(newSnapshot->valid());

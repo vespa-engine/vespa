@@ -149,8 +149,8 @@ public:
                         schema,
                         std::make_shared<DocumentDBMaintenanceConfig>(),
                         search::LogDocumentStore::Config(),
-                        std::make_shared<const ThreadingServiceConfig>(ThreadingServiceConfig::make()),
-                        std::make_shared<const AllocConfig>(),
+                        ThreadingServiceConfig::make(),
+                        AllocConfig::makeDefault(),
                         "client",
                         docTypeName.getName());
     }

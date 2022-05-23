@@ -3,18 +3,21 @@
 #pragma once
 
 #include "bootstrapconfigmanager.h"
-#include "documentdbconfigmanager.h"
 #include "i_document_db_config_owner.h"
 #include <vespa/fastos/thread.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/config/retriever/configretriever.h>
 #include <vespa/config/subscription/configuri.h>
+#include <deque>
+
+class FNET_Transport;
 
 namespace document { class DocumentTypeRepo; }
 
 namespace proton {
 
 class BootstrapConfig;
+class DocumentDBConfigManager;
 class IProtonConfigurer;
 
 /**
@@ -46,7 +49,7 @@ public:
     void Run(FastOS_ThreadInterface * thread, void *arg) override;
 
 private:
-    typedef std::map<DocTypeName, DocumentDBConfigManager::SP> DBManagerMap;
+    typedef std::map<DocTypeName, std::shared_ptr<DocumentDBConfigManager>> DBManagerMap;
     using OldDocumentTypeRepo = std::pair<vespalib::steady_time, std::shared_ptr<const document::DocumentTypeRepo>>;
     using lock_guard = std::lock_guard<std::mutex>;
 

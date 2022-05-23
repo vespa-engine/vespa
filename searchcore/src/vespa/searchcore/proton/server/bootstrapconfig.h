@@ -2,15 +2,17 @@
 
 #pragma once
 
-#include "documentdbconfig.h"
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-proton.h>
 #include <vespa/document/config/config-documenttypes.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/config/retriever/configsnapshot.h>
 #include <vespa/fileacquirer/config-filedistributorrpc.h>
 
 namespace vespa::config::content::core::internal { class InternalBucketspacesType; }
+
+namespace document { class DocumentTypeRepo; }
 
 namespace proton {
 
@@ -25,7 +27,7 @@ public:
     using FiledistributorrpcConfig = const cloud::config::filedistribution::FiledistributorrpcConfig;
     using FiledistributorrpcConfigSP = std::shared_ptr<FiledistributorrpcConfig>;
 
-    typedef DocumentDBConfig::DocumenttypesConfigSP DocumenttypesConfigSP;
+    using DocumenttypesConfigSP = std::shared_ptr<DocumenttypesConfig>;
     using BucketspacesConfig = const vespa::config::content::core::internal::InternalBucketspacesType;
     using BucketspacesConfigSP = std::shared_ptr<BucketspacesConfig>;
 

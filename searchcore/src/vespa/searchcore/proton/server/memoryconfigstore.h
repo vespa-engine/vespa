@@ -3,15 +3,15 @@
 #pragma once
 
 #include "configstore.h"
-#include "documentdbconfig.h"
 #include <vespa/searchcommon/common/schema.h>
 #include <map>
+#include <set>
 
 namespace proton {
 
 struct ConfigMaps {
     typedef std::shared_ptr<ConfigMaps> SP;
-    std::map<search::SerialNum, DocumentDBConfig::SP> configs;
+    std::map<search::SerialNum, std::shared_ptr<DocumentDBConfig>> configs;
     std::set<search::SerialNum> _valid;
     ~ConfigMaps();
 };
@@ -32,7 +32,7 @@ public:
     bool hasValidSerial(SerialNum serial) const override;
     SerialNum getPrevValidSerial(SerialNum serial) const override;
     void saveConfig(const DocumentDBConfig &config, SerialNum serial) override;
-    void loadConfig(const DocumentDBConfig &, SerialNum serial, DocumentDBConfig::SP &loaded_config) override;
+    void loadConfig(const DocumentDBConfig &, SerialNum serial, std::shared_ptr<DocumentDBConfig> &loaded_config) override;
     void removeInvalid() override;
     void prune(SerialNum serial) override;
     void serializeConfig(SerialNum, vespalib::nbostream &) override;
