@@ -1,17 +1,9 @@
 package com.yahoo.vespa.model.container.xml.embedder;
 
-import com.yahoo.config.FileReference;
-import com.yahoo.config.application.api.ApplicationPackage;
-import com.yahoo.config.application.api.FileRegistry;
-import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 
-import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 

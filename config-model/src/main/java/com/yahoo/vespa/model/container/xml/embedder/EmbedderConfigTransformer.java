@@ -1,6 +1,5 @@
 package com.yahoo.vespa.model.container.xml.embedder;
 
-
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.text.XML;
 import org.w3c.dom.Document;
@@ -99,6 +98,5 @@ public class EmbedderConfigTransformer {
             throw new IllegalArgumentException("Embedder '" + className + "' requires options for " + missingOptions);
         }
     }
-
 
 }
