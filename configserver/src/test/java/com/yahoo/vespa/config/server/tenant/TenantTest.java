@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
-import com.google.common.testing.EqualsTester;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.config.provision.TenantName;
 import org.junit.Before;
@@ -50,11 +49,10 @@ public class TenantTest {
 
     @Test
     public void equals() {
-        new EqualsTester()
-                .addEqualityGroup(t1, t2)
-                .addEqualityGroup(t3)
-                .addEqualityGroup(t4)
-                .testEquals();
+        assertEquals(t1, t2);
+        assertNotEquals(t1, t3);
+        assertNotEquals(t1, t4);
+        assertNotEquals(t3, t4);
     }
 
     @Test
