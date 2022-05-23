@@ -3,7 +3,6 @@
 
 #include "simple_index.h"
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::predicate {
 

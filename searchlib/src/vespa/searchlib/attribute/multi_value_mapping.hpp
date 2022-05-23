@@ -4,7 +4,6 @@
 
 #include "multi_value_mapping.h"
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::attribute {
 

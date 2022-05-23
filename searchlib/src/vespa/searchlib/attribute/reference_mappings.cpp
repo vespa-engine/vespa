@@ -17,9 +17,7 @@ ReferenceMappings::ReferenceMappings(GenerationHolder &genHolder, const std::ato
 {
 }
 
-ReferenceMappings::~ReferenceMappings()
-{
-}
+ReferenceMappings::~ReferenceMappings() = default;
 
 void
 ReferenceMappings::clearMapping(const Reference &entry)

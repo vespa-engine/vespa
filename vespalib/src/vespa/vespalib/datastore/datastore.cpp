@@ -14,4 +14,5 @@ template class DataStoreT<EntryRefT<22> >;
 template void vespalib::Array<vespalib::datastore::DataStoreBase::ElemHold1ListElem>::increase(size_t);
 template class vespalib::RcuVector<vespalib::datastore::EntryRef>;
 template class vespalib::RcuVectorBase<vespalib::datastore::EntryRef>;
-//template void vespalib::RcuVectorBase<vespalib::datastore::EntryRef>::expandAndInsert(const vespalib::datastore::EntryRef &);
+template class vespalib::RcuVector<vespalib::datastore::AtomicEntryRef>;
+template class vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>;
