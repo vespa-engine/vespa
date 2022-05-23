@@ -53,6 +53,10 @@ public class ExportPackages {
            .append("com.yahoo.jdisc.handler, ")
            .append("com.yahoo.jdisc.service, ")
            .append("com.yahoo.jdisc.statistics, ")
+
+           .append("javax.annotation;version=1.2, ")          // TODO Vespa 8: remove after removing Jersey
+           .append("javax.annotation.security;version=1.2, ") //      (If more 3rd party libraries require these, we may have to provide and export anyway
+
            .append("javax.inject;version=1.0.0, ")  // Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept, ")
            .append("org.aopalliance.aop");
