@@ -118,6 +118,14 @@
         <!-- compile -->
 
         <dependency>
+            <!-- TODO Vespa 8: remove dep? -->
+            <!-- Required by Jersey (loaded via javax.ws.rs-api) -->
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-csv</artifactId>
         </dependency>
