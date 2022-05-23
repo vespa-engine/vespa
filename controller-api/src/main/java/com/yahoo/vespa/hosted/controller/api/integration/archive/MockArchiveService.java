@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.archive;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,5 +32,15 @@ public class MockArchiveService implements ArchiveService {
     @Override
     public void updateKeyPolicy(ZoneId zoneId, String keyArn, Set<String> tenantAuthorizedIamRoles) {
         authorizedIamRolesForKey.put(keyArn, tenantAuthorizedIamRoles);
+    }
+
+    @Override
+    public boolean canAddTenantToBucket(ZoneId zoneId, ArchiveBucket bucket) {
+        return bucket.tenants().size() < 5;
+    }
+
+    @Override
+    public URI bucketURI(ZoneId zoneId, String bucketName, TenantName tenantName) {
+        return URI.create(String.format("s3://%s/%s/", bucketName, tenantName.value()));
     }
 }

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.archive;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,4 +21,8 @@ public interface ArchiveService {
     void updateBucketPolicy(ZoneId zoneId, ArchiveBucket bucket, Map<TenantName, String> authorizeIamRoleByTenantName);
 
     void updateKeyPolicy(ZoneId zoneId, String keyArn, Set<String> tenantAuthorizedIamRoles);
+
+    boolean canAddTenantToBucket(ZoneId zoneId, ArchiveBucket bucket);
+
+    URI bucketURI(ZoneId zoneId, String bucketName, TenantName tenantName);
 }
