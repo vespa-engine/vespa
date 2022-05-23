@@ -106,12 +106,16 @@ public class JobRunnerTest {
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, stagingTest).get().hasEnded());
-        runner.maintain();
 
+        runner.maintain();
         phaser.arriveAndAwaitAdvance();
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(succeeded::equals));
-        assertTrue(jobs.last(id, stagingTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasFailed());
+
+        runner.maintain();
+        phaser.arriveAndAwaitAdvance();
+        assertTrue(jobs.last(id, systemTest).get().hasEnded());
+        assertTrue(jobs.last(id, stagingTest).get().hasEnded());
     }
 
     @Test
@@ -442,8 +446,8 @@ public class JobRunnerTest {
             @Override public void execute(Runnable command) {
                 phaser.register();
                 delegate.execute(() -> {
-                    command.run();
-                    phaser.arriveAndDeregister();
+                    try { command.run(); }
+                    finally { phaser.arriveAndDeregister(); }
                 });
             }
         };
