@@ -24,7 +24,7 @@ public class ProxyResponseTest {
                 Map.of(), null, List.of(URI.create("http://example.com")), Path.parse("configserver"));
         ProxyResponse proxyResponse = new ProxyResponse(
                 request,
-                "response link is http://configserver:1234/bla/bla/",
+                "response link is http://configserver:4443/bla/bla/",
                 200,
                 URI.create("http://configserver:1234"),
                 "application/json");
@@ -42,7 +42,7 @@ public class ProxyResponseTest {
                                                 Map.of(), null, List.of(URI.create("http://example.com")), Path.parse("configserver"));
         ProxyResponse proxyResponse = new ProxyResponse(
                 request,
-                "response link is http://configserver:1234/bla/bla/",
+                "response link is http://configserver:4443/bla/bla/",
                 200,
                 URI.create("http://configserver:1234"),
                 "application/json");
