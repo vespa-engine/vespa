@@ -2,6 +2,7 @@
 
 #include "fileconfigmanager.h"
 #include "bootstrapconfig.h"
+#include "documentdbconfigmanager.h"
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config/print/fileconfigwriter.h>
 #include <vespa/config-bucketspaces.h>
@@ -17,6 +18,7 @@
 #include <vespa/config-summary.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/fastos/file.h>
 #include <sstream>
 #include <cassert>
 #include <fcntl.h>

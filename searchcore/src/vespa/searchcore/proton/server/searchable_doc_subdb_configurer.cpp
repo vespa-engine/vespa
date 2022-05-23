@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "reconfig_params.h"
 #include "searchable_doc_subdb_configurer.h"
+#include "reconfig_params.h"
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>

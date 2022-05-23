@@ -2,6 +2,7 @@
 
 #include "fast_access_doc_subdb_configurer.h"
 #include "i_attribute_writer_factory.h"
+#include "documentdbconfig.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
 #include <vespa/searchcore/proton/common/indexschema_inspector.h>

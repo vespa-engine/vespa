@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "documentdbconfig.h"
+#include <memory>
 
-namespace proton
-{
+namespace proton {
+
+class DocumentDBConfig;
 
 /**
  * Class to create adjusted document db config that minimizes the number of
@@ -16,9 +17,8 @@ namespace proton
 class DocumentDBConfigScout
 {
 public:
-    static DocumentDBConfig::SP
-    scout(const DocumentDBConfig::SP &config,
-          const DocumentDBConfig &liveConfig);
+    static std::shared_ptr<DocumentDBConfig>
+    scout(const std::shared_ptr<DocumentDBConfig> &config, const DocumentDBConfig &liveConfig);
 };
 
 }
