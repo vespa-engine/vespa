@@ -160,7 +160,9 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
         if (ExportPackage.class.getName().equals(Type.getType(desc).getClassName())) {
             return visitExportPackage();
         } else {
-            addImportWithTypeDesc(desc);
+            if (visible) {
+                addImportWithTypeDesc(desc);
+            }
             return Analyze.visitAnnotationDefault(this);
         }
     }
