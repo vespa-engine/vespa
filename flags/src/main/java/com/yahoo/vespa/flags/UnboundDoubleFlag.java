@@ -4,12 +4,9 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 
-import javax.annotation.concurrent.Immutable;
-
 /**
  * @author freva
  */
-@Immutable
 public class UnboundDoubleFlag extends UnboundFlagImpl<Double, DoubleFlag, UnboundDoubleFlag> {
     public UnboundDoubleFlag(FlagId id, double defaultValue) {
         this(id, defaultValue, new FetchVector());

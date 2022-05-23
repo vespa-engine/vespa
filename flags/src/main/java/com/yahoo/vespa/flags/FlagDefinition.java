@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import javax.annotation.concurrent.Immutable;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.List;
@@ -10,7 +9,6 @@ import java.util.Set;
 /**
  * @author hakonhall
  */
-@Immutable
 public class FlagDefinition {
     private final UnboundFlag<?, ?, ?> unboundFlag;
     private final List<String> owners;

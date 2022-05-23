@@ -4,12 +4,9 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.LongNode;
 
-import javax.annotation.concurrent.Immutable;
-
 /**
  * @author hakonhall
  */
-@Immutable
 public class UnboundLongFlag extends UnboundFlagImpl<Long, LongFlag, UnboundLongFlag> {
     public UnboundLongFlag(FlagId id, long defaultValue) {
         this(id, defaultValue, new FetchVector());

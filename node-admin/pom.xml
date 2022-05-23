@@ -56,10 +56,6 @@
 
         <!-- Compile -->
         <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>orchestrator-restapi</artifactId>
             <version>${project.version}</version>

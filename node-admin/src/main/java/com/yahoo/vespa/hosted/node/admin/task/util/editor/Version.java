@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
 /**
@@ -10,7 +9,6 @@ import java.util.Objects;
  *
  * @author hakon
  */
-@Immutable
 public class Version {
     private final int version;
 
