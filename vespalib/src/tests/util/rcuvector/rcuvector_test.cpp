@@ -34,7 +34,7 @@ assertUsage(const MemoryUsage & exp, const MemoryUsage & act)
 TEST(RcuVectorTest, basic)
 {
     { // insert
-        RcuVector<int32_t> v(4, 0, 4);
+        RcuVector<int32_t> v(GrowStrategy(4, 0, 4));
         for (int32_t i = 0; i < 100; ++i) {
             v.push_back(i);
             EXPECT_EQ(i, v[i]);
@@ -53,7 +53,7 @@ TEST(RcuVectorTest, basic)
 TEST(RcuVectorTest, resize)
 {
     { // resize percent
-        RcuVector<int32_t> v(2, 50, 0);
+        RcuVector<int32_t> v(GrowStrategy(2, 0.50, 0));
         EXPECT_EQ(2u, v.capacity());
         v.push_back(0);
         EXPECT_EQ(2u, v.capacity());
@@ -65,7 +65,7 @@ TEST(RcuVectorTest, resize)
         EXPECT_TRUE(v.isFull());
     }
     { // resize delta
-        RcuVector<int32_t> v(1, 0, 3);
+        RcuVector<int32_t> v(GrowStrategy(1, 0, 3));
         EXPECT_EQ(1u, v.capacity());
         v.push_back(0);
         EXPECT_EQ(1u, v.capacity());
@@ -75,7 +75,7 @@ TEST(RcuVectorTest, resize)
         EXPECT_TRUE(!v.isFull());
     }
     { // resize both
-        RcuVector<int32_t> v(2, 200, 3);
+        RcuVector<int32_t> v(GrowStrategy(2, 2.0, 3));
         EXPECT_EQ(2u, v.capacity());
         v.push_back(0);
         EXPECT_EQ(2u, v.capacity());
@@ -87,14 +87,14 @@ TEST(RcuVectorTest, resize)
         EXPECT_TRUE(!v.isFull());
     }
     { // reserve
-        RcuVector<int32_t> v(2, 0, 0);
+        RcuVector<int32_t> v(GrowStrategy(2, 0, 0));
         EXPECT_EQ(2u, v.capacity());
         v.unsafe_reserve(8);
         EXPECT_EQ(8u, v.capacity());
     }
     { // explicit resize
         GenerationHolder g;
-        RcuVectorBase<int8_t> v(g);
+        RcuVectorBase<int8_t> v(GrowStrategy(16, 1.0, 0), g);
         v.push_back(1);
         v.push_back(2);
         g.transferHoldLists(0);
@@ -120,7 +120,7 @@ TEST(RcuVectorTest, resize)
 
 TEST(RcuVectorTest, generation_handling)
 {
-    RcuVector<int32_t> v(2, 0, 2);
+    RcuVector<int32_t> v(GrowStrategy(2, 0, 2));
     v.push_back(0);
     v.push_back(10);
     EXPECT_EQ(0u, v.getMemoryUsage().allocatedBytesOnHold());
@@ -143,7 +143,7 @@ TEST(RcuVectorTest, generation_handling)
 
 TEST(RcuVectorTest, reserve)
 {
-    RcuVector<int32_t> v(2, 0, 2);
+    RcuVector<int32_t> v(GrowStrategy(2, 0, 2));
     EXPECT_EQ(2u, v.capacity());
     EXPECT_EQ(0u, v.size());
     v.push_back(0);
@@ -167,7 +167,7 @@ TEST(RcuVectorTest, reserve)
 
 TEST(RcuVectorTest, memory_usage)
 {
-    RcuVector<int8_t> v(2, 0, 2);
+    RcuVector<int8_t> v(GrowStrategy(2, 0, 2));
     EXPECT_TRUE(assertUsage(MemoryUsage(2,0,0,0), v.getMemoryUsage()));
     v.push_back(0);
     EXPECT_TRUE(assertUsage(MemoryUsage(2,1,0,0), v.getMemoryUsage()));
@@ -186,7 +186,7 @@ TEST(RcuVectorTest, memory_usage)
 TEST(RcuVectorTest, shrink_with_buffer_copying)
 {
     GenerationHolder g;
-    RcuVectorBase<int8_t> v(16, 100, 0, g);
+    RcuVectorBase<int8_t> v(GrowStrategy(16, 1.0, 0), g);
     v.push_back(1);
     v.push_back(2);
     v.push_back(3);
@@ -229,7 +229,7 @@ struct ShrinkFixture {
     ShrinkFixture() : g(),
                       initial_capacity(4 * page_ints()),
                       initial_size(initial_capacity / 1024 * 1000),
-                      vec(initial_capacity, 50, 0, g, alloc::Alloc::allocMMap()), oldPtr()
+                      vec(GrowStrategy(initial_capacity, 0.50, 0), g, alloc::Alloc::allocMMap()), oldPtr()
     {
         for (size_t i = 0; i < initial_size; ++i) {
             vec.push_back(7);
@@ -272,7 +272,7 @@ TEST(RcuVectorTest, shrink_can_shrink_mmap_allocation)
 TEST(RcuVectorTest, small_expand)
 {
     GenerationHolder g;
-    RcuVectorBase<int8_t> v(1, 50, 0, g);
+    RcuVectorBase<int8_t> v(GrowStrategy(1, 0.50, 0), g);
     EXPECT_EQ(1u, v.capacity());
     EXPECT_EQ(0u, v.size());
     v.push_back(1);
@@ -321,7 +321,7 @@ struct Fixture : public FixtureBase {
 
 Fixture::Fixture()
     : FixtureBase(),
-      arr(g, initial_alloc)
+      arr(GrowStrategy(16, 1.0, 0), g, initial_alloc)
 {
     arr.reserve(100);
 }
@@ -403,7 +403,7 @@ struct StressFixture : public FixtureBase {
 
 StressFixture::StressFixture()
     : FixtureBase(),
-      arr(g, initial_alloc),
+      arr(GrowStrategy(16, 1.0, 0), g, initial_alloc),
       stop_read(false),
       read_area(1000),
       generation_handler(),

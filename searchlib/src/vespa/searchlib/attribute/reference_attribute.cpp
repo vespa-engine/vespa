@@ -43,7 +43,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
                                        const Config & cfg)
     : NotImplementedAttribute(baseFileName, cfg),
       _store({}),
-      _indices(getGenerationHolder()),
+      _indices(cfg.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
       _compaction_spec(),
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
