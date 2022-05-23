@@ -7,7 +7,6 @@
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>

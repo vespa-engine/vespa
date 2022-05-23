@@ -31,7 +31,6 @@ struct HnswGraph {
     // This stores the level arrays for all nodes.
     // Each node consists of an array of levels (from level 0 to n) where each entry is a reference to the link array at that level.
     using NodeStore = vespalib::datastore::ArrayStore<AtomicEntryRef, LevelArrayEntryRefType>;
-    using StoreConfig = vespalib::datastore::ArrayStoreConfig;
     using LevelArrayRef = NodeStore::ConstArrayRef;
 
     // This stores all link arrays.

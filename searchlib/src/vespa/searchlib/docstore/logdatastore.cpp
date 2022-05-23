@@ -9,7 +9,6 @@
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
