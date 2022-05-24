@@ -30,7 +30,7 @@ public:
           _upper_bound(upper_bound) {
         uint64_t t = _upper_bound;
         while ((t /= _arity) > 0) ++_max_positive_levels;
-        t = -_lower_bound;
+        t = uint64_t(0)-_lower_bound;
         while ((t /= _arity) > 0) ++_max_negative_levels;
     }
 
@@ -55,7 +55,7 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
     uint64_t value;
     int max_levels;
     if (negative) {
-        value = -signed_value;
+        value = uint64_t(0)-signed_value;
         buffer[prefix_size++] = '-';
         max_levels = _max_negative_levels;
     } else {
@@ -72,7 +72,7 @@ void PredicateRangeTermExpander::expand(const vespalib::string &key, int64_t sig
     for (int i = 0; i < max_levels; ++i) {
         uint64_t start = (value / level_size) * level_size;
         if (negative) {
-            if (start + level_size - 1 > uint64_t(-LLONG_MIN)) {
+            if (start + level_size - 1 > (uint64_t(0)-LLONG_MIN)) {
                 break;
             }
             size = sprintf(buffer + prefix_size, "%" PRIu64 "-%" PRIu64,
