@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
+import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import org.junit.Test;
 
@@ -59,7 +60,7 @@ public class ArchiveAccessMaintainerTest {
     private TenantName createTenantWithAccessRole(ControllerTester tester, String tenantName, String role) {
         var tenant = tester.createTenant(tenantName, Tenant.Type.cloud);
         tester.controller().tenants().lockOrThrow(tenant, LockedTenant.Cloud.class, lockedTenant -> {
-            lockedTenant = lockedTenant.withArchiveAccessRole(Optional.of(role));
+            lockedTenant = lockedTenant.withArchiveAccess(new ArchiveAccess(Optional.of(role), Optional.empty()));
             tester.controller().tenants().store(lockedTenant);
         });
         return tenant;

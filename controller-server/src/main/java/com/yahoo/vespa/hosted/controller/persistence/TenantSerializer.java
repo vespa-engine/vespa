@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInf
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
+import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
@@ -77,6 +78,10 @@ public class TenantSerializer {
     private static final String lastLoginInfoField = "lastLoginInfo";
     private static final String secretStoresField = "secretStores";
     private static final String archiveAccessRoleField = "archiveAccessRole";
+    private static final String archiveAccessField = "archiveAccess";
+    private static final String awsArchiveAccessRoleField = "awsArchiveAccessRole";
+    private static final String gcpArchiveAccessMemberField = "gcpArchiveAccessMember";
+
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
 
@@ -117,7 +122,13 @@ public class TenantSerializer {
         toSlime(legacyBillingInfo, root.setObject(billingInfoField));
         toSlime(tenant.info(), root);
         toSlime(tenant.tenantSecretStores(), root);
-        tenant.archiveAccessRole().ifPresent(role -> root.setString(archiveAccessRoleField, role));
+        toSlime(tenant.archiveAccess(), root);
+    }
+
+    private void toSlime(ArchiveAccess archiveAccess, Cursor root) {
+        Cursor object = root.setObject(archiveAccessField);
+        archiveAccess.awsRole().ifPresent(role -> object.setString(awsArchiveAccessRoleField, role));
+        archiveAccess.gcpMember().ifPresent(member -> object.setString(gcpArchiveAccessMemberField, member));
     }
 
     private void toSlime(DeletedTenant tenant, Cursor root) {
@@ -175,8 +186,8 @@ public class TenantSerializer {
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
         TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
         List<TenantSecretStore> tenantSecretStores = secretStoresFromSlime(tenantObject.field(secretStoresField));
-        Optional<String> archiveAccessRole = SlimeUtils.optionalString(tenantObject.field(archiveAccessRoleField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
+        ArchiveAccess archiveAccess = archiveAccessFromSlime(tenantObject);
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccess);
     }
 
     private DeletedTenant deletedTenantFrom(Inspector tenantObject) {
@@ -195,6 +206,20 @@ public class TenantSerializer {
         return keys.build();
     }
 
+    ArchiveAccess archiveAccessFromSlime(Inspector tenantObject) {
+        // TODO(enygaard, 2022-05-24): Remove when all tenants have been rewritten to use ArchiveAccess object
+        Optional<String> archiveAccessRole = SlimeUtils.optionalString(tenantObject.field(archiveAccessRoleField));
+        if (archiveAccessRole.isPresent()) {
+            return new ArchiveAccess(archiveAccessRole, Optional.empty());
+        }
+        Inspector object = tenantObject.field(archiveAccessField);
+        if (!object.valid()) {
+            return new ArchiveAccess();
+        }
+        Optional<String> awsArchiveAccessRole = SlimeUtils.optionalString(object.field(awsArchiveAccessRoleField));
+        Optional<String> gcpArchiveAccessMember = SlimeUtils.optionalString(object.field(gcpArchiveAccessMemberField));
+        return new ArchiveAccess(awsArchiveAccessRole, gcpArchiveAccessMember);
+    }
     TenantInfo tenantInfoFromSlime(Inspector infoObject) {
         if (!infoObject.valid()) return TenantInfo.empty();
 
