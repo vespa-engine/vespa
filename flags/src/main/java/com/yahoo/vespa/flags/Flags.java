@@ -402,6 +402,20 @@ public class Flags {
             "Takes effect on redeployment",
             APPLICATION_ID);
 
+    public static final UnboundStringFlag FILE_DISTRIBUTION_COMPRESSION_ALGORITHM = defineStringFlag(
+            "file-distribution-compression-algorithm", "gzip",
+            List.of("hmusum"), "2022-05-24", "2022-06-24",
+            "Which algorithm to use for compressing file references when distributing files. Valid values: none, gzip",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag FILE_DISTRIBUTION_COMPRESS_SINGLE_FILES = defineFeatureFlag(
+            "file-distribution-compress-single-files", false,
+            List.of("hmusum"), "2022-05-24", "2022-06-24",
+            "Whether to compress a file references that is a single file (directories are compressed by default).",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
