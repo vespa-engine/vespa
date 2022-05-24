@@ -222,6 +222,22 @@
                                     </rules>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>enforce-no-jupiter-compile-scope</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <bannedDependencies>
+                                            <!-- Fail validation for apps with junit-jupiter-api in compile scope. -->
+                                            <excludes>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:compile</exclude>
+                                            </excludes>
+                                        </bannedDependencies>
+                                    </rules>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
