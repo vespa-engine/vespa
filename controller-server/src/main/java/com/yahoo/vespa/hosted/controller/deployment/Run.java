@@ -45,8 +45,9 @@ public class Run {
 
     // For deserialisation only -- do not use!
     public Run(RunId id, Map<Step, StepInfo> steps, Versions versions, boolean isRedeployment, Instant start, Optional<Instant> end,
-               Optional<Instant> sleepUntil, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp, Optional<Instant> noNodesDownSince,
-               Optional<ConvergenceSummary> convergenceSummary, Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<String> reason) {
+               Optional<Instant> sleepUntil, RunStatus status, long lastTestRecord, Instant lastVespaLogTimestamp,
+               Optional<Instant> noNodesDownSince, Optional<ConvergenceSummary> convergenceSummary,
+               Optional<X509Certificate> testerCertificate, boolean dryRun, Optional<String> reason) {
         this.id = id;
         this.steps = Collections.unmodifiableMap(new EnumMap<>(steps));
         this.versions = versions;
@@ -67,8 +68,9 @@ public class Run {
     public static Run initial(RunId id, Versions versions, boolean isRedeployment, Instant now, JobProfile profile, Optional<String> triggeredBy) {
         EnumMap<Step, StepInfo> steps = new EnumMap<>(Step.class);
         profile.steps().forEach(step -> steps.put(step, StepInfo.initial(step)));
-        return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(), Optional.empty(), running,
-                       -1, Instant.EPOCH, Optional.empty(), Optional.empty(), Optional.empty(), profile == JobProfile.developmentDryRun, triggeredBy);
+        return new Run(id, steps, requireNonNull(versions), isRedeployment, requireNonNull(now), Optional.empty(),
+                       Optional.empty(), running, -1, Instant.EPOCH, Optional.empty(), Optional.empty(),
+                       Optional.empty(), profile == JobProfile.developmentDryRun, triggeredBy);
     }
 
     /** Returns a new Run with the status of the given completed step set accordingly. */

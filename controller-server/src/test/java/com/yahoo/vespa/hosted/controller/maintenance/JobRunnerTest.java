@@ -93,8 +93,7 @@ public class JobRunnerTest {
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
         jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
-
-                    start(jobs, id, systemTest);
+        start(jobs, id, systemTest);
         try {
             start(jobs, id, systemTest);
             fail("Job is already running, so this should not be allowed!");
@@ -169,8 +168,8 @@ public class JobRunnerTest {
         outcomes.put(endTests, testFailure);
         runner.maintain();
         assertTrue(run.get().hasFailed());
-        assertEquals(List.of(copyVespaLogs, deactivateTester), run.get().readySteps());
-        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester);
+        assertEquals(List.of(copyVespaLogs), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs);
 
         outcomes.put(copyVespaLogs, running);
         runner.maintain();

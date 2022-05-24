@@ -25,7 +25,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.config.provision.SystemName.main;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.aborted;
 import static com.yahoo.vespa.hosted.controller.deployment.RunStatus.running;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.failed;
@@ -132,6 +131,7 @@ public class RunSerializerTest {
         assertEquals(run.end(), phoenix.end());
         assertEquals(run.status(), phoenix.status());
         assertEquals(run.lastTestLogEntry(), phoenix.lastTestLogEntry());
+        assertEquals(run.lastVespaLogTimestamp(), phoenix.lastVespaLogTimestamp());
         assertEquals(run.noNodesDownSince(), phoenix.noNodesDownSince());
         assertEquals(run.testerCertificate(), phoenix.testerCertificate());
         assertEquals(run.versions(), phoenix.versions());
