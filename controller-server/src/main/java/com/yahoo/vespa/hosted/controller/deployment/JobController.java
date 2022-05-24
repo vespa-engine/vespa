@@ -190,7 +190,7 @@ public class JobController {
                                                                            Map.of("from", Long.toString(from.toEpochMilli()))),
                                                         from);
 
-            if (run.hasStep(installTester) && run.versions().targetPlatform().isAfter(new Version("7.589.14"))) { // todo jonmv: remove
+            if (run.hasStep(installTester) && run.versions().targetPlatform().isAfter(new Version("7.590"))) { // todo jonmv: remove
                 deployedAt = run.stepInfo(installTester).flatMap(StepInfo::startTime).orElseThrow();
                 from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
                 List<LogEntry> testerLog = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()

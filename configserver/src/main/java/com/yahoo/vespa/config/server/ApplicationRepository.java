@@ -1135,9 +1135,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                         .anyMatch(serviceInfo -> serviceInfo.getServiceType().equalsIgnoreCase("logserver")))
                 .findFirst().orElseThrow(() -> new IllegalArgumentException("Could not find host info for logserver"));
 
-        ServiceInfo serviceInfo = logServerHostInfo.getServices().stream().filter(service -> List.of(LOGSERVER_CONTAINER.serviceName, CONTAINER.serviceName).contains(service.getServiceType()))
-                .findFirst().orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
-        int port = servicePort(serviceInfo);
+        ServiceInfo logService = logServerHostInfo.getServices().stream()
+                                                  .filter(service -> LOGSERVER_CONTAINER.serviceName.equals(service.getServiceType()))
+                                                  .findFirst()
+                                                  .or(() -> logServerHostInfo.getServices().stream()
+                                                                             .filter(service -> CONTAINER.serviceName.equals(service.getServiceType()))
+                                                                             .findFirst())
+                                                  .orElseThrow(() -> new IllegalArgumentException("No container running on logserver host"));
+        int port = servicePort(logService);
         return "http://" + logServerHostInfo.getHostname() + ":" + port + "/logs";
     }
 
