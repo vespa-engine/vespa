@@ -2,12 +2,12 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.google.common.io.ByteStreams;
+import com.yahoo.compress.ZstdCompressor;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -28,15 +28,20 @@ import java.util.zip.GZIPOutputStream;
  *
  * @author hmusum
  */
-public class CompressedFileReference {
+public class ZstdFileReference {
 
-    private static final Logger log = Logger.getLogger(CompressedFileReference.class.getName());
+    private static final Logger log = Logger.getLogger(ZstdFileReference.class.getName());
     private static final int recurseDepth = 100;
 
     public static File compress(File baseDir, List<File> inputFiles, File outputFile) throws IOException {
-        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
+        // Files.createTempFile(, );
+        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new FileOutputStream(outputFile));
         archiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
         createArchiveFile(archiveOutputStream, baseDir, inputFiles);
+        try (FileOutputStream out = new FileOutputStream(outputFile);
+             FileInputStream in = new FileInputStream(outputFile)) {
+            out.write(new ZstdCompressor().compress(in.readAllBytes(), 0, 0));
+        }
         return outputFile;
     }
 
