@@ -1183,7 +1183,7 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     }
     Clock::time_point now_ts = Clock::now();
     double latency = std::chrono::duration<double, std::milli>(now_ts - start_time).count();
-    _active_operations_stats.operation_done(latency);
+    _active_operations_stats.guard().stats().operation_done(latency);
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
     }
@@ -1221,7 +1221,7 @@ FileStorHandlerImpl::Stripe::lock(const monitor_guard &, const document::Bucket 
         (void) inserted;
         assert(inserted.second);
     }
-    _active_operations_stats.operation_started();
+    _active_operations_stats.guard().stats().operation_started();
 }
 
 bool
@@ -1259,10 +1259,10 @@ FileStorHandlerImpl::Stripe::operationIsInhibited(const monitor_guard & guard, c
 ActiveOperationsStats
 FileStorHandlerImpl::Stripe::get_active_operations_stats(bool reset_min_max) const
 {
-    std::lock_guard guard(*_lock);
-    auto result = _active_operations_stats;
+    auto guard = _active_operations_stats.guard();
+    auto result = guard.stats();
     if (reset_min_max) {
-        _active_operations_stats.reset_min_max();
+        guard.stats().reset_min_max();
     }
     return result;
 }

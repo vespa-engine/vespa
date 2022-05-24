@@ -98,6 +98,25 @@ public:
             SharedLocks _sharedLocks;
         };
 
+        class SafeActiveOperationsStats {
+        private:
+            std::unique_ptr<std::mutex> _lock;
+            ActiveOperationsStats _stats;
+            struct ctor_tag {};
+        public:
+            class Guard {
+            private:
+                std::lock_guard<std::mutex> _guard;
+                ActiveOperationsStats &_stats;
+            public:
+                Guard(Guard &&) = delete;
+                Guard(std::mutex &lock, ActiveOperationsStats &stats_in, ctor_tag) : _guard(lock), _stats(stats_in) {}
+                ActiveOperationsStats &stats() { return _stats; }
+            };
+            SafeActiveOperationsStats() : _lock(std::make_unique<std::mutex>()), _stats() {}
+            Guard guard() { return Guard(*_lock, _stats, ctor_tag()); }
+        };
+
         Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender);
         Stripe(Stripe &&) noexcept;
         Stripe(const Stripe &) = delete;
@@ -170,7 +189,7 @@ public:
         atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_merges;
-        mutable ActiveOperationsStats   _active_operations_stats;
+        mutable SafeActiveOperationsStats _active_operations_stats;
     };
 
     class BucketLock : public FileStorHandler::BucketLockInterface {
