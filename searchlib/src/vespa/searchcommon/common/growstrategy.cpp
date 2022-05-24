@@ -5,9 +5,11 @@
 
 namespace search {
 
-std::ostream& operator<<(std::ostream& os, const GrowStrategy& grow_strategy)
+std::ostream&
+operator<<(std::ostream& os, const GrowStrategy& grow_strategy)
 {
     os << "{docsInitialCapacity=" << grow_strategy.getDocsInitialCapacity() <<
+        ", docsMinimumCapacity=" << grow_strategy.getDocsMinimumCapacity() <<
         ", docsGrowFactor=" << grow_strategy.getDocsGrowFactor() <<
         ", docsGrowDelta=" << grow_strategy.getDocsGrowDelta() <<
         ", multiValueAllocGrowFactor=" << grow_strategy.getMultiValueAllocGrowFactor() <<

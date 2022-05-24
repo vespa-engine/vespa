@@ -12,16 +12,18 @@ class GrowStrategy
 {
 private:
     uint32_t _docsInitialCapacity;
+    uint32_t _docsMinimumCapacity;
     float    _docsGrowFactor;
     uint32_t _docsGrowDelta;
     float    _multiValueAllocGrowFactor;
 public:
     GrowStrategy() noexcept
-        : GrowStrategy(1024, 0.5, 0, 0.2)
+        : GrowStrategy(1024, 0.5, 0, 0, 0.2)
     {}
     GrowStrategy(uint32_t docsInitialCapacity, float docsGrowFactor,
-                 uint32_t docsGrowDelta, float multiValueAllocGrowFactor) noexcept
+                 uint32_t docsGrowDelta, uint32_t docsMinimumCapacity, float multiValueAllocGrowFactor) noexcept
         : _docsInitialCapacity(docsInitialCapacity),
+          _docsMinimumCapacity(docsMinimumCapacity),
           _docsGrowFactor(docsGrowFactor),
           _docsGrowDelta(docsGrowDelta),
           _multiValueAllocGrowFactor(multiValueAllocGrowFactor)
@@ -29,19 +31,21 @@ public:
     }
 
     static GrowStrategy make(uint32_t docsInitialCapacity, float docsGrowFactor, uint32_t docsGrowDelta) {
-        return GrowStrategy(docsInitialCapacity, docsGrowFactor, docsGrowDelta, 0.2);
+        return GrowStrategy(docsInitialCapacity, docsGrowFactor, docsGrowDelta, 0, 0.2);
     }
 
     uint32_t    getDocsInitialCapacity() const { return _docsInitialCapacity; }
+    uint32_t    getDocsMinimumCapacity() const { return _docsMinimumCapacity; }
     uint32_t        getDocsGrowPercent() const { return _docsGrowFactor*100; }
     float            getDocsGrowFactor() const { return _docsGrowFactor; }
     uint32_t          getDocsGrowDelta() const { return _docsGrowDelta; }
     float getMultiValueAllocGrowFactor() const { return _multiValueAllocGrowFactor; }
     void    setDocsInitialCapacity(uint32_t v) { _docsInitialCapacity = v; }
+    void    setDocsMinimumCapacity(uint32_t v) { _docsMinimumCapacity = v; }
     void          setDocsGrowDelta(uint32_t v) { _docsGrowDelta = v; }
 
     vespalib::GrowStrategy to_generic_strategy() const {
-        return vespalib::GrowStrategy(_docsInitialCapacity, _docsGrowFactor, _docsGrowDelta);
+        return vespalib::GrowStrategy(_docsInitialCapacity, _docsGrowFactor, _docsGrowDelta, _docsMinimumCapacity);
     }
 
     bool operator==(const GrowStrategy & rhs) const {

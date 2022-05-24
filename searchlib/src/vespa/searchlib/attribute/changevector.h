@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vector>
 
 namespace vespalib { class MemoryUsage; }
