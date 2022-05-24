@@ -662,7 +662,10 @@ public class InternalStepRunner implements StepRunner {
                                      "or a Java test bundle under 'components/' with at least one test with the annotation " +
                                      "for this suite. See docs.vespa.ai/en/testing.html for details.");
                     controller.jobController().updateTestReport(id);
-                    return Optional.of(noTests);
+
+                    DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
+                    boolean requireTests = spec.steps().stream().anyMatch(step -> step.concerns(id.type().environment()));
+                    return Optional.of(requireTests ? testFailure : noTests);
                 }
             case SUCCESS:
                 logger.log("Tests completed successfully.");
