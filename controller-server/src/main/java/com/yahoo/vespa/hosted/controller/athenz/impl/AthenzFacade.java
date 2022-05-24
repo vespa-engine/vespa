@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.restapi.RestApiException;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -33,7 +34,6 @@ import com.yahoo.vespa.hosted.controller.security.TenantSpec;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
-import javax.ws.rs.ForbiddenException;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -197,7 +197,7 @@ public class AthenzFacade implements AccessControl {
         }
         catch (ZmsClientException e) {
             if (e.getErrorCode() == com.yahoo.jdisc.Response.Status.FORBIDDEN)
-                throw new ForbiddenException("Not authorized to create application", e);
+                throw new RestApiException.Forbidden("Not authorized to create application", e);
             else
                 throw e;
         }
@@ -289,7 +289,7 @@ public class AthenzFacade implements AccessControl {
     private void verifyIsDomainAdmin(AthenzIdentity identity, AthenzDomain domain) {
         log("getMembership(domain=%s, role=%s, principal=%s)", domain, "admin", identity);
         if ( ! zmsClient.getMembership(new AthenzRole(domain, "admin"), identity))
-            throw new ForbiddenException(
+            throw new RestApiException.Forbidden(
                     Text.format("The user '%s' is not admin in Athenz domain '%s'", identity.getFullName(), domain.getName()));
     }
 

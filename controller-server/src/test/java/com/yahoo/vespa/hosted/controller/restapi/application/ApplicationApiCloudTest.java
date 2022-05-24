@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.restapi.RestApiException;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
@@ -29,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import org.junit.Before;
 import org.junit.Test;
 
-import javax.ws.rs.ForbiddenException;
 import java.io.File;
 import java.util.Collections;
 import java.util.Optional;
@@ -221,7 +221,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         try {
             tester.controller().tenants().create(tenantSpec("tenant2"), credentials("administrator"));
             fail("Should not be allowed to create tenant that exceed trial limit");
-        } catch (ForbiddenException e) {
+        } catch (RestApiException.Forbidden e) {
             assertEquals("Too many tenants with trial plans, please contact the Vespa support team", e.getMessage());
         }
     }

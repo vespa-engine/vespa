@@ -12,6 +12,7 @@ import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.restapi.RestApiException;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
@@ -27,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 import com.yahoo.yolean.Exceptions;
 
-import javax.ws.rs.InternalServerErrorException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -203,7 +203,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
 
     private static Principal requireUserPrincipal(HttpRequest request) {
         Principal principal = request.getJDiscRequest().getUserPrincipal();
-        if (principal == null) throw new InternalServerErrorException("Expected a user principal");
+        if (principal == null) throw new RestApiException.InternalServerError("Expected a user principal");
         return principal;
     }
 }
