@@ -13,7 +13,7 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.filedistribution.CompressedFileReference;
+import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
@@ -36,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 
 public class FileServer {
 
@@ -150,8 +151,8 @@ public class FileServer {
 
         if (file.isDirectory()) {
             Path tempFile = Files.createTempFile("filereferencedata", reference.value());
-            File compressedFile = CompressedFileReference.compress(file.getParentFile(), tempFile.toFile());
-            return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), FileReferenceData.Type.compressed, compressedFile);
+            File compressedFile = new FileReferenceCompressor(compressed).compress(file.getParentFile(), tempFile.toFile());
+            return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile);
         } else {
             return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
         }
@@ -196,7 +197,6 @@ public class FileServer {
                 .add(new StringValue(result.getDescription()));
         request.returnRequest();
     }
-
 
     boolean hasFileDownloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
         FileReference fileReference = fileReferenceDownload.fileReference();

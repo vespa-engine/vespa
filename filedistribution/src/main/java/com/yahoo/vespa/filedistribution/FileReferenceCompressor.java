@@ -7,16 +7,17 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -28,36 +29,36 @@ import java.util.zip.GZIPOutputStream;
  *
  * @author hmusum
  */
-public class CompressedFileReference {
+public class FileReferenceCompressor {
 
-    private static final Logger log = Logger.getLogger(CompressedFileReference.class.getName());
+    private static final Logger log = Logger.getLogger(FileReferenceCompressor.class.getName());
     private static final int recurseDepth = 100;
 
-    public static File compress(File baseDir, List<File> inputFiles, File outputFile) throws IOException {
-        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outputFile)));
+    private final FileReferenceData.Type type;
+
+    public FileReferenceCompressor(FileReferenceData.Type type) {
+        this.type = Objects.requireNonNull(type, "Type cannot be null");
+    }
+
+    public File compress(File baseDir, List<File> inputFiles, File outputFile) throws IOException {
+        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(compressedOutputStream(outputFile));
         archiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
         createArchiveFile(archiveOutputStream, baseDir, inputFiles);
         return outputFile;
     }
 
-    public static File compress(File directory, File outputFile) throws IOException {
-        return compress(directory, Files.find(Paths.get(directory.getAbsolutePath()),
-                recurseDepth,
-                (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
-                .map(Path::toFile).collect(Collectors.toList()), outputFile);
+    public File compress(File directory, File outputFile) throws IOException {
+        return compress(directory,
+                        Files.find(Paths.get(directory.getAbsolutePath()),
+                                   recurseDepth,
+                                   (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
+                             .map(Path::toFile).collect(Collectors.toList()),
+                        outputFile);
     }
 
-    public static byte[] compress(File baseDir, List<File> inputFiles) throws IOException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        TarArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(out));
-        archiveOutputStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
-        createArchiveFile(archiveOutputStream, baseDir, inputFiles);
-        return out.toByteArray();
-    }
-
-    static void decompress(File inputFile, File outputDir) throws IOException {
+    public void decompress(File inputFile, File outputDir) throws IOException {
         log.log(Level.FINE, () -> "Decompressing '" + inputFile + "' into '" + outputDir + "'");
-        try (ArchiveInputStream ais = new TarArchiveInputStream(new GZIPInputStream(new FileInputStream(inputFile)))) {
+        try (ArchiveInputStream ais = new TarArchiveInputStream(decompressedInputStream(inputFile))) {
             decompress(ais, outputDir);
         } catch (IllegalArgumentException e) {
             throw new RuntimeException("Unable to decompress '" + inputFile.getAbsolutePath() + "': " + e.getMessage());
@@ -111,5 +112,28 @@ public class CompressedFileReference {
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();
     }
+
+    private OutputStream compressedOutputStream(File outputFile) throws IOException {
+        switch (type) {
+            case compressed:
+                return new GZIPOutputStream(new FileOutputStream(outputFile));
+            case file:
+                return new FileOutputStream(outputFile);
+            default:
+                throw new RuntimeException("Unknown file reference type " + type);
+        }
+    }
+
+    private InputStream decompressedInputStream(File inputFile) throws IOException {
+        switch (type) {
+            case compressed:
+                return new GZIPInputStream(new FileInputStream(inputFile));
+            case file:
+                return new FileInputStream(inputFile);
+            default:
+                throw new RuntimeException("Unknown file reference type " + type);
+        }
+    }
+
 }
 
