@@ -35,6 +35,7 @@ import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
+import com.yahoo.restapi.RestApiException;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
@@ -122,9 +123,6 @@ import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
 
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotAuthorizedException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -208,10 +206,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is not supported");
             }
         }
-        catch (ForbiddenException e) {
+        catch (RestApiException.Forbidden e) {
             return ErrorResponse.forbidden(Exceptions.toMessageString(e));
         }
-        catch (NotAuthorizedException e) {
+        catch (RestApiException.Unauthorized e) {
             return ErrorResponse.unauthorized(Exceptions.toMessageString(e));
         }
         catch (NotExistsException e) {
@@ -2531,7 +2529,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static Principal requireUserPrincipal(HttpRequest request) {
         Principal principal = request.getJDiscRequest().getUserPrincipal();
-        if (principal == null) throw new InternalServerErrorException("Expected a user principal");
+        if (principal == null) throw new RestApiException.InternalServerError("Expected a user principal");
         return principal;
     }
 

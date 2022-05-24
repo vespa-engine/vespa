@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.security;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.restapi.RestApiException;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -22,7 +23,6 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
-import javax.ws.rs.ForbiddenException;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -76,7 +76,7 @@ public class CloudAccessControl implements AccessControl {
         var trialTenants = billingController.tenantsWithPlan(tenantNames, trialPlanId).size();
 
         if (maxTrialTenants.value() >= 0 && maxTrialTenants.value() <= trialTenants) {
-            throw new ForbiddenException("Too many tenants with trial plans, please contact the Vespa support team");
+            throw new RestApiException.Forbidden("Too many tenants with trial plans, please contact the Vespa support team");
         }
     }
 
@@ -84,11 +84,11 @@ public class CloudAccessControl implements AccessControl {
         if (allowedByPrivilegedRole(auth0Credentials)) return;
 
         if (!allowedByFeatureFlag(auth0Credentials)) {
-            throw new ForbiddenException("You are not currently permitted to create tenants. Please contact the Vespa team to request access.");
+            throw new RestApiException.Forbidden("You are not currently permitted to create tenants. Please contact the Vespa team to request access.");
         }
 
         if(administeredTenants(auth0Credentials) >= 3) {
-            throw new ForbiddenException("You are already administering 3 tenants. If you need more, please contact the Vespa team.");
+            throw new RestApiException.Forbidden("You are already administering 3 tenants. If you need more, please contact the Vespa team.");
         }
     }
 
