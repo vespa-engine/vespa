@@ -15,6 +15,7 @@ import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.test.HostedConfigModelRegistry;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
@@ -451,6 +452,21 @@ public class HostedDeployTest {
         assertEquals(Optional.of(ApplicationReindexing.empty()
                                                       .withPending("cluster", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
+    }
+
+    @Test
+    public void testRedeployWithCloudAccount() {
+        CloudAccount cloudAccount = new CloudAccount("012345678912");
+        DeployTester tester = new DeployTester.Builder(temporaryFolder)
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .build();
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                .vespaVersion("4.5.6")
+                .cloudAccount(cloudAccount));
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
+        assertTrue(deployment.isPresent());
+        deployment.get().activate();
+        assertEquals(cloudAccount, ((Deployment) deployment.get()).session().getCloudAccount().get());
     }
 
     /** Create the given number of hosts using the supplied versions--the last version is repeated as needed. */

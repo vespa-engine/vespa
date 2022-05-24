@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -142,6 +143,10 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeOperatorCertificates(operatorCertificates);
     }
 
+    public void setCloudAccount(Optional<CloudAccount> cloudAccount) {
+        sessionZooKeeperClient.writeCloudAccount(cloudAccount);
+    }
+
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
     public ApplicationId getApplicationId() {
         return sessionZooKeeperClient.readApplicationId()
@@ -179,6 +184,10 @@ public abstract class Session implements Comparable<Session>  {
 
     public List<X509Certificate> getOperatorCertificates() {
         return sessionZooKeeperClient.readOperatorCertificates();
+    }
+
+    public Optional<CloudAccount> getCloudAccount() {
+        return sessionZooKeeperClient.readCloudAccount();
     }
 
     private Transaction createSetStatusTransaction(Status status) {
