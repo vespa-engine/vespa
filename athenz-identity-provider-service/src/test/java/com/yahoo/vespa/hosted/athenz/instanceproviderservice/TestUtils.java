@@ -18,7 +18,8 @@ public class TestUtils {
                         .domain(domain)
                         .certDnsSuffix(dnsSuffix)
                         .ztsUrl("localhost/zts")
-                        .secretName("s3cr3t");
+                        .secretName("s3cr3t")
+                        .caCertSecretName(domain + ".ca.cert");
         return new AthenzProviderServiceConfig(
                 zoneConfig.athenzCaTrustStore("/dummy/path/to/athenz-ca.jks"));
     }

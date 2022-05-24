@@ -13,6 +13,9 @@ secretName                                string
 # Secret version
 secretVersion                             int
 
+# Secret name of CA certificate
+caCertSecretName                          string
+
 # Certificate DNS suffix
 certDnsSuffix                             string
 
