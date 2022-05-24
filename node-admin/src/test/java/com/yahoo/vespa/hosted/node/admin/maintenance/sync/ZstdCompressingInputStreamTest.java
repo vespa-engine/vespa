@@ -11,6 +11,7 @@ import java.util.Random;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.ZstdCompressingInputStream.compressor;
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author freva
@@ -25,7 +26,21 @@ public class ZstdCompressingInputStreamTest {
         assertCompression(data, 1 << 14);
     }
 
+    @Test
+    public void compress_empty_file_test() {
+        byte[] compressedData = compress(new byte[0], 1 << 10);
+        assertEquals("zstd compressing an empty file results in a 13 bytes file", 13, compressedData.length);
+    }
+
     private static void assertCompression(byte[] data, int bufferSize) {
+        byte[] compressedData = compress(data, bufferSize);
+        byte[] decompressedData = new byte[data.length];
+        compressor.decompress(compressedData, 0, compressedData.length, decompressedData, 0, decompressedData.length);
+
+        assertArrayEquals(data, decompressedData);
+    }
+
+    private static byte[] compress(byte[] data, int bufferSize) {
         ByteArrayInputStream bais = new ByteArrayInputStream(data);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZstdCompressingInputStream zcis = new ZstdCompressingInputStream(bais, bufferSize)) {
@@ -37,10 +52,6 @@ public class ZstdCompressingInputStreamTest {
             throw new UncheckedIOException(e);
         }
 
-        byte[] compressedData = baos.toByteArray();
-        byte[] decompressedData = new byte[data.length];
-        compressor.decompress(compressedData, 0, compressedData.length, decompressedData, 0, decompressedData.length);
-
-        assertArrayEquals(data, decompressedData);
+        return baos.toByteArray();
     }
 }
