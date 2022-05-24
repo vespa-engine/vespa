@@ -12,13 +12,11 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.io.IOUtils;
-import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.AbstractTransaction;
 import com.yahoo.transaction.NestedTransaction;
@@ -52,6 +50,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.KeeperException;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -279,6 +278,7 @@ public class SessionRepository {
         session.setAthenzDomain(existingSession.getAthenzDomain());
         session.setTenantSecretStores(existingSession.getTenantSecretStores());
         session.setOperatorCertificates(existingSession.getOperatorCertificates());
+        session.setCloudAccount(existingSession.getCloudAccount());
         return session;
     }
 
