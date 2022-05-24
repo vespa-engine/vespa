@@ -1,0 +1,93 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='300.38627894289516' height='20' role='img' aria-label='Deployment Status'>
+    <title>Deployment Status</title>
+    <linearGradient id='light' x2='0' y2='100%'>
+        <stop offset='0'  stop-color='#fff' stop-opacity='.5'/>
+        <stop offset='.1' stop-color='#fff' stop-opacity='.15'/>
+        <stop offset='.9' stop-color='#000' stop-opacity='.15'/>
+        <stop offset='1'  stop-color='#000' stop-opacity='.5'/>
+    </linearGradient>
+    <linearGradient id='left-light' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#fff' stop-opacity='.3'/>
+        <stop offset='.5' stop-color='#fff' stop-opacity='.1'/>
+        <stop offset='1' stop-color='#fff' stop-opacity='.0'/>
+    </linearGradient>
+    <linearGradient id='right-shadow' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#000' stop-opacity='.0'/>
+        <stop offset='.5' stop-color='#000' stop-opacity='.1'/>
+        <stop offset='1' stop-color='#000' stop-opacity='.3'/>
+    </linearGradient>
+    <linearGradient id='shadow' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#222' stop-opacity='.3'/>
+        <stop offset='.625' stop-color='#555' stop-opacity='.3'/>
+        <stop offset='.9' stop-color='#555' stop-opacity='.05'/>
+        <stop offset='1' stop-color='#555' stop-opacity='.0'/>
+    </linearGradient>
+    <linearGradient id='shade' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#000' stop-opacity='.20'/>
+        <stop offset='0.05' stop-color='#000' stop-opacity='.10'/>
+        <stop offset='1' stop-color='#000' stop-opacity='.0'/>
+    </linearGradient>
+    <linearGradient id='run-on-failure' x1='40%' x2='80%' y2='0%'>
+        <stop offset='0' stop-color='#ab83ff' />
+        <stop offset='1' stop-color='#bf103c' />
+        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
+        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
+    </linearGradient>
+    <linearGradient id='run-on-warning' x1='40%' x2='80%' y2='0%'>
+        <stop offset='0' stop-color='#ab83ff' />
+        <stop offset='1' stop-color='#bd890b' />
+        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
+        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
+    </linearGradient>
+    <linearGradient id='run-on-success' x1='40%' x2='80%' y2='0%'>
+        <stop offset='0' stop-color='#ab83ff' />
+        <stop offset='1' stop-color='#00f844' />
+        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
+        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
+    </linearGradient>
+    <clipPath id='rounded'>
+        <rect width='300.38627894289516' height='20' rx='3' fill='#fff'/>
+    </clipPath>
+    <g clip-path='url(#rounded)'>
+        <rect x='297.7936599677133' rx='3' width='8' height='20' fill='url(#shadow)'/>
+        <rect x='267.7546449838567' rx='3' width='36.03901498385664' height='20' fill='#00f844'/>
+        <rect x='267.7546449838567' rx='3' width='36.03901498385664' height='20' fill='url(#shade)'/>
+        <rect x='271.5979829411765' rx='3' width='8' height='20' fill='url(#shadow)'/>
+        <rect x='237.71563000000003' rx='3' width='39.88235294117647' height='20' fill='#00f844'/>
+        <rect x='237.71563000000003' rx='3' width='39.88235294117647' height='20' fill='url(#shade)'/>
+        <rect x='237.71563000000003' rx='3' width='8' height='20' fill='url(#shadow)'/>
+        <rect x='163.18729000000002' rx='3' width='80.52834000000001' height='20' fill='url(#run-on-warning)'/>
+        <rect x='163.18729000000002' rx='3' width='80.52834000000001' height='20' fill='url(#shade)'/>
+        <rect width='169.18729000000002' height='20' fill='#404040'/>
+        <rect x='-6.0' rx='3' width='175.18729000000002' height='20' fill='url(#shade)'/>
+        <rect width='2' height='20' fill='url(#left-light)'/>
+        <rect x='298.38627894289516' width='2' height='20' fill='url(#right-shadow)'/>
+        <rect width='300.38627894289516' height='20' fill='url(#light)'/>
+    </g>
+    <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='11'>
+        <svg x='6.5' y='3.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+            <polygon fill='#402a14' fill-opacity='0.5' points='84.84 10 34.1 44.46 34.1 103.78 84.84 68.02 135.57 103.78 135.57 44.46 84.84 10'/>
+            <polygon fill='#402a14' fill-opacity='0.5' points='84.84 68.02 84.84 10 135.57 44.46 135.57 103.78 84.84 68.02'/>
+            <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
+            <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
+        </svg>
+        <svg x='6.0' y='2.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+            <linearGradient id='yellow-shaded' x1='91.17' y1='44.83' x2='136.24' y2='73.4'  gradientUnits='userSpaceOnUse'>
+                <stop offset='0.01' stop-color='#c6783e'/>
+                <stop offset='0.54' stop-color='#ff9750'/>
+            </linearGradient>
+            <linearGradient id='blue-shaded' x1='60.71' y1='104.56' x2='-15.54' y2='63' gradientUnits='userSpaceOnUse'>
+                <stop offset='0' stop-color='#005a8e'/>
+                <stop offset='0.54' stop-color='#1a7db6'/>
+            </linearGradient>
+            <polygon fill='#ff9d4b' points='84.84 10 34.1 44.46 34.1 103.78 84.84 68.02 135.57 103.78 135.57 44.46 84.84 10'/>
+            <polygon fill='url(#yellow-shaded)' points='84.84 68.02 84.84 10 135.57 44.46 135.57 103.78 84.84 68.02'/>
+            <polygon fill='#1a7db6' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
+            <polygon fill='url(#blue-shaded)' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
+        </svg>
+        <text font-size='11' x='96.09364500000001' y='15' fill='#000' fill-opacity='.4' textLength='135.18729000000002'>tenant.application.default</text>
+        <text font-size='11' x='95.59364500000001' y='14' fill='#fff' textLength='135.18729000000002'>tenant.application.default</text>
+        <text font-size='11' x='206.95146000000003' y='15' fill='#000' fill-opacity='.4' textLength='62.52834000000001'>system-test</text>
+        <text font-size='11' x='206.45146000000003' y='14' fill='#fff' textLength='62.52834000000001'>system-test</text>
+    </g>
+</svg>
