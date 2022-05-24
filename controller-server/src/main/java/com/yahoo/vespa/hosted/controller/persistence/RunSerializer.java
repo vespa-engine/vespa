@@ -91,7 +91,6 @@ class RunSerializer {
     private static final String sourceField = "source";
     private static final String lastTestRecordField = "lastTestRecord";
     private static final String lastVespaLogTimestampField = "lastVespaLogTimestamp";
-    private static final String lastTesterLogTimestampField = "lastTesterLogTimestamp";
     private static final String noNodesDownSinceField = "noNodesDownSince";
     private static final String convergenceSummaryField = "convergenceSummaryV2";
     private static final String testerCertificateField = "testerCertificate";
@@ -138,7 +137,6 @@ class RunSerializer {
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
                        Instant.EPOCH.plus(runObject.field(lastVespaLogTimestampField).asLong(), ChronoUnit.MICROS),
-                       Instant.EPOCH.plus(runObject.field(lastTesterLogTimestampField).asLong(), ChronoUnit.MICROS),
                        SlimeUtils.optionalInstant(runObject.field(noNodesDownSinceField)),
                        convergenceSummaryFrom(runObject.field(convergenceSummaryField)),
                        Optional.of(runObject.field(testerCertificateField))
@@ -216,7 +214,6 @@ class RunSerializer {
         runObject.setString(statusField, valueOf(run.status()));
         runObject.setLong(lastTestRecordField, run.lastTestLogEntry());
         if (run.lastVespaLogTimestamp().isAfter(Instant.EPOCH)) runObject.setLong(lastVespaLogTimestampField, Instant.EPOCH.until(run.lastVespaLogTimestamp(), ChronoUnit.MICROS));
-        if (run.lastTesterLogTimestamp().isAfter(Instant.EPOCH)) runObject.setLong(lastTesterLogTimestampField, Instant.EPOCH.until(run.lastTesterLogTimestamp(), ChronoUnit.MICROS));
         run.noNodesDownSince().ifPresent(noNodesDownSince -> runObject.setLong(noNodesDownSinceField, noNodesDownSince.toEpochMilli()));
         run.convergenceSummary().ifPresent(convergenceSummary -> toSlime(convergenceSummary, runObject.setArray(convergenceSummaryField)));
         run.testerCertificate().ifPresent(certificate -> runObject.setString(testerCertificateField, X509CertificateUtils.toPem(certificate)));

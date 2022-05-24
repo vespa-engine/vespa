@@ -67,9 +67,11 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.succeeded
 import static com.yahoo.vespa.hosted.controller.deployment.Step.Status.unfinished;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
-import static com.yahoo.vespa.hosted.controller.deployment.Step.deployTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Comparator.comparing;
@@ -181,28 +183,32 @@ public class JobController {
             if (deployment.isEmpty() || deployment.get().at().isBefore(run.start()))
                 return run;
 
-            Instant vespaFrom = run.lastVespaLogTimestamp().isAfter(deployment.get().at()) ? run.lastVespaLogTimestamp() : deployment.get().at();
+            Instant deployedAt = run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)).flatMap(StepInfo::startTime).orElseThrow();
+            Instant from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
             List<LogEntry> log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
                                                                   .getLogs(new DeploymentId(id.application(), zone),
-                                                                           Map.of("from", Long.toString(vespaFrom.toEpochMilli()))),
-                                                        vespaFrom);
-            vespaFrom = log.isEmpty() ? vespaFrom : log.get(log.size() - 1).at();
+                                                                           Map.of("from", Long.toString(from.toEpochMilli()))),
+                                                        from);
 
-            Instant testerFrom = run.lastTesterLogTimestamp().isAfter(deployment.get().at()) ? run.lastTesterLogTimestamp() : deployment.get().at();
-            if (run.hasStep(deployTester) && run.versions().targetPlatform().isAfter(new Version("7.589.14"))) { // todo jonmv: remove
+            if (run.hasStep(installTester) && run.versions().targetPlatform().isAfter(new Version("7.589.14"))) { // todo jonmv: remove
+                deployedAt = run.stepInfo(installTester).flatMap(StepInfo::startTime).orElseThrow();
+                from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
                 List<LogEntry> testerLog = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
                                                                             .getLogs(new DeploymentId(id.tester().id(), zone),
-                                                                                     Map.of("from", Long.toString(testerFrom.toEpochMilli()))),
-                                                                  testerFrom);
-                testerFrom = testerLog.isEmpty() ? testerFrom : testerLog.get(testerLog.size() - 1).at();
+                                                                                     Map.of("from", Long.toString(from.toEpochMilli()))),
+                                                                  from);
 
-                log = Stream.concat(log.stream(), testerLog.stream()).sorted(comparing(LogEntry::at)).collect(toUnmodifiableList());
+                Instant justNow = controller.clock().instant().minusSeconds(2);
+                log = Stream.concat(log.stream(), testerLog.stream())
+                            .filter(entry -> entry.at().isBefore(justNow))
+                            .sorted(comparing(LogEntry::at))
+                            .collect(toUnmodifiableList());
             }
             if (log.isEmpty())
                 return run;
 
             logs.append(id.application(), id.type(), Step.copyVespaLogs, log);
-            return run.with(vespaFrom, testerFrom);
+            return run.with(log.get(log.size() - 1).at());
         });
     }
 
