@@ -241,6 +241,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_protocols.rate"));
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.incompatible_ciphers.rate"));
         metrics.add(new Metric("jdisc.http.ssl.handshake.failure.unknown.rate"));
+        metrics.add(new Metric("jdisc.http.ssl.handshake.failure.connection_closed.rate"));
 
         metrics.add(new Metric("jdisc.http.handler.unhandled_exceptions.rate"));
 

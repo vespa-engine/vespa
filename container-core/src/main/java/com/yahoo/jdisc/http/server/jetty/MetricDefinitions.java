@@ -64,6 +64,7 @@ class MetricDefinitions {
     static final String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS = "jdisc.http.ssl.handshake.failure.incompatible_protocols";
     static final String SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS = "jdisc.http.ssl.handshake.failure.incompatible_ciphers";
     static final String SSL_HANDSHAKE_FAILURE_UNKNOWN = "jdisc.http.ssl.handshake.failure.unknown";
+    static final String SSL_HANDSHAKE_FAILURE_CONNECTION_CLOSED = "jdisc.http.ssl.handshake.failure.connection_closed";
 
     static final String JETTY_THREADPOOL_MAX_THREADS = "jdisc.http.jetty.threadpool.thread.max";
     static final String JETTY_THREADPOOL_MIN_THREADS = "jdisc.http.jetty.threadpool.thread.min";
