@@ -34,19 +34,19 @@ public class ArchiveAccessMaintainerTest {
         String tenant1role = "arn:aws:iam::123456789012:role/my-role";
         String tenant2role = "arn:aws:iam::210987654321:role/my-role";
         var tenant1 = createTenantWithAccessRole(tester, "tenant1", tenant1role);
-        createTenantWithAccessRole(tester, "tenant2", tenant2role);
+        var tenant2 = createTenantWithAccessRole(tester, "tenant2", tenant2role);
 
         ZoneId testZone = ZoneId.from("prod.aws-us-east-1c");
         tester.controller().archiveBucketDb().archiveUriFor(testZone, tenant1, true);
         var testBucket = new ArchiveBucket("bucketName", "keyArn").withTenant(tenant1);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
-        assertNull(archiveService.authorizedIamRolesForBucket.get(testBucket));
-        assertNull(archiveService.authorizedIamRolesForKey.get(testBucket.keyArn()));
+
+        assertEquals(0, archiveService.authorizeAccessByTenantName.size());
         MockMetric metric = new MockMetric();
         new ArchiveAccessMaintainer(tester.controller(), metric, Duration.ofMinutes(10)).maintain();
-        assertEquals(Map.of(tenant1, tenant1role), archiveService.authorizedIamRolesForBucket.get(testBucket));
-        assertEquals(Set.of(tenant1role), archiveService.authorizedIamRolesForKey.get(testBucket.keyArn()));
+        assertEquals(new ArchiveAccess(Optional.of(tenant1role), Optional.empty()), archiveService.authorizeAccessByTenantName.get(tenant1));
+        assertEquals(new ArchiveAccess(Optional.of(tenant2role), Optional.empty()), archiveService.authorizeAccessByTenantName.get(tenant2));
 
         var expected = Map.of("archive.bucketCount",
                               tester.controller().zoneRegistry().zonesIncludingSystem().all().ids().stream()

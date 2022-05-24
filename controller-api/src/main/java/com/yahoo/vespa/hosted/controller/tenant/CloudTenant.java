@@ -57,11 +57,6 @@ public class CloudTenant extends Tenant {
         return info;
     }
 
-    /** An iam role which is allowed to access the S3 (log, dump) archive) */
-    public Optional<String> archiveAccessRole() {
-        return archiveAccess.awsRole();
-    }
-
     /** Returns the set of developer keys and their corresponding developers for this tenant. */
     public BiMap<PublicKey, Principal> developerKeys() { return developerKeys; }
 
@@ -71,10 +66,10 @@ public class CloudTenant extends Tenant {
     }
 
     /**
-     * Returns archive access archive bucket access string
+     * Role or member that is allowed to access archive bucket (log, dump)
      *
      * For AWS is this the IAM role
-     * For GCP it is a Google Workspace group
+     * For GCP it is a GCP member
      */
     public ArchiveAccess archiveAccess() {
         return archiveAccess;

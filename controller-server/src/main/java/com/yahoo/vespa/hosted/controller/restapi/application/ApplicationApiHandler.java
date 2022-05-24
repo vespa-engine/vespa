@@ -2356,7 +2356,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                     log.warning(String.format("Failed to get quota for tenant %s: %s", tenant.name(), Exceptions.toMessageString(e)));
                 }
 
-                cloudTenant.archiveAccessRole().ifPresent(role -> object.setString("archiveAccessRole", role));
+                cloudTenant.archiveAccess().awsRole().ifPresent(role -> object.setString("archiveAccessRole", role));
 
                 break;
             }
