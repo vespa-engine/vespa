@@ -36,7 +36,7 @@ public:
         ++_used;
         return *this;
     }
-    Memory get() const { return Memory(&_data[0], _used); }
+    Memory get() const { return Memory(_data.data(), _used); }
     bool operator==(const SimpleBuffer &rhs) const { return (get() == rhs.get()); }
 };
 

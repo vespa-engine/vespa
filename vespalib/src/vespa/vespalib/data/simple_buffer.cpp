@@ -16,7 +16,7 @@ SimpleBuffer::~SimpleBuffer() = default;
 Memory
 SimpleBuffer::obtain()
 {
-    return Memory(&_data[0], _used);
+    return Memory(_data.data(), _used);
 }
 
 Input &

@@ -258,8 +258,8 @@ MyTreeForceApplyStore::remove(EntryRef &ref, const KeyType &key,
     std::vector<KeyType> removals;
     removals.push_back(key);
     apply(ref,
-          &additions[0], &additions[additions.size()],
-          &removals[0], &removals[removals.size()],
+          additions.data(), additions.data() + additions.size(),
+          removals.data(), removals.data() + removals.size(),
           comp);
     return retVal;
 }

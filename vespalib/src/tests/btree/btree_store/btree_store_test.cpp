@@ -43,8 +43,8 @@ protected:
             additions.emplace_back(i, 0);
         }
         _store.apply(root,
-                     &additions[0], &additions[0] + additions.size(),
-                     &removals[0], &removals[0] + removals.size());
+                     additions.data(), additions.data() + additions.size(),
+                     removals.data(), removals.data() + removals.size());
         return root;
     }
     static std::vector<int> make_exp_sequence(int start_key, int end_key)
