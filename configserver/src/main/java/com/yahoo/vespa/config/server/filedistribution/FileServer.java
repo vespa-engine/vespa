@@ -124,21 +124,15 @@ public class FileServer {
     private void serveFile(FileReference reference, Receiver target) {
         File file = root.getFile(reference);
         log.log(Level.FINE, () -> "Start serving " + reference + " with file '" + file.getAbsolutePath() + "'");
-        boolean success = false;
-        String errorDescription = "OK";
         FileReferenceData fileData = EmptyFileReferenceData.empty(reference, file.getName());
         try {
             fileData = readFileReferenceData(reference);
-            success = true;
-        } catch (IOException e) {
-            errorDescription = "For" + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'";
-            log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.toString());
-            fileData.close();
-        }
-
-        try {
-            target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
+            target.receive(fileData, new ReplayStatus(0, "OK"));
             log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
+        } catch (IOException e) {
+            String errorDescription = "For" + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'";
+            log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.getMessage());
+            target.receive(fileData, new ReplayStatus(1, errorDescription));
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed serving " + reference + ": " + Exceptions.toMessageString(e));
         } finally {
