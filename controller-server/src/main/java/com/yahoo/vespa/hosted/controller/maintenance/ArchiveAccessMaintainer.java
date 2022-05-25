@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
+import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -53,41 +54,26 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
                                 "cloud", z.getCloudName().value()))));
 
         zoneRegistry.zonesIncludingSystem().controllerUpgraded().zones().forEach(z -> {
-                    ZoneId zoneId = z.getVirtualId();
-                    try {
-                        var tenantArchiveAccessRoles = cloudTenantArchiveExternalAccessRoles();
-                        archiveBucketDb.buckets(zoneId).forEach(archiveBucket ->
-                                archiveService.updateBucketPolicy(zoneId, archiveBucket,
-                                        Maps.filterEntries(tenantArchiveAccessRoles,
-                                                entry -> archiveBucket.tenants().contains(entry.getKey())))
-                        );
-                        Map<String, List<ArchiveBucket>> bucketsPerKey = archiveBucketDb.buckets(zoneId).stream()
-                                .collect(groupingBy(ArchiveBucket::keyArn));
-                        bucketsPerKey.forEach((keyArn, buckets) -> {
-                            Set<String> authorizedIamRolesForKey = buckets.stream()
-                                    .flatMap(b -> b.tenants().stream())
-                                    .filter(tenantArchiveAccessRoles::containsKey)
-                                    .map(tenantArchiveAccessRoles::get)
-                                    .collect(Collectors.toSet());
-                            archiveService.updateKeyPolicy(zoneId, keyArn, authorizedIamRolesForKey);
-                        });
-                    } catch (Exception e) {
-                        throw new RuntimeException("Failed to maintain archive access in " + zoneId.value(), e);
-                    }
-                }
-        );
+            ZoneId zoneId = z.getVirtualId();
+            try {
+                var tenantArchiveAccessRoles = cloudTenantArchiveExternalAccessRoles();
+                var buckets = archiveBucketDb.buckets(zoneId);
+                archiveService.updatePolicies(zoneId, buckets, tenantArchiveAccessRoles);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to maintain archive access in " + zoneId.value(), e);
+            }
+        });
 
         return 1.0;
     }
 
-    private Map<TenantName, String> cloudTenantArchiveExternalAccessRoles() {
+    private Map<TenantName, ArchiveAccess> cloudTenantArchiveExternalAccessRoles() {
         List<Tenant> tenants = controller().tenants().asList();
         return tenants.stream()
                 .filter(t -> t instanceof CloudTenant)
                 .map(t -> (CloudTenant) t)
-                .filter(t -> t.archiveAccessRole().isPresent())
                 .collect(Collectors.toUnmodifiableMap(
-                        Tenant::name, cloudTenant -> cloudTenant.archiveAccessRole().orElseThrow()));
+                        Tenant::name, cloudTenant -> cloudTenant.archiveAccess()));
     }
 
 }

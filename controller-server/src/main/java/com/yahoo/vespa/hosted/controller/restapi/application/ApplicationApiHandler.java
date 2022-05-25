@@ -109,6 +109,7 @@ import com.yahoo.vespa.hosted.controller.routing.rotation.RotationStatus;
 import com.yahoo.vespa.hosted.controller.security.AccessControlRequests;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.support.access.SupportAccess;
+import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
@@ -1039,7 +1040,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         }
 
         controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
-            lockedTenant = lockedTenant.withArchiveAccessRole(Optional.of(role));
+            lockedTenant = lockedTenant.withArchiveAccess(new ArchiveAccess(Optional.of(role), Optional.empty()));
             controller.tenants().store(lockedTenant);
         });
 
@@ -1051,7 +1052,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
 
         controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
-            lockedTenant = lockedTenant.withArchiveAccessRole(Optional.empty());
+            lockedTenant = lockedTenant.withArchiveAccess(new ArchiveAccess());
             controller.tenants().store(lockedTenant);
         });
 
@@ -2353,7 +2354,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                     log.warning(String.format("Failed to get quota for tenant %s: %s", tenant.name(), Exceptions.toMessageString(e)));
                 }
 
-                cloudTenant.archiveAccessRole().ifPresent(role -> object.setString("archiveAccessRole", role));
+                cloudTenant.archiveAccess().awsRole().ifPresent(role -> object.setString("archiveAccessRole", role));
 
                 break;
             }
