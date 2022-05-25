@@ -36,17 +36,19 @@ constexpr uint32_t INVERTED = 3;
 // Note: We need to use double for set membership checks (IN) due to
 // string hashing.
 
-const double *as_double_ptr(const uint32_t *pos) {
-    return reinterpret_cast<const double*>(pos);
+double read_double(const uint32_t *pos) {
+    double value;
+    memcpy(&value, pos, sizeof(value));
+    return value;
 }
 
 const float *as_float_ptr(const uint32_t *pos) {
     return reinterpret_cast<const float*>(pos);
 }
 
-bool find_in(double value, const double *set, const double *end) {
-    for (; set < end; ++set) {
-        if (value == *set) {
+bool find_in(double value, const uint32_t *set, const uint32_t *end) {
+    for (; set < end; set += 2) {
+        if (value == read_double(set)) {
             return true;
         }
     }
@@ -82,8 +84,8 @@ double general_find_leaf(const double *input, const uint32_t *pos, uint32_t node
                 return *as_float_ptr(pos);
             }
         } else if (node_type == IN) {
-            if (find_in(input[pos[0] >> 12], as_double_ptr(pos + 2),
-                        as_double_ptr(pos + 2 + (2 * (pos[1] & 0xff)))))
+            if (find_in(input[pos[0] >> 12], pos + 2,
+                        pos + 2 + (2 * (pos[1] & 0xff))))
             {
                 node_type = (pos[0] & 0xf0) >> 4;
                 pos += 2 + (2 * (pos[1] & 0xff));

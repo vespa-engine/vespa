@@ -108,7 +108,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
             CompiledFunction cfun(*function, PassParams::ARRAY);
             auto fun = cfun.get_function();
             ASSERT_EQUAL(cfun.num_params(), param_values.size());
-            double result = fun(&param_values[0]);
+            double result = fun(param_values.data());
             if (is_same(expected_result, result)) {
                 print_pass && fprintf(stderr, "verifying: %s -> %g ... PASS\n",
                                       as_string(param_names, param_values, expression).c_str(),

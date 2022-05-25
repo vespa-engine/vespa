@@ -214,7 +214,9 @@ void
 FastCells<T>::reallocate(size_t need) {
     capacity = roundUp2inN(size + need);
     alloc::Alloc new_memory = alloc::Alloc::alloc(elem_size * capacity);
-    memcpy(new_memory.get(), memory.get(), elem_size * size);
+    if (memory.get()) {
+        memcpy(new_memory.get(), memory.get(), elem_size * size);
+    }
     memory = std::move(new_memory);
 }
 
