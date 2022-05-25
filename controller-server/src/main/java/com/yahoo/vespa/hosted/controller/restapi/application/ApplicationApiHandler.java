@@ -297,7 +297,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/access/approve/operator")) return approveAccessRequest(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/managed/operator")) return addManagedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowAwsArchiveAccess(path.get("tenant"), request); // TODO(enygaard, 2022-05-25) Remove when no longer used by console
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access/aws")) return allowAwsArchiveAccess(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access/gcp")) return allowGcpArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
@@ -345,7 +347,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/managed/operator")) return removeManagedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return removeArchiveAccess(path.get("tenant"));
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return removeAwsArchiveAccess(path.get("tenant"));  // TODO(enygaard, 2022-05-25) Remove when no longer used by console
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access/aws")) return removeAwsArchiveAccess(path.get("tenant"));
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access/gcp")) return removeGcpArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return deleteSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return removeAllProdDeployments(path.get("tenant"), path.get("application"));
@@ -1028,7 +1032,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private HttpResponse allowArchiveAccess(String tenantName, HttpRequest request) {
+    private HttpResponse allowAwsArchiveAccess(String tenantName, HttpRequest request) {
         if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
             throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
 
@@ -1036,27 +1040,62 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var role = mandatory("role", data).asString();
 
         if (role.isBlank()) {
-            return ErrorResponse.badRequest("Archive access role can't be whitespace only");
+            return ErrorResponse.badRequest("AWS archive access role can't be whitespace only");
         }
 
         controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
-            lockedTenant = lockedTenant.withArchiveAccess(new ArchiveAccess(Optional.of(role), Optional.empty()));
+            var access = lockedTenant.get().archiveAccess();
+            lockedTenant = lockedTenant.withArchiveAccess(access.withAWSRole(role));
             controller.tenants().store(lockedTenant);
         });
 
-        return new MessageResponse("Archive access role set to '" + role + "' for tenant " + tenantName +  ".");
+        return new MessageResponse("AWS archive access role set to '" + role + "' for tenant " + tenantName +  ".");
     }
 
-    private HttpResponse removeArchiveAccess(String tenantName) {
+    private HttpResponse removeAwsArchiveAccess(String tenantName) {
         if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
             throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
 
         controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
-            lockedTenant = lockedTenant.withArchiveAccess(new ArchiveAccess());
+            var access = lockedTenant.get().archiveAccess();
+            lockedTenant = lockedTenant.withArchiveAccess(access.removeAWSRole());
             controller.tenants().store(lockedTenant);
         });
 
-        return new MessageResponse("Archive access role removed for tenant " + tenantName + ".");
+        return new MessageResponse("AWS archive access role removed for tenant " + tenantName + ".");
+    }
+
+    private HttpResponse allowGcpArchiveAccess(String tenantName, HttpRequest request) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
+
+        var data = toSlime(request.getData()).get();
+        var member = mandatory("member", data).asString();
+
+        if (member.isBlank()) {
+            return ErrorResponse.badRequest("GCP archive access role can't be whitespace only");
+        }
+
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
+            var access = lockedTenant.get().archiveAccess();
+            lockedTenant = lockedTenant.withArchiveAccess(access.withGCPMember(member));
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("GCP archive access member set to '" + member + "' for tenant " + tenantName +  ".");
+    }
+
+    private HttpResponse removeGcpArchiveAccess(String tenantName) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
+
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
+            var access = lockedTenant.get().archiveAccess();
+            lockedTenant = lockedTenant.withArchiveAccess(access.removeGCPMember());
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("GCP archive access member removed for tenant " + tenantName + ".");
     }
 
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
@@ -2354,7 +2393,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                     log.warning(String.format("Failed to get quota for tenant %s: %s", tenant.name(), Exceptions.toMessageString(e)));
                 }
 
+                // TODO(enygaard, 2022-05-25) Remove when console is using new archive access structure
                 cloudTenant.archiveAccess().awsRole().ifPresent(role -> object.setString("archiveAccessRole", role));
+                toSlime(cloudTenant.archiveAccess(), object.setObject("archiveAccess"));
 
                 break;
             }
@@ -2383,6 +2424,11 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             }
         }
         tenantMetaDataToSlime(tenant, applications, object.setObject("metaData"));
+    }
+
+    private void toSlime(ArchiveAccess archiveAccess, Cursor object) {
+        archiveAccess.awsRole().ifPresent(role -> object.setString("awsRole", role));
+        archiveAccess.gcpMember().ifPresent(member -> object.setString("gcpMember", member));
     }
 
     private void toSlime(Quota quota, QuotaUsage usage, Cursor object) {

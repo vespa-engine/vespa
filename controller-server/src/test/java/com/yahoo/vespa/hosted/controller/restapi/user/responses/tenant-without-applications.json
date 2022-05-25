@@ -15,6 +15,7 @@
     "budgetUsed": 0.0,
     "clusterSize": 5
   },
+  "archiveAccess": { },
   "applications": [ ],
   "metaData": {
     "createdAtMillis": 1600000000000
