@@ -5,7 +5,6 @@
 #include "address_space_usage.h"
 #include "changevector.h"
 #include "readable_attribute_vector.h"
-#include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
@@ -19,8 +18,7 @@
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/address_space.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/time.h>
 #include <cmath>
 #include <mutex>
