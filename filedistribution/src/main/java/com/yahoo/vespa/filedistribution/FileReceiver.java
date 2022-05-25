@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
+
 /**
  * When asking for a file reference, this handles RPC callbacks from config server with file data and metadata.
  * Uses the same Supervisor as the original caller that requests files, so communication uses the same
@@ -107,38 +109,30 @@ public class FileReceiver {
             verifyHash(hash);
 
             File file = new File(fileReferenceDir, fileName);
+            File decompressedDir = null;
             try {
-                switch (fileType) {
-                    case file:
-                        log.log(Level.FINE, () -> "Uncompressed file reference " + fileName + ", storing as " + file.getAbsolutePath());
+                if (fileType == Type.file) {
+                    try {
                         Files.createDirectories(fileReferenceDir.toPath());
-                        moveFileToDestination(inprogressFile, file);
-                        break;
-                    case compressed:
-                        log.log(Level.FINE, () -> "Compressed file reference (directory)" + fileName + ", storing in " + fileReferenceDir.getAbsolutePath());
-                        decompress(fileType, fileReferenceDir, inprogressFile);
-                        break;
-                    default:
-                        throw new RuntimeException("Unknown file type " + fileType);
+                    } catch (IOException e) {
+                        log.log(Level.SEVERE, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
+                        throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
+                    }
+                    log.log(Level.FINE, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
+                    moveFileToDestination(inprogressFile, file);
+                } else {
+                    decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
+                    new FileReferenceCompressor(fileType).decompress(inprogressFile, decompressedDir);
+                    moveFileToDestination(decompressedDir, fileReferenceDir);
                 }
             } catch (IOException e) {
                 log.log(Level.SEVERE, "Failed writing file: " + e.getMessage(), e);
                 throw new RuntimeException("Failed writing file: ", e);
             } finally {
                 deletePath(inprogressFile);
-            }
-            return file;
-        }
-
-        void decompress(FileReferenceData.Type fileType, File fileReferenceDir, File file) throws IOException {
-            File decompressedDir = null;
-            try {
-                decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
-                new FileReferenceCompressor(fileType).decompress(file, decompressedDir);
-                moveFileToDestination(decompressedDir, fileReferenceDir);
-            } finally {
                 deletePath(decompressedDir);
             }
+            return file;
         }
 
         double percentageReceived() {
