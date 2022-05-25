@@ -4,6 +4,7 @@
 #include <vespa/searchlib/features/attributematchfeature.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".prod_features_attributematch");

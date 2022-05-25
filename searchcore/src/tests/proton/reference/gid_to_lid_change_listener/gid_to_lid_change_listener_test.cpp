@@ -57,7 +57,7 @@ struct Fixture
     std::unique_ptr<GidToLidChangeListener>  _listener;
 
     Fixture()
-        : _attr(std::make_shared<ReferenceAttribute>("test", Config(BasicType::REFERENCE))),
+        : _attr(std::make_shared<ReferenceAttribute>("test")),
           _writer(vespalib::SequencedTaskExecutor::create(test_executor, 1)),
           _refCount(),
           _listener()

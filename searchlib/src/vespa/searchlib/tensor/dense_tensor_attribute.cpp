@@ -10,6 +10,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>

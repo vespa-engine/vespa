@@ -40,6 +40,7 @@ public:
 
     DECLARE_IDENTIFIABLE_ABSTRACT(PredicateAttribute);
 
+    PredicateAttribute(const vespalib::string &base_file_name);
     PredicateAttribute(const vespalib::string &base_file_name, const Config &config);
 
     ~PredicateAttribute() override;

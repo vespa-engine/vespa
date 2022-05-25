@@ -3,6 +3,7 @@
 #include "attributesconfigscout.h"
 #include "attribute_type_matcher.h"
 #include <vespa/searchlib/attribute/configconverter.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 using search::attribute::ConfigConverter;
 

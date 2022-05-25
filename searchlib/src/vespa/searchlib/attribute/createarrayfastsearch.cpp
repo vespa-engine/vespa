@@ -5,6 +5,7 @@
 #include "floatbase.h"
 #include "flagattribute.h"
 #include "defines.h"
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".createarrayfastsearch");
@@ -39,7 +40,7 @@ AttributeFactory::createArrayFastSearch(stringref name, const Config & info)
     case BasicType::UINT4:
         break;
     case BasicType::INT8:
-        ret.reset(static_cast<AttributeVector *>(new FlagAttribute(name, info)));
+        ret = std::make_shared<FlagAttribute>(name, info);
         break;
     case BasicType::INT16:
         ret.reset(CREATEINTARRAY(int16_t, name, info));
@@ -57,7 +58,7 @@ AttributeFactory::createArrayFastSearch(stringref name, const Config & info)
         ret.reset(CREATEFLOATARRAY(double, name, info));
         break;
     case BasicType::STRING:
-        ret.reset(static_cast<AttributeVector *>(new ArrayStringPostingAttribute(name, info)));
+        ret = std::make_shared<ArrayStringPostingAttribute>(name, info);
         break;
     default:
         break;

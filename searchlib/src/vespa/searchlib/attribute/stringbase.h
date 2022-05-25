@@ -73,7 +73,7 @@ protected:
 
     vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 
-    bool get_match_is_cased() const noexcept { return getConfig().get_match() == attribute::Config::Match::CASED; }
+    bool get_match_is_cased() const noexcept;
 private:
     virtual void load_posting_lists(LoadedVector& loaded);
     virtual void load_enum_store(LoadedVector& loaded);

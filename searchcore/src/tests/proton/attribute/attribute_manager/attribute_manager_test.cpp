@@ -1,9 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-attributes.h>
-#include <vespa/fastos/file.h>
-#include <vespa/searchcommon/attribute/i_attribute_functor.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_manager_initializer.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
@@ -33,11 +29,15 @@
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
+#include <vespa/searchcommon/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/config-attributes.h>
+#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_manager_test");
@@ -215,10 +215,9 @@ struct SequentialAttributeManager
 {
     SequentialAttributesInitializer initializer;
     proton::AttributeManager mgr;
-    SequentialAttributeManager(const AttributeManager &currMgr,
-                               const AttrMgrSpec &newSpec)
+    SequentialAttributeManager(const AttributeManager &currMgr, AttrMgrSpec && newSpec)
         : initializer(newSpec.getDocIdLimit()),
-          mgr(currMgr, newSpec, initializer)
+          mgr(currMgr, std::move(newSpec), initializer)
     {
         mgr.addInitializedAttributes(initializer.getInitializedAttributes());
     }
@@ -447,7 +446,7 @@ TEST_F("require that reconfig can add attributes", Fixture)
     newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
     newSpec.push_back(AttributeSpec("a3", INT32_SINGLE));
 
-    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, f._m.getNumDocs(), 10));
+    SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), f._m.getNumDocs(), 10));
     std::vector<AttributeGuard> list;
     sam.mgr.getAttributeList(list);
     std::sort(list.begin(), list.end(), [](const AttributeGuard & a, const AttributeGuard & b) {
@@ -470,7 +469,7 @@ TEST_F("require that reconfig can remove attributes", Fixture)
     AttrSpecList newSpec;
     newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
 
-    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 10));
+    SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 1, 10));
     std::vector<AttributeGuard> list;
     sam.mgr.getAttributeList(list);
     EXPECT_EQUAL(1u, list.size());
@@ -493,7 +492,7 @@ TEST_F("require that new attributes after reconfig are initialized", Fixture)
     newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
     newSpec.push_back(AttributeSpec("a3", INT32_ARRAY));
 
-    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 3, 4));
+    SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 3, 4));
     AttributeGuard::UP a2ap = sam.mgr.getAttribute("a2");
     AttributeGuard &a2(*a2ap);
     EXPECT_EQUAL(3u, a2->getNumDocs());
@@ -519,13 +518,13 @@ TEST_F("require that removed attributes cannot resurrect", BaseFixture)
     }
 
     AttrSpecList ns1;
-    SequentialAttributeManager am2(*am1, AttrMgrSpec(ns1, 3, 16));
+    SequentialAttributeManager am2(*am1, AttrMgrSpec(std::move(ns1), 3, 16));
     am1.reset();
 
     AttrSpecList ns2;
     ns2.push_back(AttributeSpec("a1", INT32_SINGLE));
     // 2 new documents added since a1 was removed
-    SequentialAttributeManager am3(am2.mgr, AttrMgrSpec(ns2, 5, 20));
+    SequentialAttributeManager am3(am2.mgr, AttrMgrSpec(std::move(ns2), 5, 20));
 
     AttributeGuard::UP ag1ap = am3.mgr.getAttribute("a1");
     AttributeGuard &ag1(*ag1ap);
@@ -545,7 +544,7 @@ TEST_F("require that extra attribute is not treated as removed", Fixture)
     ex->commit(CommitParam(1));
 
     AttrSpecList ns;
-    SequentialAttributeManager am2(f._m, AttrMgrSpec(ns, 2, 1));
+    SequentialAttributeManager am2(f._m, AttrMgrSpec(std::move(ns), 2, 1));
     EXPECT_TRUE(am2.mgr.getAttribute("ex")->operator->() == ex.get()); // reuse
 }
 
@@ -558,7 +557,7 @@ TEST_F("require that removed fields can be pruned", Fixture)
 
     AttrSpecList newSpec;
     newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
-    SequentialAttributeManager sam(f._m, AttrMgrSpec(newSpec, 1, 11));
+    SequentialAttributeManager sam(f._m, AttrMgrSpec(std::move(newSpec), 1, 11));
     sam.mgr.pruneRemovedFields(11);
 
     FastOS_StatInfo si;
@@ -690,7 +689,7 @@ TEST_F("require that attributes can be initialized and loaded in sequence", Base
         newSpec.push_back(AttributeSpec("a2", INT32_SINGLE));
         newSpec.push_back(AttributeSpec("a3", INT32_SINGLE));
 
-        SequentialAttributeManager newMgr(amf._m, AttrMgrSpec(newSpec, 10, createSerialNum + 5));
+        SequentialAttributeManager newMgr(amf._m, AttrMgrSpec(std::move(newSpec), 10, createSerialNum + 5));
 
         AttributeGuard::UP a1 = newMgr.mgr.getAttribute("a1");
         TEST_DO(validateAttribute(*a1->get()));
@@ -819,7 +818,7 @@ TEST_F("require that attribute vector of wrong type is dropped", BaseFixture)
     newSpec.push_back(AttributeSpec("a4", dense_tensor));
     newSpec.push_back(AttributeSpec("a5", predicate));
     newSpec.push_back(AttributeSpec("a6", predicate2));
-    SequentialAttributeManager am2(*am1, AttrMgrSpec(newSpec, 5, 20));
+    SequentialAttributeManager am2(*am1, AttrMgrSpec(std::move(newSpec), 5, 20));
     TEST_DO(assertCreateSerialNum(*am1, "a1", 1));
     TEST_DO(assertCreateSerialNum(*am1, "a2", 2));
     TEST_DO(assertCreateSerialNum(*am1, "a3", 3));
@@ -861,7 +860,7 @@ TEST_F("require that shrink flushtarget is handed over to new attribute manager"
     am1->addAttribute({"a1", INT32_SINGLE}, 4);
     AttrSpecList newSpec;
     newSpec.push_back(AttributeSpec("a1", INT32_SINGLE));
-    auto am2 = am1->create(AttrMgrSpec(newSpec, 5, 20));
+    auto am2 = am1->create(AttrMgrSpec(std::move(newSpec), 5, 20));
     auto am3 = std::dynamic_pointer_cast<AttributeManager>(am2);
     TEST_DO(assertShrinkTargetSerial(*am3, "a1", 3));
     EXPECT_EQUAL(am1->getShrinker("a1"), am3->getShrinker("a1"));

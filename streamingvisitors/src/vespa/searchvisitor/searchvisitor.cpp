@@ -12,6 +12,7 @@
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/features/setup.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>

@@ -1,5 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/reference_attribute.h>
+#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
+#include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
+#include <vespa/searchlib/test/weighted_type_test_utils.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/document/base/testdocrepo.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
@@ -26,12 +33,6 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
-#include <vespa/searchcore/proton/common/attribute_updater.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/reference_attribute.h>
-#include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
-#include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 

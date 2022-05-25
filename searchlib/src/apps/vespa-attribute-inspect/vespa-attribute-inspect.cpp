@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <fstream>
 

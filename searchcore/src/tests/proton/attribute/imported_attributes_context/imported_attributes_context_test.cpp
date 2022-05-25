@@ -12,6 +12,7 @@
 #include <vespa/searchlib/attribute/imported_attribute_vector_factory.h>
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <future>
 
 #include <vespa/log/log.h>

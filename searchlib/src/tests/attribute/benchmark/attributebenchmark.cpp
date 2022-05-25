@@ -4,10 +4,10 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
-#include <fstream>
 #include "attributesearcher.h"
 #include "attributeupdater.h"
 #include <sys/resource.h>

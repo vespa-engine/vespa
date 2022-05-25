@@ -1,16 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/document/config/documenttypes_config_fwd.h>
+
+#include <vespa/searchcore/proton/common/selectpruner.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
-#include <vespa/searchcore/proton/common/selectpruner.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/test/mock_attribute_manager.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("selectpruner_test");

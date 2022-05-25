@@ -18,6 +18,7 @@
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
+#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/vespalib/data/slime/slime.h>

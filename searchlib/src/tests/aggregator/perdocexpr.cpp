@@ -5,6 +5,7 @@
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/testdocman.h>

@@ -93,7 +93,7 @@ struct Fixture
     vespalib::ThreadStackExecutor _executor;
     Fixture();
     ~Fixture();
-    std::unique_ptr<AttributeInitializer> createInitializer(const AttributeSpec &spec, SerialNum serialNum);
+    std::unique_ptr<AttributeInitializer> createInitializer(AttributeSpec && spec, SerialNum serialNum);
 };
 
 Fixture::Fixture()
@@ -107,9 +107,9 @@ Fixture::Fixture()
 Fixture::~Fixture() = default;
 
 std::unique_ptr<AttributeInitializer>
-Fixture::createInitializer(const AttributeSpec &spec, SerialNum serialNum)
+Fixture::createInitializer(AttributeSpec &&spec, SerialNum serialNum)
 {
-    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", spec, serialNum, _factory, _executor);
+    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", std::move(spec), serialNum, _factory, _executor);
 }
 
 TEST("require that integer attribute can be initialized")

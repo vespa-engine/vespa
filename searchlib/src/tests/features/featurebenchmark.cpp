@@ -12,6 +12,7 @@
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <fstream>
 #include <iomanip>

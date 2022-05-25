@@ -6,6 +6,7 @@
 #include "defines.h"
 #include "singlestringattribute.h"
 #include "singleboolattribute.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include "singlestringpostattribute.hpp"
 #include "singlenumericpostattribute.hpp"
 #include <vespa/searchlib/tensor/direct_tensor_attribute.h>

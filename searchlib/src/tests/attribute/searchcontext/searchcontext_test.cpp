@@ -16,6 +16,7 @@
 #include <vespa/searchlib/queryeval/hitcollector.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/stringfmt.h>
