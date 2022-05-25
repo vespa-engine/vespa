@@ -16,8 +16,8 @@ public class LogRetriever {
 
     private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
 
-    public HttpResponse getLogs(String logServerHostname) {
-        HttpGet get = new HttpGet(logServerHostname);
+    public HttpResponse getLogs(String logServerUri) {
+        HttpGet get = new HttpGet(logServerUri);
         try {
             return new ProxyResponse(httpClient.execute(get));
         } catch (IOException e) {
