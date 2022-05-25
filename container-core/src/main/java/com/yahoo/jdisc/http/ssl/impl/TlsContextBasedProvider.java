@@ -18,6 +18,7 @@ import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledPro
  *
  * @author bjorncs
  */
+@SuppressWarnings("removal")
 public abstract class TlsContextBasedProvider extends AbstractComponent implements SslContextFactoryProvider {
 
     protected abstract TlsContext getTlsContext(String containerId, int port);

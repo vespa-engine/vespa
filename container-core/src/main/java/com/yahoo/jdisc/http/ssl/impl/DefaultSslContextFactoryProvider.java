@@ -18,6 +18,7 @@ import java.nio.file.Path;
  *
  * @author bjorncs
  */
+@SuppressWarnings("removal")
 public class DefaultSslContextFactoryProvider extends AbstractComponent implements SslContextFactoryProvider {
 
     private final SslContextFactoryProvider instance;

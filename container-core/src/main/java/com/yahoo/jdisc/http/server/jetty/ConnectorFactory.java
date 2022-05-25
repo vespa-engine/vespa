@@ -4,7 +4,9 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
+import com.yahoo.jdisc.http.SslProvider;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
@@ -41,14 +43,14 @@ public class ConnectorFactory {
     private static final Logger log = Logger.getLogger(ConnectorFactory.class.getName());
 
     private final ConnectorConfig connectorConfig;
-    private final SslContextFactoryProvider sslContextFactoryProvider;
+    private final SslProvider sslProvider;
 
     @Inject
     public ConnectorFactory(ConnectorConfig connectorConfig,
-                            SslContextFactoryProvider sslContextFactoryProvider) {
+                            SslProvider sslProvider) {
         runtimeConnectorConfigValidation(connectorConfig);
         this.connectorConfig = connectorConfig;
-        this.sslContextFactoryProvider = sslContextFactoryProvider;
+        this.sslProvider = sslProvider;
     }
 
     // Perform extra connector config validation that can only be performed at runtime,
@@ -180,10 +182,26 @@ public class ConnectorFactory {
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
-        SslContextFactory ctxFactory = sslContextFactoryProvider.getInstance(connectorConfig.name(), connectorConfig.listenPort());
-        SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, wrappedFactory.getProtocol());
+        SslConnectionFactory connectionFactory = new SslConnectionFactory(createSslContextFactory(), wrappedFactory.getProtocol());
         connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
         return connectionFactory;
+    }
+
+    @SuppressWarnings("removal")
+    private SslContextFactory createSslContextFactory() {
+        try {
+            DefaultConnectorSsl ssl = new DefaultConnectorSsl();
+            sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
+            return ssl.createSslContextFactory();
+        } catch (UnsupportedOperationException e) {
+            // TODO(bjorncs) Vespa 8 Remove this compatibility workaround
+            if (sslProvider instanceof SslContextFactoryProvider) {
+                return ((SslContextFactoryProvider) sslProvider)
+                        .getInstance(connectorConfig.name(), connectorConfig.listenPort());
+            } else {
+                throw e;
+            }
+        }
     }
 
     private ALPNServerConnectionFactory newAlpnConnectionFactory() {

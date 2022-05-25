@@ -2090,6 +2090,60 @@
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
+  "com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth[] values()",
+      "public static com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth DISABLED",
+      "public static final enum com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth WANT",
+      "public static final enum com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth NEED"
+    ]
+  },
+  "com.yahoo.jdisc.http.SslProvider$ConnectorSsl": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setSslContext(javax.net.ssl.SSLContext)",
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setClientAuth(com.yahoo.jdisc.http.SslProvider$ConnectorSsl$ClientAuth)",
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setEnabledCipherSuites(java.util.List)",
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setEnabledProtocolVersions(java.util.List)",
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setKeystore(java.security.KeyStore, char[])",
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setKeystore(java.security.KeyStore)",
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setTruststore(java.security.KeyStore, char[])",
+      "public abstract com.yahoo.jdisc.http.SslProvider$ConnectorSsl setTruststore(java.security.KeyStore)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.jdisc.http.SslProvider": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.AutoCloseable"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void configureSsl(com.yahoo.jdisc.http.SslProvider$ConnectorSsl, java.lang.String, int)",
+      "public void close()"
+    ],
+    "fields": []
+  },
   "com.yahoo.jdisc.http.filter.DiscFilterRequest$ThreadLocalSimpleDateFormat": {
     "superClass": "java.lang.ThreadLocal",
     "interfaces": [],
@@ -2407,7 +2461,8 @@
   "com.yahoo.jdisc.http.ssl.SslContextFactoryProvider": {
     "superClass": "java.lang.Object",
     "interfaces": [
-      "java.lang.AutoCloseable"
+      "java.lang.AutoCloseable",
+      "com.yahoo.jdisc.http.SslProvider"
     ],
     "attributes": [
       "public",
@@ -2416,7 +2471,8 @@
     ],
     "methods": [
       "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)",
-      "public void close()"
+      "public void close()",
+      "public void configureSsl(com.yahoo.jdisc.http.SslProvider$ConnectorSsl, java.lang.String, int)"
     ],
     "fields": []
   },

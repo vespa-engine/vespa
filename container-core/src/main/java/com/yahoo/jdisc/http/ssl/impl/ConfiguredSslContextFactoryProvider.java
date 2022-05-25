@@ -31,6 +31,7 @@ import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledPro
  *
  * @author bjorncs
  */
+@SuppressWarnings("removal")
 public class ConfiguredSslContextFactoryProvider implements SslContextFactoryProvider {
 
     private volatile AutoReloadingX509KeyManager keyManager;
