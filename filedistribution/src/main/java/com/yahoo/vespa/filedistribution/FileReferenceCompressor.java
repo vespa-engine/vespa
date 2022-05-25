@@ -47,16 +47,13 @@ public class FileReferenceCompressor {
         return outputFile;
     }
 
-    public File compress(File file, File outputFile) throws IOException {
-        if (file.isDirectory())
-            return compress(file,
-                            Files.find(Paths.get(file.getAbsolutePath()),
-                                       recurseDepth,
-                                       (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
-                                 .map(Path::toFile).collect(Collectors.toList()),
-                            outputFile);
-        else
-            return compress(file.getParentFile(), List.of(file), outputFile);
+    public File compress(File directory, File outputFile) throws IOException {
+        return compress(directory,
+                        Files.find(Paths.get(directory.getAbsolutePath()),
+                                   recurseDepth,
+                                   (p, basicFileAttributes) -> basicFileAttributes.isRegularFile())
+                             .map(Path::toFile).collect(Collectors.toList()),
+                        outputFile);
     }
 
     public void decompress(File inputFile, File outputDir) throws IOException {

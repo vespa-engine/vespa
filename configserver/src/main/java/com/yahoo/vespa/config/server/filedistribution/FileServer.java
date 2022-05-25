@@ -13,18 +13,14 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
-import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
-import com.yahoo.vespa.flags.BooleanFlag;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +36,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 
 public class FileServer {
 
@@ -51,8 +48,6 @@ public class FileServer {
     private final FileDirectory root;
     private final ExecutorService executor;
     private final FileDownloader downloader;
-    private final StringFlag compressionAlgorithm;
-    private final BooleanFlag compressSingleFiles;
 
     private enum FileApiErrorCodes {
         OK(0, "OK"),
@@ -85,24 +80,21 @@ public class FileServer {
 
     @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
-    public FileServer(ConfigserverConfig configserverConfig, FlagSource flagSource) {
+    public FileServer(ConfigserverConfig configserverConfig) {
         this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
-             createFileDownloader(getOtherConfigServersInCluster(configserverConfig)),
-             flagSource);
+             createFileDownloader(getOtherConfigServersInCluster(configserverConfig)));
     }
 
     // For testing only
-    public FileServer(File rootDir, FlagSource flagSource) {
-        this(rootDir, createFileDownloader(List.of()), flagSource);
+    public FileServer(File rootDir) {
+        this(rootDir, createFileDownloader(List.of()));
     }
 
-    public FileServer(File rootDir, FileDownloader fileDownloader, FlagSource flagSource) {
+    public FileServer(File rootDir, FileDownloader fileDownloader) {
         this.downloader = fileDownloader;
         this.root = new FileDirectory(rootDir);
         this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                      new DaemonThreadFactory("file-server-"));
-        this.compressionAlgorithm = Flags.FILE_DISTRIBUTION_COMPRESSION_ALGORITHM.bindTo(flagSource);
-        this.compressSingleFiles = Flags.FILE_DISTRIBUTION_COMPRESS_SINGLE_FILES.bindTo(flagSource);
     }
 
     boolean hasFile(String fileReference) {
@@ -155,25 +147,15 @@ public class FileServer {
     }
 
     private FileReferenceData readFileReferenceData(FileReference reference) throws IOException {
-        FileReferenceData.Type type = FileReferenceData.from(compressionAlgorithm.value());
         File file = root.getFile(reference);
-        String fileName = file.getName();
-        if (file.isDirectory()) {
-            return createFileReferenceData(file.getParentFile(), reference, type, fileName);
-        } else if (compressSingleFiles.value()) {
-            return createFileReferenceData(file, reference, type, fileName);
-        } else {
-            return new LazyFileReferenceData(reference, fileName, FileReferenceData.Type.file, file);
-        }
-    }
 
-    LazyTemporaryStorageFileReferenceData createFileReferenceData(File file,
-                                                                  FileReference reference,
-                                                                  FileReferenceData.Type type,
-                                                                  String fileName) throws IOException {
-        Path tempFile = Files.createTempFile("filereferencedata", reference.value());
-        File compressedFile = new FileReferenceCompressor(type).compress(file.getParentFile(), tempFile.toFile());
-        return new LazyTemporaryStorageFileReferenceData(reference, fileName, type, compressedFile);
+        if (file.isDirectory()) {
+            Path tempFile = Files.createTempFile("filereferencedata", reference.value());
+            File compressedFile = new FileReferenceCompressor(compressed).compress(file.getParentFile(), tempFile.toFile());
+            return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile);
+        } else {
+            return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
+        }
     }
 
     public void serveFile(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
