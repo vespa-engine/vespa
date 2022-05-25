@@ -92,7 +92,8 @@ public class JobRunner extends ControllerMaintainer {
     private void finish(RunId id) {
         try {
             jobs.finish(id);
-            controller().applications().deploymentTrigger().notifyOfCompletion(id.application());
+            if ( ! id.type().environment().isManuallyDeployed())
+                controller().applications().deploymentTrigger().notifyOfCompletion(id.application());
         }
         catch (TimeoutException e) {
             // One of the steps are still being run — that's ok, we'll try to finish the run again later.
