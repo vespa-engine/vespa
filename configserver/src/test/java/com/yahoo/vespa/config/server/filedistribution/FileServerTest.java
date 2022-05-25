@@ -10,6 +10,7 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,7 +38,7 @@ public class FileServerTest {
     @Before
     public void setup() throws IOException {
         File rootDir = new File(temporaryFolder.newFolder("fileserver-root").getAbsolutePath());
-        fileServer = new FileServer(rootDir, new MockFileDownloader(rootDir));
+        fileServer = new FileServer(rootDir, new MockFileDownloader(rootDir), new InMemoryFlagSource());
     }
 
     @Test
@@ -117,7 +118,7 @@ public class FileServerTest {
     private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
         configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
-        return new FileServer(new ConfigserverConfig(configBuilder));
+        return new FileServer(new ConfigserverConfig(configBuilder), new InMemoryFlagSource());
     }
 
     private static class FileReceiver implements FileServer.Receiver {
