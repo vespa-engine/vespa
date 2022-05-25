@@ -14,10 +14,14 @@ SmartBuffer::ensure_free(size_t bytes)
     if ((unused() < bytes) || ((unused() * 3) < read_len())) {
         size_t new_size = std::max(_data.size() * 2, read_len() + bytes);
         alloc::Alloc new_buf(alloc::Alloc::alloc(new_size));
-        memcpy(new_buf.get(), read_ptr(), read_len());
+        if (read_ptr()) {
+            memcpy(new_buf.get(), read_ptr(), read_len());
+        }
         _data.swap(new_buf);
     } else {
-        memmove(_data.get(), read_ptr(), read_len());
+        if (read_ptr()) {
+            memmove(_data.get(), read_ptr(), read_len());
+        }
     }
     _write_pos = read_len();
     _read_pos = 0;
