@@ -1,5 +1,5 @@
 {
-  "com.yahoo.yolean.Exceptions$RunnableThrowingIOException": {
+  "com.yahoo.yolean.Exceptions$RunnableThrowingException": {
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
@@ -25,7 +25,7 @@
     ],
     "fields": []
   },
-  "com.yahoo.yolean.Exceptions$SupplierThrowingIOException": {
+  "com.yahoo.yolean.Exceptions$SupplierThrowingException": {
     "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
@@ -48,20 +48,33 @@
       "public void <init>()",
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public static java.util.Optional findCause(java.lang.Throwable, java.lang.Class)",
-      "public static void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException)",
+      "public static void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingException)",
       "public static void uncheckInterrupted(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
       "public static void uncheckInterruptedAndRestoreFlag(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
-      "public static varargs void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.String, java.lang.String[])",
-      "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.Class)",
-      "public static java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException)",
-      "public static varargs java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.String, java.lang.String[])",
-      "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)",
+      "public static varargs void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingException, java.lang.String, java.lang.String[])",
+      "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingException, java.lang.Class)",
+      "public static java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingException)",
+      "public static varargs java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingException, java.lang.String, java.lang.String[])",
+      "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingException, java.lang.Class)",
       "public static java.lang.RuntimeException throwUnchecked(java.lang.Throwable)"
     ],
     "fields": []
   },
-  "com.yahoo.yolean.UncheckedInterruptedException": {
+  "com.yahoo.yolean.UncheckedException": {
     "superClass": "java.lang.RuntimeException",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.lang.Exception)",
+      "public void <init>(java.lang.Exception)",
+      "public void <init>(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.yolean.UncheckedInterruptedException": {
+    "superClass": "com.yahoo.yolean.UncheckedException",
     "interfaces": [],
     "attributes": [
       "public"

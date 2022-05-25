@@ -5,7 +5,7 @@ import com.yahoo.yolean.UncheckedInterruptedException;
 
 import java.time.Duration;
 
-import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
+import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * An abstraction used for mocking {@link Thread#sleep(long)} in unit tests.
@@ -14,12 +14,12 @@ import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
  */
 public interface Sleeper {
     default void sleep(Duration duration) throws UncheckedInterruptedException {
-        uncheckInterrupted(() -> sleepChecked(duration.toMillis()));
+        uncheck(() -> sleepChecked(duration.toMillis()));
     }
 
     default void sleepChecked(Duration duration) throws InterruptedException { sleepChecked(duration.toMillis()); }
 
-    default void sleep(long millis) throws UncheckedInterruptedException { uncheckInterrupted(() -> sleepChecked(millis)); }
+    default void sleep(long millis) throws UncheckedInterruptedException { uncheck(() -> sleepChecked(millis)); }
 
     void sleepChecked(long millis) throws InterruptedException;
 
