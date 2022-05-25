@@ -1095,6 +1095,39 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                      logger.msgs.get(1).getSecond());
     }
 
+    @Test
+    public void logs_accesslog_not_overidable_in_hosted() {
+        String containerService = joinLines("<container id='foo' version='1.0'>",
+                "  <accesslog type='json' fileNamePattern='logs/vespa/qrs/access.%Y%m%d%H%M%S' symlinkName='json_access' />",
+                "  <nodes count=\"2\">",
+                "  </nodes>",
+                "</container>");
+
+        String deploymentXml = joinLines("<deployment version='1.0'>",
+                "  <prod>",
+                "    <region>us-east-1</region>",
+                "  </prod>",
+                "</deployment>");
+
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
+                .withServices(containerService)
+                .withDeploymentSpec(deploymentXml)
+                .build();
+
+        TestLogger logger = new TestLogger();
+        DeployState deployState = new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .zone(new Zone(Environment.prod, RegionName.from("us-east-1")))
+                .properties(new TestProperties().setHostedVespa(true))
+                .deployLogger(logger)
+                .build();
+        createModel(root, deployState, null, DomBuilderTest.parse(containerService));
+        assertFalse(logger.msgs.isEmpty());
+        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
+        assertEquals("The element 'accesslog' is not overridable in hosted Vespa",
+                logger.msgs.get(0).getSecond());
+    }
+
     private void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
         Component<?, ?> component = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
         assertNotNull(component);
