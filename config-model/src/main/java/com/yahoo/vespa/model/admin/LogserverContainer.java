@@ -21,7 +21,7 @@ public class LogserverContainer extends Container {
 
     public LogserverContainer(AbstractConfigProducer<?> parent, DeployState deployState) {
         super(parent, "" + 0, 0, deployState);
-        if (deployState.isHosted()) useDynamicPorts();
+        if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester()) useDynamicPorts();
         LogserverContainerCluster cluster = (LogserverContainerCluster) parent;
         addComponent(new AccessLogComponent(
                 cluster, AccessLogType.jsonAccessLog, CompressionType.GZIP, Optional.of(cluster.getName()), true));
