@@ -15,6 +15,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static org.junit.Assert.assertEquals;
@@ -63,6 +65,21 @@ public class FileReceiverTest {
         File downloadDir = new File(root, "ref");
         assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
         assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
+    }
+
+    @Test
+    public void receiveCompressedSingleFile() throws IOException{
+        File inputFile = temporaryFolder.newFile("a-file");
+        FileWriter writer = new FileWriter(inputFile);
+        String content = IntStream.range(1, 1000).mapToObj(a -> "surely this can be compressed").collect(Collectors.joining(","));
+        writer.write(content);
+        writer.close();
+
+        File tempFile = temporaryFolder.newFile();
+        File file = new FileReferenceCompressor(compressed).compress(inputFile, tempFile);
+        transferCompressedData(new FileReference("ref"), "a-file", IOUtils.readFileBytes(file));
+        File downloadDir = new File(root, "ref");
+        assertEquals(content, IOUtils.readFile(new File(downloadDir, "a-file")));
     }
 
     private void transferPartsAndAssert(FileReference ref, String fileName, String all, int numParts) throws IOException {

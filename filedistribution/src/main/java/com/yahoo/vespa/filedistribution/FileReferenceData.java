@@ -64,6 +64,17 @@ public abstract class FileReferenceData {
      */
     public abstract void close();
 
+    public static Type from(String type) {
+        switch (type) {
+            case "none":
+                return Type.file;
+            case "gzip":
+                return Type.compressed;
+            default:
+                throw new RuntimeException("Unknown compression type " + type);
+        }
+    }
+
     @Override
     public String toString() { return fileReference.value() + " (" + filename + "), " + type.name(); }
 

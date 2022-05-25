@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.server.host.ConfigRequestHostLivenessTracker;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.rpc.security.NoopRpcAuthorizer;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 
 import java.io.File;
 import java.time.Duration;
@@ -39,7 +40,7 @@ public class MockRpcServer extends RpcServer {
               Metrics.createTestMetrics(),
               new HostRegistry(),
               new ConfigRequestHostLivenessTracker(),
-              new FileServer(tempDir),
+              new FileServer(tempDir, new InMemoryFlagSource()),
               new NoopRpcAuthorizer(),
               new RpcRequestHandlerProvider());
     }

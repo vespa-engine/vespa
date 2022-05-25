@@ -112,20 +112,21 @@ public class RpcTester implements AutoCloseable {
     }
 
     RpcServer createRpcServer(ConfigserverConfig config) throws IOException {
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
         RpcServer rpcServer = new RpcServer(config,
-                             new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
+                                            new SuperModelRequestHandler(new TestConfigDefinitionRepo(),
                                                           configserverConfig,
                                                           new SuperModelManager(
                                                                   config,
                                                                   Zone.defaultZone(),
                                                                   new MemoryGenerationCounter(),
-                                                                  new InMemoryFlagSource())),
-                             Metrics.createTestMetrics(),
-                             hostRegistry,
-                             hostLivenessTracker,
-                             new FileServer(temporaryFolder.newFolder()),
-                             new NoopRpcAuthorizer(),
-                             new RpcRequestHandlerProvider());
+                                                                  flagSource)),
+                                            Metrics.createTestMetrics(),
+                                            hostRegistry,
+                                            hostLivenessTracker,
+                                            new FileServer(temporaryFolder.newFolder(), flagSource),
+                                            new NoopRpcAuthorizer(),
+                                            new RpcRequestHandlerProvider());
         rpcServer.setUpGetConfigHandlers();
         return rpcServer;
     }
