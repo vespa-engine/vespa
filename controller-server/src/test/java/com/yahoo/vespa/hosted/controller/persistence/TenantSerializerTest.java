@@ -125,7 +125,7 @@ public class TenantSerializerTest {
                         new TenantSecretStore("ss1", "123", "role1"),
                         new TenantSecretStore("ss2", "124", "role2")
                 ),
-                new ArchiveAccess(Optional.of("arn:aws:iam::123456789012:role/my-role"), Optional.empty())
+                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role")
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
@@ -174,7 +174,7 @@ public class TenantSerializerTest {
                         otherPublicKey, new SimplePrincipal("jane")),
                 TenantInfo.empty(),
                 List.of(),
-                new ArchiveAccess(Optional.of("arn:aws:iam::123456789012:role/my-role"), Optional.of("user:foo@example.com"))
+                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com")
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(serialized.archiveAccess().awsRole().get(), "arn:aws:iam::123456789012:role/my-role");

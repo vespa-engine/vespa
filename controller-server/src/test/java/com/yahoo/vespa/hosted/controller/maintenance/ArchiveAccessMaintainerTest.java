@@ -45,8 +45,8 @@ public class ArchiveAccessMaintainerTest {
         assertEquals(0, archiveService.authorizeAccessByTenantName.size());
         MockMetric metric = new MockMetric();
         new ArchiveAccessMaintainer(tester.controller(), metric, Duration.ofMinutes(10)).maintain();
-        assertEquals(new ArchiveAccess(Optional.of(tenant1role), Optional.empty()), archiveService.authorizeAccessByTenantName.get(tenant1));
-        assertEquals(new ArchiveAccess(Optional.of(tenant2role), Optional.empty()), archiveService.authorizeAccessByTenantName.get(tenant2));
+        assertEquals(new ArchiveAccess().withAWSRole(tenant1role), archiveService.authorizeAccessByTenantName.get(tenant1));
+        assertEquals(new ArchiveAccess().withAWSRole(tenant2role), archiveService.authorizeAccessByTenantName.get(tenant2));
 
         var expected = Map.of("archive.bucketCount",
                               tester.controller().zoneRegistry().zonesIncludingSystem().all().ids().stream()
@@ -60,7 +60,7 @@ public class ArchiveAccessMaintainerTest {
     private TenantName createTenantWithAccessRole(ControllerTester tester, String tenantName, String role) {
         var tenant = tester.createTenant(tenantName, Tenant.Type.cloud);
         tester.controller().tenants().lockOrThrow(tenant, LockedTenant.Cloud.class, lockedTenant -> {
-            lockedTenant = lockedTenant.withArchiveAccess(new ArchiveAccess(Optional.of(role), Optional.empty()));
+            lockedTenant = lockedTenant.withArchiveAccess(new ArchiveAccess().withAWSRole(role));
             tester.controller().tenants().store(lockedTenant);
         });
         return tenant;

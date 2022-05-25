@@ -210,7 +210,7 @@ public class TenantSerializer {
         // TODO(enygaard, 2022-05-24): Remove when all tenants have been rewritten to use ArchiveAccess object
         Optional<String> archiveAccessRole = SlimeUtils.optionalString(tenantObject.field(archiveAccessRoleField));
         if (archiveAccessRole.isPresent()) {
-            return new ArchiveAccess(archiveAccessRole, Optional.empty());
+            return new ArchiveAccess().withAWSRole(archiveAccessRole.get());
         }
         Inspector object = tenantObject.field(archiveAccessField);
         if (!object.valid()) {
@@ -218,7 +218,9 @@ public class TenantSerializer {
         }
         Optional<String> awsArchiveAccessRole = SlimeUtils.optionalString(object.field(awsArchiveAccessRoleField));
         Optional<String> gcpArchiveAccessMember = SlimeUtils.optionalString(object.field(gcpArchiveAccessMemberField));
-        return new ArchiveAccess(awsArchiveAccessRole, gcpArchiveAccessMember);
+        return new ArchiveAccess()
+                .withAWSRole(awsArchiveAccessRole)
+                .withGCPMember(gcpArchiveAccessMember);
     }
     TenantInfo tenantInfoFromSlime(Inspector infoObject) {
         if (!infoObject.valid()) return TenantInfo.empty();

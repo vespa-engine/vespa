@@ -24,7 +24,7 @@ public class ArchiveAccess {
         this(Optional.empty(), Optional.empty());
     }
 
-    public ArchiveAccess(Optional<String> awsRole, Optional<String> gcpMember) {
+    private ArchiveAccess(Optional<String> awsRole, Optional<String> gcpMember) {
         this.awsRole = awsRole;
         this.gcpMember = gcpMember;
 
@@ -32,12 +32,28 @@ public class ArchiveAccess {
         gcpMember.ifPresent(member -> validateGCPMember(member));
     }
 
-    public static ArchiveAccess fromAWSRole(String role) {
-        return new ArchiveAccess(Optional.of(role), Optional.empty());
+    public ArchiveAccess withAWSRole(String role) {
+        return new ArchiveAccess(Optional.of(role), gcpMember());
     }
 
-    public static ArchiveAccess fromGCPMember(String member) {
-        return new ArchiveAccess(Optional.empty(), Optional.of(member));
+    public ArchiveAccess withGCPMember(String member) {
+        return new ArchiveAccess(awsRole(), Optional.of(member));
+    }
+
+    public ArchiveAccess withAWSRole(Optional<String> role) {
+        return new ArchiveAccess(role, gcpMember());
+    }
+
+    public ArchiveAccess withGCPMember(Optional<String> member) {
+        return new ArchiveAccess(awsRole(), member);
+    }
+
+    public ArchiveAccess removeAWSRole() {
+        return new ArchiveAccess(Optional.empty(), gcpMember());
+    }
+
+    public ArchiveAccess removeGCPMember() {
+        return new ArchiveAccess(awsRole(), Optional.empty());
     }
 
     private void validateAWSIAMRole(String role) {
