@@ -387,17 +387,17 @@ RoutingNode::lookupRoute()
 {
     RoutingTable::SP table = _mbus.getRoutingTable(_msg.getProtocol());
     Hop &hop = _route.getHop(0);
-    const RouteDirective &dir = static_cast<const RouteDirective&>(hop.getDirective(0));
-    if (dir.getType() == IHopDirective::TYPE_ROUTE) {
+    const auto *dir = dynamic_cast<const RouteDirective *>(&hop.getDirective(0));
+    if (dir && dir->getType() == IHopDirective::TYPE_ROUTE) {
 
-        if (!table || !table->hasRoute(dir.getName())) {
-            setError(ErrorCode::ILLEGAL_ROUTE, make_string("Route '%s' does not exist.", dir.getName().c_str()));
+        if (!table || !table->hasRoute(dir->getName())) {
+            setError(ErrorCode::ILLEGAL_ROUTE, make_string("Route '%s' does not exist.", dir->getName().c_str()));
             return false;
         }
-        insertRoute(*table->getRoute(dir.getName()));
+        insertRoute(*table->getRoute(dir->getName()));
         _trace.trace(TraceLevel::SPLIT_MERGE,
                      make_string("Route '%s' retrieved by directive; new route is '%s'.",
-                                 dir.getName().c_str(), _route.toString().c_str()));
+                                 dir->getName().c_str(), _route.toString().c_str()));
         return true;
     }
     if (table) {

@@ -11,7 +11,9 @@ Memory
 store(Memory m, Stash & stash)
 {
     char * buf = stash.alloc(m.size);
-    memcpy(buf, m.data, m.size);
+    if (m.data) {
+        memcpy(buf, m.data, m.size);
+    }
     return Memory(buf, m.size);
 }
 

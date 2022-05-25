@@ -29,8 +29,8 @@ public:
     virtual void fill(const vespalib::Memory & name, vespalib::slime::Cursor & v) const = 0;
 };
 
-class RPCSend : public RPCSendAdapter,
-                public FRT_Invokable,
+class RPCSend : public FRT_Invokable,
+                public RPCSendAdapter,
                 public FRT_IRequestWait,
                 public IDiscardHandler,
                 public IReplyHandler
