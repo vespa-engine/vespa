@@ -42,7 +42,7 @@ public:
         bool valid() const { return (id != npos()); }
     };
 
-    ConstArrayRef<K> get_keys(Tag tag) const { return {&_keys[tag.id * _keys_per_entry], _keys_per_entry}; }
+    ConstArrayRef<K> get_keys(Tag tag) const { return {_keys.data() + (tag.id * _keys_per_entry), _keys_per_entry}; }
     ArrayRef<V> get_values(Tag tag) { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
     ConstArrayRef<V> get_values(Tag tag) const { return {&_values[tag.id * _values_per_entry], _values_per_entry}; }
 

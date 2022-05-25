@@ -65,7 +65,7 @@ public:
         LabelView(size_t num_mapped_dims, const StringIdVector &labels_in)
             : addr_size(num_mapped_dims), labels(labels_in) {}
         ConstArrayRef<string_id> get_addr(size_t idx) const {
-            return {&labels[idx * addr_size], addr_size};
+            return {labels.data() + (idx * addr_size), addr_size};
         }
     };
 
