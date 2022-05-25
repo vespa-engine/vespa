@@ -6,7 +6,7 @@ package com.yahoo.yolean;
  *
  * @author bjorncs
  */
-public class UncheckedInterruptedException extends RuntimeException {
+public class UncheckedInterruptedException extends UncheckedException {
 
     public UncheckedInterruptedException(String message, InterruptedException cause, boolean restoreInterruptFlag) {
         super(message, cause);

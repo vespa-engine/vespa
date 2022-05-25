@@ -27,7 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.server.jetty.Utils.generatePrivateKeyAndCertificate;
-import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -221,7 +221,7 @@ class ProxyProtocolTest {
     private static void assertLogSize(int expectedItems, Collection<?> items) {
         for (int attempt = 0; attempt < 10; attempt++) {
             if (items.size() >= expectedItems) break;
-            uncheckInterrupted(() -> Thread.sleep(200));
+            uncheck(() -> Thread.sleep(200));
         }
         Assertions.assertThat(items).hasSize(expectedItems);
     }

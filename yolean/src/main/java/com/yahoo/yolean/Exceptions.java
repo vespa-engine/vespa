@@ -62,22 +62,26 @@ public class Exceptions {
     /**
      * Wraps any IOException thrown from a runnable in an UncheckedIOException.
      */
-    public static void uncheck(RunnableThrowingIOException runnable) {
+    public static void uncheck(RunnableThrowingException runnable) {
         try {
             runnable.run();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
-        }
-    }
-
-    public static void uncheckInterrupted(RunnableThrowingInterruptedException runnable) {
-        try {
-            runnable.run();
         } catch (InterruptedException e) {
-            throw new UncheckedInterruptedException(e, false);
+            throw new UncheckedInterruptedException(e);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
+            throw new UncheckedException(e);
         }
     }
 
+    /** Use {@link #uncheck(RunnableThrowingException)} instead */
+    @Deprecated(since="7", forRemoval = true)
+    public static void uncheckInterrupted(RunnableThrowingInterruptedException runnable) {
+        uncheck(runnable::run);
+    }
+
+    @Deprecated(since="7", forRemoval = true)
     public static void uncheckInterruptedAndRestoreFlag(RunnableThrowingInterruptedException runnable) {
         try {
             runnable.run();
@@ -89,17 +93,25 @@ public class Exceptions {
     /**
      * Wraps any IOException thrown from a runnable in an UncheckedIOException w/message.
      */
-    public static void uncheck(RunnableThrowingIOException runnable, String format, String... args) {
+    public static void uncheck(RunnableThrowingException runnable, String format, String... args) {
         try {
             runnable.run();
         } catch (IOException e) {
             String message = String.format(format, (Object[]) args);
             throw new UncheckedIOException(message, e);
+        } catch (InterruptedException e) {
+            String message = String.format(format, (Object[]) args);
+            throw new UncheckedInterruptedException(message, e);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
+            String message = String.format(format, (Object[]) args);
+            throw new UncheckedException(message, e);
         }
     }
 
     /** Similar to uncheck(), except an exceptionToIgnore exception is silently ignored. */
-    public static <T extends IOException> void uncheckAndIgnore(RunnableThrowingIOException runnable, Class<T> exceptionToIgnore) {
+    @Deprecated(since="7", forRemoval = true)
+    public static <T extends IOException> void uncheckAndIgnore(RunnableThrowingException runnable, Class<T> exceptionToIgnore) {
         try {
             runnable.run();
         } catch (UncheckedIOException e) {
@@ -111,48 +123,58 @@ public class Exceptions {
                 throw e;
             }
             // Do nothing - OK
-        } catch (IOException e) {
+        } catch (Exception e) {
             try {
                 e.getClass().asSubclass(exceptionToIgnore);
             } catch (ClassCastException f) {
-                throw new UncheckedIOException(e);
+                throw new UncheckedException(e);
             }
             // Do nothing - OK
         }
     }
 
-    @FunctionalInterface
-    public interface RunnableThrowingIOException {
-        void run() throws IOException;
-    }
-
+    @FunctionalInterface public interface RunnableThrowingException { void run() throws Exception; }
     @FunctionalInterface public interface RunnableThrowingInterruptedException { void run() throws InterruptedException; }
+    @FunctionalInterface public interface SupplierThrowingException<T> { T get() throws Exception; }
 
     /**
      * Wraps any IOException thrown from a supplier in an UncheckedIOException.
      */
-    public static <T> T uncheck(SupplierThrowingIOException<T> supplier) {
+    public static <T> T uncheck(SupplierThrowingException<T> supplier) {
         try {
             return supplier.get();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
+        } catch (InterruptedException e) {
+            throw new UncheckedInterruptedException(e);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
+            throw new UncheckedException(e);
         }
     }
 
     /**
      * Wraps any IOException thrown from a supplier in an UncheckedIOException w/message.
      */
-    public static <T> T uncheck(SupplierThrowingIOException<T> supplier, String format, String... args) {
+    public static <T> T uncheck(SupplierThrowingException<T> supplier, String format, String... args) {
         try {
             return supplier.get();
         } catch (IOException e) {
             String message = String.format(format, (Object[]) args);
             throw new UncheckedIOException(message, e);
+        } catch (InterruptedException e) {
+            String message = String.format(format, (Object[]) args);
+            throw new UncheckedInterruptedException(message, e);
+        } catch (Exception e) {
+            if (e instanceof RuntimeException) throw (RuntimeException) e;
+            String message = String.format(format, (Object[]) args);
+            throw new UncheckedException(message, e);
         }
     }
 
     /** Similar to uncheck(), except null is returned if exceptionToIgnore is thrown. */
-    public static <R, T extends IOException> R uncheckAndIgnore(SupplierThrowingIOException<R> supplier, Class<T> exceptionToIgnore) {
+    @Deprecated(since="7", forRemoval = true)
+    public static <R, T extends IOException> R uncheckAndIgnore(SupplierThrowingException<R> supplier, Class<T> exceptionToIgnore) {
         try {
             return supplier.get();
         } catch (UncheckedIOException e) {
@@ -164,19 +186,14 @@ public class Exceptions {
                 throw e;
             }
             return null;
-        } catch (IOException e) {
+        } catch (Exception e) {
             try {
                 e.getClass().asSubclass(exceptionToIgnore);
             } catch (ClassCastException f) {
-                throw new UncheckedIOException(e);
+                throw new UncheckedException(e);
             }
             return null;
         }
-    }
-
-    @FunctionalInterface
-    public interface SupplierThrowingIOException<T> {
-        T get() throws IOException;
     }
 
     /**

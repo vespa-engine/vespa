@@ -7,8 +7,6 @@ import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
 import java.util.Optional;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
-
 /**
  * Utils related to IOException.
  *
@@ -19,9 +17,9 @@ public class IOExceptionUtil {
      * Useful if it's not known whether a file or directory exists, in case e.g.
      * NoSuchFileException is thrown and the caller wants an Optional.empty() in that case.
      */
-    public static <T> Optional<T> ifExists(Exceptions.SupplierThrowingIOException<T> supplier) {
+    public static <T> Optional<T> ifExists(Exceptions.SupplierThrowingException<T> supplier) {
         try {
-            return Optional.ofNullable(uncheck(supplier));
+            return Optional.ofNullable(Exceptions.uncheck(supplier));
         } catch (UncheckedIOException e) {
             if (e.getCause() instanceof NoSuchFileException) {
                 return Optional.empty();

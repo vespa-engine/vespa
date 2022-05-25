@@ -9,7 +9,6 @@ import java.nio.file.NoSuchFileException;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 
 /**
@@ -42,6 +41,7 @@ public class ExceptionsTestCase {
     }
 
     @Test
+    @SuppressWarnings({"removal"})
     public void testUnchecks() {
         try {
             Exceptions.uncheck(this::throwNoSuchFileException);
