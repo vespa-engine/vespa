@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 public class MockLogRetriever extends LogRetriever {
 
     @Override
-    public HttpResponse getLogs(String logServerHostname) {
+    public HttpResponse getLogs(String logServerUri) {
         return new MockHttpResponse();
     }
 
