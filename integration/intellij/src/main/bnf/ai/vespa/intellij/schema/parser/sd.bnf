@@ -111,7 +111,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
 RankingExpression ::= LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
-                      FunctionCallOrLambdaExpr | RankfeatureExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
+                      FunctionCallOrLambdaExpr | RankFeatureExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
@@ -218,7 +218,7 @@ FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-Arguments ::= '()' | ( '(' (ArgumentDefinition (COMMA ArgumentDefinition)*)? ')' )
+Arguments ::= '()' | ( '(' ArgumentDefinition (COMMA ArgumentDefinition)* ')' )
 
 ArgumentDefinition ::= IdentifierVal
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
@@ -237,7 +237,7 @@ InnerConstantDefinition ::= ( ("constant" '(' IdentifierVal ')') | IdentifierVal
                             (':')? ( TensorType | "double" )?
                             (':')? ( TensorValue | FLOAT_REG | INTEGER_REG | (file ':' FilePath) | (uri ':' UriPath))
 
-RankFeature ::= IdentifierVal Arguments ( '.' IdentifierVal )?
+RankFeature ::= IdentifierVal (Arguments)? ( '.' IdentifierVal )?
                     { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                       implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                     }
