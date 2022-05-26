@@ -2,15 +2,14 @@
 
 #include "attribute_collection_spec_factory.h"
 #include <vespa/searchlib/attribute/configconverter.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 using search::attribute::ConfigConverter;
 using search::GrowStrategy;
 
 namespace proton {
 
-AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(
-        const AllocStrategy &alloc_strategy,
-        bool fastAccessOnly)
+AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(const AllocStrategy &alloc_strategy, bool fastAccessOnly)
     : _alloc_strategy(alloc_strategy),
       _fastAccessOnly(fastAccessOnly)
 {
@@ -18,7 +17,7 @@ AttributeCollectionSpecFactory::AttributeCollectionSpecFactory(
 
 AttributeCollectionSpecFactory::~AttributeCollectionSpecFactory() = default;
 
-AttributeCollectionSpec::UP
+std::unique_ptr<AttributeCollectionSpec>
 AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
                                        uint32_t docIdLimit,
                                        search::SerialNum serialNum) const
@@ -27,18 +26,18 @@ AttributeCollectionSpecFactory::create(const AttributesConfig &attrCfg,
     // Amortize memory spike cost over N docs
     const size_t skew = _alloc_strategy.get_amortize_count()/(attrCfg.attribute.size()+1);
     GrowStrategy grow = _alloc_strategy.get_grow_strategy();
-    grow.setDocsInitialCapacity(std::max(grow.getDocsInitialCapacity(),docIdLimit));
+    grow.setInitialCapacity(std::max(grow.getInitialCapacity(), size_t(docIdLimit)));
     for (const auto &attr : attrCfg.attribute) {
         search::attribute::Config cfg = ConfigConverter::convert(attr);
         if (_fastAccessOnly && !cfg.fastAccess()) {
             continue;
         }
-        grow.setDocsGrowDelta(grow.getDocsGrowDelta() + skew);
+        grow.setGrowDelta(grow.getGrowDelta() + skew);
         cfg.setGrowStrategy(grow);
         cfg.setCompactionStrategy(_alloc_strategy.get_compaction_strategy());
         attrs.push_back(AttributeSpec(attr.name, cfg));
     }
-    return std::make_unique<AttributeCollectionSpec>(attrs, docIdLimit, serialNum);
+    return std::make_unique<AttributeCollectionSpec>(std::move(attrs), docIdLimit, serialNum);
 }
 
 } // namespace proton

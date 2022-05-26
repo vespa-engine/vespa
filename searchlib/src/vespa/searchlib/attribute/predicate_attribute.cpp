@@ -65,7 +65,7 @@ adjustUpperBound(int32_t arity, int64_t upper_bound) {
 
 SimpleIndexConfig createSimpleIndexConfig(const search::attribute::Config &config) {
     return SimpleIndexConfig(config.predicateParams().dense_posting_list_threshold(),
-                             config.getGrowStrategy().to_generic_strategy());
+                             config.getGrowStrategy());
 }
 
 }  // namespace
@@ -81,8 +81,8 @@ PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name, c
                                               createSimpleIndexConfig(config), config.predicateParams().arity())),
       _lower_bound(adjustLowerBound(config.predicateParams().arity(), config.predicateParams().lower_bound())),
       _upper_bound(adjustUpperBound(config.predicateParams().arity(), config.predicateParams().upper_bound())),
-      _min_feature(config.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
-      _interval_range_vector(config.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
+      _min_feature(config.getGrowStrategy(), getGenerationHolder()),
+      _interval_range_vector(config.getGrowStrategy(), getGenerationHolder()),
       _max_interval_range(1)
 {
 }
