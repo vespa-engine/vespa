@@ -433,8 +433,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
         if (cluster.isHostedVespa() && !accessLogElements.isEmpty()) {
+            accessLogElements.clear();
             log.logApplicationPackage(
-                    Level.WARNING, "The element 'accesslog' is not overridable in hosted Vespa");
+                    Level.WARNING, "Applications are not allowed to override the 'accesslog' element");
         } else {
             for (Element accessLog : accessLogElements) {
                 AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);

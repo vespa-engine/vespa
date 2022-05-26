@@ -1124,7 +1124,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, deployState, null, DomBuilderTest.parse(containerService));
         assertFalse(logger.msgs.isEmpty());
         assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
-        assertEquals("The element 'accesslog' is not overridable in hosted Vespa",
+        assertEquals("Applications are not allowed to override the 'accesslog' element",
                 logger.msgs.get(0).getSecond());
     }
 
