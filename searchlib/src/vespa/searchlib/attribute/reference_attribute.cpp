@@ -11,6 +11,7 @@
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/common/i_gid_to_lid_mapper_factory.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/datastore/unique_store_builder.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
@@ -39,8 +40,11 @@ extractUniqueValueCount(const vespalib::GenericHeader &header)
 
 }
 
-ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
-                                       const Config & cfg)
+ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName)
+    : ReferenceAttribute(baseFileName, Config(BasicType::REFERENCE))
+{}
+
+ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName, const Config & cfg)
     : NotImplementedAttribute(baseFileName, cfg),
       _store({}),
       _indices(cfg.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),

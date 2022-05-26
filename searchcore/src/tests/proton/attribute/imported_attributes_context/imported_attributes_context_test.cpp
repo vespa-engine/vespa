@@ -31,7 +31,7 @@ using generation_t = AttributeVector::generation_t;
 std::shared_ptr<ReferenceAttribute>
 createReferenceAttribute(const vespalib::string &name)
 {
-    auto refAttr = std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE));
+    auto refAttr = std::make_shared<ReferenceAttribute>(name);
     refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
     return refAttr;
 }

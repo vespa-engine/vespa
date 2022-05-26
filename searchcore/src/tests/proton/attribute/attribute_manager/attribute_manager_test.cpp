@@ -138,7 +138,7 @@ struct ImportedAttributesRepoBuilder {
     ImportedAttributesRepo::UP _repo;
     ImportedAttributesRepoBuilder() : _repo(std::make_unique<ImportedAttributesRepo>()) {}
     void add(const vespalib::string &name) {
-        auto refAttr = std::make_shared<ReferenceAttribute>(name + "_ref", AVConfig(BasicType::REFERENCE));
+        auto refAttr = std::make_shared<ReferenceAttribute>(name + "_ref");
         refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
         auto documentMetaStore = std::shared_ptr<search::IDocumentMetaStoreContext>();

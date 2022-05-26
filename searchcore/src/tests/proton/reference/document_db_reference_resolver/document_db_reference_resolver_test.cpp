@@ -121,7 +121,7 @@ struct MyAttributeManager : public MockAttributeManager {
         addAttribute(name, AttributeFactory::createAttribute(name, Config(BasicType::INT32)));
     }
     void addReferenceAttribute(const vespalib::string &name) {
-        addAttribute(name, std::make_shared<ReferenceAttribute>(name, Config(BasicType::REFERENCE)));
+        addAttribute(name, std::make_shared<ReferenceAttribute>(name));
     }
     const ReferenceAttribute *getReferenceAttribute(const vespalib::string &name) const {
         AttributeGuard::UP guard = getAttribute(name);
