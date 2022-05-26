@@ -295,7 +295,7 @@ StructFieldDefinition ::= struct-field DottedIdentifier '{' StructFieldBody '}'
 
 StructFieldBody ::= StructFieldBodyOptions* // Does not support zero-or-one occurrences
 StructFieldBodyOptions ::= IndexingDefinition | AttributeDefinition | MatchDefinition | QueryCommandDefinition | 
-                           StructFieldDefinition | SummaryDefinition            
+                           StructFieldDefinition | SummaryDefinition | RankDefinition
 // Match
 MatchDefinition ::= match ((':' MatchProperty) | ('{' MatchProperty+ '}'))
 MatchProperty ::= text | token | exact | (exact-terminator ':' STRING_REG) | word | prefix | cased | uncased | substring |
