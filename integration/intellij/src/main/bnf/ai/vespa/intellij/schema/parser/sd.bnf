@@ -262,7 +262,7 @@ DocumentAnnotationDefinition ::= AnnotationDefinition
                           implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                         }
 
-DocumentStructDefinition ::= struct IdentifierVal '{' DocumentStructBody '}'
+DocumentStructDefinition ::= struct IdentifierVal (inherits IdentifierVal)? '{' DocumentStructBody '}'
                              { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                                implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                              }
