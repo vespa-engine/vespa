@@ -25,7 +25,7 @@ SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
       _valueShiftShift(valueShiftShift),
       _valueShiftMask(valueShiftMask),
       _wordShift(wordShift),
-      _wordData(c.getGrowStrategy().to_generic_strategy(), getGenerationHolder())
+      _wordData(c.getGrowStrategy(), getGenerationHolder())
 {
     assert(_valueMask + 1 == (1u << (1u << valueShiftShift)));
     assert((_valueShiftMask + 1) * (1u << valueShiftShift) == 8 * sizeof(Word));

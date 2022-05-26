@@ -477,7 +477,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
             }
             EXPECT_EQ(doc, docEnd);
         } else {
-            EXPECT_TRUE(has_bitvector && vec.getConfig().getEnableOnlyBitVector());
+            EXPECT_TRUE(has_bitvector && vec.getEnableOnlyBitVector());
             numHits = postingList.getBitVectorEntry(find_result.second)->_bv->reader().countTrueBits();
         }
         if (has_bitvector) {

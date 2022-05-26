@@ -253,7 +253,7 @@ createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
 {
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
-    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
+    grow.setGrowDelta(grow.getGrowDelta() + alloc_strategy.get_amortize_count());
     vespalib::string baseDir(_baseDir + "/documentmetastore");
     vespalib::string name = DocumentMetaStore::getFixedName();
     vespalib::string attrFileName = baseDir + "/" + name; // XXX: Wrong
@@ -457,7 +457,7 @@ StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, 
     auto cfg = _dms->getConfig();
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
-    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
+    grow.setGrowDelta(grow.getGrowDelta() + alloc_strategy.get_amortize_count());
     cfg.setGrowStrategy(grow);
     cfg.setCompactionStrategy(computeCompactionStrategy(alloc_strategy.get_compaction_strategy()));
     _dms->update_config(cfg); // Update grow and compaction config

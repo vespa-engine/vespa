@@ -416,7 +416,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
                                      const GrowStrategy &grow,
                                      SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),
-      _metaDataStore(grow.to_generic_strategy(), getGenerationHolder()),
+      _metaDataStore(grow, getGenerationHolder()),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(vespalib::datastore::EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),

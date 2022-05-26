@@ -5,7 +5,6 @@
 #include "address_space_usage.h"
 #include "changevector.h"
 #include "readable_attribute_vector.h"
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>

@@ -25,7 +25,7 @@ template <typename B>
 SingleValueNumericAttribute<B>::
 SingleValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c)
     : B(baseFileName, c),
-      _data(c.getGrowStrategy().to_generic_strategy(), getGenerationHolder(), this->get_initial_alloc())
+      _data(c.getGrowStrategy(), getGenerationHolder(), this->get_initial_alloc())
 { }
 
 template <typename B>

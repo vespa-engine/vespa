@@ -49,7 +49,7 @@ vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const 
 
 TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore)
     : NotImplementedAttribute(name, cfg),
-      _refVector(cfg.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
+      _refVector(cfg.getGrowStrategy(), getGenerationHolder()),
       _tensorStore(tensorStore),
       _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),

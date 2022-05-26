@@ -66,7 +66,7 @@ LogDataStore::LogDataStore(vespalib::Executor &executor, const vespalib::string 
       _tune(tune),
       _fileHeaderContext(fileHeaderContext),
       _genHandler(),
-      _lidInfo(growStrategy.to_generic_strategy()),
+      _lidInfo(growStrategy),
       _fileChunks(),
       _holdFileChunks(),
       _active(0),

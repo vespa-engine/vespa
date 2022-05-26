@@ -35,7 +35,7 @@ void
 SingleBoolAttribute::ensureRoom(DocId docIdLimit) {
     if (_bv.writer().capacity() < docIdLimit) {
         const GrowStrategy & gs = this->getConfig().getGrowStrategy();
-        uint32_t newSize = docIdLimit + (docIdLimit * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
+        uint32_t newSize = docIdLimit + (docIdLimit * gs.getGrowFactor()) + gs.getGrowDelta();
         bool incGen = _bv.reserve(newSize);
         if (incGen) {
             incGeneration();
