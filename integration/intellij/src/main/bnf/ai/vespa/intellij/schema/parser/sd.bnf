@@ -111,7 +111,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
 RankingExpression ::= LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
-                      QueryDefinitionExpr | FunctionCallOrLambdaExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
+                      FunctionCallOrLambdaExpr | RankfeatureExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
@@ -127,7 +127,7 @@ ArithmeticExpr ::= RankingExpression ArithmeticOperator RankingExpression
 
 ArithmeticOperator ::= '+' | '-' | '*' | '/' | '%' | '^' | "||" | "&&"
 
-QueryDefinitionExpr ::= QueryDefinition | ItemRawScoreDefinition
+RankFeatureExpr ::= RankFeature
 
 // Rough parsing but hard to do better due to greediness: If this is a lambda arg expressions must be identifiers
 FunctionCallOrLambdaExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierWithDashVal)?
@@ -178,22 +178,22 @@ private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition |
 
 MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
 MatchPhaseBody ::= MatchPhaseBodyOptions+
-MatchPhaseBodyOptions ::= (attribute ':' DottedIdentifiers) | (order ':' (ascending | descending)) | (max-hits ':' ('-')? INTEGER_REG)
+MatchPhaseBodyOptions ::= (attribute ':' DottedIdentifier) | (order ':' (ascending | descending)) | (max-hits ':' ('-')? INTEGER_REG)
                           | DiversityDefinition | (evaluation-point ':' ('-')? FLOAT_REG) |
                           (pre-post-filter-tipping-point ':' ('-')? FLOAT_REG) // Does not support zero-or-one occurrences
 DiversityDefinition ::= diversity '{' DiversityBody '}'
 DiversityBody ::= DiversityBodyOptions*
-private DiversityBodyOptions ::= (attribute ':' DottedIdentifiers) | (min-groups ':' ('-')? INTEGER_REG) | (cutoff-factor ':' ('-')? FLOAT_REG) |
+private DiversityBodyOptions ::= (attribute ':' DottedIdentifier) | (min-groups ':' ('-')? INTEGER_REG) | (cutoff-factor ':' ('-')? FLOAT_REG) |
                                  (cutoff-strategy ':' (strict | loose))
 
 private NumThreadsDefinition ::= num-threads-per-search ':' INTEGER_REG
 private TermwiseLimitDefinition ::= termwise-limit ':' ('-')? (FLOAT_REG | INTEGER_REG)
 private MinHitsDefinition ::= min-hits-per-thread ':' ('-')? INTEGER_REG
 private NumSearchPartitionDefinition ::= num-search-partition ':' INTEGER_REG
-FieldWeightDefinition ::= weight DottedIdentifiers ':' INTEGER_REG
+FieldWeightDefinition ::= weight DottedIdentifier ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
 InputsDefinition ::= inputs '{' InputDefinition* '}'
-InputDefinition ::= ( QueryDefinition | IdentifierVal)
+InputDefinition ::= ( QueryFeature | IdentifierVal)
                     (':')?
                     ( TensorType | "double" )? (':' ( TensorValue | FLOAT_REG | INTEGER_REG) )?
 
@@ -210,20 +210,23 @@ private SecondPhaseBodyOptions ::= (rerank-count ':' INTEGER_REG) | ExpressionDe
 RankPropertiesDefinition ::= rank-properties '{' RankPropertiesBody '}'
 RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue)+
 RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | COMMA | '$' | INTEGER_REG)+
-RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | DottedIdentifiers | STRING_REG
+RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | DottedIdentifier | STRING_REG
 
-FunctionDefinition ::= (function | macro) inline? IdentifierVal ( '()' | '(' (ArgumentDefinition (COMMA ArgumentDefinition)*)? ')' )
+FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
                        '{' ExpressionDefinition '}'  
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
+
+Arguments ::= '()' | ( '(' (ArgumentDefinition (COMMA ArgumentDefinition)*)? ')' )
+
 ArgumentDefinition ::= IdentifierVal
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
 SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
-i
+
 MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
 
 RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
@@ -234,16 +237,15 @@ InnerConstantDefinition ::= ( ("constant" '(' IdentifierVal ')') | IdentifierVal
                             (':')? ( TensorType | "double" )?
                             (':')? ( TensorValue | FLOAT_REG | INTEGER_REG | (file ':' FilePath) | (uri ':' UriPath))
 
-RankFeature ::= QueryDefinition | ItemRawScoreDefinition | FunctionCallExpr | DottedIdentifierWithDash
-QueryDefinition ::= "query" '(' IdentifierWithDashVal ')'
+RankFeature ::= IdentifierVal Arguments ( '.' IdentifierVal )?
                     { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                       implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                     }
-ItemRawScoreDefinition ::=  "itemRawScore" '(' IdentifierVal ')'
-                            { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
-                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
-                            }
-                            
+QueryFeature ::= "query" '(' IdentifierWithDashVal ')'
+                    { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
+                      implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
+                    }
+
 //-------------------------
 //---- Document rules -----
 //-------------------------

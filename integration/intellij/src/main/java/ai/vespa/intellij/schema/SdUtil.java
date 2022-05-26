@@ -48,7 +48,7 @@ public class SdUtil {
         String rankProfileName;
         if (rankProfile != null) {
             rankProfileName = rankProfile.getName();
-            List<SdArgumentDefinition> args = function.getArgumentDefinitionList();
+            List<SdArgumentDefinition> args = function.getArguments().getArgumentDefinitionList();
             StringBuilder text = new StringBuilder(rankProfileName + "." + function.getName() + "(");
             for (int i = 0; i < args.size(); i++) {
                 text.append(args.get(i).getName());
