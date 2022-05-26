@@ -49,7 +49,7 @@ public:
     search::attribute::IAttributeContext::UP createContext() const override {
         return _mock.createContext();
     }
-    IAttributeManager::SP create(const AttributeCollectionSpec &) const override {
+    IAttributeManager::SP create(AttributeCollectionSpec &&) const override {
         return IAttributeManager::SP();
     }
     std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override {

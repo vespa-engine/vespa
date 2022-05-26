@@ -1,20 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-attributes.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
@@ -39,6 +24,22 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/config-attributes.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/predicate/predicate_slime_builder.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -118,13 +119,13 @@ const AVConfig INT32_ARRAY = unregister(AVConfig(AVBasicType::INT32, AVCollectio
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken)
 {
-    AttributeUtils::fillAttribute(attr, numDocs, value, lastSyncToken);
+    AttributeUtils::fillAttribute(*attr, numDocs, value, lastSyncToken);
 }
 
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken)
 {
-    AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
+    AttributeUtils::fillAttribute(*attr, from, to, value, lastSyncToken);
 }
 
 const std::shared_ptr<IDestructorCallback> emptyCallback;

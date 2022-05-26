@@ -38,7 +38,7 @@ public:
     std::unique_ptr<search::attribute::AttributeReadGuard> getAttributeReadGuard(const vespalib::string &name, bool stableEnumGuard) const override;
 
     // Implements proton::IAttributeManager
-    IAttributeManager::SP create(const AttributeCollectionSpec &) const override;
+    IAttributeManager::SP create(AttributeCollectionSpec &&) const override;
     std::vector<searchcorespi::IFlushTarget::SP> getFlushTargets() const override;
     search::SerialNum getOldestFlushedSerialNumber() const override;
     search::SerialNum getNewestFlushedSerialNumber() const override;

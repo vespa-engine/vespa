@@ -7,6 +7,7 @@ vespa_add_executable(searchcore_attribute_test_app TEST
     searchcore_attribute
     searchcore_flushengine
     searchcore_pcommon
+    searchcore_test
     searchlib_test
     GTest::GTest
 )

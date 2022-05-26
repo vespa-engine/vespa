@@ -1,20 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_spec.h"
+#include <vespa/searchcommon/attribute/config.h>
 
 namespace proton {
 
-AttributeSpec::AttributeSpec(const vespalib::string &name,
-                             const search::attribute::Config &cfg)
+AttributeSpec::AttributeSpec(const vespalib::string &name, const Config &cfg)
     : _name(name),
-      _cfg(cfg)
+      _cfg(std::make_unique<Config>(cfg))
 {
 }
-
-AttributeSpec::AttributeSpec(const AttributeSpec &) = default;
-
-AttributeSpec &
-AttributeSpec::operator=(const AttributeSpec &) = default;
 
 AttributeSpec::AttributeSpec(AttributeSpec &&) noexcept = default;
 

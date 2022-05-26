@@ -1,8 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-bucketspaces.h>
-#include <vespa/config/subscription/sourcespec.h>
-#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
@@ -31,6 +28,10 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/config-bucketspaces.h>
+#include <vespa/config/subscription/sourcespec.h>
+#include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
