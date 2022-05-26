@@ -17,7 +17,7 @@ namespace proton {
 class AttributeCollectionSpecFactory
 {
 private:
-    using AttributesConfig = vespa::config::search::internal::InternalAttributesType;
+    using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
 
     const AllocStrategy        _alloc_strategy;
     const bool                 _fastAccessOnly;
