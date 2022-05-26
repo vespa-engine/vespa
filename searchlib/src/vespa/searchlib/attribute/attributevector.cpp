@@ -14,6 +14,7 @@
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
@@ -136,7 +137,7 @@ make_memory_allocator(const vespalib::string& name, const search::attribute::Con
 
 AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config &c)
     : _baseFileName(baseFileName),
-      _config(c),
+      _config(std::make_unique<Config>(c)),
       _interlock(std::make_shared<attribute::Interlock>()),
       _enumLock(),
       _genHandler(),
@@ -170,6 +171,16 @@ AttributeVector::updateStat(bool force) {
 
 bool AttributeVector::hasEnum() const { return _hasEnum; }
 uint32_t AttributeVector::getMaxValueCount() const { return _highestValueCount.load(std::memory_order_relaxed); }
+bool AttributeVector::hasMultiValue() const { return _config->collectionType().isMultiValue(); }
+bool AttributeVector::hasWeightedSetType() const { return _config->collectionType().isWeightedSet(); }
+size_t AttributeVector::getFixedWidth() const { return _config->basicType().fixedSize(); }
+attribute::BasicType AttributeVector::getInternalBasicType() const { return _config->basicType(); }
+attribute::CollectionType AttributeVector::getInternalCollectionType() const { return _config->collectionType(); }
+bool AttributeVector::hasArrayType() const { return _config->collectionType().isArray(); }
+bool AttributeVector::getIsFilter() const  { return _config->getIsFilter(); }
+bool AttributeVector::getIsFastSearch() const { return _config->fastSearch(); }
+bool AttributeVector::isMutable() const { return _config->isMutable(); }
+bool AttributeVector::getEnableOnlyBitVector() const { return _config->getEnableOnlyBitVector(); }
 
 bool
 AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
@@ -774,12 +785,12 @@ void
 AttributeVector::update_config(const Config& cfg)
 {
     commit(true);
-    _config.setGrowStrategy(cfg.getGrowStrategy());
-    if (cfg.getCompactionStrategy() == _config.getCompactionStrategy()) {
+    _config->setGrowStrategy(cfg.getGrowStrategy());
+    if (cfg.getCompactionStrategy() == _config->getCompactionStrategy()) {
         return;
     }
     drain_hold(1_Mi); // Wait until 1MiB or less on hold
-    _config.setCompactionStrategy(cfg.getCompactionStrategy());
+    _config->setCompactionStrategy(cfg.getCompactionStrategy());
     updateStat(true);
     commit(); // might trigger compaction
     drain_hold(1_Mi); // Wait until 1MiB or less on hold

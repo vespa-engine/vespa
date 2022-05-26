@@ -5,6 +5,7 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
@@ -309,6 +310,11 @@ TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& t
     (void) docid;
     (void) tensor;
     (void) prepare_result;
+}
+
+attribute::DistanceMetric
+TensorAttribute::distance_metric() const {
+    return getConfig().distance_metric();
 }
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);

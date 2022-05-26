@@ -9,9 +9,9 @@
 #include "lid_hold_list.h"
 #include "raw_document_meta_data.h"
 #include <vespa/searchcore/proton/common/subdbtype.h>
-#include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/docstore/ibucketizer.h>
+#include <vespa/searchcommon/common/growstrategy.h>
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace proton::bucketdb {
@@ -148,9 +148,11 @@ public:
         sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) +
         sizeof(Timestamp);
 
+    DocumentMetaStore(BucketDBOwnerSP bucketDB);
+    DocumentMetaStore(BucketDBOwnerSP bucketDB, const vespalib::string & name);
     DocumentMetaStore(BucketDBOwnerSP bucketDB,
-                      const vespalib::string & name=getFixedName(),
-                      const search::GrowStrategy & grow=search::GrowStrategy(),
+                      const vespalib::string & name,
+                      const search::GrowStrategy & grow,
                       SubDbType subDbType = SubDbType::READY);
     ~DocumentMetaStore();
 

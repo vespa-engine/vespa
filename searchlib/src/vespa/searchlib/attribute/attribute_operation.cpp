@@ -96,7 +96,7 @@ struct UpdateFast {
     void operator()(uint32_t docid) { attr->set(docid, op(attr->getFast(docid))); }
     bool valid() const {
         return (attr != nullptr) &&
-               (attr->getConfig().isMutable()); }
+               (attr->isMutable()); }
 };
 
 template <typename OP>

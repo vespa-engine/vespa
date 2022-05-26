@@ -4,7 +4,6 @@
 
 #include "attribute_spec.h"
 #include <vespa/searchlib/common/serialnum.h>
-#include <memory>
 #include <vector>
 
 namespace proton {

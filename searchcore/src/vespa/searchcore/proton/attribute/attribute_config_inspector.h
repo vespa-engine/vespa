@@ -4,9 +4,9 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
-#include <vespa/searchcommon/attribute/config.h>
 
 namespace vespa::config::search::internal { class InternalAttributesType; }
+namespace search::attribute { class Config; }
 
 namespace proton {
 
@@ -15,12 +15,13 @@ namespace proton {
  * from config server.
  */
 class AttributeConfigInspector {
-    vespalib::hash_map<vespalib::string, search::attribute::Config> _hash;
+    using Config = search::attribute::Config;
+    vespalib::hash_map<vespalib::string, std::unique_ptr<Config>> _hash;
 public:
     using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
     AttributeConfigInspector(const AttributesConfig& config);
     ~AttributeConfigInspector();
-    const search::attribute::Config* get_config(const vespalib::string& name) const;
+    const Config* get_config(const vespalib::string& name) const;
 };
 
 }

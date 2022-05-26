@@ -3,10 +3,10 @@
 #pragma once
 
 #include "attribute_collection_spec.h"
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/common/alloc_strategy.h>
 #include <vespa/searchlib/common/serialnum.h>
-#include <vespa/config-attributes.h>
+
+namespace vespa::config::search::internal { class InternalAttributesType; };
 
 namespace proton {
 
@@ -17,19 +17,16 @@ namespace proton {
 class AttributeCollectionSpecFactory
 {
 private:
-    typedef vespa::config::search::AttributesConfig AttributesConfig;
+    using AttributesConfig = const vespa::config::search::internal::InternalAttributesType;
 
     const AllocStrategy        _alloc_strategy;
     const bool                 _fastAccessOnly;
 
 public:
-    AttributeCollectionSpecFactory(const AllocStrategy& alloc_strategy,
-                                   bool fastAccessOnly);
+    AttributeCollectionSpecFactory(const AllocStrategy& alloc_strategy, bool fastAccessOnly);
     ~AttributeCollectionSpecFactory();
 
-    AttributeCollectionSpec::UP create(const AttributesConfig &attrCfg,
-                                       uint32_t docIdLimit,
-                                       search::SerialNum serialNum) const;
+    std::unique_ptr<AttributeCollectionSpec> create(const AttributesConfig &attrCfg, uint32_t docIdLimit, search::SerialNum serialNum) const;
 };
 
 } // namespace proton

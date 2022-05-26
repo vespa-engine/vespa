@@ -132,7 +132,7 @@ AttributeInitializerTasksBuilder::add(AttributeInitializer::UP initializer) {
 
 }
 
-AttributeCollectionSpec::UP
+std::unique_ptr<AttributeCollectionSpec>
 AttributeManagerInitializer::createAttributeSpec() const
 {
     uint32_t docIdLimit = 1; // The real docIdLimit is used after attributes are loaded to pad them
@@ -161,8 +161,8 @@ AttributeManagerInitializer::AttributeManagerInitializer(SerialNum configSerialN
 {
     addDependency(documentMetaStoreInitTask);
     AttributeInitializerTasksBuilder tasksBuilder(*this, documentMetaStoreInitTask, documentMetaStore, _attributesResult);
-    AttributeCollectionSpec::UP attrSpec = createAttributeSpec();
-    _attrMgr = std::make_shared<AttributeManager>(*baseAttrMgr, *attrSpec, tasksBuilder);
+    std::unique_ptr<AttributeCollectionSpec> attrSpec = createAttributeSpec();
+    _attrMgr = std::make_shared<AttributeManager>(*baseAttrMgr, std::move(*attrSpec), tasksBuilder);
 }
 
 AttributeManagerInitializer::~AttributeManagerInitializer() = default;
