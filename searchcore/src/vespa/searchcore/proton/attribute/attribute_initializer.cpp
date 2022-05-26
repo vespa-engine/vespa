@@ -9,6 +9,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attributevector.h>

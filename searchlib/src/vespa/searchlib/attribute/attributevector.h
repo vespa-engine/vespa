@@ -59,6 +59,7 @@ namespace search {
         class InterlockGuard;
         class SearchContext;
         class MultiValueMappingBase;
+        class Config;
     }
 
     namespace fileutil {
@@ -352,18 +353,23 @@ public:
     void logEnumStoreEvent(const char *reason, const char *stage);
 
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
-    size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }
-    const Config &getConfig() const noexcept { return _config; }
+    size_t getFixedWidth() const override;
+    BasicType getInternalBasicType() const;
+    CollectionType getInternalCollectionType() const;
+    bool hasArrayType() const;
+    bool getIsFilter() const override final;
+    bool getIsFastSearch() const override final;
+    bool isMutable() const;
+    bool getEnableOnlyBitVector() const;
+
+    const Config &getConfig() const noexcept { return *_config; }
     void update_config(const Config& cfg);
-    BasicType getInternalBasicType() const { return _config.basicType(); }
-    CollectionType getInternalCollectionType() const { return _config.collectionType(); }
     const BaseName & getBaseFileName() const { return _baseFileName; }
     void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
     bool isUpdateableInMemoryOnly() const { return _isUpdateableInMemoryOnly; }
 
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
 
-    bool hasArrayType() const { return _config.collectionType().isArray(); }
     bool hasEnum() const override final;
     uint32_t getMaxValueCount() const override;
     uint32_t getEnumMax() const { return _enumMax; }
@@ -388,8 +394,6 @@ public:
 
     BasicType::Type getBasicType() const override final { return getInternalBasicType().type(); }
     CollectionType::Type getCollectionType() const override final { return getInternalCollectionType().type(); }
-    bool getIsFilter() const override final { return _config.getIsFilter(); }
-    bool getIsFastSearch() const override final { return _config.fastSearch(); }
     uint32_t getCommittedDocIdLimit() const override final { return _committedDocIdLimit.load(std::memory_order_acquire); }
     bool isImported() const override;
 
@@ -490,7 +494,7 @@ private:
 
 
     BaseName                              _baseFileName;
-    Config                                _config;
+    std::unique_ptr<Config>               _config;
     std::shared_ptr<attribute::Interlock> _interlock;
     mutable std::shared_mutex             _enumLock;
     GenerationHandler                     _genHandler;
@@ -533,8 +537,8 @@ private:
     friend class AttributeManagerTest;
 public:
     bool headerTypeOK(const vespalib::GenericHeader &header) const;
-    bool hasMultiValue() const override final { return _config.collectionType().isMultiValue(); }
-    bool hasWeightedSetType() const override final { return _config.collectionType().isWeightedSet(); }
+    bool hasMultiValue() const override final;
+    bool hasWeightedSetType() const override final;
     /**
      * Should be called by the writer thread.
      */

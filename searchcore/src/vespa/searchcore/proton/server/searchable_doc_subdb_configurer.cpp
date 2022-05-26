@@ -144,7 +144,7 @@ reconfigure(const DocumentDBConfig &newConfig,
 {
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, attrSpec, params, resolver);
+    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver);
 }
 
 namespace {

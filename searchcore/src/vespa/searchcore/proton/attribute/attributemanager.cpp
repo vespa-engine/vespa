@@ -10,6 +10,7 @@
 #include "imported_attributes_repo.h"
 #include "sequential_attributes_initializer.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -24,6 +25,7 @@
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/threadexecutor.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attributemanager");

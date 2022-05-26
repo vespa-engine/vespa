@@ -24,6 +24,7 @@
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 

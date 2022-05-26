@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/searchlib/attribute/attribute.h>
@@ -13,12 +12,14 @@
 #include <vespa/searchlib/attribute/multistringpostattribute.h>
 #include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/parsequery/parse.h>
-#include <vespa/searchlib/attribute/enumstore.hpp>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/fastos/file.h>
+#include <vespa/searchlib/attribute/enumstore.hpp>
 #include <iostream>
 
 #include <vespa/log/log.h>

@@ -16,7 +16,6 @@
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/reprocessing/attribute_reprocessing_initializer.h>
 #include <vespa/searchcore/proton/reprocessing/reprocess_documents_task.h>
-#include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 
 #include <vespa/log/log.h>
@@ -104,7 +103,7 @@ FastAccessDocSubDB::setupAttributeManager(AttributeManager::SP attrMgrResult)
 }
 
 
-AttributeCollectionSpec::UP
+std::unique_ptr<AttributeCollectionSpec>
 FastAccessDocSubDB::createAttributeSpec(const AttributesConfig &attrCfg, const AllocStrategy& alloc_strategy, SerialNum serialNum) const
 {
     uint32_t docIdLimit(_dms->getCommittedDocIdLimit());
@@ -267,10 +266,10 @@ FastAccessDocSubDB::applyConfig(const DocumentDBConfig &newConfigSnapshot, const
         FastAccessDocSubDBConfigurer configurer(_fastAccessFeedView,
                 std::make_unique<AttributeWriterFactory>(), getSubDbName());
         proton::IAttributeManager::SP oldMgr = extractAttributeManager(_fastAccessFeedView.get());
-        AttributeCollectionSpec::UP attrSpec =
+        std::unique_ptr<AttributeCollectionSpec> attrSpec =
             createAttributeSpec(newConfigSnapshot.getAttributesConfig(), alloc_strategy, serialNum);
         IReprocessingInitializer::UP initializer =
-                configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, *attrSpec);
+                configurer.reconfigure(newConfigSnapshot, oldConfigSnapshot, std::move(*attrSpec));
         if (initializer->hasReprocessors()) {
             tasks.push_back(IReprocessingTask::SP(createReprocessingTask(*initializer,
                     newConfigSnapshot.getDocumentTypeRepoSP()).release()));

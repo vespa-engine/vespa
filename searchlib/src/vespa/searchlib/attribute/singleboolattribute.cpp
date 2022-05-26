@@ -10,6 +10,7 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/file_settings.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 

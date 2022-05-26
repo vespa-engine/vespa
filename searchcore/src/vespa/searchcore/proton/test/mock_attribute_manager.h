@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/hdr_abort.h>
-#include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
+#include <vespa/vespalib/util/hdr_abort.h>
+#include <cassert>
 
 namespace proton::test {
 

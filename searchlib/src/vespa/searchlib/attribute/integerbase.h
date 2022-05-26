@@ -58,7 +58,7 @@ public:
     using LoadedVector = SequentialReadModifyWriteInterface<LoadedNumericValueT>;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
-    T defaultValue() const { return getConfig().isMutable() ? 0 : attribute::getUndefined<T>(); }
+    T defaultValue() const { return isMutable() ? 0 : attribute::getUndefined<T>(); }
 protected:
     IntegerAttributeTemplate(const vespalib::string & name);
     IntegerAttributeTemplate(const vespalib::string & name, const Config & c);
