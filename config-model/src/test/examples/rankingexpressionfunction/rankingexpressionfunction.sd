@@ -22,7 +22,7 @@ search rankexpression {
   }
 
   rank-profile macros {
-    function titlematch$(var1, var2) {
+    function titlematch(var1, var2) {
       expression: file: titlematch
     }
 
