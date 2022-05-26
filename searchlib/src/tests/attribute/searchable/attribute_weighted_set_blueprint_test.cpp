@@ -4,7 +4,6 @@
 #include <vespa/searchlib/attribute/attribute_weighted_set_blueprint.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
@@ -15,6 +14,7 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_weighted_set_blueprint_test");

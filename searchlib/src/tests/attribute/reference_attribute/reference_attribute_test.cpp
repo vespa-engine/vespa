@@ -11,10 +11,10 @@
 #include <vespa/searchlib/queryeval/fake_result.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
-#include <vespa/vespalib/util/traits.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("reference_attribute_test");

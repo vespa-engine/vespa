@@ -429,7 +429,7 @@ struct MockAttributeVector : NotImplementedAttribute {
     long _return_value{1234};
 
     MockAttributeVector()
-            : NotImplementedAttribute("mock", Config(BasicType::STRING)) {
+            : NotImplementedAttribute("mock") {
     }
 
     void set_received_args(DocId doc_id, void* ser_to,

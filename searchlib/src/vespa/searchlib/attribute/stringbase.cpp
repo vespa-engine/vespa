@@ -8,6 +8,7 @@
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/util/array.hpp>
 
@@ -283,6 +284,11 @@ vespalib::MemoryUsage
 StringAttribute::getChangeVectorMemoryUsage() const
 {
     return _changes.getMemoryUsage();
+}
+
+bool
+StringAttribute::get_match_is_cased() const noexcept {
+    return getConfig().get_match() == attribute::Config::Match::CASED;
 }
 
 template bool AttributeVector::clearDoc(StringAttribute::ChangeVector& changes, DocId doc);

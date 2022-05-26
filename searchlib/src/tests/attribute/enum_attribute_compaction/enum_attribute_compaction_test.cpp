@@ -5,6 +5,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 
 #include <vespa/log/log.h>

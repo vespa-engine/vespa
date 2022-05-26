@@ -2,6 +2,7 @@
 
 #include "not_implemented_attribute.h"
 #include "search_context.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using vespalib::make_string_short::fmt;
@@ -9,6 +10,14 @@ namespace search {
 
 using largeint_t = attribute::IAttributeVector::largeint_t;
 using attribute::SearchContext;
+
+NotImplementedAttribute::NotImplementedAttribute(const vespalib::string &name)
+    : NotImplementedAttribute(name, Config())
+{}
+
+NotImplementedAttribute::NotImplementedAttribute(const vespalib::string &name, const Config & cfg)
+    : AttributeVector(name, cfg)
+{}
 
 void
 NotImplementedAttribute::notImplemented() const {

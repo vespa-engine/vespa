@@ -7,11 +7,11 @@
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/features/euclidean_distance_feature.h>
 #include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchcommon/attribute/config.h>
+
 
 using search::feature_t;
 using namespace search::fef;

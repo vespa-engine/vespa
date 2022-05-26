@@ -1,6 +1,21 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for documentretriever.
 
+#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/server/documentretriever.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/test/dummy_document_store.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/attribute/floatbase.h>
+#include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/searchlib/attribute/predicate_attribute.h>
+#include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/common/schema.h>
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/datatype/datatype.h>
@@ -21,29 +36,15 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/fieldvalue_helpers.h>
+#include <vespa/vespalib/geo/zcurve.h>
+#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/persistence/spi/bucket.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/searchcommon/common/schema.h>
-#include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
-#include <vespa/searchcore/proton/server/documentretriever.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
-#include <vespa/searchcore/proton/test/dummy_document_store.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/attribute/floatbase.h>
-#include <vespa/searchlib/attribute/integerbase.h>
-#include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchlib/predicate/predicate_index.h>
-#include <vespa/searchlib/tensor/tensor_attribute.h>
-#include <vespa/vespalib/geo/zcurve.h>
-#include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/stringfmt.h>
 
 
 #include <vespa/log/log.h>

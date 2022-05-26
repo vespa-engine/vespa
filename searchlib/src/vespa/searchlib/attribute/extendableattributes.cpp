@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "extendableattributes.h"
-#include "attrvector.hpp"
+#include "extendableattributes.hpp"
 #include "extendable_numeric_array_multi_value_read_view.h"
 #include "extendable_numeric_weighted_set_multi_value_read_view.h"
 #include "extendable_string_array_multi_value_read_view.h"
 #include "extendable_string_weighted_set_multi_value_read_view.h"
 #include <vespa/vespalib/util/stash.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.extendable_attributes");
@@ -129,7 +129,15 @@ WeightedSetIntegerExtAttribute::WeightedSetIntegerExtAttribute(const vespalib::s
 {
 }
 
-WeightedSetIntegerExtAttribute::~WeightedSetIntegerExtAttribute() {}
+WeightedSetIntegerExtAttribute::~WeightedSetIntegerExtAttribute() = default;
+
+std::unique_ptr<attribute::SearchContext>
+WeightedSetIntegerExtAttribute::getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const
+{
+    (void) term;
+    (void) params;
+    return {};
+}
 
 bool
 WeightedSetIntegerExtAttribute::add(int64_t v, int32_t w)
@@ -161,7 +169,15 @@ WeightedSetFloatExtAttribute::WeightedSetFloatExtAttribute(const vespalib::strin
 {
 }
 
-WeightedSetFloatExtAttribute::~WeightedSetFloatExtAttribute() {}
+WeightedSetFloatExtAttribute::~WeightedSetFloatExtAttribute() = default;
+
+std::unique_ptr<attribute::SearchContext>
+WeightedSetFloatExtAttribute::getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const
+{
+    (void) term;
+    (void) params;
+    return {};
+}
 
 bool
 WeightedSetFloatExtAttribute::add(double v, int32_t w)
@@ -227,5 +243,11 @@ template class MultiExtAttribute<int16_t>;
 template class MultiExtAttribute<int32_t>;
 template class MultiExtAttribute<int64_t>;
 template class MultiExtAttribute<double>;
+
+template class SingleExtAttribute<int8_t>;
+template class SingleExtAttribute<int16_t>;
+template class SingleExtAttribute<int32_t>;
+template class SingleExtAttribute<int64_t>;
+template class SingleExtAttribute<double>;
 
 }

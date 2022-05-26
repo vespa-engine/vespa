@@ -10,6 +10,8 @@
 
 namespace search {
 
+class GrowStrategy;
+
 class SingleValueSmallNumericAttribute : public IntegerAttributeTemplate<int8_t>
 {
 private:
@@ -32,7 +34,7 @@ private:
     uint32_t _valueShiftMask;   // 0x1f, 0x0f or 0x07
     uint32_t _wordShift;        // 0x05, 0x04 or 0x03
 
-    typedef vespalib::RcuVectorBase<Word> DataVector;
+    using DataVector = vespalib::RcuVectorBase<Word>;
     DataVector _wordData;
 
     T getFromEnum(EnumHandle) const override {
@@ -143,13 +145,13 @@ public:
 class SingleValueSemiNibbleNumericAttribute : public SingleValueSmallNumericAttribute
 {
 public:
-    SingleValueSemiNibbleNumericAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);
+    SingleValueSemiNibbleNumericAttribute(const vespalib::string & baseFileName, const GrowStrategy & grow);
 };
 
 class SingleValueNibbleNumericAttribute : public SingleValueSmallNumericAttribute
 {
 public:
-    SingleValueNibbleNumericAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow);
+    SingleValueNibbleNumericAttribute(const vespalib::string & baseFileName, const GrowStrategy & grow);
 };
 
 }

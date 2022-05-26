@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_blueprint.
 
-#include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/predicate/predicate_tree_annotator.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
@@ -33,14 +32,13 @@ namespace {
 struct Fixture {
     FieldSpecBase field;
     AttributeVector::SP attribute;
-    vespalib::GenerationHandler generation_handler;
     SimplePredicateQuery query;
 
     using IntervalRange = PredicateAttribute::IntervalRange;
 
     Fixture()
         : field(42, 0),
-          attribute(std::make_shared<PredicateAttribute>("f", attribute::Config(attribute::BasicType::PREDICATE))),
+          attribute(std::make_shared<PredicateAttribute>("f")),
           query(std::make_unique<PredicateQueryTerm>(),"view", 0, Weight(1))
     {
         query.getTerm()->addFeature("key", "value");

@@ -14,6 +14,7 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>

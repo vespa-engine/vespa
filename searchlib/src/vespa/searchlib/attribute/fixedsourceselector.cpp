@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fixedsourceselector.h"
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.fixed_source_selector");
@@ -8,7 +9,8 @@ LOG_SETUP(".searchlib.attribute.fixed_source_selector");
 namespace search {
 
 namespace {
-    attribute::Config getConfig() { return attribute::Config(attribute::BasicType::INT8); }
+
+attribute::Config getConfig() { return attribute::Config(attribute::BasicType::INT8); }
 
 uint32_t
 capSelector(queryeval::sourceselector::Iterator::SourceStore &store, queryeval::Source defaultSource)

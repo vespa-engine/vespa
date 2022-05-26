@@ -6,6 +6,7 @@
 #include "attributemanager.h"
 #include "attrvector.h"
 #include "interlock.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <condition_variable>

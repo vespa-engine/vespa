@@ -4,6 +4,7 @@
 
 #include "i_attribute_initializer_registry.h"
 #include "attribute_initializer_result.h"
+#include <vector>
 
 namespace proton {
 

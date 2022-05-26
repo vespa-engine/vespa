@@ -17,6 +17,7 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>

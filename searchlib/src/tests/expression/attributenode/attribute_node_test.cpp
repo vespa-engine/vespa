@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
@@ -11,6 +10,8 @@
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>

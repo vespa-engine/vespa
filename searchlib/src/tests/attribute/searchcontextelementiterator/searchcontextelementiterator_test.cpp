@@ -7,7 +7,7 @@
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/vespalib/gtest/gtest.h>
 

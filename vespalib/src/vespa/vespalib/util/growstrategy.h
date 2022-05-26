@@ -29,6 +29,9 @@ public:
     float       getGrowFactor() const noexcept { return _growFactor; }
     size_t       getGrowDelta() const noexcept { return _growDelta; }
 
+    void         setInitialCapacity(size_t v) noexcept { _initialCapacity = v; }
+    void         setGrowDelta(size_t v) noexcept { _growDelta = v; }
+
     bool operator==(const GrowStrategy & rhs) const noexcept {
         return (_initialCapacity == rhs._initialCapacity &&
                 _minimumCapacity == rhs._minimumCapacity &&

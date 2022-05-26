@@ -8,6 +8,7 @@
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -68,6 +69,10 @@ SimpleIndexConfig createSimpleIndexConfig(const search::attribute::Config &confi
 }
 
 }  // namespace
+
+PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name)
+    : PredicateAttribute(base_file_name, Config(BasicType::PREDICATE))
+{}
 
 PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name, const Config &config)
     : NotImplementedAttribute(base_file_name, config),

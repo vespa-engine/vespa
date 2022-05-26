@@ -555,8 +555,7 @@ public:
         attr.fastaccess = fastAccess;
         _builder.attribute.push_back(attr);
     }
-    AttributeCollectionSpec::UP create(uint32_t docIdLimit,
-                                       search::SerialNum serialNum) {
+    std::unique_ptr<AttributeCollectionSpec> create(uint32_t docIdLimit, search::SerialNum serialNum) {
         return _factory.create(_builder, docIdLimit, serialNum);
     }
 };
@@ -573,7 +572,7 @@ struct FastAccessAttributeCollectionSpecTest : public AttributeCollectionSpecTes
 
 TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
 {
-    AttributeCollectionSpec::UP spec = create(10, 20);
+    auto spec = create(10, 20);
     EXPECT_EQ(2u, spec->getAttributes().size());
     EXPECT_EQ("a1", spec->getAttributes()[0].getName());
     EXPECT_EQ("a2", spec->getAttributes()[1].getName());
@@ -583,7 +582,7 @@ TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
 
 TEST_F(FastAccessAttributeCollectionSpecTest, spec_can_be_created)
 {
-    AttributeCollectionSpec::UP spec = create(10, 20);
+    auto spec = create(10, 20);
     EXPECT_EQ(1u, spec->getAttributes().size());
     EXPECT_EQ("a2", spec->getAttributes()[0].getName());
     EXPECT_EQ(10u, spec->getDocIdLimit());
@@ -594,13 +593,13 @@ const FilterAttributeManager::AttributeSet ACCEPTED_ATTRIBUTES = {"a2"};
 
 class FilterAttributeManagerTest : public ::testing::Test {
 public:
-    DirectoryHandler _dirHandler;
-    DummyFileHeaderContext _fileHeaderContext;
-    ForegroundTaskExecutor _attributeFieldWriter;
-    ForegroundThreadExecutor _shared;
-    HwInfo                 _hwInfo;
+    DirectoryHandler             _dirHandler;
+    DummyFileHeaderContext       _fileHeaderContext;
+    ForegroundTaskExecutor       _attributeFieldWriter;
+    ForegroundThreadExecutor     _shared;
+    HwInfo                       _hwInfo;
     proton::AttributeManager::SP _baseMgr;
-    FilterAttributeManager _filterMgr;
+    FilterAttributeManager       _filterMgr;
 
     FilterAttributeManagerTest()
         : _dirHandler(test_dir),

@@ -4,6 +4,8 @@
 #include "streamed_value_saver.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/fastlib/io/bufferedfile.h>
+#include <vespa/searchcommon/attribute/config.h>
+
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.serialized_fast_value_attribute");

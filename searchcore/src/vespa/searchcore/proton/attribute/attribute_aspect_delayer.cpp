@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/common/i_document_type_inspector.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>
 #include <vespa/searchlib/attribute/configconverter.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
 
 using search::attribute::isUpdateableInMemoryOnly;

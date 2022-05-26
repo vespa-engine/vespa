@@ -2,10 +2,10 @@
 
 #include "mock_attribute_manager.h"
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/floatbase.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <cassert>
 
 using search::attribute::BasicType;

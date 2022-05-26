@@ -15,6 +15,7 @@
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/util/varholder.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <mutex>
 
 namespace proton {
