@@ -120,11 +120,12 @@ AttributeManager::FlushableWrap::FlushableWrap(FlushableAttributeSP flusher, Shr
 AttributeManager::FlushableWrap::~FlushableWrap() = default;
 
 AttributeVector::SP
-AttributeManager::internalAddAttribute(const AttributeSpec &spec,
+AttributeManager::internalAddAttribute(AttributeSpec && spec,
                                        uint64_t serialNum,
                                        const IAttributeFactory &factory)
 {
-    AttributeInitializer initializer(_diskLayout->createAttributeDir(spec.getName()), _documentSubDbName, spec, serialNum, factory, _shared_executor);
+    vespalib::string name = spec.getName();
+    AttributeInitializer initializer(_diskLayout->createAttributeDir(name), _documentSubDbName, std::move(spec), serialNum, factory, _shared_executor);
     AttributeInitializerResult result = initializer.init();
     if (result) {
         result.getAttribute()->setInterlock(_interlock);
@@ -166,15 +167,15 @@ AttributeManager::findFlushable(const vespalib::string &name) const
     return (itr != _flushables.end()) ? &itr->second : nullptr;
 }
 
-void
+AttributeCollectionSpec::AttributeList
 AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
-                                             const Spec &newSpec,
-                                             Spec::AttributeList &toBeAdded)
+                                             Spec::AttributeList && newAttributes)
 {
+    Spec::AttributeList toBeAdded;
     vespalib::Gate gate;
     {
         auto gateCallback = std::make_shared<vespalib::GateCallback>(gate);
-        for (const auto &aspec: newSpec.getAttributes()) {
+        for (auto &aspec: newAttributes) {
             AttributeVector::SP av = currMgr.findAttribute(aspec.getName());
             if (matchingTypes(av, aspec.getConfig())) { // transfer attribute
                 LOG(debug,
@@ -192,24 +193,25 @@ AttributeManager::transferExistingAttributes(const AttributeManager &currMgr,
                     av->update_config(cfg);
                 });
             } else {
-                toBeAdded.push_back(aspec);
+                toBeAdded.push_back(std::move(aspec));
             }
         }
     }
     gate.await();
+    return toBeAdded;
 }
 
 void
 AttributeManager::addNewAttributes(const Spec &newSpec,
-                                   const Spec::AttributeList &toBeAdded,
+                                   Spec::AttributeList && toBeAdded,
                                    IAttributeInitializerRegistry &initializerRegistry)
 {
-    for (const auto &aspec : toBeAdded) {
+    for (auto &aspec : toBeAdded) {
         LOG(debug, "Creating initializer for attribute vector '%s': docIdLimit=%u, serialNumber=%" PRIu64,
                    aspec.getName().c_str(), newSpec.getDocIdLimit(), newSpec.getCurrentSerialNum());
 
         auto initializer = std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(aspec.getName()),
-                                                                  _documentSubDbName, aspec, newSpec.getCurrentSerialNum(),
+                                                                  _documentSubDbName, std::move(aspec), newSpec.getCurrentSerialNum(),
                                                                   *_factory, _shared_executor);
         initializerRegistry.add(std::move(initializer));
 
@@ -289,7 +291,7 @@ AttributeManager::AttributeManager(const vespalib::string &baseDir,
 }
 
 AttributeManager::AttributeManager(const AttributeManager &currMgr,
-                                   const Spec &newSpec,
+                                   Spec && newSpec,
                                    IAttributeInitializerRegistry &initializerRegistry)
     : proton::IAttributeManager(),
       _attributes(),
@@ -306,18 +308,17 @@ AttributeManager::AttributeManager(const AttributeManager &currMgr,
       _hwInfo(currMgr._hwInfo),
       _importedAttributes()
 {
-    Spec::AttributeList toBeAdded;
-    transferExistingAttributes(currMgr, newSpec, toBeAdded);
-    addNewAttributes(newSpec, toBeAdded, initializerRegistry);
+    Spec::AttributeList toBeAdded = transferExistingAttributes(currMgr, newSpec.stealAttributes());
+    addNewAttributes(newSpec, std::move(toBeAdded), initializerRegistry);
     transferExtraAttributes(currMgr);
 }
 
 AttributeManager::~AttributeManager() = default;
 
 AttributeVector::SP
-AttributeManager::addAttribute(const AttributeSpec &spec, uint64_t serialNum)
+AttributeManager::addAttribute(AttributeSpec && spec, uint64_t serialNum)
 {
-    return internalAddAttribute(spec, serialNum, *_factory);
+    return internalAddAttribute(std::move(spec), serialNum, *_factory);
 }
 
 void
@@ -482,10 +483,10 @@ AttributeManager::createContext() const
 }
 
 proton::IAttributeManager::SP
-AttributeManager::create(const Spec &spec) const
+AttributeManager::create(Spec && spec) const
 {
     SequentialAttributesInitializer initializer(spec.getDocIdLimit());
-    proton::AttributeManager::SP result = std::make_shared<AttributeManager>(*this, spec, initializer);
+    proton::AttributeManager::SP result = std::make_shared<AttributeManager>(*this, std::move(spec), initializer);
     result->addInitializedAttributes(initializer.getInitializedAttributes());
     return result;
 }

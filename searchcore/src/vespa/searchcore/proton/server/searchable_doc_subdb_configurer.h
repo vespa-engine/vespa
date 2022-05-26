@@ -90,7 +90,7 @@ public:
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,
                 const DocumentDBConfig &oldConfig,
-                const AttributeCollectionSpec &attrSpec,
+                AttributeCollectionSpec && attrSpec,
                 const ReconfigParams &params,
                 IDocumentDBReferenceResolver &resolver);
 };

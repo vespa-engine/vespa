@@ -31,6 +31,7 @@
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
@@ -106,19 +107,19 @@ public:
 }
 
 const string test_dir = "test_output";
-const AVConfig INT32_SINGLE = AttributeUtils::getInt32Config();
-const AVConfig INT32_ARRAY = AttributeUtils::getInt32ArrayConfig();
+const AVConfig & INT32_SINGLE = AttributeUtils::getInt32Config();
+const AVConfig & INT32_ARRAY = AttributeUtils::getInt32ArrayConfig();
 
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken)
 {
-    AttributeUtils::fillAttribute(attr, numDocs, value, lastSyncToken);
+    AttributeUtils::fillAttribute(*attr, numDocs, value, lastSyncToken);
 }
 
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken)
 {
-    AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
+    AttributeUtils::fillAttribute(*attr, from, to, value, lastSyncToken);
 }
 
 search::SerialNum getCreateSerialNum(const AttributeGuard::UP &guard)

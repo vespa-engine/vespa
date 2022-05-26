@@ -47,7 +47,7 @@ private:
 
 public:
     AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir, const vespalib::string &documentSubDbName,
-                         const AttributeSpec &spec, uint64_t currentSerialNum, const IAttributeFactory &factory,
+                         AttributeSpec && spec, uint64_t currentSerialNum, const IAttributeFactory &factory,
                          vespalib::Executor& shared_executor);
     ~AttributeInitializer();
 

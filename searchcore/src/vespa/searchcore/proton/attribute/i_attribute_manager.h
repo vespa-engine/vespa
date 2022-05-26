@@ -39,7 +39,7 @@ struct IAttributeManager : public search::IAttributeManager
      * Create a new attribute manager based on the content of the current one and
      * the given attribute collection spec.
      */
-    virtual IAttributeManager::SP create(const AttributeCollectionSpec &spec) const = 0;
+    virtual IAttributeManager::SP create(AttributeCollectionSpec && spec) const = 0;
 
     /**
      * Return the list of flush targets for this attribute manager.
