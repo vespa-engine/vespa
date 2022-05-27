@@ -3,7 +3,8 @@
  * Vespa schema file grammar.
  * NOTE: This grammar does not enforce zero-or-one occurrences of elements (treats it like zero-to-many)
  *
- * @author: Shahar Ariel
+ * @author Shahar Ariel
+ * @author bratseth
  */
 
 {
@@ -36,7 +37,8 @@
         //BLOCK_END = '}'
         INTEGER_REG = 'regexp:[0-9]+'
         FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
-        STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"' // TODO: Should also support single-quotes
+        STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
+        STRING_REG_SINGLE_QUOTE = "regexp:'([^'\\]*(\\.[^'\\]*)*)'" // TODO: This appears not to work
         WORD_REG = 'regexp:\w+'
     ]
 }
@@ -110,7 +112,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //    NOTE: These must end by "Expr" - see this line above: extends(".*Expr")=RankingExpression
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
-RankingExpression ::= LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
+RankingExpression ::= RenameExpr | LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
                       FunctionCallOrLambdaExpr | RankFeatureExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
@@ -129,6 +131,9 @@ ArithmeticOperator ::= '+' | '-' | '*' | '/' | '%' | '^' | "||" | "&&"
 
 RankFeatureExpr ::= RankFeature
 
+// The rename function allows lists of identifiers as arguments
+RenameExpr ::= "rename" '(' RankingExpression ',' ( Arguments | ArgumentDefinition ) ',' ( Arguments | ArgumentDefinition ) ')'
+
 // Rough parsing but hard to do better due to greediness: If this is a lambda arg expressions must be identifiers
 FunctionCallOrLambdaExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierWithDashVal)?
                              ParenthesisedExpr? // This turns the function call into a lambda
@@ -139,16 +144,14 @@ PrimitiveExpr ::= ( (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | 
 
 SliceExpr ::= RankingExpression ( SliceKey | SliceIndex | FullTensorAddress )
 
-GenerateExpr ::= TensorType ParenthesisedExpr
-
 SliceKey ::= '{' Label '}'
 SliceIndex ::= '[' RankingExpression ']'
 
 FullTensorAddress ::= '{' KeyValue ( ',' KeyValue )* '}'
 
-KeyValue ::= IdentifierVal ':' ( Label | RankingExpression )
+KeyValue ::= IdentifierVal ':' ( RankingExpression | Label )
 
-Label ::= IdentifierVal | STRING_REG
+Label ::= IdentifierVal | STRING_REG | STRING_REG_SINGLE_QUOTE
 
 LiteralOrGenerateTensorExpr ::= TensorType (
                                   ( ':' TensorValue ) | // literal verbose form tensor
@@ -157,9 +160,10 @@ LiteralOrGenerateTensorExpr ::= TensorType (
 
 TensorValue ::= MappedTensorValue | ArrayTensorValues
 MappedTensorValue ::= '{' MappedTensorBlock ( ',' MappedTensorBlock )* '}'
-MappedTensorBlock ::= TensorAddress ':' ( FLOAT_REG | ArrayTensorValues )
-ArrayTensorValues ::= '[' ( FLOAT_REG | ArrayTensorValues ) ( ',' ( FLOAT_REG | ArrayTensorValues ) )* ']'
+MappedTensorBlock ::= TensorAddress ':' ( TensorCellValue | ArrayTensorValues )
+ArrayTensorValues ::= '[' ( TensorCellValue | ArrayTensorValues ) ( ',' ( TensorCellValue | ArrayTensorValues ) )* ']'
 TensorAddress ::= Label | FullTensorAddress
+TensorCellValue ::= RankingExpression
 
 //-------------------------
 //-- Rank Profile rules ---
@@ -360,11 +364,6 @@ WeightedSetProperty ::=  create-if-nonexistent | remove-if-zero
 // Dictionary
 DictionaryDefinition ::= dictionary ((':' DictionarySetting) | ('{' DictionarySetting* '}')) 
 DictionarySetting ::= hash | btree | cased | uncased
-//***** End of Field's body elements ******//
-
-//---------------------
-//---- Util rules -----
-//---------------------
 
 private WordWrapper ::= KeywordOrIdentifier | KeywordNotIdentifier | ID_REG | ID_WITH_DASH_REG | WORD_REG
 
