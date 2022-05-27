@@ -6,7 +6,6 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/multienumattribute.hpp>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/multivalueattribute.hpp>
