@@ -38,9 +38,10 @@ SYMBOL= [!$|:{}().\[\]]
 COMMA= [,]
 //BLOCK_START= \{
 //BLOCK_END= \}
-INTEGER = [0-9]+
+INTEGER = [-]?[0-9]+
 FLOAT = {INTEGER}[.][0-9]+[e]?
 STRING = \"([^\"\\]*(\\.[^\"\\]*)*)\"
+STRING_SINGLE_QUOTE = '([^'\\]*(\\.[^'\\]*)*)'
 WORD = \w+
 
 
@@ -249,6 +250,7 @@ WORD = \w+
   {FLOAT}                    { return FLOAT_REG; }
   {WORD}                     { return WORD_REG; }
   {STRING}                   { return STRING_REG; }  
+  {STRING_SINGLE_QUOTE}     { return STRING_REG_SINGLE_QUOTE; }
 
 }
 

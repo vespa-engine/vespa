@@ -25,7 +25,8 @@
     tokenTypeClass="ai.vespa.intellij.schema.psi.SdTokenType" // Class which will be used to create leaf nodes.
       
     extends(".*Expr")=RankingExpression  // Here to deal with left-recursion that happens in expressions
-   
+
+    // NOTE: As far as I (Jon) can tell these are not used. Edit the ones in sd.flex instead.
     tokens = [
         ID_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_]*'
         ID_WITH_DASH_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_-]*'
@@ -35,10 +36,10 @@
         COMMA = 'regexp:[,]'
         //BLOCK_START = '{'
         //BLOCK_END = '}'
-        INTEGER_REG = 'regexp:[0-9]+'
-        FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
+        INTEGER_REG = 'regexp:[\-]?[0-9]+'
+        FLOAT_REG = 'regexp:[\-]?[0-9]+[.][0-9]+[e]?'
         STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
-        STRING_REG_SINGLE_QUOTE = "regexp:'([^'\\]*(\\.[^'\\]*)*)'" // TODO: This appears not to work
+        STRING_REG_SINGLE_QUOTE = "regexp:'([^'\\]*(\\.[^'\\]*)*)'"
         WORD_REG = 'regexp:\w+'
     ]
 }
@@ -199,7 +200,7 @@ StrictDefinition ::= strict ':' (true | false)
 InputsDefinition ::= inputs '{' InputDefinition* '}'
 InputDefinition ::= ( QueryFeature | IdentifierVal)
                     (':')?
-                    ( TensorType | "double" )? (':' ( TensorValue | FLOAT_REG | INTEGER_REG) )?
+                    ( TensorType | "double" )? (':'? ( FLOAT_REG | INTEGER_REG | TensorValue ) )?
 
 FirstPhaseDefinition ::= first-phase '{' FirstPhaseBody '}'  { mixin="ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin" }
 FirstPhaseBody ::= FirstPhaseBodyOptions* // Does not support zero-or-one occurrences
