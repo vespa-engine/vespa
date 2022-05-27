@@ -3,8 +3,7 @@
 
 #include <vespa/vespalib/util/jsonwriter.h>
 
-namespace search {
-namespace util {
+namespace search::util {
 
 class LogUtil {
 public:
@@ -24,6 +23,4 @@ public:
     static void logDir(vespalib::JSONStringer & jstr, const vespalib::string & path, size_t numElems);
 };
 
-} // namespace util
-} // namespace search
-
+}

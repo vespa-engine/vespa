@@ -3,10 +3,10 @@
 #pragma once
 
 #include "load_utils.h"
+#include "attributevector.h"
 #include <vespa/searchcommon/attribute/multivalue.h>
 
-namespace search {
-namespace attribute {
+namespace search::attribute {
 
 template <class MvMapping, class Saver>
 uint32_t
@@ -86,5 +86,4 @@ loadFromEnumeratedSingleValue(Vector &vector,
     }
 }
 
-} // namespace search::attribute
-} // namespace search
+}

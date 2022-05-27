@@ -9,6 +9,7 @@
 #include "singlenumericattribute.h"
 #include "singlenumericattributesaver.h"
 #include "single_numeric_search_context.h"
+#include "valuemodifier.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchcommon/attribute/config.h>
 

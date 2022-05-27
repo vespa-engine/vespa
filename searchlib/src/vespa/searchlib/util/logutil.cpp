@@ -6,8 +6,7 @@
 
 using vespalib::JSONStringer;
 
-namespace search {
-namespace util {
+namespace search::util {
 
 vespalib::string
 LogUtil::extractLastElements(const vespalib::string & path, size_t numElems)
@@ -47,5 +46,4 @@ LogUtil::logDir(JSONStringer & jstr, const vespalib::string & path, size_t numEl
     jstr.endObject();
 }
 
-} // namespace util
-} // namespace search
+}

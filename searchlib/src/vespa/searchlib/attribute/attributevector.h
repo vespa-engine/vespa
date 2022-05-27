@@ -5,6 +5,7 @@
 #include "address_space_usage.h"
 #include "changevector.h"
 #include "readable_attribute_vector.h"
+#include "basename.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
@@ -61,6 +62,8 @@ namespace search {
         class SearchContext;
         class MultiValueMappingBase;
         class Config;
+        class ValueModifier;
+        class EnumModifier;
     }
 
     namespace fileutil {
@@ -97,31 +100,10 @@ protected:
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     using QueryPacketT = vespalib::stringref;
     using stringref = vespalib::stringref;
+    using ValueModifier = attribute::ValueModifier;
+    using EnumModifier = attribute::EnumModifier;
 public:
-    typedef std::shared_ptr<AttributeVector> SP;
-    class BaseName : public vespalib::string
-    {
-    public:
-        typedef vespalib::string string;
-        BaseName(vespalib::stringref s)
-            : string(s),
-              _name(createAttributeName(s))
-        { }
-        BaseName & operator = (vespalib::stringref s) {
-            BaseName n(s);
-            std::swap(*this, n);
-            return *this;
-        }
-
-        BaseName(vespalib::stringref base, vespalib::stringref name);
-        ~BaseName();
-
-        const string & getAttributeName() const { return _name; }
-        string getDirName() const;
-    private:
-        static string createAttributeName(vespalib::stringref s);
-        string _name;
-    };
+    using SP = std::shared_ptr<AttributeVector>;
 
     using GenerationHandler = vespalib::GenerationHandler;
     using GenerationHolder = vespalib::GenerationHolder;
@@ -157,46 +139,11 @@ protected:
     void setNumDocs(uint32_t n)          { _status.setNumDocs(n); }
     void incNumDocs()                    { _status.incNumDocs(); }
 
-    class ValueModifier
-    {
-    public:
-        ValueModifier(AttributeVector &attr);
-        ValueModifier(const ValueModifier &rhs);
-        ~ValueModifier();
-    private:
-        AttributeVector * stealAttr() const {
-            AttributeVector * ret(_attr);
-            _attr = nullptr;
-            return ret;
-        }
-
-        mutable AttributeVector * _attr;
-    };
-
 public:
-    class EnumModifier
-    {
-        std::unique_lock<std::shared_mutex> _enumLock;
-    public:
-        EnumModifier(std::shared_mutex &lock, attribute::InterlockGuard &interlockGuard)
-            : _enumLock(lock)
-        {
-            (void) interlockGuard;
-        }
-        EnumModifier(EnumModifier &&rhs)
-            : _enumLock(std::move(rhs._enumLock))
-        { }
-        EnumModifier &operator=(EnumModifier &&rhs)
-        {
-            _enumLock = std::move(rhs._enumLock);
-            return *this;
-        }
-        virtual ~EnumModifier() { }
-    };
 
     EnumModifier getEnumModifier();
 protected:
-    ValueModifier getValueModifier() { return ValueModifier(*this); }
+    ValueModifier getValueModifier();
 
     void updateCommittedDocIdLimit() {
         if (_uncommittedDocIdLimit != 0) {
@@ -341,7 +288,7 @@ public:
 
     const Config &getConfig() const noexcept { return *_config; }
     void update_config(const Config& cfg);
-    const BaseName & getBaseFileName() const { return _baseFileName; }
+    const attribute::BaseName & getBaseFileName() const { return _baseFileName; }
     void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
     bool isUpdateableInMemoryOnly() const { return _isUpdateableInMemoryOnly; }
 
@@ -470,7 +417,7 @@ private:
     virtual bool onLoad(vespalib::Executor * executor);
 
 
-    BaseName                              _baseFileName;
+    attribute::BaseName                   _baseFileName;
     std::unique_ptr<Config>               _config;
     std::shared_ptr<attribute::Interlock> _interlock;
     mutable std::shared_mutex             _enumLock;

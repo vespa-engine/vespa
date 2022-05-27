@@ -1,15 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "attributevector.h"
 #include "address_space_components.h"
 #include "attribute_read_guard.h"
 #include "attributefilesavetarget.h"
 #include "attributesaver.h"
-#include "attributevector.h"
 #include "attributevector.hpp"
 #include "floatbase.h"
 #include "interlock.h"
 #include "ipostinglistattributebase.h"
 #include "stringbase.h"
+#include "enummodifier.h"
+#include "valuemodifier.h"
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/fastlib/io/bufferedfile.h>
@@ -19,7 +21,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/util/file_settings.h>
-#include <vespa/searchlib/util/logutil.h>
+#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -32,13 +34,12 @@ using vespalib::getLastErrorString;
 
 using document::ValueUpdate;
 using document::AssignValueUpdate;
-using vespalib::make_string;
-using vespalib::Array;
 using vespalib::IllegalStateException;
 using search::attribute::SearchContextParams;
 using search::common::FileHeaderContext;
 using search::index::DummyFileHeaderContext;
 using search::queryeval::SearchIterator;
+using namespace vespalib::make_string_short;
 
 namespace {
 
@@ -50,59 +51,6 @@ const vespalib::string docIdLimitTag = "docIdLimit";
 }
 
 namespace search {
-
-AttributeVector::BaseName::BaseName(vespalib::stringref base, vespalib::stringref name)
-    : string(base),
-      _name(name)
-{
-    if (!empty()) {
-        push_back('/');
-    }
-    append(name);
-}
-
-AttributeVector::BaseName::~BaseName() = default;
-
-
-AttributeVector::BaseName::string
-AttributeVector::BaseName::createAttributeName(vespalib::stringref s)
-{
-    size_t p(s.rfind('/'));
-    if (p == string::npos) {
-       return s;
-    } else {
-        return s.substr(p+1);
-    }
-}
-
-
-AttributeVector::BaseName::string
-AttributeVector::BaseName::getDirName() const
-{
-    size_t p = rfind('/');
-    if (p == string::npos) {
-       return "";
-    } else {
-        return substr(0, p);
-    }
-}
-
-
-AttributeVector::ValueModifier::ValueModifier(AttributeVector &attr)
-    : _attr(&attr)
-{ }
-
-
-AttributeVector::ValueModifier::ValueModifier(const ValueModifier &rhs)
-    : _attr(rhs.stealAttr())
-{ }
-
-
-AttributeVector::ValueModifier::~ValueModifier() {
-    if (_attr) {
-        _attr->incGeneration();
-    }
-}
 
 namespace {
 
@@ -226,14 +174,12 @@ AttributeVector::addDocs(DocId &startDoc, DocId &lastDoc, uint32_t numDocs)
     return true;
 }
 
-
 bool
 AttributeVector::addDocs(uint32_t numDocs)
 {
     DocId doc;
     return addDocs(doc, doc, numDocs);
 }
-
 
 void
 AttributeVector::incGeneration()
@@ -244,7 +190,6 @@ AttributeVector::incGeneration()
     // Remove old data on hold lists that can no longer be reached by readers
     removeAllOldGenerations();
 }
-
 
 void
 AttributeVector::updateStatistics(uint64_t numValues, uint64_t numUniqueValue, uint64_t allocated,
@@ -360,21 +305,21 @@ void AttributeVector::onSave(IAttributeSaveTarget &)
 bool
 AttributeVector::hasLoadData() const {
     FastOS_StatInfo statInfo;
-    if (!FastOS_File::Stat(make_string("%s.dat", getBaseFileName().c_str()).c_str(), &statInfo)) {
+    if (!FastOS_File::Stat(fmt("%s.dat", getBaseFileName().c_str()).c_str(), &statInfo)) {
         return false;
     }
     if (hasMultiValue() &&
-        !FastOS_File::Stat(make_string("%s.idx", getBaseFileName().c_str()).c_str(), &statInfo))
+        !FastOS_File::Stat(fmt("%s.idx", getBaseFileName().c_str()).c_str(), &statInfo))
     {
         return false;
     }
     if (hasWeightedSetType() &&
-        !FastOS_File::Stat(make_string("%s.weight", getBaseFileName().c_str()).c_str(), &statInfo))
+        !FastOS_File::Stat(fmt("%s.weight", getBaseFileName().c_str()).c_str(), &statInfo))
     {
         return false;
     }
     if (isEnumeratedSaveFormat() &&
-        !FastOS_File::Stat(make_string("%s.udat", getBaseFileName().c_str()).c_str(), &statInfo))
+        !FastOS_File::Stat(fmt("%s.udat", getBaseFileName().c_str()).c_str(), &statInfo))
     {
         return false;
     }
@@ -385,12 +330,12 @@ AttributeVector::hasLoadData() const {
 bool
 AttributeVector::isEnumeratedSaveFormat() const
 {
-    vespalib::string datName(vespalib::make_string("%s.dat", getBaseFileName().c_str()));
+    vespalib::string datName(fmt("%s.dat", getBaseFileName().c_str()));
     Fast_BufferedFile   datFile;
     vespalib::FileHeader datHeader(FileSettings::DIRECTIO_ALIGNMENT);
     if ( ! datFile.OpenReadOnly(datName.c_str()) ) {
         LOG(error, "could not open %s: %s", datFile.GetFileName(), getLastErrorString().c_str());
-        throw IllegalStateException(make_string("Failed opening attribute data file '%s' for reading",
+        throw IllegalStateException(fmt("Failed opening attribute data file '%s' for reading",
                                                 datFile.GetFileName()));
     }
     datHeader.readFile(datFile);
@@ -589,11 +534,16 @@ AttributeVector::clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_spac
     }
 }
 
-AttributeVector::EnumModifier
+attribute::EnumModifier
 AttributeVector::getEnumModifier()
 {
     attribute::InterlockGuard interlockGuard(*_interlock);
-    return EnumModifier(_enumLock, interlockGuard);
+    return attribute::EnumModifier(_enumLock, interlockGuard);
+}
+
+attribute::ValueModifier
+AttributeVector::getValueModifier() {
+    return ValueModifier(*this);
 }
 
 
@@ -759,7 +709,7 @@ AttributeVector::logEnumStoreEvent(const char *reason, const char *stage)
     jstr.beginObject();
     jstr.appendKey("path").appendString(getBaseFileName());
     jstr.endObject();
-    vespalib::string eventName(make_string("%s.attribute.enumstore.%s", reason, stage));
+    vespalib::string eventName(fmt("%s.attribute.enumstore.%s", reason, stage));
     EV_STATE(eventName.c_str(), jstr.toString().data());
 }
 

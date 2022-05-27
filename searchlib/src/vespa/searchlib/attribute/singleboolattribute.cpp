@@ -6,6 +6,7 @@
 #include "ipostinglistsearchcontext.h"
 #include "primitivereader.h"
 #include "search_context.h"
+#include "valuemodifier.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
