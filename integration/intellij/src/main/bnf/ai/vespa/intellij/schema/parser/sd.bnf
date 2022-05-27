@@ -113,8 +113,8 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //    NOTE: These must end by "Expr" - see this line above: extends(".*Expr")=RankingExpression
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
-RankingExpression ::= RenameExpr | LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
-                      FunctionCallOrLambdaExpr | RankFeatureExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
+RankingExpression ::= RenameExpr | LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr |
+                      IfFunctionExpr | FunctionCallOrLambdaExpr | RankFeatureExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
