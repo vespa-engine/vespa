@@ -69,7 +69,6 @@ private:
 
 public:
     using SP = std::shared_ptr<ReferenceAttribute>;
-    DECLARE_IDENTIFIABLE_ABSTRACT(ReferenceAttribute);
     ReferenceAttribute(const vespalib::stringref baseFileName);
     ReferenceAttribute(const vespalib::stringref baseFileName, const Config & cfg);
     ~ReferenceAttribute() override;

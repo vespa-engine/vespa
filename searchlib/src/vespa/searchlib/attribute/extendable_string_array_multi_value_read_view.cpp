@@ -5,7 +5,7 @@
 namespace search::attribute {
 
 template <class MultiValueType>
-ExtendableStringArrayMultiValueReadView<MultiValueType>::ExtendableStringArrayMultiValueReadView(const std::vector<char>& buffer, const vespalib::Array<uint32_t>& offsets, const std::vector<uint32_t>& idx)
+ExtendableStringArrayMultiValueReadView<MultiValueType>::ExtendableStringArrayMultiValueReadView(const std::vector<char>& buffer, const Offsets & offsets, const std::vector<uint32_t>& idx)
     : attribute::IMultiValueReadView<MultiValueType>(),
       _buffer(buffer),
       _offsets(offsets),

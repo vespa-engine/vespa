@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.queryeval.nearest_neighbor_blueprint");

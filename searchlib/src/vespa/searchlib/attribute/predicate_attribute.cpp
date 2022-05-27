@@ -288,6 +288,4 @@ PredicateAttribute::updateValue(uint32_t doc_id, const PredicateFieldValue &valu
     assert(result.interval_range > 0);
 }
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(PredicateAttribute, AttributeVector);
-
 }  // namespace search

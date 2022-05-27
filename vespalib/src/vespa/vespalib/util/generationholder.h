@@ -2,9 +2,9 @@
 
 #pragma once
 
+#include "generationhandler.h"
 #include <vector>
 #include <memory>
-#include "generationhandler.h"
 
 namespace vespalib {
 

@@ -1,12 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("enum_attribute_compaction_test");

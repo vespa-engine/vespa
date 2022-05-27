@@ -12,11 +12,8 @@
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
-#include <vespa/searchlib/common/identifiable.h>
 #include <vespa/searchlib/common/commit_param.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/vespalib/objects/identifiable.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/time.h>
 #include <cmath>
@@ -33,6 +30,11 @@ namespace document {
 namespace vespalib {
     class GenericHeader;
     class Executor;
+}
+
+namespace vespalib::alloc {
+    class MemoryAllocator;
+    class Alloc;
 }
 
 namespace search {
@@ -74,28 +76,6 @@ using document::ArithmeticValueUpdate;
 using document::MapValueUpdate;
 using document::FieldValue;
 
-template <typename T>
-class UnWeightedType
-{
-public:
-    UnWeightedType() : _value(T()) { }
-    UnWeightedType(T v) : _value(v) { }
-    const T & getValue() const { return _value; }
-    void setValue(const T & v) { _value = v; }
-    int32_t getWeight()  const { return 1; }
-    void setWeight(int32_t w)  { (void) w; }
-
-    bool operator==(const UnWeightedType<T> & rhs) const {
-        return _value == rhs._value;
-    }
-
-private:
-    T       _value;
-};
-
-template <typename T>
-vespalib::asciistream & operator << (vespalib::asciistream & os, const UnWeightedType<T> & v);
-
 class IExtendAttribute
 {
 public:
@@ -103,11 +83,10 @@ public:
     virtual bool add(double, int32_t = 1) { return false; }
     virtual bool add(const char *, int32_t = 1) { return false; }
     
-    virtual ~IExtendAttribute() {}
+    virtual ~IExtendAttribute() = default;
 };
 
-class AttributeVector : public vespalib::Identifiable,
-                        public attribute::IAttributeVector,
+class AttributeVector : public attribute::IAttributeVector,
                         public common::ICompactableLidSpace,
                         public attribute::ReadableAttributeVector
 {
@@ -347,7 +326,6 @@ protected:
     const std::shared_ptr<vespalib::alloc::MemoryAllocator>& get_memory_allocator() const noexcept { return _memory_allocator; }
     vespalib::alloc::Alloc get_initial_alloc();
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
     bool isLoaded() const { return _loaded; }
     void logEnumStoreEvent(const char *reason, const char *stage);
 

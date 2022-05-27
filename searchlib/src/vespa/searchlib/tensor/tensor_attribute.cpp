@@ -317,6 +317,4 @@ TensorAttribute::distance_metric() const {
     return getConfig().distance_metric();
 }
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);
-
 }

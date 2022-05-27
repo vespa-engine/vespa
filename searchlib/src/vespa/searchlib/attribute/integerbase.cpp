@@ -7,8 +7,6 @@
 
 namespace search {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(IntegerAttribute, NumericAttribute);
-
 IntegerAttribute::IntegerAttribute(const vespalib::string & name, const Config & c) :
     NumericAttribute(name, c),
     _changes()

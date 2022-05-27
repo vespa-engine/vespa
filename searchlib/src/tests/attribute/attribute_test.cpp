@@ -1,16 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/mapvalueupdate.h>
+
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/searchlib/attribute/multienumattribute.hpp>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/multivalueattribute.hpp>
@@ -20,11 +15,17 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/weighted_type_test_utils.h>
 #include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/mapvalueupdate.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/file.h>
 #include <cmath>
 #include <iostream>
@@ -1412,7 +1413,7 @@ AttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
     ASSERT_TRUE(vec.update(0, 100));
     EXPECT_TRUE(vec.apply(0, Arith(Arith::Div, 0)));
     ptr->commit();
-    if (ptr->getClass().inherits(FloatingPointAttribute::classId)) {
+    if (ptr->isFloatingPointType()) {
         EXPECT_EQ(ptr->getStatus().getUpdateCount(), 86u);
         EXPECT_EQ(ptr->getStatus().getNonIdempotentUpdateCount(), 66u);
     } else { // does not apply for interger attributes
@@ -1427,7 +1428,7 @@ AttributeTest::testArithmeticValueUpdate(const AttributePtr & ptr)
     // try divide by zero with empty change vector
     EXPECT_TRUE(vec.apply(0, Arith(Arith::Div, 0)));
     ptr->commit();
-    if (ptr->getClass().inherits(FloatingPointAttribute::classId)) {
+    if (ptr->isFloatingPointType()) {
         EXPECT_EQ(ptr->getStatus().getUpdateCount(), 87u);
         EXPECT_EQ(ptr->getStatus().getNonIdempotentUpdateCount(), 67u);
     } else { // does not apply for interger attributes
@@ -1486,7 +1487,7 @@ AttributeTest::testArithmeticWithUndefinedValue(const AttributePtr & ptr, BaseTy
     std::vector<BufferType> buf(1);
     ptr->get(0, &buf[0], 1);
 
-    if (ptr->getClass().inherits(FloatingPointAttribute::classId)) {
+    if (ptr->isFloatingPointType()) {
         EXPECT_TRUE(std::isnan(buf[0]));
     } else {
         EXPECT_EQ(buf[0], after);

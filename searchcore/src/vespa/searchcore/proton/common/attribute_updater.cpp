@@ -24,6 +24,7 @@
 #include <vespa/searchlib/attribute/reference_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/classname.h>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -31,6 +32,7 @@ LOG_SETUP(".proton.common.attribute_updater");
 
 using namespace document;
 using vespalib::make_string;
+using vespalib::getClassName;
 using search::tensor::PrepareResult;
 using search::tensor::TensorAttribute;
 using search::attribute::ReferenceAttribute;
@@ -270,21 +272,20 @@ AttributeUpdater::handleUpdate(AttributeVector & vec, uint32_t lid, const FieldU
             }
         }
 
-        const vespalib::Identifiable::RuntimeClass &info = vec.getClass();
-        if (info.inherits(IntegerAttribute::classId)) {
+        if (vec.isIntegerType()) {
             handleUpdateT(static_cast<IntegerAttribute &>(vec), GetLong(), lid, vUp);
-        } else if (info.inherits(FloatingPointAttribute::classId)) {
+        } else if (vec.isFloatingPointType()) {
             handleUpdateT(static_cast<FloatingPointAttribute &>(vec), GetDouble(), lid, vUp);
-        } else if (info.inherits(StringAttribute::classId)) {
+        } else if (vec.isStringType()) {
             handleUpdateT(static_cast<StringAttribute &>(vec), GetString(), lid, vUp);
-        } else if (info.inherits(PredicateAttribute::classId)) {
+        } else if (vec.isPredicateType()) {
             handleUpdate(static_cast<PredicateAttribute &>(vec), lid, vUp);
-        } else if (info.inherits(TensorAttribute::classId)) {
+        } else if (vec.isTensorType()) {
             handleUpdate(static_cast<TensorAttribute &>(vec), lid, vUp);
-        } else if (info.inherits(ReferenceAttribute::classId)) {
+        } else if (vec.isReferenceType()) {
             handleUpdate(static_cast<ReferenceAttribute &>(vec), lid, vUp);
         } else {
-            LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), info.name());
+            LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), getClassName(vec).c_str());
             return;
         }
     }
@@ -294,24 +295,23 @@ void
 AttributeUpdater::handleValue(AttributeVector & vec, uint32_t lid, const FieldValue & val)
 {
     LOG(spam, "handleValue(%s, %u): %s", vec.getName().c_str(), lid, toString(val).c_str());
-    const vespalib::Identifiable::RuntimeClass & rc = vec.getClass();
-    if (rc.inherits(IntegerAttribute::classId)) {
+    if (vec.isIntegerType()) {
         handleValueT(static_cast<IntegerAttribute &>(vec), GetLong(), lid, val);
-    } else if (rc.inherits(FloatingPointAttribute::classId)) {
+    } else if (vec.isFloatingPointType()) {
         handleValueT(static_cast<FloatingPointAttribute &>(vec), GetDouble(), lid, val);
-    } else if (rc.inherits(StringAttribute::classId)) {
+    } else if (vec.isStringType()) {
         handleValueT(static_cast<StringAttribute &>(vec), GetString(), lid, val);
-    } else if (rc.inherits(PredicateAttribute::classId)) {
+    } else if (vec.isPredicateType()) {
         // PredicateAttribute is never multivalue.
         updateValue(static_cast<PredicateAttribute &>(vec), lid, val);
-    } else if (rc.inherits(TensorAttribute::classId)) {
+    } else if (vec.isTensorType()) {
         // TensorAttribute is never multivalue.
         updateValue(static_cast<TensorAttribute &>(vec), lid, val);
-    } else if (rc.inherits(ReferenceAttribute::classId)) {
+    } else if (vec.isReferenceType()) {
         // ReferenceAttribute is never multivalue.
         updateValue(static_cast<ReferenceAttribute &>(vec), lid, val);
     } else {
-        LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), rc.name());
+        LOG(warning, "Unsupported attribute vector '%s' (classname=%s)", vec.getName().c_str(), getClassName(vec).c_str());
         return;
     }
 }
@@ -504,11 +504,10 @@ namespace {
 void
 validate_tensor_attribute_type(AttributeVector& attr)
 {
-    const auto& info = attr.getClass();
-    if (!info.inherits(TensorAttribute::classId)) {
+    if (!attr.isTensorType()) {
         throw UpdateException(
                 make_string("Expected attribute vector '%s' to be a TensorAttribute, but was '%s'",
-                            attr.getName().c_str(), info.name()));
+                            attr.getName().c_str(), getClassName(attr).c_str()));
     }
 }
 
