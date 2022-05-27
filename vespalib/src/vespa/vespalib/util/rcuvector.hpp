@@ -148,7 +148,7 @@ template <typename T>
 void
 RcuVectorBase<T>::update_vector_start()
 {
-    _vector_start.store(&_data[0], std::memory_order_release);
+    _vector_start.store(_data.data(), std::memory_order_release);
 }
 
 template <typename T>
