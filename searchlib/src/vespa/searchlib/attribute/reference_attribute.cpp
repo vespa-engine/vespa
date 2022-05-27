@@ -511,8 +511,6 @@ ReferenceAttribute::getSearch(QueryTermSimpleUP term, const attribute::SearchCon
     return std::make_unique<ReferenceSearchContext>(*this, gid);
 }
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(ReferenceAttribute, AttributeVector);
-
 }
 
 namespace vespalib::datastore {

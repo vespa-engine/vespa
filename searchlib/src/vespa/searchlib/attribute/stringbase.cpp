@@ -17,8 +17,6 @@ LOG_SETUP(".searchlib.attribute.stringbase");
 
 namespace search {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
-
 size_t
 StringAttribute::countZero(const char * bt, size_t sz)
 {

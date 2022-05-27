@@ -6,8 +6,6 @@
 
 namespace search {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(FloatingPointAttribute, NumericAttribute);
-
 FloatingPointAttribute::FloatingPointAttribute(const vespalib::string & name, const Config & c) :
     NumericAttribute(name, c),
     _changes()

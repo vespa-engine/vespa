@@ -11,7 +11,6 @@ namespace search {
 class FloatingPointAttribute : public NumericAttribute
 {
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(FloatingPointAttribute);
     ~FloatingPointAttribute() override;
     template<typename Accessor>
     bool append(DocId doc, Accessor & ac) {

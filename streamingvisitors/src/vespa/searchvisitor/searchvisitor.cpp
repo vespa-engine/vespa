@@ -374,12 +374,11 @@ SearchVisitor::AttributeInserter::onPrimitive(uint32_t, const Content & c)
     LOG(debug, "AttributeInserter: Adding value '%s'(%d) to attribute '%s' for docid '%d'",
         value.toString().c_str(), c.getWeight(), _attribute.getName().c_str(), _docId);
     search::IExtendAttribute & attr = *_attribute.getExtendInterface();
-    const vespalib::Identifiable::RuntimeClass & aInfo = _attribute.getClass();
-    if (aInfo.inherits(search::IntegerAttribute::classId)) {
+    if (_attribute.isIntegerType()) {
         attr.add(value.getAsLong(), c.getWeight());
-    } else if (aInfo.inherits(search::FloatingPointAttribute::classId)) {
+    } else if (_attribute.isFloatingPointType()) {
         attr.add(value.getAsDouble(), c.getWeight());
-    } else if (aInfo.inherits(search::StringAttribute::classId)) {
+    } else if (_attribute.isStringType()) {
         attr.add(value.getAsString().c_str(), c.getWeight());
     } else {
         assert(false && "We got an attribute vector that is of an unknown type");
@@ -989,7 +988,7 @@ SearchVisitor::fillAttributeVectors(const vespalib::string & documentId, const S
 {
     for (const AttrInfo & finfo : _attributeFields) {
         const AttributeGuard &finfoGuard(*finfo._attr);
-        bool isPosition = finfoGuard->getClass().inherits(search::IntegerAttribute::classId) && PositionDataType::isZCurveFieldName(finfoGuard->getName());
+        bool isPosition = finfoGuard->isIntegerType() && PositionDataType::isZCurveFieldName(finfoGuard->getName());
         LOG(debug, "Filling attribute '%s',  isPosition='%s'", finfoGuard->getName().c_str(), isPosition ? "true" : "false");
         uint32_t fieldId = finfo._field;
         if (isPosition) {

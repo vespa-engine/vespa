@@ -363,6 +363,11 @@ public:
         return getBasicType() == BasicType::STRING;
     }
 
+
+    virtual bool isPredicateType() const { return getBasicType() == BasicType::PREDICATE; }
+    virtual bool isTensorType() const { return getBasicType() == BasicType::TENSOR; }
+    virtual bool isReferenceType() const { return getBasicType() == BasicType::REFERENCE; }
+
     /**
      * Returns whether this is a multi value attribute.
      **/

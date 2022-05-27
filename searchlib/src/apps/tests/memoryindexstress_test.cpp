@@ -1,5 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+
+#include <vespa/searchlib/common/scheduletaskcallback.h>
+#include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/fef/matchdatalayout.h>
+#include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/searchlib/memoryindex/memory_index.h>
+#include <vespa/searchlib/query/tree/simplequery.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/fake_search.h>
+#include <vespa/searchlib/queryeval/fake_searchable.h>
+#include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/document/annotation/spanlist.h>
 #include <vespa/document/annotation/spantree.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -8,23 +20,12 @@
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/repo/fixedtyperepo.h>
-#include <vespa/searchlib/common/scheduletaskcallback.h>
-#include <vespa/searchlib/fef/matchdata.h>
-#include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/index/i_field_length_inspector.h>
-#include <vespa/searchlib/memoryindex/memory_index.h>
-#include <vespa/searchlib/query/tree/simplequery.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/searchlib/queryeval/fake_search.h>
-#include <vespa/searchlib/queryeval/fake_searchable.h>
-#include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("memoryindexstress_test");

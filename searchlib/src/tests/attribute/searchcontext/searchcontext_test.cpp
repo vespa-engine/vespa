@@ -20,6 +20,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <set>
 
 #include <vespa/log/log.h>

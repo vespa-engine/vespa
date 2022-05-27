@@ -51,8 +51,6 @@ const vespalib::string docIdLimitTag = "docIdLimit";
 
 namespace search {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(AttributeVector, vespalib::Identifiable);
-
 AttributeVector::BaseName::BaseName(vespalib::stringref base, vespalib::stringref name)
     : string(base),
       _name(name)
@@ -500,16 +498,14 @@ AttributeVector::addReservedDoc()
     assert(docId < getNumDocs());
     clearDoc(docId);
     commit();
-    const vespalib::Identifiable::RuntimeClass &info = getClass();
-    if (info.inherits(search::FloatingPointAttribute::classId)) {
-        FloatingPointAttribute &vec =
-            static_cast<FloatingPointAttribute &>(*this);
+    FloatingPointAttribute * vec = dynamic_cast<FloatingPointAttribute *>(this);
+    if (vec) {
         if (hasMultiValue()) {
-            bool appendedUndefined = vec.append(0, attribute::getUndefined<double>(), 1);
+            bool appendedUndefined = vec->append(0, attribute::getUndefined<double>(), 1);
             assert(appendedUndefined);
             (void) appendedUndefined;
         } else {
-            bool updatedUndefined = vec.update(0, attribute::getUndefined<double>());
+            bool updatedUndefined = vec->update(0, attribute::getUndefined<double>());
             assert(updatedUndefined);
             (void) updatedUndefined;
         }

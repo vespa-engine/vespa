@@ -41,7 +41,6 @@ protected:
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
 
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<EntryRef>;
     TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore);
     ~TensorAttribute() override;

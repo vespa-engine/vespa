@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/fastos/file.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchcorespi/index/fusionrunner.h>
@@ -14,11 +13,13 @@
 #include <vespa/searchlib/memoryindex/memory_index.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
+#include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/fastos/file.h>
 #include <set>
 
 using document::Document;
