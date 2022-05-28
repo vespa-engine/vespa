@@ -241,7 +241,7 @@ InnerConstantDefinition ::= ( ("constant" '(' IdentifierVal ')') | IdentifierVal
                             (':')? ( TensorType | "double" )?
                             (':')? ( TensorValue | FLOAT_REG | INTEGER_REG | (file ':' FilePath) | (uri ':' UriPath))
 
-RankFeature ::= IdentifierVal (Arguments)? ( '.' IdentifierVal )?
+RankFeature ::= IdentifierVal (Arguments)? ( '.' IdentifierVal )*
                     { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                       implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                     }
@@ -315,7 +315,7 @@ private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | (
                           ':' | ('|' IndexingStatementOptions) | ';' | '.' | '(' | ')' | ArithmeticOperator | ComparisonOperator
 // Attribute
 AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (ComplexAttributeProperty | SimpleAttributeProperty)+ '}'))
-SimpleAttributeProperty ::= fast-search | fast-access | paged | mutable | enable-bit-vectors | enable-only-bit-vector | WordWrapper // Does not support zero-or-one occurrences
+SimpleAttributeProperty ::= fast-search | fast-rank | fast-access | paged | mutable | enable-bit-vectors | enable-only-bit-vector | WordWrapper // Does not support zero-or-one occurrences
 ComplexAttributeProperty ::= AliasDefinition | SortingDefinition | DistanceMetricDef // Does not support zero-or-one occurrences
 DistanceMetricDef ::= distance-metric ':' IdentifierWithDashVal
 // Alias
@@ -328,7 +328,7 @@ RankingSetting ::= filter | normal | literal | WordWrapper
 // Indexing Rewrite
 IndexingRewriteState ::= indexing-rewrite ':' none
 // Query Command
-QueryCommandDefinition ::= query-command ':' (DottedIdentifier | STRING_REG | WordWrapper)
+QueryCommandDefinition ::= query-command ':' (IdentifierWithDashVal | STRING_REG | WordWrapper)
 // Summary
 SummaryDefinition ::= summary IdentifierWithDashVal? (type FieldTypeName)? ((':' SummaryBodyOptions) | ( '{' SummaryBody '}'))
                       { mixin="ai.vespa.intellij.schema.psi.impl.SdSummaryDefinitionMixin" }
@@ -394,10 +394,10 @@ KeywordOrIdentifier ::= schema | search | document | struct | field | type | ind
 // Note- in this form, those keywords can't be use as identifier-with-dash!
 KeywordNotIdentifier ::= struct-field | document-summary | omit-summary-features | from-disk | rank-profile | rank-type |
                          num-threads-per-search | termwise-limit | ignore-default-rank-features | min-hits-per-thread | 
-                         num-search-partition | match-phase | max-hits | second-phase | rerank-count | min-groups | 
+                         num-search-partitions | match-phase | max-hits | second-phase | rerank-count | min-groups |
                          first-phase | keep-rank-count | rank-score-drop-limit | rank-properties | summary-features | 
                          match-features | rank-features |
-                         exact-terminator | max-length | gram-size | fast-search | fast-access | distance-metric | 
+                         exact-terminator | max-length | gram-size | fast-search | fast-rank | fast-access | distance-metric |
                          indexing-rewrite | query-command | matched-elements-only | lower-bound | upper-bound | 
                          dense-posting-list-threshold | enable-bm25 | max-links-per-node | neighbors-to-explore-at-insert | 
                          multi-threaded-indexing | create-if-nonexistent | remove-if-zero | raw-as-base64-in-summary |

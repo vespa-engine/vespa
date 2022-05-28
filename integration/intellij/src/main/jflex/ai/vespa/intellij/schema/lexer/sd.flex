@@ -93,6 +93,7 @@ WORD = \w+
   "gram-size"                { return GRAM_SIZE; }
 
   "fast-search"              { return FAST_SEARCH; }
+  "fast-rank"                { return FAST_RANK; }
   "fast-access"              { return FAST_ACCESS; }
   "alias"                    { return ALIAS; }
   "sorting"                  { return SORTING; }
@@ -158,7 +159,7 @@ WORD = \w+
   "termwise-limit"           { return TERMWISE_LIMIT; }
   "ignore-default-rank-features" { return IGNORE_DEFAULT_RANK_FEATURES; }
   "min-hits-per-thread"      { return MIN_HITS_PER_THREAD; }
-  "num-search-partition"     { return NUM_SEARCH_PARTITION; }
+  "num-search-partitions"    { return NUM_SEARCH_PARTITIONS; }
   "constants"                { return CONSTANTS; }
   "second-phase"             { return SECOND_PHASE; }
   "rerank-count"             { return RERANK_COUNT; }
