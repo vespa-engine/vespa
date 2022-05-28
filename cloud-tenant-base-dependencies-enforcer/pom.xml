@@ -20,7 +20,7 @@
         <junit5.platform.version>1.8.1</junit5.platform.version>
 
         <!-- MUST BE KEPT IN SYNC WITH parent/pom.xml -->
-        <athenz.version>1.10.14</athenz.version>
+        <athenz.version>1.10.54</athenz.version>
         <httpclient5.version>5.1.2</httpclient5.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
         <onnxruntime.version>1.8.0</onnxruntime.version>
