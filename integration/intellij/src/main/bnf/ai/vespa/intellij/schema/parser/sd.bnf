@@ -308,7 +308,8 @@ MatchProperty ::= text | token | exact | (exact-terminator ':' STRING_REG) | wor
 IndexingDefinition ::= indexing ((':' IndexingStatement) | ('{' IndexingStatement+ '}'))
 IndexingStatement ::= IndexingStatementOptions (('|' IndexingStatementOptions)*) (';')?
                       // Does not support zero-or-one occurrences
-IndexingStatementOptions ::= summary | attribute | index | set_language | lowercase |
+IndexingStatementOptions ::= summary DottedIdentifier? | attribute DottedIdentifier? | index DottedIdentifier? |
+                             set_language | lowercase |
                              (input (DottedIdentifier | IndexingStuff)+) |
                              ('{' IndexingStatementOptions '}') | IndexingStuff+
 private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatement '}') |
