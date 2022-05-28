@@ -29,7 +29,6 @@
     // NOTE: As far as I (Jon) can tell these are not used. Edit the ones in sd.flex instead.
     tokens = [
         ID_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_]*'
-        ID_WITH_DASH_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_-]*[a-zA-Z0-9_]'
         WHITE_SPACE = 'regexp:\s+'
         COMMENT = 'regexp:#.*'
         SYMBOL = 'regexp:[!$|:{}().\[\]]'
@@ -366,14 +365,14 @@ WeightedSetProperty ::=  create-if-nonexistent | remove-if-zero
 DictionaryDefinition ::= dictionary ((':' DictionarySetting) | ('{' DictionarySetting* '}')) 
 DictionarySetting ::= hash | btree | cased | uncased
 
-private WordWrapper ::= KeywordOrIdentifier | KeywordNotIdentifier | ID_REG | ID_WITH_DASH_REG | WORD_REG
+private WordWrapper ::= KeywordOrIdentifier | KeywordNotIdentifier | ID_REG | IdentifierWithDashVal | WORD_REG
 
 IdentifierVal ::= KeywordOrIdentifier | ID_REG { mixin="ai.vespa.intellij.schema.psi.impl.SdIdentifierMixin"
                                                  implements=["ai.vespa.intellij.schema.psi.SdIdentifier"]
                                                }
 DottedIdentifier ::= IdentifierVal ('.' IdentifierVal)*
 
-IdentifierWithDashVal ::= ID_WITH_DASH_REG | IdentifierVal { mixin="ai.vespa.intellij.schema.psi.impl.SdIdentifierMixin"
+IdentifierWithDashVal ::= IdentifierVal ('-' IdentifierVal)* { mixin="ai.vespa.intellij.schema.psi.impl.SdIdentifierMixin"
                                                              implements=["ai.vespa.intellij.schema.psi.SdIdentifier"]
                                                            }
 DottedIdentifierWithDash ::= IdentifierWithDashVal ('.' IdentifierWithDashVal)*

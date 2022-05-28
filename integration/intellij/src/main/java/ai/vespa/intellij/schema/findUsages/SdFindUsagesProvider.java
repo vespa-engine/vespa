@@ -24,7 +24,8 @@ public class SdFindUsagesProvider implements FindUsagesProvider {
     public WordsScanner getWordsScanner() {
         // TODO: Not used at the moment (?) as we search by brute force
         return new DefaultWordsScanner(new SdLexerAdapter(),
-                                       TokenSet.create(SdTypes.ID_REG, SdTypes.ID_WITH_DASH_REG, SdTypes.IDENTIFIER_VAL,
+                                       TokenSet.create(SdTypes.ID_REG,
+                                                       SdTypes.IDENTIFIER_VAL,
                                                        SdTypes.IDENTIFIER_WITH_DASH_VAL),
                                        TokenSet.create(SdTypes.COMMENT),
                                        TokenSet.create(SdTypes.STRING_REG, SdTypes.INTEGER_REG, SdTypes.FLOAT_REG));
