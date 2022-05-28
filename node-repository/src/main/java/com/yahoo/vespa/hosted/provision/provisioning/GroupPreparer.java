@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.transaction.Mutex;
@@ -17,6 +18,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -27,6 +30,7 @@ import java.util.stream.Collectors;
 public class GroupPreparer {
 
     private static final Mutex PROBE_LOCK = () -> {};
+    private static final Logger log = Logger.getLogger(GroupPreparer.class.getName());
 
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
@@ -68,6 +72,7 @@ public class GroupPreparer {
     public PrepareResult prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                  List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups,
                                  NodesAndHosts<LockedNodeList> allNodesAndHosts) {
+        log.log(Level.FINE, "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " + requestedNodes.resources().orElse(NodeResources.unspecified()));
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
         NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
