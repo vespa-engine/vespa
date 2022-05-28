@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
@@ -14,7 +15,6 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -82,24 +82,16 @@ public class CapacityPolicies {
 
     public NodeResources defaultNodeResources(ClusterSpec clusterSpec, ApplicationId applicationId, boolean exclusive) {
         if (clusterSpec.type() == ClusterSpec.Type.admin) {
-            Architecture architecture = architecture(applicationId);
-
-            // The lowest amount resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
-            NodeResources smallestExclusiveResources = new NodeResources(0.5, 4, 50, 0.3);
+            Architecture architecture = adminClusterArchitecture(applicationId);
 
             if (clusterSpec.id().value().equals("cluster-controllers")) {
-                if (requiresExclusiveHost(clusterSpec.type(), exclusive)) {
-                    return versioned(clusterSpec, Map.of(new Version("0"), smallestExclusiveResources)).with(architecture);
-                }
-                return versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.25, 1.14, 10, 0.3),
-                                                     new Version("7.586.50"), new NodeResources(0.25, 1.333, 10, 0.3),
-                                                     new Version("7.586.54"), new NodeResources(0.25, 1.14, 10, 0.3)))
+                return clusterControllerResources(clusterSpec, exclusive)
                         .with(architecture);
             }
 
             return (requiresExclusiveHost(clusterSpec.type(), exclusive)
-                    ? versioned(clusterSpec, Map.of(new Version("0"), smallestExclusiveResources))
-                    : versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.5, 2, 50, 0.3))))
+                    ? versioned(clusterSpec, Map.of(new Version("0"), smallestExclusiveResources()))
+                    : versioned(clusterSpec, Map.of(new Version("0"), smallestSharedResources())))
                     .with(architecture);
         }
 
@@ -108,7 +100,16 @@ public class CapacityPolicies {
                : versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(1.5, 8, 50, 0.3)));
     }
 
-    private Architecture architecture(ApplicationId instance) {
+    private NodeResources clusterControllerResources(ClusterSpec clusterSpec, boolean exclusive) {
+        if (requiresExclusiveHost(clusterSpec.type(), exclusive)) {
+            return versioned(clusterSpec, Map.of(new Version("0"), smallestExclusiveResources()));
+        }
+        return versioned(clusterSpec, Map.of(new Version("0"), new NodeResources(0.25, 1.14, 10, 0.3),
+                                             new Version("7.586.50"), new NodeResources(0.25, 1.333, 10, 0.3),
+                                             new Version("7.586.54"), new NodeResources(0.25, 1.14, 10, 0.3)));
+    }
+
+    private Architecture adminClusterArchitecture(ApplicationId instance) {
         return Architecture.valueOf(adminClusterNodeArchitecture.with(APPLICATION_ID, instance.serializedForm()).value());
     }
 
@@ -122,6 +123,20 @@ public class CapacityPolicies {
         return requireNonNull(new TreeMap<>(resources).floorEntry(spec.vespaVersion()),
                               "no default resources applicable for " + spec + " among: " + resources)
                 .getValue();
+    }
+
+    // The lowest amount resources that can be exclusive allocated (i.e. a matching host flavor for this exists)
+    private NodeResources smallestExclusiveResources() {
+        return (zone.getCloud().name().equals(CloudName.from("gcp")))
+                ? new NodeResources(1, 4, 50, 0.3)
+                : new NodeResources(0.5, 4, 50, 0.3);
+    }
+
+    // The lowest amount resources that can be shared (i.e. a matching host flavor for this exists)
+    private NodeResources smallestSharedResources() {
+        return (zone.getCloud().name().equals(CloudName.from("gcp")))
+                ? new NodeResources(1, 4, 50, 0.3)
+                : new NodeResources(0.5, 2, 50, 0.3);
     }
 
     /**
