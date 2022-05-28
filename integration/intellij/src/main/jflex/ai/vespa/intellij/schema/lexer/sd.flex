@@ -29,12 +29,12 @@ import static com.intellij.psi.TokenType.WHITE_SPACE; // Pre-defined whitespace 
 //**--------- REGEXES ---------**//
 // If some character sequence is matched to this regex, it will be treated as an IDENTIFIER.
 ID=[a-zA-Z_][a-zA-Z0-9_]*
-ID_WITH_DASH = [a-zA-Z_][a-zA-Z0-9_-]*
+ID_WITH_DASH = [a-zA-Z_][a-zA-Z0-9_-]*[a-zA-Z0-9_]
 // If some character sequence is matched to this regex, it will be treated as a WHITE_SPACE.
 WHITE_SPACE=[ \t\n\x0B\f\r]+
 
 COMMENT=#.*
-SYMBOL= [!$|:{}().\[\]]
+SYMBOL= [;!$|:{}().\[\]]
 COMMA= [,]
 //BLOCK_START= \{
 //BLOCK_END= \}

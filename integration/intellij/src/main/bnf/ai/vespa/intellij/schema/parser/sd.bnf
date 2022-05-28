@@ -29,7 +29,7 @@
     // NOTE: As far as I (Jon) can tell these are not used. Edit the ones in sd.flex instead.
     tokens = [
         ID_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_]*'
-        ID_WITH_DASH_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_-]*'
+        ID_WITH_DASH_REG = 'regexp:[a-zA-Z_][a-zA-Z0-9_-]*[a-zA-Z0-9_]'
         WHITE_SPACE = 'regexp:\s+'
         COMMENT = 'regexp:#.*'
         SYMBOL = 'regexp:[!$|:{}().\[\]]'
@@ -136,12 +136,12 @@ RankFeatureExpr ::= RankFeature
 RenameExpr ::= "rename" '(' RankingExpression ',' ( Arguments | ArgumentDefinition ) ',' ( Arguments | ArgumentDefinition ) ')'
 
 // Rough parsing but hard to do better due to greediness: If this is a lambda arg expressions must be identifiers
-FunctionCallOrLambdaExpr ::= IdentifierWithDashVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierWithDashVal)?
+FunctionCallOrLambdaExpr ::= IdentifierVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierVal)?
                              ParenthesisedExpr? // This turns the function call into a lambda
  
 ParenthesisedExpr ::= '(' RankingExpression ')'
 
-PrimitiveExpr ::= ( (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | RankFeature | STRING_REG )
+PrimitiveExpr ::= ( INTEGER_REG | FLOAT_REG | IdentifierVal | RankFeature | STRING_REG )
 
 SliceExpr ::= RankingExpression ( SliceKey | SliceIndex | FullTensorAddress )
 
@@ -183,17 +183,17 @@ private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition |
 
 MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
 MatchPhaseBody ::= MatchPhaseBodyOptions+
-MatchPhaseBodyOptions ::= (attribute ':' DottedIdentifier) | (order ':' (ascending | descending)) | (max-hits ':' ('-')? INTEGER_REG)
-                          | DiversityDefinition | (evaluation-point ':' ('-')? FLOAT_REG) |
-                          (pre-post-filter-tipping-point ':' ('-')? FLOAT_REG) // Does not support zero-or-one occurrences
+MatchPhaseBodyOptions ::= (attribute ':' DottedIdentifier) | (order ':' (ascending | descending)) | (max-hits ':' INTEGER_REG)
+                          | DiversityDefinition | (evaluation-point ':' FLOAT_REG) |
+                          (pre-post-filter-tipping-point ':' FLOAT_REG) // Does not support zero-or-one occurrences
 DiversityDefinition ::= diversity '{' DiversityBody '}'
 DiversityBody ::= DiversityBodyOptions*
-private DiversityBodyOptions ::= (attribute ':' DottedIdentifier) | (min-groups ':' ('-')? INTEGER_REG) | (cutoff-factor ':' ('-')? FLOAT_REG) |
+private DiversityBodyOptions ::= (attribute ':' DottedIdentifier) | (min-groups ':' INTEGER_REG) | (cutoff-factor ':' FLOAT_REG) |
                                  (cutoff-strategy ':' (strict | loose))
 
 private NumThreadsDefinition ::= num-threads-per-search ':' INTEGER_REG
-private TermwiseLimitDefinition ::= termwise-limit ':' ('-')? (FLOAT_REG | INTEGER_REG)
-private MinHitsDefinition ::= min-hits-per-thread ':' ('-')? INTEGER_REG
+private TermwiseLimitDefinition ::= termwise-limit ':' (FLOAT_REG | INTEGER_REG)
+private MinHitsDefinition ::= min-hits-per-thread ':' INTEGER_REG
 private NumSearchPartitionDefinition ::= num-search-partition ':' INTEGER_REG
 FieldWeightDefinition ::= weight DottedIdentifier ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
@@ -204,7 +204,7 @@ InputDefinition ::= ( QueryFeature | IdentifierVal)
 
 FirstPhaseDefinition ::= first-phase '{' FirstPhaseBody '}'  { mixin="ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin" }
 FirstPhaseBody ::= FirstPhaseBodyOptions* // Does not support zero-or-one occurrences
-private FirstPhaseBodyOptions ::= (keep-rank-count ':' INTEGER_REG) | (rank-score-drop-limit ':' ('-')? (FLOAT_REG | INTEGER_REG)) | ExpressionDefinition
+private FirstPhaseBodyOptions ::= (keep-rank-count ':' INTEGER_REG) | (rank-score-drop-limit ':' (FLOAT_REG | INTEGER_REG)) | ExpressionDefinition
 
 ExpressionDefinition ::= expression ((':' RankingExpression) | ('{' RankingExpression* '}'))
 
@@ -215,7 +215,7 @@ private SecondPhaseBodyOptions ::= (rerank-count ':' INTEGER_REG) | ExpressionDe
 RankPropertiesDefinition ::= rank-properties '{' RankPropertiesBody '}'
 RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue)+
 RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | COMMA | '$' | INTEGER_REG)+
-RankPropertiesValue ::= (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | WORD_REG | DottedIdentifier | STRING_REG
+RankPropertiesValue ::= INTEGER_REG | FLOAT_REG | WORD_REG | DottedIdentifier | STRING_REG
 
 FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
                        '{' ExpressionDefinition '}'  
