@@ -177,7 +177,7 @@ private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition |
                            ignore-default-rank-features | RankPropertiesDefinition | FirstPhaseDefinition | 
                            SummaryFeaturesDefinition | MatchFeaturesDefinition | RankFeaturesDefinition | 
                            SecondPhaseDefinition | ConstantsDefinition | RankDefinition | RankTypeDefinition | 
-                           MinHitsDefinition | NumSearchPartitionDefinition | FieldWeightDefinition | StrictDefinition |
+                           MinHitsDefinition | NumSearchPartitionsDefinition | FieldWeightDefinition | StrictDefinition |
                            InputsDefinition
 
 MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
@@ -193,7 +193,7 @@ private DiversityBodyOptions ::= (attribute ':' DottedIdentifier) | (min-groups 
 private NumThreadsDefinition ::= num-threads-per-search ':' INTEGER_REG
 private TermwiseLimitDefinition ::= termwise-limit ':' (FLOAT_REG | INTEGER_REG)
 private MinHitsDefinition ::= min-hits-per-thread ':' INTEGER_REG
-private NumSearchPartitionDefinition ::= num-search-partition ':' INTEGER_REG
+private NumSearchPartitionsDefinition ::= num-search-partitions ':' INTEGER_REG
 FieldWeightDefinition ::= weight DottedIdentifier ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
 InputsDefinition ::= inputs '{' InputDefinition* '}'
