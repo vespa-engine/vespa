@@ -9,7 +9,6 @@
 #include <vespa/searchcore/proton/matching/match_context.h>
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
 #include <vespa/searchcorespi/index/indexsearchable.h>
-#include <vespa/searchlib/attribute/attributevector.h>
 
 namespace proton {
 

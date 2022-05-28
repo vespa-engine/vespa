@@ -8,6 +8,7 @@
 #include "multi_numeric_search_context.h"
 #include "load_utils.h"
 #include "primitivereader.h"
+#include "valuemodifier.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.h>
 

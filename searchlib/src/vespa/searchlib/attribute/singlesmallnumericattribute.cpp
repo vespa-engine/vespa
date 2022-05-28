@@ -5,6 +5,7 @@
 #include "iattributesavetarget.h"
 #include "primitivereader.h"
 #include "single_small_numeric_search_context.h"
+#include "valuemodifier.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchcommon/attribute/config.h>

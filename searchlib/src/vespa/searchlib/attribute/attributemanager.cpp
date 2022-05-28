@@ -206,7 +206,7 @@ AttributeManager::createBaseFileName(const string & name) const
         dir += "/";
         dir += getSnapshot().dirName;
     }
-    return AttributeVector::BaseName(dir, name);
+    return attribute::BaseName(dir, name);
 }
 
 bool

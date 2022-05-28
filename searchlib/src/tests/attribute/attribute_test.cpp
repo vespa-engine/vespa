@@ -303,7 +303,7 @@ AttributeTest::AttributeTest() = default;
 
 void AttributeTest::testBaseName()
 {
-    AttributeVector::BaseName v("attr1");
+    attribute::BaseName v("attr1");
     EXPECT_EQ(v.getAttributeName(), "attr1");
     EXPECT_TRUE(v.getDirName().empty());
     v = "attribute/attr1/attr1";
@@ -320,12 +320,10 @@ void AttributeTest::testBaseName()
     EXPECT_EQ(v.getDirName(), "index.1/1.ready/attribute/attr1/snapshot-X");
     v = "/index.1/1.ready/attribute/attr1/snapshot-X/attr1";
     EXPECT_EQ(v.getAttributeName(), "attr1");
-    EXPECT_EQ(v.getDirName(),
-                 "/index.1/1.ready/attribute/attr1/snapshot-X");
+    EXPECT_EQ(v.getDirName(), "/index.1/1.ready/attribute/attr1/snapshot-X");
     v = "xxxyyyy/zzz/index.1/1.ready/attribute/attr1/snapshot-X/attr1";
     EXPECT_EQ(v.getAttributeName(), "attr1");
-    EXPECT_EQ(v.getDirName(),
-               "xxxyyyy/zzz/index.1/1.ready/attribute/attr1/snapshot-X");
+    EXPECT_EQ(v.getDirName(), "xxxyyyy/zzz/index.1/1.ready/attribute/attr1/snapshot-X");
 }
 
 void AttributeTest::addDocs(const AttributePtr & v, size_t sz)
