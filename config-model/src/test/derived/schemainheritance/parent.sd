@@ -36,5 +36,5 @@ schema parent {
     }
     import field importedschema_ref.importedfield1 as parent_imported {
     }
-    raw-as-base64-in-summary
+    raw-as-base64-in-summary: true
 }

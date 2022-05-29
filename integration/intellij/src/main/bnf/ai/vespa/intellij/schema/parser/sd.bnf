@@ -171,7 +171,7 @@ RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration"]
                            }
-private RankProfileBody ::= ( RankProfileBodyOptions (NL)* )* // Does not support zero-or-one occurrences
+private RankProfileBody ::= ( RankProfileBodyOptions | NL )*
 private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition | FunctionDefinition | TermwiseLimitDefinition | 
                            ignore-default-rank-features | RankPropertiesDefinition | FirstPhaseDefinition | 
                            SummaryFeaturesDefinition | MatchFeaturesDefinition | RankFeaturesDefinition | 
@@ -229,11 +229,11 @@ ArgumentDefinition ::= IdentifierVal
                          implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart RankFeature* BlockEnd))
+SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart ( RankFeature | NL )* BlockEnd))
 
-MatchFeaturesDefinition ::= match-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart RankFeature* BlockEnd))
+MatchFeaturesDefinition ::= match-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart ( RankFeature | NL )* BlockEnd))
 
-RankFeaturesDefinition ::= rank-features ((':' RankFeature+ (NL)+) | (BlockStart RankFeature* BlockEnd))
+RankFeaturesDefinition ::= rank-features ((':' RankFeature+ (NL)+) | (BlockStart ( RankFeature | NL )* BlockEnd))
 
 ConstantsDefinition ::= constants BlockStart ( InnerConstantDefinition | NL )* BlockEnd
 

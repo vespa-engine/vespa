@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search uri_wset {
+schema uri_wset {
     document uri_wset {
         field my_uri type weightedset<uri> {
             indexing: index
