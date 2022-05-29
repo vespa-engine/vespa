@@ -59,8 +59,7 @@ public class FileReceiver {
         private final File inprogressFile;
 
         Session(File downloadDirectory, int sessionId, FileReference reference,
-                FileReferenceData.Type fileType, String fileName, long fileSize)
-        {
+                FileReferenceData.Type fileType, String fileName, long fileSize) {
             this.hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
             this.sessionId = sessionId;
             this.reference = reference;
@@ -83,13 +82,12 @@ public class FileReceiver {
         }
 
         void addPart(int partId, byte [] part) {
-            if (partId != currentPartId) {
+            if (partId != currentPartId)
                 throw new IllegalStateException("Received partid " + partId + " while expecting " + currentPartId);
-            }
-            if (fileSize < currentFileSize + part.length) {
+            if (fileSize < currentFileSize + part.length)
                 throw new IllegalStateException("Received part would extend the file from " + currentFileSize + " to " +
                                                 (currentFileSize + part.length) + ", but " + fileSize + " is max.");
-            }
+
             try {
                 Files.write(inprogressFile.toPath(), part, StandardOpenOption.WRITE, StandardOpenOption.APPEND);
             } catch (IOException e) {
@@ -220,21 +218,20 @@ public class FileReceiver {
         log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         String fileName = req.parameters().get(1).asString();
-        String type = req.parameters().get(2).asString();
+        Type type = Type.valueOf(req.parameters().get(2).asString());
         long fileSize = req.parameters().get(3).asInt64();
         int sessionId = nextSessionId.getAndIncrement();
         int retval = 0;
         synchronized (sessions) {
-            if (sessions.containsKey(sessionId)) {
-                retval = 1;
-                log.severe("Session id " + sessionId + " already exist, impossible. Request from(" + req.target() + ")");
-            } else {
-                try {
-                    sessions.put(sessionId, new Session(downloadDirectory, sessionId, reference,
-                                                        FileReferenceData.Type.valueOf(type),fileName, fileSize));
-                } catch (Exception e) {
+            try {
+                Session session = sessions.putIfAbsent(sessionId,
+                                                       new Session(downloadDirectory, sessionId, reference, type, fileName, fileSize));
+                if (session != null) {
                     retval = 1;
+                    log.severe("Session id " + sessionId + " already exist, impossible. Request from(" + req.target() + ")");
                 }
+            } catch (Exception e) {
+                retval = 1;
             }
         }
         req.returnValues().add(new Int32Value(retval));

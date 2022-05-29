@@ -65,11 +65,13 @@ public class FileServer {
     public static class ReplayStatus {
         private final int code;
         private final String description;
-        ReplayStatus(int code, String description) {
+        private ReplayStatus(int code, String description) {
             this.code = code;
             this.description = description;
         }
-        public boolean ok() { return code == 0; }
+        private static ReplayStatus ok() { return new ReplayStatus(0, "OK"); }
+        private static ReplayStatus error(String errorMessage) { return new ReplayStatus(1, errorMessage); }
+        public boolean isOk() { return code == 0; }
         public int getCode() { return code; }
         public String getDescription() { return description; }
     }
@@ -82,15 +84,15 @@ public class FileServer {
     @Inject
     public FileServer(ConfigserverConfig configserverConfig) {
         this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
-             createFileDownloader(getOtherConfigServersInCluster(configserverConfig)));
+             createFileDownloader(configserverConfig));
     }
 
     // For testing only
     public FileServer(File rootDir) {
-        this(rootDir, createFileDownloader(List.of()));
+        this(rootDir, createFileDownloader());
     }
 
-    public FileServer(File rootDir, FileDownloader fileDownloader) {
+    FileServer(File rootDir, FileDownloader fileDownloader) {
         this.downloader = fileDownloader;
         this.root = new FileDirectory(rootDir);
         this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
@@ -127,12 +129,12 @@ public class FileServer {
         FileReferenceData fileData = EmptyFileReferenceData.empty(reference, file.getName());
         try {
             fileData = readFileReferenceData(reference);
-            target.receive(fileData, new ReplayStatus(0, "OK"));
+            target.receive(fileData, ReplayStatus.ok());
             log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
         } catch (IOException e) {
             String errorDescription = "For" + reference.value() + ": failed reading file '" + file.getAbsolutePath() + "'";
             log.warning(errorDescription + " for sending to '" + target.toString() + "'. " + e.getMessage());
-            target.receive(fileData, new ReplayStatus(1, errorDescription));
+            target.receive(fileData, ReplayStatus.error(errorDescription));
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed serving " + reference + ": " + Exceptions.toMessageString(e));
         } finally {
@@ -179,10 +181,11 @@ public class FileServer {
                                                                                     client,
                                                                                     downloadFromOtherSourceIfNotFound);
             fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
-            if (fileExists) startFileServing(fileReference, receiver);
+            if (fileExists)
+                startFileServing(fileReference, receiver);
         } catch (IllegalArgumentException e) {
             fileExists = false;
-            log.warning("Failed serving file reference '" + fileReference + "', request was from " + request.target() + ", with error " + e.toString());
+            log.warning("Failed serving file reference '" + fileReference + "', request was from " + request.target() + ", with error " + e.getMessage());
         }
 
         FileApiErrorCodes result = fileExists ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND;
@@ -221,9 +224,16 @@ public class FileServer {
         executor.shutdown();
     }
 
+    private static FileDownloader createFileDownloader() {
+        return createFileDownloader(List.of());
+    }
+
+    private static FileDownloader createFileDownloader(ConfigserverConfig configserverConfig) {
+        return createFileDownloader(getOtherConfigServersInCluster(configserverConfig));
+    }
+
     private static FileDownloader createFileDownloader(List<String> configServers) {
         Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
-
         return new FileDownloader(configServers.isEmpty()
                                           ? FileDownloader.emptyConnectionPool()
                                           : createConnectionPool(configServers, supervisor),
