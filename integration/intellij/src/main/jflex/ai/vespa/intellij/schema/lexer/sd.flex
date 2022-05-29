@@ -30,14 +30,15 @@ import static com.intellij.psi.TokenType.WHITE_SPACE; // Pre-defined whitespace 
 // If some character sequence is matched to this regex, it will be treated as an IDENTIFIER.
 ID=[a-zA-Z_][a-zA-Z0-9_]*
 // If some character sequence is matched to this regex, it will be treated as a WHITE_SPACE.
-WHITE_SPACE=[ \t\n\x0B\f\r]+
+WHITE_SPACE=[ \t\x0B\f\r]+
+NL=[\n]+
 
 COMMENT=#.*
 SYMBOL= [;!$|:{}().\[\]]
 COMMA= [,]
 //BLOCK_START= \{
 //BLOCK_END= \}
-INTEGER = [-]?[0-9]+
+INTEGER = [0-9]+
 FLOAT = {INTEGER}[.][0-9]+[e]?
 STRING = \"([^\"\\]*(\\.[^\"\\]*)*)\"
 STRING_SINGLE_QUOTE = '([^'\\]*(\\.[^'\\]*)*)'
@@ -239,7 +240,8 @@ WORD = \w+
   {ID}                       { return ID_REG; }
 
   {WHITE_SPACE}              { return WHITE_SPACE; }
-                                    
+  {NL}                       { return NL; }
+
   {COMMENT}                  { return COMMENT; }  
   {SYMBOL}                   { return SYMBOL; }  
   {COMMA}                    { return COMMA; }
@@ -249,7 +251,7 @@ WORD = \w+
   {FLOAT}                    { return FLOAT_REG; }
   {WORD}                     { return WORD_REG; }
   {STRING}                   { return STRING_REG; }  
-  {STRING_SINGLE_QUOTE}     { return STRING_REG_SINGLE_QUOTE; }
+  {STRING_SINGLE_QUOTE}      { return STRING_REG_SINGLE_QUOTE; }
 
 }
 

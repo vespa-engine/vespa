@@ -35,24 +35,24 @@
         COMMA = 'regexp:[,]'
         //BLOCK_START = '{'
         //BLOCK_END = '}'
-        INTEGER_REG = 'regexp:[\-]?[0-9]+'
-        FLOAT_REG = 'regexp:[\-]?[0-9]+[.][0-9]+[e]?'
+        INTEGER_REG = 'regexp:[0-9]+'
+        FLOAT_REG = 'regexp:[0-9]+[.][0-9]+[e]?'
         STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
         STRING_REG_SINGLE_QUOTE = "regexp:'([^'\\]*(\\.[^'\\]*)*)'"
         WORD_REG = 'regexp:\w+'
     ]
 }
 
-SdFile ::= SchemaDefinition | DocumentDefinition | RankProfileDefinition
-SchemaDefinition ::= (search | schema) IdentifierVal? (inherits IdentifierVal)? '{' SchemaBody '}'
-SchemaBody ::= SchemaBodyOptions* DocumentDefinition SchemaBodyOptions* // Does not support zero-or-one occurrences
+SdFile ::= (NL)* ( SchemaDefinition | DocumentDefinition | RankProfileDefinition )
+SchemaDefinition ::= (search | schema) IdentifierVal? (NL)* (inherits IdentifierVal)? BlockStart SchemaBody BlockEnd
+SchemaBody ::= ( SchemaBodyOptions | NL )* DocumentDefinition ( SchemaBodyOptions | NL )* // Does not support zero-or-one occurrences
 private SchemaBodyOptions ::= SchemaFieldDefinition | ImportFieldDefinition | DocumentSummaryDefinition | 
                               RankProfileDefinition | IndexDefinition | DocumentStructDefinition |
                               FieldSetDefinition | ConstantDefinition | OnnxModelDefinition | StemmingDefinition |
                               raw-as-base64-in-summary | SchemaAnnotationDefinition
 
          
-SchemaFieldDefinition ::= field IdentifierVal type FieldTypeName '{' SchemaFieldBody '}'
+SchemaFieldDefinition ::= field IdentifierVal type FieldTypeName BlockStart SchemaFieldBody BlockEnd
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                            }
@@ -65,33 +65,33 @@ private SingleValueFieldTypeName ::= "string" | "int" | "long" | "bool" | "byte"
 private TensorType ::= "tensor" ('<' ("float" | "double" | "int8" | "bfloat16") '>')? '(' TensorDimension (COMMA TensorDimension)* ')'
 private TensorDimension ::= WordWrapper (('{' '}') | ('[' INTEGER_REG ']'))
 
-SchemaFieldBody ::= DocumentFieldBodyOptions* // Fields of schemas and documents defined the same way here
+SchemaFieldBody ::= ( DocumentFieldBodyOptions | NL )* // Fields of schemas and documents defined the same way here
 
-DocumentSummaryDefinition ::= document-summary IdentifierWithDashVal (inherits IdentifierWithDashVal)? '{' DocumentSummaryBody '}' 
+DocumentSummaryDefinition ::= document-summary IdentifierWithDashVal (inherits IdentifierWithDashVal)? BlockStart DocumentSummaryBody BlockEnd
                               { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                                 implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                                }
-DocumentSummaryBody ::= DocumentSummaryBodyOptions* // Does not support zero-or-one occurrences
+DocumentSummaryBody ::= ( DocumentSummaryBodyOptions (NL)* )* // Does not support zero-or-one occurrences
 private DocumentSummaryBodyOptions ::= SummaryDefinition | omit-summary-features | from-disk
 
-ImportFieldDefinition ::= import field IdentifierVal '.' IdentifierVal as IdentifierVal '{''}'
+ImportFieldDefinition ::= import field IdentifierVal '.' IdentifierVal as IdentifierVal BlockStart BlockEnd
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                            }
 
-FieldSetDefinition ::= fieldset IdentifierVal '{' FieldSetBody '}'
-FieldSetBody ::= FieldSetBodyOptions*
+FieldSetDefinition ::= fieldset IdentifierVal BlockStart FieldSetBody BlockEnd
+FieldSetBody ::= ( FieldSetBodyOptions | NL )*
 private FieldSetBodyOptions ::= (fields ':' DottedIdentifier (COMMA DottedIdentifier)*) | QueryCommandDefinition | MatchDefinition
 
-ConstantDefinition ::= constant IdentifierVal '{' ConstantBody '}'
-ConstantBody ::= ConstantBodyOptions*
+ConstantDefinition ::= constant IdentifierVal BlockStart ConstantBody BlockEnd
+ConstantBody ::= ( ConstantBodyOptions | NL )*
 private ConstantBodyOptions ::= (file ':' FilePath) | (uri ':' UriPath) | (type ':' TensorType)
 private FilePath ::= WordWrapper (('.' | '/') WordWrapper)+   
 private UriPath ::= ('H'|'h') ('T'|'t') ('T'|'t') ('P'|'p') ('S'|'s')? ':' ('//')? (IdentifierWithDashVal | '.' | '/' | ':')+
 
 
-OnnxModelDefinition ::= onnx-model IdentifierVal '{' OnnxModelBody '}'
-OnnxModelBody ::= OnnxModelBodyOptions*
+OnnxModelDefinition ::= onnx-model IdentifierVal BlockStart OnnxModelBody BlockEnd
+OnnxModelBody ::= ( OnnxModelBodyOptions | NL )*
 private OnnxModelBodyOptions ::= (file ':' FilePath) | (uri ':' UriPath) | 
                                  ((input | output) (RankFeature | IdentifierVal | STRING_REG) ':' ('.' | '/' | '(' | ')' | IdentifierWithDashVal | WORD_REG))
 
@@ -100,8 +100,8 @@ SchemaAnnotationDefinition ::= AnnotationDefinition
                           implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                          }
                           
-private AnnotationDefinition ::= annotation IdentifierVal (inherits IdentifierVal)? '{' AnnotationFieldDefinition* '}'
-AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
+private AnnotationDefinition ::= annotation IdentifierVal (inherits IdentifierVal)? BlockStart AnnotationFieldDefinition* BlockEnd
+AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName BlockStart BlockEnd
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                            }
@@ -117,15 +117,15 @@ RankingExpression ::= RenameExpr | LiteralOrGenerateTensorExpr | FilePathExpr | 
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
-IfFunctionExpr ::= "if" '(' RankingExpression COMMA RankingExpression COMMA RankingExpression ')'
+IfFunctionExpr ::= "if" '(' (NL)* RankingExpression (NL)* COMMA (NL)* RankingExpression (NL)* COMMA (NL)* RankingExpression ')'
 
 InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (COMMA RankingExpression)* ']'
 
-BooleanExpr ::= RankingExpression ComparisonOperator RankingExpression
+BooleanExpr ::= RankingExpression (NL)* ComparisonOperator (NL)* RankingExpression
 
 ComparisonOperator ::= '<' | '>' | "==" | "<=" | ">=" | "~=" | "!="
 
-ArithmeticExpr ::= RankingExpression ArithmeticOperator RankingExpression
+ArithmeticExpr ::= RankingExpression (NL)* ArithmeticOperator (NL)* RankingExpression
 
 ArithmeticOperator ::= '+' | '-' | '*' | '/' | '%' | '^' | "||" | "&&"
 
@@ -135,44 +135,44 @@ RankFeatureExpr ::= RankFeature
 RenameExpr ::= "rename" '(' RankingExpression ',' ( Arguments | ArgumentDefinition ) ',' ( Arguments | ArgumentDefinition ) ')'
 
 // Rough parsing but hard to do better due to greediness: If this is a lambda arg expressions must be identifiers
-FunctionCallOrLambdaExpr ::= IdentifierVal '(' RankingExpression (COMMA RankingExpression)* ')' ('.' IdentifierVal)?
+FunctionCallOrLambdaExpr ::= IdentifierVal (NL)* '(' RankingExpression ( (NL)* COMMA RankingExpression)* ')' ('.' IdentifierVal)?
                              ParenthesisedExpr? // This turns the function call into a lambda
  
-ParenthesisedExpr ::= '(' RankingExpression ')'
+ParenthesisedExpr ::= (NL)* '(' (NL)* RankingExpression (NL)* ')' (NL)*
 
-PrimitiveExpr ::= ( INTEGER_REG | FLOAT_REG | IdentifierVal | RankFeature | STRING_REG )
+PrimitiveExpr ::= ( AnyNumber | IdentifierVal | RankFeature | STRING_REG )
 
 SliceExpr ::= RankingExpression ( SliceKey | SliceIndex | FullTensorAddress )
 
-SliceKey ::= '{' Label '}'
+SliceKey ::= BlockStart Label BlockEnd
 SliceIndex ::= '[' RankingExpression ']'
 
-FullTensorAddress ::= '{' KeyValue ( ',' KeyValue )* '}'
+FullTensorAddress ::= BlockStart KeyValue ( (NL)* ',' (NL)* KeyValue )* BlockEnd
 
 KeyValue ::= IdentifierVal ':' ( RankingExpression | Label )
 
 Label ::= IdentifierVal | STRING_REG | STRING_REG_SINGLE_QUOTE
 
 LiteralOrGenerateTensorExpr ::= TensorType (
-                                  ( ':' TensorValue ) | // literal verbose form tensor
+                                  ( (NL)* ':' (NL)* TensorValue ) | // literal verbose form tensor
                                   ParenthesisedExpr // generate tensor
                                 )
 
 TensorValue ::= MappedTensorValue | ArrayTensorValues
-MappedTensorValue ::= '{' MappedTensorBlock ( ',' MappedTensorBlock )* '}'
+MappedTensorValue ::= BlockStart MappedTensorBlock ( ',' MappedTensorBlock )* BlockEnd
 MappedTensorBlock ::= TensorAddress ':' ( TensorCellValue | ArrayTensorValues )
-ArrayTensorValues ::= '[' ( TensorCellValue | ArrayTensorValues ) ( ',' ( TensorCellValue | ArrayTensorValues ) )* ']'
+ArrayTensorValues ::= (NL)* '[' (NL)* ( TensorCellValue | ArrayTensorValues ) ( (NL)* ',' (NL)* ( TensorCellValue | ArrayTensorValues ) )* (NL)* ']' (NL)*
 TensorAddress ::= Label | FullTensorAddress
 TensorCellValue ::= RankingExpression
 
 //-------------------------
 //-- Rank Profile rules ---
 //-------------------------
-RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits IdentifierWithDashVal (COMMA IdentifierWithDashVal)*)? '{' RankProfileBody '}'
+RankProfileDefinition ::= (rank-profile | model) IdentifierWithDashVal (inherits IdentifierWithDashVal (COMMA IdentifierWithDashVal)*)? BlockStart RankProfileBody BlockEnd
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration"]
                            }
-private RankProfileBody ::= RankProfileBodyOptions* // Does not support zero-or-one occurrences
+private RankProfileBody ::= ( RankProfileBodyOptions (NL)* )* // Does not support zero-or-one occurrences
 private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition | FunctionDefinition | TermwiseLimitDefinition | 
                            ignore-default-rank-features | RankPropertiesDefinition | FirstPhaseDefinition | 
                            SummaryFeaturesDefinition | MatchFeaturesDefinition | RankFeaturesDefinition | 
@@ -180,13 +180,13 @@ private RankProfileBodyOptions ::= MatchPhaseDefinition | NumThreadsDefinition |
                            MinHitsDefinition | NumSearchPartitionsDefinition | FieldWeightDefinition | StrictDefinition |
                            InputsDefinition
 
-MatchPhaseDefinition ::= match-phase '{' MatchPhaseBody '}'
-MatchPhaseBody ::= MatchPhaseBodyOptions+
+MatchPhaseDefinition ::= match-phase BlockStart MatchPhaseBody BlockEnd
+MatchPhaseBody ::= ( MatchPhaseBodyOptions | NL )*
 MatchPhaseBodyOptions ::= (attribute ':' DottedIdentifier) | (order ':' (ascending | descending)) | (max-hits ':' INTEGER_REG)
                           | DiversityDefinition | (evaluation-point ':' FLOAT_REG) |
                           (pre-post-filter-tipping-point ':' FLOAT_REG) // Does not support zero-or-one occurrences
-DiversityDefinition ::= diversity '{' DiversityBody '}'
-DiversityBody ::= DiversityBodyOptions*
+DiversityDefinition ::= diversity BlockStart DiversityBody BlockEnd
+DiversityBody ::= ( DiversityBodyOptions | NL )*
 private DiversityBodyOptions ::= (attribute ':' DottedIdentifier) | (min-groups ':' INTEGER_REG) | (cutoff-factor ':' FLOAT_REG) |
                                  (cutoff-strategy ':' (strict | loose))
 
@@ -196,50 +196,51 @@ private MinHitsDefinition ::= min-hits-per-thread ':' INTEGER_REG
 private NumSearchPartitionsDefinition ::= num-search-partitions ':' INTEGER_REG
 FieldWeightDefinition ::= weight DottedIdentifier ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
-InputsDefinition ::= inputs '{' InputDefinition* '}'
+InputsDefinition ::= inputs BlockStart InputDefinition* BlockEnd
 InputDefinition ::= ( QueryFeature | IdentifierVal)
                     (':')?
-                    ( TensorType | "double" )? (':'? ( FLOAT_REG | INTEGER_REG | TensorValue ) )?
+                    ( TensorType | "double" )? (':'? ( AnyNumber | TensorValue ) )?
 
-FirstPhaseDefinition ::= first-phase '{' FirstPhaseBody '}'  { mixin="ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin" }
-FirstPhaseBody ::= FirstPhaseBodyOptions* // Does not support zero-or-one occurrences
-private FirstPhaseBodyOptions ::= (keep-rank-count ':' INTEGER_REG) | (rank-score-drop-limit ':' (FLOAT_REG | INTEGER_REG)) | ExpressionDefinition
+FirstPhaseDefinition ::= first-phase BlockStart FirstPhaseBody BlockEnd
+                         { mixin="ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin" }
+FirstPhaseBody ::= ( FirstPhaseBodyOptions | NL )* // Does not support zero-or-one occurrences
+private FirstPhaseBodyOptions ::= (keep-rank-count ':' INTEGER_REG) | (rank-score-drop-limit ':' AnyNumber) | ExpressionDefinition
 
-ExpressionDefinition ::= expression ((':' RankingExpression) | ('{' RankingExpression* '}'))
+ExpressionDefinition ::= expression ((':' RankingExpression) | (BlockStart RankingExpression* BlockEnd))
 
-SecondPhaseDefinition ::= second-phase '{' SecondPhaseBody '}'
-SecondPhaseBody ::= SecondPhaseBodyOptions*
+SecondPhaseDefinition ::= second-phase BlockStart SecondPhaseBody BlockEnd
+SecondPhaseBody ::= ( SecondPhaseBodyOptions | NL )*
 private SecondPhaseBodyOptions ::= (rerank-count ':' INTEGER_REG) | ExpressionDefinition
 
-RankPropertiesDefinition ::= rank-properties '{' RankPropertiesBody '}'
-RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue)+
+RankPropertiesDefinition ::= rank-properties BlockStart RankPropertiesBody BlockEnd
+RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue (NL)+ )+
 RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | COMMA | '$' | INTEGER_REG)+
-RankPropertiesValue ::= INTEGER_REG | FLOAT_REG | WORD_REG | DottedIdentifier | STRING_REG
+RankPropertiesValue ::= AnyNumber | WORD_REG | DottedIdentifier | STRING_REG
 
 FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
-                       '{' ExpressionDefinition '}'  
+                       BlockStart ExpressionDefinition BlockEnd
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-Arguments ::= '()' | ( '(' ArgumentDefinition (COMMA ArgumentDefinition)* ')' )
+Arguments ::= '()' | ( '(' ArgumentDefinition ((NL)* COMMA (NL)* ArgumentDefinition)* ')' )
 
 ArgumentDefinition ::= IdentifierVal
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
+SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart RankFeature* BlockEnd))
 
-MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
+MatchFeaturesDefinition ::= match-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart RankFeature* BlockEnd))
 
-RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
+RankFeaturesDefinition ::= rank-features ((':' RankFeature+ (NL)+) | (BlockStart RankFeature* BlockEnd))
 
-ConstantsDefinition ::= constants '{' InnerConstantDefinition* '}'
+ConstantsDefinition ::= constants BlockStart ( InnerConstantDefinition | NL )* BlockEnd
 
-InnerConstantDefinition ::= ( ("constant" '(' IdentifierVal ')') | IdentifierVal )
+InnerConstantDefinition ::= ( ("constant" (NL)* '(' (NL)* IdentifierVal (NL)* ')' (NL)* ) | IdentifierVal )
                             (':')? ( TensorType | "double" )?
-                            (':')? ( TensorValue | FLOAT_REG | INTEGER_REG | (file ':' FilePath) | (uri ':' UriPath))
+                            (':')? ( TensorValue | AnyNumber | (file ':' FilePath) | (uri ':' UriPath))
 
 RankFeature ::= IdentifierVal (Arguments)? ( '.' IdentifierVal )*
                     { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
@@ -253,12 +254,12 @@ QueryFeature ::= "query" '(' IdentifierWithDashVal ')'
 //-------------------------
 //---- Document rules -----
 //-------------------------
-DocumentDefinition ::= document (IdentifierVal (inherits IdentifierVal (COMMA IdentifierVal)*)?)? '{' DocumentBody '}'
+DocumentDefinition ::= document (IdentifierVal (inherits IdentifierVal (COMMA IdentifierVal)*)?)? BlockStart DocumentBody BlockEnd
                       { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                         implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                       }
 
-DocumentBody ::= DocumentBodyOptions*
+DocumentBody ::= ( DocumentBodyOptions | NL )*
 DocumentBodyOptions ::= DocumentStructDefinition | DocumentFieldDefinition | DocumentAnnotationDefinition
 
 DocumentAnnotationDefinition ::= AnnotationDefinition
@@ -266,104 +267,100 @@ DocumentAnnotationDefinition ::= AnnotationDefinition
                           implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                         }
 
-DocumentStructDefinition ::= struct IdentifierVal (inherits IdentifierVal)? '{' DocumentStructBody '}'
+DocumentStructDefinition ::= struct IdentifierVal (inherits IdentifierVal)? BlockStart DocumentStructBody BlockEnd
                              { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                                implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                              }
 
-DocumentStructBody ::= DocumentStructFieldDefinition*
-DocumentStructFieldDefinition ::= field IdentifierVal type FieldTypeName '{' DocumentStructFieldBody '}'
+DocumentStructBody ::= ( DocumentStructFieldDefinition | NL )*
+DocumentStructFieldDefinition ::= field IdentifierVal type FieldTypeName BlockStart DocumentStructFieldBody BlockEnd
                                   { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                                     implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                                   }
-                                    
-DocumentStructFieldBody ::= MatchDefinition?
+DocumentStructFieldBody ::= ( MatchDefinition (NL)* )?
 
-DocumentFieldDefinition ::= field IdentifierVal type FieldTypeName '{' DocumentFieldBody '}'
+DocumentFieldDefinition ::= field IdentifierVal type FieldTypeName BlockStart DocumentFieldBody BlockEnd
                            { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                              implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                            }
 
-DocumentFieldBody ::= DocumentFieldBodyOptions* // Does not support zero-or-one occurrences
+DocumentFieldBody ::= ( DocumentFieldBodyOptions | NL )* // Does not support zero-or-one occurrences
 private DocumentFieldBodyOptions ::= StructFieldDefinition | MatchDefinition | IndexingDefinition | AttributeDefinition | 
                              AliasDefinition | RankDefinition | IndexingRewriteState | QueryCommandDefinition | SummaryDefinition |
                              BoldingDefinition | (id ':' INTEGER_REG) | IndexDefinition | (normalizing ':' IdentifierWithDashVal) | 
                              SortingDefinition | StemmingDefinition | (weight ':' INTEGER_REG) | WeightedSetDefinition |
                              RankTypeDefinition | DictionaryDefinition | SummaryToDefinition | header | body
-//***** Field's body elements ******//
+
 // Struct
-StructFieldDefinition ::= struct-field DottedIdentifier '{' StructFieldBody '}'
+StructFieldDefinition ::= struct-field DottedIdentifier BlockStart StructFieldBody BlockEnd
                           { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                             implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                           }
 
-StructFieldBody ::= StructFieldBodyOptions* // Does not support zero-or-one occurrences
-StructFieldBodyOptions ::= IndexingDefinition | AttributeDefinition | MatchDefinition | QueryCommandDefinition | 
-                           StructFieldDefinition | SummaryDefinition | RankDefinition
+StructFieldBody ::= ( StructFieldBodyOptions | NL )* // Does not support zero-or-one occurrences
+StructFieldBodyOptions ::= SummaryDefinition | IndexingDefinition | AttributeDefinition | MatchDefinition |
+                           QueryCommandDefinition | StructFieldDefinition | RankDefinition
+
 // Match
-MatchDefinition ::= match ((':' MatchProperty) | ('{' MatchProperty+ '}'))
+MatchDefinition ::= match ((':' MatchProperty (NL)+) | ( BlockStart ( MatchProperty (NL)* )* BlockEnd))
 MatchProperty ::= text | token | exact | (exact-terminator ':' STRING_REG) | word | prefix | cased | uncased | substring |
                   suffix | (max-length ':' INTEGER_REG) | gram | (gram-size ':' INTEGER_REG) | WordWrapper
 // Indexing
-IndexingDefinition ::= indexing ((':' IndexingStatement) | ('{' IndexingStatement+ '}'))
-IndexingStatement ::= IndexingStatementOptions (('|' IndexingStatementOptions)*) (';')?
-                      // Does not support zero-or-one occurrences
-IndexingStatementOptions ::= summary DottedIdentifier? | attribute DottedIdentifier? | index DottedIdentifier? |
-                             set_language | lowercase |
-                             (input (DottedIdentifier | IndexingStuff)+) |
-                             ('{' IndexingStatementOptions '}') | IndexingStuff+
-private IndexingStuff ::= WordWrapper | INTEGER_REG | FLOAT_REG | STRING_REG | ('{' IndexingStatement '}') |
-                          ':' | ('|' IndexingStatementOptions) | ';' | '.' | '(' | ')' | ArithmeticOperator | ComparisonOperator
+IndexingDefinition ::= indexing ((':' IndexingStatement (NL)+) | ( BlockStart ( IndexingStatement ';' (NL)*)* BlockEnd))
+IndexingStatement ::= IndexingExpression (('|' IndexingExpression)*)
+IndexingExpression ::= (input DottedIdentifier) |
+                       summary DottedIdentifier? | attribute DottedIdentifier? | index DottedIdentifier? |
+                       set_language | lowercase |
+                       IndexingStuff |
+                       (BlockStart ( IndexingStatement)* BlockEnd) |
+// TODO: Parse advanced indexing statements properly
+private IndexingStuff ::= WordWrapper | AnyNumber | STRING_REG |
+                          ':' | '.' | '(' | ')' | ArithmeticOperator | ComparisonOperator
+
 // Attribute
-AttributeDefinition ::= attribute ((':' SimpleAttributeProperty) | ('{' (ComplexAttributeProperty | SimpleAttributeProperty)+ '}'))
+AttributeDefinition ::= attribute ((':' SimpleAttributeProperty (NL)+ ) |
+                                   BlockStart (ComplexAttributeProperty | SimpleAttributeProperty | NL)+ BlockEnd )
 SimpleAttributeProperty ::= fast-search | fast-rank | fast-access | paged | mutable | enable-bit-vectors | enable-only-bit-vector | WordWrapper // Does not support zero-or-one occurrences
 ComplexAttributeProperty ::= AliasDefinition | SortingDefinition | DistanceMetricDef // Does not support zero-or-one occurrences
-DistanceMetricDef ::= distance-metric ':' IdentifierWithDashVal
-// Alias
-AliasDefinition ::= alias (DottedIdentifier)? ':' DottedIdentifierWithDash
-// Stemming
-StemmingDefinition ::= stemming ':' IdentifierWithDashVal
-// Rank
-RankDefinition ::= rank ((DottedIdentifier? ':' RankingSetting) | ('{' RankingSetting '}'))
+DistanceMetricDef ::= distance-metric ':' IdentifierWithDashVal (NL)+
+AliasDefinition ::= alias (DottedIdentifier)? ':' DottedIdentifierWithDash (NL)+
+StemmingDefinition ::= stemming ':' IdentifierWithDashVal (NL)+
+RankDefinition ::= rank ((DottedIdentifier? ':' RankingSetting (NL)+) | (BlockStart ( RankingSetting | NL )+ BlockEnd))
 RankingSetting ::= filter | normal | literal | WordWrapper
-// Indexing Rewrite
-IndexingRewriteState ::= indexing-rewrite ':' none
-// Query Command
-QueryCommandDefinition ::= query-command ':' (IdentifierWithDashVal | STRING_REG | WordWrapper)
+IndexingRewriteState ::= indexing-rewrite ':' none (NL)+
+QueryCommandDefinition ::= query-command ':' (IdentifierWithDashVal | STRING_REG | WordWrapper) (NL)+
 // Summary
-SummaryDefinition ::= summary IdentifierWithDashVal? (type FieldTypeName)? ((':' SummaryBodyOptions) | ( '{' SummaryBody '}'))
+SummaryDefinition ::= summary IdentifierWithDashVal? (type FieldTypeName)? ((':' SummaryBodyOptions (NL)+ ) | ( BlockStart SummaryBody BlockEnd))
                       { mixin="ai.vespa.intellij.schema.psi.impl.SdSummaryDefinitionMixin" }
-SummaryBody ::= SummaryBodyOptions* // Does not support zero-or-one occurrences
+SummaryBody ::= ( SummaryBodyOptions | NL )* // Does not support zero-or-one occurrences
 SummaryBodyOptions ::= full | static | dynamic | ((source ':' DottedIdentifier) (COMMA DottedIdentifier)*) |
                        (to ':' IdentifierVal (COMMA IdentifierVal)*) | matched-elements-only | BoldingDefinition
-// Summary To
-SummaryToDefinition ::= summary-to ':' WordWrapper (COMMA WordWrapper)*
-// Bolding                       
-BoldingDefinition ::= bolding ':' (on | off | true | false)
+SummaryToDefinition ::= summary-to ':' WordWrapper (COMMA WordWrapper)* (NL)+
+BoldingDefinition ::= bolding ':' (on | off | true | false) (NL)+
+
 // Index
-IndexDefinition ::= index IdentifierVal? ((':' IndexProperty) | ('{' IndexProperty '}'))
-IndexProperty ::= IndexPropertyOptions*
+IndexDefinition ::= index IdentifierVal? ((':' IndexProperty (NL)+ ) | (BlockStart IndexProperty BlockEnd))
+IndexProperty ::= ( IndexPropertyOptions | NL )*
 private IndexPropertyOptions ::= (alias ':' DottedIdentifierWithDash) | StemmingDefinition | (arity ':' INTEGER_REG) |
                                  (lower-bound ':' INTEGER_REG ('L')?) | (upper-bound ':' INTEGER_REG ('L')?) |
                                  (dense-posting-list-threshold ':' FLOAT_REG) | enable-bm25 | prefix | HnswDefinition
-HnswDefinition ::= hnsw '{' HnswBody '}'
-HnswBody ::= HnswBodyOptions*
+HnswDefinition ::= hnsw BlockStart HnswBody BlockEnd
+HnswBody ::= ( HnswBodyOptions | NL )*
 private HnswBodyOptions ::= (max-links-per-node ':' INTEGER_REG) | (neighbors-to-explore-at-insert ':' INTEGER_REG) |
                             (multi-threaded-indexing ':' (on | off | true | false))
 // Sorting
-SortingDefinition ::= sorting ((':' SortingProperty) | ('{' SortingProperty* '}'))
+SortingDefinition ::= sorting ((':' SortingProperty (NL)+) | (BlockStart ( SortingProperty | NL)* BlockEnd))
 SortingProperty ::= ascending | descending | (function ':' SortingFunction) | (strength ':' SortingStrength) | 
                     (locale ':' IdentifierWithDashVal)
 SortingFunction ::= uca | raw | lowercase
 SortingStrength ::= primary | secondary | tertiary | quaternary | identical
 // Rank Type
-RankTypeDefinition ::= rank-type IdentifierVal? ':' IdentifierVal
+RankTypeDefinition ::= rank-type IdentifierVal? ':' IdentifierVal (NL)+
 // Weighted Set
-WeightedSetDefinition ::= weightedset ((':' WeightedSetProperty) | ('{' WeightedSetProperty* '}'))  // Does not support 
-                                                                                                  // zero-or-one occurrences
+WeightedSetDefinition ::= weightedset ((':' WeightedSetProperty (NL)+ ) | (BlockStart ( WeightedSetProperty | NL )* BlockEnd))
 WeightedSetProperty ::=  create-if-nonexistent | remove-if-zero
 // Dictionary
-DictionaryDefinition ::= dictionary ((':' DictionarySetting) | ('{' DictionarySetting* '}')) 
+DictionaryDefinition ::= dictionary ((':' DictionarySetting (NL)+) | (BlockStart ( DictionarySetting | NL )* BlockEnd))
 DictionarySetting ::= hash | btree | cased | uncased
 
 private WordWrapper ::= KeywordOrIdentifier | KeywordNotIdentifier | ID_REG | IdentifierWithDashVal | WORD_REG
@@ -377,6 +374,11 @@ IdentifierWithDashVal ::= IdentifierVal ('-' IdentifierVal)* { mixin="ai.vespa.i
                                                              implements=["ai.vespa.intellij.schema.psi.SdIdentifier"]
                                                            }
 DottedIdentifierWithDash ::= IdentifierWithDashVal ('.' IdentifierWithDashVal)*
+
+BlockStart ::= (NL)* '{' (NL)*
+BlockEnd ::=   (NL)* '}' (NL)*
+
+AnyNumber ::= ('-')? ( FLOAT_REG | INTEGER_REG)
 
 // Those lists of keywords (KeywordOrIdentifier and KeywordNotIdentifier) have to be synchronized with sd.flex file.
 // If you add a keyword here, you should add it to the sd.flex file as well.
