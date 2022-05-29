@@ -32,10 +32,12 @@ import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.vespa.objects.FieldBase;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.Map;
@@ -69,6 +71,19 @@ public class JsonSerializationHelper {
         } catch (IOException e) {
             throw new JsonSerializationException(e);
         }
+    }
+
+    public static void serializeTensorFieldShortForm(JsonGenerator generator, FieldBase field, TensorFieldValue value) {
+        wrapIOException(() -> {
+            fieldNameIfNotNull(generator, field);
+            if (value.getTensor().isPresent()) {
+                Tensor tensor = value.getTensor().get();
+                generator.writeRawValue(new String(JsonFormat.encodeShortForm(tensor), StandardCharsets.UTF_8));
+            } else {
+                generator.writeStartObject();
+                generator.writeEndObject();
+            }
+        });
     }
 
     public static void serializeTensorField(JsonGenerator generator, FieldBase field, TensorFieldValue value) {

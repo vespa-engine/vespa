@@ -63,6 +63,7 @@ import static com.yahoo.document.json.JsonSerializationHelper.serializeStringFie
 import static com.yahoo.document.json.JsonSerializationHelper.serializeStructField;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeStructuredField;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeTensorField;
+import static com.yahoo.document.json.JsonSerializationHelper.serializeTensorFieldShortForm;
 import static com.yahoo.document.json.JsonSerializationHelper.serializeWeightedSet;
 import static com.yahoo.document.json.document.DocumentParser.FIELDS;
 import static com.yahoo.document.json.document.DocumentParser.REMOVE;
@@ -76,6 +77,8 @@ public class JsonWriter implements DocumentWriter {
 
     private static final JsonFactory jsonFactory = new JsonFactory();
     private final JsonGenerator generator;
+
+    private final boolean tensorShortForm;
 
     // I really hate exception unsafe constructors, but the alternative
     // requires generator to not be a final
@@ -108,7 +111,12 @@ public class JsonWriter implements DocumentWriter {
      *            the output JSON generator
      */
     public JsonWriter(JsonGenerator generator) {
+        this(generator, false);
+    }
+
+    public JsonWriter(JsonGenerator generator, boolean tensorShortForm) {
         this.generator = generator;
+        this.tensorShortForm = tensorShortForm;
     }
 
     /**
@@ -206,7 +214,11 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
-        serializeTensorField(generator, field, value);
+        if (tensorShortForm) {
+            serializeTensorFieldShortForm(generator, field, value);
+        } else {
+            serializeTensorField(generator, field, value);
+        }
     }
 
     @Override
