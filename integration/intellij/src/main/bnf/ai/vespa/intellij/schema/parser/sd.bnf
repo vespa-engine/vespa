@@ -117,7 +117,7 @@ RankingExpression ::= RenameExpr | LiteralOrGenerateTensorExpr | FilePathExpr | 
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
 
-IfFunctionExpr ::= "if" '(' (NL)* RankingExpression CommaSeparator RankingExpression CommaSeparator RankingExpression ')'
+IfFunctionExpr ::= "if" ClauseStart RankingExpression CommaSeparator RankingExpression CommaSeparator RankingExpression ClauseEnd
 
 InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (CommaSeparator RankingExpression)* ']'
 
@@ -131,13 +131,13 @@ UnaryOperator ::= '!' | '-'
 RankFeatureExpr ::= RankFeature
 
 // The rename function allows lists of identifiers as arguments
-RenameExpr ::= "rename" '(' RankingExpression CommaSeparator ( Arguments | ArgumentDefinition ) CommaSeparator ( Arguments | ArgumentDefinition ) ')'
+RenameExpr ::= "rename" ClauseStart RankingExpression CommaSeparator ( Arguments | ArgumentDefinition ) CommaSeparator ( Arguments | ArgumentDefinition ) ClauseEnd
 
 // Rough parsing but hard to do better due to greediness: If this is a lambda arg expressions must be identifiers
-FunctionCallOrLambdaExpr ::= IdentifierVal (NL)* '(' RankingExpression ( CommaSeparator RankingExpression)* ')' ('.' IdentifierVal)?
-                             ParenthesisedExpr? // This turns the function call into a lambda
+FunctionCallOrLambdaExpr ::= IdentifierVal ClauseStart RankingExpression ( CommaSeparator RankingExpression )* ClauseEnd ( '.' IdentifierVal )?
+                             (ParenthesisedExpr)? // This turns the function call into a lambda
  
-ParenthesisedExpr ::= (NL)* '(' (NL)* RankingExpression (NL)* ')' (NL)*
+ParenthesisedExpr ::= ClauseStart RankingExpression ClauseEnd
 
 PrimitiveExpr ::= ( AnyNumber | IdentifierVal | RankFeature | STRING_REG )
 
@@ -158,7 +158,7 @@ LiteralOrGenerateTensorExpr ::= TensorType (
                                 )
 
 TensorValue ::= MappedTensorValue | ArrayTensorValues
-MappedTensorValue ::= BlockStart MappedTensorBlock ( ',' MappedTensorBlock )* BlockEnd
+MappedTensorValue ::= BlockStart MappedTensorBlock ( COMMA MappedTensorBlock )* BlockEnd
 MappedTensorBlock ::= TensorAddress ':' ( TensorCellValue | ArrayTensorValues )
 ArrayTensorValues ::= (NL)* '[' (NL)* ( TensorCellValue | ArrayTensorValues ) ( CommaSeparator ( TensorCellValue | ArrayTensorValues ) )* (NL)* ']' (NL)*
 TensorAddress ::= Label | FullTensorAddress
@@ -222,7 +222,7 @@ FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-Arguments ::= '()' | ( '(' ArgumentDefinition (CommaSeparator ArgumentDefinition)* ')' )
+Arguments ::= '()' | ( ClauseStart ArgumentDefinition (CommaSeparator ArgumentDefinition)* ClauseEnd )
 
 ArgumentDefinition ::= IdentifierVal
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
@@ -237,7 +237,7 @@ RankFeaturesDefinition ::= rank-features ((':' RankFeature+ (NL)+) | (BlockStart
 
 ConstantsDefinition ::= constants BlockStart ( InnerConstantDefinition | NL )* BlockEnd
 
-InnerConstantDefinition ::= ( ("constant" (NL)* '(' (NL)* IdentifierVal (NL)* ')' (NL)* ) | IdentifierVal )
+InnerConstantDefinition ::= ( ("constant" ClauseStart IdentifierVal ClauseEnd ) | IdentifierVal )
                             (':')? ( TensorType | "double" )?
                             (':')? ( TensorValue | AnyNumber | (file ':' FilePath) | (uri ':' UriPath))
 
@@ -375,6 +375,8 @@ DottedIdentifierWithDash ::= IdentifierWithDashVal ('.' IdentifierWithDashVal)*
 
 BlockStart ::= (NL)* '{' (NL)*
 BlockEnd ::=   (NL)* '}' (NL)*
+ClauseStart ::= (NL)* '(' (NL)*
+ClauseEnd ::=   (NL)* ')' (NL)*
 CommaSeparator ::= (NL)* COMMA (NL)*
 AnyNumber ::= ('-')? ( FLOAT_REG | INTEGER_REG)
 
