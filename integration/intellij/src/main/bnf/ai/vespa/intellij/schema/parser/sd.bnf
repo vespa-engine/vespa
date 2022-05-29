@@ -224,7 +224,7 @@ FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
 
 Arguments ::= '()' | ( ClauseStart ArgumentDefinition (CommaSeparator ArgumentDefinition)* ClauseEnd )
 
-ArgumentDefinition ::= IdentifierVal
+ArgumentDefinition ::= IdentifierVal | INTEGER_REG
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
