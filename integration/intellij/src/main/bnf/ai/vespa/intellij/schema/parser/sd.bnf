@@ -301,7 +301,7 @@ StructFieldBodyOptions ::= SummaryDefinition | IndexingDefinition | AttributeDef
                            QueryCommandDefinition | StructFieldDefinition | RankDefinition
 
 // Match
-MatchDefinition ::= match ((':' MatchProperty (NL)+) | ( BlockStart ( MatchProperty (NL)* )* BlockEnd))
+MatchDefinition ::= match ((':' MatchProperty (NL)*) | ( BlockStart ( MatchProperty (NL)* )* BlockEnd))
 MatchProperty ::= text | token | exact | (exact-terminator ':' STRING_REG) | word | prefix | cased | uncased | substring |
                   suffix | (max-length ':' INTEGER_REG) | gram | (gram-size ':' INTEGER_REG) | WordWrapper
 // Indexing
