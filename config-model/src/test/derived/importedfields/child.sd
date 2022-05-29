@@ -1,9 +1,15 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search child {
+schema child {
   document child {
-    field a_ref type reference<parent_a> { indexing: attribute }
-    field b_ref type reference<parent_b> { indexing: attribute }
-    field b_ref_with_summary type reference<parent_b> { indexing: attribute | summary }
+    field a_ref type reference<parent_a> {
+        indexing: attribute
+    }
+    field b_ref type reference<parent_b> {
+        indexing: attribute
+    }
+    field b_ref_with_summary type reference<parent_b> {
+        indexing: attribute | summary
+    }
   }
   import field a_ref.int_field as my_int_field {}
   import field b_ref.string_field as my_string_field {}

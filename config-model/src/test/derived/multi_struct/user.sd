@@ -1,4 +1,4 @@
-search user {
+schema user {
     document user {
         field a type string {
           indexing: summary

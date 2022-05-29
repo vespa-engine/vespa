@@ -1,4 +1,4 @@
-search ad {
+schema ad {
     document ad {
         field e type string {
             indexing: attribute | summary

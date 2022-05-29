@@ -1,4 +1,4 @@
-search shop {
+schema shop {
     document shop {
         struct mystruct {
             field one type string {}

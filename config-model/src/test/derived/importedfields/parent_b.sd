@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search parent_b {
+schema parent_b {
   document parent_b {
     field string_field type string {
       indexing: attribute

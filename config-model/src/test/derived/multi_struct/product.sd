@@ -1,4 +1,4 @@
-search product {
+schema product {
   document product {
     struct mystruct {
         field zero type string {}
