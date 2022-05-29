@@ -86,7 +86,7 @@ private FieldSetBodyOptions ::= (fields ':' DottedIdentifier (COMMA DottedIdenti
 ConstantDefinition ::= constant IdentifierVal BlockStart ConstantBody BlockEnd
 ConstantBody ::= ( ConstantBodyOptions | NL )*
 private ConstantBodyOptions ::= (file ':' FilePath) | (uri ':' UriPath) | (type ':' TensorType)
-private FilePath ::= WordWrapper (('.' | '/') WordWrapper)+   
+private FilePath ::= ( WordWrapper | INTEGER_REG) (('.' | '/' | '-') ( WordWrapper | INTEGER_REG) )+
 private UriPath ::= ('H'|'h') ('T'|'t') ('T'|'t') ('P'|'p') ('S'|'s')? ':' ('//')? (IdentifierWithDashVal | '.' | '/' | ':')+
 
 
