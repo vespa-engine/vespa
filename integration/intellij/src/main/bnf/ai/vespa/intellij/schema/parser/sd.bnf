@@ -33,8 +33,6 @@
         COMMENT = 'regexp:#.*'
         SYMBOL = 'regexp:[!$|:{}().\[\]]'
         COMMA = 'regexp:[,]'
-        //BLOCK_START = '{'
-        //BLOCK_END = '}'
         INTEGER_REG = 'regexp:[0-9]+'
         FLOAT_REG = 'regexp:[0-9]+[.][0-9]+([eE][0-9]+)?'
         STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
@@ -369,9 +367,10 @@ IdentifierVal ::= KeywordOrIdentifier | ID_REG { mixin="ai.vespa.intellij.schema
                                                }
 DottedIdentifier ::= IdentifierVal ('.' IdentifierVal)*
 
-IdentifierWithDashVal ::= IdentifierVal ('-' IdentifierVal)* { mixin="ai.vespa.intellij.schema.psi.impl.SdIdentifierMixin"
-                                                             implements=["ai.vespa.intellij.schema.psi.SdIdentifier"]
-                                                           }
+IdentifierWithDashVal ::= IdentifierVal ('-' ( IdentifierVal | INTEGER_REG ) )*
+                                               { mixin="ai.vespa.intellij.schema.psi.impl.SdIdentifierMixin"
+                                                 implements=["ai.vespa.intellij.schema.psi.SdIdentifier"]
+                                               }
 DottedIdentifierWithDash ::= IdentifierWithDashVal ('.' IdentifierWithDashVal)*
 
 BlockStart ::= (NL)* '{' (NL)*
