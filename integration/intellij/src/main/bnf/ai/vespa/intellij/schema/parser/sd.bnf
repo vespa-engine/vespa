@@ -49,7 +49,7 @@ SchemaBody ::= ( SchemaBodyOptions | NL )* DocumentDefinition ( SchemaBodyOption
 private SchemaBodyOptions ::= SchemaFieldDefinition | ImportFieldDefinition | DocumentSummaryDefinition | 
                               RankProfileDefinition | IndexDefinition | DocumentStructDefinition |
                               FieldSetDefinition | ConstantDefinition | OnnxModelDefinition | StemmingDefinition |
-                              raw-as-base64-in-summary | SchemaAnnotationDefinition
+                              ( raw-as-base64-in-summary ':' (true | false) ) | SchemaAnnotationDefinition
 
          
 SchemaFieldDefinition ::= field IdentifierVal type FieldTypeName BlockStart SchemaFieldBody BlockEnd
@@ -112,7 +112,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName BlockStart 
 //    NOTE: These must end by "Expr" - see this line above: extends(".*Expr")=RankingExpression
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
-RankingExpression ::= RenameExpr | LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr |
+RankingExpression ::= RenameExpr | LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BinaryExpr | UnaryExpr |
                       IfFunctionExpr | FunctionCallOrLambdaExpr | RankFeatureExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
@@ -121,13 +121,12 @@ IfFunctionExpr ::= "if" '(' (NL)* RankingExpression (NL)* COMMA (NL)* RankingExp
 
 InListRankingExpr ::= RankingExpression "in" '[' RankingExpression (COMMA RankingExpression)* ']'
 
-BooleanExpr ::= RankingExpression (NL)* ComparisonOperator (NL)* RankingExpression
-
+BinaryExpr ::= RankingExpression (NL)* ( ArithmeticOperator | ComparisonOperator) (NL)* RankingExpression
+ArithmeticOperator ::= '+' | '-' | '*' | '/' | '%' | '^' | "||" | "&&"
 ComparisonOperator ::= '<' | '>' | "==" | "<=" | ">=" | "~=" | "!="
 
-ArithmeticExpr ::= RankingExpression (NL)* ArithmeticOperator (NL)* RankingExpression
-
-ArithmeticOperator ::= '+' | '-' | '*' | '/' | '%' | '^' | "||" | "&&"
+UnaryExpr ::= UnaryOperator (NL)* RankingExpression
+UnaryOperator ::= '!' | '-'
 
 RankFeatureExpr ::= RankFeature
 
@@ -308,11 +307,11 @@ MatchProperty ::= text | token | exact | (exact-terminator ':' STRING_REG) | wor
 // Indexing
 IndexingDefinition ::= indexing ((':' IndexingStatement (NL)+) | ( BlockStart ( IndexingStatement ';' (NL)*)* BlockEnd))
 IndexingStatement ::= IndexingExpression (('|' IndexingExpression)*)
-IndexingExpression ::= (input DottedIdentifier) |
+IndexingExpression ::= (input ( DottedIdentifier | IndexingStuff )+ )+ |
                        summary DottedIdentifier? | attribute DottedIdentifier? | index DottedIdentifier? |
                        set_language | lowercase |
-                       IndexingStuff |
-                       (BlockStart ( IndexingStatement)* BlockEnd) |
+                       (IndexingStuff)+ |
+                       ( (WordWrapper)? BlockStart (NL | IndexingStatement)* BlockEnd) |
 // TODO: Parse advanced indexing statements properly
 private IndexingStuff ::= WordWrapper | AnyNumber | STRING_REG |
                           ':' | '.' | '(' | ')' | ArithmeticOperator | ComparisonOperator
@@ -339,11 +338,10 @@ SummaryToDefinition ::= summary-to ':' WordWrapper (COMMA WordWrapper)* (NL)+
 BoldingDefinition ::= bolding ':' (on | off | true | false) (NL)+
 
 // Index
-IndexDefinition ::= index IdentifierVal? ((':' IndexProperty (NL)+ ) | (BlockStart IndexProperty BlockEnd))
-IndexProperty ::= ( IndexPropertyOptions | NL )*
-private IndexPropertyOptions ::= (alias ':' DottedIdentifierWithDash) | StemmingDefinition | (arity ':' INTEGER_REG) |
-                                 (lower-bound ':' INTEGER_REG ('L')?) | (upper-bound ':' INTEGER_REG ('L')?) |
-                                 (dense-posting-list-threshold ':' FLOAT_REG) | enable-bm25 | prefix | HnswDefinition
+IndexDefinition ::= index IdentifierVal? ((':' IndexProperty (NL)+ ) | (BlockStart ( IndexProperty | NL)* BlockEnd))
+private IndexProperty ::= (alias ':' DottedIdentifierWithDash) | StemmingDefinition | (arity ':' INTEGER_REG) |
+                          (lower-bound ':' INTEGER_REG ('L')?) | (upper-bound ':' INTEGER_REG ('L')?) |
+                          (dense-posting-list-threshold ':' FLOAT_REG) | enable-bm25 | prefix | HnswDefinition
 HnswDefinition ::= hnsw BlockStart HnswBody BlockEnd
 HnswBody ::= ( HnswBodyOptions | NL )*
 private HnswBodyOptions ::= (max-links-per-node ':' INTEGER_REG) | (neighbors-to-explore-at-insert ':' INTEGER_REG) |
