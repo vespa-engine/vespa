@@ -117,6 +117,7 @@ public class FileReferenceCompressor {
         switch (type) {
             case compressed:
                 return new GZIPOutputStream(new FileOutputStream(outputFile));
+            case archive:
             case file:
                 return new FileOutputStream(outputFile);
             default:
@@ -128,6 +129,7 @@ public class FileReferenceCompressor {
         switch (type) {
             case compressed:
                 return new GZIPInputStream(new FileInputStream(inputFile));
+            case archive:
             case file:
                 return new FileInputStream(inputFile);
             default:

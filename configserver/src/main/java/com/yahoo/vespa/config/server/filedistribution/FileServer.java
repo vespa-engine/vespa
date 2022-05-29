@@ -21,6 +21,7 @@ import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.StringFlag;
@@ -39,6 +40,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.archive;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 
 public class FileServer {
@@ -52,6 +54,7 @@ public class FileServer {
     private final ExecutorService executor;
     private final FileDownloader downloader;
     private final StringFlag compressionAlgorithm;
+    private final BooleanFlag alwaysUseArchive;
 
     private enum FileApiErrorCodes {
         OK(0, "OK"),
@@ -103,6 +106,7 @@ public class FileServer {
         this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                      new DaemonThreadFactory("file-server-"));
         this.compressionAlgorithm = Flags.FILE_DISTRIBUTION_COMPRESSION_ALGORITHM.bindTo(flagSource);
+        this.alwaysUseArchive = Flags.FILE_DISTRIBUTION_ALWAYS_USE_ARCHIVE.bindTo(flagSource);
     }
 
     boolean hasFile(String fileReference) {
@@ -155,6 +159,10 @@ public class FileServer {
             Path tempFile = Files.createTempFile("filereferencedata", reference.value());
             File compressedFile = new FileReferenceCompressor(compressed).compress(file.getParentFile(), tempFile.toFile());
             return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile);
+        } else if (alwaysUseArchive.value()) {
+            Path tempFile = Files.createTempFile("filereferencedata", reference.value());
+            File compressedFile = new FileReferenceCompressor(archive).compress(file, tempFile.toFile());
+            return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), archive, compressedFile);
         } else {
             return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
         }

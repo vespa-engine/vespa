@@ -402,10 +402,10 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag FILE_DISTRIBUTION_COMPRESS_SINGLE_FILES = defineFeatureFlag(
-            "file-distribution-compress-single-files", false,
-            List.of("hmusum"), "2022-05-24", "2022-06-24",
-            "Whether to compress a file references that is a single file (directories are compressed by default).",
+    public static final UnboundBooleanFlag FILE_DISTRIBUTION_ALWAYS_USE_ARCHIVE = defineFeatureFlag(
+            "file-distribution-always-use-archive", false,
+            List.of("hmusum"), "2022-05-30", "2022-06-30",
+            "Whether to use an archive (tar archive) for single files (directories will always be packaged in an archive)",
             "Takes effect immediately",
             APPLICATION_ID);
 

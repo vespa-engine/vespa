@@ -120,14 +120,13 @@ public class FileReceiver {
                         log.log(Level.FINE, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
                         moveFileToDestination(inprogressFile, file);
                         break;
+                    case archive:
                     case archive_gzip:
                     case compressed:
                         decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
                         new FileReferenceCompressor(fileType).decompress(inprogressFile, decompressedDir);
                         moveFileToDestination(decompressedDir, fileReferenceDir);
                         break;
-                    case archive:
-                        throw new RuntimeException("File type " + fileType + " not supported yet");
                     default:
                         throw new RuntimeException("Unknown file type " + fileType);
                 }
