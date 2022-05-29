@@ -12,7 +12,12 @@ import java.nio.ByteBuffer;
  */
 public abstract class FileReferenceData {
 
-    public enum Type { file, compressed }
+    public enum Type {
+        file, /* file, uncompressed */
+        compressed /* gzipped tar archive, legacy name */,
+        archive /* tar archive, uncompressed */,
+        archive_gzip /* gzipped tar archive */,
+    }
 
     private final FileReference fileReference;
     private final String filename;

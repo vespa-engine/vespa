@@ -13,14 +13,17 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +51,7 @@ public class FileServer {
     private final FileDirectory root;
     private final ExecutorService executor;
     private final FileDownloader downloader;
+    private final StringFlag compressionAlgorithm;
 
     private enum FileApiErrorCodes {
         OK(0, "OK"),
@@ -82,21 +86,23 @@ public class FileServer {
 
     @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
-    public FileServer(ConfigserverConfig configserverConfig) {
+    public FileServer(ConfigserverConfig configserverConfig, FlagSource flagSource) {
         this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
-             createFileDownloader(configserverConfig));
+             createFileDownloader(configserverConfig),
+             flagSource);
     }
 
     // For testing only
-    public FileServer(File rootDir) {
-        this(rootDir, createFileDownloader());
+    public FileServer(File rootDir, FlagSource flagSource) {
+        this(rootDir, createFileDownloader(), flagSource);
     }
 
-    FileServer(File rootDir, FileDownloader fileDownloader) {
+    FileServer(File rootDir, FileDownloader fileDownloader, FlagSource flagSource) {
         this.downloader = fileDownloader;
         this.root = new FileDirectory(rootDir);
         this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                      new DaemonThreadFactory("file-server-"));
+        this.compressionAlgorithm = Flags.FILE_DISTRIBUTION_COMPRESSION_ALGORITHM.bindTo(flagSource);
     }
 
     boolean hasFile(String fileReference) {

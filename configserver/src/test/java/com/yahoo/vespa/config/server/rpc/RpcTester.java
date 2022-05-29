@@ -123,7 +123,7 @@ public class RpcTester implements AutoCloseable {
                              Metrics.createTestMetrics(),
                              hostRegistry,
                              hostLivenessTracker,
-                             new FileServer(temporaryFolder.newFolder()),
+                             new FileServer(temporaryFolder.newFolder(), new InMemoryFlagSource()),
                              new NoopRpcAuthorizer(),
                              new RpcRequestHandlerProvider());
         rpcServer.setUpGetConfigHandlers();

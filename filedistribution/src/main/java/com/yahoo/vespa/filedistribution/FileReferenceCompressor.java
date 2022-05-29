@@ -107,7 +107,7 @@ public class FileReferenceCompressor {
     }
 
     private static void writeFileToTar(ArchiveOutputStream taos, File baseDir, File file) throws IOException {
-        log.log(Level.FINEST, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()).toString());
+        log.log(Level.FINEST, () -> "Adding file to tar: " + baseDir.toPath().relativize(file.toPath()));
         taos.putArchiveEntry(taos.createArchiveEntry(file, baseDir.toPath().relativize(file.toPath()).toString()));
         ByteStreams.copy(new FileInputStream(file), taos);
         taos.closeArchiveEntry();

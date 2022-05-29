@@ -109,19 +109,27 @@ public class FileReceiver {
             File file = new File(fileReferenceDir, fileName);
             File decompressedDir = null;
             try {
-                if (fileType == Type.file) {
-                    try {
-                        Files.createDirectories(fileReferenceDir.toPath());
-                    } catch (IOException e) {
-                        log.log(Level.SEVERE, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
-                        throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
-                    }
-                    log.log(Level.FINE, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
-                    moveFileToDestination(inprogressFile, file);
-                } else {
-                    decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
-                    new FileReferenceCompressor(fileType).decompress(inprogressFile, decompressedDir);
-                    moveFileToDestination(decompressedDir, fileReferenceDir);
+                switch (fileType) {
+                    case file:
+                        try {
+                            Files.createDirectories(fileReferenceDir.toPath());
+                        } catch (IOException e) {
+                            log.log(Level.SEVERE, "Failed creating directory (" + fileReferenceDir.toPath() + "): " + e.getMessage(), e);
+                            throw new RuntimeException("Failed creating directory (" + fileReferenceDir.toPath() + "): ", e);
+                        }
+                        log.log(Level.FINE, () -> "Uncompressed file, moving to " + file.getAbsolutePath());
+                        moveFileToDestination(inprogressFile, file);
+                        break;
+                    case archive_gzip:
+                    case compressed:
+                        decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
+                        new FileReferenceCompressor(fileType).decompress(inprogressFile, decompressedDir);
+                        moveFileToDestination(decompressedDir, fileReferenceDir);
+                        break;
+                    case archive:
+                        throw new RuntimeException("File type " + fileType + " not supported yet");
+                    default:
+                        throw new RuntimeException("Unknown file type " + fileType);
                 }
             } catch (IOException e) {
                 log.log(Level.SEVERE, "Failed writing file: " + e.getMessage(), e);
@@ -162,7 +170,7 @@ public class FileReceiver {
         methods.add(new Method(RECEIVE_META_METHOD, "sssl", "ii", this::receiveFileMeta)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
-                .paramDesc(2, "type", "'file' or 'compressed'")
+                .paramDesc(2, "type", "'file' 'compressed', 'archive', 'archive_gzip'")
                 .paramDesc(3, "filelength", "length in bytes of file")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise")
                 .returnDesc(1, "session-id", "Session id to be used for this transfer"));
