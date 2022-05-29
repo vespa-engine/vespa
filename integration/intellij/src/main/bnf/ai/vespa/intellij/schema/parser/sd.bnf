@@ -195,7 +195,7 @@ private MinHitsDefinition ::= min-hits-per-thread ':' INTEGER_REG
 private NumSearchPartitionsDefinition ::= num-search-partitions ':' INTEGER_REG
 FieldWeightDefinition ::= weight DottedIdentifier ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
-InputsDefinition ::= inputs BlockStart InputDefinition* BlockEnd
+InputsDefinition ::= inputs BlockStart ( InputDefinition | NL )* BlockEnd
 InputDefinition ::= ( QueryFeature | IdentifierVal)
                     (':')?
                     ( TensorType | "double" )? (':'? ( AnyNumber | TensorValue ) )?
