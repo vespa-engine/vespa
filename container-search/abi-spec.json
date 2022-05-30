@@ -5363,6 +5363,7 @@
       "public void addItem(com.yahoo.prelude.query.Item)",
       "public void addItem(int, com.yahoo.prelude.query.Item)",
       "public boolean isEmpty()",
+      "public com.yahoo.prelude.query.Item rankWith(com.yahoo.prelude.query.Item)",
       "public com.yahoo.prelude.query.Item and(com.yahoo.prelude.query.Item)",
       "public static java.util.List getPositiveTerms(com.yahoo.prelude.query.Item)",
       "public int treeSize()",

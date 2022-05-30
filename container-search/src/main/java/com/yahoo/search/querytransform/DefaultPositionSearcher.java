@@ -56,7 +56,11 @@ public class DefaultPositionSearcher extends Searcher {
         }
         if (useV8GeoPositions && (location != null) && (location.getAttribute() != null)) {
             var geoLoc = new GeoLocationItem(location);
-            query.getModel().getQueryTree().and(geoLoc);
+            if (location.isGeoCircle() && location.degRadius() < 0) {
+                query.getModel().getQueryTree().rankWith(geoLoc);
+            } else {
+                query.getModel().getQueryTree().and(geoLoc);
+            }
             location = null;
             query.getRanking().setLocation(location);
         }
