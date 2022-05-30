@@ -89,7 +89,6 @@
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>aircompressor</artifactId>
-      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.antlr</groupId>
@@ -112,11 +111,6 @@
       <artifactId>xercesImpl</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
     </dependency>
@@ -132,12 +126,16 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>testutil</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
-
   </dependencies>
 
   <build>
