@@ -24,6 +24,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <cassert>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.feedhandler");
