@@ -14,6 +14,7 @@
   <artifactId>container-disc</artifactId>
   <version>7-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -46,13 +47,14 @@
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
     </dependency>
-      <dependency>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>annotations</artifactId>
-          <version>${project.version}</version>
-          <scope>provided</scope>
-      </dependency>
-      <dependency>
+
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>annotations</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-lib</artifactId>
       <version>${project.version}</version>
@@ -71,15 +73,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>component</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-apache-http-client-bundle</artifactId>
       <version>${project.version}</version>
@@ -87,36 +80,10 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-core</artifactId>
+      <artifactId>defaults</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
+      <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-messagebus</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-      <dependency>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>defaults</artifactId>
-          <version>${project.version}</version>
-          <scope>provided</scope>
-      </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
@@ -135,6 +102,7 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+
     <!-- WARNING: These are only here to make bundlification work -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -177,7 +145,44 @@
       <artifactId>jackson-annotations</artifactId>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>component</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-core</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>config</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-messagebus</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>config</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
   </dependencies>
+
   <build>
     <plugins>
       <plugin>
@@ -218,7 +223,7 @@
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
 
-               <!-- Jetty -->
+                <!-- Jetty -->
                 <!-- TODO Vespa 8: embed these in container-core/disc, saving a lot of dep management. -->
                 <!--               Check if those listed in container-dep-versions are not used by hosted apps! -->
                 alpn-api-${jetty-alpn.version}.jar,
