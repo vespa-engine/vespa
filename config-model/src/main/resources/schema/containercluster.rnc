@@ -5,7 +5,6 @@ ContainerCluster = element container | jdisc {
     Include* &
     ContainerServices &    
     DocumentBinding* &
-    Aliases? &
     NodesOfContainerCluster? &
     ClientAuthorize?
 }
@@ -34,11 +33,6 @@ ClientAuthorize = element client-authorize { empty }
 Components = element components {
     Include* &
     Component*
-}
-
-Aliases = element aliases {
-    element service-alias { xsd:NCName }* &
-    element endpoint-alias { xsd:NCName }*
 }
 
 Include = element \include {
