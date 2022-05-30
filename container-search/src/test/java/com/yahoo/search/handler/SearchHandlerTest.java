@@ -36,7 +36,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.Executors;
 
-import static com.yahoo.yolean.Exceptions.uncheck;
+import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
@@ -306,7 +306,7 @@ public class SearchHandlerTest {
     private void assertMetricPresent(String key) {
         for (int i = 0; i < 200; i++) {
             if (metric.metrics().containsKey(key)) return;
-            uncheck(() -> Thread.sleep(1));
+            uncheckInterrupted(() -> Thread.sleep(1));
         }
         fail(String.format("Could not find metric with key '%s' in '%s'", key, metric));
     }
