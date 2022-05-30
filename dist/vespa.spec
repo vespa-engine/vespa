@@ -86,7 +86,7 @@ BuildRequires: glibc-langpack-en
 %if 0%{?el9}
 BuildRequires: gcc-c++
 BuildRequires: libatomic
-BuildRequires: vespa-pybind11-devel
+BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python3-devel
 BuildRequires: glibc-langpack-en
@@ -202,19 +202,14 @@ BuildRequires: vespa-openblas-devel = 0.3.18
 BuildRequires: vespa-re2-devel = 20210801
 %define _use_vespa_re2 1
 %else
-%if 0%{?el9}
-BuildRequires: vespa-xxhash-devel = 0.8.0
-%define _use_vespa_xxhash 1
-%else
 BuildRequires: xxhash-devel >= 0.8.0
-%endif
 %if 0%{?el7} || 0%{?el8}
 BuildRequires: vespa-openblas-devel = 0.3.18
 %define _use_vespa_openblas 1
 %else
 BuildRequires: openblas-devel
 %endif
-%if 0%{?amzn2022} || 0%{?el9}
+%if 0%{?amzn2022}
 BuildRequires: vespa-re2-devel = 20210801
 %define _use_vespa_re2 1
 %else
@@ -271,7 +266,7 @@ Requires: perl-URI
 %if ! 0%{?el7}
 Requires: valgrind
 %endif
-%if (0%{?el7} && 0%{?amzn2}) || 0%{?el9}
+%if (0%{?el7} && 0%{?amzn2})
 Requires: vespa-xxhash = 0.8.0
 %else
 Requires: xxhash
@@ -380,7 +375,7 @@ Summary: Vespa - The open big data serving engine - base C++ libraries
 %if 0%{?centos} || 0%{?rocky}
 Requires: epel-release
 %endif
-%if 0%{?amzn2} || 0%{?el9}
+%if 0%{?amzn2}
 Requires: vespa-xxhash = 0.8.0
 %else
 Requires: xxhash-libs >= 0.8.0
@@ -397,7 +392,7 @@ Requires: vespa-openblas = 0.3.18
 %else
 Requires: openblas-serial
 %endif
-%if 0%{?amzn2} || 0%{?amzn2022} || 0%{?el9}
+%if 0%{?amzn2} || 0%{?amzn2022}
 Requires: vespa-re2 = 20210801
 %else
 Requires: re2
