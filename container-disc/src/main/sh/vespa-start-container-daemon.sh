@@ -174,6 +174,7 @@ configure_memory() {
     memory_options="-Xms${jvm_minHeapsize}m -Xmx${jvm_heapsize}m"
     memory_options="${memory_options} -XX:ThreadStackSize=${jvm_stacksize}"
     memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"
+    memory_options="${memory_options} -XX:+UseTransparentHugePages"
 
     if ((jvm_compressedClassSpaceSize != 0)); then
         memory_options="${memory_options} -XX:CompressedClassSpaceSize=${jvm_compressedClassSpaceSize}m"
