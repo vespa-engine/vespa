@@ -637,21 +637,29 @@ public class DeploymentSpec {
         private final String tagName;
         private final List<String> attributes;
         private final String message;
+        private final int majorVersion;
 
-        public DeprecatedElement(String tagName, List<String> attributes, String message) {
+        public DeprecatedElement(int majorVersion, String tagName, List<String> attributes, String message) {
             this.tagName = Objects.requireNonNull(tagName);
             this.attributes = Objects.requireNonNull(attributes);
             this.message = Objects.requireNonNull(message);
+            this.majorVersion = majorVersion;
             if (message.isBlank()) throw new IllegalArgumentException("message must be non-empty");
         }
 
+        /** Returns the major version that deprecated this element */
+        public int majorVersion() {
+            return majorVersion;
+        }
+
         public String humanReadableString() {
+            String deprecationDescription = "deprecated since major version " + majorVersion;
             if (attributes.isEmpty()) {
-                return "Element '" + tagName + "' is deprecated. " + message;
+                return "Element '" + tagName + "' is " + deprecationDescription + ". " + message;
             }
-            return "Element '" + tagName + "' contains deprecated attribute" + (attributes.size() > 1 ? "s" : "") + ": " +
+            return "Element '" + tagName + "' contains attribute" + (attributes.size() > 1 ? "s " : " ") +
                    attributes.stream().map(attr -> "'" + attr + "'").collect(Collectors.joining(", ")) +
-                   ". " + message;
+                   " " + deprecationDescription + ". " + message;
         }
 
         @Override

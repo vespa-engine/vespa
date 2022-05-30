@@ -59,6 +59,16 @@ public class ApplicationPackageValidator {
         validateEndpointChange(application, applicationPackage, instant);
         validateCompactedEndpoint(applicationPackage);
         validateSecurityClientsPem(applicationPackage);
+        validateDeprecatedElements(applicationPackage);
+    }
+
+    /** Verify that deployment spec does not use elements deprecated on a major version older than compile version */
+    private void validateDeprecatedElements(ApplicationPackage applicationPackage) {
+        for (var deprecatedElement : applicationPackage.deploymentSpec().deprecatedElements()) {
+            if (applicationPackage.compileVersion().isEmpty()) continue;
+            if (deprecatedElement.majorVersion() >= applicationPackage.compileVersion().get().getMajor()) continue;
+            throw new IllegalArgumentException(deprecatedElement.humanReadableString());
+        }
     }
 
     /** Verify that we have the security/clients.pem file for public systems */

@@ -1089,9 +1089,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertFalse(logger.msgs.isEmpty());
         assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
         assertEquals(Level.WARNING, logger.msgs.get(1).getFirst());
-        assertEquals("Element 'prod' contains deprecated attribute: 'global-service-id'. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
+        assertEquals("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
                      logger.msgs.get(0).getSecond());
-        assertEquals("Element 'region' contains deprecated attribute: 'active'. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
+        assertEquals("Element 'region' contains attribute 'active' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
                      logger.msgs.get(1).getSecond());
     }
 
