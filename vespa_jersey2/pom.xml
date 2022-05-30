@@ -52,7 +52,7 @@
     </dependency>
 
     <dependency>
-      <!-- TODO: try to remove! Previously pulled in by jersey-media-json-jackson. -->
+      <!-- TODO Vespa 8: remove! Previously pulled in by jersey-media-json-jackson. -->
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
       <artifactId>jackson-jaxrs-json-provider</artifactId>
       <exclusions>
@@ -68,6 +68,24 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <!-- TODO Vespa 8: remove! Previously pulled in by jersey-media-json-jackson. -->
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-jaxb-annotations</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- Conflicts with javax.activation:javax.activation-api:1.2.0, which is "exported" via jdisc_core. -->
+          <groupId>jakarta.activation</groupId>
+          <artifactId>jakarta.activation-api</artifactId>
+        </exclusion>
+        <exclusion>
+          <!-- Conflicts with javax.xml.bind:jaxb-api:2.3, which is "exported" via jdisc_core.-->
+          <groupId>jakarta.xml.bind</groupId>
+          <artifactId>jakarta.xml.bind-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
   </dependencies>
 
   <build>
