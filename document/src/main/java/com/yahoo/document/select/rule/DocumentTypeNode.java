@@ -46,27 +46,7 @@ public class DocumentTypeNode implements ExpressionNode {
     }
 
     private Object evaluate(DocumentOperation op) {
-        // TODO Vespa 8: Uncomment the following line and remove the legacy one
-        // return op.getId().getDocType().equals(type) ? op : false;
-        return legacyEvaluate(op);
-    }
-
-    private Object legacyEvaluate(DocumentOperation op) {
-        DocumentType doct;
-        if (op instanceof DocumentPut) {
-            doct = ((DocumentPut) op).getDocument().getDataType();
-        } else if (op instanceof DocumentUpdate) {
-            doct = ((DocumentUpdate) op).getDocumentType();
-        } else if (op instanceof DocumentRemove) {
-            DocumentRemove removeOp = (DocumentRemove) op;
-            return (removeOp.getId().getDocType().equals(type) ? op : Boolean.FALSE);
-        } else if (op instanceof DocumentGet) {
-            DocumentGet getOp = (DocumentGet) op;
-            return (getOp.getId().getDocType().equals(type) ? op : Boolean.FALSE);
-        } else {
-            throw new IllegalStateException("Document class '" + op.getClass().getName() + "' is not supported.");
-        }
-        return doct.isA(this.type) ? op : Boolean.FALSE;
+        return op.getId().getDocType().equals(type) ? op : false;
     }
 
     public void accept(Visitor visitor) {
