@@ -4,6 +4,10 @@
 
 namespace slobrok {
 
+ServiceMapping::ServiceMapping(const ServiceMapping& rhs) noexcept = default;
+
 ServiceMapping::~ServiceMapping() = default;
+
+ServiceMapping& ServiceMapping::operator=(const ServiceMapping& rhs) = default;
 
 } // namespace slobrok
