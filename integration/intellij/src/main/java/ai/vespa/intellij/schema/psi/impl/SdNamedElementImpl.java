@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.psi.impl;
 
+import ai.vespa.intellij.schema.psi.SdArgumentDeclaration;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.ASTNode;
@@ -10,7 +11,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import ai.vespa.intellij.schema.SdIcons;
 import ai.vespa.intellij.schema.SdUtil;
 import ai.vespa.intellij.schema.psi.SdAnnotationFieldDefinition;
-import ai.vespa.intellij.schema.psi.SdArgumentDefinition;
+import ai.vespa.intellij.schema.psi.SdArgumentDeclaration;
 import ai.vespa.intellij.schema.psi.SdDeclarationType;
 import ai.vespa.intellij.schema.psi.SdDocumentAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdDocumentDefinition;
@@ -77,8 +78,8 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
             return SdDeclarationType.RANK_PROFILE;
         } else if (this instanceof SdFunctionDefinition) {
             return SdDeclarationType.FUNCTION;
-        } else if (this instanceof SdArgumentDefinition) {
-            return SdDeclarationType.FIUNCTION_ARGUMENT;
+        } else if (this instanceof SdArgumentDeclaration) {
+            return SdDeclarationType.FUNCTION_ARGUMENT;
         } else if (this instanceof SdDocumentDefinition) {
             return SdDeclarationType.DOCUMENT;
         } else if (this instanceof SdDocumentStructDefinition) {

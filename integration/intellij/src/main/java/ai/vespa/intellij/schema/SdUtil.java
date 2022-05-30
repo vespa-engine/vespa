@@ -2,6 +2,7 @@
 package ai.vespa.intellij.schema;
 
 import ai.vespa.intellij.schema.model.RankProfile;
+import ai.vespa.intellij.schema.psi.SdArgumentDeclaration;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiElement;
@@ -12,7 +13,7 @@ import com.intellij.psi.search.FileTypeIndex;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiTreeUtil;
 import ai.vespa.intellij.schema.psi.SdAnnotationFieldDefinition;
-import ai.vespa.intellij.schema.psi.SdArgumentDefinition;
+import ai.vespa.intellij.schema.psi.SdArgumentDeclaration;
 import ai.vespa.intellij.schema.psi.SdDeclaration;
 import ai.vespa.intellij.schema.psi.SdDocumentAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdDocumentDefinition;
@@ -48,7 +49,7 @@ public class SdUtil {
         String rankProfileName;
         if (rankProfile != null) {
             rankProfileName = rankProfile.getName();
-            List<SdArgumentDefinition> args = function.getArguments().getArgumentDefinitionList();
+            List<SdArgumentDeclaration> args = function.getArgumentDeclarations().getArgumentDeclarationList();
             StringBuilder text = new StringBuilder(rankProfileName + "." + function.getName() + "(");
             for (int i = 0; i < args.size(); i++) {
                 text.append(args.get(i).getName());
@@ -114,7 +115,7 @@ public class SdUtil {
         // Check if element is inside a function body
         SdFunctionDefinition macroParent = PsiTreeUtil.getParentOfType(element, SdFunctionDefinition.class);
         if (macroParent != null) {
-            for (SdArgumentDefinition arg : PsiTreeUtil.findChildrenOfType(macroParent, SdArgumentDefinition.class)) {
+            for (SdArgumentDeclaration arg : PsiTreeUtil.findChildrenOfType(macroParent, SdArgumentDeclaration.class)) {
                 if (name.equals(arg.getName())) { // if the element was declared as an argument of the function
                     result.add(arg);
                     return result;
@@ -133,7 +134,7 @@ public class SdUtil {
         }
 
         for (PsiElement declaration : PsiTreeUtil.collectElements(file, psiElement ->
-            psiElement instanceof SdDeclaration && !(psiElement instanceof SdArgumentDefinition))) {
+            psiElement instanceof SdDeclaration && !(psiElement instanceof SdArgumentDeclaration))) {
             if (name.equals(((SdDeclaration) declaration).getName())) {
                 result.add((SdDeclaration) declaration);
                 break;

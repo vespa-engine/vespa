@@ -129,7 +129,10 @@ UnaryOperator ::= '!' | '-'
 RankFeatureExpr ::= RankFeature
 
 // The rename function allows lists of identifiers as arguments
-RenameExpr ::= "rename" ClauseStart RankingExpression CommaSeparator ( Arguments | ArgumentDefinition ) CommaSeparator ( Arguments | ArgumentDefinition ) ClauseEnd
+RenameExpr ::= "rename" ClauseStart RankingExpression CommaSeparator
+                                    ( ArgumentDeclarations | ArgumentDeclaration ) CommaSeparator
+                                    ( ArgumentDeclarations | ArgumentDeclaration )
+                        ClauseEnd
 
 // Rough parsing but hard to do better due to greediness: If this is a lambda arg expressions must be identifiers
 FunctionCallOrLambdaExpr ::= IdentifierVal ClauseStart RankingExpression ( CommaSeparator RankingExpression )* ClauseEnd ( '.' IdentifierVal )?
@@ -214,18 +217,14 @@ RankPropertiesBody ::= (RankPropertiesKey ':' RankPropertiesValue NL+ )+
 RankPropertiesKey ::= (IdentifierWithDashVal | STRING_REG | '(' | ')' | '.' | COMMA | '$' | INTEGER_REG)+
 RankPropertiesValue ::= AnyNumber | WORD_REG | DottedIdentifier | STRING_REG
 
-FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
+FunctionDefinition ::= (function | macro) inline? IdentifierVal ArgumentDeclarations
                        BlockStart ExpressionDefinition BlockEnd
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-// Not using ClauseEnd here to avoid consuming trailing NL's, which must be left to terminate single-line
-// rank feature lists in summary/match/rank-features
-Arguments ::= '()' | ( ClauseStart ArgumentDefinition (CommaSeparator ArgumentDefinition)* NL* ')' )
-
-// When used in function declarations this should really be IdentifierVal only
-ArgumentDefinition ::= IdentifierVal | INTEGER_REG | STRING_REG | STRING_REG_SINGLE_QUOTE
+ArgumentDeclarations ::= '()' | ( ClauseStart ArgumentDeclaration (CommaSeparator ArgumentDeclaration)* NL* ClauseEnd )
+ArgumentDeclaration ::= IdentifierVal
                        { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                          implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
@@ -242,7 +241,7 @@ InnerConstantDefinition ::= ( ("constant" ClauseStart IdentifierVal ClauseEnd ) 
                             (':')? ( TensorType | "double" )?
                             (':')? ( TensorValue | AnyNumber | (file ':' FilePath) | (uri ':' UriPath))
 
-RankFeature ::= ForEachFeature  | ( IdentifierVal (Arguments)? ( '.' IdentifierVal )* )
+RankFeature ::= ForEachFeature  | ( IdentifierVal (FeatureArguments)? ( '.' IdentifierVal )* )
                     { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                       implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                     }
@@ -259,6 +258,14 @@ ForEachFeature ::= "foreach" ClauseStart
                      ( ('>' AnyNumber) | ('<'  AnyNumber) | "true" | STRING_REG )  CommaSeparator // condition
                      IdentifierVal                                                                // operation
                    ClauseEnd
+
+// Not using ClauseEnd here to avoid consuming trailing NL's, which must be left to terminate single-line
+// rank feature lists in summary/match/rank-features
+FeatureArguments ::= '()' | ( ClauseStart FeatureArgument (CommaSeparator FeatureArgument)* NL* ')' )
+FeatureArgument ::= DottedIdentifier | INTEGER_REG | STRING_REG | STRING_REG_SINGLE_QUOTE
+                       { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
+                         implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
+                       }
 
 //-------------------------
 //---- Document rules -----

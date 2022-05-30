@@ -20,7 +20,7 @@ public enum SdDeclarationType {
     DOCUMENT_SUMMARY("Document-Summary"),
     RANK_PROFILE("Rank Profile"),
     FUNCTION("Function"),
-    FIUNCTION_ARGUMENT("Function argument"),
+    FUNCTION_ARGUMENT("Function argument"),
     FEATURE("Feature (first use in file)");
 
     private final String typeName;
