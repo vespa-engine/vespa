@@ -3,7 +3,7 @@
 #include "attributes_initializer_base.h"
 #include "attributemanager.h"
 #include <vespa/searchlib/attribute/attributevector.h>
-
+#include <cassert>
 namespace proton {
 
 void

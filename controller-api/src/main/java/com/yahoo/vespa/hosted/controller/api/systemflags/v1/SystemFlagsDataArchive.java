@@ -177,7 +177,7 @@ public class SystemFlagsDataArchive {
         if (!filenamesForSystem.isEmpty() && !filenamesForSystem.contains(filename)) {
             if (systemDefinition != null && filename.startsWith(systemDefinition.system().value() + '.')) {
                 throw new IllegalArgumentException(String.format(
-                        "Environment or zone in filename '%s' is does not exist", filename));
+                        "Environment or zone in filename '%s' does not exist", filename));
             }
             return; // Ignore files irrelevant for system
         }

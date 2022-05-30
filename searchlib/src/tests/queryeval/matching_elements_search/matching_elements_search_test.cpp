@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/queryeval/matching_elements_search.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::attribute::BasicType;

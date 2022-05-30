@@ -17,7 +17,7 @@ class CondensedBitVectorT : public CondensedBitVector
 {
 public:
     CondensedBitVectorT(size_t sz, GenerationHolder &genHolder) :
-        _v(sz, 30, 1000, genHolder)
+        _v(vespalib::GrowStrategy(sz, 30, 1000, 0), genHolder)
     {
         for (size_t i = 0; i < sz; ++i) {
             _v.push_back(0);

@@ -7,9 +7,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.text.Text;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -148,9 +146,11 @@ public class DeploymentTrigger {
             return;
         }
 
-        applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application ->
+        applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
+            if (application.get().deploymentSpec().instance(id.instance()).isPresent())
                 applications().store(application.with(id.instance(),
-                                                      instance -> withRemainingChange(instance, instance.change(), jobs.deploymentStatus(application.get())))));
+                                                      instance -> withRemainingChange(instance, instance.change(), jobs.deploymentStatus(application.get()))));
+        });
     }
 
     /**

@@ -41,12 +41,8 @@ protected:
     }
 
 public:
-    SingleValueNumericAttribute(const vespalib::string & baseFileName,
-                                const AttributeVector::Config & c =
-                                AttributeVector::Config(AttributeVector::
-                                        BasicType::fromType(T()),
-                                        attribute::CollectionType::SINGLE));
-
+    SingleValueNumericAttribute(const vespalib::string & baseFileName);  // Only for testing
+    SingleValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c);
 
     ~SingleValueNumericAttribute();
 

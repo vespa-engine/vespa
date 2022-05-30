@@ -2267,4 +2267,16 @@ public class DeploymentTriggerTest {
         assertEquals(Set.of(), tests.deploymentStatus().jobsToRun().keySet());
     }
 
+    @Test
+    public void testNoTests() {
+        DeploymentContext app = tester.newDeploymentContext();
+        app.submit(new ApplicationPackageBuilder().systemTest().region("us-east-3").build());
+
+        // Declared tests must have run actual tests to succeed.
+        app.failTests(systemTest, true);
+        assertFalse(tester.jobs().last(app.instanceId(), systemTest).get().hasSucceeded());
+        app.failTests(stagingTest, true);
+        assertTrue(tester.jobs().last(app.instanceId(), stagingTest).get().hasSucceeded());
+    }
+
 }

@@ -21,10 +21,12 @@
 #include <vespa/searchcore/proton/test/threading_service_observer.h>
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
-#include <vespa/searchlib/index/docbuilder.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedview_test");

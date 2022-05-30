@@ -2,13 +2,11 @@
 
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 
 /**
  * @author hakon
  */
-@Immutable
 public class Mark {
     private final Position position;
     private final Version version;

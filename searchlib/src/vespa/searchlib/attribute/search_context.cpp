@@ -74,7 +74,7 @@ SearchContext::attributeName() const
 bool
 SearchContext::getIsFilter() const
 {
-    return _attr.getConfig().getIsFilter();
+    return _attr.getIsFilter();
 }
 
 

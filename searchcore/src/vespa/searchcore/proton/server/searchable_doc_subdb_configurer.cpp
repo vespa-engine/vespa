@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "reconfig_params.h"
 #include "searchable_doc_subdb_configurer.h"
+#include "reconfig_params.h"
 #include <vespa/searchcore/proton/matching/matcher.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
@@ -144,7 +144,7 @@ reconfigure(const DocumentDBConfig &newConfig,
 {
     assert(!params.shouldAttributeManagerChange());
     AttributeCollectionSpec attrSpec(AttributeCollectionSpec::AttributeList(), 0, 0);
-    reconfigure(newConfig, oldConfig, attrSpec, params, resolver);
+    reconfigure(newConfig, oldConfig, std::move(attrSpec), params, resolver);
 }
 
 namespace {
@@ -174,14 +174,14 @@ createAttributeReprocessingInitializer(const DocumentDBConfig &newConfig,
 IReprocessingInitializer::UP
 SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
-                                          const AttributeCollectionSpec &attrSpec,
+                                          AttributeCollectionSpec && attrSpec,
                                           const ReconfigParams &params,
                                           IDocumentDBReferenceResolver &resolver)
 {
     bool shouldMatchViewChange = false;
     bool shouldSearchViewChange = false;
     bool shouldFeedViewChange = params.shouldSchemaChange();
-
+    search::SerialNum currentSerialNum = attrSpec.getCurrentSerialNum();
     SearchView::SP searchView = _searchView.get();
     Matchers::SP matchers = searchView->getMatchers();
     if (params.shouldMatchersChange()) {
@@ -197,7 +197,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     IAttributeManager::SP attrMgr = searchView->getAttributeManager();
     IAttributeWriter::SP attrWriter = _feedView.get()->getAttributeWriter();
     if (params.shouldAttributeManagerChange()) {
-        IAttributeManager::SP newAttrMgr = attrMgr->create(attrSpec);
+        IAttributeManager::SP newAttrMgr = attrMgr->create(std::move(attrSpec));
         newAttrMgr->setImportedAttributes(resolver.resolve(*newAttrMgr, *attrMgr,
                                                            searchView->getDocumentMetaStore(),
                                                            newConfig.getMaintenanceConfigSP()->getVisibilityDelay()));
@@ -209,7 +209,7 @@ SearchableDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
         attrWriter = newAttrWriter;
         shouldFeedViewChange = true;
         initializer = createAttributeReprocessingInitializer(newConfig, newAttrMgr, oldConfig, oldAttrMgr,
-                                                             _subDbName, attrSpec.getCurrentSerialNum());
+                                                             _subDbName, currentSerialNum);
     } else if (params.shouldAttributeWriterChange()) {
         attrWriter = std::make_shared<AttributeWriter>(attrMgr);
         shouldFeedViewChange = true;

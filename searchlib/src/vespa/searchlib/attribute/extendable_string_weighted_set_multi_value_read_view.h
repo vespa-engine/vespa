@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/i_multi_value_read_view.h>
-#include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/stllike/allocator.h>
 
 namespace search::attribute {
 
@@ -16,13 +16,14 @@ namespace search::attribute {
 template <typename MultiValueType>
 class ExtendableStringWeightedSetMultiValueReadView : public attribute::IMultiValueReadView<MultiValueType>
 {
+    using Offsets = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
     const std::vector<char>&            _buffer;
-    const vespalib::Array<uint32_t>&    _offsets;
+    const Offsets                     & _offsets;
     const std::vector<uint32_t>&        _idx;
     const std::vector<int32_t>&         _weights;
     mutable std::vector<MultiValueType> _copy;
 public:
-    ExtendableStringWeightedSetMultiValueReadView(const std::vector<char>& buffer, const vespalib::Array<uint32_t>& offsets, const std::vector<uint32_t>& idx, const std::vector<int32_t>& weights);
+    ExtendableStringWeightedSetMultiValueReadView(const std::vector<char>& buffer, const Offsets & offsets, const std::vector<uint32_t>& idx, const std::vector<int32_t>& weights);
     ~ExtendableStringWeightedSetMultiValueReadView() override;
     vespalib::ConstArrayRef<MultiValueType> get_values(uint32_t doc_id) const override;
 };

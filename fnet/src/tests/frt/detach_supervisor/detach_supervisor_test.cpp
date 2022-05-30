@@ -75,7 +75,7 @@ struct RpcFixture : FRT_Invokable {
         req->SubRef();
         return target;
     };
-    int check_result(FRT_RPCRequest *req, uint64_t expect) {
+    static int check_result(FRT_RPCRequest *req, uint64_t expect) {
         int num_ok = 0;
         if (!req->CheckReturnTypes("l")) {
             ASSERT_EQUAL(req->GetErrorCode(), FRTE_RPC_CONNECTION);
@@ -87,15 +87,15 @@ struct RpcFixture : FRT_Invokable {
         req->SubRef();
         return num_ok;
     }
-    int verify_rpc(FNET_Connection *conn) {
-        auto *req = orb.AllocRPCRequest();
+    static int verify_rpc(FNET_Connection *conn) {
+        auto *req = FRT_Supervisor::AllocRPCRequest();
         req->SetMethodName("inc");
         req->GetParams()->AddInt64(7);
         FRT_Supervisor::InvokeSync(conn->Owner()->GetScheduler(), conn, req, 300.0);
         return check_result(req, 8);
     }
-    int verify_rpc(FRT_Target *target) {
-        auto *req = orb.AllocRPCRequest();
+    static int verify_rpc(FRT_Target *target) {
+        auto *req = FRT_Supervisor::AllocRPCRequest();
         req->SetMethodName("inc");
         req->GetParams()->AddInt64(4);
         target->InvokeSync(req, 300.0);
@@ -135,8 +135,8 @@ TEST_MT_FFFFF("require that supervisor can be detached from transport", 4, Basic
         std::this_thread::sleep_for(50ms);
         self.reset();   // <--- detach supervisor for server 1
         TEST_BARRIER(); // #4
-        EXPECT_EQUAL(self->verify_rpc(target), 0); // outgoing 2way target should be closed
-        EXPECT_EQUAL(self->verify_rpc(client_target), 1); // pure client target should not be closed
+        EXPECT_EQUAL(RpcFixture::verify_rpc(target), 0); // outgoing 2way target should be closed
+        EXPECT_EQUAL(RpcFixture::verify_rpc(client_target), 1); // pure client target should not be closed
         TEST_BARRIER(); // #5
         target->SubRef();
         client_target->SubRef();

@@ -16,6 +16,7 @@
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
 namespace search {

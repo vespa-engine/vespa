@@ -34,6 +34,9 @@ public:
 
     size_t size() const { return _buffer.size(); }
     std::string getCrumb() const {
+        if (_buffer.empty()) {
+            return std::string();
+        }
         return std::string(&_buffer[0], _buffer.size());
     }
 };

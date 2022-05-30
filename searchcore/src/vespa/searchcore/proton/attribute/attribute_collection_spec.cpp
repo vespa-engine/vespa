@@ -4,15 +4,23 @@
 
 namespace proton {
 
-AttributeCollectionSpec::AttributeCollectionSpec(const AttributeList &attributes,
-                                                 uint32_t docIdLimit,
-                                                 SerialNum currentSerialNum)
-    : _attributes(attributes),
+AttributeCollectionSpec::AttributeCollectionSpec(AttributeList && attributes, uint32_t docIdLimit, SerialNum currentSerialNum)
+    : _attributes(std::move(attributes)),
       _docIdLimit(docIdLimit),
       _currentSerialNum(currentSerialNum)
 {
 }
 
-AttributeCollectionSpec::~AttributeCollectionSpec() { }
+AttributeCollectionSpec::~AttributeCollectionSpec() = default;
+
+bool
+AttributeCollectionSpec::hasAttribute(const vespalib::string &name) const {
+    for (const auto &attr : _attributes) {
+        if (attr.getName() == name) {
+            return true;
+        }
+    }
+    return false;
+}
 
 }

@@ -232,7 +232,7 @@ FileStorHandlerImpl::getQueueSize() const
 {
     size_t sum(0);
     for (const auto & stripe : _stripes) {
-        sum += stripe.getQueueSize();
+        sum += stripe.get_cached_queue_size();
     }
     return sum;
 }
@@ -755,7 +755,10 @@ FileStorHandlerImpl::remapQueueNoLock(const RemapInfo& source, std::vector<Remap
             stripe(bucket).exposeQueue().emplace_back(std::move(entry));
         }
     }
-
+    stripe(source.bucket).unsafe_update_cached_queue_size();
+    for (const auto *target: targets) {
+        stripe(target->bucket).unsafe_update_cached_queue_size();
+    }
 }
 
 void
@@ -840,6 +843,7 @@ FileStorHandlerImpl::Stripe::failOperations(const document::Bucket &bucket, cons
             ++iter;
         }
     }
+    update_cached_queue_size(guard);
 }
 
 void
@@ -909,6 +913,7 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _lock(std::make_unique<std::mutex>()),
       _cond(std::make_unique<std::condition_variable>()),
       _queue(std::make_unique<PriorityQueue>()),
+      _cached_queue_size(_queue->size()),
       _lockedBuckets(),
       _active_merges(0),
       _active_operations_stats()
@@ -1029,6 +1034,7 @@ FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx
     std::shared_ptr<api::StorageMessage> msg = std::move(iter->_command);
     document::Bucket bucket(iter->_bucket);
     idx.erase(iter); // iter not used after this point.
+    update_cached_queue_size(guard);
 
     if (!messageTimedOutInQueue(*msg, waitTime)) {
         auto locker = std::make_unique<BucketLock>(guard, *this, bucket, msg->getPriority(),
@@ -1088,6 +1094,7 @@ FileStorHandlerImpl::Stripe::abort(std::vector<std::shared_ptr<api::StorageReply
             ++it;
         }
     }
+    update_cached_queue_size(lockGuard);
 }
 
 bool
@@ -1096,6 +1103,7 @@ FileStorHandlerImpl::Stripe::schedule(MessageEntry messageEntry)
     {
         std::lock_guard guard(*_lock);
         _queue->emplace_back(std::move(messageEntry));
+        update_cached_queue_size(guard);
     }
     _cond->notify_all();
     return true;
@@ -1106,6 +1114,7 @@ FileStorHandlerImpl::Stripe::schedule_and_get_next_async_message(MessageEntry en
 {
     std::unique_lock guard(*_lock);
     _queue->emplace_back(std::move(entry));
+    update_cached_queue_size(guard);
     auto lockedMessage = get_next_async_message(guard);
     if ( ! lockedMessage.msg) {
         if (guard.owns_lock()) {
@@ -1174,7 +1183,7 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     }
     Clock::time_point now_ts = Clock::now();
     double latency = std::chrono::duration<double, std::milli>(now_ts - start_time).count();
-    _active_operations_stats.operation_done(latency);
+    _active_operations_stats.guard().stats().operation_done(latency);
     if (!entry._exclusiveLock && entry._sharedLocks.empty()) {
         _lockedBuckets.erase(iter); // No more locks held
     }
@@ -1212,7 +1221,7 @@ FileStorHandlerImpl::Stripe::lock(const monitor_guard &, const document::Bucket 
         (void) inserted;
         assert(inserted.second);
     }
-    _active_operations_stats.operation_started();
+    _active_operations_stats.guard().stats().operation_started();
 }
 
 bool
@@ -1250,10 +1259,10 @@ FileStorHandlerImpl::Stripe::operationIsInhibited(const monitor_guard & guard, c
 ActiveOperationsStats
 FileStorHandlerImpl::Stripe::get_active_operations_stats(bool reset_min_max) const
 {
-    std::lock_guard guard(*_lock);
-    auto result = _active_operations_stats;
+    auto guard = _active_operations_stats.guard();
+    auto result = guard.stats();
     if (reset_min_max) {
-        _active_operations_stats.reset_min_max();
+        guard.stats().reset_min_max();
     }
     return result;
 }

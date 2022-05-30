@@ -4,7 +4,6 @@
 #include "threading_service_config.h"
 #include <vespa/config-attributes.h>
 #include <vespa/config-imported-fields.h>
-#include <vespa/config-indexschema.h>
 #include <vespa/config-rank-profiles.h>
 #include <vespa/config-summary.h>
 #include <vespa/config-summarymap.h>
@@ -51,7 +50,6 @@ DocumentDBConfig::ComparisonResult::ComparisonResult()
       storeChanged(false),
       visibilityDelayChanged(false),
       flushChanged(false),
-      threading_service_config_changed(false),
       alloc_config_changed(false)
 { }
 
@@ -73,8 +71,8 @@ DocumentDBConfig::DocumentDBConfig(
                const Schema::SP &schema,
                const DocumentDBMaintenanceConfig::SP &maintenance,
                const search::LogDocumentStore::Config & storeConfig,
-               std::shared_ptr<const ThreadingServiceConfig> threading_service_config,
-               std::shared_ptr<const AllocConfig> alloc_config,
+               const ThreadingServiceConfig & threading_service_config,
+               const AllocConfig & alloc_config,
                const vespalib::string &configId,
                const vespalib::string &docTypeName) noexcept
     : _configId(configId),
@@ -96,8 +94,8 @@ DocumentDBConfig::DocumentDBConfig(
       _schema(schema),
       _maintenance(maintenance),
       _storeConfig(storeConfig),
-      _threading_service_config(std::move(threading_service_config)),
-      _alloc_config(std::move(alloc_config)),
+      _threading_service_config(threading_service_config),
+      _alloc_config(alloc_config),
       _orig(),
       _delayedAttributeAspects(false)
 { }
@@ -150,9 +148,9 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
            equals<TuneFileDocumentDB>(_tuneFileDocumentDB.get(), rhs._tuneFileDocumentDB.get()) &&
            equals<Schema>(_schema.get(), rhs._schema.get()) &&
            equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get()) &&
-           _storeConfig == rhs._storeConfig &&
-           equals<ThreadingServiceConfig>(_threading_service_config.get(), rhs._threading_service_config.get()) &&
-           equals<AllocConfig>(_alloc_config.get(), rhs._alloc_config.get());
+           (_storeConfig == rhs._storeConfig) &&
+           (_threading_service_config == rhs._threading_service_config) &&
+           (_alloc_config == rhs._alloc_config);
 }
 
 
@@ -178,8 +176,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     retval.storeChanged = (_storeConfig != rhs._storeConfig);
     retval.visibilityDelayChanged = (_maintenance->getVisibilityDelay() != rhs._maintenance->getVisibilityDelay());
     retval.flushChanged = !equals<DocumentDBMaintenanceConfig>(_maintenance.get(), rhs._maintenance.get(), [](const auto &l, const auto &r) { return l.getFlushConfig() == r.getFlushConfig(); });
-    retval.threading_service_config_changed = !equals<ThreadingServiceConfig>(_threading_service_config.get(), rhs._threading_service_config.get());
-    retval.alloc_config_changed = !equals<AllocConfig>(_alloc_config.get(), rhs._alloc_config.get());
+    retval.alloc_config_changed = (_alloc_config != rhs._alloc_config);
     return retval;
 }
 
@@ -201,9 +198,7 @@ DocumentDBConfig::valid() const
            _importedFields &&
            _tuneFileDocumentDB &&
            _schema &&
-           _maintenance &&
-           _threading_service_config &&
-           _alloc_config;
+           _maintenance;
 }
 
 namespace

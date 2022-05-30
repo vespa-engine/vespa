@@ -3,8 +3,11 @@ package com.yahoo.vespa.hosted.controller.api.integration.archive;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 
+import java.net.URI;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -15,8 +18,10 @@ import java.util.TreeMap;
  */
 public class MockArchiveService implements ArchiveService {
 
-    public Map<ArchiveBucket, Map<TenantName, String>> authorizedIamRolesForBucket = new HashMap<>();
-    public Map<String, Set<String>> authorizedIamRolesForKey = new TreeMap<>();
+
+    public Set<ArchiveBucket> archiveBuckets = new HashSet<>();
+    public Map<TenantName, ArchiveAccess> authorizeAccessByTenantName = new HashMap<>();
+
 
     @Override
     public ArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
@@ -24,12 +29,18 @@ public class MockArchiveService implements ArchiveService {
     }
 
     @Override
-    public void updateBucketPolicy(ZoneId zoneId, ArchiveBucket bucket, Map<TenantName, String> authorizeIamRoleByTenantName) {
-        authorizedIamRolesForBucket.put(bucket, authorizeIamRoleByTenantName);
+    public void updatePolicies(ZoneId zoneId, Set<ArchiveBucket> buckets, Map<TenantName, ArchiveAccess> authorizeAccessByTenantName) {
+        this.archiveBuckets = new HashSet<>(buckets);
+        this.authorizeAccessByTenantName = new HashMap<>(authorizeAccessByTenantName);
     }
 
     @Override
-    public void updateKeyPolicy(ZoneId zoneId, String keyArn, Set<String> tenantAuthorizedIamRoles) {
-        authorizedIamRolesForKey.put(keyArn, tenantAuthorizedIamRoles);
+    public boolean canAddTenantToBucket(ZoneId zoneId, ArchiveBucket bucket) {
+        return bucket.tenants().size() < 5;
+    }
+
+    @Override
+    public URI bucketURI(ZoneId zoneId, String bucketName, TenantName tenantName) {
+        return URI.create(String.format("s3://%s/%s/", bucketName, tenantName.value()));
     }
 }

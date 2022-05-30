@@ -15,7 +15,6 @@
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/entryref.h>
-#include <vespa/vespalib/util/rcuvector.h>
 #include <vespa/vespalib/util/reusable_set_pool.h>
 #include <vespa/vespalib/stllike/allocator.h>
 

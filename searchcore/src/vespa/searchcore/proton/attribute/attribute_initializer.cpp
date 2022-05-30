@@ -9,6 +9,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchcommon/attribute/persistent_predicate_params.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/searchlib/attribute/attribute_header.h>
 #include <vespa/searchlib/attribute/attributevector.h>
@@ -232,13 +233,13 @@ AttributeInitializer::createAndSetupEmptyAttribute() const
 
 AttributeInitializer::AttributeInitializer(const std::shared_ptr<AttributeDirectory> &attrDir,
                                            const vespalib::string &documentSubDbName,
-                                           const AttributeSpec &spec,
+                                           AttributeSpec && spec,
                                            uint64_t currentSerialNum,
                                            const IAttributeFactory &factory,
                                            vespalib::Executor& shared_executor)
     : _attrDir(attrDir),
       _documentSubDbName(documentSubDbName),
-      _spec(spec),
+      _spec(std::move(spec)),
       _currentSerialNum(currentSerialNum),
       _factory(factory),
       _shared_executor(shared_executor),

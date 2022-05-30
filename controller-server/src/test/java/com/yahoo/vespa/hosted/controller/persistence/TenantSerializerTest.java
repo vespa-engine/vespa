@@ -6,12 +6,14 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
+import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.DeletedTenant;
@@ -101,7 +103,7 @@ public class TenantSerializerTest {
                                                                otherPublicKey, new SimplePrincipal("jane")),
                                              TenantInfo.empty(),
                                              List.of(),
-                                             Optional.empty()
+                                             new ArchiveAccess()
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
@@ -123,13 +125,61 @@ public class TenantSerializerTest {
                         new TenantSecretStore("ss1", "123", "role1"),
                         new TenantSecretStore("ss2", "124", "role2")
                 ),
-                Optional.of("arn:aws:iam::123456789012:role/my-role")
+                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role")
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
         assertEquals(tenant.tenantSecretStores(), serialized.tenantSecretStores());
     }
 
+    @Test
+    public void cloud_tenant_with_old_archive_access_serialization() {
+        var json = "{\n" +
+                "  \"name\": \"elderly-lady\",\n" +
+                "  \"type\": \"cloud\",\n" +
+                "  \"createdAt\": 1234,\n" +
+                "  \"lastLoginInfo\": {\n" +
+                "    \"user\": 123,\n" +
+                "    \"developer\": 456\n" +
+                "  },\n" +
+                "  \"creator\": \"foobar-user\",\n" +
+                "  \"pemDeveloperKeys\": [\n" +
+                "    {\n" +
+                "      \"key\": \"-----BEGIN PUBLIC KEY-----\\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEuKVFA8dXk43kVfYKzkUqhEY2rDT9\\nz/4jKSTHwbYR8wdsOSrJGVEUPbS2nguIJ64OJH7gFnxM6sxUVj+Nm2HlXw==\\n-----END PUBLIC KEY-----\\n\",\n" +
+                "      \"user\": \"joe\"\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"key\": \"-----BEGIN PUBLIC KEY-----\\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFELzPyinTfQ/sZnTmRp5E4Ve/sbE\\npDhJeqczkyFcT2PysJ5sZwm7rKPEeXDOhzTPCyRvbUqc2SGdWbKUGGa/Yw==\\n-----END PUBLIC KEY-----\\n\",\n" +
+                "      \"user\": \"jane\"\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"billingInfo\": {\n" +
+                "    \"customerId\": \"customer\",\n" +
+                "    \"productCode\": \"Vespa\"\n" +
+                "  },\n" +
+                "  \"archiveAccessRole\": \"arn:aws:iam::123456789012:role/my-role\"\n" +
+                "}";
+        var tenant = (CloudTenant) serializer.tenantFrom(SlimeUtils.jsonToSlime(json));
+        assertEquals("arn:aws:iam::123456789012:role/my-role", tenant.archiveAccess().awsRole().get());
+        assertFalse(tenant.archiveAccess().gcpMember().isPresent());
+    }
+
+    @Test
+    public void cloud_tenant_with_archive_access() {
+        CloudTenant tenant = new CloudTenant(TenantName.from("elderly-lady"),
+                Instant.ofEpochMilli(1234L),
+                lastLoginInfo(123L, 456L, null),
+                Optional.of(new SimplePrincipal("foobar-user")),
+                ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
+                        otherPublicKey, new SimplePrincipal("jane")),
+                TenantInfo.empty(),
+                List.of(),
+                new ArchiveAccess().withAWSRole("arn:aws:iam::123456789012:role/my-role").withGCPMember("user:foo@example.com")
+        );
+        CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
+        assertEquals(serialized.archiveAccess().awsRole().get(), "arn:aws:iam::123456789012:role/my-role");
+        assertEquals(serialized.archiveAccess().gcpMember().get(), "user:foo@example.com");
+    }
 
     @Test
     public void cloud_tenant_with_tenant_info_partial() {

@@ -2,6 +2,7 @@
 
 #include "sourceblendersearch.h"
 #include "isourceselector.h"
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/util/array.hpp>
 

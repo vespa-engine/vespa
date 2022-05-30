@@ -64,6 +64,7 @@ public class ContainerTester {
                "    <serviceName>servicename</serviceName>\n" +
                "    <secretName>secretname</secretName>\n" +
                "    <secretVersion>0</secretVersion>\n" +
+               "    <caCertSecretName>vespa.external.ca.cert</caCertSecretName>\n" +
                "    <certDnsSuffix>suffix</certDnsSuffix>\n" +
                "    <ztsUrl>https://localhost:123/</ztsUrl>\n" +
                "  </config>\n" +

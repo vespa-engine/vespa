@@ -4,7 +4,6 @@
 
 #include "attribute_spec.h"
 #include <vespa/searchlib/common/serialnum.h>
-#include <memory>
 #include <vector>
 
 namespace proton {
@@ -15,9 +14,7 @@ namespace proton {
 class AttributeCollectionSpec
 {
 public:
-    typedef std::unique_ptr<AttributeCollectionSpec> UP;
-
-    typedef std::vector<AttributeSpec> AttributeList;
+    using AttributeList = std::vector<AttributeSpec>;
 
 private:
     typedef search::SerialNum SerialNum;
@@ -27,12 +24,13 @@ private:
     SerialNum     _currentSerialNum;
 
 public:
-    AttributeCollectionSpec(const AttributeList &attributes,
-                            uint32_t docIdLimit,
-                            SerialNum currentSerialNum);
+    AttributeCollectionSpec(AttributeList && attributes, uint32_t docIdLimit, SerialNum currentSerialNum);
     ~AttributeCollectionSpec();
     const AttributeList &getAttributes() const {
         return _attributes;
+    }
+    AttributeList stealAttributes() {
+        return std::move(_attributes);
     }
     uint32_t getDocIdLimit() const {
         return _docIdLimit;
@@ -40,14 +38,7 @@ public:
     SerialNum getCurrentSerialNum() const {
         return _currentSerialNum;
     }
-    bool hasAttribute(const vespalib::string &name) const {
-        for (const auto &attr : _attributes) {
-            if (attr.getName() == name) {
-                return true;
-            }
-        }
-        return false;
-    }
+    bool hasAttribute(const vespalib::string &name) const;
 };
 
 } // namespace proton

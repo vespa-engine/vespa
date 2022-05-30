@@ -449,7 +449,7 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
         return;
     }
 
-    ConfigComparisonResult cmpres;
+    DocumentDBConfig::ComparisonResult cmpres;
     Schema::SP oldSchema;
     int64_t generation = configSnapshot->getGeneration();
     {

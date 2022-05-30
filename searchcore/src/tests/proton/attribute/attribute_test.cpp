@@ -1,20 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/config-attributes.h>
-#include <vespa/document/datatype/documenttype.h>
-#include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/document/datatype/tensor_data_type.h>
-#include <vespa/document/fieldvalue/document.h>
-#include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/document/update/arithmeticvalueupdate.h>
-#include <vespa/document/update/assignvalueupdate.h>
-#include <vespa/document/update/documentupdate.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/searchcommon/attribute/attributecontent.h>
-#include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcore/proton/attribute/attribute_collection_spec_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/attribute/attributemanager.h>
@@ -39,6 +24,22 @@
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/config-attributes.h>
+#include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
+#include <vespa/document/fieldvalue/document.h>
+#include <vespa/document/predicate/predicate_slime_builder.h>
+#include <vespa/document/update/arithmeticvalueupdate.h>
+#include <vespa/document/update/assignvalueupdate.h>
+#include <vespa/document/update/documentupdate.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -118,13 +119,13 @@ const AVConfig INT32_ARRAY = unregister(AVConfig(AVBasicType::INT32, AVCollectio
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t numDocs, int64_t value, uint64_t lastSyncToken)
 {
-    AttributeUtils::fillAttribute(attr, numDocs, value, lastSyncToken);
+    AttributeUtils::fillAttribute(*attr, numDocs, value, lastSyncToken);
 }
 
 void
 fillAttribute(const AttributeVector::SP &attr, uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken)
 {
-    AttributeUtils::fillAttribute(attr, from, to, value, lastSyncToken);
+    AttributeUtils::fillAttribute(*attr, from, to, value, lastSyncToken);
 }
 
 const std::shared_ptr<IDestructorCallback> emptyCallback;
@@ -555,8 +556,7 @@ public:
         attr.fastaccess = fastAccess;
         _builder.attribute.push_back(attr);
     }
-    AttributeCollectionSpec::UP create(uint32_t docIdLimit,
-                                       search::SerialNum serialNum) {
+    std::unique_ptr<AttributeCollectionSpec> create(uint32_t docIdLimit, search::SerialNum serialNum) {
         return _factory.create(_builder, docIdLimit, serialNum);
     }
 };
@@ -573,7 +573,7 @@ struct FastAccessAttributeCollectionSpecTest : public AttributeCollectionSpecTes
 
 TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
 {
-    AttributeCollectionSpec::UP spec = create(10, 20);
+    auto spec = create(10, 20);
     EXPECT_EQ(2u, spec->getAttributes().size());
     EXPECT_EQ("a1", spec->getAttributes()[0].getName());
     EXPECT_EQ("a2", spec->getAttributes()[1].getName());
@@ -583,7 +583,7 @@ TEST_F(NormalAttributeCollectionSpecTest, spec_can_be_created)
 
 TEST_F(FastAccessAttributeCollectionSpecTest, spec_can_be_created)
 {
-    AttributeCollectionSpec::UP spec = create(10, 20);
+    auto spec = create(10, 20);
     EXPECT_EQ(1u, spec->getAttributes().size());
     EXPECT_EQ("a2", spec->getAttributes()[0].getName());
     EXPECT_EQ(10u, spec->getDocIdLimit());
@@ -594,13 +594,13 @@ const FilterAttributeManager::AttributeSet ACCEPTED_ATTRIBUTES = {"a2"};
 
 class FilterAttributeManagerTest : public ::testing::Test {
 public:
-    DirectoryHandler _dirHandler;
-    DummyFileHeaderContext _fileHeaderContext;
-    ForegroundTaskExecutor _attributeFieldWriter;
-    ForegroundThreadExecutor _shared;
-    HwInfo                 _hwInfo;
+    DirectoryHandler             _dirHandler;
+    DummyFileHeaderContext       _fileHeaderContext;
+    ForegroundTaskExecutor       _attributeFieldWriter;
+    ForegroundThreadExecutor     _shared;
+    HwInfo                       _hwInfo;
     proton::AttributeManager::SP _baseMgr;
-    FilterAttributeManager _filterMgr;
+    FilterAttributeManager       _filterMgr;
 
     FilterAttributeManagerTest()
         : _dirHandler(test_dir),

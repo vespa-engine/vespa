@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator.api;
 
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.path.Path;
 
 import java.time.Duration;
@@ -14,6 +15,6 @@ import java.time.Duration;
 public interface VespaCurator {
 
     /** Create and acquire a re-entrant lock in given path. This blocks until the lock is acquired or timeout elapses. */
-    AutoCloseable lock(Path path, Duration timeout);
+    AutoCloseable lock(Path path, Duration timeout) throws UncheckedTimeoutException;
 
 }

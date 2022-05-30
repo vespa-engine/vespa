@@ -4,6 +4,7 @@
 #include "bootstrapconfig.h"
 #include "proton_config_snapshot.h"
 #include "i_proton_configurer.h"
+#include "documentdbconfigmanager.h"
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <thread>

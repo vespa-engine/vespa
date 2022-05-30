@@ -3,8 +3,10 @@ package com.yahoo.container.plugin.classanalysis;
 
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Base;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.ClassAnnotation;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.InvisibleAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Derived;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.DummyAnnotation;
+import com.yahoo.container.plugin.classanalysis.sampleclasses.InvisibleDummyAnnotation;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Fields;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface1;
 import com.yahoo.container.plugin.classanalysis.sampleclasses.Interface2;
@@ -106,6 +108,11 @@ public class AnalyzeClassTest {
     @Test
     public void class_annotation_is_included() {
         assertTrue(analyzeClass(ClassAnnotation.class).getReferencedClasses().contains(name(DummyAnnotation.class)));
+    }
+
+    @Test
+    public void invisible_annotation_not_included() {
+        assertFalse(analyzeClass(InvisibleAnnotation.class).getReferencedClasses().contains(name(InvisibleDummyAnnotation.class)));
     }
 
     @Test

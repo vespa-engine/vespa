@@ -41,6 +41,7 @@
 #include <vespa/searchlib/fef/queryproperties.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/geo/zcurve.h>

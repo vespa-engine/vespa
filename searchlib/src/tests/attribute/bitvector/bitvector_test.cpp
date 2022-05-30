@@ -4,19 +4,19 @@
 
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/parsequery/parse.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>
-#include <vespa/searchlib/queryeval/executeinfo.h>
 
 LOG_SETUP("bitvector_test");
 

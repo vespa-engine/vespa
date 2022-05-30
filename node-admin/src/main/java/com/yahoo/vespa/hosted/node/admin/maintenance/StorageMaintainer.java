@@ -81,7 +81,6 @@ public class StorageMaintainer {
     }
 
     public boolean syncLogs(NodeAgentContext context, boolean throttle) {
-        if (context.zone().getCloudName().value().equals("gcp")) return false;
         Optional<URI> archiveUri = context.node().archiveUri();
         if (archiveUri.isEmpty()) return false;
         ApplicationId owner = context.node().owner().orElseThrow();

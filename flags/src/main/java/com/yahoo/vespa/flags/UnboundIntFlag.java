@@ -4,12 +4,9 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 
-import javax.annotation.concurrent.Immutable;
-
 /**
  * @author hakonhall
  */
-@Immutable
 public class UnboundIntFlag extends UnboundFlagImpl<Integer, IntFlag, UnboundIntFlag> {
     public UnboundIntFlag(FlagId id, int defaultValue) {
         this(id, defaultValue, new FetchVector());

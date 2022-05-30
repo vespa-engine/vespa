@@ -1,10 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("attributecontent_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcommon/attribute/attributecontent.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/integerbase.h>
+#include <vespa/log/log.h>
+LOG_SETUP("attributecontent_test");
 
 using namespace search::attribute;
 

@@ -155,6 +155,7 @@ Test::Main()
     ssp.setTimeout(400s);
     SourceSession::UP      ss = srcNet.mb.createSourceSession(src, ssp);
     DestinationSession::UP ds = dstNet.mb.createDestinationSession("session", true, dst);
+    dst.setDestinationSession(*ds);
     ASSERT_EQUAL(400s, ssp.getTimeout());
 
     // wait for slobrok registration

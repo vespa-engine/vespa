@@ -64,7 +64,10 @@ enum PathGroup {
                "/application/v4/tenant/{tenant}/key/"),
 
     tenantArchiveAccess(Matcher.tenant,
-                       "/application/v4/tenant/{tenant}/archive-access"),
+                       "/application/v4/tenant/{tenant}/archive-access",
+                       "/application/v4/tenant/{tenant}/archive-access/aws",
+                       "/application/v4/tenant/{tenant}/archive-access/gcp"),
+
 
     billingToken(Matcher.tenant,
                  "/billing/v1/tenant/{tenant}/token"),

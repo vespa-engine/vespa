@@ -17,11 +17,6 @@ AllocConfig::AllocConfig(const AllocStrategy& alloc_strategy,
 {
 }
 
-AllocConfig::AllocConfig()
-    : AllocConfig(AllocStrategy(), 1, 1)
-{
-}
-
 AllocConfig::~AllocConfig() = default;
 
 bool
@@ -35,8 +30,8 @@ AllocConfig::operator==(const AllocConfig &rhs) const noexcept
 AllocStrategy
 AllocConfig::make_alloc_strategy(SubDbType sub_db_type) const
 {
-    auto &baseline_grow_strategy = _alloc_strategy.get_grow_strategy();
-    size_t initial_capacity = baseline_grow_strategy.getDocsInitialCapacity();
+    auto &baseline = _alloc_strategy.get_grow_strategy();
+    size_t initial_capacity = baseline.getInitialCapacity();
     switch (sub_db_type) {
     case SubDbType::READY:
         initial_capacity *= _searchable_copies;
@@ -49,7 +44,7 @@ AllocConfig::make_alloc_strategy(SubDbType sub_db_type) const
         initial_capacity = std::max(1024ul, initial_capacity / 100);
         break;
     }
-    GrowStrategy grow_strategy(initial_capacity, baseline_grow_strategy.getDocsGrowFactor(), baseline_grow_strategy.getDocsGrowDelta(), baseline_grow_strategy.getMultiValueAllocGrowFactor());
+    GrowStrategy grow_strategy(initial_capacity, baseline.getGrowFactor(), baseline.getGrowDelta(), initial_capacity, baseline.getMultiValueAllocGrowFactor());
     return AllocStrategy(grow_strategy, _alloc_strategy.get_compaction_strategy(), _alloc_strategy.get_amortize_count());
 }
 

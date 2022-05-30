@@ -20,6 +20,8 @@ public class ZstdCompressingInputStream extends InputStream {
     private final byte[] inputBuffer;
     private final byte[] outputBuffer;
 
+    private boolean firstRead = true;
+    private boolean eof = false;
     private int outputPosition = 0;
     private int outputLength = 0;
     private boolean isClosed = false;
@@ -39,9 +41,15 @@ public class ZstdCompressingInputStream extends InputStream {
         throwIfClosed();
 
         if (outputPosition >= outputLength) {
-            int readLength = is.read(inputBuffer);
-            if (readLength == -1)
-                return -1;
+            int readLength = eof ? -1 : is.read(inputBuffer);
+            if (readLength == -1) {
+                if (!firstRead)
+                    return -1;
+                // zstd compressing an empty file results in a 13 bytes file.
+                eof = true;
+                readLength = 0;
+            }
+            firstRead = false;
 
             outputLength = compressor.compress(inputBuffer, 0, readLength, outputBuffer, 0, outputBuffer.length);
             outputPosition = 0;

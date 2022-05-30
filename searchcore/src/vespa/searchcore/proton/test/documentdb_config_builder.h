@@ -28,8 +28,8 @@ private:
     search::index::Schema::SP _schema;
     DocumentDBConfig::MaintenanceConfigSP _maintenance;
     search::LogDocumentStore::Config _store;
-    std::shared_ptr<const ThreadingServiceConfig> _threading_service_config;
-    std::shared_ptr<const AllocConfig> _alloc_config;
+    const ThreadingServiceConfig _threading_service_config;
+    const AllocConfig _alloc_config;
     vespalib::string _configId;
     vespalib::string _docTypeName;
 

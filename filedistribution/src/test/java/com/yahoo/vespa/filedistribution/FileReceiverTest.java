@@ -10,14 +10,14 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
+
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
+import static org.junit.Assert.assertEquals;
 
 public class FileReceiverTest {
     private File root;
@@ -58,7 +58,7 @@ public class FileReceiverTest {
         writerB.close();
 
         File tempFile = temporaryFolder.newFile();
-        File file = CompressedFileReference.compress(dirWithFiles, tempFile);
+        File file = new FileReferenceCompressor(compressed).compress(dirWithFiles, tempFile);
         transferCompressedData(new FileReference("ref"), "a", IOUtils.readFileBytes(file));
         File downloadDir = new File(root, "ref");
         assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
@@ -88,8 +88,7 @@ public class FileReceiverTest {
     }
 
     private void transferCompressedData(FileReference ref, String fileName, byte[] data) {
-        FileReceiver.Session session =
-                new FileReceiver.Session(root, 1, ref, FileReferenceData.Type.compressed, fileName, data.length);
+        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref, compressed, fileName, data.length);
         session.addPart(0, data);
         session.close(hasher.hash(ByteBuffer.wrap(data), 0));
     }

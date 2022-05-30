@@ -15,6 +15,7 @@
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
+#include "documentdbconfig.h"
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -46,6 +47,7 @@
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/fastos/file.h>
 #ifdef __linux__
 #include <malloc.h>
 #endif
@@ -398,7 +400,7 @@ Proton::addDocumentDB(const DocTypeName &docTypeName,
                       document::BucketSpace bucketSpace,
                       const vespalib::string &configId,
                       const BootstrapConfig::SP &bootstrapConfig,
-                      const DocumentDBConfig::SP &documentDBConfig,
+                      const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
     try {
@@ -586,7 +588,7 @@ DocumentDB::SP
 Proton::addDocumentDB(const document::DocumentType &docType,
                       document::BucketSpace bucketSpace,
                       const BootstrapConfig::SP &bootstrapConfig,
-                      const DocumentDBConfig::SP &documentDBConfig,
+                      const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
     const ProtonConfig &config(bootstrapConfig->getProtonConfig());

@@ -83,7 +83,6 @@ public class JobRunner extends ControllerMaintainer {
                 jobs.abort(run.id(), "job timeout of " + jobTimeout + " reached");
                 advance(jobs.run(run.id()).get());
             });
-
         else if (run.readySteps().isEmpty())
             executors.execute(() -> finish(run.id()));
         else if (run.hasFailed() || run.sleepUntil().map(sleepUntil -> ! sleepUntil.isAfter(controller().clock().instant())).orElse(true))
@@ -93,7 +92,8 @@ public class JobRunner extends ControllerMaintainer {
     private void finish(RunId id) {
         try {
             jobs.finish(id);
-            controller().applications().deploymentTrigger().notifyOfCompletion(id.application());
+            if ( ! id.type().environment().isManuallyDeployed())
+                controller().applications().deploymentTrigger().notifyOfCompletion(id.application());
         }
         catch (TimeoutException e) {
             // One of the steps are still being run — that's ok, we'll try to finish the run again later.

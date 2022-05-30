@@ -5,8 +5,6 @@
 #include "operation_listener.h"
 #include "search_context.h"
 #include "document_meta_store_versions.h"
-#include <vespa/fastos/file.h>
-#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/remove_batch_entry.h>
@@ -16,6 +14,8 @@
 #include <vespa/searchlib/common/i_gid_to_lid_mapper.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -24,6 +24,7 @@
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore");
@@ -403,22 +404,23 @@ DocumentMetaStore::unload()
     unloadBucket(*_bucketDB, prev, prevDelta);
 }
 
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB)
+    : DocumentMetaStore(std::move(bucketDB), getFixedName())
+{}
 
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB, const vespalib::string &name)
+    : DocumentMetaStore(std::move(bucketDB), name, search::GrowStrategy())
+{}
 DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
                                      const vespalib::string &name,
                                      const GrowStrategy &grow,
                                      SubDbType subDbType)
     : DocumentMetaStoreAttribute(name),
-      _metaDataStore(grow.getDocsInitialCapacity(),
-                     grow.getDocsGrowPercent(),
-                     grow.getDocsGrowDelta(),
-                     getGenerationHolder()),
+      _metaDataStore(grow, getGenerationHolder()),
       _gidToLidMap(),
       _gid_to_lid_map_write_itr(vespalib::datastore::EntryRef(), _gidToLidMap.getAllocator()),
       _gid_to_lid_map_write_itr_prepare_serial_num(0u),
-      _lidAlloc(_metaDataStore.size(),
-                _metaDataStore.capacity(),
-                getGenerationHolder()),
+      _lidAlloc(_metaDataStore.size(), _metaDataStore.capacity(), getGenerationHolder()),
       _bucketDB(std::move(bucketDB)),
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),

@@ -65,7 +65,7 @@ public:
         LabelView(size_t num_mapped_dims, const StringIdVector &labels_in)
             : addr_size(num_mapped_dims), labels(labels_in) {}
         ConstArrayRef<string_id> get_addr(size_t idx) const {
-            return {&labels[idx * addr_size], addr_size};
+            return {labels.data() + (idx * addr_size), addr_size};
         }
     };
 
@@ -104,9 +104,7 @@ private:
     HashType _map;
 
 public:
-    FastAddrMap(size_t num_mapped_dims, const StringIdVector &labels_in, size_t expected_subspaces)
-        : _labels(num_mapped_dims, labels_in),
-          _map(expected_subspaces * 2, Hash(), Equal(_labels)) {}
+    FastAddrMap(size_t num_mapped_dims, const StringIdVector &labels_in, size_t expected_subspaces);
     ~FastAddrMap();
     FastAddrMap(const FastAddrMap &) = delete;
     FastAddrMap &operator=(const FastAddrMap &) = delete;

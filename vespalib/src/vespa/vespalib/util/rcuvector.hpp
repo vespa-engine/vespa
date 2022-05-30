@@ -18,6 +18,17 @@ template <typename T>
 RcuVectorHeld<T>::~RcuVectorHeld() = default;
 
 template <typename T>
+size_t RcuVectorBase<T>::calcNewSize(size_t baseSize) const {
+    size_t delta = (baseSize * _growStrategy.getGrowFactor()) + _growStrategy.getGrowDelta();
+    size_t newSize = baseSize + std::max(delta, static_cast<size_t>(1));
+    return std::max(newSize, _growStrategy.getMinimumCapacity());
+}
+template <typename T>
+size_t RcuVectorBase<T>::calcNewSize() const {
+    return calcNewSize(_data.capacity());
+}
+
+template <typename T>
 void
 RcuVectorBase<T>::unsafe_resize(size_t n) {
     _data.resize(n);
@@ -111,41 +122,16 @@ RcuVectorBase<T>::shrink(size_t newSize)
 }
 
 template <typename T>
-RcuVectorBase<T>::RcuVectorBase(GenerationHolderType &genHolder,
-                                const Alloc &initialAlloc)
-    : _data(initialAlloc),
-      _vector_start(nullptr),
-      _growPercent(100),
-      _growDelta(0),
-      _genHolder(genHolder)
-{
-    _data.reserve(16);
-    update_vector_start();
-}
-
-template <typename T>
-RcuVectorBase<T>::RcuVectorBase(size_t initialCapacity,
-                                size_t growPercent,
-                                size_t growDelta,
-                                GenerationHolderType &genHolder,
-                                const Alloc &initialAlloc)
-    : _data(initialAlloc),
-      _vector_start(nullptr),
-      _growPercent(growPercent),
-      _growDelta(growDelta),
-      _genHolder(genHolder)
-{
-    _data.reserve(initialCapacity);
-    update_vector_start();
-}
-
-template <typename T>
 RcuVectorBase<T>::RcuVectorBase(GrowStrategy growStrategy,
                                 GenerationHolderType &genHolder,
                                 const Alloc &initialAlloc)
-    : RcuVectorBase(growStrategy.getInitialCapacity(), growStrategy.getGrowPercent(),
-                    growStrategy.getGrowDelta(), genHolder, initialAlloc)
+    : _data(initialAlloc),
+      _vector_start(nullptr),
+      _growStrategy(growStrategy),
+      _genHolder(genHolder)
 {
+    _data.reserve(_growStrategy.getInitialCapacity());
+    update_vector_start();
 }
 
 template <typename T>
@@ -162,7 +148,7 @@ template <typename T>
 void
 RcuVectorBase<T>::update_vector_start()
 {
-    _vector_start.store(&_data[0], std::memory_order_release);
+    _vector_start.store(_data.data(), std::memory_order_release);
 }
 
 template <typename T>
@@ -181,14 +167,7 @@ RcuVector<T>::onReallocation() {
 
 template <typename T>
 RcuVector<T>::RcuVector()
-    : RcuVectorBase<T>(_genHolderStore),
-      _generation(0),
-      _genHolderStore()
-{ }
-
-template <typename T>
-RcuVector<T>::RcuVector(size_t initialCapacity, size_t growPercent, size_t growDelta)
-    : RcuVectorBase<T>(initialCapacity, growPercent, growDelta, _genHolderStore),
+    : RcuVectorBase<T>(GrowStrategy(16, 1.0, 0, 0), _genHolderStore),
       _generation(0),
       _genHolderStore()
 { }

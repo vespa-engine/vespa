@@ -2,6 +2,7 @@
 
 #include "fast_access_doc_subdb_configurer.h"
 #include "i_attribute_writer_factory.h"
+#include "documentdbconfig.h"
 #include <vespa/searchcore/proton/attribute/attribute_writer.h>
 #include <vespa/searchcore/proton/common/document_type_inspector.h>
 #include <vespa/searchcore/proton/common/indexschema_inspector.h>
@@ -46,10 +47,11 @@ FastAccessDocSubDBConfigurer::~FastAccessDocSubDBConfigurer() = default;
 IReprocessingInitializer::UP
 FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
                                           const DocumentDBConfig &oldConfig,
-                                          const AttributeCollectionSpec &attrSpec)
+                                          AttributeCollectionSpec && attrSpec)
 {
     FastAccessFeedView::SP oldView = _feedView.get();
-    IAttributeWriter::SP writer = _factory->create(oldView->getAttributeWriter(), attrSpec);
+    search::SerialNum currentSerialNum = attrSpec.getCurrentSerialNum();
+    IAttributeWriter::SP writer = _factory->create(oldView->getAttributeWriter(), std::move(attrSpec));
     reconfigureFeedView(*oldView, newConfig.getSchemaSP(), newConfig.getDocumentTypeRepoSP(), writer);
 
     const document::DocumentType *newDocType = newConfig.getDocumentType();
@@ -61,7 +63,7 @@ FastAccessDocSubDBConfigurer::reconfigure(const DocumentDBConfig &newConfig,
     return std::make_unique<AttributeReprocessingInitializer>
         (ARIConfig(writer->getAttributeManager(), *newConfig.getSchemaSP()),
          ARIConfig(oldView->getAttributeWriter()->getAttributeManager(), *oldConfig.getSchemaSP()),
-         inspector, oldIndexschemaInspector, _subDbName, attrSpec.getCurrentSerialNum());
+         inspector, oldIndexschemaInspector, _subDbName, currentSerialNum);
 }
 
 } // namespace proton

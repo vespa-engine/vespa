@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.editor;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.Comparator;
 import java.util.Objects;
 
@@ -10,7 +9,6 @@ import java.util.Objects;
  *
  * @author hakon
  */
-@Immutable
 public class Position implements Comparable<Position> {
     private static final Position START_POSITION = new Position(0, 0);
 

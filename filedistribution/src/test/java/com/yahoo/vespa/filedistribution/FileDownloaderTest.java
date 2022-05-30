@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -147,9 +148,9 @@ public class FileDownloaderTest {
             File barFile = new File(subdir, "really-long-filename-over-100-bytes-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
             IOUtils.writeFile(barFile, "bar", false);
 
-            File tarFile = CompressedFileReference.compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
+            File tarFile = new FileReferenceCompressor(compressed).compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
             byte[] tarredContent = IOUtils.readFileBytes(tarFile);
-            receiveFile(fileReference, filename, FileReferenceData.Type.compressed, tarredContent);
+            receiveFile(fileReference, filename, compressed, tarredContent);
             Optional<File> downloadedFile = getFile(fileReference);
 
             assertTrue(downloadedFile.isPresent());

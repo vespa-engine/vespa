@@ -3,15 +3,18 @@
 #pragma once
 
 #include "document_db_maintenance_config.h"
-#include <vespa/document/config/documenttypes_config_fwd.h>
-#include <vespa/searchlib/common/tunefileinfo.h>
-#include <vespa/searchcommon/common/schema.h>
+#include "threading_service_config.h"
+#include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/matching/ranking_constants.h>
 #include <vespa/searchcore/proton/matching/ranking_expressions.h>
 #include <vespa/searchcore/proton/matching/onnx_models.h>
+#include <vespa/searchlib/common/tunefileinfo.h>
+#include <vespa/searchlib/docstore/logdocumentstore.h>
+#include <vespa/searchcommon/common/schema.h>
+#include <vespa/document/config/documenttypes_config_fwd.h>
+
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>
-#include <vespa/searchlib/docstore/logdocumentstore.h>
 
 namespace vespa::config::search::internal {
     class InternalSummaryType;
@@ -29,9 +32,6 @@ namespace document {
 }
 
 namespace proton {
-
-class ThreadingServiceConfig;
-class AllocConfig;
 
 class DocumentDBConfig
 {
@@ -57,7 +57,6 @@ public:
         bool storeChanged;
         bool visibilityDelayChanged;
         bool flushChanged;
-        bool threading_service_config_changed;
         bool alloc_config_changed;
 
         ComparisonResult();
@@ -92,7 +91,6 @@ public:
             }
             return *this;
         }
-        ComparisonResult &set_threading_service_config_changed(bool val) { threading_service_config_changed = val; return *this; }
         ComparisonResult &set_alloc_config_changed(bool val) { alloc_config_changed = val; return *this; }
     };
 
@@ -137,8 +135,8 @@ private:
     search::index::Schema::SP        _schema;
     MaintenanceConfigSP              _maintenance;
     search::LogDocumentStore::Config _storeConfig;
-    std::shared_ptr<const ThreadingServiceConfig> _threading_service_config;
-    std::shared_ptr<const AllocConfig> _alloc_config;
+    const ThreadingServiceConfig     _threading_service_config;
+    const AllocConfig                _alloc_config;
     SP                               _orig;
     bool                             _delayedAttributeAspects;
 
@@ -146,18 +144,18 @@ private:
     template <typename T>
     bool equals(const T * lhs, const T * rhs) const
     {
-        if (lhs == NULL) {
-            return rhs == NULL;
+        if (lhs == nullptr) {
+            return rhs == nullptr;
         }
-        return rhs != NULL && *lhs == *rhs;
+        return rhs != nullptr && *lhs == *rhs;
     }
     template <typename T, typename Func>
     bool equals(const T *lhs, const T *rhs, Func isEqual) const
     {
-        if (lhs == NULL) {
-            return rhs == NULL;
+        if (lhs == nullptr) {
+            return rhs == nullptr;
         }
-        return rhs != NULL && isEqual(*lhs, *rhs);
+        return rhs != nullptr && isEqual(*lhs, *rhs);
     }
 public:
     DocumentDBConfig(int64_t generation,
@@ -177,8 +175,8 @@ public:
                      const search::index::Schema::SP &schema,
                      const DocumentDBMaintenanceConfig::SP &maintenance,
                      const search::LogDocumentStore::Config & storeConfig,
-                     std::shared_ptr<const ThreadingServiceConfig> threading_service_config,
-                     std::shared_ptr<const AllocConfig> alloc_config,
+                     const ThreadingServiceConfig & threading_service_config,
+                     const AllocConfig & alloc_config,
                      const vespalib::string &configId,
                      const vespalib::string &docTypeName) noexcept;
 
@@ -220,10 +218,8 @@ public:
     const MaintenanceConfigSP &getMaintenanceConfigSP() const { return _maintenance; }
     const search::TuneFileDocumentDB::SP &getTuneFileDocumentDBSP() const { return _tuneFileDocumentDB; }
     bool getDelayedAttributeAspects() const { return _delayedAttributeAspects; }
-    const ThreadingServiceConfig& get_threading_service_config() const { return *_threading_service_config; }
-    const std::shared_ptr<const ThreadingServiceConfig>& get_threading_service_config_shared_ptr() const { return _threading_service_config; }
-    const AllocConfig& get_alloc_config() const { return *_alloc_config; }
-    const std::shared_ptr<const AllocConfig>& get_alloc_config_shared_ptr() const { return _alloc_config; }
+    const ThreadingServiceConfig& get_threading_service_config() const { return _threading_service_config; }
+    const AllocConfig& get_alloc_config() const { return _alloc_config; }
 
     bool operator==(const DocumentDBConfig &rhs) const;
 

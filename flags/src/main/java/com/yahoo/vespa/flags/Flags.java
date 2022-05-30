@@ -230,7 +230,7 @@ public class Flags {
 
     public static final UnboundStringFlag JDK_VERSION = defineStringFlag(
             "jdk-version", "17",
-            List.of("hmusum"), "2021-10-25", "2022-06-01",
+            List.of("hmusum"), "2021-10-25", "2022-06-10",
             "JDK version to use on host and inside containers. Note application-id dimension only applies for container, " +
                     "while hostname and node type applies for host.",
             "Takes effect on restart for Docker container and on next host-admin tick for host",
@@ -269,7 +269,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS = defineFeatureFlag(
             "fail-deployment-with-invalid-jvm-options", true,
-            List.of("hmusum"), "2021-12-20", "2022-06-01",
+            List.of("hmusum"), "2021-12-20", "2022-07-01",
             "Whether to fail deployments with invalid JVM options in services.xml",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -283,7 +283,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
             "enable-data-highway-in-aws", false,
-            List.of("hmusum"), "2022-01-06", "2022-06-01",
+            List.of("hmusum"), "2022-01-06", "2022-08-01",
             "Enable Data Highway in AWS",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);
@@ -369,7 +369,7 @@ public class Flags {
 
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
             "fail-deployment-for-files-with-unknown-extension", "NOOP",
-            List.of("hmusum"), "2022-04-27", "2022-05-27",
+            List.of("hmusum"), "2022-04-27", "2022-06-27",
             "Whether to log, fail or do nothing for  deployments when app has a file with unknown extension (valid values LOG, FAIL, NOOP)",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -380,13 +380,6 @@ public class Flags {
             "Whether we should send notification for a given tenant",
             "Takes effect immediately",
             TENANT_ID);
-
-    public static final UnboundBooleanFlag INSTALL_JDK_FROM_LATEST_APPSTREAM_REPO = defineFeatureFlag(
-            "install-jdk-from-latest-appstream-repo", false,
-            List.of("hmusum"), "2022-05-03", "2022-06-03",
-            "Whether we should install JDK from latest-appstream repo on hosts (e.g. for security issues fixed in newer JDK versions)",
-            "Takes effect immediately",
-            HOSTNAME);
 
     public static final UnboundStringFlag PROVISION_IN_EXTERNAL_ACCOUNT = defineStringFlag(
             "provision-in-external-account", "",
@@ -400,6 +393,20 @@ public class Flags {
             List.of("tokle"), "2022-05-09", "2022-07-01",
             "Enable or disable proxy protocol mixed mode",
             "Takes effect on redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundStringFlag FILE_DISTRIBUTION_COMPRESSION_ALGORITHM = defineStringFlag(
+            "file-distribution-compression-algorithm", "gzip",
+            List.of("hmusum"), "2022-05-24", "2022-06-24",
+            "Which algorithm to use for compressing file references when distributing files. Valid values: none, gzip",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag FILE_DISTRIBUTION_COMPRESS_SINGLE_FILES = defineFeatureFlag(
+            "file-distribution-compress-single-files", false,
+            List.of("hmusum"), "2022-05-24", "2022-06-24",
+            "Whether to compress a file references that is a single file (directories are compressed by default).",
+            "Takes effect immediately",
             APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

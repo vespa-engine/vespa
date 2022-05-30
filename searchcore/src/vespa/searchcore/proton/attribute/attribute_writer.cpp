@@ -9,6 +9,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/attribute_updater.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>

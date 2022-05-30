@@ -93,8 +93,7 @@ public class JobRunnerTest {
         ApplicationId id = appId.defaultInstance();
         byte[] testPackageBytes = new byte[0];
         jobs.submit(appId, Submission.basic(applicationPackage, testPackageBytes), 2);
-
-                    start(jobs, id, systemTest);
+        start(jobs, id, systemTest);
         try {
             start(jobs, id, systemTest);
             fail("Job is already running, so this should not be allowed!");
@@ -106,12 +105,16 @@ public class JobRunnerTest {
         assertFalse(jobs.last(id, systemTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().stepStatuses().values().stream().allMatch(unfinished::equals));
         assertFalse(jobs.last(id, stagingTest).get().hasEnded());
-        runner.maintain();
 
+        runner.maintain();
         phaser.arriveAndAwaitAdvance();
         assertTrue(jobs.last(id, systemTest).get().stepStatuses().values().stream().allMatch(succeeded::equals));
-        assertTrue(jobs.last(id, stagingTest).get().hasEnded());
         assertTrue(jobs.last(id, stagingTest).get().hasFailed());
+
+        runner.maintain();
+        phaser.arriveAndAwaitAdvance();
+        assertTrue(jobs.last(id, systemTest).get().hasEnded());
+        assertTrue(jobs.last(id, stagingTest).get().hasEnded());
     }
 
     @Test
@@ -165,8 +168,8 @@ public class JobRunnerTest {
         outcomes.put(endTests, testFailure);
         runner.maintain();
         assertTrue(run.get().hasFailed());
-        assertEquals(List.of(copyVespaLogs, deactivateTester), run.get().readySteps());
-        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs, deactivateTester);
+        assertEquals(List.of(copyVespaLogs), run.get().readySteps());
+        assertStepsWithStartTime(run.get(), deployTester, deployReal, installTester, installReal, startTests, endTests, copyVespaLogs);
 
         outcomes.put(copyVespaLogs, running);
         runner.maintain();
@@ -442,8 +445,8 @@ public class JobRunnerTest {
             @Override public void execute(Runnable command) {
                 phaser.register();
                 delegate.execute(() -> {
-                    command.run();
-                    phaser.arriveAndDeregister();
+                    try { command.run(); }
+                    finally { phaser.arriveAndDeregister(); }
                 });
             }
         };

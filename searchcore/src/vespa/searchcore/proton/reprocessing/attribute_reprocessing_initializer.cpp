@@ -3,6 +3,7 @@
 #include "attribute_reprocessing_initializer.h"
 #include <vespa/searchcore/proton/attribute/attribute_populator.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcore/proton/attribute/document_field_populator.h>
 #include <vespa/searchcore/proton/attribute/filter_attribute_manager.h>
 #include <vespa/searchcore/proton/common/i_indexschema_inspector.h>

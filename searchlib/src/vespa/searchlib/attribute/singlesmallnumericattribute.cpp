@@ -5,8 +5,10 @@
 #include "iattributesavetarget.h"
 #include "primitivereader.h"
 #include "single_small_numeric_search_context.h"
+#include "valuemodifier.h"
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/file_settings.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -24,10 +26,7 @@ SingleValueSmallNumericAttribute(const vespalib::string & baseFileName,
       _valueShiftShift(valueShiftShift),
       _valueShiftMask(valueShiftMask),
       _wordShift(wordShift),
-      _wordData(c.getGrowStrategy().getDocsInitialCapacity(),
-                c.getGrowStrategy().getDocsGrowPercent(),
-                c.getGrowStrategy().getDocsGrowDelta(),
-                getGenerationHolder())
+      _wordData(c.getGrowStrategy(), getGenerationHolder())
 {
     assert(_valueMask + 1 == (1u << (1u << valueShiftShift)));
     assert((_valueShiftMask + 1) * (1u << valueShiftShift) == 8 * sizeof(Word));

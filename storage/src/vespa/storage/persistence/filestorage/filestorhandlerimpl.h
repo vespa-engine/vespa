@@ -30,6 +30,7 @@
 #include <boost/multi_index/sequenced_index.hpp>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/vespalib/stllike/hash_map.h>
+#include <vespa/vespalib/datastore/atomic_value_wrapper.h>
 #include <atomic>
 #include <optional>
 
@@ -74,6 +75,7 @@ public:
     using BucketIdx = bmi::nth_index<PriorityQueue, 2>::type;
     using Clock = std::chrono::steady_clock;
     using monitor_guard = std::unique_lock<std::mutex>;
+    using atomic_size_t = vespalib::datastore::AtomicValueWrapper<size_t>;
 
     class Stripe {
     public:
@@ -96,6 +98,25 @@ public:
             SharedLocks _sharedLocks;
         };
 
+        class SafeActiveOperationsStats {
+        private:
+            std::unique_ptr<std::mutex> _lock;
+            ActiveOperationsStats _stats;
+            struct ctor_tag {};
+        public:
+            class Guard {
+            private:
+                std::lock_guard<std::mutex> _guard;
+                ActiveOperationsStats &_stats;
+            public:
+                Guard(Guard &&) = delete;
+                Guard(std::mutex &lock, ActiveOperationsStats &stats_in, ctor_tag) : _guard(lock), _stats(stats_in) {}
+                ActiveOperationsStats &stats() { return _stats; }
+            };
+            SafeActiveOperationsStats() : _lock(std::make_unique<std::mutex>()), _stats() {}
+            Guard guard() { return Guard(*_lock, _stats, ctor_tag()); }
+        };
+
         Stripe(const FileStorHandlerImpl & owner, MessageSender & messageSender);
         Stripe(Stripe &&) noexcept;
         Stripe(const Stripe &) = delete;
@@ -111,10 +132,11 @@ public:
         void broadcast() {
             _cond->notify_all();
         }
-        size_t getQueueSize() const {
-            std::lock_guard guard(*_lock);
-            return _queue->size();
+        size_t get_cached_queue_size() const { return _cached_queue_size.load_relaxed(); }
+        void unsafe_update_cached_queue_size() {
+            _cached_queue_size.store_relaxed(_queue->size());
         }
+
         void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
                      api::StorageMessage::Id lockMsgId, bool was_active_merge);
         void decrease_active_sync_merges_counter() noexcept;
@@ -142,6 +164,12 @@ public:
         void setMetrics(FileStorStripeMetrics * metrics) { _metrics = metrics; }
         ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const;
     private:
+        void update_cached_queue_size(const std::lock_guard<std::mutex> &) {
+            _cached_queue_size.store_relaxed(_queue->size());
+        }
+        void update_cached_queue_size(const std::unique_lock<std::mutex> &) {
+            _cached_queue_size.store_relaxed(_queue->size());
+        }
         bool hasActive(monitor_guard & monitor, const AbortBucketOperationsCommand& cmd) const;
         FileStorHandler::LockedMessage get_next_async_message(monitor_guard& guard);
         [[nodiscard]] bool operation_type_should_be_throttled(api::MessageType::Id type_id) const noexcept;
@@ -158,9 +186,10 @@ public:
         std::unique_ptr<std::mutex>                _lock;
         std::unique_ptr<std::condition_variable>   _cond;
         std::unique_ptr<PriorityQueue>  _queue;
+        atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
         uint32_t                        _active_merges;
-        mutable ActiveOperationsStats   _active_operations_stats;
+        mutable SafeActiveOperationsStats _active_operations_stats;
     };
 
     class BucketLock : public FileStorHandler::BucketLockInterface {

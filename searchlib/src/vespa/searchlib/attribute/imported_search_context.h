@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include "attributevector.h"
 #include "bitvector_search_cache.h"
+#include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
 #include <vespa/searchlib/common/i_document_meta_store_context.h>
@@ -11,9 +11,10 @@
 #include <vespa/vespalib/util/arrayref.h>
 
 namespace search::fef { class TermFieldMatchData; }
-
+namespace search { class QueryTermSimple; }
 namespace search::attribute {
 
+class IAttributeVector;
 class ReferenceAttribute;
 class ImportedAttributeVector;
 class SearchContextParams;
@@ -65,7 +66,7 @@ public:
     const QueryTermUCS4 * queryTerm() const override;
     const vespalib::string& attributeName() const override;
 
-    using DocId = IAttributeVector::DocId;
+    using DocId = uint32_t;
 
     int32_t find(DocId docId, int32_t elemId, int32_t& weight) const {
         return _target_search_context->find(getTargetLid(docId), elemId, weight);

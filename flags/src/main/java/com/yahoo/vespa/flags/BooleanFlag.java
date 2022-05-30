@@ -1,12 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import javax.annotation.concurrent.Immutable;
-
 /**
  * @author hakonhall
  */
-@Immutable
 public class BooleanFlag extends FlagImpl<Boolean, BooleanFlag> {
     public BooleanFlag(FlagId id, boolean defaultValue, FetchVector vector, FlagSerializer<Boolean> serializer, FlagSource source) {
         super(id, defaultValue, vector, serializer, source, BooleanFlag::new);

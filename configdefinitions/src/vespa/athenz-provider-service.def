@@ -13,14 +13,17 @@ secretName                                string
 # Secret version
 secretVersion                             int
 
+# Secret name of CA certificate
+caCertSecretName                          string
+
 # Certificate DNS suffix
-certDnsSuffix                             string
+certDnsSuffix                             string default=""
 
 # Athenz ZTS server url
-ztsUrl                                    string
+ztsUrl                                    string default=""
 
 # Path to Athenz CA JKS trust store
-athenzCaTrustStore                        string
+athenzCaTrustStore                        string default=""
 
 # Period between certificate updates
 updatePeriodDays                          int  default=1

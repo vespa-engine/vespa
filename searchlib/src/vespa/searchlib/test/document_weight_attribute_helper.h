@@ -17,20 +17,18 @@ private:
     IntegerAttribute *_int_attr;
     const IDocumentWeightAttribute *_dwa;
 
-    AttributeVector::SP make_attr() {
-        attribute::Config cfg(attribute::BasicType::INT64, attribute::CollectionType::WSET);
-        cfg.setFastSearch(true);
-        return AttributeFactory::createAttribute("my_attribute", cfg);
-    }
+    AttributeVector::SP make_attr();
 
 public:
-    DocumentWeightAttributeHelper() : _attr(make_attr()),
-                                      _int_attr(dynamic_cast<IntegerAttribute *>(_attr.get())),
-                                      _dwa(_attr->asDocumentWeightAttribute())
+    DocumentWeightAttributeHelper()
+        : _attr(make_attr()),
+          _int_attr(dynamic_cast<IntegerAttribute *>(_attr.get())),
+          _dwa(_attr->asDocumentWeightAttribute())
     {
         ASSERT_TRUE(_int_attr != nullptr);
         ASSERT_TRUE(_dwa != nullptr);
     }
+    ~DocumentWeightAttributeHelper();
 
     void add_docs(size_t limit) {
         AttributeVector::DocId docid;

@@ -123,10 +123,10 @@ public:
     const_iterator end()              const { return array(_sz); }
     iterator begin()                        { return array(0); }
     iterator end()                          { return array(_sz); }
-    const_reverse_iterator rbegin()   const { return array(_sz) - 1; }
-    const_reverse_iterator rend()     const { return array(0) - 1; }
-    reverse_iterator rbegin()               { return array(_sz) - 1; }
-    reverse_iterator rend()                 { return array(0) - 1; }
+    const_reverse_iterator rbegin()   const { return empty() ? array(0) : array(_sz) - 1; }
+    const_reverse_iterator rend()     const { return empty() ? array(0) : array(0) - 1; }
+    reverse_iterator rbegin()               { return empty() ? array(0) : array(_sz) - 1; }
+    reverse_iterator rend()                 { return empty() ? array(0) : array(0) - 1; }
     size_t size() const                     { return _sz; }
     size_t byteSize() const                 { return _sz * sizeof(T); }
     size_t byteCapacity() const             { return _array.size(); }

@@ -101,11 +101,11 @@ TEST("test operator== on attribute config for tensor type")
 }
 
 TEST("Test GrowStrategy consistency") {
-    GrowStrategy g(1024, 0.5, 17, 0.4f);
-    EXPECT_EQUAL(1024u, g.getDocsInitialCapacity());
-    EXPECT_EQUAL(50u, g.getDocsGrowPercent());
-    EXPECT_EQUAL(0.5, g.getDocsGrowFactor());
-    EXPECT_EQUAL(17u, g.getDocsGrowDelta());
+    GrowStrategy g(1024, 0.5, 17, 3, 0.4f);
+    EXPECT_EQUAL(1024u, g.getInitialCapacity());
+    EXPECT_EQUAL(0.5, g.getGrowFactor());
+    EXPECT_EQUAL(17u, g.getGrowDelta());
+    EXPECT_EQUAL(3u, g.getMinimumCapacity());
     EXPECT_EQUAL(0.4f, g.getMultiValueAllocGrowFactor());
 }
 

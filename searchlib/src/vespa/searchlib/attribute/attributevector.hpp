@@ -87,7 +87,7 @@ AttributeVector::applyArithmetic(ChangeVectorT< ChangeTemplate<T> > & changes, D
     } else if (op == ArithmeticValueUpdate::Mul) {
         changes.push_back(ChangeTemplate<T>(ChangeBase::MUL, doc, 0, 0));
     } else if (op == ArithmeticValueUpdate::Div) {
-        if (this->getClass().inherits(IntegerAttribute::classId) && aop == 0) {
+        if ((aop == 0) && isIntegerType()) {
             divideByZeroWarning();
         } else {
             changes.push_back(ChangeTemplate<T>(ChangeBase::DIV, doc, 0, 0));
@@ -171,11 +171,6 @@ bool AttributeVector::remove(ChangeVectorT< ChangeTemplate<T> > & changes, DocId
         }
     }
     return retval;
-}
-
-template<typename T>
-vespalib::asciistream & operator << (vespalib::asciistream & os, const UnWeightedType<T> & v) {
-    return os << "(" << v._value << ", 1)";
 }
 
 }

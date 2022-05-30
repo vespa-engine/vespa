@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_operation.h"
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include "singlenumericattribute.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/basictype.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/array.hpp>
 
 #include <vespa/log/log.h>
@@ -96,7 +97,7 @@ struct UpdateFast {
     void operator()(uint32_t docid) { attr->set(docid, op(attr->getFast(docid))); }
     bool valid() const {
         return (attr != nullptr) &&
-               (attr->getConfig().isMutable()); }
+               (attr->isMutable()); }
 };
 
 template <typename OP>

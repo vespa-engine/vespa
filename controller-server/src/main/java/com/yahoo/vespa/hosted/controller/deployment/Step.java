@@ -65,7 +65,7 @@ public enum Step {
     deactivateReal(true, deployInitialReal, deployReal, endTests, copyVespaLogs),
 
     /** Deactivate the tester. */
-    deactivateTester(true, deployTester, endTests),
+    deactivateTester(true, deployTester, endTests, copyVespaLogs),
 
     /** Report completion to the deployment orchestration machinery. */
     report(true, installReal, deactivateReal, deactivateTester);

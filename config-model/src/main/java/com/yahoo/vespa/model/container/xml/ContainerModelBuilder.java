@@ -86,6 +86,7 @@ import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.container.search.PageTemplates;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import com.yahoo.vespa.model.container.xml.document.DocumentFactoryBuilder;
+import com.yahoo.vespa.model.container.xml.embedder.EmbedderConfig;
 import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -197,9 +198,11 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addClusterContent(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         DeployState deployState = context.getDeployState();
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
+
         addConfiguredComponents(deployState, cluster, spec);
         addSecretStore(cluster, spec, deployState);
 
+        addEmbedderComponents(deployState, cluster, spec);
         addModelEvaluation(spec, cluster, context);
         addModelEvaluationBundles(cluster);
 
@@ -382,6 +385,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
+    private static void addEmbedderComponents(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
+        for (Element node : XML.getChildren(spec, "embedder")) {
+            Element transformed = EmbedderConfig.transform(deployState, node);
+            cluster.addComponent(new DomComponentBuilder().build(deployState, cluster, transformed));
+        }
+    }
+
     private void addConfiguredComponents(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         for (Element components : XML.getChildren(spec, "components")) {
             addIncludes(components);
@@ -422,13 +432,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
-        if (cluster.isHostedVespa() && !accessLogElements.isEmpty()) {
-            log.logApplicationPackage(
-                    Level.WARNING, "Applications are not allowed to override the 'accesslog' element");
-        } else {
-            for (Element accessLog : accessLogElements) {
-                AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
-            }
+        for (Element accessLog : accessLogElements) {
+            AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
         }
 
         if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())

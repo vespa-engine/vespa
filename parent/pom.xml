@@ -936,7 +936,7 @@
         <asm.version>9.2</asm.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.10.14</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <athenz.version>1.10.54</athenz.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <jjwt.version>0.11.2</jjwt.version>
         <aws.sdk.version>1.11.974</aws.sdk.version>
         <!-- Athenz END -->
