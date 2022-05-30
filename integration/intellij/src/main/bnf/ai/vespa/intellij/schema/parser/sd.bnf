@@ -34,7 +34,7 @@
         SYMBOL = 'regexp:[!$|:{}().\[\]]'
         COMMA = 'regexp:[,]'
         INTEGER_REG = 'regexp:[0-9]+'
-        FLOAT_REG = 'regexp:[0-9]+[.][0-9]+([eE][0-9]+)?'
+        FLOAT_REG = 'regexp:[0-9]+[.][0-9]+([eE][-]?[0-9]+)?'
         STRING_REG = 'regexp:\"([^\"\\]*(\\.[^\"\\]*)*)\"'
         STRING_REG_SINGLE_QUOTE = "regexp:'([^'\\]*(\\.[^'\\]*)*)'"
         WORD_REG = 'regexp:\w+'
@@ -140,7 +140,7 @@ FunctionCallOrLambdaExpr ::= IdentifierVal ClauseStart RankingExpression ( Comma
  
 ParenthesisedExpr ::= ClauseStart RankingExpression ClauseEnd
 
-PrimitiveExpr ::= ( AnyNumber | IdentifierVal | RankFeature | STRING_REG )
+PrimitiveExpr ::= ( AnyNumber | ('$')?IdentifierVal | RankFeature | STRING_REG | STRING_REG_SINGLE_QUOTE )
 
 SliceExpr ::= RankingExpression ( SliceKey | SliceIndex | FullTensorAddress )
 
