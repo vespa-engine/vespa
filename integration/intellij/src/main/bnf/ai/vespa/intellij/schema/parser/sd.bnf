@@ -323,7 +323,7 @@ IndexingExpression ::= (input ( DottedIdentifier | IndexingStuff )+ )+ |
                        IndexingStuff+ |
                        ( WordWrapper? BlockStart (NL | IndexingStatement)* BlockEnd) |
 // TODO: Parse advanced indexing statements properly
-private IndexingStuff ::= WordWrapper | AnyNumber | STRING_REG |
+private IndexingStuff ::= WordWrapper | AnyNumber | STRING_REG | BlockStart | BlockEnd |
                           ':' | '.' | '(' | ')' | ArithmeticOperator | ComparisonOperator
 
 // Attribute
