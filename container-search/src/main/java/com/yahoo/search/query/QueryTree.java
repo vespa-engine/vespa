@@ -110,6 +110,19 @@ public class QueryTree extends CompositeItem {
     // -------------- Facade
 
     /**
+     * Modifies this query to become the current query RANK with the given item.
+     *
+     * @return the resulting root item in this
+     */
+    public Item rankWith(Item item) {
+        var result = new RankItem();
+        result.addItem(getRoot());
+        result.addItem(item);
+        setRoot(result);
+        return result;
+    }
+
+    /**
      * Modifies this query to become the current query AND the given item.
      *
      * @return the resulting root item in this
