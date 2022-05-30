@@ -180,9 +180,6 @@ configure_memory() {
         memory_options="${memory_options} -XX:CompressedClassSpaceSize=${jvm_compressedClassSpaceSize}m"
     fi
 
-    if [ "${VESPA_USE_HUGEPAGES}" ]; then
-        memory_options="${memory_options} -XX:+UseLargePages"
-    fi
 }
 
 configure_cpu() {
