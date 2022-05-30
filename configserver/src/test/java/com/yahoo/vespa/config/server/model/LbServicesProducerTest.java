@@ -222,11 +222,6 @@ public class LbServicesProducerTest {
         String services = "<services>" +
                           "<admin version='4.0'><logservers> <nodes count='1' /> </logservers></admin>" +
                           "  <container id='mydisc' version='1.0'>" +
-                          "    <aliases>" +
-                          "      <endpoint-alias>foo2.bar2.com</endpoint-alias>" +
-                          "      <service-alias>service1</service-alias>" +
-                          "      <endpoint-alias>foo1.bar1.com</endpoint-alias>" +
-                          "    </aliases>" +
                           "    <nodes count='1' />" +
                           "    <search/>" +
                           "  </container>" +

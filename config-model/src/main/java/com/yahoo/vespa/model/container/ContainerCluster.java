@@ -142,8 +142,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private final Set<Path> platformBundles = new LinkedHashSet<>();
 
-    private final List<String> serviceAliases = new ArrayList<>();
-    private final List<String> endpointAliases = new ArrayList<>();
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;
     private final boolean zooKeeperLocalhostAffinity;
@@ -615,12 +613,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public Map<String, String> concreteDocumentTypes() { return concreteDocumentTypes; }
-
-    /** The configured service aliases for the service in this cluster */
-    public List<String> serviceAliases() { return serviceAliases; }
-
-    /** The configured endpoint aliases (fqdn) for the service in this cluster */
-    public List<String> endpointAliases() { return endpointAliases; }
 
     public void setHostClusterId(String clusterId) { hostClusterId = clusterId; }
 
