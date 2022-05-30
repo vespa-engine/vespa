@@ -505,53 +505,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void http_aliases_are_stored_on_cluster_and_on_service_properties() {
-        Element clusterElem = DomBuilderTest.parse(
-                        "<container id='default' version='1.0'>",
-                        "  <aliases>",
-                        "    <service-alias>service1</service-alias>",
-                        "    <service-alias>service2</service-alias>",
-                        "    <endpoint-alias>foo1.bar1.com</endpoint-alias>",
-                        "    <endpoint-alias>foo2.bar2.com</endpoint-alias>",
-                        "  </aliases>",
-                        "  <nodes>",
-                        "    <node hostalias='host1' />",
-                        "  </nodes>",
-                        "</container>");
-
-        createModel(root, clusterElem);
-        assertEquals(getContainerCluster("default").serviceAliases().get(0), "service1");
-        assertEquals(getContainerCluster("default").endpointAliases().get(0), "foo1.bar1.com");
-        assertEquals(getContainerCluster("default").serviceAliases().get(1), "service2");
-        assertEquals(getContainerCluster("default").endpointAliases().get(1), "foo2.bar2.com");
-
-        assertEquals(getContainerCluster("default").getContainers().get(0).getServicePropertyString("servicealiases"), "service1,service2");
-        assertEquals(getContainerCluster("default").getContainers().get(0).getServicePropertyString("endpointaliases"), "foo1.bar1.com,foo2.bar2.com");
-    }
-
-    @Test
-    public void http_aliases_are_only_honored_in_prod_environment() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>",
-                "  <aliases>",
-                "    <service-alias>service1</service-alias>",
-                "    <endpoint-alias>foo1.bar1.com</endpoint-alias>",
-                "  </aliases>",
-                "  <nodes>",
-                "    <node hostalias='host1' />",
-                "  </nodes>",
-                "</container>");
-
-        DeployState deployState = new DeployState.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east-1"))).build();
-        createModel(root, deployState, null, clusterElem);
-        assertEquals(0, getContainerCluster("default").serviceAliases().size());
-        assertEquals(0, getContainerCluster("default").endpointAliases().size());
-
-        assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("servicealiases"));
-        assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("endpointaliases"));
-    }
-
-    @Test
     public void endpoints_are_added_to_containers() throws IOException, SAXException {
         final var servicesXml = joinLines("",
                 "<container id='comics-search' version='1.0'>",

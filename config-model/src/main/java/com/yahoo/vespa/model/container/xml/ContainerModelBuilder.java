@@ -26,16 +26,15 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.derived.RankProfileList;
+import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
@@ -207,7 +206,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addHttp(deployState, spec, cluster, context);
 
         addAccessLogs(deployState, cluster, spec);
-        addRoutingAliases(cluster, spec, deployState.zone().environment());
         addNodes(cluster, spec, context);
 
         addClientProviders(deployState, spec, cluster);
@@ -357,21 +355,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Build the comma delimited list of endpoints this container should be known as.
         // Confusingly called 'rotations' for legacy reasons.
         container.setProp("rotations", String.join(",", rotationsProperty));
-    }
-
-    private void addRoutingAliases(ApplicationContainerCluster cluster, Element spec, Environment environment) {
-        if (environment != Environment.prod) return;
-
-        Element aliases = XML.getChild(spec, "aliases");
-        if (aliases != null) {
-            log.logApplicationPackage(WARNING, "The 'aliases' element and its children has no effect. They have been deprecated for removal in Vespa 8");
-        }
-        for (Element alias : XML.getChildren(aliases, "service-alias")) {
-            cluster.serviceAliases().add(XML.getValue(alias));
-        }
-        for (Element alias : XML.getChildren(aliases, "endpoint-alias")) {
-            cluster.endpointAliases().add(XML.getValue(alias));
-        }
     }
 
     private static void addEmbedderComponents(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
@@ -750,7 +733,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
             extractJvmOptions(nodes, cluster, nodesElement, context);
-            applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
             if (!environmentVars.isEmpty()) {
@@ -784,19 +766,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
-    }
-
-    private static void applyRoutingAliasProperties(List<ApplicationContainer> result, ApplicationContainerCluster cluster) {
-        if (!cluster.serviceAliases().isEmpty()) {
-            result.forEach(container -> {
-                container.setProp("servicealiases", cluster.serviceAliases().stream().collect(Collectors.joining(",")));
-            });
-        }
-        if (!cluster.endpointAliases().isEmpty()) {
-            result.forEach(container -> {
-                container.setProp("endpointaliases", cluster.endpointAliases().stream().collect(Collectors.joining(",")));
-            });
-        }
     }
     
     private static void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
