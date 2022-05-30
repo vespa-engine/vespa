@@ -21,7 +21,7 @@ public class ContainerImageDownloaderTest {
         ContainerEngineMock podman = new ContainerEngineMock().asyncImageDownload(true);
         ContainerImageDownloader downloader = new ContainerImageDownloader(podman);
         TaskContext context = new TestTaskContext();
-        DockerImage image = DockerImage.fromString("registry.example.com/vespa:7.42");
+        DockerImage image = DockerImage.fromString("registry.example.com/repo/vespa:7.42");
 
         assertFalse("Download started", downloader.get(context, image, RegistryCredentials.none));
         assertFalse("Download pending", downloader.get(context, image, RegistryCredentials.none));

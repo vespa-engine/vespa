@@ -64,6 +64,9 @@ MMapPool::mmap(size_t sz) {
             }
         }
 #ifdef __linux__
+        if (madvise(buf, sz, MADV_HUGEPAGE) != 0) {
+            // Just an advise, not everyone will listen...
+        }
         if (sz >= _G_bigBlockLimit) {
             if (madvise(buf, sz, MADV_DONTDUMP) != 0) {
                 std::error_code ec(errno, std::system_category());

@@ -14,6 +14,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 /**
  * Generates a test descriptor file based on content of the compiled test classes
  *
@@ -54,7 +56,7 @@ public class GenerateTestDescriptorMojo extends AbstractMojo {
         try {
             Path descriptorFile = testClassesDirectory().resolve(TestDescriptor.DEFAULT_FILENAME);
             Files.createDirectories(descriptorFile.getParent());
-            Files.write(descriptorFile, descriptor.toJson().getBytes());
+            Files.write(descriptorFile, descriptor.toJson().getBytes(UTF_8));
         } catch (IOException e) {
             throw new MojoExecutionException("Failed to write test descriptor file: " + e.getMessage(), e);
         }

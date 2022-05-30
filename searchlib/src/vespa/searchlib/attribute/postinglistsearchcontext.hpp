@@ -45,21 +45,10 @@ PostingListSearchContextT<DataT>::lookupSingle()
         if (_postingList.isBitVector(typeId)) {
             const BitVectorEntry *bve = _postingList.getBitVectorEntry(_pidx);
             const GrowableBitVector *bv = bve->_bv.get();
-            if (_useBitVector) {
-                _gbv = bv;
-            } else {
-                _pidx = bve->_tree;
-                if (_pidx.valid()) { 
-                    auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
-                    _frozenRoot = frozenView.getRoot();
-                    if (!_frozenRoot.valid()) {
-                        _pidx = vespalib::datastore::EntryRef();
-                    }
-                } else {
-                    _gbv = bv; 
-                }
-            }
-        } else {
+            _bv = &bv->reader();
+            _pidx = bve->_tree;
+        }
+        if (_pidx.valid()) {
             auto frozenView = _postingList.getTreeEntry(_pidx)->getFrozenView(_postingList.getAllocator());
             _frozenRoot = frozenView.getRoot();
             if (!_frozenRoot.valid()) {
@@ -179,8 +168,8 @@ createPostingIterator(fef::TermFieldMatchData *matchData, bool strict)
         return search::BitVectorIterator::create(bv, bv->size(), *matchData, strict);
     }
     if (_uniqueValues == 1) {
-        if (_gbv != nullptr) {
-            return BitVectorIterator::create(_gbv, std::min(_gbv->size(), _docIdLimit), *matchData, strict);
+        if (_bv != nullptr && (!_pidx.valid() || _useBitVector || matchData->isNotNeeded())) {
+            return BitVectorIterator::create(_bv, std::min(_bv->size(), _docIdLimit), *matchData, strict);
         }
         if (!_pidx.valid()) {
             return std::make_unique<EmptySearch>();
@@ -217,9 +206,9 @@ template <typename DataT>
 unsigned int
 PostingListSearchContextT<DataT>::singleHits() const
 {
-    if (_gbv) {
+    if (_bv && !_pidx.valid()) {
         // Some inaccuracy is expected, data changes underfeet
-        return _gbv->countTrueBits();
+        return _bv->countTrueBits();
     }
     if (!_pidx.valid()) {
         return 0u;

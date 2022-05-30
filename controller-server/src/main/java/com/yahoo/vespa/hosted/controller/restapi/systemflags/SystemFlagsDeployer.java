@@ -4,10 +4,10 @@ package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.text.Text;
-import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.json.FlagData;
+import com.yahoo.vespa.hosted.controller.api.integration.ControllerIdentityProvider;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.SystemFlagsDataArchive;
 import com.yahoo.vespa.hosted.controller.restapi.systemflags.SystemFlagsDeployResult.OperationError;
@@ -46,7 +46,7 @@ class SystemFlagsDeployer  {
     private final ExecutorService executor = Executors.newCachedThreadPool(new DaemonThreadFactory("system-flags-deployer-"));
 
 
-    SystemFlagsDeployer(ServiceIdentityProvider identityProvider, SystemName system, Set<FlagsTarget> targets) {
+    SystemFlagsDeployer(ControllerIdentityProvider identityProvider, SystemName system, Set<FlagsTarget> targets) {
         this(new FlagsClient(identityProvider, targets), system, targets);
     }
 

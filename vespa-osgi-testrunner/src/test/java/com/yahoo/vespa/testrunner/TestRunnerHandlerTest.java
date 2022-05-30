@@ -5,7 +5,8 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.test.json.JsonTestHelper;
+import com.yahoo.vespa.testrunner.TestRunner.Status;
+import com.yahoo.vespa.testrunner.TestRunner.Suite;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,11 +22,10 @@ import java.util.logging.LogRecord;
 import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
+import static com.yahoo.slime.SlimeUtils.jsonToSlimeOrThrow;
+import static com.yahoo.slime.SlimeUtils.toJsonBytes;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author mortent
@@ -51,16 +51,18 @@ class TestRunnerHandlerTest {
                 .withFailures(List.of(new TestReport.Failure("Foo.bar()", exception)))
                 .withLogs(logRecords).build();
 
-        aggregateRunner = AggregateTestRunner.of(List.of(new MockJunitRunner(TestRunner.Status.SUCCESS, testReport)));
+        aggregateRunner = AggregateTestRunner.of(List.of(new MockRunner(TestRunner.Status.SUCCESS, testReport)));
         testRunnerHandler = new TestRunnerHandler(Executors.newSingleThreadExecutor(), aggregateRunner);
     }
 
     @Test
     public void createsCorrectTestReport() throws IOException {
+        aggregateRunner.test(Suite.SYSTEM_TEST, new byte[0]);
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/report", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"summary\":{\"success\":1,\"failed\":2,\"ignored\":3,\"aborted\":4,\"inconclusive\":5,\"failures\":[{\"testName\":\"Foo.bar()\",\"testError\":\"org.junit.ComparisonFailure: expected:<foo> but was:<bar>\",\"exception\":\"java.lang.RuntimeException: org.junit.ComparisonFailure: expected:<foo> but was:<bar>\\n\\tat Foo.bar(Foo.java:1123)\\n\"}]},\"output\":[\"00:00:12.000 Tests started\"]}");
+        assertEquals(new String(toJsonBytes(jsonToSlimeOrThrow("{\"summary\":{\"success\":1,\"failed\":2,\"ignored\":3,\"aborted\":4,\"inconclusive\":5,\"failures\":[{\"testName\":\"Foo.bar()\",\"testError\":\"org.junit.ComparisonFailure: expected:<foo> but was:<bar>\",\"exception\":\"java.lang.RuntimeException: org.junit.ComparisonFailure: expected:<foo> but was:<bar>\\n\\tat Foo.bar(Foo.java:1123)\\n\"}]},\"output\":[\"00:00:12.000 Tests started\"]}").get(), false), UTF_8),
+                     new String(toJsonBytes(jsonToSlimeOrThrow(out.toByteArray()).get(), false), UTF_8));
     }
 
     @Test
@@ -71,7 +73,8 @@ class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        JsonTestHelper.assertJsonEquals(out.toString(UTF_8), "{\"logRecords\":[{\"id\":0,\"at\":12000,\"type\":\"info\",\"message\":\"Tests started\"}]}");
+        assertEquals(new String(toJsonBytes(jsonToSlimeOrThrow("{\"logRecords\":[{\"id\":0,\"at\":12000,\"type\":\"info\",\"message\":\"Tests started\"}]}").get(), false), UTF_8),
+                     new String(toJsonBytes(jsonToSlimeOrThrow(out.toByteArray()).get(), false), UTF_8));
 
         // Should not get old log
         response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log?after=0", GET));
@@ -82,11 +85,9 @@ class TestRunnerHandlerTest {
 
     @Test
     public void returnsEmptyResponsesWhenReportNotReady() throws IOException {
-        TestRunner testRunner = mock(TestRunner.class);
-        when(testRunner.getReport()).thenReturn(null);
-        testRunnerHandler = new TestRunnerHandler(
-                Executors.newSingleThreadExecutor(),
-                ComponentRegistry.singleton(new ComponentId("runner"), testRunner));
+        testRunnerHandler = new TestRunnerHandler(Executors.newSingleThreadExecutor(),
+                                                  ComponentRegistry.singleton(new ComponentId("runner"),
+                                                                              new MockRunner(Status.NOT_STARTED, null)));
 
         {
             HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
@@ -111,12 +112,12 @@ class TestRunnerHandlerTest {
         return logRecord;
     }
 
-    private static class MockJunitRunner implements TestRunner {
+    private static class MockRunner implements TestRunner {
 
         private final TestRunner.Status status;
         private final TestReport testReport;
 
-        public MockJunitRunner(TestRunner.Status status, TestReport testReport) {
+        public MockRunner(TestRunner.Status status, TestReport testReport) {
 
             this.status = status;
             this.testReport = testReport;
@@ -129,9 +130,10 @@ class TestRunnerHandlerTest {
 
         @Override
         public Collection<LogRecord> getLog(long after) {
-            return getReport().logLines().stream()
-                              .filter(entry -> entry.getSequenceNumber() > after)
-                              .collect(Collectors.toList());
+            return getReport() == null ? List.of()
+                                       : getReport().logLines().stream()
+                                                    .filter(entry -> entry.getSequenceNumber() > after)
+                                                    .collect(Collectors.toList());
         }
 
         @Override

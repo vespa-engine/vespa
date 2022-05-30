@@ -83,7 +83,7 @@ protected:
 
     std::vector<uint32_t> get_active_lids() {
         std::vector<uint32_t> result;
-        auto active_lids = _allocator.getActiveLids();
+        const auto &active_lids = _allocator.getActiveLids();
         uint32_t lid = active_lids.getNextTrueBit(1);
         while (lid < active_lids.size()) {
             if (active_lids.testBit(lid)) {

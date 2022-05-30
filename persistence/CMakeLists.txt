@@ -4,14 +4,8 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
-    staging_vespalib
-    fnet
     document
-    persistencetypes
-    config_cloudconfig
     vdslib
-    metrics
-    configdefinitions
 
     LIBS
     src/vespa/persistence

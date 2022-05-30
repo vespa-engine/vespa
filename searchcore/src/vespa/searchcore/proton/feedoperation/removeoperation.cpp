@@ -7,7 +7,6 @@ using document::BucketId;
 using document::DocumentId;
 using document::GlobalId;
 using document::DocumentTypeRepo;
-using storage::spi::Timestamp;
 using vespalib::make_string;
 
 namespace proton {

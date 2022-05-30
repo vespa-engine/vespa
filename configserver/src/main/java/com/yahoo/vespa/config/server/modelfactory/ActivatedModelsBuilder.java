@@ -11,7 +11,6 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
@@ -160,7 +159,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readQuota(),
                                                zkClient.readTenantSecretStores(),
                                                secretStore,
-                                               zkClient.readOperatorCertificates());
+                                               zkClient.readOperatorCertificates(),
+                                               zkClient.readCloudAccount());
     }
 
 }

@@ -4,9 +4,9 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.derived.AttributeFields;
-import com.yahoo.searchdefinition.derived.DerivedConfiguration;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.derived.AttributeFields;
+import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
@@ -77,13 +77,7 @@ public class StreamingSearchCluster extends SearchCluster implements
         if ( ! schema.getName().equals(docTypeName))
             throw new IllegalArgumentException("Document type name '" + docTypeName +
                                                "' must be the same as the schema name '" + schema.getName() + "'");
-        this.schemaConfig = new DerivedConfiguration(schema,
-                                                     deployState.getDeployLogger(),
-                                                     deployState.getProperties(),
-                                                     deployState.rankProfileRegistry(),
-                                                     deployState.getQueryProfiles().getRegistry(),
-                                                     deployState.getImportedModels(),
-                                                     deployState.getExecutor());
+        this.schemaConfig = new DerivedConfiguration(schema, deployState);
     }
 
     @Override

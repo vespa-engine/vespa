@@ -95,6 +95,7 @@ RankProcessor::initQueryEnvironment()
                 terms[i].getTerm()->index().c_str(), terms[i].getTerm()->getTerm());
         }
     }
+    _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());
     _match_data = _mdLayout.createMatchData();
 }
 

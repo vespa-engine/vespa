@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
@@ -86,7 +87,7 @@ public class LoadBalancerProvisioner {
             ClusterSpec.Id clusterId = effectiveId(cluster);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
             NodeList nodes = nodesOf(clusterId, application);
-            prepare(loadBalancerId, nodes);
+            prepare(loadBalancerId, nodes, requestedNodes.cloudAccount());
         }
     }
 
@@ -177,10 +178,10 @@ public class LoadBalancerProvisioner {
         return loadBalancerId;
     }
 
-    private void prepare(LoadBalancerId id, NodeList nodes) {
+    private void prepare(LoadBalancerId id, NodeList nodes, Optional<CloudAccount> cloudAccount) {
         Instant now = nodeRepository.clock().instant();
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
-        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer);
+        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, cloudAccount);
         LoadBalancer newLoadBalancer;
         LoadBalancer.State fromState = null;
         if (loadBalancer.isEmpty()) {
@@ -199,8 +200,9 @@ public class LoadBalancerProvisioner {
         LoadBalancerId id = new LoadBalancerId(transaction.application(), cluster);
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         if (loadBalancer.isEmpty()) throw new IllegalArgumentException("Could not active load balancer that was never prepared: " + id);
+        if (loadBalancer.get().instance().isEmpty()) throw new IllegalArgumentException("Activating " + id + ", but prepare never provisioned a load balancer instance");
 
-        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer);
+        Optional<LoadBalancerInstance> instance = provisionInstance(id, nodes, loadBalancer, loadBalancer.get().instance().get().cloudAccount());
         LoadBalancer.State state = instance.isPresent() ? LoadBalancer.State.active : loadBalancer.get().state();
         LoadBalancer newLoadBalancer = loadBalancer.get().with(instance).with(state, now);
         db.writeLoadBalancers(List.of(newLoadBalancer), loadBalancer.get().state(), transaction.nested());
@@ -208,7 +210,9 @@ public class LoadBalancerProvisioner {
     }
 
     /** Provision or reconfigure a load balancer instance, if necessary */
-    private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, NodeList nodes, Optional<LoadBalancer> currentLoadBalancer) {
+    private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, NodeList nodes,
+                                                             Optional<LoadBalancer> currentLoadBalancer,
+                                                             Optional<CloudAccount> cloudAccount) {
         boolean shouldDeactivateRouting = deactivateRouting.with(FetchVector.Dimension.APPLICATION_ID,
                                                                  id.application().serializedForm())
                                                            .value();
@@ -221,7 +225,7 @@ public class LoadBalancerProvisioner {
         if (hasReals(currentLoadBalancer, reals)) return currentLoadBalancer.get().instance();
         log.log(Level.INFO, () -> "Provisioning instance for " + id + ", targeting: " + reals);
         try {
-            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals),
+            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals, cloudAccount),
                                               shouldDeactivateRouting || allowEmptyReals(currentLoadBalancer)));
         } catch (Exception e) {
             log.log(Level.WARNING, e, () -> "Could not (re)configure " + id + ", targeting: " +

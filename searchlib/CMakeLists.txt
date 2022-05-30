@@ -4,16 +4,12 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
-    staging_vespalib
     vespaeval
     fnet
     configdefinitions
     metrics
-    fastlib_fast
     document
     config_cloudconfig
-    persistencetypes
-    searchcommon
 
     EXTERNAL_DEPENDS
     ${VESPA_GLIBC_RT_LIB}
@@ -54,6 +50,8 @@ vespa_define_module(
     src/vespa/searchlib/transactionlog
     src/vespa/searchlib/uca
     src/vespa/searchlib/util
+    src/vespa/searchcommon/attribute
+    src/vespa/searchcommon/common
 
     APPS
     src/apps/docstore
@@ -214,6 +212,8 @@ vespa_define_module(
     src/tests/rankingexpression/intrinsic_blueprint_adapter
     src/tests/ranksetup
     src/tests/ranksetup/verify_feature
+    src/tests/searchcommon/attribute/config
+    src/tests/searchcommon/schema
     src/tests/sort
     src/tests/sortresults
     src/tests/sortspec
@@ -234,7 +234,7 @@ vespa_define_module(
     src/tests/vespa-fileheader-inspect
 )
 
-install_java_artifact(searchlib)
+install_jar(searchlib.jar)
 
 vespa_install_script(src/main/sh/vespa-gbdt-converter bin)
 vespa_install_script(src/main/sh/vespa-treenet-converter bin)

@@ -9,13 +9,15 @@ class ConnectionLogHandler {
     private final LogFileHandler<ConnectionLogEntry> logFileHandler;
 
     public ConnectionLogHandler(String logDirectoryName, int bufferSize, String clusterName,
-                                int queueSize, LogWriter<ConnectionLogEntry> logWriter) {
+                                int queueSize, LogWriter<ConnectionLogEntry> logWriter, boolean useClusterIdInFileName) {
         logFileHandler = new LogFileHandler<>(
                 LogFileHandler.Compression.ZSTD,
                 bufferSize,
-                String.format("logs/vespa/%s/ConnectionLog.%s.%s", logDirectoryName, clusterName, "%Y%m%d%H%M%S"),
+                useClusterIdInFileName ? String.format("logs/vespa/%s/ConnectionLog.%s.%s", logDirectoryName, clusterName, "%Y%m%d%H%M%S") :
+                                          String.format("logs/vespa/%s/ConnectionLog.%s", logDirectoryName, "%Y%m%d%H%M%S"),
                 "0 60 ...",
-                String.format("ConnectionLog.%s", clusterName),
+                useClusterIdInFileName ? String.format("ConnectionLog.%s", clusterName) :
+                                          "ConnectionLog",
                 queueSize,
                 "connection-logger",
                 logWriter);

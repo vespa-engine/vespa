@@ -3,6 +3,7 @@ package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -1507,6 +1508,29 @@ public class DeploymentSpecTest {
                                                "    </endpoints>" +
                                                "  </instance>\n" +
                                                "</deployment>").deployableHashCode());
+    }
+
+    @Test
+    public void cloudAccount() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0' cloud-account='100000000000'>" +
+                "    <instance id='beta' cloud-account='200000000000'>" +
+                "      <prod>" +
+                "          <region>us-west-1</region>" +
+                "      </prod>" +
+                "    </instance>" +
+                "    <instance id='main'>" +
+                "      <prod>" +
+                "          <region cloud-account='300000000000'>us-east-1</region>" +
+                "          <region>eu-west-1</region>" +
+                "      </prod>" +
+                "    </instance>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        assertEquals(Optional.of(new CloudAccount("200000000000")), spec.requireInstance("beta").cloudAccount(Environment.prod, RegionName.from("us-west-1")));
+        assertEquals(Optional.of(new CloudAccount("300000000000")), spec.requireInstance("main").cloudAccount(Environment.prod, RegionName.from("us-east-1")));
+        assertEquals(Optional.of(new CloudAccount("100000000000")), spec.requireInstance("main").cloudAccount(Environment.prod, RegionName.from("eu-west-1")));
     }
 
     private static void assertInvalid(String deploymentSpec, String errorMessagePart) {

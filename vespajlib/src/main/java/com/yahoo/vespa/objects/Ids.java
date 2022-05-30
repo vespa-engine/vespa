@@ -3,7 +3,7 @@ package com.yahoo.vespa.objects;
 
 /**
  * This is a class containing the global ids that are given out.
- * Must be in sync with version for c++ in staging_vespalib/src/vespalib/objects/ids.h
+ * Must be in sync with version for c++ in vespalib/src/vespalib/objects/ids.h
  *
  * @author baldersheim
  */

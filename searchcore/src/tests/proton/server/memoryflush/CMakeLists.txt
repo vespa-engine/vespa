@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_memoryflush_test_app TEST
     DEPENDS
     searchcore_server
     searchcore_flushengine
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_memoryflush_test_app COMMAND searchcore_memoryflush_test_app)

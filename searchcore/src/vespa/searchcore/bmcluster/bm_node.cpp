@@ -202,7 +202,7 @@ std::shared_ptr<DocumentDBConfig> make_document_db_config(std::shared_ptr<Docume
             schema,
             std::make_shared<proton::DocumentDBMaintenanceConfig>(),
             search::LogDocumentStore::Config(),
-            std::make_shared<const proton::ThreadingServiceConfig>(proton::ThreadingServiceConfig::make(1)),
+            std::make_shared<const proton::ThreadingServiceConfig>(proton::ThreadingServiceConfig::make()),
             std::make_shared<const proton::AllocConfig>(),
             "client",
             doc_type_name.getName());

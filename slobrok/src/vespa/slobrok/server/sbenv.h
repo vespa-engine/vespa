@@ -12,8 +12,8 @@
 #include "union_service_map.h"
 #include <vespa/config-slobroks.h>
 #include <vespa/slobrok/cfg.h>
-#include <vespa/vespalib/net/simple_health_producer.h>
-#include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/vespalib/net/http/simple_health_producer.h>
+#include <vespa/vespalib/net/http/simple_component_config_producer.h>
 
 class FastOS_ThreadPool;
 class FNET_Transport;

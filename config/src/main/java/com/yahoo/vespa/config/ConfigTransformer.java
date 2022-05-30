@@ -28,7 +28,7 @@ public class ConfigTransformer<T extends ConfigInstance> {
     private final Class<T> clazz;
 
     private static volatile PathAcquirer pathAcquirer = new IdentityPathAcquirer();
-    private static volatile UrlDownloader urlDownloader;
+    private static volatile UrlDownloader urlDownloader = null;
 
     /**
      * For internal use only *

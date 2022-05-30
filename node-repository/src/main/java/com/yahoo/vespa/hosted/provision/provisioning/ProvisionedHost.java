@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
@@ -34,10 +35,11 @@ public class ProvisionedHost {
     private final List<Address> nodeAddresses;
     private final NodeResources nodeResources;
     private final Version osVersion;
+    private final Optional<CloudAccount> cloudAccount;
 
     public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType,
                            Optional<ApplicationId> exclusiveToApplicationId, Optional<ClusterSpec.Type> exclusiveToClusterType,
-                           List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion) {
+                           List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion, Optional<CloudAccount> cloudAccount) {
         this.id = Objects.requireNonNull(id, "Host id must be set");
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
@@ -47,6 +49,7 @@ public class ProvisionedHost {
         this.nodeAddresses = validateNodeAddresses(nodeAddresses);
         this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
         this.osVersion = Objects.requireNonNull(osVersion, "OS version must be set");
+        this.cloudAccount = Objects.requireNonNull(cloudAccount, "Cloud account must be set");
         if (!hostType.isHost()) throw new IllegalArgumentException(hostType + " is not a host");
     }
 
@@ -60,11 +63,12 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
-        Node.Builder builder = Node
-                .create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor, hostType)
-                .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
+        Node.Builder builder = Node.create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor,
+                                           hostType)
+                                   .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
         exclusiveToApplicationId.ifPresent(builder::exclusiveToApplicationId);
         exclusiveToClusterType.ifPresent(builder::exclusiveToClusterType);
+        cloudAccount.ifPresent(builder::cloudAccount);
         return builder.build();
     }
 
@@ -82,6 +86,7 @@ public class ProvisionedHost {
     public List<Address> nodeAddresses() { return nodeAddresses; }
     public NodeResources nodeResources() { return nodeResources; }
     public Version osVersion() { return osVersion; }
+    public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
 
     public String nodeHostname() { return nodeAddresses.get(0).hostname(); }
 
@@ -98,12 +103,13 @@ public class ProvisionedHost {
                exclusiveToClusterType.equals(that.exclusiveToClusterType) &&
                nodeAddresses.equals(that.nodeAddresses) &&
                nodeResources.equals(that.nodeResources) &&
-               osVersion.equals(that.osVersion);
+               osVersion.equals(that.osVersion) &&
+               cloudAccount.equals(that.cloudAccount);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, nodeAddresses, nodeResources, osVersion);
+        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, nodeAddresses, nodeResources, osVersion, cloudAccount);
     }
 
     @Override
@@ -118,6 +124,7 @@ public class ProvisionedHost {
                ", nodeAddresses=" + nodeAddresses +
                ", nodeResources=" + nodeResources +
                ", osVersion=" + osVersion +
+               ", cloudAccount=" + cloudAccount +
                '}';
     }
 

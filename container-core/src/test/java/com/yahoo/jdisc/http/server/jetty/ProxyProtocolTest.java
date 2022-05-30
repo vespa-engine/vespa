@@ -31,8 +31,10 @@ import static com.yahoo.yolean.Exceptions.uncheckInterrupted;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
 import static org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author bjorncs
@@ -117,6 +119,20 @@ class ProxyProtocolTest {
         assertNotEquals(proxyLocalPort, connectionLog.logEntries().get(0).localPort().get().intValue());
     }
 
+    @Test
+    void requireThatSslConnectionFailsWhenMixedModeIsDisabled() throws Exception {
+        JettyTestDriver driver = createSslWithProxyProtocolTestDriver(
+                certificateFile, privateKeyFile, requestLogMock, connectionLog, false);
+        try {
+            sendJettyClientRequest(driver, certificateFile, null);
+            fail("Expected exception");
+        } catch (ExecutionException e) {
+            assertInstanceOf(IOException.class, e.getCause());
+        } finally {
+            assertTrue(driver.close());
+        }
+    }
+
     private static JettyTestDriver createSslWithProxyProtocolTestDriver(
             Path certificateFile, Path privateKeyFile, RequestLog requestLog,
             ConnectionLog connectionLog, boolean mixedMode) {
@@ -142,6 +158,7 @@ class ProxyProtocolTest {
     private ContentResponse sendJettyClientRequest(JettyTestDriver testDriver, Path certificateFile, Object tag)
             throws Exception {
         HttpClient client = createJettyHttpClient(certificateFile);
+        ExecutionException cause = null;
         try {
             int maxAttempts = 3;
             for (int attempt = 0; attempt < maxAttempts; attempt++) {
@@ -152,13 +169,14 @@ class ProxyProtocolTest {
                     assertEquals(200, response.getStatus());
                     return response;
                 } catch (ExecutionException e) {
-                    // Retry when the server closes the connection before the TLS handshake is completed. This have been observed in CI.
+                    // Retry when the server closes the connection before the TLS handshake is completed. This has been observed in CI.
                     // We have been unable to reproduce this locally. The cause is therefor currently unknown.
                     log.log(Level.WARNING, String.format("Attempt %d failed: %s", attempt, e.getMessage()), e);
                     Thread.sleep(10);
+                    cause = e;
                 }
             }
-            throw new AssertionError("Failed to send request, see log for details");
+            throw cause;
         } finally {
             client.stop();
             client.destroy();

@@ -13,7 +13,7 @@ namespace search::attribute {
 using queryeval::SearchIterator;
 
 template <typename T, typename M>
-MultiNumericFlagSearchContext<T, M>::MultiNumericFlagSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, vespalib::ConstArrayRef<BitVector *> bit_vectors)
+MultiNumericFlagSearchContext<T, M>::MultiNumericFlagSearchContext(std::unique_ptr<QueryTermSimple> qTerm, const AttributeVector& toBeSearched, MultiValueMappingReadView<M> mv_mapping_read_view, AtomicBitVectorsRef bit_vectors)
     : MultiNumericSearchContext<T, M>(std::move(qTerm), toBeSearched, mv_mapping_read_view),
       _bit_vectors(bit_vectors),
       _zeroHits(false)

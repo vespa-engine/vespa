@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.lb;
 
 import ai.vespa.http.DomainName;
 import com.google.common.collect.ImmutableSortedSet;
+import com.yahoo.config.provision.CloudAccount;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -21,14 +22,16 @@ public class LoadBalancerInstance {
     private final Set<Integer> ports;
     private final Set<String> networks;
     private final Set<Real> reals;
+    private final Optional<CloudAccount> cloudAccount;
 
     public LoadBalancerInstance(DomainName hostname, Optional<DnsZone> dnsZone, Set<Integer> ports, Set<String> networks,
-                                Set<Real> reals) {
+                                Set<Real> reals, Optional<CloudAccount> cloudAccount) {
         this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
         this.dnsZone = Objects.requireNonNull(dnsZone, "dnsZone must be non-null");
         this.ports = ImmutableSortedSet.copyOf(requirePorts(ports));
         this.networks = ImmutableSortedSet.copyOf(Objects.requireNonNull(networks, "networks must be non-null"));
         this.reals = ImmutableSortedSet.copyOf(Objects.requireNonNull(reals, "targets must be non-null"));
+        this.cloudAccount = Objects.requireNonNull(cloudAccount, "cloudAccount must be non-null");
     }
 
     /** Fully-qualified domain name of this load balancer. This hostname can be used for query and feed */
@@ -56,9 +59,14 @@ public class LoadBalancerInstance {
         return reals;
     }
 
+    /** Cloud account of this load balancer. This is empty if the load balancer is in the zone's default account */
+    public Optional<CloudAccount> cloudAccount() {
+        return cloudAccount;
+    }
+
     /** Returns a copy of this with reals set to given reals */
     public LoadBalancerInstance withReals(Set<Real> reals) {
-        return new LoadBalancerInstance(hostname, dnsZone, ports, networks, reals);
+        return new LoadBalancerInstance(hostname, dnsZone, ports, networks, reals, cloudAccount);
     }
 
     private static Set<Integer> requirePorts(Set<Integer> ports) {

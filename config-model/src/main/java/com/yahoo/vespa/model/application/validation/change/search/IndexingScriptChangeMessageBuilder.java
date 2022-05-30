@@ -1,12 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.application.validation.change.search;
 
-import com.yahoo.searchdefinition.Schema;
-import com.yahoo.searchdefinition.document.ImmutableSDField;
-import com.yahoo.searchdefinition.document.Matching;
-import com.yahoo.searchdefinition.document.MatchType;
-import com.yahoo.searchdefinition.document.NormalizeLevel;
-import com.yahoo.searchdefinition.document.Stemming;
+import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.ImmutableSDField;
+import com.yahoo.schema.document.Matching;
+import com.yahoo.schema.document.MatchType;
+import com.yahoo.schema.document.NormalizeLevel;
+import com.yahoo.schema.document.Stemming;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 

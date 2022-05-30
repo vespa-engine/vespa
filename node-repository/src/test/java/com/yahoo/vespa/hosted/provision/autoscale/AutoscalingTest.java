@@ -239,7 +239,7 @@ public class AutoscalingTest {
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         NodeResources defaultResources =
-                new CapacityPolicies(tester.nodeRepository()).defaultNodeResources(cluster1.type(), application1);
+                new CapacityPolicies(tester.nodeRepository()).defaultNodeResources(cluster1, application1, false);
 
         // deploy
         tester.deploy(application1, cluster1, Capacity.from(min, max));

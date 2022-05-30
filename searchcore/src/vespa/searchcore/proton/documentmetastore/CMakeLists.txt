@@ -20,4 +20,5 @@ vespa_add_library(searchcore_documentmetastore STATIC
     searchcore_attribute
     searchcore_bucketdb
     searchcore_initializer
+    searchcorespi
 )

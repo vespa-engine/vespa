@@ -3,33 +3,30 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * @author mpolden
  */
-public class LoadBalancersResponse extends HttpResponse {
+public class LoadBalancersResponse extends SlimeJsonResponse {
 
     private final NodeRepository nodeRepository;
     private final HttpRequest request;
 
     public LoadBalancersResponse(HttpRequest request, NodeRepository nodeRepository) {
-        super(200);
         this.request = request;
         this.nodeRepository = nodeRepository;
+        Cursor root = slime.setObject();
+        toSlime(loadBalancers(), root);
     }
 
     private Optional<ApplicationId> application() {
@@ -48,16 +45,9 @@ public class LoadBalancersResponse extends HttpResponse {
         return loadBalancers.asList();
     }
 
-    @Override
-    public String getContentType() { return "application/json"; }
-
-    @Override
-    public void render(OutputStream stream) throws IOException {
-        Slime slime = new Slime();
-        Cursor root = slime.setObject();
-        Cursor loadBalancerArray = root.setArray("loadBalancers");
-
-        loadBalancers().forEach(lb -> {
+    private void toSlime(List<LoadBalancer> loadBalancers, Cursor object) {
+        Cursor loadBalancerArray = object.setArray("loadBalancers");
+        loadBalancers.forEach(lb -> {
             Cursor lbObject = loadBalancerArray.addObject();
             lbObject.setString("id", lb.id().serializedForm());
             lbObject.setString("state", lb.state().name());
@@ -84,9 +74,10 @@ public class LoadBalancersResponse extends HttpResponse {
                     realObject.setLong("port", real.port());
                 });
             });
+            lb.instance()
+              .flatMap(LoadBalancerInstance::cloudAccount)
+              .ifPresent(cloudAccount -> lbObject.setString("cloudAccount", cloudAccount.value()));
         });
-
-        new JsonFormat(true).encode(stream, slime);
     }
 
 }

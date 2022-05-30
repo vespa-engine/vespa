@@ -2,8 +2,8 @@
 #pragma once
 
 #include "rpchooks.h"
-#include <vespa/vespalib/net/metrics_producer.h>
-#include <vespa/vespalib/net/simple_metrics_producer.h>
+#include <vespa/vespalib/net/http/metrics_producer.h>
+#include <vespa/vespalib/net/http/simple_metrics_producer.h>
 
 class FNET_Transport;
 

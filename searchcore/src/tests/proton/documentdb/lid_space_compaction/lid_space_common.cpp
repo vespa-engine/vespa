@@ -106,7 +106,7 @@ MyHandler::createMoveOperation(const search::DocumentMetaData &document, uint32_
     assert(document.lid > moveToLid);
     _moveFromLid = document.lid;
     const auto & entry = _docs[document.lid];
-    auto op = std::make_unique<MoveOperation>(entry.first.bucketId, entry.first.timestamp, entry.second,
+    auto op = std::make_unique<MoveOperation>(entry.first.bucketId, storage::spi::Timestamp(entry.first.timestamp), entry.second,
                                               DbDocumentId(document.lid), 0);
     op->setTargetLid(moveToLid);
     return op;

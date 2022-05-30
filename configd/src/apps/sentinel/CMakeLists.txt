@@ -25,5 +25,5 @@ vespa_add_executable(configd_config-sentinel_app
     DEPENDS
     fnet
     configdefinitions
-    staging_vespalib
+    vespalib
 )

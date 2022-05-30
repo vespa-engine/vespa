@@ -91,7 +91,7 @@ private UriPath ::= ('H'|'h') ('T'|'t') ('T'|'t') ('P'|'p') ('S'|'s')? ':' ('//'
 OnnxModelDefinition ::= onnx-model IdentifierVal '{' OnnxModelBody '}'
 OnnxModelBody ::= OnnxModelBodyOptions*
 private OnnxModelBodyOptions ::= (file ':' FilePath) | (uri ':' UriPath) | 
-                                 ((input | output) (IdentifierVal | STRING_REG) ':' ('.' | '/' | '(' | ')' | IdentifierWithDashVal | WORD_REG)) 
+                                 ((input | output) (RankFeature | IdentifierVal | STRING_REG) ':' ('.' | '/' | '(' | ')' | IdentifierWithDashVal | WORD_REG))
 
 SchemaAnnotationDefinition ::= AnnotationDefinition
                         { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
@@ -110,7 +110,7 @@ AnnotationFieldDefinition ::= field IdentifierVal type FieldTypeName '{' '}'
 //    NOTE: These must end by "Expr" - see this line above: extends(".*Expr")=RankingExpression
 //          The *Expr alternatives are consumed greedily so order matters.
 //-------------------------
-RankingExpression ::= LiteralTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
+RankingExpression ::= LiteralOrGenerateTensorExpr | FilePathExpr | ParenthesisedExpr | BooleanExpr | ArithmeticExpr | IfFunctionExpr |
                       QueryDefinitionExpr | FunctionCallOrLambdaExpr | InListRankingExpr | PrimitiveExpr | SliceExpr
 
 FilePathExpr ::= file ':' (FilePath | WordWrapper)
@@ -139,6 +139,8 @@ PrimitiveExpr ::= ( (('-')? INTEGER_REG) | (('-')? FLOAT_REG) | IdentifierVal | 
 
 SliceExpr ::= RankingExpression ( SliceKey | SliceIndex | FullTensorAddress )
 
+GenerateExpr ::= TensorType ParenthesisedExpr
+
 SliceKey ::= '{' Label '}'
 SliceIndex ::= '[' RankingExpression ']'
 
@@ -148,13 +150,16 @@ KeyValue ::= IdentifierVal ':' ( Label | RankingExpression )
 
 Label ::= IdentifierVal | STRING_REG
 
-LiteralTensorExpr ::= TensorType ':' '{' TensorValue ( ',' TensorValue )* '}'
+LiteralOrGenerateTensorExpr ::= TensorType (
+                                  ( ':' TensorValue ) | // literal verbose form tensor
+                                  ParenthesisedExpr // generate tensor
+                                )
 
-TensorValue ::= CellAddress ':' RankingExpression
-
-CellAddress ::= Label | FullTensorAddress
-
-LambdaExpr ::= IdentifierWithDashVal '(' IdentifierVal (COMMA IdentifierVal)* ')' ParenthesisedExpr
+TensorValue ::= MappedTensorValue | ArrayTensorValues
+MappedTensorValue ::= '{' MappedTensorBlock ( ',' MappedTensorBlock )* '}'
+MappedTensorBlock ::= TensorAddress ':' ( FLOAT_REG | ArrayTensorValues )
+ArrayTensorValues ::= '[' ( FLOAT_REG | ArrayTensorValues ) ( ',' ( FLOAT_REG | ArrayTensorValues ) )* ']'
+TensorAddress ::= Label | FullTensorAddress
 
 //-------------------------
 //-- Rank Profile rules ---
@@ -187,8 +192,10 @@ private MinHitsDefinition ::= min-hits-per-thread ':' ('-')? INTEGER_REG
 private NumSearchPartitionDefinition ::= num-search-partition ':' INTEGER_REG
 FieldWeightDefinition ::= weight DottedIdentifiers ':' INTEGER_REG
 StrictDefinition ::= strict ':' (true | false)
-InputsDefinition ::= inputs '{' InputsBody '}'
-InputsBody ::= (QueryDefinition TensorType)*
+InputsDefinition ::= inputs '{' InputDefinition* '}'
+InputDefinition ::= ( QueryDefinition | IdentifierVal)
+                    (':')?
+                    ( TensorType | "double" )? (':' ( TensorValue | FLOAT_REG | INTEGER_REG) )?
 
 FirstPhaseDefinition ::= first-phase '{' FirstPhaseBody '}'  { mixin="ai.vespa.intellij.schema.psi.impl.SdFirstPhaseDefinitionMixin" }
 FirstPhaseBody ::= FirstPhaseBodyOptions* // Does not support zero-or-one occurrences
@@ -216,12 +223,16 @@ ArgumentDefinition ::= IdentifierVal
                        }
 
 SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
-
+i
 MatchFeaturesDefinition ::= match-features ((':' RankFeature+) | ((inherits IdentifierWithDashVal)? '{' RankFeature* '}'))
 
 RankFeaturesDefinition ::= rank-features ((':' RankFeature+) | ('{' RankFeature* '}'))
 
-ConstantsDefinition ::= constants '{' (IdentifierVal ':' RankPropertiesValue)* '}'
+ConstantsDefinition ::= constants '{' InnerConstantDefinition* '}'
+
+InnerConstantDefinition ::= ( ("constant" '(' IdentifierVal ')') | IdentifierVal )
+                            (':')? ( TensorType | "double" )?
+                            (':')? ( TensorValue | FLOAT_REG | INTEGER_REG | (file ':' FilePath) | (uri ':' UriPath))
 
 RankFeature ::= QueryDefinition | ItemRawScoreDefinition | FunctionCallExpr | DottedIdentifierWithDash
 QueryDefinition ::= "query" '(' IdentifierWithDashVal ')'

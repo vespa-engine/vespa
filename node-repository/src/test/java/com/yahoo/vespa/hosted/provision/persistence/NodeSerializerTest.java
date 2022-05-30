@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.InstanceName;
@@ -486,6 +487,17 @@ public class NodeSerializerTest {
         node = node.with(trustStoreItems);
         node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
         assertEquals(trustStoreItems, node.trustedCertificates());
+    }
+
+    @Test
+    public void cloud_account_serialization() {
+        CloudAccount account = new CloudAccount("012345678912");
+        Node node = Node.create("id", "host1.example.com", nodeFlavors.getFlavorOrThrow("default"), State.provisioned, NodeType.host)
+                        .cloudAccount(account)
+                        .exclusiveToApplicationId(ApplicationId.defaultId())
+                        .build();
+        node = nodeSerializer.fromJson(State.provisioned, nodeSerializer.toJson(node));
+        assertEquals(account, node.cloudAccount().get());
     }
 
     private byte[] createNodeJson(String hostname, String... ipAddress) {

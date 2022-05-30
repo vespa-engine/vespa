@@ -11,7 +11,6 @@
 #include "ipruneremoveddocumentshandler.h"
 #include "tlswriter.h"
 #include "transactionlogmanager.h"
-#include <persistence/spi/types.h>
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/feedtoken.h>
@@ -58,7 +57,6 @@ private:
     using Packet = search::transactionlog::Packet;
     using RPC = search::transactionlog::client::RPC;
     using SerialNum = search::SerialNum;
-    using Timestamp = storage::spi::Timestamp;
     using BucketId =  document::BucketId;
     using FeedStateSP = std::shared_ptr<FeedState>;
     using FeedOperationUP = std::unique_ptr<FeedOperation>;

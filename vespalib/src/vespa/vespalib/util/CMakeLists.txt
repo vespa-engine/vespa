@@ -2,6 +2,7 @@
 vespa_add_library(vespalib_vespalib_util OBJECT
     SOURCES
     active.cpp
+    adaptive_sequenced_executor.cpp
     address_space.cpp
     alloc.cpp
     approx.cpp
@@ -12,32 +13,45 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     benchmark_timer.cpp
     bfloat16.cpp
     binary_hamming_distance.cpp
+    bits.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
+    cgroup_resource_limits.cpp
     classname.cpp
+    clock.cpp
     compress.cpp
     compressor.cpp
     count_down_latch.cpp
     cpu_usage.cpp
+    crc.cpp
     destructor_callbacks.cpp
+    doom.cpp
+    document_runnable.cpp
     dual_merge_director.cpp
     error.cpp
     exception.cpp
     exceptions.cpp
     executor_idle_tracking.cpp
     file_area_freelist.cpp
+    foregroundtaskexecutor.cpp
     gate.cpp
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp
+    growablebytebuffer.cpp
     hdr_abort.cpp
     host_name.cpp
+    jsonexception.cpp
+    jsonstream.cpp
+    jsonwriter.cpp
     invokeserviceimpl.cpp
+    isequencedtaskexecutor.cpp
     issue.cpp
     joinable.cpp
     latch.cpp
     left_right_heap.cpp
     lz4compressor.cpp
+    malloc_mmap_guard.cpp
     md5.c
     memoryusage.cpp
     mmap_file_allocator.cpp
@@ -46,27 +60,36 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     nice.cpp
     printable.cpp
     priority_queue.cpp
+    process_memory_stats.cpp
+    programoptions.cpp
     random.cpp
     rcuvector.cpp
     regexp.cpp
     require.cpp
+    resource_limits.cpp
     reusable_set.cpp
     reusable_set_handle.cpp
     reusable_set_pool.cpp
     round_up_to_page_size.cpp
     runnable.cpp
     runnable_pair.cpp
+    rusage.cpp
     sequence.cpp
+    sequencedtaskexecutor.cpp
+    sequencedtaskexecutorobserver.cpp
     sha1.cpp
     shared_operation_throttler.cpp
     shared_string_repo.cpp
+    shutdownguard.cpp
     sig_catch.cpp
     signalhandler.cpp
     simple_thread_bundle.cpp
+    singleexecutor.cpp
     small_vector.cpp
     stash.cpp
     string_hash.cpp
     stringfmt.cpp
+    testclock.cpp
     thread.cpp
     thread_bundle.cpp
     threadstackexecutor.cpp
@@ -74,6 +97,8 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     time.cpp
     unwind_message.cpp
     valgrind.cpp
+    xmlserializable.cpp
+    xmlstream.cpp
     zstdcompressor.cpp
     DEPENDS
 )

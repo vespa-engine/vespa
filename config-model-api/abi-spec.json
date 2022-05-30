@@ -156,6 +156,7 @@
       "public static final com.yahoo.path.Path SECURITY_DIR",
       "public static final java.lang.String SD_NAME_SUFFIX",
       "public static final java.lang.String RANKEXPRESSION_NAME_SUFFIX",
+      "public static final java.lang.String RANKPROFILE_NAME_SUFFIX",
       "public static final java.lang.String RULES_NAME_SUFFIX",
       "public static final java.lang.String EXT_DIR",
       "public static final java.lang.String PERMANENT_SERVICES"
@@ -195,7 +196,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
+      "public void <init>(com.yahoo.config.provision.InstanceName, java.util.List, com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy, com.yahoo.config.application.api.DeploymentSpec$RevisionTarget, com.yahoo.config.application.api.DeploymentSpec$RevisionChange, com.yahoo.config.application.api.DeploymentSpec$UpgradeRollout, int, int, int, java.util.List, java.util.Optional, java.util.Optional, java.util.Optional, com.yahoo.config.application.api.Notifications, java.util.List, java.time.Instant)",
       "public com.yahoo.config.provision.InstanceName name()",
       "public com.yahoo.config.application.api.DeploymentSpec$UpgradePolicy upgradePolicy()",
       "public com.yahoo.config.application.api.DeploymentSpec$RevisionTarget revisionTarget()",
@@ -209,6 +210,7 @@
       "public boolean canUpgradeAt(java.time.Instant)",
       "public boolean canChangeRevisionAt(java.time.Instant)",
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
+      "public java.util.Optional cloudAccount(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.util.List endpoints()",
       "public boolean deploysTo(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
@@ -258,12 +260,13 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.config.provision.Environment)",
-      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional, java.util.Optional)",
+      "public void <init>(com.yahoo.config.provision.Environment, java.util.Optional, boolean, java.util.Optional, java.util.Optional, java.util.Optional)",
       "public com.yahoo.config.provision.Environment environment()",
       "public java.util.Optional region()",
       "public boolean active()",
       "public java.util.Optional testerFlavor()",
       "public java.util.Optional athenzService()",
+      "public java.util.Optional cloudAccount()",
       "public java.util.List zones()",
       "public boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public boolean isTest()",

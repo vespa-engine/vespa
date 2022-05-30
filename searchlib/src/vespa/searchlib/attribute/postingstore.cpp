@@ -101,7 +101,7 @@ PostingStore<DataT>::removeSparseBitVectors()
         assert(isBitVector(typeId));
         BitVectorEntry *bve = getWBitVectorEntry(iRef);
         GrowableBitVector &bv = *bve->_bv.get();
-        uint32_t docFreq = bv.countTrueBits();
+        uint32_t docFreq = bv.writer().countTrueBits();
         if (bve->_tree.valid()) {
             RefType iRef2(bve->_tree);
             assert(isBTree(iRef2));
@@ -111,19 +111,19 @@ PostingStore<DataT>::removeSparseBitVectors()
         }
         if (docFreq < _minBvDocFreq)
             needscan = true;
-        unsigned int oldExtraSize = bv.extraByteSize();
-        if (bv.size() > _bvSize) {
+        unsigned int oldExtraSize = bv.writer().extraByteSize();
+        if (bv.writer().size() > _bvSize) {
             bv.shrink(_bvSize);
             res = true;
         }
-        if (bv.capacity() < _bvCapacity) {
+        if (bv.writer().capacity() < _bvCapacity) {
             bv.reserve(_bvCapacity);
             res = true;
         }
-        if (bv.size() < _bvSize) {
+        if (bv.writer().size() < _bvSize) {
             bv.extend(_bvSize);
         }
-        unsigned int newExtraSize = bv.extraByteSize();
+        unsigned int newExtraSize = bv.writer().extraByteSize();
         if (oldExtraSize != newExtraSize) {
             _bvExtraBytes = _bvExtraBytes + newExtraSize - oldExtraSize;
         }
@@ -149,7 +149,7 @@ PostingStore<DataT>::consider_remove_sparse_bitvector(std::vector<EntryRef>& ref
         assert(isBitVector(typeId));
         assert(_bvs.find(iRef.ref()) != _bvs.end());
         BitVectorEntry *bve = getWBitVectorEntry(iRef);
-        BitVector &bv = *bve->_bv.get();
+        BitVector &bv = bve->_bv->writer();
         uint32_t docFreq = bv.countTrueBits();
         if (bve->_tree.valid()) {
             RefType iRef2(bve->_tree);
@@ -226,12 +226,12 @@ PostingStore<DataT>::dropBitVector(EntryRef &ref)
     assert(isBitVector(typeId));
     (void) typeId;
     BitVectorEntry *bve = getWBitVectorEntry(iRef);
-    AllocatedBitVector *bv = bve->_bv.get();
+    GrowableBitVector *bv = bve->_bv.get();
     assert(bv);
-    uint32_t docFreq = bv->countTrueBits();
+    uint32_t docFreq = bv->writer().countTrueBits();
     EntryRef ref2(bve->_tree);
     if (!ref2.valid()) {
-        makeDegradedTree(ref2, *bv);
+        makeDegradedTree(ref2, bv->writer());
     }
     assert(ref2.valid());
     assert(isBTree(ref2));
@@ -242,7 +242,7 @@ PostingStore<DataT>::dropBitVector(EntryRef &ref)
     _bvs.erase(ref.ref());
     _store.holdElem(iRef, 1);
     _status.decBitVectors();
-    _bvExtraBytes -= bv->extraByteSize();
+    _bvExtraBytes -= bv->writer().extraByteSize();
     ref = ref2;
 }
 
@@ -258,7 +258,7 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     (void) typeId;
     vespalib::GenerationHolder &genHolder = _store.getGenerationHolder();
     auto bvsp = std::make_shared<GrowableBitVector>(_bvSize, _bvCapacity, genHolder);
-    AllocatedBitVector &bv = *bvsp.get();
+    BitVector &bv = bvsp->writer();
     uint32_t docIdLimit = _bvSize;
     (void) docIdLimit;
     Iterator it = begin(ref);
@@ -283,7 +283,7 @@ PostingStore<DataT>::makeBitVector(EntryRef &ref)
     bve->_bv = bvsp;
     _bvs.insert(bPair.ref.ref());
     _status.incBitVectors();
-    _bvExtraBytes += bv.extraByteSize();
+    _bvExtraBytes += bvsp->writer().extraByteSize();
     // barrier ?
     ref = bPair.ref;
 }
@@ -299,7 +299,7 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
     RefType iRef(ref);
     vespalib::GenerationHolder &genHolder = _store.getGenerationHolder();
     auto bvsp = std::make_shared<GrowableBitVector>(_bvSize, _bvCapacity, genHolder);
-    AllocatedBitVector &bv = *bvsp.get();
+    BitVector &bv = bvsp->writer();
     uint32_t docIdLimit = _bvSize;
     (void) docIdLimit;
     uint32_t expDocFreq = ae - aOrg;
@@ -319,7 +319,7 @@ PostingStore<DataT>::applyNewBitVector(EntryRef &ref,
     bve->_bv = bvsp;
     _bvs.insert(bPair.ref.ref());
     _status.incBitVectors();
-    _bvExtraBytes += bv.extraByteSize();
+    _bvExtraBytes += bvsp->writer().extraByteSize();
     // barrier ?
     ref = bPair.ref;
 }
@@ -390,7 +390,7 @@ PostingStore<DataT>::apply(EntryRef &ref,
             BTreeType *tree = getWTreeEntry(iRef2);
             applyTree(tree, a, ae, r, re, CompareT());
         }
-        BitVector *bv = bve->_bv.get();
+        BitVector *bv = &bve->_bv->writer();
         assert(bv);
         apply(*bv, a, ae, r, re);
         uint32_t docFreq = bv->countTrueBits();
@@ -433,7 +433,7 @@ PostingStore<DataT>::internalSize(uint32_t typeId, const RefType & iRef) const
             const BTreeType *tree = getTreeEntry(iRef2);
             return tree->size(_allocator);
         } else {
-            const BitVector *bv = bve->_bv.get();
+            const BitVector *bv = &bve->_bv->writer();
             return bv->countTrueBits();
         }
     } else {
@@ -456,7 +456,7 @@ PostingStore<DataT>::internalFrozenSize(uint32_t typeId, const RefType & iRef) c
             return tree->frozenSize(_allocator);
         } else {
             // Some inaccuracy is expected, data changes underfeet
-            return bve->_bv->countTrueBits();
+            return bve->_bv->reader().countTrueBits();
         }
     } else {
         const BTreeType *tree = getTreeEntry(iRef);
@@ -608,7 +608,7 @@ PostingStore<DataT>::clear(const EntryRef ref)
             }
             _bvs.erase(ref.ref());
             _status.decBitVectors();
-            _bvExtraBytes -= bve->_bv->extraByteSize();
+            _bvExtraBytes -= bve->_bv->writer().extraByteSize();
             _store.holdElem(ref, 1);
         } else {
             BTreeType *tree = getWTreeEntry(iRef);

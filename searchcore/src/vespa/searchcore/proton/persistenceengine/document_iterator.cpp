@@ -214,7 +214,7 @@ public:
             if (doc && _fields) {
                 document::FieldSet::stripFields(*doc, *_fields);
             }
-            _list.push_back(createDocEntry(meta.timestamp, meta.removed, std::move(doc), _defaultSerializedSize));
+            _list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed, std::move(doc), _defaultSerializedSize));
         }
     }
 
@@ -269,7 +269,7 @@ DocumentIterator::fetchCompleteSource(const IDocumentRetriever & source, Iterate
         for (uint32_t lid : lidsToFetch) {
             const search::DocumentMetaData & meta = metaData[lidIndexMap[lid]];
             assert(lid == meta.lid);
-            list.push_back(createDocEntry(meta.timestamp, meta.removed));
+            list.push_back(createDocEntry(storage::spi::Timestamp(meta.timestamp), meta.removed));
         }
     } else {
         MatchVisitor visitor(matcher, metaData, lidIndexMap, _fields.get(), list, _defaultSerializedSize);

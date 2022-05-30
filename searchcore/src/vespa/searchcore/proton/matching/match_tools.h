@@ -93,6 +93,7 @@ class MatchToolsFactory
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     QueryLimiter                    & _queryLimiter;
+    search::attribute::AttributeBlueprintParams _global_filter_params;
     RequestContext                    _requestContext;
     Query                             _query;
     MaybeMatchPhaseLimiter::UP        _match_limiter;
@@ -142,6 +143,19 @@ public:
     const RequestContext & getRequestContext() const { return _requestContext; }
 
     const StringStringMap & get_feature_rename_map() const;
+
+    /**
+     * Extracts global filter parameters from the rank-profile and query.
+     *
+     * These parameters are expected to be in the range [0.0, 1.0], which matches the range of the estimated hit ratio of the query.
+     * When searchable-copies > 1, we must scale the parameters to match the effective range of the estimated hit ratio.
+     * This is done by multiplying with the active hit ratio (active docids / docid limit).
+     */
+    static search::attribute::AttributeBlueprintParams
+    extract_global_filter_params(const search::fef::RankSetup& rank_setup,
+                                       const search::fef::Properties& rank_properties,
+                                       uint32_t active_docids,
+                                       uint32_t docid_limit);
 };
 
 }

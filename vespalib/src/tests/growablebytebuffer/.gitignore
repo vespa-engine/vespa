@@ -1,0 +1,4 @@
+.depend
+Makefile
+growablebytebuffer_test
+vespalib_growablebytebuffer_test_app

@@ -7,15 +7,11 @@ vespa_define_module(
     vespalib
     metrics
     config_cloudconfig
-    fastlib_fast
-    juniper
     configdefinitions
     document
     searchlib
     messagebus
-    documentapi
     persistence
-    searchcorespi
     searchsummary
     fileacquirer
 
@@ -41,12 +37,14 @@ vespa_define_module(
     src/vespa/searchcore/proton/server
     src/vespa/searchcore/proton/summaryengine
     src/vespa/searchcore/proton/test
+    src/vespa/searchcorespi
+    src/vespa/searchcorespi/flush
+    src/vespa/searchcorespi/index
 
     APPS
     src/apps/proton
     src/apps/tests
     src/apps/verify_ranksetup
-    src/apps/vespa-dump-feed
     src/apps/vespa-feed-bm
     src/apps/vespa-gen-testdocs
     src/apps/vespa-proton-cmd
@@ -78,6 +76,7 @@ vespa_define_module(
     src/tests/proton/common/hw_info_sampler
     src/tests/proton/common/operation_rate_tracker
     src/tests/proton/common/state_reporter_utils
+    src/tests/proton/common/timer
     src/tests/proton/docsummary
     src/tests/proton/document_iterator
     src/tests/proton/documentdb
@@ -158,6 +157,8 @@ vespa_define_module(
     src/tests/proton/statusreport
     src/tests/proton/summaryengine
     src/tests/proton/verify_ranksetup
+    src/tests/index/disk_indexes
+    src/tests/index/index_disk_layout
 
     TEST_DEPENDS
     messagebus_messagebus-test

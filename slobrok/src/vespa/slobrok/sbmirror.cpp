@@ -217,8 +217,8 @@ MirrorAPI::handleReconfig()
 bool
 MirrorAPI::handleReqDone()
 {
-    if (_reqDone) {
-        _reqDone = false;
+    if (_reqDone.load(std::memory_order_relaxed)) {
+        _reqDone.store(false, std::memory_order_relaxed);
         _reqPending = false;
         bool reconn = _req->IsError() ? true : handleIncrementalFetch();
 
@@ -321,9 +321,9 @@ MirrorAPI::PerformTask()
 void
 MirrorAPI::RequestDone(FRT_RPCRequest *req)
 {
-    LOG_ASSERT(req == _req && !_reqDone);
+    LOG_ASSERT(req == _req && !_reqDone.load(std::memory_order_relaxed));
     (void) req;
-    _reqDone = true;
+    _reqDone.store(true, std::memory_order_relaxed);
     ScheduleNow();
 }
 

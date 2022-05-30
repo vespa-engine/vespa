@@ -2,6 +2,7 @@
 package com.yahoo.config.application.api;
 
 import com.google.common.collect.ImmutableSet;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import org.junit.Test;
@@ -700,6 +701,35 @@ public class DeploymentSpecWithoutInstanceTest {
         assertEquals(Set.of("us-east"), endpointRegions("foo", spec));
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("nalle", spec));
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("default", spec));
+    }
+
+    @Test
+    public void productionSpecWithCloudAccount() {
+        StringReader r = new StringReader(
+                "<deployment version='1.0' cloud-account='012345678912'>" +
+                "    <prod>" +
+                "        <region cloud-account='219876543210'>us-east-1</region>" +
+                "        <region>us-west-1</region>" +
+                "    </prod>" +
+                "</deployment>"
+        );
+        DeploymentSpec spec = DeploymentSpec.fromXml(r);
+        DeploymentInstanceSpec instance = spec.requireInstance("default");
+        assertEquals(Optional.of(new CloudAccount("219876543210")), instance.cloudAccount(Environment.prod, RegionName.from("us-east-1")));
+        assertEquals(Optional.of(new CloudAccount("012345678912")), instance.cloudAccount(Environment.prod, RegionName.from("us-west-1")));
+        assertEquals(Optional.empty(), instance.cloudAccount(Environment.staging, RegionName.defaultName()));
+
+        r = new StringReader(
+                "<deployment version='1.0'>" +
+                "    <prod>" +
+                "        <region cloud-account='219876543210'>us-east-1</region>" +
+                "        <region>us-west-1</region>" +
+                "    </prod>" +
+                "</deployment>"
+        );
+        spec = DeploymentSpec.fromXml(r);
+        assertEquals(Optional.of(new CloudAccount("219876543210")), spec.requireInstance("default").cloudAccount(Environment.prod, RegionName.from("us-east-1")));
+        assertEquals(Optional.empty(), spec.requireInstance("default").cloudAccount(Environment.prod, RegionName.from("us-west-1")));
     }
 
     private static Set<String> endpointRegions(String endpointId, DeploymentSpec spec) {

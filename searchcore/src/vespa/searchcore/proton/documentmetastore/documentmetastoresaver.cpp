@@ -44,7 +44,7 @@ public:
         uint8_t bucketUsedBits = metaData.getBucketUsedBits();
         assert(BucketId::validUsedBits(bucketUsedBits));
         assert((bucketUsedBits >> BucketId::CountBits) == 0);
-        Timestamp::Type timestamp = metaData.getTimestamp();
+        Timestamp timestamp = metaData.getTimestamp();
         search::BufferWriter &datWriter(_datWriter);
         datWriter.write(&lid, sizeof(lid));
         datWriter.write(gid.get(), GlobalId::LENGTH);

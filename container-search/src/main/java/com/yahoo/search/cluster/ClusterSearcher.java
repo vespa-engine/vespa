@@ -90,8 +90,8 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
         } catch (ExecutionException e) {
             pong = new Pong(ErrorMessage.createUnspecifiedError("Execution was interrupted: " + p));
             logThrowable = e;
-        } catch (LinkageError e) { // Typically Osgi woes
-            pong = new Pong(ErrorMessage.createErrorInPluginSearcher("Class loading problem",e));
+        } catch (LinkageError e) { // Typically, Osgi woes
+            pong = new Pong(ErrorMessage.createErrorInPluginSearcher("Class loading problem", e));
             logThrowable = e;
         } catch (TimeoutException e) {
             pong = new Pong(ErrorMessage.createNoAnswerWhenPingingNode("Ping thread timed out."));

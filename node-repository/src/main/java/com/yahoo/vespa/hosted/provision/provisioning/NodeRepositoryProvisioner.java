@@ -17,9 +17,7 @@ import com.yahoo.config.provision.ProvisionLogger;
 import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -99,27 +97,27 @@ public class NodeRepositoryProvisioner implements Provisioner {
         NodeResources resources;
         NodeSpec nodeSpec;
         if (requested.type() == NodeType.tenant) {
-            var actual = capacityPolicies.applyOn(requested, application);
+            boolean exclusive = capacityPolicies.decideExclusivity(requested, cluster.isExclusive());
+            Capacity actual = capacityPolicies.applyOn(requested, application, exclusive);
             ClusterResources target = decideTargetResources(application, cluster, actual);
-            boolean exclusive = capacityPolicies.decideExclusivity(actual, cluster.isExclusive());
             ensureRedundancy(target.nodes(), cluster, actual.canFail(), application);
             logIfDownscaled(requested.minResources().nodes(), actual.minResources().nodes(), cluster, logger);
 
             groups = target.groups();
-            resources = getNodeResources(cluster, target.nodeResources(), application);
-            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail());
+            resources = getNodeResources(cluster, target.nodeResources(), application, exclusive);
+            nodeSpec = NodeSpec.from(target.nodes(), resources, exclusive, actual.canFail(), requested.cloudAccount());
         }
         else {
             groups = 1; // type request with multiple groups is not supported
-            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application);
+            resources = getNodeResources(cluster, requested.minResources().nodeResources(), application, true);
             nodeSpec = NodeSpec.from(requested.type());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
 
-    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId) {
+    private NodeResources getNodeResources(ClusterSpec cluster, NodeResources nodeResources, ApplicationId applicationId, boolean exclusive) {
         return nodeResources.isUnspecified()
-                ? capacityPolicies.defaultNodeResources(cluster.type(), applicationId)
+                ? capacityPolicies.defaultNodeResources(cluster, applicationId, exclusive)
                 : nodeResources;
     }
 
@@ -180,7 +178,8 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources initialResourcesFrom(Capacity requested, ClusterSpec clusterSpec, ApplicationId applicationId) {
         var initial = requested.minResources();
         if (initial.nodeResources().isUnspecified())
-            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec.type(), applicationId));
+            initial = initial.with(capacityPolicies.defaultNodeResources(clusterSpec, applicationId,
+                                                                         capacityPolicies.decideExclusivity(requested, clusterSpec.isExclusive())));
         return initial;
     }
 

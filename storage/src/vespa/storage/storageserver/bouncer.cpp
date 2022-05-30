@@ -145,22 +145,22 @@ Bouncer::rejectCommandWithTooHighClockSkew(api::StorageMessage& msg,
 }
 
 void
-Bouncer::abortCommandDueToClusterDown(api::StorageMessage& msg)
+Bouncer::abortCommandDueToClusterDown(api::StorageMessage& msg, const lib::State& cluster_state)
 {
     std::shared_ptr<api::StorageReply> reply(
             static_cast<api::StorageCommand&>(msg).makeReply().release());
     std::ostringstream ost;
     ost << "We don't allow external load while cluster is in state "
-        << _clusterState->toString(true);
+        << cluster_state.toString(true);
     append_node_identity(ost);
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, ost.str()));
     sendUp(reply);
 }
 
 bool
-Bouncer::clusterIsUp() const
+Bouncer::clusterIsUp(const lib::State& cluster_state)
 {
-    return (*_clusterState == lib::State::UP);
+    return (cluster_state == lib::State::UP);
 }
 
 bool Bouncer::isDistributor() const {
@@ -264,14 +264,14 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     int maxClockSkewInSeconds;
     bool isInAvailableState;
     bool abortLoadWhenClusterDown;
-    bool cluster_is_up;
+    const lib::State *cluster_state;
     int feedPriorityLowerBound;
     {
         std::lock_guard lock(_lock);
         state                    = &getDerivedNodeState(msg->getBucket().getBucketSpace()).getState();
         maxClockSkewInSeconds    = _config->maxClockSkewSeconds;
         abortLoadWhenClusterDown = _config->stopExternalLoadWhenClusterDown;
-        cluster_is_up            = clusterIsUp();
+        cluster_state            = _clusterState;
         isInAvailableState       = state->oneOf(_config->stopAllLoadWhenNodestateNotIn.c_str());
         feedPriorityLowerBound   = _config->feedRejectionPriorityThreshold;
     }
@@ -285,7 +285,7 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     }
     // Special case for point lookup Gets while node is in maintenance mode
     // to allow reads to complete during two-phase cluster state transitions
-    if ((*state == lib::State::MAINTENANCE) && (type.getId() == api::MessageType::GET_ID) && clusterIsUp()) {
+    if ((*state == lib::State::MAINTENANCE) && (type.getId() == api::MessageType::GET_ID) && clusterIsUp(*cluster_state)) {
         MBUS_TRACE(msg->getTrace(), 7, "Bouncer: node is in Maintenance mode, but letting Get through");
         return false;
     }
@@ -319,8 +319,8 @@ Bouncer::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     }
 
     // If cluster state is not up, fail external load
-    if (abortLoadWhenClusterDown && !cluster_is_up) {
-        abortCommandDueToClusterDown(*msg);
+    if (abortLoadWhenClusterDown && !clusterIsUp(*cluster_state)) {
+        abortCommandDueToClusterDown(*msg, *cluster_state);
         return true;
     }
 

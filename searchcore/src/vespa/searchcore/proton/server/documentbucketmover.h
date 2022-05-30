@@ -4,7 +4,7 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/globalid.h>
-#include <persistence/spi/types.h>
+#include <vespa/persistence/spi/types.h>
 #include <atomic>
 
 namespace vespalib { class IDestructorCallback; }
@@ -123,6 +123,7 @@ public:
 
     const document::BucketId &getBucket() const { return _bucket; }
     void cancel();
+    [[nodiscard]] bool cancelled() const noexcept { return _cancelled; }
     void setAllScheduled() { _allScheduled = true; }
     /// Signals all documents have been scheduled for move
     bool allScheduled() const { return _allScheduled; }
@@ -147,6 +148,7 @@ private:
     std::atomic<uint32_t>           _started;
     std::atomic<uint32_t>           _completed;
     std::atomic<bool>               _needReschedule;
+    bool                            _cancelled;
     bool                            _allScheduled; // All moves started, or operation has been cancelled
     bool                            _lastGidValid;
     document::GlobalId              _lastGid;

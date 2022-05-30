@@ -13,12 +13,11 @@ class CreateBucketOperation : public FeedOperation
 public:
     CreateBucketOperation();
     CreateBucketOperation(const document::BucketId &bucketId);
-    virtual ~CreateBucketOperation() {}
+    ~CreateBucketOperation() override = default;
     const document::BucketId &getBucketId() const { return _bucketId; }
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo) override;
-    virtual vespalib::string toString() const override;
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
+    vespalib::string toString() const override;
 };
 
 } // namespace proton

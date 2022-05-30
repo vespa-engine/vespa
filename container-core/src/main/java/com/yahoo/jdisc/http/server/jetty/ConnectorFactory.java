@@ -13,6 +13,7 @@ import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2CServerConnectionFactory;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -122,10 +123,7 @@ public class ConnectorFactory {
             sslFactory = newSslConnectionFactory(metric, http1Factory);
         }
         if (proxyProtocolConfig.enabled()) {
-            if (proxyProtocolConfig.mixedMode()) {
-                factories.add(newDetectorConnectionFactory(sslFactory));
-            }
-            factories.add(newProxyProtocolConnectionFactory(sslFactory));
+            factories.add(newProxyProtocolConnectionFactory(sslFactory, proxyProtocolConfig.mixedMode()));
         }
         factories.add(sslFactory);
         if (connectorConfig.http2Enabled()) factories.add(alpnFactory);
@@ -199,8 +197,10 @@ public class ConnectorFactory {
         return new DetectorConnectionFactory(alternatives);
     }
 
-    private ProxyConnectionFactory newProxyProtocolConnectionFactory(ConnectionFactory wrappedFactory) {
-        return new ProxyConnectionFactory(wrappedFactory.getProtocol());
+    private ProxyConnectionFactory newProxyProtocolConnectionFactory(ConnectionFactory wrapped, boolean mixedMode) {
+        return mixedMode
+                ? new ProxyConnectionFactory(wrapped.getProtocol())
+                : new MandatoryProxyConnectionFactory(wrapped.getProtocol());
     }
 
     private static boolean isSslEffectivelyEnabled(ConnectorConfig config) {
@@ -209,5 +209,15 @@ public class ConnectorFactory {
     }
 
     private static long toMillis(double seconds) { return (long)(seconds * 1000); }
+
+    /**
+     * A {@link ProxyConnectionFactory} which disables the default behaviour of upgrading to
+     * next protocol when proxy protocol is not detected.
+     */
+    private static class MandatoryProxyConnectionFactory extends ProxyConnectionFactory {
+        MandatoryProxyConnectionFactory(String next) { super(next); }
+        @Override protected String findNextProtocol(Connector __) { return null; }
+    }
+
 
 }

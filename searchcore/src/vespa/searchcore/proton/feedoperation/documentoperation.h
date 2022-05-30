@@ -4,35 +4,17 @@
 #include "feedoperation.h"
 #include <vespa/searchcore/proton/common/dbdocumentid.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <persistence/spi/types.h>
-#include <vespa/searchlib/query/base.h>
+#include <vespa/persistence/spi/types.h>
 
 namespace proton {
 
 class DocumentOperation : public FeedOperation
 {
-protected:
-    document::BucketId      _bucketId;
-    storage::spi::Timestamp _timestamp;
-    DbDocumentId            _dbdId;
-    DbDocumentId            _prevDbdId;
-    bool                    _prevMarkedAsRemoved;
-    storage::spi::Timestamp _prevTimestamp;
-    mutable uint32_t        _serializedDocSize; // Set by serialize()/deserialize()
-    uint64_t                _prepare_serial_num;
-
-    DocumentOperation(Type type) noexcept;
-
-    DocumentOperation(Type type, document::BucketId bucketId, storage::spi::Timestamp timestamp) noexcept;
-
-    void assertValidBucketId(const document::DocumentId &docId) const;
-    void assertValidBucketId(const document::GlobalId &docId) const;
-    vespalib::string docArgsToString() const;
-
 public:
+    using Timestamp = uint64_t;
     ~DocumentOperation() override;
     const document::BucketId &getBucketId() const { return _bucketId; }
-    storage::spi::Timestamp getTimestamp() const { return _timestamp; }
+    Timestamp getTimestamp() const { return _timestamp; }
 
     search::DocumentIdT getLid() const { return _dbdId.getLid(); }
     search::DocumentIdT getPrevLid() const { return _prevDbdId.getLid(); }
@@ -77,8 +59,8 @@ public:
             getLid() != getPrevLid();
     }
 
-    storage::spi::Timestamp getPrevTimestamp() const { return _prevTimestamp; }
-    void setPrevTimestamp(storage::spi::Timestamp prevTimestamp) { _prevTimestamp = prevTimestamp; }
+    Timestamp getPrevTimestamp() const { return _prevTimestamp; }
+    void setPrevTimestamp(Timestamp prevTimestamp) { _prevTimestamp = prevTimestamp; }
 
     void serialize(vespalib::nbostream &os) const override;
     void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
@@ -89,6 +71,22 @@ public:
 
     // Provided as a hook for tests.
     void serializeDocumentOperationOnly(vespalib::nbostream &os) const;
+protected:
+    document::BucketId      _bucketId;
+    Timestamp               _timestamp;
+    DbDocumentId            _dbdId;
+    DbDocumentId            _prevDbdId;
+    bool                    _prevMarkedAsRemoved;
+    Timestamp               _prevTimestamp;
+    mutable uint32_t        _serializedDocSize; // Set by serialize()/deserialize()
+    uint64_t                _prepare_serial_num;
+
+    DocumentOperation(Type type) noexcept;
+    DocumentOperation(Type type, document::BucketId bucketId, uint64_t timestamp) noexcept;
+
+    void assertValidBucketId(const document::DocumentId &docId) const;
+    void assertValidBucketId(const document::GlobalId &docId) const;
+    vespalib::string docArgsToString() const;
 };
 
 } // namespace proton

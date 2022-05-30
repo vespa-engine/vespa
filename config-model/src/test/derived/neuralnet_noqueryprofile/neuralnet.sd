@@ -75,9 +75,17 @@ search neuralnet {
             query(W_0)   tensor(x[9],hidden[9])
             query(b_0)   tensor(hidden[9])
             query(W_1)   tensor(hidden[9],out[9])
-            query(b_1)   tensor(out[9])
+            b_1          tensor(out[9])
             query(W_out) tensor(out[9])
             query(b_out) tensor(out[1]):[1.0]
+        }
+
+        inputs {
+            query(foo): 5.5
+        }
+
+        rank-properties {
+            query(bar): 5.5
         }
 
     }

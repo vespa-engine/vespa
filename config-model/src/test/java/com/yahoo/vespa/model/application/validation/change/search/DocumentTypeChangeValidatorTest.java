@@ -8,7 +8,7 @@ import com.yahoo.document.Field;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.document.StructDataType;
 import com.yahoo.documentmodel.NewDocumentType;
-import com.yahoo.searchdefinition.FieldSets;
+import com.yahoo.schema.FieldSets;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRefeedAction;
 import org.junit.Test;

@@ -7,7 +7,6 @@ vespa_add_executable(storageserver_storaged_app
     INSTALL sbin
     DEPENDS
     storageserver_storageapp
-    searchlib_searchlib_uca
 )
 
 install(CODE "execute_process(COMMAND ln -snf vespa-storaged-bin \$ENV{DESTDIR}/\${CMAKE_INSTALL_PREFIX}/sbin/vespa-distributord-bin)")

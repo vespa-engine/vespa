@@ -23,7 +23,7 @@ public class ContainerFailTest {
 
     @Test
     public void test() {
-        DockerImage dockerImage = DockerImage.fromString("registry.example.com/dockerImage");
+        DockerImage dockerImage = DockerImage.fromString("registry.example.com/repo/image");
         try (ContainerTester tester = new ContainerTester(List.of(dockerImage))) {
             ContainerName containerName = new ContainerName("host1");
             String hostname = "host1.test.yahoo.com";

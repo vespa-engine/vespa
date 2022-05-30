@@ -19,6 +19,7 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
@@ -186,6 +187,7 @@ public class ModelContextImpl implements ModelContext {
         private final int metricsproxyNumThreads;
         private final int availableProcessors;
         private final boolean containerDumpHeapOnShutdownTimeout;
+        private final boolean loadCodeAsHugePages;
         private final double containerShutdownTimeout;
         private final int maxUnCommittedMemory;
         private final boolean forwardIssuesAsErrors;
@@ -193,7 +195,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean unorderedMergeChaining;
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
-        private final boolean failDeploymentWithInvalidJvmOptions;
         private final List<String> ignoredHttpUserAgents;
         private final boolean enableServerOcspStapling;
         private final String mergeThrottlingPolicy;
@@ -230,6 +231,7 @@ public class ModelContextImpl implements ModelContext {
             this.metricsproxyNumThreads = flagValue(source, appId, version, Flags.METRICSPROXY_NUM_THREADS);
             this.availableProcessors = flagValue(source, appId, version, Flags.AVAILABLE_PROCESSORS);
             this.containerDumpHeapOnShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT);
+            this.loadCodeAsHugePages = flagValue(source, appId, version, Flags.LOAD_CODE_AS_HUGEPAGES);
             this.containerShutdownTimeout = flagValue(source, appId, version, Flags.CONTAINER_SHUTDOWN_TIMEOUT);
             this.maxUnCommittedMemory = flagValue(source, appId, version, Flags.MAX_UNCOMMITTED_MEMORY);
             this.forwardIssuesAsErrors = flagValue(source, appId, version, PermanentFlags.FORWARD_ISSUES_AS_ERRORS);
@@ -237,7 +239,6 @@ public class ModelContextImpl implements ModelContext {
             this.unorderedMergeChaining = flagValue(source, appId, version, Flags.UNORDERED_MERGE_CHAINING);
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
-            this.failDeploymentWithInvalidJvmOptions = flagValue(source, appId, version, Flags.FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
             this.enableServerOcspStapling = flagValue(source, appId, version, Flags.ENABLE_SERVER_OCSP_STAPLING);
             this.mergeThrottlingPolicy = flagValue(source, appId, version, Flags.MERGE_THROTTLING_POLICY);
@@ -277,12 +278,12 @@ public class ModelContextImpl implements ModelContext {
         @Override public int availableProcessors() { return availableProcessors; }
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
+        @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
         @Override public boolean ignoreThreadStackSizes() { return ignoreThreadStackSizes; }
         @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
-        @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
         @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }
@@ -364,6 +365,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> tlsCiphersOverride;
         private final List<String> zoneDnsSuffixes;
         private final List<String> environmentVariables;
+        private final Optional<CloudAccount> cloudAccount;
 
         public Properties(ApplicationId applicationId,
                           Version nodeVespaVersion,
@@ -378,7 +380,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
-                          List<X509Certificate> operatorCertificates) {
+                          List<X509Certificate> operatorCertificates,
+                          Optional<CloudAccount> cloudAccount) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId, nodeVespaVersion);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -406,6 +409,7 @@ public class ModelContextImpl implements ModelContext {
             this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
             this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource)
                     .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
+            this.cloudAccount = cloudAccount;
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -489,6 +493,11 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public List<String> environmentVariables() { return environmentVariables; }
+
+        @Override
+        public Optional<CloudAccount> cloudAccount() {
+            return cloudAccount;
+        }
 
     }
 

@@ -13,13 +13,12 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
-import com.yahoo.document.internal.GeoPosType;
 import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.OwnedStructDataType;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.document.annotation.SDAnnotationType;
+import com.yahoo.schema.document.annotation.SDAnnotationType;
 
 import java.util.*;
 

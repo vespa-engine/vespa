@@ -2,17 +2,15 @@
 
 #pragma once
 
-#include <vespa/vespalib/net/simple_health_producer.h>
-#include <vespa/vespalib/net/simple_component_config_producer.h>
+#include <vespa/vespalib/net/http/simple_health_producer.h>
+#include <vespa/vespalib/net/http/simple_component_config_producer.h>
 #include <vespa/vespalib/metrics/simple_metrics.h>
 
-namespace config {
-namespace sentinel {
+namespace config::sentinel {
 
 struct StateApi {
     vespalib::SimpleHealthProducer myHealth;
     vespalib::SimpleComponentConfigProducer myComponents;
 };
 
-} // namespace config::sentinel
-} // namespace config
+}

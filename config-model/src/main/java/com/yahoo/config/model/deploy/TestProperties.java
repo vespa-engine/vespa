@@ -66,7 +66,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean unorderedMergeChaining = true;
     private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
-    private boolean failDeploymentWithInvalidJvmOptions = false;
     private String mergeThrottlingPolicy = "STATIC";
     private double persistenceThrottlingWsDecrementFactor = 1.2;
     private double persistenceThrottlingWsBackoff = 0.95;
@@ -122,7 +121,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean unorderedMergeChaining() { return unorderedMergeChaining; }
     @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
-    @Override public boolean failDeploymentWithInvalidJvmOptions() { return failDeploymentWithInvalidJvmOptions; }
     @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
     @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
     @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
@@ -296,11 +294,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxCompactBuffers(int maxCompactBuffers) {
         this.maxCompactBuffers = maxCompactBuffers;
-        return this;
-    }
-
-    public TestProperties failDeploymentWithInvalidJvmOptions(boolean fail) {
-        failDeploymentWithInvalidJvmOptions = fail;
         return this;
     }
 

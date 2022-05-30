@@ -214,6 +214,9 @@ MmapMemory::getBasePages(size_t len, int mmapOpt, int fd, size_t offset)
         ok = (mem == wanted);
     }
     if (mem != MAP_FAILED) {
+        if (madvise(mem, len, MADV_HUGEPAGE) != 0) {
+            // Just an advise, not everyone will listen...
+        }
         if (getStart() == nullptr) {
             setStart(mem);
             // assumes len parameter is always multiple of the current block size.

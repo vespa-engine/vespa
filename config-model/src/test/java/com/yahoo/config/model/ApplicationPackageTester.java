@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.model.application.provider.ApplicationPackageXmlFilesValidator;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.searchdefinition.Schema;
+import com.yahoo.schema.Schema;
 
 import java.io.File;
 import java.io.IOException;

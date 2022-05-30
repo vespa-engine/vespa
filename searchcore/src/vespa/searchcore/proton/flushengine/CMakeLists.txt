@@ -16,4 +16,5 @@ vespa_add_library(searchcore_flushengine STATIC
     tls_stats_factory.cpp
     tls_stats_map.cpp
     DEPENDS
+    searchcorespi
 )

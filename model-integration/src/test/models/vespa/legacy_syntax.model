@@ -1,0 +1,26 @@
+model legacy_syntax {
+
+    # Syntax  not supported in rank profiles which probably should be removed on Vespa 9
+    input1: tensor(name{}, x[3])
+    input2: tensor(x[3])
+
+    constants {
+        constant1: tensor(x[3]):{{x:0}:0.5, {x:1}:1.5, {x:2}:2.5}
+        constant2: 3.0
+    }
+
+    # Syntax to be removed on Vespa 9
+    constant constant1asLarge {
+        type: tensor(x[3])
+        file: constant1asLarge.json
+    }
+
+    function foo1() {
+        expression: file:test.expression
+    }
+
+    function foo2() {
+        expression: reduce(sum(input1 * input2, name) * constant(constant1asLarge), max, x) * constant2
+    }
+
+}

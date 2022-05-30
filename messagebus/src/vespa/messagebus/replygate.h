@@ -6,6 +6,7 @@
 #include "imessagehandler.h"
 #include "ireplyhandler.h"
 #include <vespa/vespalib/util/referencecounter.h>
+#include <atomic>
 
 namespace mbus {
 
@@ -26,7 +27,7 @@ class ReplyGate : public vespalib::ReferenceCounter,
 {
 private:
     IMessageHandler &_sender;
-    bool             _open;
+    std::atomic<bool> _open;
 
 public:
     /**

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 public class PackageTallyTest {
 
     @Test
-    public void referenced_packages_missing_from_are_detected() {
+    public void referenced_packages_missing_from_available_packages_are_detected() {
         PackageTally tally = new PackageTally(Map.of(), Set.of("p1", "java.util", "com.yahoo.api.annotations", "missing"));
         Set<String> missingPackages = tally.referencedPackagesMissingFrom(Set.of("p1"));
         assertEquals(Set.of("missing"), missingPackages);

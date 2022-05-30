@@ -5,7 +5,8 @@
 #include "lid_usage_stats.h"
 #include <vespa/document/base/globalid.h>
 #include <vespa/document/bucket/bucketid.h>
-#include <persistence/spi/types.h>
+#include <vector>
+#include <memory>
 
 namespace search {
 
@@ -15,7 +16,7 @@ namespace search {
 struct DocumentMetaData {
     typedef uint32_t DocId;
     DocId lid;
-    storage::spi::Timestamp timestamp;
+    uint64_t timestamp;
     document::BucketId bucketId;
     document::GlobalId gid;
     bool removed;
@@ -31,14 +32,14 @@ struct DocumentMetaData {
     { }
 
     DocumentMetaData(DocId lid_,
-                     storage::spi::Timestamp timestamp_,
+                     uint64_t timestamp_,
                      document::BucketId bucketId_,
                      const document::GlobalId &gid_) noexcept
         : DocumentMetaData(lid_, timestamp_, bucketId_, gid_, false)
     { }
 
     DocumentMetaData(DocId lid_,
-                     storage::spi::Timestamp timestamp_,
+                     uint64_t timestamp_,
                      document::BucketId bucketId_,
                      const document::GlobalId &gid_,
                      bool removed_) noexcept
@@ -72,7 +73,7 @@ struct IDocumentMetaStore {
     typedef uint32_t                DocId;
     typedef document::GlobalId      GlobalId;
     typedef document::BucketId      BucketId;
-    typedef storage::spi::Timestamp Timestamp;
+    typedef uint64_t Timestamp;
 
     virtual ~IDocumentMetaStore() {}
 

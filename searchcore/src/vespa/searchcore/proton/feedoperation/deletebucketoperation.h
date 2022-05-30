@@ -13,7 +13,7 @@ class DeleteBucketOperation : public RemoveDocumentsOperation
 public:
     DeleteBucketOperation();
     DeleteBucketOperation(const document::BucketId &bucketId);
-    virtual ~DeleteBucketOperation() {}
+    ~DeleteBucketOperation() override = default;
     const document::BucketId &getBucketId() const { return _bucketId; }
     virtual void serialize(vespalib::nbostream &os) const override;
     virtual void deserialize(vespalib::nbostream &is,

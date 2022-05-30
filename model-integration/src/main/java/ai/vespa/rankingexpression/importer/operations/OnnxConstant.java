@@ -84,7 +84,7 @@ public class OnnxConstant extends IntermediateOperation {
         }
         if (value.isEmpty()) {
             throw new IllegalArgumentException("Node '" + name + "' of type " +
-                    "constant has missing or non-supported 'value' attribute");
+                                               "constant has missing or non-supported 'value' attribute");
         }
         return value.get();
     }

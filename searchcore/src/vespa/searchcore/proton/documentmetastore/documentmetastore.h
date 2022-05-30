@@ -146,7 +146,7 @@ public:
     static constexpr size_t minHeaderLen = 0x1000;
     static constexpr size_t entrySize =
         sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) +
-        sizeof(Timestamp::Type);
+        sizeof(Timestamp);
 
     DocumentMetaStore(BucketDBOwnerSP bucketDB,
                       const vespalib::string & name=getFixedName(),
@@ -167,9 +167,9 @@ public:
      * map is then re-built the same way it was originally where add()
      * was used to create the <lid, gid> pairs.
      **/
-    Result put(const GlobalId &gid, const BucketId &bucketId,
-               const Timestamp &timestamp, uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override;
-    bool updateMetaData(DocId lid, const BucketId &bucketId, const Timestamp &timestamp) override;
+    Result put(const GlobalId &gid, const BucketId &bucketId, Timestamp timestamp,
+               uint32_t docSize, DocId lid, uint64_t prepare_serial_num) override;
+    bool updateMetaData(DocId lid, const BucketId &bucketId, Timestamp timestamp) override;
     bool remove(DocId lid, uint64_t prepare_serial_num) override;
 
     BucketId getBucketOf(const vespalib::GenerationHandler::Guard & guard, uint32_t lid) const override;
@@ -185,7 +185,7 @@ public:
     void move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num) override;
     bool validButMaybeUnusedLid(DocId lid) const { return _lidAlloc.validButMaybeUnusedLid(lid); }
     bool validLidFast(DocId lid) const { return _lidAlloc.validLid(lid); }
-    bool validLidFastSafe(DocId lid, uint32_t limit) const { return _lidAlloc.validLidSafe(lid, limit); }
+    bool validLidFast(DocId lid, uint32_t limit) const { return _lidAlloc.validLid(lid, limit); }
     bool validLid(DocId lid) const override { return validLidFast(lid); }
     void removeBatch(const std::vector<DocId> &lidsToRemove, const DocId docIdLimit) override;
     const RawDocumentMetaData & getRawMetaData(DocId lid) const override { return _metaDataStore.acquire_elem_ref(lid); }
@@ -254,7 +254,7 @@ public:
         return AttributeVector::getGenerationHandler();
     }
 
-    const search::GrowableBitVector &getActiveLids() const { return _lidAlloc.getActiveLids(); }
+    const search::BitVector &getActiveLids() const { return _lidAlloc.getActiveLids(); }
 
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
 

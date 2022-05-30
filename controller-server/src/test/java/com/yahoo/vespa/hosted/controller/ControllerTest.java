@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller;
 import com.google.common.collect.Sets;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
-import com.yahoo.config.application.api.Notifications;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ApplicationId;
@@ -1175,6 +1174,25 @@ public class ControllerTest {
         tester.applications().lockApplicationOrThrow(application, locked -> tester.applications().store(locked.withMajorVersion(8)));
         assertEquals(version1, tester.applications().compileVersion(application, OptionalInt.of(7)));
         assertEquals(version2, tester.applications().compileVersion(application, OptionalInt.empty()));
+    }
+
+    @Test
+    public void testCloudAccount() {
+        DeploymentContext context = tester.newDeploymentContext();
+        ZoneId zone = ZoneId.from("prod", "us-west-1");
+        String cloudAccount = "012345678912";
+        var applicationPackage = new ApplicationPackageBuilder()
+                .cloudAccount(cloudAccount)
+                .region(zone.region())
+                .build();
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception"); // Account invalid for tenant
+        } catch (IllegalArgumentException ignored) {}
+
+        tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
+        context.submit(applicationPackage).deploy();
+        assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(zone)).get().value());
     }
 
 }

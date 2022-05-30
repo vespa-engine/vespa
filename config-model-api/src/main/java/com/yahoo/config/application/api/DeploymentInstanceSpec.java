@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.application.api;
 
-import ai.vespa.validation.Validation;
-import com.yahoo.config.application.api.DeploymentSpec.RevisionTarget;
 import com.yahoo.config.provision.AthenzService;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
@@ -14,11 +13,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -29,7 +26,6 @@ import static com.yahoo.config.application.api.DeploymentSpec.RevisionChange.whe
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
 import static com.yahoo.config.provision.Environment.prod;
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 
 /**
  * The deployment spec for an application instance
@@ -54,6 +50,7 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
     private final List<DeploymentSpec.ChangeBlocker> changeBlockers;
     private final Optional<String> globalServiceId;
     private final Optional<AthenzService> athenzService;
+    private final Optional<CloudAccount> cloudAccount;
     private final Notifications notifications;
     private final List<Endpoint> endpoints;
 
@@ -67,25 +64,29 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                                   List<DeploymentSpec.ChangeBlocker> changeBlockers,
                                   Optional<String> globalServiceId,
                                   Optional<AthenzService> athenzService,
+                                  Optional<CloudAccount> cloudAccount,
                                   Notifications notifications,
                                   List<Endpoint> endpoints,
                                   Instant now) {
         super(steps);
-        this.name = name;
-        this.upgradePolicy = upgradePolicy;
+        this.name = Objects.requireNonNull(name);
+        this.upgradePolicy = Objects.requireNonNull(upgradePolicy);
+        Objects.requireNonNull(revisionTarget);
+        Objects.requireNonNull(revisionChange);
         this.revisionTarget = require(maxRisk == 0 || revisionTarget == next, revisionTarget,
                                       "revision-target must be 'next' when max-risk is specified");
         this.revisionChange = require(maxRisk == 0 || revisionChange == whenClear, revisionChange,
                                       "revision-change must be 'when-clear' when max-risk is specified");
-        this.upgradeRollout = upgradeRollout;
+        this.upgradeRollout = Objects.requireNonNull(upgradeRollout);
         this.minRisk = requireAtLeast(minRisk, "minimum risk score", 0);
         this.maxRisk = require(maxRisk >= minRisk, maxRisk, "maximum risk cannot be less than minimum risk score");
         this.maxIdleHours = requireInRange(maxIdleHours, "maximum idle hours", 0, 168);
-        this.changeBlockers = changeBlockers;
-        this.globalServiceId = globalServiceId;
-        this.athenzService = athenzService;
-        this.notifications = notifications;
-        this.endpoints = List.copyOf(endpoints);
+        this.changeBlockers = Objects.requireNonNull(changeBlockers);
+        this.globalServiceId = Objects.requireNonNull(globalServiceId);
+        this.athenzService = Objects.requireNonNull(athenzService);
+        this.cloudAccount = Objects.requireNonNull(cloudAccount);
+        this.notifications = Objects.requireNonNull(notifications);
+        this.endpoints = List.copyOf(Objects.requireNonNull(endpoints));
         validateZones(new HashSet<>(), new HashSet<>(), this);
         validateEndpoints(steps(), globalServiceId, this.endpoints);
         validateChangeBlockers(changeBlockers, now);
@@ -222,6 +223,16 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                       .findFirst()
                       .flatMap(DeploymentSpec.DeclaredZone::athenzService)
                       .or(() -> this.athenzService);
+    }
+
+    /** Returns the cloud account to use for given environment and region, if any */
+    public Optional<CloudAccount> cloudAccount(Environment environment, RegionName region) {
+        if (!environment.isProduction()) return Optional.empty();
+        return zones().stream()
+                      .filter(zone -> zone.concerns(environment, Optional.of(region)))
+                      .findFirst()
+                      .flatMap(DeploymentSpec.DeclaredZone::cloudAccount)
+                      .or(() -> cloudAccount);
     }
 
     /** Returns the notification configuration of these instances */

@@ -25,7 +25,16 @@ public class VespaImportTestCase {
     @Test
     public void testExample() {
         ImportedModel model = importModel("example");
+        assertModel(model);
+    }
 
+    @Test
+    public void testLegacySyntax() {
+        ImportedModel model = importModel("legacy_syntax");
+        assertModel(model);
+    }
+
+    private void assertModel(ImportedModel model) {
         assertEquals(2, model.inputs().size());
         assertEquals("tensor(name{},x[3])", model.inputs().get("input1").toString());
         assertEquals("tensor(x[3])", model.inputs().get("input2").toString());

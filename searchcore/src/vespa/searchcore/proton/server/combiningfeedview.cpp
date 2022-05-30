@@ -87,7 +87,7 @@ CombiningFeedView::findPrevDbdId(const document::GlobalId &gid,
         if (inspectRes._found) {
             op.setPrevDbDocumentId(DbDocumentId(subDbId, inspectRes._lid));
             op.setPrevMarkedAsRemoved(subDbId == getRemFeedViewId());
-            op.setPrevTimestamp(inspectRes._timestamp);
+            op.setPrevTimestamp(storage::spi::Timestamp(inspectRes._timestamp));
             break;
         }
     }

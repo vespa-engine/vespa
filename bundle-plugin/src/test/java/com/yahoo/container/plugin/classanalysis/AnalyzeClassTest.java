@@ -38,23 +38,23 @@ import static org.junit.Assert.fail;
 public class AnalyzeClassTest {
 
     @Test
-    public void require_that_full_class_name_is_returned() {
+    public void full_class_name_is_returned() {
         assertEquals(name(Base.class), analyzeClass(Base.class).getName());
     }
 
     @Test
-    public void require_that_base_class_is_included() {
+    public void base_class_is_included() {
         assertTrue(analyzeClass(Derived.class).getReferencedClasses().contains(name(Base.class)));
     }
 
     @Test
-    public void require_that_implemented_interfaces_are_included() {
+    public void implemented_interfaces_are_included() {
         assertTrue(analyzeClass(Base.class).getReferencedClasses().containsAll(
                 List.of(name(Interface1.class), name(Interface2.class))));
     }
 
     @Test
-    public void require_that_interface_can_be_analyzed() {
+    public void interface_can_be_analyzed() {
         ClassFileMetaData classMetaData = analyzeClass(Interface1.class);
 
         assertEquals(name(Interface1.class), classMetaData.getName());
@@ -62,72 +62,72 @@ public class AnalyzeClassTest {
     }
 
     @Test
-    public void require_that_return_type_is_included() {
+    public void return_type_is_included() {
         assertTrue(analyzeClass(Interface1.class).getReferencedClasses().contains(name(Image.class)));
     }
 
     @Test
-    public void require_that_parameters_are_included() {
+    public void parameters_are_included() {
         assertTrue(analyzeClass(Interface1.class).getReferencedClasses().contains(name(Kernel.class)));
     }
 
     @Test
-    public void require_that_exceptions_are_included() {
+    public void exceptions_are_included() {
         assertTrue(analyzeClass(Interface1.class).getReferencedClasses().contains(name(ImagingOpException.class)));
     }
 
     @Test
-    public void require_that_basic_types_ignored() {
+    public void basic_types_ignored() {
         List.of("int", "float").forEach(type ->
                 assertFalse(analyzeClass(Interface1.class).getReferencedClasses().contains(type)));
     }
 
     @Test
-    public void require_that_arrays_of_basic_types_ignored() {
+    public void arrays_of_basic_types_ignored() {
         List.of("int[]", "int[][]").forEach(type ->
                 assertFalse(analyzeClass(Interface1.class).getReferencedClasses().contains(type)));
     }
 
     @Test
-    public void require_that_instance_field_types_are_included() {
+    public void instance_field_types_are_included() {
         assertTrue(analyzeClass(Fields.class).getReferencedClasses().contains(name(String.class)));
     }
 
     @Test
-    public void require_that_static_field_types_are_included() {
+    public void static_field_types_are_included() {
         assertTrue(analyzeClass(Fields.class).getReferencedClasses().contains(name(java.util.List.class)));
     }
 
     @Test
-    public void require_that_field_annotation_is_included() {
+    public void field_annotation_is_included() {
         assertTrue(analyzeClass(Fields.class).getReferencedClasses().contains(name(DummyAnnotation.class)));
     }
 
     @Test
-    public void require_that_class_annotation_is_included() {
+    public void class_annotation_is_included() {
         assertTrue(analyzeClass(ClassAnnotation.class).getReferencedClasses().contains(name(DummyAnnotation.class)));
     }
 
     @Test
-    public void require_that_method_annotation_is_included() {
+    public void method_annotation_is_included() {
         assertTrue(analyzeClass(MethodAnnotation.class).getReferencedClasses().contains(name(DummyAnnotation.class)));
     }
 
     @Test
-    public void require_that_export_package_annotations_are_ignored() {
+    public void export_package_annotations_are_ignored() {
         List.of(ExportPackage.class, Version.class).forEach(type ->
                 assertFalse(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info"))
                         .getReferencedClasses().contains(type)));
     }
 
     @Test
-    public void require_that_export_annotations_are_processed() {
+    public void export_annotations_are_processed() {
         assertEquals(Optional.of(new ExportPackageAnnotation(3, 1, 4, "TEST_QUALIFIER-2")),
                 Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.package-info")).getExportPackage());
     }
 
     @Test
-    public void require_that_export_annotations_are_validated() {
+    public void export_annotations_are_validated() {
 
         try {
             Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.invalid.package-info"));
@@ -140,24 +140,24 @@ public class AnalyzeClassTest {
     }
 
     @Test
-    public void require_that_catch_clauses_are_included() {
+    public void catch_clauses_are_included() {
         assertTrue(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.CatchException"))
                 .getReferencedClasses().contains(name(LoginException.class)));
     }
 
     @Test
-    public void require_that_class_references_are_included() {
+    public void class_references_are_included() {
         assertTrue(Analyze.analyzeClass(classFile("com.yahoo.container.plugin.classanalysis.sampleclasses.ClassReference"))
                 .getReferencedClasses().contains(name(Interface1.class)));
     }
 
     @Test
-    public void require_that_return_type_of_method_invocations_are_included() {
+    public void return_type_of_method_invocations_are_included() {
         assertTrue(analyzeClass(MethodInvocation.class).getReferencedClasses().contains(name(Image.class)));
     }
 
     @Test
-    public void require_that_attributes_are_included() {
+    public void attributes_are_included() {
         //Uses com/coremedia/iso/Utf8.class from com.googlecode.mp4parser:isoparser:1.0-RC-1
         assertTrue(Analyze.analyzeClass(classFile("class/Utf8")).getReferencedClasses()
                 .contains("org.aspectj.weaver.MethodDeclarationLineNumber"));

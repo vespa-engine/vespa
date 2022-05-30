@@ -1,4 +1,9 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+if(NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+set(VESPALIB_DIRECTIO_TESTDIR src/tests/directio)
+set(VESPALIB_PROCESS_MEMORY_STATS_TESTDIR src/tests/util/process_memory_stats)
+endif()
+
 vespa_define_module(
     DEPENDS
     fastos
@@ -13,6 +18,7 @@ vespa_define_module(
     src/apps/make_fixture_macros
     src/apps/vespa-detect-hostname
     src/apps/vespa-drop-file-from-cache
+    src/apps/vespa-resource-limits
     src/apps/vespa-tsan-digest
     src/apps/vespa-validate-hostname
 
@@ -24,16 +30,20 @@ vespa_define_module(
     src/tests/arrayref
     src/tests/assert
     src/tests/barrier
+    src/tests/benchmark
     src/tests/benchmark_timer
+    src/tests/bits
     src/tests/box
     src/tests/btree
     src/tests/btree/btree_store
     src/tests/btree/btree-scan-speed
     src/tests/btree/btree-stress
+    src/tests/clock
     src/tests/component
     src/tests/compress
     src/tests/compression
     src/tests/cpu_usage
+    src/tests/crc
     src/tests/crypto
     src/tests/data/databuffer
     src/tests/data/input_reader
@@ -52,10 +62,12 @@ vespa_define_module(
     src/tests/datastore/unique_store
     src/tests/datastore/unique_store_dictionary
     src/tests/datastore/unique_store_string_allocator
+    ${VESPALIB_DIRECTIO_TESTDIR}
     src/tests/detect_type_benchmark
     src/tests/dotproduct
     src/tests/drop-file-from-cache
     src/tests/dual_merge_director
+    src/tests/encoding/base64
     src/tests/eventbarrier
     src/tests/exception_classes
     src/tests/executor
@@ -63,18 +75,24 @@ vespa_define_module(
     src/tests/explore_modern_cpp
     src/tests/false
     src/tests/fiddle
+    src/tests/fileheader
+    src/tests/floatingpointtype
     src/tests/fuzzy
     src/tests/gencnt
+    src/tests/growablebytebuffer
     src/tests/guard
     src/tests/host_name
     src/tests/hwaccelrated
     src/tests/io/fileutil
     src/tests/io/mapped_file_input
     src/tests/issue
+    src/tests/json
     src/tests/latch
     src/tests/left_right_heap
     src/tests/make_fixture_macros
     src/tests/memory
+    src/tests/memorydatastore
+    src/tests/metrics
     src/tests/net/async_resolver
     src/tests/net/crypto_socket
     src/tests/net/selector
@@ -89,9 +107,13 @@ vespa_define_module(
     src/tests/net/tls/protocol_snooping
     src/tests/net/tls/transport_options
     src/tests/nice
+    src/tests/objects/identifiable
     src/tests/objects/nbostream
+    src/tests/objects/objectdump
+    src/tests/objects/objectselection
     src/tests/optimized
     src/tests/overload
+    src/tests/polymorphicarray
     src/tests/portal
     src/tests/portal/handle_manager
     src/tests/portal/http_request
@@ -99,12 +121,18 @@ vespa_define_module(
     src/tests/printable
     src/tests/priority_queue
     src/tests/process
+    ${VESPALIB_PROCESS_MEMORY_STATS_TESTDIR}
+    src/tests/programoptions
     src/tests/random
     src/tests/referencecounter
     src/tests/regex
     src/tests/rendezvous
     src/tests/require
     src/tests/runnable_pair
+    src/tests/rusage
+    src/tests/sequencedtaskexecutor
+    src/tests/shutdownguard
+    src/tests/singleexecutor
     src/tests/sha1
     src/tests/shared_operation_throttler
     src/tests/shared_string_repo
@@ -117,6 +145,7 @@ vespa_define_module(
     src/tests/small_vector
     src/tests/spin_lock
     src/tests/stash
+    src/tests/state_server
     src/tests/stllike
     src/tests/stringfmt
     src/tests/sync
@@ -146,6 +175,7 @@ vespa_define_module(
     src/tests/typify
     src/tests/unwind_message
     src/tests/util/bfloat16
+    src/tests/util/cgroup_resource_limits
     src/tests/util/file_area_freelist
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
@@ -161,7 +191,10 @@ vespa_define_module(
     src/tests/visit_ranges
     src/tests/invokeservice
     src/tests/wakeup
+    src/tests/xmlserializable
     src/tests/zcurve
+    src/tests/fastlib/io
+    src/tests/fastlib/text
 
     LIBS
     src/vespa/vespalib
@@ -171,12 +204,15 @@ vespa_define_module(
     src/vespa/vespalib/data
     src/vespa/vespalib/data/slime
     src/vespa/vespalib/datastore
+    src/vespa/vespalib/encoding
     src/vespa/vespalib/fuzzy
     src/vespa/vespalib/geo
     src/vespa/vespalib/hwaccelrated
     src/vespa/vespalib/io
     src/vespa/vespalib/locale
+    src/vespa/vespalib/metrics
     src/vespa/vespalib/net
+    src/vespa/vespalib/net/http
     src/vespa/vespalib/net/tls
     src/vespa/vespalib/net/tls/impl
     src/vespa/vespalib/objects
@@ -190,4 +226,7 @@ vespa_define_module(
     src/vespa/vespalib/time
     src/vespa/vespalib/trace
     src/vespa/vespalib/util
+    src/vespa/fastlib/io
+    src/vespa/fastlib/text
+    src/vespa/fastlib/text/apps
 )

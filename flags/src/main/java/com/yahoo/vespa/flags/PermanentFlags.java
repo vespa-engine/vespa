@@ -262,6 +262,12 @@ public class PermanentFlags {
             "Takes effect on next redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
+            "cloud-accounts", List.of(), String.class,
+            "A list of 12-digit AWS account IDs that are valid for the given tenant",
+            "Takes effect on next deployment through controller",
+            TENANT_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

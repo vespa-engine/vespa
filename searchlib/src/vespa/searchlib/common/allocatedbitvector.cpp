@@ -108,23 +108,4 @@ AllocatedBitVector::resize(Index newLength)
     clear();
 }
 
-AllocatedBitVector &
-AllocatedBitVector::operator=(const AllocatedBitVector & rhs)
-{
-    AllocatedBitVector tmp(rhs);
-    swap(tmp);
-    assert(testBit(size()));
-
-    return *this;
-}
-AllocatedBitVector &
-AllocatedBitVector::operator=(const BitVector & rhs)
-{
-    AllocatedBitVector tmp(rhs);
-    swap(tmp);
-    assert(testBit(size()));
-
-    return *this;
-}
-
 } // namespace search

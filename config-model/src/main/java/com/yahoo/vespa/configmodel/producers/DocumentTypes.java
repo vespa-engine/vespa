@@ -5,13 +5,12 @@ import com.yahoo.document.*;
 import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
-import com.yahoo.documentmodel.DataTypeCollection;
 import com.yahoo.documentmodel.NewDocumentReferenceDataType;
 import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.documentmodel.OwnedTemporaryType;
 import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.documentmodel.VespaDocumentType;
-import com.yahoo.searchdefinition.document.FieldSet;
+import com.yahoo.schema.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
 import java.util.*;
 

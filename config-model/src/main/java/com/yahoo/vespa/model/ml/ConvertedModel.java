@@ -11,10 +11,9 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.searchdefinition.FeatureNames;
-import com.yahoo.searchdefinition.RankProfile;
-import com.yahoo.searchdefinition.RankingConstant;
-import com.yahoo.searchdefinition.expressiontransforms.RankProfileTransformContext;
+import com.yahoo.schema.FeatureNames;
+import com.yahoo.schema.RankProfile;
+import com.yahoo.schema.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -265,12 +264,12 @@ public class ConvertedModel {
 
     private static Map<String, ExpressionFunction> convertStored(ModelStore store, RankProfile profile) {
         for (Pair<String, Tensor> constant : store.readSmallConstants()) {
-            profile.addConstant(constant.getFirst(),
-                                new RankProfile.Constant(FeatureNames.asConstantFeature(constant.getFirst()), constant.getSecond()));
+            var name = FeatureNames.asConstantFeature(constant.getFirst());
+            profile.add(new RankProfile.Constant(name, constant.getSecond()));
         }
 
-        for (RankingConstant constant : store.readLargeConstants()) {
-            profile.rankingConstants().putIfAbsent(constant);
+        for (RankProfile.Constant constant : store.readLargeConstants()) {
+            profile.add(constant);
         }
 
         for (Pair<String, RankingExpression> function : store.readFunctions()) {
@@ -298,8 +297,8 @@ public class ConvertedModel {
                                                String constantValueString) {
         Tensor constantValue = Tensor.from(constantValueString);
         store.writeSmallConstant(constantName, constantValue);
-        profile.addConstant(constantName,
-                            new RankProfile.Constant(FeatureNames.asConstantFeature(constantName), constantValue));
+        Reference name = FeatureNames.asConstantFeature(constantName);
+        profile.add(new RankProfile.Constant(name, constantValue));
     }
 
     private static void transformLargeConstant(ModelStore store,
@@ -318,10 +317,11 @@ public class ConvertedModel {
             constantsReplacedByFunctions.add(constantName); // will replace constant(constantName) by constantName later
         }
         else {
-            profile.rankingConstants().computeIfAbsent(constantName, name -> {
-                Path constantPath = store.writeLargeConstant(name, constantValue);
-                return new RankingConstant(name, constantValue.type(), constantPath.toString());
-            });
+            var constantReference = FeatureNames.asConstantFeature(constantName);
+            if ( ! profile.constants().containsKey(constantReference)) {
+                Path constantPath = store.writeLargeConstant(constantName, constantValue);
+                profile.add(new RankProfile.Constant(constantReference, constantValue.type(), constantPath.toString()));
+            }
         }
     }
 
@@ -548,15 +548,17 @@ public class ConvertedModel {
         }
 
         /**
-         * Reads the information about all the large (aka ranking) constants stored in the application package
+         * Reads the information about all the large constants stored in the application package
          * (the constant value itself is replicated with file distribution).
          */
-        List<RankingConstant> readLargeConstants() {
+        List<RankProfile.Constant> readLargeConstants() {
             try {
-                List<RankingConstant> constants = new ArrayList<>();
+                List<RankProfile.Constant> constants = new ArrayList<>();
                 for (ApplicationFile constantFile : application.getFile(modelFiles.largeConstantsInfoPath()).listFiles()) {
                     String[] parts = IOUtils.readAll(constantFile.createReader()).split(":");
-                    constants.add(new RankingConstant(parts[0], TensorType.fromSpec(parts[1]), parts[2]));
+                    constants.add(new RankProfile.Constant(FeatureNames.asConstantFeature(parts[0]),
+                                                           TensorType.fromSpec(parts[1]),
+                                                           parts[2]));
                 }
                 return constants;
             }

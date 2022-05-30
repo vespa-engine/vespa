@@ -450,7 +450,10 @@ void LogDataStore::compactFile(FileId fileId)
     IWriteData::UP compacter;
     FileId destinationFileId = FileId::active();
     if (_bucketizer) {
-        if ( ! shouldCompactToActiveFile(fc->getDiskFootprint() - fc->getDiskBloat())) {
+        size_t disk_footprint = fc->getDiskFootprint();
+        size_t disk_bloat = fc->getDiskBloat();
+        size_t compacted_size = (disk_footprint <= disk_bloat) ? 0u : (disk_footprint - disk_bloat);
+        if ( ! shouldCompactToActiveFile(compacted_size)) {
             MonitorGuard guard(_updateLock);
             destinationFileId = allocateFileId(guard);
             setNewFileChunk(guard, createWritableFile(destinationFileId, fc->getLastPersistedSerialNum(), fc->getNameId().next()));
@@ -464,9 +467,8 @@ void LogDataStore::compactFile(FileId fileId)
 
     fc->appendTo(_executor, *this, *compacter, fc->getNumChunks(), nullptr, CpuCategory::COMPACT);
 
-    if (destinationFileId.isActive()) {
-        flushActiveAndWait(0);
-    } else {
+    flushActiveAndWait(0);
+    if (!destinationFileId.isActive()) {
         MonitorGuard guard(_updateLock);
         auto & compactTo = dynamic_cast<WriteableFileChunk &>(*_fileChunks[destinationFileId.getId()]);
         flushFileAndWait(std::move(guard), compactTo, 0);

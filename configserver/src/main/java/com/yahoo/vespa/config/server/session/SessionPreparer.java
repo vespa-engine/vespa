@@ -20,10 +20,10 @@ import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.lang.SettableOptional;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.TimeoutBudget;
@@ -204,7 +204,8 @@ public class SessionPreparer {
                                                               params.quota(),
                                                               params.tenantSecretStores(),
                                                               secretStore,
-                                                              params.operatorCertificates());
+                                                              params.operatorCertificates(),
+                                                              params.cloudAccount());
             this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
@@ -281,7 +282,8 @@ public class SessionPreparer {
                                   athenzDomain,
                                   params.quota(),
                                   params.tenantSecretStores(),
-                                  params.operatorCertificates());
+                                  params.operatorCertificates(),
+                                  params.cloudAccount());
             checkTimeout("write state to zookeeper");
         }
 
@@ -321,7 +323,8 @@ public class SessionPreparer {
                                        Optional<AthenzDomain> athenzDomain,
                                        Optional<Quota> quota,
                                        List<TenantSecretStore> tenantSecretStores,
-                                       List<X509Certificate> operatorCertificates) {
+                                       List<X509Certificate> operatorCertificates,
+                                       Optional<CloudAccount> cloudAccount) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -334,6 +337,7 @@ public class SessionPreparer {
             zooKeeperClient.writeQuota(quota);
             zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
             zooKeeperClient.writeOperatorCertificates(operatorCertificates);
+            zooKeeperClient.writeCloudAccount(cloudAccount);
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

@@ -15,7 +15,7 @@ namespace search::index {
  */
 class FieldLengthCalculator {
     std::atomic<double>   _average_field_length;
-    uint32_t              _num_samples;     // Capped by _max_num_samples
+    std::atomic<uint32_t> _num_samples;     // Capped by _max_num_samples
     uint32_t              _max_num_samples;
 
 public:
@@ -39,7 +39,7 @@ public:
     }
 
     double get_average_field_length() const { return _average_field_length.load(std::memory_order_relaxed); }
-    uint32_t get_num_samples() const { return _num_samples; }
+    uint32_t get_num_samples() const { return _num_samples.load(std::memory_order_relaxed); }
     uint32_t get_max_num_samples() const { return _max_num_samples; }
 
     FieldLengthInfo get_info() const {
@@ -47,10 +47,12 @@ public:
     }
 
     void add_field_length(uint32_t field_length) {
-        if (_num_samples < _max_num_samples) {
-            ++_num_samples;
+        auto num_samples = get_num_samples();
+        if (num_samples < _max_num_samples) {
+            ++num_samples;
+            _num_samples.store(num_samples, std::memory_order_relaxed);
         }
-        _average_field_length.store((_average_field_length.load(std::memory_order_relaxed) * (_num_samples - 1) + field_length) / _num_samples, std::memory_order_relaxed);
+        _average_field_length.store((_average_field_length.load(std::memory_order_relaxed) * (num_samples - 1) + field_length) / num_samples, std::memory_order_relaxed);
     }
 
 };

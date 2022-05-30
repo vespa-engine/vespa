@@ -24,7 +24,7 @@ public class AthenzIdentityVerifier implements HostnameVerifier {
     private final Set<AthenzIdentity> allowedIdentities;
 
     public AthenzIdentityVerifier(Set<AthenzIdentity> allowedIdentities) {
-        this.allowedIdentities = allowedIdentities;
+        this.allowedIdentities = Set.copyOf(allowedIdentities);
     }
 
     @Override

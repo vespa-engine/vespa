@@ -66,6 +66,7 @@ public class ApplicationPackageBuilder {
     private boolean explicitSystemTest = false;
     private boolean explicitStagingTest = false;
     private Version compileVersion = Version.fromString("6.1");
+    private String cloudAccount = null;
 
     public ApplicationPackageBuilder majorVersion(int majorVersion) {
         this.majorVersion = OptionalInt.of(majorVersion);
@@ -256,12 +257,22 @@ public class ApplicationPackageBuilder {
         }
     }
 
+    public ApplicationPackageBuilder cloudAccount(String cloudAccount) {
+        this.cloudAccount = cloudAccount;
+        return this;
+    }
+
     private byte[] deploymentSpec() {
         StringBuilder xml = new StringBuilder();
         xml.append("<deployment version='1.0' ");
         majorVersion.ifPresent(v -> xml.append("major-version='").append(v).append("' "));
-        if(athenzIdentityAttributes != null) {
+        if (athenzIdentityAttributes != null) {
             xml.append(athenzIdentityAttributes);
+        }
+        if (cloudAccount != null) {
+            xml.append(" cloud-account='");
+            xml.append(cloudAccount);
+            xml.append("'");
         }
         xml.append(">\n");
         for (String instance : instances.split(",")) {

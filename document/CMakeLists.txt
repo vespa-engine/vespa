@@ -4,7 +4,6 @@ vespa_define_module(
     fastos
     vespalog
     vespalib
-    staging_vespalib
     config_cloudconfig
     vespaeval
 
@@ -43,4 +42,4 @@ vespa_define_module(
     src/tests/tensor_fieldvalue/partial_remove
 )
 
-install_java_artifact(document)
+install_jar(document.jar)

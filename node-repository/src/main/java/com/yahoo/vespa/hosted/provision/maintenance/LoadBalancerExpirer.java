@@ -80,7 +80,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
             try {
                 attempts.add(1);
                 log.log(Level.INFO, () -> "Removing expired inactive " + lb.id());
-                service.remove(lb.id().application(), lb.id().cluster());
+                service.remove(lb);
                 db.removeLoadBalancer(lb.id());
             } catch (Exception e){
                 failed.add(lb.id());
@@ -113,7 +113,7 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
             try {
                 attempts.add(1);
                 LOG.log(Level.INFO, () -> "Removing reals from inactive load balancer " + lb.id() + ": " + Sets.difference(lb.instance().get().reals(), reals));
-                service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals), true);
+                service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals, lb.instance().get().cloudAccount()), true);
                 db.writeLoadBalancer(lb.with(lb.instance().map(instance -> instance.withReals(reals))), lb.state());
             } catch (Exception e) {
                 failed.add(lb.id());

@@ -1,0 +1,4 @@
+.depend
+Makefile
+bits_test
+vespalib_bits_test_app

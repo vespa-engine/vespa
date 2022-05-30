@@ -79,6 +79,7 @@ BucketMover::BucketMover(const BucketId &bucket, const MaintenanceDocumentSubDB 
       _started(0),
       _completed(0),
       _needReschedule(false),
+      _cancelled(false),
       _allScheduled(false),
       _lastGidValid(false),
       _lastGid()
@@ -138,6 +139,7 @@ BucketMover::moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallba
 
 void
 BucketMover::cancel() {
+    _cancelled = true;
     setAllScheduled();
     _needReschedule.store(true, std::memory_order_relaxed);
 }

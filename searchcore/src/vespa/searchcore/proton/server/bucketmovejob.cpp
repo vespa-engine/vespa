@@ -159,7 +159,7 @@ BucketMoveJob::needMove(const ScanIterator &itr) const {
         return noMove;
     }
     const bool wantReady = (shouldBeReady == Trinary::True) || isActive;
-    LOG(spam, "checkBucket(): bucket(%s), shouldBeReady(%s), active(%s)",
+    LOG(spam, "needMove(): bucket(%s), shouldBeReady(%s), active(%s)",
         itr.getBucket().toString().c_str(), toStr(shouldBeReady), toStr(isActive));
     if (wantReady) {
         if (!hasNotReadyDocs) {
@@ -241,6 +241,11 @@ BucketMoveJob::prepareMove(std::shared_ptr<BucketMoveJob> job, BucketMover::Move
 void
 BucketMoveJob::completeMove(GuardedMoveOps ops, IDestructorCallbackSP onDone) {
     BucketMover & mover = ops.mover();
+    if (mover.cancelled()) {
+        LOG(spam, "completeMove(%s, mover@%p): mover already cancelled, not processing it further",
+            mover.getBucket().toString().c_str(), &mover);
+        return;
+    }
     mover.moveDocuments(std::move(ops.success()), std::move(onDone));
     ops.failed().clear();
     if (checkIfMoverComplete(mover)) {
@@ -280,6 +285,7 @@ void
 BucketMoveJob::cancelBucket(BucketId bucket) {
     auto inFlight = _bucketsInFlight.find(bucket);
     if (inFlight != _bucketsInFlight.end()) {
+        LOG(spam, "cancelBucket(%s): cancelling existing mover %p", bucket.toString().c_str(), inFlight->second.get());
         inFlight->second->cancel();
         checkIfMoverComplete(*inFlight->second);
     }
@@ -329,7 +335,7 @@ std::shared_ptr<BucketMover>
 BucketMoveJob::createMover(BucketId bucket, bool wantReady) {
     const MaintenanceDocumentSubDB &source(wantReady ? _notReady : _ready);
     const MaintenanceDocumentSubDB &target(wantReady ? _ready : _notReady);
-    LOG(debug, "checkBucket(): mover.setupForBucket(%s, source:%u, target:%u)",
+    LOG(debug, "createMover(): BucketMover::create(%s, source:%u, target:%u)",
         bucket.toString().c_str(), source.sub_db_id(), target.sub_db_id());
     return BucketMover::create(bucket, &source, target.sub_db_id(), _moveHandler);
 }

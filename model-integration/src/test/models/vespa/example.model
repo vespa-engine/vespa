@@ -1,17 +1,15 @@
 model example {
 
     # All inputs that are not scalar (aka 0-dimensional tensor) must be declared
-    input1: tensor(name{}, x[3])
-    input2: tensor(x[3])
+    inputs {
+        input1: tensor(name{}, x[3])
+        input2: tensor(x[3])
+    }
 
     constants {
         constant1: tensor(x[3]):{{x:0}:0.5, {x:1}:1.5, {x:2}:2.5}
         constant2: 3.0
-    }
-
-    constant constant1asLarge {
-        type: tensor(x[3])
-        file: constant1asLarge.json
+        constant1asLarge tensor(x[3]): file:constant1asLarge.json
     }
 
     function foo1() {

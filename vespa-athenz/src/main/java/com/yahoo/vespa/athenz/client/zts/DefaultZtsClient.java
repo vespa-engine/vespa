@@ -38,7 +38,6 @@ import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -230,7 +229,7 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
             return URI.create(ztsUrl.toString() + '/');
     }
     public static class Builder {
-        private URI ztsUrl;
+        private final URI ztsUrl;
         private ErrorHandler errorHandler = ErrorHandler.empty();
         private HostnameVerifier hostnameVerifier = null;
         private Supplier<SSLContext> sslContextSupplier = null;
@@ -260,9 +259,8 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
         }
 
         public DefaultZtsClient build() {
-            if (Objects.isNull(sslContextSupplier)) {
-                throw new IllegalArgumentException("No ssl context or identity provider available to set up zts client");
-            }
+            if (sslContextSupplier == null)
+                throw new IllegalArgumentException("No SSL context or identity provider available to set up ZTS client");
             return new DefaultZtsClient(ztsUrl, sslContextSupplier, hostnameVerifier, errorHandler);
         }
     }

@@ -1,4 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+find_package(ICU 60.0 REQUIRED COMPONENTS uc i18n)
 vespa_add_library(searchlib
     SOURCES
     $<TARGET_OBJECTS:searchlib_aggregation>
@@ -28,11 +29,16 @@ vespa_add_library(searchlib
     $<TARGET_OBJECTS:searchlib_searchlib_index>
     $<TARGET_OBJECTS:searchlib_tensor>
     $<TARGET_OBJECTS:searchlib_transactionlog>
+    $<TARGET_OBJECTS:searchlib_uca>
     $<TARGET_OBJECTS:searchlib_util>
+    $<TARGET_OBJECTS:searchcommon_searchcommon_common>
+    $<TARGET_OBJECTS:searchcommon_searchcommon_attribute>
 
     INSTALL lib64
     DEPENDS
-    staging_vespalib
+    vespalib
+    ICU::i18n
+    ICU::uc
     ${VESPA_ATOMIC_LIB}
 )
 

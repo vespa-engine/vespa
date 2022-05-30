@@ -6,9 +6,9 @@
 #include "i_maintenance_job.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/vespalib/util/retain_guard.h>
-#include <vespa/vespalib/util/scheduledexecutor.h>
 #include <mutex>
 
+class FNET_Transport;
 
 namespace vespalib {
 
@@ -26,6 +26,7 @@ namespace proton {
 
 class MaintenanceJobRunner;
 class DocumentDBMaintenanceConfig;
+class ScheduledExecutor;
 
 /**
  * Class that controls the bucket moving between ready and notready sub databases
@@ -88,7 +89,7 @@ private:
     MaintenanceDocumentSubDB          _readySubDB;
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;
-    std::unique_ptr<vespalib::ScheduledExecutor>  _periodicTimer;
+    std::unique_ptr<ScheduledExecutor>  _periodicTimer;
     DocumentDBMaintenanceConfigSP     _config;
     State                             _state;
     const DocTypeName                &_docTypeName;

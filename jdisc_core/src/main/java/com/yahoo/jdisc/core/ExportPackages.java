@@ -58,7 +58,9 @@ public class ExportPackages {
            .append("org.aopalliance.aop");
 
         for (int i = 1; i < jars.length; ++i) {
-            out.append(", ").append(getExportedPackages(jars[i]));
+            String exports = getExportedPackages(jars[i]);
+            if (exports != null && ! exports.isEmpty())
+                out.append(", ").append(exports);
         }
         return out.toString();
     }

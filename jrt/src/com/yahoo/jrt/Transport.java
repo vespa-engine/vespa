@@ -4,6 +4,7 @@ package com.yahoo.jrt;
 
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -15,7 +16,7 @@ import java.util.logging.Logger;
  * multiplexed network IO, handles scheduled tasks and keeps track of
  * some additional helper threads. A single Transport object can back
  * multiple {@link Supervisor} objects.
- **/
+ */
 public class Transport {
 
     private static final Logger log = Logger.getLogger(Transport.class.getName());
@@ -30,11 +31,11 @@ public class Transport {
     private final int eventsBeforeWakeup;
 
     private final TransportMetrics metrics = TransportMetrics.getInstance();
-    private final ArrayList<TransportThread> threads = new ArrayList<>();
+    private final List<TransportThread> threads = new ArrayList<>();
     private final Random rnd = new Random();
 
     /**
-     * Create a new Transport object with the given fatal error
+     * Creates a new Transport object with the given fatal error
      * handler and CryptoEngine. If a fatal error occurs when no fatal
      * error handler is registered, the default action is to log the
      * error and exit with exit code 1.
@@ -44,7 +45,7 @@ public class Transport {
      * @param cryptoEngine crypto engine to use
      * @param numThreads number of {@link TransportThread}s.
      * @param eventsBeforeWakeup number write events in Q before waking thread up
-     **/
+     */
     public Transport(String name, FatalErrorHandler fatalHandler, CryptoEngine cryptoEngine, int numThreads, boolean tcpNoDelay, int eventsBeforeWakeup) {
         this.name = name;
         this.fatalHandler = fatalHandler; // NB: this must be set first
@@ -82,7 +83,7 @@ public class Transport {
      * Select a random transport thread
      *
      * @return a random transport thread
-     **/
+     */
     public TransportThread selectThread() {
         return threads.get(rnd.nextInt(threads.size()));
     }
@@ -93,24 +94,24 @@ public class Transport {
     public String getName() { return name; }
 
     /**
-     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * Uses the underlying CryptoEngine to create a CryptoSocket for
      * the client side of a connection.
      *
      * @return CryptoSocket handling appropriate encryption
      * @param channel low-level socket channel to be wrapped by the CryptoSocket
      * @param spec who we are connecting to, for hostname validation
-     **/
+     */
     CryptoSocket createClientCryptoSocket(SocketChannel channel, Spec spec) {
         return cryptoEngine.createClientCryptoSocket(channel, spec);
     }
 
     /**
-     * Use the underlying CryptoEngine to create a CryptoSocket for
+     * Uses the underlying CryptoEngine to create a CryptoSocket for
      * the server side of a connection.
      *
      * @return CryptoSocket handling appropriate encryption
      * @param channel low-level socket channel to be wrapped by the CryptoSocket
-     **/
+     */
     CryptoSocket createServerCryptoSocket(SocketChannel channel) {
         return cryptoEngine.createServerCryptoSocket(channel);
     }
@@ -122,7 +123,7 @@ public class Transport {
      *
      * @param problem the throwable causing the failure
      * @param context the object owning the crashing thread
-     **/
+     */
     void handleFailure(Throwable problem, Object context) {
         if (fatalHandler != null) {
             fatalHandler.handleFailure(problem, context);
@@ -135,19 +136,19 @@ public class Transport {
     }
 
     /**
-     * Listen to the given address. This method is called by a {@link
+     * Listens to the given address. This method is called by a {@link
      * Supervisor} object.
      *
      * @return active object accepting new connections
      * @param owner the one calling this method
      * @param spec the address to listen to
-     **/
+     */
     Acceptor listen(Supervisor owner, Spec spec) throws ListenFailedException {
         return new Acceptor(this, owner, spec);
     }
 
     /**
-     * Connect to the given address. This method is called by a {@link
+     * Connects to the given address. This method is called by a {@link
      * Supervisor} object.
      *
      * @return the new connection
@@ -166,7 +167,7 @@ public class Transport {
     }
 
     /**
-     * Request that {@link Connection#doHandshakeWork()} be called (in any thread)
+     * Requests that {@link Connection#doHandshakeWork()} be called (in any thread)
      * followed by a call to {@link Connection#handleHandshakeWorkDone()} from the transport thread.
      *
      * @param conn the connection needing handshake work
@@ -176,7 +177,7 @@ public class Transport {
     }
 
     /**
-     * Synchronize with all transport threads. This method will block
+     * Synchronizes with all transport threads. This method will block
      * until all commands issued before this method was invoked has
      * completed. If a transport thread has been shut down (or is in
      * the progress of being shut down) this method will instead wait
@@ -185,7 +186,7 @@ public class Transport {
      * method from a transport thread is not a good idea.
      *
      * @return this object, to enable chaining
-     **/
+     */
     public Transport sync() {
         for (TransportThread thread: threads) {
             thread.sync();
@@ -194,10 +195,10 @@ public class Transport {
     }
 
     /**
-     * Initiate controlled shutdown of all transport threads.
+     * Initiates controlled shutdown of all transport threads.
      *
      * @return this object, to enable chaining with join
-     **/
+     */
     public Transport shutdown() {
         connector.close();
         for (TransportThread thread: threads) {
@@ -207,8 +208,8 @@ public class Transport {
     }
 
     /**
-     * Wait for all transport threads to finish.
-     **/
+     * Waits for all transport threads to finish.
+     */
     public void join() {
         for (TransportThread thread: threads) {
             thread.join();
@@ -225,4 +226,5 @@ public class Transport {
     public TransportMetrics metrics() {
         return metrics;
     }
+
 }
