@@ -778,9 +778,7 @@ public class DocumentSelectorTestCase {
         var s=new DocumentSelector("parent.parentField = \"parentValue\"");
         List<DocumentPut> documents = createDocs();
         assertEquals(Result.TRUE, evaluate("test", documents.get(0)));
-        // TODO Vespa 8: Change the following assert (only) to expect Result.FALSE
-        assertEquals("Matching on type is [on Vespa 7, not] exact",
-                     Result.TRUE, evaluate("parent", documents.get(0)));
+        assertEquals("Matching on type is exact", Result.FALSE, evaluate("parent", documents.get(0)));
         assertEquals(Result.TRUE, evaluate("test.parentField = \"parentValue\"", documents.get(0)));
         assertEquals("Fields may be accessed by parent type",
                      Result.TRUE, evaluate("parent.parentField = \"parentValue\"", documents.get(0)));
