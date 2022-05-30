@@ -3,8 +3,8 @@ package com.yahoo.document.restapi.resource;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.cloud.config.ClusterListConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.concurrent.SystemTimer;
 import com.yahoo.container.core.HandlerMetricContextUtil;
@@ -69,7 +69,7 @@ import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.http.server.MetricNames;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.yolean.Exceptions.RunnableThrowingException;
+import com.yahoo.yolean.Exceptions.RunnableThrowingIOException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -850,7 +850,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         });
     }
 
-    private static void loggingException(RunnableThrowingException runnable) {
+    private static void loggingException(RunnableThrowingIOException runnable) {
         try {
             runnable.run();
         }
