@@ -220,7 +220,9 @@ FunctionDefinition ::= (function | macro) inline? IdentifierVal Arguments
                          implements=["ai.vespa.intellij.schema.psi.SdFunctionDefinitionInterface" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-Arguments ::= '()' | ( ClauseStart ArgumentDefinition (CommaSeparator ArgumentDefinition)* ClauseEnd )
+// Not using ClauseEnd here to avoid consuming trailing NL's, which must be left to terminate single-line
+// rank feature lists in summary/match/rank-features
+Arguments ::= '()' | ( ClauseStart ArgumentDefinition (CommaSeparator ArgumentDefinition)* (NL)* ')' )
 
 // When used in function declarations this should really be IdentifierVal only
 ArgumentDefinition ::= IdentifierVal | INTEGER_REG | STRING_REG | STRING_REG_SINGLE_QUOTE
@@ -228,11 +230,11 @@ ArgumentDefinition ::= IdentifierVal | INTEGER_REG | STRING_REG | STRING_REG_SIN
                          implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                        }
 
-SummaryFeaturesDefinition ::= summary-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart ( RankFeature | NL )* BlockEnd))
+SummaryFeaturesDefinition ::= summary-features ((':' (RankFeature)+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart ( RankFeature | NL )* BlockEnd))
 
-MatchFeaturesDefinition ::= match-features ((':' RankFeature+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart ( RankFeature | NL )* BlockEnd))
+MatchFeaturesDefinition ::= match-features ((':' (RankFeature)+ (NL)+) | ((inherits IdentifierWithDashVal)? BlockStart ( RankFeature | NL )* BlockEnd))
 
-RankFeaturesDefinition ::= rank-features ((':' RankFeature+ (NL)+) | (BlockStart ( RankFeature | NL )* BlockEnd))
+RankFeaturesDefinition ::= rank-features ((':' (RankFeature)+ (NL)+) | (BlockStart ( RankFeature | NL )* BlockEnd))
 
 ConstantsDefinition ::= constants BlockStart ( InnerConstantDefinition | NL )* BlockEnd
 
@@ -240,7 +242,7 @@ InnerConstantDefinition ::= ( ("constant" ClauseStart IdentifierVal ClauseEnd ) 
                             (':')? ( TensorType | "double" )?
                             (':')? ( TensorValue | AnyNumber | (file ':' FilePath) | (uri ':' UriPath))
 
-RankFeature ::= IdentifierVal (Arguments)? ( '.' IdentifierVal )*
+RankFeature ::= ForEachFeature  | ( IdentifierVal (Arguments)? ( '.' IdentifierVal )* )
                     { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                       implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                     }
@@ -248,6 +250,15 @@ QueryFeature ::= "query" '(' IdentifierWithDashVal ')'
                     { mixin="ai.vespa.intellij.schema.psi.impl.SdNamedElementImpl"
                       implements=["ai.vespa.intellij.schema.psi.SdDeclaration" "ai.vespa.intellij.schema.psi.SdNamedElement"]
                     }
+
+// Needs special handling due to the nested rank feature, and the condition
+ForEachFeature ::= "foreach" ClauseStart
+                     IdentifierVal CommaSeparator                                                 // dimension
+                     IdentifierVal CommaSeparator                                                 // variable
+                     RankFeature CommaSeparator                                                   // feature
+                     ( ('>' AnyNumber) | ('<'  AnyNumber) | "true" | STRING_REG )  CommaSeparator // condition
+                     IdentifierVal                                                                // operation
+                   ClauseEnd
 
 //-------------------------
 //---- Document rules -----
@@ -371,7 +382,7 @@ IdentifierWithDashVal ::= IdentifierVal ('-' ( IdentifierVal | INTEGER_REG ) )*
                                                { mixin="ai.vespa.intellij.schema.psi.impl.SdIdentifierMixin"
                                                  implements=["ai.vespa.intellij.schema.psi.SdIdentifier"]
                                                }
-DottedIdentifierWithDash ::= IdentifierWithDashVal ('.' IdentifierWithDashVal)*
+DottedIdentifierWithDash ::= IdentifierWithDashVal ('.' IdentifierWithDashVal )*
 
 BlockStart ::= (NL)* '{' (NL)*
 BlockEnd ::=   (NL)* '}' (NL)*
