@@ -432,8 +432,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     protected void addAccessLogs(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         List<Element> accessLogElements = getAccessLogElements(spec);
 
-        for (Element accessLog : accessLogElements) {
-            AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
+        if (cluster.isHostedVespa() && !accessLogElements.isEmpty()) {
+            accessLogElements.clear();
+            log.logApplicationPackage(
+                    Level.WARNING, "Applications are not allowed to override the 'accesslog' element");
+        } else {
+            for (Element accessLog : accessLogElements) {
+                AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(cluster::addComponent);
+            }
         }
 
         if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())
