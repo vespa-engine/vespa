@@ -41,11 +41,11 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
         Schema schema = createSearch("src/test/examples/rankingexpressionfunction", deployProperties, rankProfileRegistry);
         RankProfile functionsRankProfile = rankProfileRegistry.get(schema, "macros");
         Map<String, RankProfile.RankingExpressionFunction> functions = functionsRankProfile.getFunctions();
-        assertEquals(2, functions.get("titlematch$").function().arguments().size());
-        assertEquals("var1", functions.get("titlematch$").function().arguments().get(0));
-        assertEquals("var2", functions.get("titlematch$").function().arguments().get(1));
-        assertEquals("var1 * var2 + 890", functions.get("titlematch$").function().getBody().getRoot().toString());
-        assertEquals("0.8 + 0.2 * titlematch$(4,5) + 0.8 * titlematch$(7,8) * closeness(distance)",
+        assertEquals(2, functions.get("titlematch").function().arguments().size());
+        assertEquals("var1", functions.get("titlematch").function().arguments().get(0));
+        assertEquals("var2", functions.get("titlematch").function().arguments().get(1));
+        assertEquals("var1 * var2 + 890", functions.get("titlematch").function().getBody().getRoot().toString());
+        assertEquals("0.8 + 0.2 * titlematch(4,5) + 0.8 * titlematch(7,8) * closeness(distance)",
                      functionsRankProfile.getFirstPhaseRanking().getRoot().toString());
         assertEquals("78 + closeness(distance)",
                      functions.get("artistmatch").function().getBody().getRoot().toString());
@@ -56,19 +56,19 @@ public class RankingExpressionsTestCase extends AbstractSchemaTestCase {
         List<Pair<String, String>> rankProperties = rawRankProfile.configProperties();
         assertEquals(6, rankProperties.size());
 
-        assertEquals("rankingExpression(titlematch$).rankingScript", rankProperties.get(2).getFirst());
+        assertEquals("rankingExpression(titlematch).rankingScript", rankProperties.get(2).getFirst());
         assertEquals("var1 * var2 + 890", rankProperties.get(2).getSecond());
 
         assertEquals("rankingExpression(artistmatch).rankingScript", rankProperties.get(3).getFirst());
         assertEquals("78 + closeness(distance)", rankProperties.get(3).getSecond());
 
         assertEquals("rankingExpression(firstphase).rankingScript", rankProperties.get(5).getFirst());
-        assertEquals("0.8 + 0.2 * rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c) + 0.8 * rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6) * closeness(distance)", rankProperties.get(5).getSecond());
+        assertEquals("0.8 + 0.2 * rankingExpression(titlematch@126063073eb2deb.ab95cd69909927c) + 0.8 * rankingExpression(titlematch@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6) * closeness(distance)", rankProperties.get(5).getSecond());
 
-        assertEquals("rankingExpression(titlematch$@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6).rankingScript", rankProperties.get(1).getFirst());
+        assertEquals("rankingExpression(titlematch@c7e4c2d0e6d9f2a1.1d4ed08e56cce2e6).rankingScript", rankProperties.get(1).getFirst());
         assertEquals("7 * 8 + 890", rankProperties.get(1).getSecond());
 
-        assertEquals("rankingExpression(titlematch$@126063073eb2deb.ab95cd69909927c).rankingScript", rankProperties.get(0).getFirst());
+        assertEquals("rankingExpression(titlematch@126063073eb2deb.ab95cd69909927c).rankingScript", rankProperties.get(0).getFirst());
         assertEquals("4 * 5 + 890", rankProperties.get(0).getSecond());
     }
 

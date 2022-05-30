@@ -31,7 +31,7 @@ search rankexpression {
     }
 
     first-phase {
-      expression: 0.8+0.2*titlematch$(4,5)+0.8*titlematch$(7,8)*closeness(distance)
+      expression: 0.8+0.2*titlematch(4,5)+0.8*titlematch(7,8)*closeness(distance)
     }
 
   }
