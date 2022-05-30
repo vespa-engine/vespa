@@ -10,7 +10,6 @@ search outsidedoc {
 
     field a type string {
       indexing: index
-      # index-to: default
     }
 
   }

@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search tensor {
+schema tensor {
 
   document tensor {
     field f1 type tensor(x[3]) {
@@ -97,7 +97,7 @@ search tensor {
   rank-profile profile8 {
 
     first-phase {
-      expression: sum(tensor(d0[1])(attribute{x:functionNotLabel()}))
+      expression: sum(tensor(d0[1])(attribute(f3){x:functionNotLabel()}))
     }
 
     function functionNotLabel() {
@@ -110,7 +110,7 @@ search tensor {
 
     # shadow refers to the generate index and shadow() to the function
     first-phase {
-      expression: sum(tensor(shadow[1])(attribute{x: shadow + shadow() }))
+      expression: sum(tensor(shadow[1])(attribute(f3){x: shadow + shadow() }))
     }
 
     function shadow() {

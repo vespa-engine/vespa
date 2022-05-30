@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search ad {
+schema ad {
   document ad {
     field campaign_ref type reference<campaign> {
       indexing: attribute | summary

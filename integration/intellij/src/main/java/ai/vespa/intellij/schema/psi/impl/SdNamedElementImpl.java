@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.intellij.schema.psi.impl;
 
+import ai.vespa.intellij.schema.psi.SdArgumentDeclaration;
 import com.intellij.extapi.psi.ASTWrapperPsiElement;
 import com.intellij.icons.AllIcons;
 import com.intellij.lang.ASTNode;
@@ -10,7 +11,7 @@ import com.intellij.psi.util.PsiTreeUtil;
 import ai.vespa.intellij.schema.SdIcons;
 import ai.vespa.intellij.schema.SdUtil;
 import ai.vespa.intellij.schema.psi.SdAnnotationFieldDefinition;
-import ai.vespa.intellij.schema.psi.SdArgumentDefinition;
+import ai.vespa.intellij.schema.psi.SdArgumentDeclaration;
 import ai.vespa.intellij.schema.psi.SdDeclarationType;
 import ai.vespa.intellij.schema.psi.SdDocumentAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdDocumentDefinition;
@@ -22,9 +23,8 @@ import ai.vespa.intellij.schema.psi.SdElementFactory;
 import ai.vespa.intellij.schema.psi.SdFunctionDefinition;
 import ai.vespa.intellij.schema.psi.SdIdentifier;
 import ai.vespa.intellij.schema.psi.SdImportFieldDefinition;
-import ai.vespa.intellij.schema.psi.SdItemRawScoreDefinition;
 import ai.vespa.intellij.schema.psi.SdNamedElement;
-import ai.vespa.intellij.schema.psi.SdQueryDefinition;
+import ai.vespa.intellij.schema.psi.SdRankFeature;
 import ai.vespa.intellij.schema.psi.SdRankProfileDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaAnnotationDefinition;
 import ai.vespa.intellij.schema.psi.SdSchemaFieldDefinition;
@@ -36,6 +36,7 @@ import javax.swing.Icon;
 /**
  * This abstract class is used to wrap a Psi Element with SdNamedElement interface, which enables the element to be a
  * "name owner" (like an identifier). It allows the element to take a part in references, find usages and more.
+ *
  * @author Shahar Ariel
  */
 public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements SdNamedElement {
@@ -50,7 +51,7 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
             ASTNode asNode = this.getNode().findChildByType(SdTypes.AS);
             node = this.getNode().findChildByType(SdTypes.IDENTIFIER_VAL, asNode);
         } else if (this instanceof SdRankProfileDefinition || this instanceof SdDocumentSummaryDefinition
-                   || this instanceof SdQueryDefinition) {
+                   || this instanceof SdRankFeature) {
             node = this.getNode().findChildByType(SdTypes.IDENTIFIER_WITH_DASH_VAL);
         } else {
             node = this.getNode().findChildByType(SdTypes.IDENTIFIER_VAL);
@@ -77,8 +78,8 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
             return SdDeclarationType.RANK_PROFILE;
         } else if (this instanceof SdFunctionDefinition) {
             return SdDeclarationType.FUNCTION;
-        } else if (this instanceof SdArgumentDefinition) {
-            return SdDeclarationType.FIUNCTION_ARGUMENT;
+        } else if (this instanceof SdArgumentDeclaration) {
+            return SdDeclarationType.FUNCTION_ARGUMENT;
         } else if (this instanceof SdDocumentDefinition) {
             return SdDeclarationType.DOCUMENT;
         } else if (this instanceof SdDocumentStructDefinition) {
@@ -94,10 +95,8 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
             return SdDeclarationType.STRUCT_FIELD;
         } else if (this instanceof SdAnnotationFieldDefinition) {
             return SdDeclarationType.ANNOTATION_FIELD;
-        } else if (this instanceof SdQueryDefinition) {
-            return SdDeclarationType.QUERY;
-        } else if (this instanceof SdItemRawScoreDefinition) {
-            return SdDeclarationType.ITEM_RAW_SCORE;
+        } else if (this instanceof SdRankFeature) {
+            return SdDeclarationType.FEATURE;
         } else {
             return null;
         }
@@ -147,7 +146,7 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
                 }
                 SdRankProfileDefinition rankProfileParent = PsiTreeUtil.getParentOfType(element, SdRankProfileDefinition.class);
                 if (rankProfileParent != null) {
-                    if (element instanceof SdQueryDefinition || element instanceof SdItemRawScoreDefinition) {
+                    if (element instanceof SdRankFeature) {
                         return element.getName() + " in " + rankProfileParent.getName();
                     }
                     return rankProfileParent.getName() + "." + element.getName();
@@ -163,8 +162,7 @@ public abstract class SdNamedElementImpl extends ASTWrapperPsiElement implements
             @Override
             public Icon getIcon(boolean unused) {
                 if (element instanceof SdSchemaFieldDefinition || element instanceof SdDocumentFieldDefinition || 
-                    element instanceof SdAnnotationFieldDefinition || element instanceof SdQueryDefinition || 
-                    element instanceof SdItemRawScoreDefinition) {
+                    element instanceof SdAnnotationFieldDefinition || element instanceof SdRankFeature) {
                     return AllIcons.Nodes.Field;
                 } else if (element instanceof SdStructFieldDefinition  ||
                            element instanceof SdDocumentStructFieldDefinition) {

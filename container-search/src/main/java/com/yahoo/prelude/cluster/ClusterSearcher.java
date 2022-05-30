@@ -141,7 +141,7 @@ public class ClusterSearcher extends Searcher {
                                                    SchemaInfo schemaInfo,
                                                    VespaDocumentAccess access) {
         if (searchClusterConfig.searchdef().size() != 1) {
-            throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
+            throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single schema : " + searchClusterConfig.searchdef());
         }
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         VdsStreamingSearcher searcher = new VdsStreamingSearcher(access);

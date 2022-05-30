@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search annotationreference2 {
+schema annotationreference2 {
     document annotationreference2 {
         annotation foo { }
         annotation bar {

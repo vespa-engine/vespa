@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search foobar {
+schema foobar {
     document foobar inherits foo, bar {
         struct mystructinfoobar {
             field f3 type string { }
