@@ -170,6 +170,7 @@ StartCommand() {
     java \
         -Xms128m -Xmx2048m \
         -XX:+PreserveFramePointer \
+        -XX:+UseTransparentHugePages \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="$VESPA_HOME/var/crash" \
         -XX:+ExitOnOutOfMemoryError \

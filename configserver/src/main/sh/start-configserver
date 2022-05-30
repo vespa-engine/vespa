@@ -164,6 +164,7 @@ fixddir $bundlecachedir
 vespa-run-as-vespa-user vespa-runserver -s ${VESPA_SERVICE_NAME} -r 30 -p $pidfile -- \
 	java \
 	-Xms128m -Xmx2048m \
+        -XX:+UseTransparentHugePages \
 	-XX:+PreserveFramePointer \
 	-XX:+HeapDumpOnOutOfMemoryError \
 	-XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
