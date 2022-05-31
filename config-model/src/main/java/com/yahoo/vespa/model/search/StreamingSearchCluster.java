@@ -25,6 +25,7 @@ import com.yahoo.vespa.configdefinition.IlscriptsConfig;
  */
 public class StreamingSearchCluster extends SearchCluster implements
         DocumentdbInfoConfig.Producer,
+        RankProfilesConfig.Producer,
         VsmsummaryConfig.Producer,
         VsmfieldsConfig.Producer,
         SummarymapConfig.Producer,
@@ -104,6 +105,7 @@ public class StreamingSearchCluster extends SearchCluster implements
         derivedConfig.getConfig(builder);
     }
 
+    @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
         derivedConfig.getRankProfileList().getConfig(builder);
     }
