@@ -6286,7 +6286,8 @@
       "public void <init>(com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
       "public final void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public com.yahoo.search.query.profile.types.QueryProfileTypeRegistry getTypeRegistry()",
-      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile findQueryProfile(java.lang.String)"
+      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile findQueryProfile(java.lang.String)",
+      "public static com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry fromConfig(com.yahoo.search.query.profile.config.QueryProfilesConfig)"
     ],
     "fields": [
       "public static final com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry empty"
