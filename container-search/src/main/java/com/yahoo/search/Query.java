@@ -882,7 +882,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         yql.append(" where ");
         String insert = serializeSortingAndLimits(includeHitsAndOffset);
         yql.append(VespaSerializer.serialize(this, insert));
-        yql.append(';');
         return yql.toString();
     }
 

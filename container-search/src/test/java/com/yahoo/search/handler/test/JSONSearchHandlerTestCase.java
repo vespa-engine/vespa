@@ -348,7 +348,7 @@ public class JSONSearchHandlerTestCase {
 
         // Run query
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
-        assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\";\"}}]}}",
+        assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\"\"}}]}}",
                      result);
     }
 
@@ -373,7 +373,7 @@ public class JSONSearchHandlerTestCase {
                        "}\n";
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
 
-        String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()));\"}}]}}";
+        String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
         assertEquals(expected, result);
     }
 
@@ -396,7 +396,7 @@ public class JSONSearchHandlerTestCase {
                        "}\n";
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, query, JSON_CONTENT_TYPE).readAll();
 
-        String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()));\"}}]}}";
+        String expected = "{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where field contains \\\"term\\\" | all(output(count()))\"}}]}}";
         assertEquals(expected, result);
     }
 
@@ -407,14 +407,14 @@ public class JSONSearchHandlerTestCase {
 
         // Run query
         String result = driver.sendRequest(uri + "searchChain=echoingQuery", com.yahoo.jdisc.http.HttpRequest.Method.POST, root.toString(), JSON_CONTENT_TYPE).readAll();
-        assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\";\"}}]}}",
+        assertEquals("{\"root\":{\"id\":\"toplevel\",\"relevance\":1.0,\"fields\":{\"totalCount\":0},\"children\":[{\"id\":\"Query\",\"relevance\":1.0,\"fields\":{\"query\":\"select * from sources * where default contains \\\"bad\\\"\"}}]}}",
                      result);
     }
 
     @Test
     public void testRequestMapping() {
         ObjectNode json = jsonMapper.createObjectNode();
-        json.put("yql", "select * from sources * where sddocname contains \"blog_post\" limit 0 | all(group(date) max(3) order(-count())each(output(count())));");
+        json.put("yql", "select * from sources * where sddocname contains \"blog_post\" limit 0 | all(group(date) max(3) order(-count())each(output(count())))");
         json.put("hits", 10);
         json.put("offset", 5);
         json.put("queryProfile", "foo");
@@ -518,7 +518,7 @@ public class JSONSearchHandlerTestCase {
                 "&nocache=false&model.type=yql&collapse.summary=default&ranking.matchPhase.diversity.minGroups=1&ranking.location=123789.89123N%3B128123W&ranking.queryCache=false&offset=5&streaming.groupname=abc&groupingSessionCache=false" +
                 "&presentation.template=json&trace.rules=none&rules.off=false&ranking.properties=default&searchChain=exceptionInPlugin&pos.ll=1263123N%3B1231.9W&ranking.sorting=desc&ranking.matchPhase.ascending=true&ranking.features=none&hitcountestimate=true" +
                 "&model.filter=default&metrics.ignore=_all&collapse.field=none&ranking.profile=1&rules.rulebase=default&model.defaultIndex=1&trace.level=1&ranking.listFeatures=false&timeout=0&presentation.format=json" +
-                "&yql=select+%2A+from+sources+%2A+where+sddocname+contains+%22blog_post%22+limit+0+%7C+all%28group%28date%29+max%283%29+order%28-count%28%29%29each%28output%28count%28%29%29%29%29%3B&recall=none&streaming.maxbucketspervisitor=5" +
+                "&yql=select+%2A+from+sources+%2A+where+sddocname+contains+%22blog_post%22+limit+0+%7C+all%28group%28date%29+max%283%29+order%28-count%28%29%29each%28output%28count%28%29%29%29%29&recall=none&streaming.maxbucketspervisitor=5" +
                 "&queryProfile=foo&presentation.bolding=true&model.encoding=json&model.queryString=abc&streaming.selection=none&trace.timestamps=false&collapse.size=2&streaming.priority=10&ranking.matchPhase.diversity.attribute=title" +
                 "&ranking.matchPhase.attribute=title&hits=10&streaming.userid=123&pos.bb=1237123W%3B123218N&model.restrict=_doc%2Cjson%2Cxml&ranking.freshness=0.05&user=123";
 
