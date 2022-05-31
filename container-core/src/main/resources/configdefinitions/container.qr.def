@@ -1,8 +1,8 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=container
 
-### All params must be flagged as 'restart' because this config is manually
-### retrieved by ConfiguredApplication.start to init the rpc server
+### Changes to this config requires restart because it is used to initialize
+### connection to the config system
 
 ## filedistributor rpc configuration
 filedistributor.configid reference default="" restart

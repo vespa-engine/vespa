@@ -1,8 +1,7 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=cloud.config
 
-### All params must be flagged as 'restart' because this config is manually
-### retrieved by ConfiguredApplication.start to init the rpc server
+### Changes to this config requires restart
 
 ## The connectionspec for a slobrok is used for connecting to it using
 ## the FNET Remote Tools framework.  It is normally on the form
