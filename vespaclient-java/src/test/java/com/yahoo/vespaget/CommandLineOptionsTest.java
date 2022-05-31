@@ -56,8 +56,7 @@ public class CommandLineOptionsTest {
         assertFalse(params.help);
         assertFalse(params.documentIds.hasNext());
         assertFalse(params.printIdsOnly);
-        // TODO Vespa 8: change to DocumentOnly.NAME
-        assertEquals(AllFields.NAME, params.fieldSet);
+        assertEquals(DocumentOnly.NAME, params.fieldSet);
         assertEquals("default-get", params.route);
         assertTrue(params.cluster.isEmpty());
         assertEquals("client", params.configId);
