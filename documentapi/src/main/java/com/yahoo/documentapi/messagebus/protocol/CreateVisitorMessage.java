@@ -3,7 +3,6 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
-import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocumentOnly;
 
 import java.util.ArrayList;
@@ -25,8 +24,7 @@ public class CreateVisitorMessage extends DocumentMessage {
     private long fromTime = 0;
     private long toTime = 0;
     private boolean visitRemoves = false;
-    // TODO Vespa 8: change to DocumentOnly.NAME
-    private String fieldSet = AllFields.NAME;
+    private String fieldSet = DocumentOnly.NAME;
     private boolean visitInconsistentBuckets = false;
     private Map<String, byte[]> params = new TreeMap<>();
     private int maxBucketsPerVisitor = 1;
