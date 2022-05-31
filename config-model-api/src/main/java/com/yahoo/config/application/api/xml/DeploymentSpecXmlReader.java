@@ -439,7 +439,7 @@ public class DeploymentSpecXmlReader {
     private Optional<String> readGlobalServiceId(Element environmentTag) {
         String globalServiceId = environmentTag.getAttribute(globalServiceIdAttribute);
         if (globalServiceId.isEmpty()) return Optional.empty();
-        deprecate(environmentTag, List.of(globalServiceIdAttribute), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
+        deprecate(environmentTag, List.of(globalServiceIdAttribute), 7, "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
         return Optional.of(globalServiceId);
     }
 
@@ -524,15 +524,15 @@ public class DeploymentSpecXmlReader {
     private boolean readActive(Element regionTag) {
         String activeValue = regionTag.getAttribute("active");
         if ("".equals(activeValue)) return true; // Default to active
-        deprecate(regionTag, List.of("active"), "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
+        deprecate(regionTag, List.of("active"), 7, "See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax");
         if ("true".equals(activeValue)) return true;
         if ("false".equals(activeValue)) return false;
         throw new IllegalArgumentException("Value of 'active' attribute in region tag must be 'true' or 'false' " +
                                            "to control whether this region should receive traffic from the global endpoint of this application");
     }
 
-    private void deprecate(Element element, List<String> attributes, String message) {
-        deprecatedElements.add(new DeprecatedElement(element.getTagName(), attributes, message));
+    private void deprecate(Element element, List<String> attributes, int majorVersion, String message) {
+        deprecatedElements.add(new DeprecatedElement(majorVersion, element.getTagName(), attributes, message));
     }
 
     private static boolean isEmptySpec(Element root) {

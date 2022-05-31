@@ -147,7 +147,10 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder region(String regionName) {
-        return region(RegionName.from(regionName), true);
+        prodBody.append("      <region>")
+                .append(regionName)
+                .append("</region>\n");
+        return this;
     }
 
     public ApplicationPackageBuilder region(RegionName regionName, boolean active) {

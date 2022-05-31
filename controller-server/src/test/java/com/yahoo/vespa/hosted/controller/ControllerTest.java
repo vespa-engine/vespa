@@ -1195,4 +1195,20 @@ public class ControllerTest {
         assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(zone)).get().value());
     }
 
+    @Test
+    public void testSubmitWithElementDeprecatedOnPreviousMajor() {
+        DeploymentContext context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .compileVersion(Version.fromString("8.1"))
+                .region("us-west-1")
+                .globalServiceId("qrs")
+                .build();
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7"));
+        }
+    }
+
 }

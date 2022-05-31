@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.application.pkg;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.Endpoint;
@@ -20,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -59,6 +61,22 @@ public class ApplicationPackageValidator {
         validateEndpointChange(application, applicationPackage, instant);
         validateCompactedEndpoint(applicationPackage);
         validateSecurityClientsPem(applicationPackage);
+        validateDeprecatedElements(applicationPackage);
+    }
+
+    /** Verify that deployment spec does not use elements deprecated on a major version older than wanted major version */
+    private void validateDeprecatedElements(ApplicationPackage applicationPackage) {
+        int wantedMajor = applicationPackage.compileVersion().map(Version::getMajor)
+                                            .or(() -> applicationPackage.deploymentSpec().majorVersion())
+                                            .or(() -> controller.readVersionStatus().controllerVersion()
+                                                                .map(VespaVersion::versionNumber)
+                                                                .map(Version::getMajor))
+                                            .orElseThrow(() -> new IllegalArgumentException("Could not determine wanted major version"));
+        for (var deprecatedElement : applicationPackage.deploymentSpec().deprecatedElements()) {
+            if (applicationPackage.compileVersion().isEmpty()) continue;
+            if (deprecatedElement.majorVersion() >= wantedMajor) continue;
+            throw new IllegalArgumentException(deprecatedElement.humanReadableString());
+        }
     }
 
     /** Verify that we have the security/clients.pem file for public systems */
