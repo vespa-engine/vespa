@@ -72,9 +72,8 @@ public:
     using Dictionary = EnumPostingTree;
     using PostingList = typename PostingParent::PostingList;
 
-    MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
-                                      AttributeVector::Config(AttributeVector::BasicType::STRING,
-                                                              attribute::CollectionType::ARRAY));
+    MultiValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
+    MultiValueStringPostingAttributeT(const vespalib::string & name);
     ~MultiValueStringPostingAttributeT();
 
     void removeOldGenerations(generation_t firstUsed) override;

@@ -10,6 +10,7 @@
 #include "multi_string_enum_hint_search_context.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stash.h>
@@ -25,6 +26,11 @@ MultiValueStringAttributeT<B, M>::
 MultiValueStringAttributeT(const vespalib::string &name,
                            const AttributeVector::Config &c)
     : MultiValueEnumAttribute<B, M>(name, c)
+{ }
+
+template <typename B, typename M>
+MultiValueStringAttributeT<B, M>::MultiValueStringAttributeT(const vespalib::string &name)
+    : MultiValueStringAttributeT<B, M>(name, AttributeVector::Config(AttributeVector::BasicType::STRING,  attribute::CollectionType::ARRAY))
 { }
 
 template <typename B, typename M>

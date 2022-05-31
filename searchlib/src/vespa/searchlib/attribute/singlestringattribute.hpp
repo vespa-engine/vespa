@@ -9,6 +9,7 @@
 #include "single_string_enum_hint_search_context.h"
 #include <vespa/vespalib/text/utf8.h>
 #include <vespa/vespalib/text/lowercase.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
@@ -23,6 +24,11 @@ SingleValueStringAttributeT<B>::
 SingleValueStringAttributeT(const vespalib::string &name,
                             const AttributeVector::Config & c)
     : SingleValueEnumAttribute<B>(name, c)
+{ }
+
+template <typename B>
+SingleValueStringAttributeT<B>::SingleValueStringAttributeT(const vespalib::string &name)
+    : SingleValueStringAttributeT<B>(name, AttributeVector::Config(AttributeVector::BasicType::STRING))
 { }
 
 template <typename B>
