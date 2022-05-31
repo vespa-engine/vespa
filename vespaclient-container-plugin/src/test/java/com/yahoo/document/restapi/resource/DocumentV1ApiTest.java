@@ -337,7 +337,7 @@ public class DocumentV1ApiTest {
         // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
         access.expect(parameters -> {
             assertEquals("[Content:cluster=content]", parameters.getRemoteDataHandler());
-            assertEquals("[all]", parameters.fieldSet());
+            assertEquals("[document]", parameters.fieldSet());
             assertEquals(60_000L, parameters.getSessionTimeoutMs());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
