@@ -96,7 +96,7 @@ SignalHandler::dump_current_thread_stack_to_shared_state() noexcept
     // Note: safe_dump_to() takes in buffer size in _bytes_, not in number of frames.
     const auto n_frames = boost::stacktrace::safe_dump_to(frames_buf.data(), frames_buf.size() * sizeof(void*));
     _shared_backtrace_data._n_dumped_frames = static_cast<uint32_t>(n_frames);
-    _shared_backtrace_data._signal_handler_done.store(true, std::memory_order_release);
+    _shared_backtrace_data._signal_handler_done.store(true);
 }
 
 SignalHandler::SignalHandler(int signal)
@@ -204,7 +204,7 @@ SignalHandler::get_cross_thread_stack_trace(pthread_t thread_id)
         _shared_backtrace_data._want_backtrace.store(false);
         return "(pthread_kill() failed; could not get backtrace)";
     }
-    while (!_shared_backtrace_data._signal_handler_done.load(std::memory_order_acquire)) {
+    while (!_shared_backtrace_data._signal_handler_done.load()) {
         std::this_thread::sleep_for(1ms); // TODO yield instead?
     }
     constexpr int frames_to_skip = 4; // handleSignal() -> gotSignal() -> dump_current_thread_...() -> backtrace()
