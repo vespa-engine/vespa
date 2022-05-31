@@ -23,10 +23,6 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
-          <groupId>org.apache.httpcomponents.client5</groupId>
-          <artifactId>httpclient5</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>biz.aQute.bnd</groupId>
           <artifactId>*</artifactId>
         </exclusion>
