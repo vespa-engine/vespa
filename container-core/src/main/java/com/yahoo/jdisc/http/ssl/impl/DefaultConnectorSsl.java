@@ -81,7 +81,7 @@ public class DefaultConnectorSsl implements SslProvider.ConnectorSsl {
                 ssl.setNeedClientAuth(true);
                 break;
             case WANT:
-                ssl.setNeedClientAuth(true);
+                ssl.setWantClientAuth(true);
                 ssl.setNeedClientAuth(false);
                 break;
             default:
