@@ -3,9 +3,7 @@ package com.yahoo.search.query.ranking;
 
 import com.yahoo.fs4.MapEncoder;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.Query;
 import com.yahoo.search.query.Ranking;
-import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.text.JSON;
 
