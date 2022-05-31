@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -95,7 +95,7 @@ public class DocumentRetrieverTest {
                 .setCluster("")
                 .setRoute("default")
                 .setConfigId("client")
-                .setFieldSet(AllFields.NAME)
+                .setFieldSet(DocumentOnly.NAME)
                 .setPrintIdsOnly(false)
                 .setHelp(false)
                 .setShowDocSize(false)
