@@ -63,9 +63,13 @@ public class BundleValidatorTest {
         BundleValidator validator = new BundleValidator();
         JarFile jarFile = createTemporaryJarFile("import-warnings");
         validator.validateJarFile(state, jarFile);
-        assertThat(buffer.toString())
+        String output = buffer.toString();
+        assertThat(output)
                 .contains("JAR file 'import-warnings.jar' imports the packages [org.json] from 'org.json:json'. \n" +
                         "This bundle is no longer provided on Vespa 8 - see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.");
+        assertThat(output)
+                .contains("JAR file 'import-warnings.jar' imports the packages [org.eclipse.jetty.client.api] from 'jetty'. \n" +
+                        "The Jetty bundles are no longer provided on Vespa 8 - see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.");
     }
 
     private DeployState createDeployState(StringBuffer buffer) {
