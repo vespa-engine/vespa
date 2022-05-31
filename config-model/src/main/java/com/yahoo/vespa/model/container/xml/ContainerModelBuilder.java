@@ -671,12 +671,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addContainers(Collections.singleton(container));
     }
 
-    static boolean incompatibleGCOptions(String jvmargs) {
-        Pattern gcAlgorithm = Pattern.compile("-XX:[-+]Use.+GC");
-        Pattern cmsArgs = Pattern.compile("-XX:[-+]*CMS");
-        return (gcAlgorithm.matcher(jvmargs).find() || cmsArgs.matcher(jvmargs).find());
-    }
-
     private static String buildJvmGCOptions(ConfigModelContext context, String jvmGCOptions) {
         return new JvmGcOptions(context.getDeployState(), jvmGCOptions).build();
     }
@@ -1107,32 +1101,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         String buildLegacyOptions() {
-            String jvmOptions;
+            String jvmOptions = null;
             if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
-                if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
-                    String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-                    throw new IllegalArgumentException("You have specified both deprecated jvm-options='" + jvmOptions + "'" +
-                                                               " and deprecated jvmargs='" + jvmArgs +
-                                                               "'. 'jvm-options' and 'jvmargs' are deprecated and will be removed in Vespa 8." +
-                                                               " Please merge 'jvmargs' into 'options' or 'gc-options' in 'jvm' element." +
-                                                               " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
-                }
                 if (! jvmOptions.isEmpty())
                     logger.logApplicationPackage(WARNING, "'jvm-options' is deprecated and will be removed in Vespa 8." +
                             " Please merge 'jvm-options' into 'options' or 'gc-options' in 'jvm' element." +
-                            " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
-            } else {
-                jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-                if (incompatibleGCOptions(jvmOptions)) {
-                    logger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs'" +
-                            "  to 'gc-options' in 'jvm' element. 'jvmargs' is deprecated and will be removed in Vespa 8." +
-                            " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
-                    cluster.setJvmGCOptions(ContainerCluster.G1GC);
-                }
-                if (! jvmOptions.isEmpty())
-                    logger.logApplicationPackage(WARNING, "'jvmargs' is deprecated and will be removed in Vespa 8." +
-                            " Please merge 'jvmargs' into 'options' or 'gc-options' in 'jvm' element." +
                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
             }
 
