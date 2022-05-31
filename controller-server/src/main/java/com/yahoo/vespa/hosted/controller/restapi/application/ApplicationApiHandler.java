@@ -245,9 +245,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/request/operator")) return accessRequests(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return tenantInfoProfile(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return tenantInfoBilling(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return tenantInfoContacts(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return withCloudTenant(path.get("tenant"), this::tenantInfoProfile);
+        if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return withCloudTenant(path.get("tenant"), this::tenantInfoBilling);
+        if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return withCloudTenant(path.get("tenant"), this::tenantInfoContacts);
         if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(request, Optional.of(path.get("tenant")), false);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
@@ -301,9 +301,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/access/approve/operator")) return approveAccessRequest(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/access/managed/operator")) return addManagedAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return putTenantInfo(path.get("tenant"), request, this::putTenantInfoProfile);
-        if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return putTenantInfo(path.get("tenant"), request, this::putTenantInfoBilling);
-        if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return putTenantInfo(path.get("tenant"), request, this::putTenantInfoContacts);
+        if (path.matches("/application/v4/tenant/{tenant}/info/profile")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoProfile);
+        if (path.matches("/application/v4/tenant/{tenant}/info/billing")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoBilling);
+        if (path.matches("/application/v4/tenant/{tenant}/info/contacts")) return withCloudTenant(path.get("tenant"), request, this::putTenantInfoContacts);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowAwsArchiveAccess(path.get("tenant"), request); // TODO(enygaard, 2022-05-25) Remove when no longer used by console
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/aws")) return allowAwsArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/archive-access/gcp")) return allowGcpArchiveAccess(path.get("tenant"), request);
@@ -510,24 +510,10 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                 .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
     }
 
-    private HttpResponse tenantInfoProfile(String tenantName, HttpRequest request) {
+    private HttpResponse withCloudTenant(String tenantName, Function<CloudTenant, SlimeJsonResponse> handler) {
         return controller.tenants().get(TenantName.from(tenantName))
                 .filter(tenant -> tenant.type() == Tenant.Type.cloud)
-                .map(tenant -> tenantInfoProfile((CloudTenant)tenant))
-                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
-    }
-
-    private HttpResponse tenantInfoBilling(String tenantName, HttpRequest request) {
-        return controller.tenants().get(TenantName.from(tenantName))
-                .filter(tenant -> tenant.type() == Tenant.Type.cloud)
-                .map(tenant -> tenantInfoBilling((CloudTenant)tenant))
-                .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
-    }
-
-    private HttpResponse tenantInfoContacts(String tenantName, HttpRequest request) {
-        return controller.tenants().get(TenantName.from(tenantName))
-                .filter(tenant -> tenant.type() == Tenant.Type.cloud)
-                .map(tenant -> tenantInfoContacts((CloudTenant) tenant))
+                .map(tenant -> handler.apply((CloudTenant) tenant))
                 .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
     }
 
@@ -568,7 +554,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         return new SlimeJsonResponse(slime);
     }
 
-    private SlimeJsonResponse putTenantInfo(String tenantName, HttpRequest request, BiFunction<CloudTenant, Inspector, SlimeJsonResponse> handler) {
+    private SlimeJsonResponse withCloudTenant(String tenantName, HttpRequest request, BiFunction<CloudTenant, Inspector, SlimeJsonResponse> handler) {
         return controller.tenants().get(tenantName)
                 .map(tenant -> handler.apply((CloudTenant) tenant, toSlime(request.getData()).get()))
                 .orElseGet(() -> ErrorResponse.notFoundError("Tenant '" + tenantName + "' does not exist or does not support this"));
