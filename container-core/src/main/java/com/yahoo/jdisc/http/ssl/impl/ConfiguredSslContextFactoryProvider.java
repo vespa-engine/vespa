@@ -2,14 +2,12 @@
 package com.yahoo.jdisc.http.ssl.impl;
 
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
-import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.jdisc.http.SslProvider;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.AutoReloadingX509KeyManager;
 import com.yahoo.security.tls.TlsContext;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -23,16 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledCipherSuites;
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledProtocols;
-
 /**
- * An implementation of {@link SslContextFactoryProvider} that uses the {@link ConnectorConfig} to construct a {@link SslContextFactory}.
+ * An implementation of {@link SslProvider} that uses the {@link ConnectorConfig} to configure SSL.
  *
  * @author bjorncs
  */
-@SuppressWarnings("removal")
-public class ConfiguredSslContextFactoryProvider implements SslContextFactoryProvider {
+public class ConfiguredSslContextFactoryProvider implements SslProvider {
 
     private volatile AutoReloadingX509KeyManager keyManager;
     private final ConnectorConfig connectorConfig;
@@ -43,7 +37,7 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
     }
 
     @Override
-    public SslContextFactory getInstance(String containerId, int port) {
+    public void configureSsl(ConnectorSsl ssl, String name, int port) {
         ConnectorConfig.Ssl sslConfig = connectorConfig.ssl();
         if (!sslConfig.enabled()) throw new IllegalStateException();
 
@@ -63,23 +57,31 @@ public class ConfiguredSslContextFactoryProvider implements SslContextFactoryPro
 
         SSLContext sslContext = builder.build();
 
-        SslContextFactory.Server factory = new SslContextFactory.Server();
-        factory.setSslContext(sslContext);
+        ssl.setSslContext(sslContext);
 
-        factory.setNeedClientAuth(sslConfig.clientAuth() == ClientAuth.Enum.NEED_AUTH);
-        factory.setWantClientAuth(sslConfig.clientAuth() == ClientAuth.Enum.WANT_AUTH);
+        switch (sslConfig.clientAuth()) {
+            case NEED_AUTH:
+                ssl.setClientAuth(ConnectorSsl.ClientAuth.NEED);
+                break;
+            case WANT_AUTH:
+                ssl.setClientAuth(ConnectorSsl.ClientAuth.WANT);
+                break;
+            case DISABLED:
+                ssl.setClientAuth(ConnectorSsl.ClientAuth.DISABLED);
+                break;
+            default:
+                throw new IllegalArgumentException(sslConfig.clientAuth().toString());
+        }
 
         List<String> protocols = !sslConfig.enabledProtocols().isEmpty()
                 ? sslConfig.enabledProtocols()
                 : new ArrayList<>(TlsContext.getAllowedProtocols(sslContext));
-        setEnabledProtocols(factory, sslContext, protocols);
+        ssl.setEnabledProtocolVersions(protocols);
 
         List<String> ciphers = !sslConfig.enabledCipherSuites().isEmpty()
                 ? sslConfig.enabledCipherSuites()
                 : new ArrayList<>(TlsContext.getAllowedCipherSuites(sslContext));
-        setEnabledCipherSuites(factory, sslContext, ciphers);
-
-        return factory;
+        ssl.setEnabledCipherSuites(ciphers);
     }
 
     @Override

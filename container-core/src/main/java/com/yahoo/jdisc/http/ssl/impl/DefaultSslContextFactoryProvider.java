@@ -4,24 +4,22 @@ package com.yahoo.jdisc.http.ssl.impl;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.jdisc.http.SslProvider;
 import com.yahoo.security.tls.ConfigFileBasedTlsContext;
 import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.nio.file.Path;
 
 /**
- * The default implementation of {@link SslContextFactoryProvider} to be injected into connectors without explicit ssl configuration.
+ * The default implementation of {@link SslProvider} to be injected into connectors without explicit ssl configuration.
  *
  * @author bjorncs
  */
-@SuppressWarnings("removal")
-public class DefaultSslContextFactoryProvider extends AbstractComponent implements SslContextFactoryProvider {
+public class DefaultSslContextFactoryProvider extends AbstractComponent implements SslProvider {
 
-    private final SslContextFactoryProvider instance;
+    private final SslProvider instance;
 
     @Inject
     public DefaultSslContextFactoryProvider(ConnectorConfig connectorConfig) {
@@ -30,7 +28,7 @@ public class DefaultSslContextFactoryProvider extends AbstractComponent implemen
                 .orElseGet(ThrowingSslContextFactoryProvider::new);
     }
 
-    private static SslContextFactoryProvider createTlsContextBasedProvider(ConnectorConfig connectorConfig, Path configFile) {
+    private static SslProvider createTlsContextBasedProvider(ConnectorConfig connectorConfig, Path configFile) {
         return new StaticTlsContextBasedProvider(
                 new ConfigFileBasedTlsContext(
                         configFile, TransportSecurityUtils.getInsecureAuthorizationMode(), getPeerAuthenticationMode(connectorConfig)));
@@ -47,8 +45,8 @@ public class DefaultSslContextFactoryProvider extends AbstractComponent implemen
     }
 
     @Override
-    public SslContextFactory getInstance(String containerId, int port) {
-        return instance.getInstance(containerId, port);
+    public void configureSsl(ConnectorSsl ssl, String name, int port) {
+        instance.configureSsl(ssl, name, port);
     }
 
     @Override
@@ -56,9 +54,9 @@ public class DefaultSslContextFactoryProvider extends AbstractComponent implemen
         instance.close();
     }
 
-    private static class ThrowingSslContextFactoryProvider implements SslContextFactoryProvider {
+    private static class ThrowingSslContextFactoryProvider implements SslProvider {
         @Override
-        public SslContextFactory getInstance(String containerId, int port) {
+        public void configureSsl(ConnectorSsl ssl, String name, int port) {
             throw new UnsupportedOperationException();
         }
     }
