@@ -519,9 +519,6 @@ public class SelectParser implements Parser {
                 if (TARGET_NUM_HITS.equals(annotation_name)) {
                     weakAnd.setN((int)(annotation_value.asDouble()));
                 }
-                if (SCORE_THRESHOLD.equals(annotation_name)) {
-                    weakAnd.setScoreThreshold((int)(annotation_value.asDouble()));
-                }
             });
         }
 
