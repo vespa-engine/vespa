@@ -27,12 +27,6 @@ public class RankFeatures implements Cloneable {
     private final Ranking parent;
     private final Map<String, Object> features;
 
-    /** @deprecated pass the parent */
-    @Deprecated // TODO: Remove on Vespa 8
-    public RankFeatures() {
-        this(new Ranking(new Query()));
-    }
-
     public RankFeatures(Ranking parent) {
         this(parent, new LinkedHashMap<>());
     }
@@ -67,18 +61,6 @@ public class RankFeatures implements Cloneable {
      */
     public void put(String name, String value) {
         features.put(name, value);
-    }
-
-    /**
-     * Returns a rank feature as a string by full name or null if not set
-     *
-     * @deprecated use getTensor (or getDouble) instead
-     */
-    @Deprecated // TODO: Remove on Vespa 8
-    public String get(String name) {
-        Object value = features.get(name);
-        if (value == null) return null;
-        return value.toString();
     }
 
     /** Returns this value as either a Double, Tensor or String. Returns null if the value is not set. */

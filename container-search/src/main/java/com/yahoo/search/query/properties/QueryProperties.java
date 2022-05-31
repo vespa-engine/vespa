@@ -36,11 +36,6 @@ public class QueryProperties extends Properties {
     private final CompiledQueryProfileRegistry profileRegistry;
     private final Map<String, Embedder> embedders;
 
-    @Deprecated  // TODO: Remove on Vespa 8
-    public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Embedder embedder) {
-        this(query, profileRegistry, Map.of(Embedder.defaultEmbedderId, embedder));
-    }
-
     public QueryProperties(Query query, CompiledQueryProfileRegistry profileRegistry, Map<String, Embedder> embedders) {
         this.query = query;
         this.profileRegistry = profileRegistry;
@@ -379,7 +374,7 @@ public class QueryProperties extends Properties {
             try {
                 query.getRanking().getFeatures().put(key, Double.parseDouble(valueString));
             }
-            catch (IllegalArgumentException e) { // TODO: Throw instead on Vespa 8
+            catch (IllegalArgumentException e) {
                 query.getRanking().getFeatures().put(key, valueString);
             }
         }

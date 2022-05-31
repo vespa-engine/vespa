@@ -6654,7 +6654,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder)",
       "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, java.util.Map)",
       "public void setParentQuery(com.yahoo.search.Query)",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
@@ -6852,12 +6851,10 @@
       "public"
     ],
     "methods": [
-      "public void <init>()",
       "public void <init>(com.yahoo.search.query.Ranking)",
       "public void put(java.lang.String, double)",
       "public void put(java.lang.String, com.yahoo.tensor.Tensor)",
       "public void put(java.lang.String, java.lang.String)",
-      "public java.lang.String get(java.lang.String)",
       "public java.lang.Object getObject(java.lang.String)",
       "public java.util.OptionalDouble getDouble(java.lang.String)",
       "public java.util.Optional getTensor(java.lang.String)",
