@@ -107,13 +107,8 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         SimpleConfigProducer<?> configServers = new SimpleConfigProducer<>(parent, "configservers");
         Element configserversE = XML.getChild(adminE, "configservers");
         if (configserversE == null) {
-            Element configserverE = XML.getChild(adminE, "configserver");
-            if (configserverE == null)
-                configserverE = XML.getChild(adminE, "adminserver");
-            else
-                deployState.getDeployLogger().logApplicationPackage(Level.INFO,
-                                                                    "Specifying configserver without parent element configservers in services.xml is deprecated and will be removed in Vespa 8");
-            return List.of(new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, configserverE));
+            Element adminserver = XML.getChild(adminE, "adminserver");
+            return List.of(new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, adminserver));
         }
         else {
             List<Configserver> configservers = new ArrayList<>();
