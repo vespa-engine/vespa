@@ -60,13 +60,13 @@ public class MinimalQueryInserter extends Searcher {
     }
 
     private static boolean warmup(Linguistics linguistics) {
-        Query query = new Query("search/?yql=select%20*%20from%20sources%20where%20title%20contains%20'xyz';");
+        Query query = new Query("search/?yql=select%20*%20from%20sources%20where%20title%20contains%20'xyz'");
         Result result = insertQuery(query, new ParserEnvironment().setLinguistics(linguistics));
         if (result != null) {
             log.warning("Warmup code trigger an error. Error = " + result.toString());
             return false;
         }
-        if ( ! "select * from sources where title contains \"xyz\";".equals(query.yqlRepresentation())) {
+        if ( ! "select * from sources where title contains \"xyz\"".equals(query.yqlRepresentation())) {
             log.warning("Warmup code generated unexpected yql: " + query.yqlRepresentation());
             return false;
         }
