@@ -32,6 +32,13 @@ if (VESPA_USE_SANITIZER)
 else()
     set(C_WARN_OPTS "-Winline ${C_WARN_OPTS}")
 endif()
+if (VESPA_USE_SANITIZER)
+  if (VESPA_USE_SANITIZER STREQUAL "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
+    # Turn off warning about std::atomic_thread_fence not being supported by
+    # address sanitizer.
+    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-tsan")
+  endif()
+endif()
 
 # Warnings that are specific to C++ compilation
 # Note: this is not a union of C_WARN_OPTS, since CMAKE_CXX_FLAGS already includes CMAKE_C_FLAGS, which in turn includes C_WARN_OPTS transitively
