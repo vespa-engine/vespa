@@ -1139,11 +1139,6 @@ public class YqlParser implements Parser {
         if (targetNumHits != null) {
             weakAnd.setN(targetNumHits);
         }
-        Integer scoreThreshold = getAnnotation(spec, SCORE_THRESHOLD,
-                Integer.class, null, "min dot product score for hit inclusion");
-        if (scoreThreshold != null) {
-            weakAnd.setScoreThreshold(scoreThreshold);
-        }
         return convertVarArgs(spec, 1, weakAnd);
     }
 
