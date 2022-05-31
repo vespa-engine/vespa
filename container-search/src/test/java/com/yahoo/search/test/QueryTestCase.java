@@ -561,9 +561,9 @@ public class QueryTestCase {
         Set<String> traces = new HashSet<>();
         for (String trace : q.getContext(true).getTrace().traceNode().descendants(String.class))
             traces.add(trace);
-        assertTrue(traces.contains("trace1: [select * from sources * where default contains \"foo\";]"));
+        assertTrue(traces.contains("trace1: [select * from sources * where default contains \"foo\"]"));
         assertTrue(traces.contains("trace2"));
-        assertTrue(traces.contains("trace3-1, trace3-2: [select * from sources * where default contains \"foo\";]"));
+        assertTrue(traces.contains("trace3-1, trace3-2: [select * from sources * where default contains \"foo\"]"));
         assertTrue(traces.contains("trace4-1, trace4-2"));
     }
 
