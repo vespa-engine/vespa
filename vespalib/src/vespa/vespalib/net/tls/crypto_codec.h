@@ -53,7 +53,7 @@ struct DecodeResult {
 };
 
 struct TlsContext;
-class PeerCredentials;
+struct PeerCredentials;
 class AssumedRoles;
 
 // TODO move to different namespace, not dependent on TLS?
