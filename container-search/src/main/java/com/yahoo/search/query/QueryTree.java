@@ -114,7 +114,7 @@ public class QueryTree extends CompositeItem {
      *
      * @return the resulting root item in this
      */
-    public Item rankWith(Item item) {
+    public Item withRank(Item item) {
         var result = new RankItem();
         result.addItem(getRoot());
         result.addItem(item);
