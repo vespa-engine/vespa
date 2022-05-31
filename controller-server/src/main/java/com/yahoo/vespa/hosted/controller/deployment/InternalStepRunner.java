@@ -664,8 +664,11 @@ public class InternalStepRunner implements StepRunner {
                     controller.jobController().updateTestReport(id);
 
                     DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
-                    boolean requireTests = spec.steps().stream().anyMatch(step -> step.concerns(id.type().environment()));
-                    return Optional.of(requireTests ? testFailure : noTests);
+                    if (spec.steps().stream().anyMatch(step -> step.concerns(id.type().environment()))) {
+                        logger.log(WARNING, "This test job is declared in deployment.xml, and will fail if no tests are run.");
+                        return Optional.of(testFailure);
+                    }
+                    return Optional.of(noTests);
                 }
             case SUCCESS:
                 logger.log("Tests completed successfully.");
