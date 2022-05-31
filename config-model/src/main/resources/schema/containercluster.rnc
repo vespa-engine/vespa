@@ -226,7 +226,6 @@ HttpClientApi = element http-client-api {
 # NODES:
 
 NodesOfContainerCluster = element nodes {
-    attribute jvmargs { text }? &
     attribute jvm-options { text }? &
     attribute jvm-gc-options { text }? &
     attribute preload { text }? &

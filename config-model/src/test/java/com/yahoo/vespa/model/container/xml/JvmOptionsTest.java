@@ -15,7 +15,6 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import org.junit.Test;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -23,7 +22,6 @@ import java.util.List;
 import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -57,14 +55,6 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         assertEquals(45, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals("-XX:SoftRefLRUPolicyMSPerMB=2500", model.getContainerClusters().values().iterator().next().getContainers().get(0).getJvmOptions());
     }
-    @Test
-    public void detect_conflicting_jvmgcoptions_in_jvmargs() {
-        assertFalse(ContainerModelBuilder.incompatibleGCOptions(""));
-        assertFalse(ContainerModelBuilder.incompatibleGCOptions("UseG1GC"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:+UseG1GC"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("abc -XX:+UseParNewGC xyz"));
-        assertTrue(ContainerModelBuilder.incompatibleGCOptions("-XX:CMSInitiatingOccupancyFraction=19"));
-    }
 
     @Test
     public void honours_jvm_gc_options() {
@@ -83,14 +73,9 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
     }
 
     private static void verifyIgnoreJvmGCOptions(boolean isHosted) throws IOException, SAXException {
-        verifyIgnoreJvmGCOptionsIfJvmArgs("jvmargs", ContainerCluster.G1GC, isHosted);
-        verifyIgnoreJvmGCOptionsIfJvmArgs( "jvm-options", "-XX:+UseG1GC", isHosted);
-
-    }
-    private static void verifyIgnoreJvmGCOptionsIfJvmArgs(String jvmOptionsName, String expectedGC, boolean isHosted) throws IOException, SAXException {
         String servicesXml =
                 "<container version='1.0'>" +
-                        "  <nodes jvm-gc-options='-XX:+UseG1GC' " + jvmOptionsName + "='-XX:+UseParNewGC'>" +
+                        "  <nodes jvm-gc-options='-XX:+UseG1GC' jvm-options='-XX:+UseParNewGC'>" +
                         "    <node hostalias='mockhost'/>" +
                         "  </nodes>" +
                         "</container>";
@@ -105,11 +90,11 @@ public class JvmOptionsTest extends ContainerModelBuilderTestBase {
         QrStartConfig.Builder qrStartBuilder = new QrStartConfig.Builder();
         model.getConfig(qrStartBuilder, "container/container.0");
         QrStartConfig qrStartConfig = new QrStartConfig(qrStartBuilder);
-        assertEquals(expectedGC, qrStartConfig.jvm().gcopts());
+        assertEquals("-XX:+UseG1GC", qrStartConfig.jvm().gcopts());
     }
 
     @Test
-    public void ignores_jvmgcoptions_on_conflicting_jvmargs() throws IOException, SAXException {
+    public void ignores_jvmgcoptions_on_conflicting_jvmoptions() throws IOException, SAXException {
         verifyIgnoreJvmGCOptions(false);
         verifyIgnoreJvmGCOptions(true);
     }

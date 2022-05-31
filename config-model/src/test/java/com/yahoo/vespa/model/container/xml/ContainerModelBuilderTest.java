@@ -1040,6 +1040,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         createModel(root, deployState, null, DomBuilderTest.parse(containerService));
         assertFalse(logger.msgs.isEmpty());
+        System.out.println(logger.msgs);
         assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
         assertEquals(Level.WARNING, logger.msgs.get(1).getFirst());
         assertEquals("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
