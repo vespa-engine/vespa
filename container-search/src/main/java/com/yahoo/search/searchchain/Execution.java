@@ -142,13 +142,6 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, executor);
         }
 
-        /** @deprecated pass an executor */
-        @Deprecated // TODO: Remove on Vespa 8
-        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
-                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics) {
-            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, Runnable::run);
-        }
-
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub() {
             return createContextStub(null, null, SchemaInfo.empty(), null);
