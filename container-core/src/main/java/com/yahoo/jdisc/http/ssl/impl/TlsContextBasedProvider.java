@@ -2,41 +2,34 @@
 package com.yahoo.jdisc.http.ssl.impl;
 
 import com.yahoo.component.AbstractComponent;
-import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.jdisc.http.SslProvider;
 import com.yahoo.security.tls.TlsContext;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.util.List;
 
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledCipherSuites;
-import static com.yahoo.jdisc.http.ssl.impl.SslContextFactoryUtils.setEnabledProtocols;
-
 /**
- * A {@link SslContextFactoryProvider} that creates {@link SslContextFactory} instances from {@link TlsContext} instances.
+ * A {@link SslProvider} that configures SSL from {@link TlsContext} instances.
  *
  * @author bjorncs
  */
-public abstract class TlsContextBasedProvider extends AbstractComponent implements SslContextFactoryProvider {
+public abstract class TlsContextBasedProvider extends AbstractComponent implements SslProvider {
 
     protected abstract TlsContext getTlsContext(String containerId, int port);
 
     @Override
-    public final SslContextFactory getInstance(String containerId, int port) {
-        TlsContext tlsContext = getTlsContext(containerId, port);
-        SSLContext sslContext = tlsContext.context();
+    public void configureSsl(ConnectorSsl ssl, String name, int port) {
+        TlsContext tlsContext = getTlsContext(name, port);
         SSLParameters parameters = tlsContext.parameters();
-
-        SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
-        sslContextFactory.setSslContext(sslContext);
-
-        sslContextFactory.setNeedClientAuth(parameters.getNeedClientAuth());
-        sslContextFactory.setWantClientAuth(parameters.getWantClientAuth());
-
-        setEnabledProtocols(sslContextFactory, sslContext, List.of(parameters.getProtocols()));
-        setEnabledCipherSuites(sslContextFactory, sslContext, List.of(parameters.getCipherSuites()));
-
-        return sslContextFactory;
+        ssl.setSslContext(tlsContext.context());
+        ssl.setEnabledProtocolVersions(List.of(parameters.getProtocols()));
+        ssl.setEnabledCipherSuites(List.of(parameters.getCipherSuites()));
+        if (parameters.getNeedClientAuth()) {
+            ssl.setClientAuth(ConnectorSsl.ClientAuth.NEED);
+        } else if (parameters.getWantClientAuth()) {
+            ssl.setClientAuth(ConnectorSsl.ClientAuth.WANT);
+        } else {
+            ssl.setClientAuth(ConnectorSsl.ClientAuth.DISABLED);
+        }
     }
 }

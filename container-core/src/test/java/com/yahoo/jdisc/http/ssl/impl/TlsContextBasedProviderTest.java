@@ -9,7 +9,6 @@ import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
-import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
@@ -24,7 +23,6 @@ import java.util.Set;
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertNotNull;
 
 /**
  * @author bjorncs
@@ -35,9 +33,9 @@ public class TlsContextBasedProviderTest {
     public void creates_sslcontextfactory_from_tlscontext() {
         TlsContext tlsContext = createTlsContext();
         var provider = new SimpleTlsContextBasedProvider(tlsContext);
-        SslContextFactory sslContextFactory = provider.getInstance("dummyContainerId", 8080);
-        assertNotNull(sslContextFactory);
-        assertArrayEquals(tlsContext.parameters().getCipherSuites(), sslContextFactory.getIncludeCipherSuites());
+        DefaultConnectorSsl ssl = new DefaultConnectorSsl();
+        provider.configureSsl(ssl, "dummyContainerId", 8080);
+        assertArrayEquals(tlsContext.parameters().getCipherSuites(), ssl.createSslContextFactory().getIncludeCipherSuites());
     }
 
     private static TlsContext createTlsContext() {
