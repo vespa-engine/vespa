@@ -32,8 +32,8 @@ protected:
     using generation_t = StringAttribute::generation_t;
 
 public:
-    SingleValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
-                                AttributeVector::Config(AttributeVector::BasicType::STRING));
+    SingleValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
+    SingleValueStringAttributeT(const vespalib::string & name);
     ~SingleValueStringAttributeT();
 
     void freezeEnumDictionary() override;

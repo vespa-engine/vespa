@@ -67,8 +67,8 @@ private:
 
     void applyValueChanges(EnumStoreBatchUpdater& updater) override;
 public:
-    SingleValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
-                                       AttributeVector::Config(AttributeVector::BasicType::STRING));
+    SingleValueStringPostingAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
+    SingleValueStringPostingAttributeT(const vespalib::string & name);
     ~SingleValueStringPostingAttributeT();
 
     void removeOldGenerations(generation_t firstUsed) override;

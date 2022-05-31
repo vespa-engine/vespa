@@ -4,6 +4,7 @@
 
 #include "singlestringpostattribute.h"
 #include "single_string_enum_search_context.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 
 namespace search {
@@ -13,6 +14,12 @@ SingleValueStringPostingAttributeT<B>::SingleValueStringPostingAttributeT(const 
                                                                           const AttributeVector::Config & c) :
     SingleValueStringAttributeT<B>(name, c),
     PostingParent(*this, this->getEnumStore())
+{
+}
+
+template <typename B>
+SingleValueStringPostingAttributeT<B>::SingleValueStringPostingAttributeT(const vespalib::string & name)
+    : SingleValueStringPostingAttributeT<B>(name, AttributeVector::Config(AttributeVector::BasicType::STRING))
 {
 }
 
