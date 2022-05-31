@@ -1042,7 +1042,7 @@ public class VespaSerializer {
         }
 
         private boolean needsAnnotationBlock(WeakAndItem item) {
-            return nonDefaultScoreThreshold(item) || nonDefaultTargetNumHits(item);
+            return nonDefaultTargetNumHits(item);
         }
 
         @Override
@@ -1050,23 +1050,14 @@ public class VespaSerializer {
             if (needsAnnotationBlock(item)) {
                 destination.append("([{");
             }
-            int lengthBeforeAnnotations = destination.length();
             if (nonDefaultTargetNumHits(item)) {
                 destination.append(TARGET_NUM_HITS).append(": ").append(item.getN());
-            }
-            if (nonDefaultScoreThreshold(item)) {
-                comma(destination, lengthBeforeAnnotations);
-                destination.append(SCORE_THRESHOLD).append(": ").append(item.getScoreThreshold());
             }
             if (needsAnnotationBlock(item)) {
                 destination.append("}]");
             }
             destination.append(WEAK_AND).append('(');
             return true;
-        }
-
-        private boolean nonDefaultScoreThreshold(WeakAndItem w) {
-            return w.getScoreThreshold() > 0;
         }
 
         private boolean nonDefaultTargetNumHits(WeakAndItem w) {
