@@ -29,8 +29,13 @@ mmap_huge(size_t sz) {
 size_t round_huge_down(size_t v) { return v & ~(HUGEPAGE_SIZE - 1); }
 size_t round_huge_up(size_t v) { return round_huge_down(v + (HUGEPAGE_SIZE - 1)); }
 
+#ifdef __clang__
+void
+non_optimized_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n) __attribute__((noinline, optnone)) ;
+#else
 void
 non_optimized_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n) __attribute__((noinline, optimize(1))) ;
+#endif
 
 // Simple memcpy replacement to avoid calling code in other dso.
 void
