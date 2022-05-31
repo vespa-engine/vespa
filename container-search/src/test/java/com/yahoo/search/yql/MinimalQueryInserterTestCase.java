@@ -229,7 +229,7 @@ public class MinimalQueryInserterTestCase {
         execution.search(query);
         assertEquals(7, query.getOffset());
         assertEquals(24, query.getHits());
-        assertEquals("select * from sources * where title contains \"madonna\" limit 31 offset 7;",
+        assertEquals("select * from sources * where title contains \"madonna\" limit 31 offset 7",
                      query.yqlRepresentation());
     }
 
@@ -258,7 +258,7 @@ public class MinimalQueryInserterTestCase {
         Query query = new Query("search/?yql=select%20*%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20timeout%2051");
         execution.search(query);
         assertEquals(51L, query.getTimeout());
-        assertEquals("select * from sources * where title contains \"madonna\" timeout 51;", query.yqlRepresentation());
+        assertEquals("select * from sources * where title contains \"madonna\" timeout 51", query.yqlRepresentation());
     }
 
     @Test
@@ -266,7 +266,7 @@ public class MinimalQueryInserterTestCase {
         var select = "select x, y, z from sources * "
                 + "where (x > 0 AND y contains \"foo\" AND z contains \"bar\") "
                 + "order by x limit 20 offset 10 timeout 30 "
-                + "| all(group(y) max(3) each(output(count())));";
+                + "| all(group(y) max(3) each(output(count())))";
         Query query = new Query("search/?yql="+ URLEncoder.encode(select, Charsets.UTF_8));
         execution.search(query);
 
@@ -294,7 +294,7 @@ public class MinimalQueryInserterTestCase {
                     .fieldOrders().get(1).getFieldName());
             assertEquals(Order.DESCENDING, query.getRanking().getSorting()
                     .fieldOrders().get(1).getSortOrder());
-            assertEquals("select ignoredfield from ignoredsource where title contains \"madonna\" order by something, shoesize desc limit 300 timeout 3;", query.yqlRepresentation());
+            assertEquals("select ignoredfield from ignoredsource where title contains \"madonna\" order by something, shoesize desc limit 300 timeout 3", query.yqlRepresentation());
         }
         {
             String yql = "select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20order%20by%20other%20limit%20300%20timeout%203";
@@ -304,7 +304,7 @@ public class MinimalQueryInserterTestCase {
                     .get(0).getFieldName());
             assertEquals(Order.ASCENDING, query.getRanking().getSorting()
                     .fieldOrders().get(0).getSortOrder());
-            assertEquals("select ignoredfield from ignoredsource where title contains \"madonna\" order by other limit 300 timeout 3;", query.yqlRepresentation());
+            assertEquals("select ignoredfield from ignoredsource where title contains \"madonna\" order by other limit 300 timeout 3", query.yqlRepresentation());
         }
         {
             String yql = "select%20foo%20from%20bar%20where%20title%20contains%20%22madonna%22%20order%20by%20%5B%7B%22function%22%3A%20%22uca%22%2C%20%22locale%22%3A%20%22en_US%22%2C%20%22strength%22%3A%20%22IDENTICAL%22%7D%5Dother%20desc%2C%20%5B%7B%22function%22%3A%20%22lowercase%22%7D%5Dsomething%20limit%20300%20timeout%203";
@@ -327,7 +327,7 @@ public class MinimalQueryInserterTestCase {
                 AttributeSorter sorter = fieldOrder.getSorter();
                 assertEquals(LowerCaseSorter.class, sorter.getClass());
             }
-            assertEquals("select foo from bar where title contains \"madonna\" order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc, [{\"function\": \"lowercase\"}]something limit 300 timeout 3;",
+            assertEquals("select foo from bar where title contains \"madonna\" order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc, [{\"function\": \"lowercase\"}]something limit 300 timeout 3",
                     query.yqlRepresentation());
         }
     }
@@ -337,7 +337,7 @@ public class MinimalQueryInserterTestCase {
         String yql = "select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20order%20by%20something%2C%20shoesize%20desc%20limit%20300%20timeout%203";
         Query query = new Query("search/?yql=" + yql);
         execution.search(query);
-        assertEquals("select ignoredfield from ignoredsource where title contains \"madonna\" order by something, shoesize desc limit 300 timeout 3;",
+        assertEquals("select ignoredfield from ignoredsource where title contains \"madonna\" order by something, shoesize desc limit 300 timeout 3",
                      query.yqlRepresentation());
     }
 
@@ -345,7 +345,7 @@ public class MinimalQueryInserterTestCase {
     public void testAndSegmenting() {
         Query query = new Query("?yql=select%20%2A%20from%20sources%20%2A%20where%20%5B%7B%22defaultIndex%22%3A%20%22default%22%2C%22grammar%22%3A%20%22web%22%2C%22stem%22%3A%20true%2C%22allowEmpty%22%3A%20true%7D%5DuserInput%28%40animal%29%3B&animal=m%26m%27s&tracelevel=3");
         execution.search(query);
-        assertEquals("select * from sources * where (default contains \"m\" AND default contains ([{origin: {original: \"m\\'s\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"m\", \"s\")));",
+        assertEquals("select * from sources * where (default contains \"m\" AND default contains ([{origin: {original: \"m\\'s\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"m\", \"s\")))",
                      query.yqlRepresentation());
     }
 
