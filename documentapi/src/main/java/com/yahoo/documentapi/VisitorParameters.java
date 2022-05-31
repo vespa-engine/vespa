@@ -3,9 +3,8 @@ package com.yahoo.documentapi;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
-import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.messagebus.ThrottlePolicy;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.text.Utf8;
 
@@ -18,7 +17,6 @@ import java.util.TreeMap;
  *
  * @author Håkon Humberset
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class VisitorParameters extends Parameters {
 
     private String documentSelection;
@@ -30,8 +28,7 @@ public class VisitorParameters extends Parameters {
     private long fromTimestamp = 0;
     private long toTimestamp = 0;
     boolean visitRemoves = false;
-    // TODO Vespa 8: change to DocumentOnly.NAME;
-    private String fieldSet = AllFields.NAME;
+    private String fieldSet = DocumentOnly.NAME;
     boolean visitInconsistentBuckets = false;
     private ProgressToken resumeToken = null;
     private String resumeFileName = "";
@@ -140,9 +137,6 @@ public class VisitorParameters extends Parameters {
 
     public boolean getVisitRemoves() { return visitRemoves; }
 
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean getVisitHeadersOnly() { return false; }
-
     /** @return The field set to use. */
     public String fieldSet() { return fieldSet; }
 
@@ -229,10 +223,6 @@ public class VisitorParameters extends Parameters {
     public void visitRemoves(boolean visitRemoves) { this.visitRemoves = visitRemoves; }
 
     public void setVisitRemoves(boolean visitRemoves) { this.visitRemoves = visitRemoves; }
-
-    /** @deprecated this option is ignored */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void setVisitHeadersOnly(boolean headersOnly) { }
 
     /** Set field set to use. */
     public void fieldSet(String fieldSet) { this.fieldSet = fieldSet; }

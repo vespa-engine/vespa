@@ -6,7 +6,7 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.AsyncParameters;
 import com.yahoo.documentapi.AsyncSession;
 import com.yahoo.documentapi.DocumentIdResponse;
@@ -122,8 +122,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
 
     @Override
     public Result get(DocumentId id, DocumentOperationParameters parameters) {
-        // TODO Vespa 8: change to DocumentOnly.NAME
-        GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(AllFields.NAME));
+        GetDocumentMessage msg = new GetDocumentMessage(id, parameters.fieldSet().orElse(DocumentOnly.NAME));
         return send(msg, parameters);
     }
 
