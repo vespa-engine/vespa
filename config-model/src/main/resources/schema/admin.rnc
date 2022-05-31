@@ -7,7 +7,7 @@ AdminV2 =
    element adminserver { service.attlist } &
    GenericConfig* &
    LogServer? &
-   (ConfigServer | ConfigServers)? &
+   ConfigServers? &
    AdminSlobroks? &
    AdminMonitoring? &
    Metrics? &
