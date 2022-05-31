@@ -234,7 +234,8 @@ enum PathGroup {
 
     /** Paths used for invoice management */
     hostedAccountant("/billing/v1/invoice/{*}",
-                     "/billing/v1/billing"),
+                     "/billing/v1/billing",
+                     "/billing/v1/plans"),
 
     /** Path used for listing endpoint certificate request and re-requesting endpoint certificates */
     endpointCertificates("/endpointcertificates/"),

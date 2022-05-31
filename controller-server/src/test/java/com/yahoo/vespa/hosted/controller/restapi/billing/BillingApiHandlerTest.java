@@ -79,6 +79,13 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     @Test
+    public void list_plans() {
+        var listPlansRequest = request("/billing/v1/plans", GET)
+                .roles(Role.hostedAccountant());
+        tester.assertResponse(listPlansRequest, "{\"plans\":[{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},{\"id\":\"paid\",\"name\":\"Paid Plan - for testing purposes\"},{\"id\":\"none\",\"name\":\"None Plan - for testing purposes\"}]}");
+    }
+
+    @Test
     public void setting_and_deleting_instrument() {
         assertTrue(billingController.getDefaultInstrument(tenant).isEmpty());
 
