@@ -6,5 +6,5 @@ Bundle-Version: 7.0.0
 Created-By: vespa container maven plugin
 Bundle-Name: my-bundle
 Bundle-Vendor: Yahoo!
-Import-Package: org.json;version="[0.0.0,1)"
+Import-Package: org.json;version="[0.0.0,1)",org.eclipse.jetty.client.api;version="[9.4.46,10)"
 

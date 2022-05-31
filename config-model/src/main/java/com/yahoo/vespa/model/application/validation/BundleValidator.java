@@ -84,7 +84,10 @@ public class BundleValidator extends AbstractBundleValidator {
         ORG_JSON("org.json:json",
                 "This bundle is no longer provided on Vespa 8 - " +
                         "see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.",
-                Set.of("org\\.json"));
+                Set.of("org\\.json")),
+        JETTY("jetty", "The Jetty bundles are no longer provided on Vespa 8 - " +
+                      "see https://docs.vespa.ai/en/vespa8-release-notes.html#container-runtime.",
+              Set.of("org\\.eclipse\\.jetty.*"));
 
         final String name;
         final Collection<Predicate<String>> javaPackageMatchers;
