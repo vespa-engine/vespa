@@ -426,7 +426,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 rawParameters = rawParameters.withFieldSet(path.documentType().orElseThrow() + ":[document]");
             DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> {
                 outstanding.decrementAndGet();
-                handle(path, handler, response, (document, jsonResponse) -> {
+                handle(path, request, handler, response, (document, jsonResponse) -> {
                     if (document != null) {
                         jsonResponse.writeSingleDocument(document);
                         jsonResponse.commit(Response.Status.OK);
@@ -591,6 +591,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final OutputStream out = new ContentChannelOutputStream(buffer);
         private final JsonGenerator json;
         private final ResponseHandler handler;
+        private final HttpRequest request;
         private final Queue<CompletionHandler> acks = new ConcurrentLinkedQueue<>();
         private final Queue<ByteArrayOutputStream> docs = new ConcurrentLinkedQueue<>();
         private final AtomicLong documentsWritten = new AtomicLong();
@@ -601,14 +602,24 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private ContentChannel channel;
 
         private JsonResponse(ResponseHandler handler) throws IOException {
+            this(handler, null);
+        }
+
+        private JsonResponse(ResponseHandler handler, HttpRequest request) throws IOException {
             this.handler = handler;
+            this.request = request;
             json = jsonFactory.createGenerator(out);
             json.writeStartObject();
         }
 
         /** Creates a new JsonResponse with path and id fields written. */
         static JsonResponse create(DocumentPath path, ResponseHandler handler) throws IOException {
-            JsonResponse response = new JsonResponse(handler);
+            return create(path, handler, null);
+        }
+
+        /** Creates a new JsonResponse with path and id fields written. */
+        static JsonResponse create(DocumentPath path, ResponseHandler handler, HttpRequest request) throws IOException {
+            JsonResponse response = new JsonResponse(handler, request);
             response.writePathId(path.rawPath());
             response.writeDocId(path.id());
             return response;
@@ -703,7 +714,11 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         }
 
         synchronized void writeSingleDocument(Document document) throws IOException {
-            new JsonWriter(json).writeFields(document);
+            boolean tensorShortForm = false;
+            if (request != null && request.parameters().containsKey("format.tensors")) {
+                tensorShortForm = request.parameters().get("format.tensors").contains("short");
+            }
+            new JsonWriter(json, tensorShortForm).writeFields(document);
         }
 
         synchronized void writeDocumentsArrayStart() throws IOException {
@@ -1001,8 +1016,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         void onSuccess(Document document, JsonResponse response) throws IOException;
     }
 
-    private static void handle(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response, SuccessCallback callback) {
-        try (JsonResponse jsonResponse = JsonResponse.create(path, handler)) {
+    private static void handle(DocumentPath path, HttpRequest request, ResponseHandler handler, com.yahoo.documentapi.Response response, SuccessCallback callback) {
+        try (JsonResponse jsonResponse = JsonResponse.create(path, handler, request)) {
             jsonResponse.writeTrace(response.getTrace());
             if (response.isSuccess())
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
@@ -1037,7 +1052,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private static void handleFeedOperation(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response) {
-        handle(path, handler, response, (document, jsonResponse) -> jsonResponse.commit(Response.Status.OK));
+        handle(path, null, handler, response, (document, jsonResponse) -> jsonResponse.commit(Response.Status.OK));
     }
 
     private void updatePutMetrics(Outcome outcome) {
