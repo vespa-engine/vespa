@@ -3,8 +3,8 @@ package com.yahoo.documentapi.messagebus;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocIdOnly;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.ProgressToken;
@@ -499,7 +499,7 @@ public class MessageBusVisitorSessionTestCase {
         if (msg.getMaxPendingReplyCount() != 32) {
             sb.append("max pending=").append(msg.getMaxPendingReplyCount()).append("\n");
         }
-        if (!AllFields.NAME.equals(msg.getFieldSet())) {
+        if (!DocumentOnly.NAME.equals(msg.getFieldSet())) {
             sb.append("fieldset=").append(msg.getFieldSet()).append("\n");
         }
         if (msg.getVisitInconsistentBuckets()) {
