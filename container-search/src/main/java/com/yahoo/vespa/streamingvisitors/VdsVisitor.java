@@ -116,7 +116,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         return query.properties().getString(streamingSelection);
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private void setVisitorParameters(String searchCluster, Route route, String documentType) {
         params.setDocumentSelection(createSelectionString(documentType, createQuerySelectionString()));
         params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
