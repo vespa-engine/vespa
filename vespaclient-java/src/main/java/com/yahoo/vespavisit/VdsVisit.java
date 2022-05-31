@@ -3,6 +3,7 @@ package com.yahoo.vespavisit;
 
 import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.fieldset.DocIdOnly;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.documentapi.VisitorControlHandler;
@@ -193,7 +194,7 @@ public class VdsVisit {
                 .longOpt("fieldset")
                 .hasArg(true)
                 .argName("fieldset")
-                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets). Default is [all].")
+                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets). Default is [document].")
                 .build());
 
         options.addOption(Option.builder()
@@ -467,6 +468,8 @@ public class VdsVisit {
             }
             if (line.hasOption("l")) {
                 params.fieldSet(line.getOptionValue("l"));
+            } else {
+                params.fieldSet(DocumentOnly.NAME);
             }
             if (line.hasOption("visitinconsistentbuckets")) {
                 params.visitInconsistentBuckets(true);

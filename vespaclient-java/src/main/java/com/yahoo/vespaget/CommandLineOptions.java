@@ -67,10 +67,9 @@ public class CommandLineOptions {
                 .longOpt(PRINTIDS_OPTION)
                 .build());
 
-        // TODO Vespa 8: change to DocumentOnly.NAME
         options.addOption(Option.builder("f")
                 .hasArg(true)
-                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets) (default '" + AllFields.NAME + "')")
+                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets) (default '" + DocumentOnly.NAME + "')")
                 .longOpt(FIELDSET_OPTION)
                 .argName("fieldset").build());
 
@@ -176,8 +175,7 @@ public class CommandLineOptions {
             if (printIdsOnly) {
                 fieldSet = DocIdOnly.NAME;
             } else if (fieldSet.isEmpty()) { 
-                // TODO Vespa 8: change to DocumentOnly.NAME
-               fieldSet = AllFields.NAME;
+                fieldSet = DocumentOnly.NAME;
             }
 
             if (!cluster.isEmpty() && !route.isEmpty()) {
