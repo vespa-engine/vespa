@@ -24,7 +24,6 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
 
     private int n;
     private String index;
-    private int scoreThreshold = 0;
 
     /** Creates a WAND item with default N */
     public WeakAndItem() {
@@ -80,17 +79,6 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     public int getN() { return n; }
 
     public void setN(int N) { this.n = N; }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public int getScoreThreshold() { return scoreThreshold; }
-
-    /**
-     * Noop.
-     *
-     * @deprecated has no effect
-     */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void setScoreThreshold(int scoreThreshold) { this.scoreThreshold = scoreThreshold; }
 
     @Override
     protected void encodeThis(ByteBuffer buffer) {
