@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.container.search.searchchain;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.schema.derived.DerivedConfiguration;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -33,17 +33,19 @@ public class MockSearchClusters {
         }
 
         @Override
-        protected SearchCluster.IndexingMode getIndexingMode() { return streaming ? SearchCluster.IndexingMode.STREAMING : SearchCluster.IndexingMode.REALTIME; }
+        public void defaultDocumentsConfig() {}
+
+        @Override
+        public void getConfig(AttributesConfig.Builder builder) {
+        }
 
         @Override
         public void getConfig(DocumentdbInfoConfig.Builder builder) {
         }
 
         @Override
-        public void defaultDocumentsConfig() {}
-
-        @Override
-        public DerivedConfiguration getSchemaConfig() { return null; }
+        public void getConfig(RankProfilesConfig.Builder builder) {
+        }
 
         @Override
         public void getConfig(IndexInfoConfig.Builder builder) {
@@ -54,12 +56,11 @@ public class MockSearchClusters {
         }
 
         @Override
-        public void getConfig(AttributesConfig.Builder builder) {
+        public void getConfig(SchemaInfoConfig.Builder builder) {
         }
 
         @Override
-        public void getConfig(RankProfilesConfig.Builder builder) {
-        }
+        protected SearchCluster.IndexingMode getIndexingMode() { return streaming ? SearchCluster.IndexingMode.STREAMING : SearchCluster.IndexingMode.REALTIME; }
 
     }
 

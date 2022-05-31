@@ -222,9 +222,6 @@ public class IndexedSearchCluster extends SearchCluster
     }
 
     @Override
-    public DerivedConfiguration getSchemaConfig() { return null; }
-
-    @Override
     public void getConfig(IndexInfoConfig.Builder builder) {
         documentDbsConfigProducer.getConfig(builder);
     }
@@ -239,12 +236,10 @@ public class IndexedSearchCluster extends SearchCluster
         documentDbsConfigProducer.getConfig(builder);
     }
 
-    @Override
     public void getConfig(AttributesConfig.Builder builder) {
         documentDbsConfigProducer.getConfig(builder);
     }
 
-    @Override
     public void getConfig(RankProfilesConfig.Builder builder) {
         documentDbsConfigProducer.getConfig(builder);
     }
