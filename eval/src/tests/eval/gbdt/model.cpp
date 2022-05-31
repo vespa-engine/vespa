@@ -3,6 +3,7 @@
 
 #include <random>
 #include <vespa/eval/eval/function.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 using vespalib::eval::Function;

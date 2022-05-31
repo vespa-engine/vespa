@@ -3,9 +3,7 @@
 #include "operator_nodes.h"
 #include "node_visitor.h"
 
-namespace vespalib {
-namespace eval {
-namespace nodes {
+namespace vespalib::eval::nodes {
 
 Operator::Operator(const vespalib::string &op_str_in, int priority_in, Order order_in)
     : _op_str(op_str_in),
@@ -16,7 +14,7 @@ Operator::Operator(const vespalib::string &op_str_in, int priority_in, Order ord
       _is_const_double(false)
 {}
 
-Operator::~Operator() { }
+Operator::~Operator() = default;
 
 template <typename T> void OperatorHelper<T>::accept(NodeVisitor &visitor) const {
     visitor.visit(static_cast<const T&>(*this));
@@ -41,6 +39,4 @@ OperatorRepo::OperatorRepo() : _map(), _max_size(0) {
     add(nodes::Or());
 }
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}

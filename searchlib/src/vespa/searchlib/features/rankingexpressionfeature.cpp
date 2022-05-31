@@ -7,6 +7,7 @@
 #include <vespa/searchlib/features/rankingexpression/feature_name_extractor.h>
 #include <vespa/eval/eval/param_usage.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".features.rankingexpression");

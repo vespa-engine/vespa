@@ -11,6 +11,7 @@
 #include <vespa/eval/eval/llvm/compile_cache.h>
 #include <vespa/eval/eval/llvm/addr_to_symbol.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <set>
 
 namespace vespalib::eval {

@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/node_traverser.h>
 #include <vespa/eval/eval/extract_bit.h>
 #include <vespa/eval/eval/hamming_distance.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <llvm/IR/Verifier.h>
 #include <llvm/Support/TargetSelect.h>
 #include <llvm/IR/IRBuilder.h>

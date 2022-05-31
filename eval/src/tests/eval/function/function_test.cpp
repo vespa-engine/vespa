@@ -8,6 +8,7 @@
 #include <vespa/eval/eval/test/eval_spec.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/check_type.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::nodes;

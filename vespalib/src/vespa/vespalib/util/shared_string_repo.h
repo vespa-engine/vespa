@@ -6,7 +6,6 @@
 #include "string_id.h"
 #include "spin_lock.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
