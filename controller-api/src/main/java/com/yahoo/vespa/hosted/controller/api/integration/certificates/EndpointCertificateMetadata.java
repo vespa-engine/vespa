@@ -84,6 +84,34 @@ public class EndpointCertificateMetadata {
         return lastRefreshed;
     }
 
+    public EndpointCertificateMetadata withKeyName(String keyName) {
+        return new EndpointCertificateMetadata(
+                keyName,
+                this.certName,
+                this.version,
+                this.lastRequested,
+                this.rootRequestId,
+                this.leafRequestId,
+                this.requestedDnsSans,
+                this.issuer,
+                this.expiry,
+                this.lastRefreshed);
+    }
+
+    public EndpointCertificateMetadata withCertName(String certName) {
+        return new EndpointCertificateMetadata(
+                this.keyName,
+                certName,
+                this.version,
+                this.lastRequested,
+                this.rootRequestId,
+                this.leafRequestId,
+                this.requestedDnsSans,
+                this.issuer,
+                this.expiry,
+                this.lastRefreshed);
+    }
+
     public EndpointCertificateMetadata withVersion(int version) {
         return new EndpointCertificateMetadata(
                 this.keyName,
