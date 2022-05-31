@@ -57,7 +57,7 @@ public class DefaultPositionSearcher extends Searcher {
         if (useV8GeoPositions && (location != null) && (location.getAttribute() != null)) {
             var geoLoc = new GeoLocationItem(location);
             if (location.isGeoCircle() && location.degRadius() < 0) {
-                query.getModel().getQueryTree().rankWith(geoLoc);
+                query.getModel().getQueryTree().withRank(geoLoc);
             } else {
                 query.getModel().getQueryTree().and(geoLoc);
             }
