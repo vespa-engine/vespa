@@ -705,11 +705,10 @@ public class YqlParserTestCase {
                     "b contains \"B\")",
                     "WEAKAND(37) a:A b:B");
 
-        QueryTree tree = parse("select foo from bar where {scoreThreshold: 41}weakAnd(a " +
+        QueryTree tree = parse("select foo from bar where weakAnd(a " +
                                "contains \"A\", b contains \"B\")");
         assertEquals("WEAKAND(100) a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
-        assertEquals(41, ((WeakAndItem)tree.getRoot()).getScoreThreshold());
     }
 
     @Test

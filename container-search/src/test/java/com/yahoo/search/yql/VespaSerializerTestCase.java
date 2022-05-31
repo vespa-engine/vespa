@@ -297,9 +297,6 @@ public class VespaSerializerTestCase {
     @Test
     public void testAnnotatedWeakAnd() {
         parseAndConfirm("([{" + YqlParser.TARGET_NUM_HITS + ": 10}]weakAnd(a contains \"A\", b contains \"B\"))");
-        parseAndConfirm("([{" + YqlParser.SCORE_THRESHOLD + ": 10}]weakAnd(a contains \"A\", b contains \"B\"))");
-        parseAndConfirm("([{" + YqlParser.TARGET_NUM_HITS + ": 10, " + YqlParser.SCORE_THRESHOLD
-                + ": 20}]weakAnd(a contains \"A\", b contains \"B\"))");
     }
 
     @Test

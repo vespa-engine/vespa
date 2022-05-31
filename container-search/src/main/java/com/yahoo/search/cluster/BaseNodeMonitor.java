@@ -58,10 +58,6 @@ public abstract class BaseNodeMonitor<T> {
      */
     public boolean isWorking() { return isWorking; }
 
-    /** @deprecated Not used */
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean isQuarantined() { return isQuarantined; }
-
     /**
      * Called when this node fails.
      *
@@ -78,12 +74,6 @@ public abstract class BaseNodeMonitor<T> {
      * if this method is called at least responseAfterFailLimit times
      */
     public abstract void responded();
-
-    /** @deprecated Not used */
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean isIdle() {
-        return (now()-respondedAt) >= configuration.getIdleLimit();
-    }
 
     protected long now() {
         return System.currentTimeMillis();
