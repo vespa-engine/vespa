@@ -6,6 +6,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceUsage;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -25,6 +26,11 @@ public class PlanRegistryMock implements PlanRegistry {
         return Stream.of(freeTrial, paidPlan, nonePlan)
                 .filter(p -> p.id().equals(planId))
                 .findAny();
+    }
+
+    @Override
+    public List<Plan> all() {
+        return List.of(freeTrial, paidPlan, nonePlan);
     }
 
     private static class MockPlan implements Plan {

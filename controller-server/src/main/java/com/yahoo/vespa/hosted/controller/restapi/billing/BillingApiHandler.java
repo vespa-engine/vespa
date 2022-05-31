@@ -24,6 +24,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMetho
 import com.yahoo.vespa.hosted.controller.api.integration.billing.InstrumentOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PaymentInstrument;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
@@ -56,11 +57,13 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
     private final BillingController billingController;
     private final ApplicationController applicationController;
     private final TenantController tenantController;
+    private final PlanRegistry planRegistry;
 
     public BillingApiHandler(Executor executor,
                              Controller controller) {
         super(executor);
         this.billingController = controller.serviceRegistry().billingController();
+        this.planRegistry = controller.serviceRegistry().planRegistry();
         this.applicationController = controller.applications();
         this.tenantController = controller.tenants();
     }
@@ -103,6 +106,7 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         if (path.matches("/billing/v1/billing")) return getBillingAllTenants(request.getProperty("until"));
         if (path.matches("/billing/v1/invoice/export")) return getAllBills();
         if (path.matches("/billing/v1/invoice/tenant/{tenant}/line-item")) return getLineItems(path.get("tenant"));
+        if (path.matches("/billing/v1/plans")) return getPlans();
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -293,6 +297,18 @@ public class BillingApiHandler extends ThreadedHttpRequestHandler {
         } catch (DateTimeParseException e) {
             return ErrorResponse.badRequest("Could not parse date: " + until);
         }
+    }
+
+    private HttpResponse getPlans() {
+        var slime = new Slime();
+        var root = slime.setObject();
+        var plans = root.setArray("plans");
+        for (var plan : planRegistry.all()) {
+            var p = plans.addObject();
+            p.setString("id", plan.id().value());
+            p.setString("name", plan.displayName());
+        }
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse getLineItems(String tenant) {
