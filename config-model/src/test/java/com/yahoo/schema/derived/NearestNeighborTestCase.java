@@ -4,7 +4,6 @@ package com.yahoo.schema.derived;
 import com.yahoo.component.ComponentId;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
@@ -22,8 +21,7 @@ public class NearestNeighborTestCase extends AbstractExportingTestCase {
             ComponentId.resetGlobalCountersForTests();
             DerivedConfiguration c = assertCorrectDeriving("nearestneighbor");
 
-            CompiledQueryProfileRegistry queryProfiles =
-                    QueryProfileConfigurer.createFromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {}).getConfig()).compile();
+            CompiledQueryProfileRegistry queryProfiles = CompiledQueryProfileRegistry.fromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {}).getConfig());
             Query q = new Query("?ranking.features.query(q_vec)=[1,2,3,4,5,6]", // length is 6, not 5
                                 queryProfiles.getComponent("default"));
             fail("This should fail when q_vec is parsed as a tensor");
