@@ -181,7 +181,7 @@ public class YqlParserTestCase {
         assertParse("select foo from bar where title contains \"madonna\" and title contains \"saint\"",
                     "AND title:madonna title:saint");
         assertParse("select foo from bar where title contains \"madonna\" and title contains \"saint\" and title " +
-                    "contains \"angel\";",
+                    "contains \"angel\"",
                     "AND title:madonna title:saint title:angel");
     }
 
@@ -307,7 +307,7 @@ public class YqlParserTestCase {
     public void testTermAnnotations() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "({label: \"merkelapp\"}\"colors\");").getLabel());
+                                 "({label: \"merkelapp\"}\"colors\")").getLabel());
         assertEquals("another",
                      getRootWord("select foo from bar where baz contains " +
                                  "({annotations: {cox: \"another\"}}\"colors\")").getAnnotation("cox"));
@@ -336,14 +336,14 @@ public class YqlParserTestCase {
     public void testAnnotationsCanBeInBrackets() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {label: \"merkelapp\"} ]\"colors\");").getLabel());
+                                 "([ {label: \"merkelapp\"} ]\"colors\")").getLabel());
     }
 
     @Test
     public void testValuesCanBeQuoted() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "( {label: \"merkelapp\"} \"colors\");").getLabel());
+                                 "( {label: \"merkelapp\"} \"colors\")").getLabel());
     }
 
     @Test
@@ -411,7 +411,7 @@ public class YqlParserTestCase {
         assertFalse(getRootWord("select foo from bar where baz contains " +
                                 "([ {stem: true} ]\"colors\")").isStemmed());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "\"colors\";").isStemmed());
+                                "\"colors\"").isStemmed());
     }
 
     @Test
@@ -614,7 +614,7 @@ public class YqlParserTestCase {
     //This test is order dependent. Fix it!
     @Test
     public void testDotProduct() {
-        assertParse("select foo from bar where dotProduct(description, {\"a\":1, \"b\":2});",
+        assertParse("select foo from bar where dotProduct(description, {\"a\":1, \"b\":2})",
                     "DOTPRODUCT description{[1]:\"a\",[2]:\"b\"}");
         assertParse("select foo from bar where dotProduct(description, {\"a\":2})",
                     "DOTPRODUCT description{[2]:\"a\"}");
@@ -1166,7 +1166,6 @@ public class YqlParserTestCase {
             expectedYql.append("\"google com\")"); // but not with the simple syntax
         if (hasAnnotations)
             expectedYql.append(")");
-        expectedYql.append(";");
         assertEquals(expectedYql.toString(), query.yqlRepresentation());
 
         assertTrue(query.getModel().getQueryTree().getRoot() instanceof PhraseItem);
