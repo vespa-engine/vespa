@@ -34,6 +34,8 @@ deadlock:proton::ImportedAttributesContext::getAttributeStableEnum
 race:llvm::sys::MutexImpl
 race:llvm::sys::SmartMutex<false>::lock
 race:llvm::sys::SmartMutex<true>::lock
+race:llvm::sys::DynamicLibrary::getPermanentLibrary
+race:(anonymous namespace)::GDBJITRegistrationListener::notifyObjectLoaded
 
 # This is external code that we do not control. Complains that mutex
 # creation and locking is not strictly enough ordered.
