@@ -1549,22 +1549,6 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testJvmArgs() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<container version='1.0'>" +
-                        "  <search/>" +
-                        "  <nodes jvmargs='-DfooOption=xyz' count='3'/>" +
-                        "</container>";
-        int numberOfHosts = 3;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true);
-        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
-        assertEquals("-DfooOption=xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
-    }
-
-    @Test
     public void testJvmOptions() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1580,30 +1564,6 @@ public class ModelProvisioningTest {
         VespaModel model = tester.createModel(services, true);
         assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
         assertEquals("-DfooOption=xyz", model.getContainerClusters().get("container").getContainers().get(0).getAssignedJvmOptions());
-    }
-
-    @Test
-    public void testFailWhenBothJvmOptionsAndJvmArgs() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                        "<container version='1.0'>" +
-                        "  <search/>" +
-                        "  <nodes jvm-options='xyz' jvmargs='abc' count='3'/>" +
-                        "</container>";
-        int numberOfHosts = 3;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        try {
-            tester.createModel(services, true);
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("You have specified both deprecated jvm-options='xyz' and deprecated jvmargs='abc'. " +
-                                 "'jvm-options' and 'jvmargs' are deprecated and will be removed in Vespa 8. " +
-                                 "Please merge 'jvmargs' into 'options' or 'gc-options' in 'jvm' element. " +
-                                 "See https://docs.vespa.ai/en/reference/services-container.html#jvm",
-                         e.getMessage());
-        }
     }
 
     @Test
