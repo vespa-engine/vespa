@@ -101,7 +101,6 @@ public class ClusterTest {
         assertEquals(8, config.numJrtTransportThreads());
         assertEquals(100.0, config.minSearchCoverage(), DELTA);
         assertEquals(97.0, config.minActivedocsPercentage(), DELTA);
-        assertEquals(100.0, config.minGroupCoverage(), DELTA);
         assertEquals(0.9999, config.topKProbability(), DELTA);
         assertEquals(3, config.node().size());
         assertEquals(0, config.node(0).key());
