@@ -50,14 +50,14 @@ public class UserInputTestCase {
             URIBuilder builder = searchUri();
             builder.setParameter("yql", "select * from sources * where userInput(\"nalle\")");
             Query query = searchAndAssertNoErrors(builder);
-            assertEquals("select * from sources * where default contains \"nalle\";", query.yqlRepresentation());
+            assertEquals("select * from sources * where default contains \"nalle\"", query.yqlRepresentation());
         }
         {
             URIBuilder builder = searchUri();
             builder.setParameter("nalle", "bamse");
             builder.setParameter("yql", "select * from sources * where userInput(@nalle)");
             Query query = searchAndAssertNoErrors(builder);
-            assertEquals("select * from sources * where default contains \"bamse\";", query.yqlRepresentation());
+            assertEquals("select * from sources * where default contains \"bamse\"", query.yqlRepresentation());
         }
         {
             URIBuilder builder = searchUri();
@@ -74,7 +74,7 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where {grammar: \"raw\"}userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains \"nal le\";", query.yqlRepresentation());
+        assertEquals("select * from sources * where default contains \"nal le\"", query.yqlRepresentation());
     }
 
     @Test
@@ -83,7 +83,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                 "select * from sources * where {grammar: \"segment\"}userInput(\"nal le\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains ([{origin: {original: \"nal le\", offset: 0, length: 6}}]phrase(\"nal\", \"le\"));", query.yqlRepresentation());
+        assertEquals("select * from sources * where default contains ([{origin: {original: \"nal le\", offset: 0, length: 6}}]phrase(\"nal\", \"le\"))", query.yqlRepresentation());
     }
 
     @Test
@@ -92,7 +92,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                 "select * from sources * where {grammar: \"segment\"}userInput(\"^^^^^^^^\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where default contains \"^^^^^^^^\";", query.yqlRepresentation());
+        assertEquals("select * from sources * where default contains \"^^^^^^^^\"", query.yqlRepresentation());
     }
 
     @Test
@@ -100,7 +100,7 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where {grammar: \"any\"}userInput('foo bar')");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where (default contains \"foo\" OR default contains \"bar\");",
+        assertEquals("select * from sources * where (default contains \"foo\" OR default contains \"bar\")",
                      query.yqlRepresentation());
     }
 
@@ -109,7 +109,7 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where {grammar: \"all\"}userInput('foo bar')");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where (default contains \"foo\" AND default contains \"bar\");",
+        assertEquals("select * from sources * where (default contains \"foo\" AND default contains \"bar\")",
                      query.yqlRepresentation());
     }
 
@@ -118,7 +118,7 @@ public class UserInputTestCase {
         URIBuilder builder = searchUri();
         builder.setParameter("yql", "select * from sources * where {grammar: \"weakAnd\"}userInput('foo bar')");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where weakAnd(default contains \"foo\", default contains \"bar\");",
+        assertEquals("select * from sources * where weakAnd(default contains \"foo\", default contains \"bar\")",
                      query.yqlRepresentation());
     }
 
@@ -139,7 +139,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                 "select * from sources * where [{defaultIndex: \"glompf\"}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where glompf contains \"nalle\";", query.yqlRepresentation());
+        assertEquals("select * from sources * where glompf contains \"nalle\"", query.yqlRepresentation());
     }
 
     @Test
@@ -149,7 +149,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{stem: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{stem: false}]\"nalle\");",
+                "select * from sources * where default contains ([{stem: false}]\"nalle\")",
                 query.yqlRepresentation());
     }
 
@@ -160,7 +160,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                              "select * from ecitem where rank(([{defaultIndex:\"myfield\"}](userInput(@myinput))))");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from ecitem where rank(myfield = (-5));", query.yqlRepresentation());
+        assertEquals("select * from ecitem where rank(myfield = (-5))", query.yqlRepresentation());
         assertEquals("RANK myfield:-5", query.getModel().getQueryTree().getRoot().toString());
     }
 
@@ -171,7 +171,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{ranked: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{ranked: false}]\"nalle\");",
+                "select * from sources * where default contains ([{ranked: false}]\"nalle\")",
                 query.yqlRepresentation());
     }
 
@@ -182,7 +182,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{filter: true}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{filter: true}]\"nalle\");",
+                "select * from sources * where default contains ([{filter: true}]\"nalle\")",
                 query.yqlRepresentation());
     }
 
@@ -194,7 +194,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{normalizeCase: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{normalizeCase: false}]\"nalle\");",
+                "select * from sources * where default contains ([{normalizeCase: false}]\"nalle\")",
                 query.yqlRepresentation());
     }
 
@@ -205,7 +205,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{accentDrop: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{accentDrop: false}]\"nalle\");",
+                "select * from sources * where default contains ([{accentDrop: false}]\"nalle\")",
                 query.yqlRepresentation());
     }
 
@@ -216,7 +216,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{usePositionData: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{usePositionData: false}]\"nalle\");",
+                "select * from sources * where default contains ([{usePositionData: false}]\"nalle\")",
                 query.yqlRepresentation());
     }
 
@@ -228,7 +228,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                 "select * from sources * where foo contains @nalle and foo contains phrase(@nalle, @meta, @nalle)");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where (foo contains \"bamse\" AND foo contains phrase(\"bamse\", \"syntactic\", \"bamse\"));", query.yqlRepresentation());
+        assertEquals("select * from sources * where (foo contains \"bamse\" AND foo contains phrase(\"bamse\", \"syntactic\", \"bamse\"))", query.yqlRepresentation());
     }
 
     @Test
@@ -237,7 +237,7 @@ public class UserInputTestCase {
         builder.setParameter("varref", "1980");
         builder.setParameter("yql", "select * from sources * where year > @varref");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where year > 1980;", query.yqlRepresentation());
+        assertEquals("select * from sources * where year > 1980", query.yqlRepresentation());
     }
 
     @Test
@@ -248,7 +248,7 @@ public class UserInputTestCase {
                              "select * from sources * where myfield contains 'token'" +
                              "| [{'continuations':[@continuation, 'BCBKCBACBKCCK'] }] all(group(f) each(output(count())))");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where myfield contains \"token\" | [{ continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(f) each(output(count())));", query.yqlRepresentation());
+        assertEquals("select * from sources * where myfield contains \"token\" | [{ continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]all(group(f) each(output(count())))", query.yqlRepresentation());
     }
 
     @Test
@@ -258,7 +258,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                              "select foo from bar where fieldName contains equiv(@term,'B')");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select foo from bar where fieldName contains equiv(\"A\", \"B\");", query.yqlRepresentation());
+        assertEquals("select foo from bar where fieldName contains equiv(\"A\", \"B\")", query.yqlRepresentation());
     }
 
     private Query searchAndAssertNoErrors(URIBuilder builder) {
