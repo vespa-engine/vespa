@@ -4,7 +4,6 @@ package com.yahoo.schema.derived;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
-import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.Test;
@@ -22,8 +21,7 @@ public class NeuralNetTestCase extends AbstractExportingTestCase {
         ComponentId.resetGlobalCountersForTests();
         DerivedConfiguration c = assertCorrectDeriving("neuralnet");
         // Verify that query profiles end up correct when passed through the same intermediate forms as a full system
-        CompiledQueryProfileRegistry queryProfiles =
-                QueryProfileConfigurer.createFromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {}).getConfig()).compile();
+        CompiledQueryProfileRegistry queryProfiles = CompiledQueryProfileRegistry.fromConfig(new QueryProfiles(c.getQueryProfiles(), (level, message) -> {}).getConfig());
         assertNeuralNetQuery(c, queryProfiles.getComponent("default"));
     }
 
