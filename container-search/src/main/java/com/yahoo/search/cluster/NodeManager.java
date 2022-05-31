@@ -20,25 +20,12 @@ public interface NodeManager<T> {
     /** Called when a working node fails */
     void failed(T node);
 
-    /** 
-     * Called when a node should be pinged. 
-     * This *must* lead to either a call to NodeMonitor.failed or NodeMonitor.responded
-     *
-     * @deprecated Use ping(ClusterMonitor clusterMonitor, T node, Executor executor) instead.
-     */
-    @Deprecated // TODO: Remove on Vespa 8
-    default void ping(T node, Executor executor) {
-        throw new IllegalStateException("If you have not overrriden ping(ClusterMonitor<T> clusterMonitor, T node, Executor executor), you should at least have overriden this method.");
-    }
-
     /**
      * Called when a node should be pinged.
      * This *must* lead to either a call to ClusterMonitor.failed or ClusterMonitor.responded
      */
-    default void ping(ClusterMonitor<T> clusterMonitor, T node, Executor executor) {
-        ping(node, executor);
-    }
-    
+    void ping(ClusterMonitor<T> clusterMonitor, T node, Executor executor);
+
     /** Called right after a ping has been issued to each node. This default implementation does nothing. */
     default void pingIterationCompleted() {}
 

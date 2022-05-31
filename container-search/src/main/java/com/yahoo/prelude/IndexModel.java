@@ -39,20 +39,6 @@ public final class IndexModel {
         this.unionSearchDefinition = unionOf(searchDefinitions);
     }
 
-    /**
-     * Use IndexModel as a pure wrapper for the parameters given.
-     *
-     * @deprecated use the constructor without the third parameter
-     */
-    @Deprecated // TODO: Remove Vespa 8
-    public IndexModel(Map<String, List<String>> masterClusters,
-                      Map<String, SearchDefinition> searchDefinitions,
-                      SearchDefinition unionSearchDefinition) {
-        this.masterClusters = masterClusters;
-        this.searchDefinitions = searchDefinitions;
-        this.unionSearchDefinition = unionSearchDefinition;
-    }
-
     public IndexModel(IndexInfoConfig indexInfo, QrSearchersConfig clusters) {
         this(indexInfo, toClusters(clusters));
     }
@@ -135,8 +121,6 @@ public final class IndexModel {
 
     public Map<String, SearchDefinition> getSearchDefinitions() { return searchDefinitions; }
 
-    /** @deprecated do not use */
-    @Deprecated // TODO: Remove on Vespa 8
-    public SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
+    SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
 
 }
