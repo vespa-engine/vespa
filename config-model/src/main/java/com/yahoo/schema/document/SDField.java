@@ -16,8 +16,6 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;
-import com.yahoo.schema.fieldoperation.FieldOperation;
-import com.yahoo.schema.fieldoperation.FieldOperationContainer;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
@@ -50,7 +48,7 @@ import java.util.TreeMap;
  *
  * @author bratseth
  */
-public class SDField extends Field implements TypedKey, FieldOperationContainer, ImmutableSDField {
+public class SDField extends Field implements TypedKey, ImmutableSDField {
 
     /** Use this field for modifying index-structure, even if it doesn't have any indexing code */
     private boolean indexStructureField = false;
@@ -117,9 +115,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
     private final Map<String, String> aliasToName = new HashMap<>();
-
-    /** Pending operations that must be applied after parsing, due to use of not-yet-defined structs. */
-    private final List<FieldOperation> pendingOperations = new LinkedList<>();
 
     private boolean isExtraField = false;
 
@@ -350,27 +345,6 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     private Matching matchingForStructFields = null;
-
-    public void addOperation(FieldOperation op) {
-        pendingOperations.add(op);
-    }
-
-    @Override
-    public void applyOperations(SDField field) {
-        if (pendingOperations.isEmpty()) return;
-
-        Collections.sort(pendingOperations);
-        ListIterator<FieldOperation> ops = pendingOperations.listIterator();
-        while (ops.hasNext()) {
-            FieldOperation op = ops.next();
-            ops.remove();
-            op.apply(field);
-        }
-    }
-
-    public void applyOperations() {
-        applyOperations(this);
-    }
 
     public void setId(int fieldId, DocumentType owner) {
         super.setId(fieldId, owner);
