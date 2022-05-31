@@ -17,7 +17,7 @@ public class ClientParameters {
     public final Iterator<String> documentIds;
     // Print only the id for retrieved documents
     public final boolean printIdsOnly;
-    // Determines which document fields to retrieve. Default is '[all]'.
+    // Determines which document fields to retrieve. Default is '[document]'.
     public final String fieldSet;
     // The Vespa route
     public final String route;
