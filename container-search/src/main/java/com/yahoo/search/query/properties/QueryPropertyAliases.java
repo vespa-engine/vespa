@@ -24,8 +24,7 @@ public class QueryPropertyAliases extends PropertyAliases {
     @Override
     protected CompoundName unalias(CompoundName nameOrAlias) {
         if (nameOrAlias.first().equalsIgnoreCase("rankfeature")
-            || nameOrAlias.first().equalsIgnoreCase("input")
-            || nameOrAlias.first().equalsIgnoreCase("featureoverride")) { // deprecated: TODO Remove on Vespa 8
+            || nameOrAlias.first().equalsIgnoreCase("input")) {
             if (nameOrAlias.size() > 1) // only alias the prefix
                 return nameOrAlias.rest().prepend("ranking", "features");
             else
