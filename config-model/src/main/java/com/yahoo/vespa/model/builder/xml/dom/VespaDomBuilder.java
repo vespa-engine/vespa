@@ -41,7 +41,6 @@ import java.util.logging.Logger;
  */
 public class VespaDomBuilder extends VespaModelBuilder {
 
-    public static final String JVMARGS_ATTRIB_NAME = "jvmargs";
     public static final String JVM_OPTIONS = "jvm-options";
     public static final String OPTIONS = "options";
     public static final String JVM_GC_OPTIONS = "jvm-gc-options";
@@ -145,10 +144,6 @@ public class VespaDomBuilder extends VespaModelBuilder {
             if (producerSpec != null) {
                 if (producerSpec.hasAttribute(JVM_OPTIONS)) {
                     t.appendJvmOptions(producerSpec.getAttribute(JVM_OPTIONS));
-                } else {
-                    if (producerSpec.hasAttribute(JVMARGS_ATTRIB_NAME)) {
-                        t.appendJvmOptions(producerSpec.getAttribute(JVMARGS_ATTRIB_NAME));
-                    }
                 }
                 if (producerSpec.hasAttribute(PRELOAD_ATTRIB_NAME)) {
                     t.setPreLoad(producerSpec.getAttribute(PRELOAD_ATTRIB_NAME));
