@@ -223,16 +223,20 @@
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>enforce-no-jupiter-compile-scope</id>
+                                <id>enforce-just-our-jupiter</id>
                                 <goals>
                                     <goal>enforce</goal>
                                 </goals>
                                 <configuration>
                                     <rules>
                                         <bannedDependencies>
-                                            <!-- Fail validation for apps with junit-jupiter-api in compile scope. -->
+                                            <!-- Fail validation for apps with junit-jupiter-api in compile scope, or on wrong version. -->
                                             <excludes>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:compile</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:provided</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:runtime</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${junit.version}):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${junit.version},):jar:*</exclude>
                                             </excludes>
                                         </bannedDependencies>
                                     </rules>
