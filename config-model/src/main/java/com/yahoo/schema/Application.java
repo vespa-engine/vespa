@@ -66,10 +66,6 @@ public class Application {
 
         var orderer = new SDDocumentTypeOrderer(sdocs, logger);
         orderer.process();
-        for (SDDocumentType sdoc : orderer.getOrdered()) {
-            new FieldOperationApplierForStructs().process(sdoc);
-            new FieldOperationApplier().process(sdoc);
-        }
 
         var resolver = new DocumentReferenceResolver(schemas);
         sdocs.forEach(resolver::resolveReferences);
@@ -82,7 +78,6 @@ public class Application {
 
         List<Schema> schemasSomewhatOrdered = new ArrayList<>(schemas);
         for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
-            new FieldOperationApplierForSearch().process(schema); // TODO: Why is this not in the regular list?
             new Processing(properties).process(schema,
                                                logger,
                                                rankProfileRegistry,
