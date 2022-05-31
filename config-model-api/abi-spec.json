@@ -297,7 +297,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, java.util.List, java.lang.String)",
+      "public void <init>(int, java.lang.String, java.util.List, java.lang.String)",
+      "public int majorVersion()",
       "public java.lang.String humanReadableString()",
       "public java.lang.String toString()"
     ],
