@@ -35,7 +35,7 @@ public:
     DataStoreT(const DataStoreT &rhs) = delete;
     DataStoreT &operator=(const DataStoreT &rhs) = delete;
     DataStoreT();
-    ~DataStoreT();
+    ~DataStoreT() override;
 
     /**
      * Increase number of dead elements in buffer.

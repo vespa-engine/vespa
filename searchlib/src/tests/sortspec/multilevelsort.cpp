@@ -56,7 +56,7 @@ private:
     T getRandomValue() {
         T min = std::numeric_limits<T>::min();
         T max = std::numeric_limits<T>::max();
-        return min + static_cast<T>((max - min) * (((float)rand() / (float)RAND_MAX)));
+        return min + static_cast<T>(double(max - min) * (((float)rand() / (float)RAND_MAX)));
     }
     template<typename T>
     void fill(IntegerAttribute *attr, uint32_t size, uint32_t unique = 0);
