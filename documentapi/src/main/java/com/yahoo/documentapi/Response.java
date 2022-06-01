@@ -41,17 +41,6 @@ public class Response {
      * Creates a response containing a textual message
      *
      * @param textMessage the message to encapsulate in the Response
-     * @param success     true if the response represents a successful call
-     */
-    @Deprecated(since = "7") // TODO: Remove on Vespa 8
-    public Response(long requestId, String textMessage, boolean success) {
-        this(requestId, textMessage, success ? SUCCESS : ERROR);
-    }
-
-    /**
-     * Creates a response containing a textual message
-     *
-     * @param textMessage the message to encapsulate in the Response
      * @param outcome     the outcome of the operation
      */
     public Response(long requestId, String textMessage, Outcome outcome) {
