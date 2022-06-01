@@ -49,13 +49,6 @@ public final class JsonFormat implements SlimeFormat {
         new Encoder(value, os, indent).encode();
     }
 
-    @Override
-    @Deprecated(since = "7", forRemoval = true)
-    @SuppressWarnings("removal")
-    public void decode(InputStream is, Slime slime) {
-        throw new UnsupportedOperationException("Not implemented");
-    }
-
     /** Returns the given slime data as UTF-8-encoded JSON */
     public static byte[] toJsonBytes(Slime slime) {
         try {
