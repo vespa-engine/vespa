@@ -126,8 +126,7 @@ public class Notifier {
                         .collect(Collectors.joining("<br>\n")))
                 .append("</ul>\n")
                 .append("<br>\n")
-                .append("<a href=\"" + content.uri() + "\">Vespa Console</a>")
-                .append(content.uri().toString());
+                .append("<a href=\"" + content.uri() + "\">Vespa Console</a>");
         return new Mail(recipients, subject, body.toString(), html.toString());
     }
 

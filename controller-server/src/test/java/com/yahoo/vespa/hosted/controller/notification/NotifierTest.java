@@ -73,7 +73,7 @@ public class NotifierTest {
                 "<li>test package has production tests, but no production tests are declared in deployment.xml</li><br>\n" +
                 "<li>see <a href=\"https://docs.vespa.ai/en/testing.html\">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</li></ul>\n" +
                 "<br>\n" +
-                "<a href=\"https://dashboard.tld/tenant1/default\">Vespa Console</a>https://dashboard.tld/tenant1/default",
+                "<a href=\"https://dashboard.tld/tenant1/default\">Vespa Console</a>",
                 mail.htmlMessage().get());
     }
 
