@@ -45,11 +45,9 @@ private:
      * dispatch the signal to the appropriate static signal handler
      * instance.
      *
-     * noinline to ensure consistent number of frames to skip for back-tracing.
-     *
      * @param signal the caught signal
      **/
-    static void handleSignal(int signal) noexcept __attribute__((noinline));
+    static void handleSignal(int signal) noexcept;
 
     /**
      * This method is invoked by the common signal handling method to
