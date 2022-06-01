@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.*;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -233,6 +234,7 @@ public class VdsVisitorTestCase {
         assertEquals("searchvisitor", params.getVisitorLibrary());
         assertEquals(Integer.MAX_VALUE, params.getMaxPending());
         assertEquals(qa.traceLevel, params.getTraceLevel());
+        assertEquals(AllFields.NAME, params.getFieldSet());
 
         // Verify library parameters
         //System.err.println("query="+new String(params.getLibraryParameters().get("query")));
