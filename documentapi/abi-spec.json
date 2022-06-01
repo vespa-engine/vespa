@@ -132,8 +132,6 @@
     "methods": [
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.DocumentId)",
-      "public void <init>(long, java.lang.String, boolean)",
-      "public void <init>(long, com.yahoo.document.DocumentId, java.lang.String, boolean)",
       "public void <init>(long, com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public void <init>(long, com.yahoo.document.DocumentId, java.lang.String, com.yahoo.documentapi.Response$Outcome, com.yahoo.messagebus.Trace)",
       "public com.yahoo.document.DocumentId getDocumentId()",
@@ -192,8 +190,6 @@
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.Document)",
       "public void <init>(long, com.yahoo.document.Document, com.yahoo.messagebus.Trace)",
-      "public void <init>(long, java.lang.String, boolean)",
-      "public void <init>(long, com.yahoo.document.Document, java.lang.String, boolean)",
       "public void <init>(long, com.yahoo.document.Document, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public void <init>(long, com.yahoo.document.Document, java.lang.String, com.yahoo.documentapi.Response$Outcome, com.yahoo.messagebus.Trace)",
       "public com.yahoo.document.Document getDocument()",
@@ -213,9 +209,7 @@
     "methods": [
       "public void <init>(long)",
       "public void <init>(long, com.yahoo.document.DocumentUpdate)",
-      "public void <init>(long, java.lang.String, boolean)",
       "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
-      "public void <init>(long, com.yahoo.document.DocumentUpdate, java.lang.String, boolean)",
       "public void <init>(long, com.yahoo.document.DocumentUpdate, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public void <init>(long, com.yahoo.document.DocumentUpdate, java.lang.String, com.yahoo.documentapi.Response$Outcome, com.yahoo.messagebus.Trace)",
       "public com.yahoo.document.DocumentUpdate getDocumentUpdate()",
@@ -431,7 +425,6 @@
     "methods": [
       "public void <init>(long)",
       "public void <init>(long, java.lang.String)",
-      "public void <init>(long, java.lang.String, boolean)",
       "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome)",
       "public void <init>(long, java.lang.String, com.yahoo.documentapi.Response$Outcome, com.yahoo.messagebus.Trace)",
       "public java.lang.String getTextMessage()",
@@ -473,8 +466,7 @@
     "fields": [
       "public static final enum com.yahoo.documentapi.Result$ResultType SUCCESS",
       "public static final enum com.yahoo.documentapi.Result$ResultType TRANSIENT_ERROR",
-      "public static final enum com.yahoo.documentapi.Result$ResultType FATAL_ERROR",
-      "public static final enum com.yahoo.documentapi.Result$ResultType CONDITION_NOT_MET_ERROR"
+      "public static final enum com.yahoo.documentapi.Result$ResultType FATAL_ERROR"
     ]
   },
   "com.yahoo.documentapi.Result": {
