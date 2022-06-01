@@ -172,10 +172,7 @@ class ParsedType {
         case "float16":
         case "float":
         case "double":
-            /* TODO Vespa 8:
             throw new IllegalArgumentException("weightedset of inexact type '" + vt + "' is not supported");
-            */
-            break;
         default:
             throw new IllegalArgumentException("weightedset of unknown type '" + vt + "' is not supported");
         }
