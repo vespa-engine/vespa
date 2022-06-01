@@ -11,6 +11,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.tenant.ArchiveAccess;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantContacts;
@@ -42,7 +43,7 @@ public class NotifierTest {
                                     List.of(TenantContacts.Audience.NOTIFICATIONS),
                                     email)))),
             List.of(),
-            Optional.empty());
+            new ArchiveAccess());
 
 
     MockCuratorDb curatorDb = new MockCuratorDb(SystemName.Public);
