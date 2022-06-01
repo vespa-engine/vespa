@@ -4,7 +4,6 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
-#include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/filter_wrapper.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
@@ -19,7 +18,6 @@ using search::queryeval::FieldSpecBase;
 using search::queryeval::FieldSpecBaseList;
 using search::queryeval::SearchIterator;
 using search::queryeval::LeafBlueprint;
-using search::queryeval::EquivBlueprint;
 using search::queryeval::Blueprint;
 
 namespace search::diskindex {
@@ -44,7 +42,6 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpecBase & field,
     _lookupRes(std::move(lookupRes)),
     _useBitVector(useBitVector),
     _fetchPostingsDone(false),
-    _hasEquivParent(false),
     _postingHandle(),
     _bitVector()
 {
@@ -52,26 +49,11 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpecBase & field,
                             _lookupRes->counts._numDocs == 0));
 }
 
-namespace {
-
-bool
-areAnyParentsEquiv(const Blueprint * node)
-{
-    return (node == nullptr)
-           ? false
-           : (dynamic_cast<const EquivBlueprint *>(node) != nullptr)
-             ? true
-             : areAnyParentsEquiv(node->getParent());
-}
-
-}
-
 void
 DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
     (void) execInfo;
     if (!_fetchPostingsDone) {
-        _hasEquivParent = areAnyParentsEquiv(getParent());
         _bitVector = _diskIndex.readBitVector(*_lookupRes);
         if (!_useBitVector || !_bitVector) {
             _postingHandle = _diskIndex.readPostingList(*_lookupRes);
@@ -83,7 +65,7 @@ DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 SearchIterator::UP
 DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda, bool strict) const
 {
-    if (_bitVector && (_useBitVector || (tfmda[0]->isNotNeeded() && !_hasEquivParent))) {
+    if (_bitVector && (_useBitVector || tfmda[0]->isNotNeeded())) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_lookupRes->indexId).c_str(), _lookupRes->wordNum, _lookupRes->counts._numDocs);
         return BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict);
