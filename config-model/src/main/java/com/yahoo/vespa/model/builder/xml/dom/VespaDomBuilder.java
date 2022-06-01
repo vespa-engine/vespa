@@ -20,15 +20,11 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.generic.builder.DomServiceClusterBuilder;
-import com.yahoo.vespa.model.generic.service.ServiceCluster;
 import com.yahoo.vespa.model.search.SearchCluster;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -293,17 +289,6 @@ public class VespaDomBuilder extends VespaModelBuilder {
         for (SearchCluster sc : Content.getSearchClusters(configModelRepo)) {
             sc.setClusterIndex(index++);
         }
-    }
-
-    @Override
-    public List<ServiceCluster> getClusters(DeployState deployState, AbstractConfigProducer parent) {
-        List<ServiceCluster> clusters = new ArrayList<>();
-        Document services = XmlHelper.getDocument(deployState.getApplicationPackage().getServices(), "services.xml");
-        for (Element clusterSpec : XML.getChildren(services.getDocumentElement(), "cluster")) {
-            DomServiceClusterBuilder clusterBuilder = new DomServiceClusterBuilder(clusterSpec.getAttribute("name"));
-            clusters.add(clusterBuilder.build(deployState, parent.getRoot(), clusterSpec));
-        }
-        return clusters;
     }
 
 }
