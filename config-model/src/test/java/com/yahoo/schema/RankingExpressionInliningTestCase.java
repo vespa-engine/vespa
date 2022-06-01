@@ -191,36 +191,37 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    public void testFunctionInliningWithReplacement() throws ParseException {
-        RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
-        MockDeployLogger deployLogger = new MockDeployLogger();
-        ApplicationBuilder builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(),
-                                                            new MockFileRegistry(),
-                                                            deployLogger,
-                                                            new TestProperties(),
-                                                            rankProfileRegistry,
-                                                            new QueryProfileRegistry());
-        builder.addSchema(
-                        "search test {\n" +
-                        "    document test { }\n" +
-                        "    rank-profile test {\n" +
-                        "        first-phase {\n" +
-                        "            expression: foo\n" +
-                        "        }\n" +
-                        "        function foo(x) {\n" +
-                        "            expression: x + x\n" +
-                        "        }\n" +
-                        "        function inline foo() {\n" +  // replaces previous "foo" during parsing
-                        "            expression: foo(2)\n" +
-                        "        }\n" +
-                        "    }\n" +
-                        "}\n");
-        builder.build(true);
-        Schema s = builder.getSchema();
-        RankProfile test = rankProfileRegistry.get(s, "test").compile(new QueryProfileRegistry(), new ImportedMlModels());
-        assertEquals("foo(2)", test.getFirstPhaseRanking().getRoot().toString());
-        assertTrue("Does not contain expected warning",
-                   deployLogger.contains("Function 'foo' is defined twice in rank profile 'test'"));
+    public void testFunctionRedefinitionIsIllegal() throws ParseException {
+        try {
+            RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();
+            MockDeployLogger deployLogger = new MockDeployLogger();
+            ApplicationBuilder builder = new ApplicationBuilder(MockApplicationPackage.createEmpty(),
+                                                                new MockFileRegistry(),
+                                                                deployLogger,
+                                                                new TestProperties(),
+                                                                rankProfileRegistry,
+                                                                new QueryProfileRegistry());
+            builder.addSchema(
+                    "search test {\n" +
+                    "    document test { }\n" +
+                    "    rank-profile test {\n" +
+                    "        first-phase {\n" +
+                    "            expression: foo\n" +
+                    "        }\n" +
+                    "        function foo(x) {\n" +
+                    "            expression: x + x\n" +
+                    "        }\n" +
+                    "        function inline foo() {\n" +
+                    "            expression: foo(2)\n" +
+                    "        }\n" +
+                    "    }\n" +
+                    "}\n");
+            builder.build(true);
+        }
+        catch (IllegalArgumentException e) {
+            // success
+            assertEquals("Function 'foo' is defined twice in rank profile 'test'", e.getMessage());
+        }
     }
 
     /**
