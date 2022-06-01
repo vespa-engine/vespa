@@ -72,11 +72,13 @@ private:
 
 namespace {
 
-std::unique_ptr<AttributeResult> createResult(const IAttributeVector * attribute)
+std::unique_ptr<AttributeResult>
+createResult(const IAttributeVector * attribute)
 {
-    return (dynamic_cast<const SingleValueEnumAttributeBase *>(attribute) != nullptr)
-        ? std::make_unique<EnumAttributeResult>(attribute, 0)
-        : std::make_unique<AttributeResult>(attribute, 0);
+    IAttributeVector::EnumRefs enumRefs = attribute->make_enum_read_view();
+    return (enumRefs.empty())
+        ? std::make_unique<AttributeResult>(attribute, 0)
+        : std::make_unique<EnumAttributeResult>(enumRefs, attribute, 0);
 }
 
 }
@@ -120,7 +122,8 @@ AttributeNode::AttributeNode(const AttributeNode & attribute) :
     _scratchResult->setDocId(0);
 }
 
-AttributeNode & AttributeNode::operator = (const AttributeNode & attr)
+AttributeNode &
+AttributeNode::operator = (const AttributeNode & attr)
 {
     if (this != &attr) {
         FunctionNode::operator = (attr);
@@ -133,7 +136,8 @@ AttributeNode & AttributeNode::operator = (const AttributeNode & attr)
     return *this;
 }
 
-void AttributeNode::onPrepare(bool preserveAccurateTypes)
+void
+AttributeNode::onPrepare(bool preserveAccurateTypes)
 {
     const IAttributeVector * attribute = _scratchResult->getAttribute();
     if (attribute != nullptr) {
@@ -225,7 +229,8 @@ void AttributeNode::onPrepare(bool preserveAccurateTypes)
 }
 
 template <typename V>
-void AttributeNode::IntegerHandler<V>::handle(const AttributeResult & r)
+void
+AttributeNode::IntegerHandler<V>::handle(const AttributeResult & r)
 {
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
@@ -236,7 +241,8 @@ void AttributeNode::IntegerHandler<V>::handle(const AttributeResult & r)
     }
 }
 
-void AttributeNode::FloatHandler::handle(const AttributeResult & r)
+void
+AttributeNode::FloatHandler::handle(const AttributeResult & r)
 {
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
@@ -247,7 +253,8 @@ void AttributeNode::FloatHandler::handle(const AttributeResult & r)
     }
 }
 
-void AttributeNode::StringHandler::handle(const AttributeResult & r)
+void
+AttributeNode::StringHandler::handle(const AttributeResult & r)
 {
     size_t numValues = r.getAttribute()->getValueCount(r.getDocId());
     _vector.resize(numValues);
@@ -279,7 +286,8 @@ bool AttributeNode::onExecute() const
     return true;
 }
 
-void AttributeNode::wireAttributes(const IAttributeContext & attrCtx)
+void
+AttributeNode::wireAttributes(const IAttributeContext & attrCtx)
 {
     const IAttributeVector * attribute(_scratchResult ? _scratchResult->getAttribute() : nullptr);
     if (attribute == nullptr) {
@@ -296,18 +304,21 @@ void AttributeNode::wireAttributes(const IAttributeContext & attrCtx)
     }
 }
 
-void AttributeNode::cleanup()
+void
+AttributeNode::cleanup()
 {
     _scratchResult.reset();
 }
 
-Serializer & AttributeNode::onSerialize(Serializer & os) const
+Serializer &
+AttributeNode::onSerialize(Serializer & os) const
 {
     FunctionNode::onSerialize(os);
     return os << _attributeName;
 }
 
-Deserializer & AttributeNode::onDeserialize(Deserializer & is)
+Deserializer &
+AttributeNode::onDeserialize(Deserializer & is)
 {
     FunctionNode::onDeserialize(is);
 

@@ -7,9 +7,7 @@
 #include <vespa/searchlib/attribute/multistringpostattribute.h>
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/singlestringpostattribute.hpp>
-#include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/multistringpostattribute.hpp>
 
 #include <vespa/log/log.h>
@@ -393,8 +391,6 @@ TEST("testSingleValue")
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
-        const IAttributeVector * ia = &svsa;
-        EXPECT_TRUE(dynamic_cast<const SingleValueEnumAttributeBase *>(ia) != nullptr);
         testSingleValue(svsa, cfg);
 
         SingleValueStringAttribute svsb("svsa", cfg);
