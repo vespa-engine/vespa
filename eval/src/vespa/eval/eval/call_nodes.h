@@ -4,16 +4,12 @@
 
 #include "basic_nodes.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <map>
 #include <cmath>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval { struct NodeVisitor; }
 
-struct NodeVisitor;
-
-namespace nodes {
+namespace vespalib::eval::nodes {
 
 /**
  * Common superclass for AST nodes describing calls to built-in
@@ -144,6 +140,4 @@ struct Hamming : CallHelper<Hamming> { Hamming() : Helper("hamming", 2) {} };
 
 //-----------------------------------------------------------------------------
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}

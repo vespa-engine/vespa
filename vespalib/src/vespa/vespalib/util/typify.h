@@ -3,7 +3,7 @@
 #pragma once
 
 #include "traits.h"
-#include <stddef.h>
+#include <cstddef>
 #include <utility>
 
 namespace vespalib {

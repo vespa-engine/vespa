@@ -3,11 +3,9 @@
 #include "call_nodes.h"
 #include "node_visitor.h"
 
-namespace vespalib {
-namespace eval {
-namespace nodes {
+namespace vespalib::eval::nodes {
 
-Call::~Call() { }
+Call::~Call() = default;
 
 
 template <typename T> void CallHelper<T>::accept(NodeVisitor &visitor) const {
@@ -47,6 +45,4 @@ CallRepo::CallRepo() : _map() {
     add(nodes::Hamming());
 }
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}

@@ -8,6 +8,7 @@
 #include "delete_node.h"
 #include "aggr.h"
 #include <vespa/vespalib/locale/c.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <cctype>
 #include <map>
 #include <set>

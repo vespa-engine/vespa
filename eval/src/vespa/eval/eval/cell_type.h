@@ -2,12 +2,12 @@
 
 #pragma once
 
+#include "int8float.h"
+#include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vector>
 #include <cstdint>
 #include <cassert>
-#include "int8float.h"
-#include <vespa/vespalib/util/bfloat16.h>
 
 namespace vespalib::eval {
 
