@@ -110,17 +110,13 @@ public class Result {
         /** The request failed, but may be successful if retried at a later time. */
         TRANSIENT_ERROR,
         /** The request failed, and retrying is pointless. */
-        FATAL_ERROR,
-        /** Condition specified in operation not met error  */
-        @Deprecated(since = "7", forRemoval = true) // TODO: Remove on Vespa 8 — this is a Response outcome, not a Result outcome.
-        CONDITION_NOT_MET_ERROR
+        FATAL_ERROR
     }
+
     public static Error toError(ResultType result) {
         switch (result) {
             case TRANSIENT_ERROR:
                 return new Error(ErrorCode.TRANSIENT_ERROR, ResultType.TRANSIENT_ERROR.name());
-            case CONDITION_NOT_MET_ERROR:
-                return new Error(ErrorCode.FATAL_ERROR, ResultType.CONDITION_NOT_MET_ERROR.name());
             case FATAL_ERROR:
                 return new Error(ErrorCode.FATAL_ERROR, ResultType.FATAL_ERROR.name());
         }
