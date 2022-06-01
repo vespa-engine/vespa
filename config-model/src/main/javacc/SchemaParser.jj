@@ -1082,26 +1082,8 @@ void attributeSetting(ParsedAttribute attribute) :
       | <ALIAS> { String alias; String aliasedName=attribute.name(); } [aliasedName = identifier()] <COLON> alias = identifierWithDash() {
           attribute.addAlias(aliasedName, alias);
       }
-      | attributeTensorType(attribute)
       | <DISTANCEMETRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
     )
-}
-
-/**
- * This rule consumes a tensor type statement for an attribute element.
- *
- * @param attribute The attribute to modify.
- */
-void attributeTensorType(ParsedAttribute attribute) :
-{
-    TensorType tensorType;
-}
-{
-    tensorType = tensorType("For attribute field '" + attribute.name() + "'")
-    {
-        // TODO: Remove on Vespa 8
-        deployLogger.logApplicationPackage(Level.WARNING, "In field '" + attribute.name() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
-    }
 }
 
 /**
@@ -1729,7 +1711,7 @@ void rankingConstant(ParsedSchema schema) :
 {
     ( <CONSTANT> name = identifier() lbrace()
       (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
-       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove on Vespa 8
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. Remove?
        | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
       )+
       <RBRACE>
@@ -1889,8 +1871,7 @@ void function(ParsedRankProfile profile) :
         func.setInline(inline);
         var old = profile.addOrReplaceFunction(func);
         if (old != null) {
-            /* TODO disallow this for Vespa 8 */
-            deployLogger.logApplicationPackage(Level.WARNING, "Function '" + func.name()
+            throw new IllegalArgumentException("Function '" + func.name()
                                                + "' is defined twice in rank profile '"
                                                + profile.name() + "'");
         }
