@@ -204,13 +204,13 @@ public class DocumentGenPluginTest {
         Array old = (Array) book.removeFieldValue("myarrayint");
         assertEquals(old.get(0), new IntegerFieldValue(10));
         book.removeFieldValue("stringmap");
-        book.removeFieldValue("mywsfloat");
+        book.removeFieldValue("mywsinteger");
         assertNull(book.getIsbn());
         assertNull(book.getYear());
         assertNull(book.getDescription());
         assertNull(book.getStringmap());
         assertNull(book.getMyarrayint());
-        assertNull(book.getMywsfloat());
+        assertNull(book.getMywsinteger());
 
         Music music = getMusicBasic();
         Field artist = music.getField("artist");
@@ -349,30 +349,30 @@ public class DocumentGenPluginTest {
     @Test
     public void testWeightedSets() {
         Book book = getBook();
-        assertTrue(book.getField("mywsfloat").getDataType() instanceof WeightedSetDataType);
-        Field ws = book.getField("mywsfloat");
-        assertEquals(book.getMywsfloat().get(2.2f), (Integer)200);
-        WeightedSet floatWs = (WeightedSet) book.getFieldValue("mywsfloat");
-        assertEquals(floatWs.get(new FloatFieldValue(2.2f)), (Integer)200);
-        floatWs.remove(new FloatFieldValue(2.2f));
-        assertNull(book.getMywsfloat().get(2.2f));
-        assertEquals(((WeightedSet)book.getFieldValue(ws)).get(new FloatFieldValue(1.1f)), (Integer)100);
+        assertTrue(book.getField("mywsinteger").getDataType() instanceof WeightedSetDataType);
+        Field ws = book.getField("mywsinteger");
+        assertEquals(book.getMywsinteger().get(2), (Integer)200);
+        WeightedSet integerWs = (WeightedSet) book.getFieldValue("mywsinteger");
+        assertEquals(integerWs.get(new IntegerFieldValue(2)), (Integer)200);
+        integerWs.remove(new IntegerFieldValue(2));
+        assertNull(book.getMywsinteger().get(2));
+        assertEquals(((WeightedSet)book.getFieldValue(ws)).get(new IntegerFieldValue(1)), (Integer)100);
 
-        Map<Float, Integer> ws2 = new HashMap<>();
-        ws2.put(1.11f, 1000);
-        ws2.put(2.22f, 2000);
-        ws2.put(3.33f, 3000);
-        book.setMywsfloat(ws2);
-        assertEquals(book.getMywsfloat().get(2.22f), (Integer)2000);
-        floatWs = (WeightedSet) book.getFieldValue("mywsfloat");
-        assertEquals(floatWs.get(new FloatFieldValue(2.22f)), (Integer)2000);
-        assertEquals(floatWs.size(), 3);
-        ws2.put(4.44f, 4000);
-        assertEquals(book.getMywsfloat().get(4.44f), (Integer)4000);
-        book.getMywsfloat().remove(4.44f);
-        assertNull(book.getMywsfloat().get(4.44f));
-        assertNull(ws2.get(4.44f));
-        assertEquals(((WeightedSet)book.getFieldValue(ws)).get(new FloatFieldValue(1.11f)), (Integer)1000);
+        Map<Integer, Integer> ws2 = new HashMap<>();
+        ws2.put(1, 1000);
+        ws2.put(2, 2000);
+        ws2.put(3, 3000);
+        book.setMywsinteger(ws2);
+        assertEquals(book.getMywsinteger().get(2), (Integer)2000);
+        integerWs = (WeightedSet) book.getFieldValue("mywsinteger");
+        assertEquals(integerWs.get(new IntegerFieldValue(2)), (Integer)2000);
+        assertEquals(integerWs.size(), 3);
+        ws2.put(4, 4000);
+        assertEquals(book.getMywsinteger().get(4), (Integer)4000);
+        book.getMywsinteger().remove(4);
+        assertNull(book.getMywsinteger().get(4));
+        assertNull(ws2.get(4));
+        assertEquals(((WeightedSet)book.getFieldValue(ws)).get(new IntegerFieldValue(1)), (Integer)1000);
     }
 
     @Test
@@ -557,10 +557,10 @@ public class DocumentGenPluginTest {
         book.setTitle("Moby Dick");
         book.setYear(1851);
         book.setMystruct(new Ss1().setSs01(new Ss0().setS0("My s0").setD0(99d)).setS1("My s1").setL1(89L));//.setAl1(myAs1));
-        Map<Float, Integer> wsFloat = new HashMap<>();
-        wsFloat.put(56f, 55);
-        wsFloat.put(57f, 54);
-        book.setMywsfloat(wsFloat);
+        Map<Integer, Integer> wsInteger = new HashMap<>();
+        wsInteger.put(56, 55);
+        wsInteger.put(57, 54);
+        book.setMywsinteger(wsInteger);
 
         Array<IntegerFieldValue> intArr1 = new Array<>(DataType.getArray(DataType.INT));
         intArr1.add(new IntegerFieldValue(1));
@@ -604,10 +604,10 @@ public class DocumentGenPluginTest {
         myS1.setFieldValue("ss01", myS0);
         bookGeneric.setFieldValue("mystruct", myS1);
 
-        WeightedSet<FloatFieldValue> wsFloat = new WeightedSet<>(DataType.getWeightedSet(DataType.FLOAT));
-        wsFloat.put(new FloatFieldValue(56f), 55);
-        wsFloat.put(new FloatFieldValue(57f), 54);
-        bookGeneric.setFieldValue("mywsfloat", wsFloat);
+        WeightedSet<FloatFieldValue> wsInteger = new WeightedSet<>(DataType.getWeightedSet(DataType.FLOAT));
+        wsInteger.put(new FloatFieldValue(56), 55);
+        wsInteger.put(new FloatFieldValue(57), 54);
+        bookGeneric.setFieldValue("mywsinteger", wsInteger);
 
         Array<IntegerFieldValue> intArr1 = new Array<>(DataType.getArray(DataType.INT));
         intArr1.add(new IntegerFieldValue(1));
@@ -660,10 +660,10 @@ public class DocumentGenPluginTest {
         myS1.setFieldValue("ss01", myS0);
         bookGeneric.setFieldValue("mystruct", myS1);
         assertEquals(((StructuredFieldValue) bookGeneric.getFieldValue("mystruct")).getFieldValue("s1").getWrappedValue(), "My s1");
-        WeightedSet<FloatFieldValue> wsFloat = new WeightedSet<>(DataType.getWeightedSet(DataType.FLOAT));
-        wsFloat.put(new FloatFieldValue(56f), 55);
-        wsFloat.put(new FloatFieldValue(57f), 54);
-        bookGeneric.setFieldValue("mywsfloat", wsFloat);
+        WeightedSet<IntegerFieldValue> wsInteger = new WeightedSet<>(DataType.getWeightedSet(DataType.INT));
+        wsInteger.put(new IntegerFieldValue(56), 55);
+        wsInteger.put(new IntegerFieldValue(57), 54);
+        bookGeneric.setFieldValue("mywsinteger", wsInteger);
         Array<IntegerFieldValue> intArr1 = new Array<>(DataType.getArray(DataType.INT));
         intArr1.add(new IntegerFieldValue(1));
         intArr1.add(new IntegerFieldValue(2));
@@ -682,7 +682,7 @@ public class DocumentGenPluginTest {
         assertEquals(book.getMytriplearray().get(0).get(0).get(0), (Integer)1);
         assertEquals(book.getMytriplearray().get(0).get(0).get(1), (Integer)2);
         assertEquals(book.getMytriplearray().get(0).get(0).get(2), (Integer)3);
-        assertEquals(book.getMywsfloat().get(57f), (Integer)54);
+        assertEquals(book.getMywsinteger().get(57), (Integer)54);
         assertEquals(book.getMystruct().getAs1().get(1), "as1_2");
         treeCheck = book.titleSpanTrees().values().iterator().next();
         titleAnnCheck = treeCheck.iterator().next();
@@ -697,7 +697,7 @@ public class DocumentGenPluginTest {
         assertEquals(book2.getMytriplearray().get(0).get(0).get(0), (Integer)1);
         assertEquals(book2.getMytriplearray().get(0).get(0).get(1), (Integer)2);
         assertEquals(book2.getMytriplearray().get(0).get(0).get(2), (Integer)3);
-        assertEquals(book2.getMywsfloat().get(57f), (Integer)54);
+        assertEquals(book2.getMywsinteger().get(57), (Integer)54);
         assertEquals(book2.getMystruct().getAs1().get(1), "as1_2");
         treeCheck = book2.titleSpanTrees().values().iterator().next();
         titleAnnCheck = treeCheck.iterator().next();
@@ -816,11 +816,11 @@ public class DocumentGenPluginTest {
         structMap.put(60, ss1);
         book.setStructmap(structMap);
 
-        Map<Float, Integer> ws = new HashMap<>();
-        ws.put(1.1f, 100);
-        ws.put(2.2f, 200);
-        ws.put(3.3f, 300);
-        book.setMywsfloat(ws);
+        Map<Integer, Integer> ws = new HashMap<>();
+        ws.put(1, 100);
+        ws.put(2, 200);
+        ws.put(3, 300);
+        book.setMywsinteger(ws);
 
         Ss1 arrayedStruct1 = new Ss1().setS1("YEPS").setI1(789);
         Ss1 arrayedStruct2 = new Ss1().setS1("JA").setI1(456);
@@ -891,11 +891,11 @@ public class DocumentGenPluginTest {
         assertEquals(a.get(1).getInteger(), 20);
         assertEquals(a.get(2).getInteger(), 30);
 
-        WeightedSet<FloatFieldValue> ws = (WeightedSet<FloatFieldValue>) des.getFieldValue("mywsfloat");
+        WeightedSet<IntegerFieldValue> ws = (WeightedSet<IntegerFieldValue>) des.getFieldValue("mywsinteger");
         assertEquals(ws.size(), 3);
-        assertEquals(ws.get(new FloatFieldValue(1.1f)), (Integer)100);
-        assertEquals(ws.get(new FloatFieldValue(2.2f)), (Integer)200);
-        assertEquals(ws.get(new FloatFieldValue(3.3f)), (Integer)300);
+        assertEquals(ws.get(new IntegerFieldValue(1)), (Integer)100);
+        assertEquals(ws.get(new IntegerFieldValue(2)), (Integer)200);
+        assertEquals(ws.get(new IntegerFieldValue(3)), (Integer)300);
 
         Array<Struct> sstrctArr = (Array<Struct>) des.getFieldValue("mysinglestructarray");
         assertEquals(sstrctArr.size(), 2);
