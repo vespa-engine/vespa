@@ -197,15 +197,16 @@ SignalHandler::get_cross_thread_stack_trace(pthread_t thread_id)
     std::lock_guard guard(stack_dump_caller_mutex);
 
     assert(!_shared_backtrace_data._want_backtrace.load());
-    _shared_backtrace_data._signal_handler_done.store(false);
-
     _shared_backtrace_data._want_backtrace.store(true);
+
     if (pthread_kill(thread_id, SIGUSR2) != 0) {
         _shared_backtrace_data._want_backtrace.store(false);
         return "(pthread_kill() failed; could not get backtrace)";
     }
-    while (!_shared_backtrace_data._signal_handler_done.load()) {
+    bool expected_done = true;
+    while (!_shared_backtrace_data._signal_handler_done.compare_exchange_strong(expected_done, false)) {
         std::this_thread::sleep_for(1ms); // TODO yield instead?
+        expected_done = true;
     }
     constexpr int frames_to_skip = 4; // handleSignal() -> gotSignal() -> dump_current_thread_...() -> backtrace()
     return vespalib::getStackTrace(frames_to_skip, _shared_backtrace_data._stack_frames.data(),
