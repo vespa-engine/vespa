@@ -72,7 +72,6 @@ public class CompressedApplicationInputStream implements AutoCloseable {
 
     public File decompress(File dir) throws IOException {
         decompressInto(dir.toPath());
-        dir = findActualApplicationDir(dir);
         return dir;
     }
 
@@ -107,16 +106,6 @@ public class CompressedApplicationInputStream implements AutoCloseable {
 
     private static Path createTempFile(Path applicationDir) throws IOException {
         return Files.createTempFile(applicationDir, "application", null);
-    }
-
-    private File findActualApplicationDir(File application) {
-        // If application is in e.g. application/, use that as root for UnpackedApplication
-        // TODO: Vespa 8: Remove application/ directory support
-        File[] files = application.listFiles();
-        if (files != null && files.length == 1 && files[0].isDirectory()) {
-            application = files[0];
-        }
-        return application;
     }
 
 }
