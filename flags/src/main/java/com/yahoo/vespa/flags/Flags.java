@@ -166,7 +166,7 @@ public class Flags {
 
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2022-06-01",
+            List.of("bjorncs", "tokle"), "2021-02-10", "2022-09-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
@@ -411,7 +411,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_YUM_PROXY_V2 = defineFeatureFlag(
             "use-yumproxy-v2", false,
-            List.of("mortent"), "2022-05-05", "2022-06-01",
+            List.of("tokle"), "2022-05-05", "2022-07-01",
             "Use yumproxy-v2",
             "Takes effect on host admin restart",
             HOSTNAME);
