@@ -47,8 +47,6 @@ void my_cool_function(std::latch& arrival_latch, std::latch& departure_latch) {
 
 TEST(SignalHandlerTest, can_dump_stack_of_another_thread)
 {
-    SignalHandler::enable_cross_thread_stack_tracing();
-
     std::latch arrival_latch(2);
     std::latch departure_latch(2);
 
@@ -66,7 +64,6 @@ TEST(SignalHandlerTest, can_dump_stack_of_another_thread)
 
 TEST(SignalHandlerTest, dumping_stack_of_an_ex_thread_does_not_crash)
 {
-    SignalHandler::enable_cross_thread_stack_tracing();
     std::thread t([]() noexcept {
         // Do a lot of nothing at all.
     });
@@ -83,9 +80,12 @@ string my_totally_tubular_and_groovy_function() {
 
 TEST(SignalHandlerTest, can_get_stack_trace_of_own_thread)
 {
-    SignalHandler::enable_cross_thread_stack_tracing(); // Technically not cross-thread in this case...!
     auto trace = my_totally_tubular_and_groovy_function();
     EXPECT_THAT(trace, HasSubstr("my_totally_tubular_and_groovy_function"));
 }
 
-GTEST_MAIN_RUN_ALL_TESTS()
+int main(int argc, char* argv[]) {
+    ::testing::InitGoogleTest(&argc, argv);
+    SignalHandler::enable_cross_thread_stack_tracing();
+    return RUN_ALL_TESTS();
+}
