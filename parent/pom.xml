@@ -942,7 +942,6 @@
                 <artifactId>metrics-core</artifactId>
                 <version>3.2.5</version>
             </dependency>
-
             <dependency>
                 <groupId>uk.co.datumedge</groupId>
                 <artifactId>hamcrest-json</artifactId>
@@ -953,6 +952,11 @@
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
                 <version>2.12.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${org.json.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -109,7 +109,6 @@
                                         <include>org.glassfish.jersey.core:jersey-common:[${jersey2.version}]:jar:provided</include>
                                         <include>org.glassfish.jersey.core:jersey-server:[${jersey2.version}]:jar:provided</include>
                                         <include>org.javassist:javassist:[${javassist.version}]:jar:provided</include>
-                                        <include>org.json:json:[${org.json.version}]:jar:provided</include>
                                         <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
