@@ -1630,7 +1630,7 @@ void rankingConstant(ParsedSchema schema) :
 {
     ( <CONSTANT> name = identifier() lbrace()
       (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
-       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove on Vespa 8
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. Remove?
        | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
       )+
       <RBRACE>
@@ -1789,8 +1789,7 @@ void function(ParsedRankProfile profile) :
         func.setInline(inline);
         var old = profile.addOrReplaceFunction(func);
         if (old != null) {
-            /* TODO disallow this for Vespa 8 */
-            deployLogger.logApplicationPackage(Level.WARNING, "Function '" + func.name()
+            throw new IllegalArgumentException("Function '" + func.name()
                                                + "' is defined twice in rank profile '"
                                                + profile.name() + "'");
         }
