@@ -9,7 +9,6 @@ import com.yahoo.vespa.model.builder.xml.dom.DomRoutingBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
 import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.generic.GenericServicesBuilder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,7 +33,6 @@ public class VespaConfigModelRegistry extends ConfigModelRegistry {
         builderList.add(new DomRoutingBuilder());
         builderList.add(new Content.Builder());
         builderList.add(new ContainerModelBuilder(false, Networking.enable));
-        builderList.add(new GenericServicesBuilder());
     }
 
     @Override
