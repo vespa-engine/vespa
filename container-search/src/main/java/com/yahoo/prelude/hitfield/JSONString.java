@@ -21,7 +21,6 @@ import java.util.Iterator;
  *
  * @author Steinar Knutsen
  */
-// TODO Vespa 8: remove methods leaking org.json types (replace with Slime equivalent?)
 public class JSONString implements Inspectable {
 
     private Inspector value;
@@ -437,21 +436,6 @@ public class JSONString implements Inspectable {
     public String getContent() {
         initContent();
         return content;
-    }
-
-    /** @deprecated Use {@link #getContent()} instead and parse content yourself */
-    @Deprecated(forRemoval = true, since = "7")
-    public Object getParsedJSON() {
-        initContent();
-        if (parsedJSON == null) {
-            initJSON();
-        }
-        return parsedJSON;
-    }
-
-    @Deprecated(forRemoval = true, since = "7")
-    public void setParsedJSON(Object parsedJSON) {
-        this.parsedJSON = parsedJSON;
     }
 
     public String renderFromInspector() {
