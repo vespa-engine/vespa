@@ -70,7 +70,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
             builder.connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
         } else {
             builder.accessLog(new ServerConfig.AccessLog.Builder()
-                    .remoteAddressHeaders(List.of("x-forwarded-for", "client-ip"))
+                    .remoteAddressHeaders(List.of("x-forwarded-for"))
                     .remotePortHeaders(List.of("X-Forwarded-Port")));
         }
         configureJettyThreadpool(builder);

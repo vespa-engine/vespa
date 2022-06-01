@@ -2,7 +2,6 @@
 package com.yahoo.prelude.fastsearch;
 
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.RawData;
@@ -101,7 +100,7 @@ public class SlimeSummaryTestCase {
         if (hit.getField("jsonstring_field") instanceof JSONString) {
             JSONString jstr = (JSONString) hit.getField("jsonstring_field");
             assertEquals("{\"foo\":1,\"bar\":2}", jstr.getContent());
-            assertNotNull(getParsedJSON(jstr));
+            assertNotNull(jstr.getContent());
 
             com.yahoo.data.access.Inspector value = jstr.inspect();
             assertEquals(1L, value.field("foo").asLong());
@@ -124,8 +123,6 @@ public class SlimeSummaryTestCase {
         assertEquals(tensor1, featureData.getTensor("rankingExpression(tensor1_feature)"));
         assertEquals(tensor2, featureData.getTensor("tensor2_feature"));
     }
-
-    @SuppressWarnings("removal") private static Object getParsedJSON(JSONString jstr) { return jstr.getParsedJSON(); }
 
     @Test
     public void testFieldAccessAPI() {

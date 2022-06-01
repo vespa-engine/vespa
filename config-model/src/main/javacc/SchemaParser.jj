@@ -190,12 +190,7 @@ TOKEN :
 | < MUTATE: "mutate" >
 | < QUERY: "query" >
 | < RANKPROFILE: "rank-profile" >
-| < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
-| < RANKDEGRADATION: "rank-degradation" >
 | < RAW_AS_BASE64_IN_SUMMARY: "raw-as-base64-in-summary" >
-| < RPBINSIZE: "doc-frequency" >
-| < RPBINLOW:  "min-fullrank-docs">
-| < RPPOSBINSIZE: "occurrences-per-doc" >
 | < SUMMARY: "summary" >
 | < FULL: "full" >
 | < STATIC: "static" >
@@ -229,8 +224,6 @@ TOKEN :
 | < CASED: "cased" >
 | < UNCASED: "uncased" >
 | < BOLDING: "bolding" >
-| < BODY: "body" >
-| < HEADER: "header" >
 | < NONE: "none" >
 | < ON: "on" >
 | < OFF: "off" >
@@ -246,7 +239,6 @@ TOKEN :
 | < FILTER: "filter" >
 | < NORMAL: "normal" >
 | < EXACTTERMINATOR: "exact-terminator" >
-| < INDEXINGREWRITE: "indexing-rewrite" >
 | < IGNOREDEFAULTRANKFEATURES: "ignore-default-rank-features" >
 | < ID: "id" >
 | < SOURCE: "source" >
@@ -268,7 +260,6 @@ TOKEN :
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
-| < USEDOCUMENT: "use-document" >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
 | < COLON: ":" >
@@ -415,7 +406,6 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | searchStemming(schema)
       | importField(schema)
       | rankingConstant(schema) // Deprecated: TODO: Emit warning when on Vespa 8
-      | useDocument(schema)
       | rankProfile(schema)
       | documentSummary(schema)
       | fieldOutsideDoc(schema)
@@ -459,17 +449,6 @@ ParsedSchema rootDocumentItem(ParsedSchema schema) :
         schema.setDocumentWithoutSchema();
         return schema;
     } )
-}
-
-/**
- * Consumes a use-document statement. This currently does nothing.
- *
- * @param schema the schema object to modify.
- */
-void useDocument(ParsedSchema schema) : { }
-{
-    <USEDOCUMENT> <COLON> identifier()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'use-document' is deprecated and has no effect."); }
 }
 
 /**
@@ -862,16 +841,13 @@ void fieldBody(ParsedField field) : { }
 {
     ( alias(field) |
       attribute(field) |
-      body() |
       bolding(field) |
       dictionary(field) |
       fieldStemming(field) |
-      header() |
       id(field) |
       summaryInField(field) |
       indexInsideField(field) |
       indexing(field) |
-      indexingRewrite(field) |
       matchSettings(field.matchSettings()) |
       normalizing(field) |
       queryCommand(field) |
@@ -1172,7 +1148,7 @@ void summaryItem(ParsedSummaryField field) : { }
       | summaryBolding(field)
       | summarySourceList(field)
       | summaryDestinationList(field)
-      | summaryProperties(field) )
+    )
 }
 
 /**
@@ -1228,30 +1204,6 @@ void summaryDestinationList(ParsedSummaryField field) :
 {
     <TO> <COLON> str = identifier() { field.addDestination(str); }
     (    <COMMA> str = identifier() { field.addDestination(str); } )*
-}
-
-/**
- * This rule consumes properties for a summary field element.
- *
- * @param field The summary field to modify.
- */
-void summaryProperties(ParsedSummaryField field) : { }
-{
-    <PROPERTIES> lbrace() (summaryProperty(field) <NL>)+ <RBRACE>
-}
-
-/**
- * This rule consumes a single summary property pair for a summary field element.
- *
- * @param field The summary field to modify.
- */
-void summaryProperty(ParsedSummaryField field) :
-{
-    String name, value;
-}
-{
-    name = identifierWithDash() <COLON> (value = identifierWithDash() | value = quotedString())
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying summary properties is deprecated and has no effect."); }
 }
 
 /**
@@ -1334,28 +1286,6 @@ void dictionarySetting(ParsedField field) : { }
       | <BTREE>           { field.dictionary(DictionaryOption.BTREE); }
       | <CASED>           { field.dictionary(DictionaryOption.CASED); }
       | <UNCASED>         { field.dictionary(DictionaryOption.UNCASED); } )
-}
-
-/**
- * This rule consumes a body statement of a field element.
- */
-void body() : { }
-{
-    <BODY>
-    {
-        deployLogger.logApplicationPackage(Level.WARNING, "'body' is deprecated and has no effect.");
-    }
-}
-
-/**
- * This rule consumes a header statement of a field element.
- */
-void header() : { }
-{
-    <HEADER>
-    {
-        deployLogger.logApplicationPackage(Level.WARNING, "'header' is deprecated and has no effect.");
-    }
 }
 
 void queryCommand(ParsedField field) :
@@ -1481,17 +1411,6 @@ void id(ParsedField field) :
     {
         field.setId(fieldId);
     }
-}
-
-/**
- * Consumes an indexing-rewrite statement of a field body block.
- *
- * @param field The field to modify.
- */
-void indexingRewrite(ParsedField field) : { }
-{
-    <INDEXINGREWRITE> <COLON> <NONE>
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'indexing-rewrite' is deprecated and has no effect."); }
 }
 
 /**
@@ -1789,7 +1708,6 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
-      | rankDegradation()
       | inputs(profile)
       | constants(schema, profile)
       | matchFeatures(profile)
@@ -2311,68 +2229,6 @@ void fieldRankFilter(ParsedRankProfile profile) :
 }
 
 /**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationBinSize() :
-{
-    double freq;
-}
-{
-    <RPBINSIZE> <COLON> freq = floatValue()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
-}
-
-
-/**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationBinLow() :
-{
-    int n;
-}
-{
-    <RPBINLOW> <COLON> n = integer()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
-}
-
-/**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationPosbinSize() :
-{
-    double avgOcc;
-}
-{
-    <RPPOSBINSIZE> <COLON> avgOcc = floatValue()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
-}
-
-
-/**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationItem() : { }
-{
-    ( rankDegradationBinSize()
-      | rankDegradationBinLow()
-      | rankDegradationPosbinSize() )
-}
-
-/**
- * Consumes a rank-degradation statement of a rank profile.
- */
-void rankDegradation() :
-{
-    double freq;
-}
-{
-    ( <RANKDEGRADATIONFREQ> <COLON> freq = floatValue()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
-      | <RANKDEGRADATION> lbrace() ( rankDegradationItem() (<NL>)*)+ <RBRACE>
-    )
-}
-
-/**
  * Consumes a set of constants available in ranking expressions in the enclosing profile.
  */
 void constants(ParsedSchema schema, ParsedRankProfile profile) :
@@ -2695,7 +2551,6 @@ String identifier() : { }
       | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
-      | <BODY>
       | <BOLDING>
       | <BTREE>
       | <CASED>
@@ -2729,7 +2584,6 @@ String identifier() : { }
       | <FUNCTION>
       | <GRAM>
       | <HASH>
-      | <HEADER>
       | <HUGE>
       | <ID>
       | <IDENTICAL>
@@ -2738,7 +2592,6 @@ String identifier() : { }
       | <IMPORT>
       | <INDEX>
       | <INDEXING>
-      | <INDEXINGREWRITE>
       | <INHERITS>
       | <INLINE>
       | <INPUTS>
@@ -2813,7 +2666,6 @@ String identifier() : { }
       | <UNCASED>
       | <URI>
       | <UPPERBOUND>
-      | <USEDOCUMENT>
       | <VARIABLE>
       | <WEIGHT>
       | <WEIGHTEDSET>

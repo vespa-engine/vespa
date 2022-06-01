@@ -3,7 +3,7 @@ package com.yahoo.search.query.profile.config;
 
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.subscription.ConfigSubscriber;
+import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -19,27 +19,10 @@ import java.util.Set;
 /**
  * @author bratseth
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
-public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber<QueryProfilesConfig> {
+public class QueryProfileConfigurer {
 
-    private final ConfigSubscriber subscriber = new ConfigSubscriber();
-
-    private volatile QueryProfileRegistry currentRegistry;
-
-    public QueryProfileConfigurer(String configId) {
-        subscriber.subscribe(this, QueryProfilesConfig.class, configId);
-    }
-
-    /** Returns the registry created by the last occurring call to configure */
-    public QueryProfileRegistry getCurrentRegistry() { return currentRegistry; }
-
-    private void setCurrentRegistry(QueryProfileRegistry registry) {
-        this.currentRegistry=registry;
-    }
-
-    public void configure(QueryProfilesConfig config) {
-        QueryProfileRegistry registry = createFromConfig(config);
-        setCurrentRegistry(registry);
+    public static QueryProfileRegistry createFromConfigId(String configId) {
+        return createFromConfig(ConfigGetter.getConfig(QueryProfilesConfig.class, configId));
     }
 
     public static QueryProfileRegistry createFromConfig(QueryProfilesConfig config) {
@@ -67,11 +50,6 @@ public class QueryProfileConfigurer implements ConfigSubscriber.SingleSubscriber
 
         registry.freeze();
         return registry;
-    }
-
-    /** Stop subscribing from this configurer */
-    public void shutdown() {
-        subscriber.close();
     }
 
     private static void createProfile(QueryProfilesConfig.Queryprofile config, QueryProfileRegistry registry) {

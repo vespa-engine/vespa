@@ -177,8 +177,6 @@
       "public java.lang.String toString()",
       "public boolean fillWeightedSetItem(com.yahoo.prelude.query.WeightedSetItem)",
       "public java.lang.String getContent()",
-      "public java.lang.Object getParsedJSON()",
-      "public void setParsedJSON(java.lang.Object)",
       "public java.lang.String renderFromInspector()"
     ],
     "fields": []
@@ -1289,18 +1287,6 @@
       "public static final java.lang.String queryCanonicalization"
     ]
   },
-  "com.yahoo.prelude.query.QueryException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, java.lang.Throwable)"
-    ],
-    "fields": []
-  },
   "com.yahoo.prelude.query.RangeItem": {
     "superClass": "com.yahoo.prelude.query.IntItem",
     "interfaces": [],
@@ -1752,8 +1738,6 @@
       "public java.lang.String getIndexName()",
       "public int getN()",
       "public void setN(int)",
-      "public int getScoreThreshold()",
-      "public void setScoreThreshold(int)",
       "public void disclose(com.yahoo.prelude.query.textualrepresentation.Discloser)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)"
@@ -1990,7 +1974,6 @@
       "public varargs void trace(boolean, int, java.lang.Object[])",
       "public void attachContext(com.yahoo.search.Query)",
       "public java.lang.String yqlRepresentation()",
-      "public java.lang.String yqlRepresentation(com.yahoo.collections.Tuple2, boolean)",
       "public java.lang.String yqlRepresentation(boolean)",
       "public com.yahoo.search.query.context.QueryContext getContext(boolean)",
       "public int hashCode()",
@@ -2003,8 +1986,6 @@
       "public com.yahoo.container.jdisc.HttpRequest getHttpRequest()",
       "public com.yahoo.search.query.SessionId getSessionId()",
       "public com.yahoo.search.query.SessionId getSessionId(java.lang.String)",
-      "public boolean hasEncodableProperties()",
-      "public int encodeAsProperties(java.nio.ByteBuffer, boolean)",
       "public void prepare()",
       "public bridge synthetic com.yahoo.processing.Request clone()",
       "public bridge synthetic com.yahoo.processing.request.Properties properties()",
@@ -2102,10 +2083,8 @@
       "public void <init>(boolean)",
       "public java.lang.Object getNode()",
       "public boolean isWorking()",
-      "public boolean isQuarantined()",
       "public abstract void failed(com.yahoo.search.result.ErrorMessage)",
       "public abstract void responded()",
-      "public boolean isIdle()",
       "protected long now()",
       "protected abstract void setWorking(boolean, java.lang.String)",
       "public boolean isInternal()"
@@ -2134,7 +2113,6 @@
       "public com.yahoo.search.cluster.MonitorConfiguration getConfiguration()",
       "public boolean isClosed()",
       "public void add(java.lang.Object, boolean)",
-      "public com.yahoo.search.cluster.BaseNodeMonitor getNodeMonitor(java.lang.Object)",
       "public synchronized void failed(java.lang.Object, com.yahoo.search.result.ErrorMessage)",
       "public synchronized void responded(java.lang.Object)",
       "public void ping(java.util.concurrent.Executor)",
@@ -2228,16 +2206,9 @@
     ],
     "methods": [
       "public void <init>()",
-      "public void setCheckInterval(long)",
       "public long getCheckInterval()",
-      "public void setResponseAfterFailLimit(int)",
-      "public void setIdleLimit(int)",
-      "public long getIdleLimit()",
       "public long getRequestTimeout()",
-      "public void setFailLimit(long)",
       "public long getFailLimit()",
-      "public void setFailQuarantineLimit(int)",
-      "public void setQuarantineTime(long)",
       "public java.lang.String toString()"
     ],
     "fields": []
@@ -2254,8 +2225,7 @@
       "public java.lang.String name()",
       "public abstract void working(java.lang.Object)",
       "public abstract void failed(java.lang.Object)",
-      "public void ping(java.lang.Object, java.util.concurrent.Executor)",
-      "public void ping(com.yahoo.search.cluster.ClusterMonitor, java.lang.Object, java.util.concurrent.Executor)",
+      "public abstract void ping(com.yahoo.search.cluster.ClusterMonitor, java.lang.Object, java.util.concurrent.Executor)",
       "public void pingIterationCompleted()"
     ],
     "fields": []
@@ -6315,7 +6285,8 @@
       "public void <init>(com.yahoo.search.query.profile.types.QueryProfileTypeRegistry)",
       "public final void register(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public com.yahoo.search.query.profile.types.QueryProfileTypeRegistry getTypeRegistry()",
-      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile findQueryProfile(java.lang.String)"
+      "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile findQueryProfile(java.lang.String)",
+      "public static com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry fromConfig(com.yahoo.search.query.profile.config.QueryProfilesConfig)"
     ],
     "fields": [
       "public static final com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry empty"
@@ -6682,7 +6653,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, com.yahoo.language.process.Embedder)",
       "public void <init>(com.yahoo.search.Query, com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry, java.util.Map)",
       "public void setParentQuery(com.yahoo.search.Query)",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
@@ -6880,12 +6850,10 @@
       "public"
     ],
     "methods": [
-      "public void <init>()",
       "public void <init>(com.yahoo.search.query.Ranking)",
       "public void put(java.lang.String, double)",
       "public void put(java.lang.String, com.yahoo.tensor.Tensor)",
       "public void put(java.lang.String, java.lang.String)",
-      "public java.lang.String get(java.lang.String)",
       "public java.lang.Object getObject(java.lang.String)",
       "public java.util.OptionalDouble getDouble(java.lang.String)",
       "public java.util.Optional getTensor(java.lang.String)",
@@ -8165,7 +8133,6 @@
     "methods": [
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.schema.SchemaInfo, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
-      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts)",
@@ -8236,7 +8203,6 @@
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.schema.SchemaInfo, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
-      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
       "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",

@@ -80,13 +80,6 @@ public class RankingTestCase {
         q.getRanking().setSorting((String)null);
     }
 
-    /** Tests deprecated naming */
-    @Test
-    public void testFeatureOverride() {
-        Query query = new Query("?query=abc&featureoverride.something=2");
-        assertEquals(2, query.getRanking().getFeatures().getDouble("something").getAsDouble(), 0.0000001);
-    }
-
     @Test
     public void testStructuredRankProperty() {
         Query query = new Query("?query=abc&rankproperty.distanceToPath(gps_position).path=(0,0,10,0,10,5,20,5)");

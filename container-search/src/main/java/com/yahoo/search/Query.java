@@ -4,18 +4,12 @@ package com.yahoo.search;
 import ai.vespa.cloud.ZoneInfo;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.collections.Tuple2;
-import com.yahoo.component.Version;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.fs4.MapEncoder;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.prelude.fastsearch.DocumentDatabase;
-import com.yahoo.prelude.query.Highlight;
 import com.yahoo.prelude.query.textualrepresentation.TextualQueryRepresentation;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.dispatch.Dispatcher;
-import com.yahoo.search.dispatch.rpc.ProtobufSerialization;
 import com.yahoo.search.federation.FederationSearcher;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.ParameterParser;
@@ -858,12 +852,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         }
     }
 
-    /** @deprecated remove the ignored segmenterVersion argument from invocations */
-    @Deprecated // TODO: Remove on Vespa 8
-    public String yqlRepresentation(Tuple2<String, Version> segmenterVersion, boolean includeHitsAndOffset) {
-        return yqlRepresentation(includeHitsAndOffset);
-    }
-
     /**
      * Serialize this query as YQL+. This will create a string representation
      * which should always be legal YQL+. If a problem occurs, a
@@ -894,7 +882,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         yql.append(" where ");
         String insert = serializeSortingAndLimits(includeHitsAndOffset);
         yql.append(VespaSerializer.serialize(this, insert));
-        yql.append(';');
         return yql.toString();
     }
 
@@ -1059,73 +1046,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         if (requestId == null)
             requestId = UniqueRequestId.next(serverId);
         return new SessionId(requestId, getRanking().getProfile());
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean hasEncodableProperties() {
-        if ( ! ranking.getProperties().isEmpty()) return true;
-        if ( ! ranking.getFeatures().isEmpty()) return true;
-        if ( ranking.getFreshness() != null) return true;
-        if ( model.getSearchPath() != null) return true;
-        if ( model.getDocumentDb() != null) return true;
-        if ( presentation.getHighlight() != null && ! presentation.getHighlight().getHighlightItems().isEmpty()) return true;
-        return false;
-    }
-
-    /**
-     * Encodes properties of this query.
-     *
-     * @param buffer the buffer to encode to
-     * @param encodeQueryData true to encode all properties, false to only include session information, not actual query data
-     * @return the encoded length
-     * @deprecated do not use
-     */
-    @Deprecated // TODO: Remove on Vespa 8
-    public int encodeAsProperties(ByteBuffer buffer, boolean encodeQueryData) {
-        // Make sure we don't encode anything here if we have turned the property feature off
-        // Due to sendQuery we sometimes end up turning this feature on and then encoding a 0 int as the number of
-        // property maps - that's ok (probably we should simplify by just always turning the feature on)
-        if (! hasEncodableProperties()) return 0;
-        int start = buffer.position();
-        int mapCountPosition = buffer.position();
-        buffer.putInt(0); // map count will go here
-        int mapCount = 0;
-        mapCount += ranking.getProperties().encode(buffer, encodeQueryData);
-        if (encodeQueryData) {
-            mapCount += ranking.getFeatures().encode(buffer);
-            if (presentation.getHighlight() != null) {
-                mapCount += MapEncoder.encodeMultiMap(Highlight.HIGHLIGHTTERMS, presentation.getHighlight().getHighlightTerms(), buffer);
-            }
-            mapCount += MapEncoder.encodeMap("model", createModelMap(), buffer);
-        }
-        mapCount += MapEncoder.encodeSingleValue(DocumentDatabase.MATCH_PROPERTY, DocumentDatabase.SEARCH_DOC_TYPE_KEY, model.getDocumentDb(), buffer);
-        mapCount += MapEncoder.encodeMap("caches", createCacheSettingMap(), buffer);
-        buffer.putInt(mapCountPosition, mapCount);
-        return buffer.position() - start;
-    }
-
-    private Map<String, Boolean> createCacheSettingMap() {
-        if (getGroupingSessionCache() && ranking.getQueryCache()) {
-            Map<String, Boolean> cacheSettingMap = new HashMap<>();
-            cacheSettingMap.put("grouping", true);
-            cacheSettingMap.put("query", true);
-            return cacheSettingMap;
-        }
-        if (getGroupingSessionCache())
-            return Collections.singletonMap("grouping", true);
-        if (ranking.getQueryCache())
-            return Collections.singletonMap("query", true);
-        return Collections.emptyMap();
-    }
-
-    private Map<String, String> createModelMap() {
-        Map<String, String> m = new HashMap<>();
-        if (model.getSearchPath() != null) m.put("searchpath", model.getSearchPath());
-
-        int traceLevel = ProtobufSerialization.getTraceLevelForBackend(this);
-        if (traceLevel > 0) m.put("tracelevel", String.valueOf(traceLevel));
-
-        return m;
     }
 
     /**
