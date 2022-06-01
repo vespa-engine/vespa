@@ -194,7 +194,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2022-06-01",
+            List.of("geirst", "vekterli"), "2021-07-16", "2022-09-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -223,7 +223,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag UNORDERED_MERGE_CHAINING = defineFeatureFlag(
             "unordered-merge-chaining", true,
-            List.of("vekterli", "geirst"), "2021-11-15", "2022-06-01",
+            List.of("vekterli", "geirst"), "2021-11-15", "2022-09-01",
             "Enables the use of unordered merge chains for data merge operations",
             "Takes effect at redeploy",
             ZONE_ID, APPLICATION_ID);
@@ -303,7 +303,7 @@ public class Flags {
 
     public static final UnboundIntFlag PERSISTENCE_THROTTLING_WINDOW_SIZE = defineIntFlag(
             "persistence-throttling-window-size", -1,
-            List.of("vekterli"), "2022-02-23", "2022-06-01",
+            List.of("vekterli"), "2022-02-23", "2022-09-01",
             "If greater than zero, sets both min and max window size to the given number, effectively " +
             "turning dynamic throttling into a static throttling policy. " +
             "Only applies if DYNAMIC policy is used.",
@@ -312,14 +312,14 @@ public class Flags {
 
     public static final UnboundDoubleFlag PERSISTENCE_THROTTLING_WS_RESIZE_RATE = defineDoubleFlag(
             "persistence-throttling-ws-resize-rate", 3.0,
-            List.of("vekterli"), "2022-02-23", "2022-06-01",
+            List.of("vekterli"), "2022-02-23", "2022-09-01",
             "Sets the dynamic throttle policy resize rate. Only applies if DYNAMIC policy is used.",
             "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag PERSISTENCE_THROTTLING_OF_MERGE_FEED_OPS = defineFeatureFlag(
             "persistence-throttling-of-merge-feed-ops", true,
-            List.of("vekterli"), "2022-02-24", "2022-06-01",
+            List.of("vekterli"), "2022-02-24", "2022-09-01",
             "If true, each put/remove contained within a merge is individually throttled as if it " +
             "were a put/remove from a client. If false, merges are throttled at a persistence thread " +
             "level, i.e. per ApplyBucketDiff message, regardless of how many document operations " +
@@ -329,7 +329,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag INHIBIT_DEFAULT_MERGES_WHEN_GLOBAL_MERGES_PENDING = defineFeatureFlag(
             "inhibit-default-merges-when-global-merges-pending", true,
-            List.of("geirst", "vekterli"), "2022-02-11", "2022-06-01",
+            List.of("geirst", "vekterli"), "2022-02-11", "2022-09-01",
             "Inhibits all merges to buckets in the default bucket space if the current " +
                     "cluster state bundle indicates that global merges are pending in the cluster",
             "Takes effect on redeployment",
