@@ -118,7 +118,10 @@ public:
     ~DataStore();
 
     EntryRef addEntry(const EntryType &e);
-    const EntryType &getEntry(EntryRef ref) const;
+
+    const EntryType &getEntry(EntryRef ref) const {
+        return *this->template getEntry<EntryType>(RefType(ref));
+    }
 };
 
 extern template class DataStoreT<EntryRefT<22> >;

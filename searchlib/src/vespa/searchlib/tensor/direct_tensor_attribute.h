@@ -9,25 +9,25 @@ namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
 
-class DirectTensorAttribute : public TensorAttribute
+class DirectTensorAttribute final : public TensorAttribute
 {
     DirectTensorStore _direct_store;
 
 public:
     DirectTensorAttribute(vespalib::stringref baseFileName, const Config &cfg);
-    virtual ~DirectTensorAttribute();
-    virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
+    ~DirectTensorAttribute() override;
+    void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
     void update_tensor(DocId docId,
                        const document::TensorUpdate &update,
                        bool create_empty_if_non_existing) override;
-    virtual std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
-    virtual bool onLoad(vespalib::Executor *executor) override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    virtual void compactWorst() override;
+    std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
+    bool onLoad(vespalib::Executor *executor) override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    void compactWorst() override;
 
     void set_tensor(DocId docId, std::unique_ptr<vespalib::eval::Value> tensor);
     const vespalib::eval::Value &get_tensor_ref(DocId docId) const override;
-    virtual bool supports_get_tensor_ref() const override { return true; }
+    bool supports_get_tensor_ref() const override { return true; }
 };
 
 }  // namespace search::tensor

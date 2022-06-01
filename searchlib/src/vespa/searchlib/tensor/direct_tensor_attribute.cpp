@@ -122,24 +122,18 @@ DirectTensorAttribute::getTensor(DocId docId) const
 const vespalib::eval::Value &
 DirectTensorAttribute::get_tensor_ref(DocId docId) const
 {
-    EntryRef ref;
-    if (docId < getCommittedDocIdLimit()) {
-        ref = acquire_entry_ref(docId);
-    }
-    if (ref.valid()) {
-        auto ptr = _direct_store.get_tensor(ref);
-        if (ptr) {
-            return *ptr;
-        }
-    }
-    return *_emptyTensor;
+    if (docId >= getCommittedDocIdLimit()) return *_emptyTensor;
+
+    auto ptr = _direct_store.get_tensor(acquire_entry_ref(docId));
+    if ( ptr == nullptr) return *_emptyTensor;
+
+    return *ptr;
 }
 
 std::unique_ptr<AttributeSaver>
 DirectTensorAttribute::onInitSave(vespalib::stringref fileName)
 {
-    vespalib::GenerationHandler::Guard guard(getGenerationHandler().
-                                             takeGuard());
+    vespalib::GenerationHandler::Guard guard(getGenerationHandler().takeGuard());
     return std::make_unique<DirectTensorAttributeSaver>
         (std::move(guard),
          this->createAttributeHeader(fileName),
