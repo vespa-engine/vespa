@@ -445,7 +445,7 @@ sub http_upload_lowlevel {
     $url = add_url_property_from_option($url, $opt_F, "from");
     `$CURL_POST $url`;
   } else {
-    my $TAR="tar -C $app --dereference --exclude='.[a-zA-Z0-9]*' --exclude=ext -cf - . --transform=\"s#^#application/#\" ";
+    my $TAR="tar -C $app --dereference --exclude='.[a-zA-Z0-9]*' --exclude=ext -cf - .";
     print "Uploading application '$app' using $url\n";
     if (-f $app) {
       `cat $app | $CURL_POST_ZIP $url`;
