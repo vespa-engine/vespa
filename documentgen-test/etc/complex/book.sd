@@ -64,7 +64,6 @@ search book {
         }
         field vector type tensor(x{}) {
             indexing: attribute | summary
-            attribute: tensor(x{})
         }
     }
 
