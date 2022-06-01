@@ -52,7 +52,6 @@ import com.yahoo.vespa.model.content.Content;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.filedistribution.FileReferencesRepository;
-import com.yahoo.vespa.model.generic.service.ServiceCluster;
 import com.yahoo.vespa.model.ml.ConvertedModel;
 import com.yahoo.vespa.model.ml.ModelName;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;
@@ -114,9 +113,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
     private final ApplicationConfigProducerRoot root;
 
     private final ApplicationPackage applicationPackage;
-
-    /** Generic service instances - service clusters which have no specific model */
-    private final List<ServiceCluster> serviceClusters = new ArrayList<>();
 
     /** The global rank profiles of this model */
     private final RankProfileList rankProfileList;
@@ -182,7 +178,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         if (complete) { // create a completed, frozen model
             root.useFeatureFlags(deployState.getProperties().featureFlags());
             configModelRepo.readConfigModels(deployState, this, builder, root, new VespaConfigModelRegistry(configModelRegistry));
-            addServiceClusters(deployState, builder);
             setupRouting(deployState);
             getAdmin().addPerHostServices(hostSystem.getHosts(), deployState);
             freezeModelTopology();
@@ -258,11 +253,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
         } catch (Exception e) {
             throw new RuntimeException("Error while validating model:", e);
         }
-    }
-
-    /** Adds generic application specific clusters of services */
-    private void addServiceClusters(DeployState deployState, VespaModelBuilder builder) {
-        serviceClusters.addAll(builder.getClusters(deployState, this));
     }
 
     /**
@@ -649,11 +639,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
         return root.getFileDistributionConfigProducer();
-    }
-
-    /** The clusters of application specific generic services */
-    public List<ServiceCluster> serviceClusters() {
-        return serviceClusters;
     }
 
     /** Returns an unmodifiable view of the mapping of config id to {@link ConfigProducer} */

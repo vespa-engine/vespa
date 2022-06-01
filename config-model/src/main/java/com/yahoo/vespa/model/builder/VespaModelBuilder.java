@@ -6,9 +6,6 @@ import com.yahoo.config.model.ConfigModelRepo;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
-import com.yahoo.vespa.model.generic.service.ServiceCluster;
-
-import java.util.List;
 
 /**
  * Base class for classes capable of building vespa model.
@@ -18,7 +15,6 @@ import java.util.List;
 public abstract class VespaModelBuilder {
 
     public abstract ApplicationConfigProducerRoot getRoot(String name, DeployState deployState, AbstractConfigProducer parent);
-    public abstract List<ServiceCluster> getClusters(DeployState pkg, AbstractConfigProducer parent);
 
     /**
      * Processing that requires access across plugins
