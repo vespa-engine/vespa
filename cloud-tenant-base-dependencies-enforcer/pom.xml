@@ -22,6 +22,8 @@
         <!-- MUST BE KEPT IN SYNC WITH parent/pom.xml -->
         <athenz.version>1.10.54</athenz.version>
         <httpclient5.version>5.1.2</httpclient5.version>
+        <httpclient.version>4.5.13</httpclient.version>
+        <httpcore.version>4.4.13</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
         <onnxruntime.version>1.8.0</onnxruntime.version>
         <!-- END parent/pom.xml -->
@@ -188,6 +190,7 @@
                                         <include>com.yahoo.vespa:config-model-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:config-model:*:jar:test</include>
                                         <include>com.yahoo.vespa:config-provisioning:*:jar:test</include>
+                                        <include>com.yahoo.vespa:container-apache-http-client-bundle:*:jar:test</include>
                                         <include>com.yahoo.vespa:container-search-gui:*:jar:test</include>
                                         <include>com.yahoo.vespa:container-test:*:jar:test</include>
                                         <include>com.yahoo.vespa:hosted-api:*:jar:test</include>
@@ -247,6 +250,9 @@
                                         <include>org.apache.httpcomponents.client5:httpclient5:${httpclient5.version}:jar:test</include>
                                         <include>org.apache.httpcomponents.core5:httpcore5:${httpclient5.version}:jar:test</include>
                                         <include>org.apache.httpcomponents.core5:httpcore5-h2:${httpclient5.version}:jar:test</include>
+                                        <include>org.apache.httpcomponents:httpclient:${httpclient.version}:jar:test</include>
+                                        <include>org.apache.httpcomponents:httpcore:${httpcore.version}:jar:test</include>
+                                        <include>org.apache.httpcomponents:httpmime:${httpclient.version}:jar:test</include>
                                         <include>org.apache.opennlp:opennlp-tools:1.9.3:jar:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
                                         <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
