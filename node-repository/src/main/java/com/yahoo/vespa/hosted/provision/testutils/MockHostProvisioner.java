@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.HostEvent;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.NodeAllocationException;
@@ -32,6 +33,7 @@ import java.util.stream.IntStream;
 public class MockHostProvisioner implements HostProvisioner {
 
     private final List<ProvisionedHost> provisionedHosts = new ArrayList<>();
+    private final List<HostEvent> hostEvents = new ArrayList<>();
     private final List<Flavor> flavors;
     private final MockNameResolver nameResolver;
     private final int memoryTaxGb;
@@ -100,6 +102,11 @@ public class MockHostProvisioner implements HostProvisioner {
         deprovisionedHosts++;
     }
 
+    @Override
+    public List<HostEvent> hostEventsIn(List<CloudAccount> cloudAccounts) {
+        return Collections.unmodifiableList(hostEvents);
+    }
+
     /** Returns the hosts that have been provisioned by this  */
     public List<ProvisionedHost> provisionedHosts() {
         return Collections.unmodifiableList(provisionedHosts);
@@ -127,6 +134,11 @@ public class MockHostProvisioner implements HostProvisioner {
                                .findFirst()
                                .orElseThrow(() -> new IllegalArgumentException("No such flavor '" + flavorName + "'"));
         hostFlavor = Optional.of(flavor);
+        return this;
+    }
+
+    public MockHostProvisioner addEvent(HostEvent event) {
+        hostEvents.add(event);
         return this;
     }
 

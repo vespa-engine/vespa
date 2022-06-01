@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostEvent;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -14,7 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Service for provisioning physical docker tenant hosts inside the zone.
+ * A service which supports provisioning container hosts dynamically.
  *
  * @author freva
  */
@@ -77,5 +78,11 @@ public interface HostProvisioner {
      * @param host host to deprovision.
      */
     void deprovision(Node host);
+
+    /**
+     * Returns the maintenance events scheduled for hosts in this zone, in given cloud accounts. Host events in the
+     * zone's default cloud account are always included.
+     */
+    List<HostEvent> hostEventsIn(List<CloudAccount> cloudAccounts);
 
 }
