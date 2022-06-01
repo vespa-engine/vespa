@@ -242,7 +242,7 @@ public class StorageGroup {
 
             int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
 
-            if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify
+            if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify? But see ModelProvisioningTest.testThatStandaloneSyntaxWorksOnHostedManuallyDeployed
                 context.getDeployLogger()
                        .logApplicationPackage(Level.WARNING,
                                               "Cluster '" + clusterElement.stringAttribute("id") + "' " +
