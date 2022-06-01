@@ -491,6 +491,11 @@ MemoryAllocator::select_allocator(size_t mmapLimit, size_t alignment) {
     return & AutoAllocator::getAllocator(mmapLimit, alignment);
 }
 
+const MemoryAllocator *
+MemoryAllocator::select_allocator() {
+    return & AutoAllocator::getDefault();
+}
+
 Alloc
 Alloc::allocHeap(size_t sz)
 {

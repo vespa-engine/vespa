@@ -37,7 +37,8 @@ public:
     static size_t roundUpToHugePages(size_t sz) {
         return (sz+(HUGEPAGE_SIZE-1)) & ~(HUGEPAGE_SIZE-1);
     }
-    static const MemoryAllocator * select_allocator(size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0);
+    static const MemoryAllocator * select_allocator();
+    static const MemoryAllocator * select_allocator(size_t mmapLimit, size_t alignment);
 };
 
 }
