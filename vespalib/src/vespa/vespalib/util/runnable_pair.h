@@ -20,5 +20,5 @@ public:
     void run() override;
 };
 
-} // namespace vesaplib
+} // namespace vespalib
 
