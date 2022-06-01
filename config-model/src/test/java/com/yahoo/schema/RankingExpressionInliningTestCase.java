@@ -19,6 +19,7 @@ import java.util.logging.Level;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -217,6 +218,7 @@ public class RankingExpressionInliningTestCase extends AbstractSchemaTestCase {
                     "    }\n" +
                     "}\n");
             builder.build(true);
+            fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
             // success
