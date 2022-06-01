@@ -8,7 +8,6 @@ search indexrewrite {
 
     field title type string {
         indexing: input title_src | lowercase | normalize | tokenize | index
-        indexing-rewrite: none
         rank-type: about
         stemming: none
         alias: headline

@@ -50,7 +50,6 @@ schema advanced {
 
         field title type string {
           indexing: input title_src | index
-          indexing-rewrite: none
           rank-type: identity
           stemming: none
           alias: headline
@@ -65,7 +64,6 @@ schema advanced {
 		      case "": "myweb" | index | summary;
 		      default: input product_src | index | summary;
 	        }
-          indexing-rewrite: none
 	      normalizing: none
         }
 
@@ -77,7 +75,6 @@ schema advanced {
 	          "baz" | index product2;
 	        };
           }
-          indexing-rewrite: none
           normalizing: none
         }
 
@@ -87,7 +84,6 @@ schema advanced {
  		      default: input product3_src | index product3 | summary product3;
  	        }
  	      normalizing: none
- 	      indexing-rewrite: none
  	    }
 
     field location type position {
