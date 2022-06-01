@@ -28,11 +28,6 @@ search multiplesummaries {
     summary field3 type array<int> {
     }
 
-    # TODO disallow duplicates
-    summary field1 type weightedset<string> {
-      source: field1
-    }
-
   }
 
 }
