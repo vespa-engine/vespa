@@ -31,30 +31,6 @@ public class DocumentIdResponse extends Response {
     }
 
     /**
-     * Creates a response containing a textual message
-     *
-     * @param textMessage the message to encapsulate in the Response
-     * @param success     true if the response represents a successful call
-     */
-    @Deprecated(since = "7") // TODO: Remove on Vespa 8
-    public DocumentIdResponse(long requestId, String textMessage, boolean success) {
-        this(requestId, null, textMessage, success ? Outcome.SUCCESS : Outcome.ERROR);
-    }
-
-    /**
-     * Creates a response containing a textual message and/or a document id
-     *
-     * @param documentId  the DocumentId to encapsulate in the Response
-     * @param textMessage the message to encapsulate in the Response
-     * @param success     true if the response represents a successful call
-     */
-    @Deprecated(since = "7") // TODO: Remove on Vespa 8
-    public DocumentIdResponse(long requestId, DocumentId documentId, String textMessage, boolean success) {
-        this(requestId, documentId, textMessage, success ? Outcome.SUCCESS : Outcome.ERROR);
-    }
-
-
-    /**
      * Creates a response containing a textual message and/or a document id
      *
      * @param documentId  the DocumentId to encapsulate in the Response
