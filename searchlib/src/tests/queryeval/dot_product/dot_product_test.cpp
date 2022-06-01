@@ -38,11 +38,22 @@ struct DP {
     static const uint32_t fieldId = 0;
     static const TermFieldHandle handle = 0;
     std::vector<std::pair<std::string, uint32_t> > tokens;
+    bool field_is_filter;
+    bool term_is_not_needed;
+
+    DP()
+        : tokens(),
+          field_is_filter(false),
+          term_is_not_needed(false)
+    {
+    }
 
     DP &add(const std::string &token, uint32_t weight) {
         tokens.push_back(std::make_pair(token, weight));
         return *this;
     }
+    DP& set_field_is_filter(bool value) { field_is_filter = value; return *this; }
+    DP& set_term_is_not_needed(bool value) { term_is_not_needed = value; return *this; }
 
     Node::UP createNode() const {
         SimpleDotProduct *node = new SimpleDotProduct(tokens.size(), "view", 0, Weight(0));
@@ -54,9 +65,12 @@ struct DP {
 
     FakeResult search(Searchable &searchable, const std::string &field, bool strict) const {
         MatchData::UP md(MatchData::makeTestInstance(1, 1));
+        if (term_is_not_needed) {
+            md->resolveTermField(handle)->tagAsNotNeeded();
+        }
         FakeRequestContext requestContext;
         Node::UP node = createNode();
-        FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle));
+        FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle, field_is_filter));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);
@@ -111,7 +125,7 @@ struct MockFixture {
         childMatch.push_back(md->resolveTermField(children.size()));
         children.push_back(mock);
         weights.push_back(1);
-        search = DotProductSearch::create(children, tfmd, childMatch, weights, std::move(md));
+        search = DotProductSearch::create(children, tfmd, false, childMatch, weights, std::move(md));
     }
 };
 
@@ -126,14 +140,40 @@ struct MockFixture {
 
 } // namespace <unnamed>
 
-TEST("test Simple") {
+std::function<int(int)>
+make_score_filter(bool field_is_filter, bool term_is_not_needed)
+{
+    if (field_is_filter || term_is_not_needed) {
+        return [](int) noexcept { return 0; };
+    } else {
+        return [](int value) noexcept { return value; };
+    }
+}
+
+void run_simple(bool field_is_filter, bool term_is_not_needed)
+{
+    auto score_filter = make_score_filter(field_is_filter, term_is_not_needed);
     FakeResult expect = FakeResult()
-                        .doc(3).score(30 * 3)
-                        .doc(5).score(50 * 5)
-                        .doc(7).score(70 * 7);
-    DP ws = DP().add("7", 70).add("5", 50).add("3", 30).add("100", 1000);
+                        .doc(3).score(score_filter(30 * 3))
+                        .doc(5).score(score_filter(50 * 5))
+                        .doc(7).score(score_filter(70 * 7));
+    DP ws = DP().add("7", 70).add("5", 50).add("3", 30).add("100", 1000)
+            .set_field_is_filter(field_is_filter)
+            .set_term_is_not_needed(term_is_not_needed);
 
     TEST_DO(verifySimple(expect, ws));
+}
+
+TEST("test Simple") {
+    TEST_DO(run_simple(false, false));
+}
+
+TEST("test Simple filter field") {
+    TEST_DO(run_simple(true, false));
+}
+
+TEST("test Simple unranked") {
+    TEST_DO(run_simple(false, true));
 }
 
 TEST("test Simple Single") {
@@ -144,19 +184,35 @@ TEST("test Simple Single") {
     TEST_DO(verifySimple(expect, ws));
 }
 
-TEST("test Multi") {
+void run_multi(bool field_is_filter, bool term_is_not_needed)
+{
+    auto score_filter = make_score_filter(field_is_filter, term_is_not_needed);
     FakeSearchable index;
     setupFakeSearchable(index);
     FakeResult expect = FakeResult()
-                        .doc(3).score(30 * 3 + 130 * 2 * 3 + 230 * 3 * 3)
-                        .doc(5).score(50 * 5 + 150 * 2 * 5)
-                        .doc(7).score(70 * 7);
+                        .doc(3).score(score_filter(30 * 3 + 130 * 2 * 3 + 230 * 3 * 3))
+                        .doc(5).score(score_filter(50 * 5 + 150 * 2 * 5))
+                        .doc(7).score(score_filter(70 * 7));
     DP ws = DP().add("7", 70).add("5", 50).add("3", 30)
             .add("15", 150).add("13", 130)
-            .add("23", 230).add("100", 1000);
+            .add("23", 230).add("100", 1000)
+            .set_field_is_filter(field_is_filter)
+            .set_term_is_not_needed(term_is_not_needed);
 
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", true));
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
+}
+
+
+TEST("test Multi") {
+    TEST_DO(run_multi(false, false));
+}
+
+TEST("test Multi filter field") {
+    TEST_DO(run_multi(true, false));
+}
+TEST("test Multi unranked") {
+    TEST_DO(run_multi(false, true));
 }
 
 TEST_F("test Eager Empty Child", MockFixture(search::endDocId, {})) {
@@ -210,14 +266,14 @@ private:
     SearchIterator::UP create(const std::vector<SearchIterator*> &children) const override {
         std::vector<fef::TermFieldMatchData*> no_child_match;
         MatchData::UP no_match_data;
-        return DotProductSearch::create(children, _tfmd, no_child_match, _weights, std::move(no_match_data));
+        return DotProductSearch::create(children, _tfmd, false, no_child_match, _weights, std::move(no_match_data));
     }
 };
 
 class WeightIteratorChildrenVerifier : public search::test::DwaIteratorChildrenVerifier {
 private:
     SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const override {
-        return SearchIterator::UP(DotProductSearch::create(_tfmd, _weights, std::move(children)));
+        return SearchIterator::UP(DotProductSearch::create(_tfmd, false, _weights, std::move(children)));
     }
 };
 

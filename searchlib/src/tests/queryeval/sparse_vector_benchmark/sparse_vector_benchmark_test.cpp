@@ -223,8 +223,18 @@ struct RiseWandFactory : SparseVectorFactory {
 
 struct WeightedSetFactory : SparseVectorFactory {
     mutable TermFieldMatchData tfmd;
+    bool                       field_is_filter;
+
+    WeightedSetFactory(bool field_is_filter_, bool term_is_not_needed)
+        : tfmd(),
+          field_is_filter(field_is_filter_)
+    {
+        if (term_is_not_needed) {
+            tfmd.tagAsNotNeeded();
+        }
+    }
     virtual std::string name() const override {
-        return vespalib::make_string("WeightedSet");
+        return vespalib::make_string("WeightedSet%s%s", (field_is_filter ? "-filter" : ""), (tfmd.isNotNeeded() ? "-unranked" : ""));
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         std::vector<SearchIterator *> terms;
@@ -234,14 +244,24 @@ struct WeightedSetFactory : SparseVectorFactory {
             terms.push_back(childFactory.createChild(i, limit).release());
             weights.push_back(default_weight);
         }
-        return WeightedSetTermSearch::create(terms, tfmd, weights, MatchData::UP(nullptr));
+        return WeightedSetTermSearch::create(terms, tfmd, field_is_filter, weights, MatchData::UP(nullptr));
     }
 };
 
 struct DotProductFactory : SparseVectorFactory {
     mutable TermFieldMatchData tfmd;
+    bool                       field_is_filter;
+
+    DotProductFactory(bool field_is_filter_, bool term_is_not_needed)
+        : tfmd(),
+          field_is_filter(field_is_filter_)
+    {
+        if (term_is_not_needed) {
+            tfmd.tagAsNotNeeded();
+        }
+    }
     virtual std::string name() const override {
-        return vespalib::make_string("DotProduct");
+        return vespalib::make_string("DotProduct%s%s", (field_is_filter ? "-filter" : ""), (tfmd.isNotNeeded() ? "-unranked" : ""));
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         MatchDataLayout layout;
@@ -258,7 +278,7 @@ struct DotProductFactory : SparseVectorFactory {
             childMatch.push_back(md->resolveTermField(handles[i]));
             weights.push_back(default_weight);
         }
-        return DotProductSearch::create(terms, tfmd, childMatch, weights, std::move(md));
+        return DotProductSearch::create(terms, tfmd, field_is_filter, childMatch, weights, std::move(md));
     }
 };
 
@@ -333,6 +353,7 @@ struct Result {
 Result run_single_benchmark(FilterStrategy &filterStrategy, SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) {
     SearchIterator::UP search(filterStrategy.createRoot(vectorFactory, childFactory, childCnt, limit));
     SearchIterator &sb = *search;
+    sb.initFullRange();
     uint32_t num_hits = 0;
     vespalib::Timer timer;
     for (sb.seek(1); !sb.isAtEnd(); sb.seek(sb.getDocId() + 1)) {
@@ -383,13 +404,21 @@ public:
 void benchmark_all_operators(Setup &setup, const std::vector<uint32_t> &child_counts) {
     VespaWandFactory       vespaWand256(256);
     RiseWandFactory        riseWand256(256);
-    WeightedSetFactory     weightedSet;
-    DotProductFactory      dotProduct;
+    WeightedSetFactory     weightedSet(false, false);
+    WeightedSetFactory     weightedSet_filter(true, false);
+    WeightedSetFactory     weightedSet_unranked(false, true);
+    DotProductFactory      dotProduct(false, false);
+    DotProductFactory      dotProduct_filter(true, false);
+    DotProductFactory      dotProduct_unranked(false, true);
     OrFactory              plain_or;
     setup.benchmark(vespaWand256, child_counts);
     setup.benchmark(riseWand256, child_counts);
     setup.benchmark(weightedSet, child_counts);
+    setup.benchmark(weightedSet_filter, child_counts);
+    setup.benchmark(weightedSet_unranked, child_counts);
     setup.benchmark(dotProduct, child_counts);
+    setup.benchmark(dotProduct_filter, child_counts);
+    setup.benchmark(dotProduct_unranked, child_counts);
     setup.benchmark(plain_or, child_counts);
 }
 

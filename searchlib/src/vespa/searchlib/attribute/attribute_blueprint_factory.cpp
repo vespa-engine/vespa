@@ -409,6 +409,7 @@ public:
     SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override
     {
         assert(tfmda.size() == 1);
+        assert(getState().numFields() == 1);
         if (_terms.size() == 0) {
             return std::make_unique<queryeval::EmptySearch>();
         }
@@ -418,7 +419,8 @@ public:
         for (const IDocumentWeightAttribute::LookupResult &r : _terms) {
             _attr.create(r.posting_idx, iterators);
         }
-        return SearchType::create(*tfmda[0], _weights, std::move(iterators));
+        bool field_is_filter = getState().fields()[0].isFilter();
+        return SearchType::create(*tfmda[0], field_is_filter, _weights, std::move(iterators));
     }
 
     std::unique_ptr<SearchIterator> createFilterSearch(bool strict, FilterConstraint constraint) const override;
