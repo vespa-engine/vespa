@@ -3,26 +3,26 @@
 #pragma once
 
 #include "attributeresult.h"
-#include <vespa/searchlib/attribute/singleenumattribute.h>
 
 namespace search::expression {
 
-class EnumAttributeResult : public AttributeResult
+class EnumAttributeResult final : public AttributeResult
 {
 public:
+    using EnumRefs = attribute::IAttributeVector::EnumRefs;
     DECLARE_RESULTNODE(EnumAttributeResult);
-    EnumAttributeResult(const attribute::IAttributeVector * attribute, DocId docId) :
+    EnumAttributeResult(EnumRefs enumRefs, const attribute::IAttributeVector * attribute, DocId docId) :
         AttributeResult(attribute, docId),
-        _enumAttr(dynamic_cast<const SingleValueEnumAttributeBase *>(attribute))
+        _enumRefs(enumRefs)
     {
     }
 private:
-    EnumAttributeResult() :
-        AttributeResult(),
-        _enumAttr(NULL)
+    EnumAttributeResult()
+        : AttributeResult(),
+          _enumRefs()
     { }
-    int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_enumAttr->getE(getDocId()))); }
-    const SingleValueEnumAttributeBase * _enumAttr;
+    int64_t onGetEnum(size_t index) const override { (void) index; return (static_cast<int64_t>(_enumRefs[getDocId()].load_relaxed().ref())); }
+    EnumRefs _enumRefs;
 };
 
 }

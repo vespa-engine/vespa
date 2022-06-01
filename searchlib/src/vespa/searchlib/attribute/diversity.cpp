@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "diversity.hpp"
-#include "singleenumattribute.h"
 #include "singlenumericattribute.h"
 #include <vespa/vespalib/stllike/hash_map.h>
 
@@ -18,11 +17,11 @@ struct FetchNumberFast {
 };
 
 struct FetchEnumFast {
-    const SingleValueEnumAttributeBase * const attr;
+    IAttributeVector::EnumRefs enumRefs;
     typedef uint32_t ValueType;
-    FetchEnumFast(const IAttributeVector &attr_in) : attr(dynamic_cast<const SingleValueEnumAttributeBase *>(&attr_in)) {}
-    ValueType get(uint32_t docid) const { return attr->getE(docid); }
-    bool valid() const { return (attr != nullptr); }
+    FetchEnumFast(const IAttributeVector &attr) : enumRefs(attr.make_enum_read_view()) {}
+    ValueType get(uint32_t docid) const { return enumRefs[docid].load_relaxed().ref(); }
+    bool valid() const { return ! enumRefs.empty(); }
 };
 
 struct FetchEnum {

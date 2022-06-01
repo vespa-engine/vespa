@@ -25,17 +25,14 @@ protected:
     using EnumIndex = IEnumStore::Index;
     using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
     using GenerationHolder = vespalib::GenerationHolder;
-
+    using EnumRefs = attribute::IAttributeVector::EnumRefs;
 public:
     using EnumIndexCopyVector = vespalib::Array<EnumIndex>;
-
 protected:
+
     EntryRef acquire_enum_entry_ref(DocId docId) const noexcept { return _enumIndices.acquire_elem_ref(docId).load_acquire(); }
-
-public:
-    IEnumStore::Index getEnumIndex(DocId docId) const noexcept { return acquire_enum_entry_ref(docId); }
     EnumHandle getE(DocId doc) const noexcept { return acquire_enum_entry_ref(doc).ref(); }
-protected:
+    EnumRefs make_read_view(size_t read_size) const noexcept { return _enumIndices.make_read_view(read_size); }
     SingleValueEnumAttributeBase(const attribute::Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc);
     ~SingleValueEnumAttributeBase();
     AttributeVector::DocId addDoc(bool & incGeneration);
@@ -64,6 +61,9 @@ protected:
 private:
     void considerUpdateAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter);
     void applyUpdateValueChange(const Change& c, EnumStoreBatchUpdater& updater);
+    EnumRefs make_enum_read_view() const noexcept override {
+        return make_read_view(this->getCommittedDocIdLimit());
+    }
 
 protected:
     // from EnumAttribute
