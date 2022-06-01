@@ -27,12 +27,6 @@ public class DomTuningDispatchBuilder {
         builder.setDispatchPolicy(dispatchElement.childAsString("dispatch-policy"));
         builder.setMinActiveDocsCoverage(dispatchElement.childAsDouble("min-active-docs-coverage"));
 
-        if (dispatchElement.child("min-group-coverage") != null) // TODO: Remove on Vespa 8
-            logger.logApplicationPackage(Level.WARNING, "Attribute 'min-group-coverage' is deprecated and ignored: " +
-                                                        "Use min-active-docs-coverage instead.");
-        if (dispatchElement.child("use-local-node") != null) // TODO: Remove on Vespa 8
-            logger.logApplicationPackage(Level.WARNING, "Attribute 'use-local-node' is deprecated and ignored: " +
-                                                        "The local node will automatically be preferred when appropriate.");
         return builder.build();
     }
 
