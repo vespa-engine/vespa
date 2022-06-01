@@ -69,10 +69,9 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
             // Enable connection log hosted Vespa
             builder.connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
         } else {
-            // TODO Vespa 8: Remove legacy Yahoo headers
             builder.accessLog(new ServerConfig.AccessLog.Builder()
-                    .remoteAddressHeaders(List.of("x-forwarded-for", "y-ra", "yahooremoteip", "client-ip"))
-                    .remotePortHeaders(List.of("X-Forwarded-Port", "y-rp")));
+                    .remoteAddressHeaders(List.of("x-forwarded-for", "client-ip"))
+                    .remotePortHeaders(List.of("X-Forwarded-Port")));
         }
         configureJettyThreadpool(builder);
         builder.stopTimeout(300);
