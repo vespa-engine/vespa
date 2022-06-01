@@ -97,5 +97,11 @@
       <artifactId>commons-compress</artifactId>
       <scope>compile</scope>
     </dependency>
+    <dependency>
+      <!-- required for container-search code using org.json -->
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <scope>compile</scope>
+    </dependency>
   </dependencies>
 </project>
