@@ -41,8 +41,16 @@ struct WS {
     MatchDataLayout layout;
     TermFieldHandle handle;
     std::vector<std::pair<std::string, uint32_t> > tokens;
+    bool field_is_filter;
+    bool term_is_not_needed;
 
-    WS() : layout(), handle(layout.allocTermField(fieldId)), tokens() {
+    WS()
+        : layout(),
+          handle(layout.allocTermField(fieldId)),
+          tokens(),
+          field_is_filter(false),
+          term_is_not_needed(false)
+    {
         MatchData::UP tmp = layout.createMatchData();
         ASSERT_TRUE(tmp->resolveTermField(handle)->getFieldId() == fieldId);
     }
@@ -51,6 +59,8 @@ struct WS {
         tokens.push_back(std::make_pair(token, weight));
         return *this;
     }
+    WS& set_field_is_filter(bool value) { field_is_filter = value; return *this; }
+    WS& set_term_is_not_needed(bool value) { term_is_not_needed = value; return *this; }
 
     Node::UP createNode() const {
         SimpleWeightedSetTerm *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
@@ -74,8 +84,11 @@ struct WS {
     FakeResult search(Searchable &searchable, const std::string &field, bool strict) const {
         FakeRequestContext requestContext;
         MatchData::UP md = layout.createMatchData();
+        if (term_is_not_needed) {
+            md->resolveTermField(handle)->tagAsNotNeeded();
+        }
         Node::UP node = createNode();
-        FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle));
+        FieldSpecList fields = FieldSpecList().add(FieldSpec(field, fieldId, handle, field_is_filter));
         queryeval::Blueprint::UP bp = searchable.createBlueprint(requestContext, fields, *node);
         bp->fetchPostings(ExecuteInfo::create(strict));
         SearchIterator::UP sb = bp->createSearch(*md, strict);
@@ -123,20 +136,30 @@ struct MockFixture {
         mock = new MockSearch(initial);
         children.push_back(mock);
         weights.push_back(1);
-        search = WeightedSetTermSearch::create(children, tfmd, weights, MatchData::UP(nullptr));
+        search = WeightedSetTermSearch::create(children, tfmd, false, weights, MatchData::UP(nullptr));
     }
 };
 
 } // namespace <unnamed>
 
-TEST("testSimple") {
+void run_simple(bool field_is_filter, bool term_is_not_needed)
+{
     FakeSearchable index;
     setupFakeSearchable(index);
-    FakeResult expect = FakeResult()
-                        .doc(3).elem(0).weight(30).pos(0)
-                        .doc(5).elem(0).weight(50).pos(0)
-                        .doc(7).elem(0).weight(70).pos(0);
-    WS ws = WS().add("7", 70).add("5", 50).add("3", 30).add("100", 1000);
+    FakeResult expect;
+    if (field_is_filter || term_is_not_needed) {
+        expect.doc(3)
+            .doc(5)
+            .doc(7);
+    } else {
+        expect.doc(3).elem(0).weight(30).pos(0)
+            .doc(5).elem(0).weight(50).pos(0)
+            .doc(7).elem(0).weight(70).pos(0);
+    }
+    WS ws = WS().add("7", 70).add("5", 50).add("3", 30).add("100", 1000)
+            .set_field_is_filter(field_is_filter)
+            .set_term_is_not_needed(term_is_not_needed);
+;
     EXPECT_TRUE(ws.isGenericSearch(index, "field", true));
     EXPECT_TRUE(ws.isGenericSearch(index, "field", false));
     EXPECT_TRUE(ws.isGenericSearch(index, "multi-field", true));
@@ -148,21 +171,54 @@ TEST("testSimple") {
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
 }
 
-TEST("testMulti") {
+TEST("testSimple") {
+    TEST_DO(run_simple(false, false));
+}
+
+TEST("testSimple filter field") {
+    TEST_DO(run_simple(true, false));
+}
+
+TEST("testSimple unranked") {
+    TEST_DO(run_simple(false, true));
+}
+
+void run_multi(bool field_is_filter, bool term_is_not_needed)
+{
     FakeSearchable index;
     setupFakeSearchable(index);
-    FakeResult expect = FakeResult()
-                        .doc(3).elem(0).weight(230).pos(0).elem(0).weight(130).pos(0).elem(0).weight(30).pos(0)
-                        .doc(5).elem(0).weight(150).pos(0).elem(0).weight(50).pos(0)
-                        .doc(7).elem(0).weight(70).pos(0);
+    FakeResult expect;
+    if (field_is_filter || term_is_not_needed) {
+        expect.doc(3)
+            .doc(5)
+            .doc(7);
+    } else {
+        expect.doc(3).elem(0).weight(230).pos(0).elem(0).weight(130).pos(0).elem(0).weight(30).pos(0)
+            .doc(5).elem(0).weight(150).pos(0).elem(0).weight(50).pos(0)
+            .doc(7).elem(0).weight(70).pos(0);
+    }
     WS ws = WS().add("7", 70).add("5", 50).add("3", 30)
             .add("15", 150).add("13", 130)
-            .add("23", 230).add("100", 1000);
+            .add("23", 230).add("100", 1000)
+            .set_field_is_filter(field_is_filter)
+            .set_term_is_not_needed(term_is_not_needed);
     EXPECT_TRUE(ws.isGenericSearch(index, "multi-field", true));
     EXPECT_TRUE(ws.isGenericSearch(index, "multi-field", false));
 
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", true));
     EXPECT_EQUAL(expect, ws.search(index, "multi-field", false));
+}
+
+TEST("testMulti") {
+    TEST_DO(run_multi(false, false));
+}
+
+TEST("testMulti filter field") {
+    TEST_DO(run_multi(true, false));
+}
+
+TEST("testMulti unranked") {
+    TEST_DO(run_multi(false, true));
 }
 
 TEST_F("test Eager Empty Child", MockFixture(search::endDocId)) {
@@ -194,14 +250,14 @@ TEST_F("test Eager Matching Child", MockFixture(5)) {
 class IteratorChildrenVerifier : public search::test::IteratorChildrenVerifier {
 private:
     SearchIterator::UP create(const std::vector<SearchIterator*> &children) const override {
-        return SearchIterator::UP(WeightedSetTermSearch::create(children, _tfmd, _weights, MatchData::UP(nullptr)));
+        return SearchIterator::UP(WeightedSetTermSearch::create(children, _tfmd, false, _weights, MatchData::UP(nullptr)));
     }
 };
 
 class WeightIteratorChildrenVerifier : public search::test::DwaIteratorChildrenVerifier {
 private:
     SearchIterator::UP create(std::vector<DocumentWeightIterator> && children) const override {
-        return SearchIterator::UP(WeightedSetTermSearch::create(_tfmd, _weights, std::move(children)));
+        return SearchIterator::UP(WeightedSetTermSearch::create(_tfmd, false, _weights, std::move(children)));
     }
 };
 

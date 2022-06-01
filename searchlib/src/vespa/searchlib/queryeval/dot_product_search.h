@@ -28,11 +28,13 @@ public:
     // TODO: use MultiSearch::Children to pass ownership
     static SearchIterator::UP create(const std::vector<SearchIterator*> &children,
                                      search::fef::TermFieldMatchData &tmd,
+                                     bool field_is_filter,
                                      const std::vector<fef::TermFieldMatchData*> &childMatch,
                                      const std::vector<int32_t> &weights,
                                      fef::MatchData::UP md);
 
     static SearchIterator::UP create(search::fef::TermFieldMatchData &tmd,
+                                     bool field_is_filter,
                                      const std::vector<int32_t> &weights,
                                      std::vector<DocumentWeightIterator> &&iterators);
 };
