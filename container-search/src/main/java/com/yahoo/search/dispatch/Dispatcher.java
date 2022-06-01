@@ -214,7 +214,7 @@ public class Dispatcher extends AbstractComponent {
                                                                                  acceptIncompleteCoverage,
                                                                                  maxHitsPerNode);
             if (invoker.isPresent()) {
-                query.trace(false, 2, "Dispatching to group ", group.id());
+                query.trace(false, 2, "Dispatching to group ", group.id(), " after retries = ", i);
                 query.getModel().setSearchPath("/" + group.id());
                 invoker.get().teardown((success, time) -> loadBalancer.releaseGroup(group, success, time));
                 return invoker.get();
