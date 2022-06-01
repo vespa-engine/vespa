@@ -73,7 +73,6 @@ public class ApplicationPackageValidator {
                                                                 .map(Version::getMajor))
                                             .orElseThrow(() -> new IllegalArgumentException("Could not determine wanted major version"));
         for (var deprecatedElement : applicationPackage.deploymentSpec().deprecatedElements()) {
-            if (applicationPackage.compileVersion().isEmpty()) continue;
             if (deprecatedElement.majorVersion() >= wantedMajor) continue;
             throw new IllegalArgumentException(deprecatedElement.humanReadableString());
         }
