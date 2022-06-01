@@ -240,9 +240,12 @@ extern void chdir(const vespalib::string & directory);
  * @param directory   The directory name.
  * @param recursive   If set, remove all content of the directory to. If not
  *                    set, fail if the directory is not empty.
- * @throw IoException If we failed to remove the directory.
+ * @throw std::filesystem::filesystem_error If we failed to remove the directory.
  *
  * @return True if directory existed, false if not.
+ *
+ * This function is deprecated. Use std::filesystem::remove or std::filesystem::remove_all
+ * instead.
  */
 extern bool rmdir(const vespalib::string & directory, bool recursive = false);
 

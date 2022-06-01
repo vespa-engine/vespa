@@ -1,9 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <filesystem>
 #include <iostream>
 #include <vector>
 #include <regex>
+#include <system_error>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -237,28 +239,15 @@ TEST("require that vespalib::mkdir and vespalib::rmdir works")
         ASSERT_TRUE(mkdir("mydir/otherdir/evenmorestuff"));
         rmdir("mydir");
         TEST_FATAL("Should not work without recursive option set");
-    } catch (IoException& e) {
+    } catch (std::filesystem::filesystem_error& e) {
         //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::DIRECTORY_HAVE_CONTENT, e.getType());
+        EXPECT_EQUAL(make_error_code(std::errc::directory_not_empty), e.code());
     }
         // Works with recursive option
     {
         ASSERT_TRUE(rmdir("mydir", true));
         ASSERT_TRUE(!fileExists("mydir"));
         ASSERT_TRUE(!rmdir("mydir", true));
-    }
-        // Doesn't work on file
-    try{
-        {
-            File f("myfile");
-            f.open(File::CREATE);
-            f.write("foo", 3, 0);
-        }
-        rmdir("myfile");
-        TEST_FATAL("Should have failed to run rmdir on file.");
-    } catch (IoException& e) {
-        //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::ILLEGAL_PATH, e.getType());
     }
 
     // mkdir works when a path component is a symlink which points to
