@@ -15,14 +15,26 @@ import com.yahoo.vespa.http.client.core.ServerResponseException;
 import com.yahoo.vespa.http.client.core.Vtag;
 import org.apache.http.Header;
 import org.apache.http.HttpHost;
+import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.StatusLine;
+import org.apache.http.auth.AUTH;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.ChallengeState;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.InputStreamEntity;
+import org.apache.http.impl.auth.BasicScheme;
+import org.apache.http.impl.client.BasicAuthCache;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.message.BasicHeader;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 
 import javax.net.ssl.SSLContext;
@@ -249,7 +261,14 @@ class ApacheGatewayConnection implements GatewayConnection {
     private InputStream executePost(HttpPost httpPost) throws ServerResponseException, IOException {
         if (httpClient == null)
             throw new IOException("Trying to executePost while not having a connection/http client");
-        HttpResponse response = httpClient.execute(httpPost);
+        String proxyAuthzHeader = getCustomProxyAuthorizationHeader(connectionParams).orElse(null);
+        HttpResponse response;
+        if (connectionParams.getProxyHost() != null && proxyAuthzHeader != null) {
+            HttpContext context = createContextForcingPreemptiveProxyAuth(proxyAuthzHeader);
+            response = httpClient.execute(httpPost, context);
+        } else {
+            response = httpClient.execute(httpPost);
+        }
         try {
             verifyServerResponseCode(response);
             verifyServerVersion(response.getFirstHeader(Headers.VERSION));
@@ -263,6 +282,38 @@ class ApacheGatewayConnection implements GatewayConnection {
         byte[] responseData = EntityUtils.toByteArray(response.getEntity());
         return responseData == null ? null : new ByteArrayInputStream(responseData);
     }
+
+    private static Optional<String> getCustomProxyAuthorizationHeader(ConnectionParams params) {
+        return params.getHeaders().stream()
+                .filter(h -> h.getKey().equals(AUTH.PROXY_AUTH_RESP))
+                .findAny()
+                .map(Map.Entry::getValue);
+    }
+
+    private HttpContext createContextForcingPreemptiveProxyAuth(String proxyAuthzHeader) {
+        BasicAuthCache authCache = new BasicAuthCache();
+        HttpHost proxy = new HttpHost(connectionParams.getProxyHost(), connectionParams.getProxyPort());
+        authCache.put(proxy, new CustomAuthScheme(proxyAuthzHeader));
+        HttpContext context = new BasicHttpContext();
+        context.setAttribute(HttpClientContext.AUTH_CACHE, authCache);
+        BasicCredentialsProvider prov = new BasicCredentialsProvider();
+        prov.setCredentials(new AuthScope(proxy), new UsernamePasswordCredentials("", ""));
+        context.setAttribute(HttpClientContext.CREDS_PROVIDER, prov);
+        return context;
+    }
+    private static class CustomAuthScheme extends BasicScheme {
+        final String proxyAuthzHeader;
+        @SuppressWarnings("deprecation")
+        CustomAuthScheme(String proxyAuthzHeader) {
+            super(ChallengeState.PROXY);
+            this.proxyAuthzHeader = proxyAuthzHeader;
+        }
+        @Override
+        public Header authenticate(Credentials credentials, HttpRequest request, HttpContext context) {
+            return new BasicHeader(AUTH.PROXY_AUTH_RESP, proxyAuthzHeader);
+        }
+    }
+
 
     private void verifyServerResponseCode(HttpResponse response) throws ServerResponseException {
         StatusLine statusLine = response.getStatusLine();
