@@ -64,6 +64,13 @@
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <!-- Must be on test classpath for cloud users -->
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
 
     <build>
