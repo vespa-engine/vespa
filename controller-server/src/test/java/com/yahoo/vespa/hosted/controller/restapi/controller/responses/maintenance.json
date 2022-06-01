@@ -22,9 +22,6 @@
       "name": "ChangeRequestMaintainer"
     },
     {
-      "name": "CloudEventTracker"
-    },
-    {
       "name": "CloudTrialExpirer"
     },
     {
