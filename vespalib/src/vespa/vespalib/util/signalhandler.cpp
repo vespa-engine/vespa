@@ -190,7 +190,7 @@ SignalHandler::get_cross_thread_stack_trace(pthread_t thread_id)
     }
     // This will only work with pthreads, but then again, so will Vespa.
     if (thread_id == pthread_self()) {
-        return vespalib::getStackTrace(3); // Skip getStackTrace() internals + this function's frame.
+        return vespalib::getStackTrace(1); // Skip this function's frame.
     }
 
     static std::mutex stack_dump_caller_mutex;

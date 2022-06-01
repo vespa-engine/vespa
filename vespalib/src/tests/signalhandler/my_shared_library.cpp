@@ -12,6 +12,7 @@ void my_cool_function(std::latch& arrival_latch, std::latch& departure_latch) {
     arrival_latch.arrive_and_wait();
     // Twiddle thumbs in departure latch until main test thread has dumped our stack
     departure_latch.arrive_and_wait();
+    asm(""); // Dear GCC; really, really don't inline this function. It's clobberin' time!
 }
 
 vespalib::string my_totally_tubular_and_groovy_function() {
