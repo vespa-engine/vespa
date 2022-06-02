@@ -99,25 +99,4 @@ public abstract class BaseStructDataType extends StructuredDataType {
         return fields.size();
     }
 
-    /** Returns the compressor to use to compress data of this type
-     * @deprecated Will go away on Vespa 8
-     */
-    @Deprecated
-    public Compressor getCompressor() { return new Compressor(CompressionType.NONE); }
-
-    /** Returns a view of the configuration of the compressor used to compress this type
-     * @deprecated Will go away on Vespa 8
-     */
-    @Deprecated
-    public CompressionConfig getCompressionConfig() {
-        return new CompressionConfig();
-    }
-
-    /**
-     *  Set the config to the compressor used to compress data of this type
-     * @deprecated Ignored and will go away on Vespa 8
-     */
-    @Deprecated
-    public void setCompressionConfig(CompressionConfig config) { }
-
 }
