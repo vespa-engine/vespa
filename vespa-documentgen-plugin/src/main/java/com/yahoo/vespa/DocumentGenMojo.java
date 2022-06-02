@@ -444,10 +444,7 @@ public class DocumentGenMojo extends AbstractMojo {
                 " */\n" +
                 "@com.yahoo.document.Generated\npublic class "+className+" extends "+superType+" {\n\n"+
                 ind(1)+"/** The doc type of this.*/\n" +
-                ind(1)+"public static final com.yahoo.document.DocumentType type = getDocumentType();\n\n"+
-                ind(1)+"/** Struct type view of the type of the body of this.*/\n" +
-                ind(1)+"/** Struct type view of the type of the header of this.*/\n" +
-                ind(1)+"private static final com.yahoo.document.StructDataType headerStructType = getHeaderStructType();\n\n");
+                ind(1)+"public static final com.yahoo.document.DocumentType type = getDocumentType();\n\n");
 
         // Constructor
         out.write(
@@ -460,11 +457,6 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(1)+"}\n\n");
         // isGenerated()
         out.write(ind(1)+"@Override protected boolean isGenerated() { return true; }\n\n");
-
-        // Mimic header and body to make serialization work.
-        // This can be improved by generating a method to serialize the document _here_, and use that in serialization.
-        exportOverriddenStructGetter(docType.allHeader().getFields(), out, 1, "getHeader", className+".headerStructType");
-        exportStructTypeGetter(docType.getName()+".header", docType.allHeader().getFields(), out, 1, "getHeaderStructType", "com.yahoo.document.StructDataType");
 
         Collection<Field> allUniqueFields = getAllUniqueFields(multiExtends, docType.getAllFields());
         exportExtendedStructTypeGetter(className, docType.getName(), allUniqueFields, docType.getFieldSets(),
