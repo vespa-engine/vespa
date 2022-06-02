@@ -12,10 +12,8 @@ import java.util.Map;
  *
  * @author Ulf Lilleengen
  * @since 5.1
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@SuppressWarnings("removal")
-@Deprecated(since = "7", forRemoval = true)
 class MappedLevelControllerRepo {
     private final Map<String, LevelController> levelControllerMap = new HashMap<>();
     private final MappedByteBuffer mapBuf;
