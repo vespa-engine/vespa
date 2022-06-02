@@ -41,7 +41,6 @@ schema complex {
     field prefixenabled type string {
       indexing: index | attribute
       index: prefix
-      attribute: huge
       normalizing: none
       stemming: shortest
     }

@@ -37,7 +37,6 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         Attribute a1 = f1.getAttributes().get(f1.getName());
         assertEquals(Attribute.Type.LONG, a1.getType());
         assertEquals(Attribute.CollectionType.SINGLE, a1.getCollectionType());
-        assertTrue(a1.isHuge());
         assertFalse(a1.isFastSearch());
         assertFalse(a1.isFastAccess());
         assertFalse(a1.isRemoveIfZero());
@@ -48,7 +47,6 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         Attribute a2 = f2.getAttributes().get(f2.getName());
         assertEquals(Attribute.Type.LONG, a2.getType());
         assertEquals(Attribute.CollectionType.SINGLE, a2.getCollectionType());
-        assertFalse(a2.isHuge());
         assertTrue(a2.isFastSearch());
         assertFalse(a2.isFastAccess());
         assertFalse(a2.isRemoveIfZero());
@@ -61,7 +59,6 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         Attribute a3 = f3.getAttributes().get(f3.getName());
         assertEquals(Attribute.Type.LONG, a3.getType());
         assertEquals(Attribute.CollectionType.SINGLE, a3.getCollectionType());
-        assertFalse(a3.isHuge());
         assertFalse(a3.isFastSearch());
         assertFalse(a3.isFastAccess());
         assertFalse(a3.isRemoveIfZero());
@@ -306,7 +303,6 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         single.setEnableBitVectors(true);
         single.setEnableOnlyBitVector(true);
         single.setFastSearch(true);
-        single.setHuge(true);
         single.setPaged(true);
         single.setFastAccess(true);
         single.setPosition(true);
@@ -329,7 +325,6 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertTrue(array.isEnabledBitVectors());
         assertTrue(array.isEnabledOnlyBitVector());
         assertTrue(array.isFastSearch());
-        assertTrue(array.isHuge());
         assertTrue(array.isPaged());
         assertTrue(array.isFastAccess());
         assertTrue(array.isPosition());
