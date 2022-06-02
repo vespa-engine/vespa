@@ -62,12 +62,6 @@ public class ApplicationRequestToDiscFilterRequestWrapper extends DiscFilterRequ
     }
 
     @Override
-    @Deprecated
-    public void setUri(URI uri) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String getParameter(String name) {
         throw new UnsupportedOperationException();
     }
