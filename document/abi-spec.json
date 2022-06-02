@@ -954,11 +954,8 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.DocumentType, int)",
-      "public void <init>(com.yahoo.document.TemporaryStructuredDataType, int)",
       "public static com.yahoo.document.ReferenceDataType createWithInferredId(com.yahoo.document.DocumentType)",
-      "public static com.yahoo.document.ReferenceDataType createWithInferredId(com.yahoo.document.TemporaryStructuredDataType)",
       "public com.yahoo.document.StructuredDataType getTargetType()",
-      "public void setTargetType(com.yahoo.document.StructuredDataType)",
       "public com.yahoo.document.datatypes.ReferenceFieldValue createFieldValue()",
       "public java.lang.Class getValueClass()",
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
@@ -1054,19 +1051,6 @@
     "fields": [
       "public static final int classId"
     ]
-  },
-  "com.yahoo.document.TemporaryStructuredDataType": {
-    "superClass": "com.yahoo.document.StructDataType",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public static com.yahoo.document.TemporaryStructuredDataType create(java.lang.String)",
-      "public static com.yahoo.document.TemporaryStructuredDataType createById(int)",
-      "protected void setName(java.lang.String)"
-    ],
-    "fields": []
   },
   "com.yahoo.document.TensorDataType": {
     "superClass": "com.yahoo.document.DataType",
