@@ -6,7 +6,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.subscription.ConfigInstanceUtil;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.model.SimpleConfigProducer;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.utils.FreezableMap;
-
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,6 +25,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -233,7 +232,6 @@ public abstract class AbstractConfigProducer<CHILD extends AbstractConfigProduce
         return didApply;
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void applyUserConfig(ConfigInstance.Builder builder, ConfigPayloadBuilder payloadBuilder) {
         ConfigInstance.Builder override;
         if (builder instanceof GenericConfig.GenericConfigBuilder) {

@@ -7,11 +7,9 @@ import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.vespa.config.ConfigKey;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -21,7 +19,6 @@ import static java.util.logging.Level.FINE;
  * @author Tony Vaagenes
  * @author ollivir
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class CloudSubscriber  implements Subscriber {
     private static final Logger log = Logger.getLogger(CloudSubscriber.class.getName());
 

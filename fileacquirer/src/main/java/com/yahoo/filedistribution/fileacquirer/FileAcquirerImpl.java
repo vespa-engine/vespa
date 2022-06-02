@@ -38,10 +38,8 @@ class FileAcquirerImpl implements FileAcquirer {
 
     private final Supervisor supervisor = new Supervisor(new Transport("fileaquirer"));
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ConfigSubscriber configSubscriber;
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private class Connection implements ConfigSubscriber.SingleSubscriber<FiledistributorrpcConfig> {
         private final Lock targetLock = new ReentrantLock();
         private Target target;
@@ -125,7 +123,6 @@ class FileAcquirerImpl implements FileAcquirer {
         }
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public FileAcquirerImpl(String configId) {
         configSubscriber = new ConfigSubscriber();
         configSubscriber.subscribe(connection, FiledistributorrpcConfig.class, configId);

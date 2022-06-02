@@ -216,7 +216,6 @@ public class ProxyServerTest {
         assertEquals(ProxyServer.DEFAULT_PROXY_CONFIG_SOURCES, properties.configSources[0]);
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private static ProxyServer createTestServer(ConfigSourceSet source, ConfigSourceClient configSourceClient) {
         return new ProxyServer(null, source, configSourceClient);
     }

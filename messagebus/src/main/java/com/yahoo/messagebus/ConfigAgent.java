@@ -14,7 +14,6 @@ import com.yahoo.messagebus.routing.RoutingTableSpec;
  *
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class ConfigAgent implements ConfigSubscriber.SingleSubscriber<MessagebusConfig>{
 
     private final ConfigURI configURI;
