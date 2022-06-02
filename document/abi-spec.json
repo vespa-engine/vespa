@@ -42,9 +42,6 @@
       "public boolean hasField(java.lang.String)",
       "public java.util.Collection getFields()",
       "public int getFieldCount()",
-      "public com.yahoo.compress.Compressor getCompressor()",
-      "public com.yahoo.document.CompressionConfig getCompressionConfig()",
-      "public void setCompressionConfig(com.yahoo.document.CompressionConfig)",
       "public bridge synthetic com.yahoo.document.DataType clone()",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -534,7 +531,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.DocumentTypeManager)",
-      "public static com.yahoo.compress.CompressionType toCompressorType(com.yahoo.document.config.DocumentmanagerConfig$Datatype$Structtype$Compresstype$Enum)",
       "public static com.yahoo.config.subscription.ConfigSubscriber configure(com.yahoo.document.DocumentTypeManager, java.lang.String)",
       "public com.yahoo.config.subscription.ConfigSubscriber configure(java.lang.String)",
       "public static com.yahoo.document.DocumentTypeManager configureNewManager(com.yahoo.document.config.DocumentmanagerConfig)",
@@ -2245,9 +2241,6 @@
       "public com.yahoo.document.StructDataType getDataType()",
       "public void setVersion(int)",
       "public int getVersion()",
-      "public com.yahoo.compress.CompressionType getCompressionType()",
-      "public int getCompressionLevel()",
-      "public float getCompressionThreshold()",
       "public com.yahoo.document.datatypes.Struct clone()",
       "public void clear()",
       "public java.util.Iterator iterator()",
