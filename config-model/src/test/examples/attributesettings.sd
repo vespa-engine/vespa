@@ -5,7 +5,6 @@ search attributesettings {
 
     field f1 type long {
       indexing: attribute
-      attribute: huge
     }
 
     field f2 type long {

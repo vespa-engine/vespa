@@ -256,7 +256,6 @@ TOKEN :
 | < PAGED: "paged" >
 | < FASTRANK: "fast-rank" >
 | < FASTSEARCH: "fast-search" >
-| < HUGE: "huge" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
@@ -1046,8 +1045,7 @@ void attributeSetting(ParsedAttribute attribute) :
 }
 {
     (
-        <HUGE>                 { attribute.setHuge(true); }
-      | <FASTRANK>             { attribute.setFastRank(true); }
+        <FASTRANK>             { attribute.setFastRank(true); }
       | <FASTSEARCH>           { attribute.setFastSearch(true); }
       | <FASTACCESS>           { attribute.setFastAccess(true); }
       | <MUTABLE>              { attribute.setMutable(true); }
@@ -2584,7 +2582,6 @@ String identifier() : { }
       | <FUNCTION>
       | <GRAM>
       | <HASH>
-      | <HUGE>
       | <ID>
       | <IDENTICAL>
       | <IDENTIFIER>
