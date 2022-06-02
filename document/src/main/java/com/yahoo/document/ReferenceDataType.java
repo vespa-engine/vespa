@@ -22,16 +22,6 @@ public class ReferenceDataType extends DataType {
         this((StructuredDataType)targetType, id);
     }
 
-    /**
-     * Constructor used when building a multi document type model where the concrete instance
-     * of the target document type might not yet be known. The temporary data type should be
-     * replaced later using setTargetType().
-     */
-    @SuppressWarnings("deprecation")
-    public ReferenceDataType(TemporaryStructuredDataType temporaryTargetType, int id) {
-        this((StructuredDataType) temporaryTargetType, id);
-    }
-
     private ReferenceDataType(StructuredDataType targetType, int id) {
         super(buildTypeName(targetType), id);
         this.targetType = targetType;
@@ -52,33 +42,7 @@ public class ReferenceDataType extends DataType {
         return new ReferenceDataType(targetType);
     }
 
-    /**
-     * Creates a new type where the numeric ID is based on the hash of targetType
-     */
-    @SuppressWarnings("deprecation")
-    public static ReferenceDataType createWithInferredId(TemporaryStructuredDataType targetType) {
-        return new ReferenceDataType(targetType);
-    }
-
     public StructuredDataType getTargetType() { return targetType; }
-
-    /**
-     * Overrides the stored temporary data type with a concrete StructuredDataType instance. Should only
-     * be invoked from configuration or model code when resolving temporary types.
-     *
-     * @throws IllegalStateException if the previously stored target type is already a concrete
-     *     instance (not TemporaryStructuredDataType).
-     */
-    @SuppressWarnings("deprecation")
-    public void setTargetType(StructuredDataType targetType) {
-        if (! (this.targetType instanceof TemporaryStructuredDataType)) {
-            throw new IllegalStateException(String.format(
-                    "Unexpected attempt to replace already concrete target " +
-                    "type in ReferenceDataType instance (type is '%s')", this.targetType.getName()));
-        }
-        this.targetType = targetType;
-        setName(buildTypeName(targetType));
-    }
 
     @Override
     public ReferenceFieldValue createFieldValue() {
