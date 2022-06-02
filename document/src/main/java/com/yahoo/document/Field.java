@@ -16,7 +16,6 @@ import java.io.Serializable;
  * @author Thomas Gundersen
  * @author bratseth
  */
-// TODO: Remove header/body concept on Vespa 8
 public class Field extends FieldBase implements FieldSet, Comparable, Serializable {
 
     protected DataType dataType;
@@ -27,14 +26,9 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * Creates a new field.
      *
      * @param name     The name of the field
+     * @param id       Serialized ID
      * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field
-     *                 (true = "header").
      */
-    @Deprecated
-    public Field(String name, int id, DataType dataType, boolean isHeader) {
-        this(name, id, dataType);
-    }
     public Field(String name, int id, DataType dataType) {
         super(name);
         this.fieldId = id;
@@ -53,15 +47,8 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      *
      * @param name     The name of the field
      * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field
-     *                 (true = "header").
      * @param owner    the owning document (used to check for id collisions)
      */
-    @Deprecated
-    public Field(String name, DataType dataType, boolean isHeader, DocumentType owner) {
-        this(name, dataType, owner);
-    }
-
     public Field(String name, DataType dataType, DocumentType owner) {
         this(name, 0, dataType);
         this.fieldId = calculateIdV7(owner);
@@ -69,20 +56,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     }
 
     /**
-     * Creates a new field.
-     *
-     * @param name     The name of the field
-     * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field
-     *                 (true = "header").
-     */
-    @Deprecated
-    public Field(String name, DataType dataType, boolean isHeader) {
-        this(name, dataType);
-    }
-
-    /**
-     * Constructor for <b>header</b> fields
+     * Constructor for normal fields
      *
      * @param name     The name of the field
      * @param dataType The datatype of the field
@@ -181,12 +155,6 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         dataType = type;
         fieldId = calculateIdV7(null);
         forcedId = false;
-    }
-
-    /** Returns the numeric ID used to represent this field when serialized */
-    @Deprecated
-    public final int getId(int version) {
-        return getId();
     }
 
     public final int getId() {
