@@ -23,11 +23,10 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class DocumentRouteSelectorPolicy
         implements DocumentProtocolRoutingPolicy, ConfigSubscriber.SingleSubscriber<DocumentrouteselectorpolicyConfig> {
 
-    private static Logger log = Logger.getLogger(DocumentRouteSelectorPolicy.class.getName());
+    private static final Logger log = Logger.getLogger(DocumentRouteSelectorPolicy.class.getName());
     private Map<String, DocumentSelector> config;
     private String error = "Not configured.";
     private ConfigSubscriber subscriber;

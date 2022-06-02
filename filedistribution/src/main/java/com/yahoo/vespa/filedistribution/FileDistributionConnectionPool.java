@@ -22,7 +22,6 @@ import java.util.List;
  */
 public class FileDistributionConnectionPool extends JRTConnectionPool {
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public FileDistributionConnectionPool(ConfigSourceSet sourceSet, Supervisor supervisor) {
         super(sourceSet, supervisor);
     }

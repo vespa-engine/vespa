@@ -47,7 +47,6 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
     private final Supervisor supervisor = new Supervisor(new Transport("config-source-client"));
 
     private final ResponseHandler responseHandler;
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ConfigSourceSet configSourceSet;
     private final Object subscribersLock = new Object();
     private final Map<ConfigCacheKey, Subscriber> subscribers = new ConcurrentHashMap<>();
@@ -62,7 +61,6 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("delayed responses"));
     private final ScheduledFuture<?> delayedResponsesFuture;
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     RpcConfigSourceClient(ResponseHandler responseHandler, ConfigSourceSet configSourceSet) {
         this.responseHandler = responseHandler;
         this.configSourceSet = configSourceSet;

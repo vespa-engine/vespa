@@ -96,7 +96,6 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                                                        File downloadDirectory,
                                                        Supervisor supervisor) {
         List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(configserverConfig);
-        @SuppressWarnings("removal") // TODO Vespa 8: remove
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
 
         ConnectionPool connectionPool = (otherConfigServersInCluster.isEmpty())
