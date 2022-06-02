@@ -25,11 +25,11 @@ search book {
 
       field mystruct2 type ss2 {}
 
-      field mywsfloat type weightedset<float> {
+      field mywsinteger type weightedset<int> {
         indexing: attribute
       }
 
-      field mynestedwsfloat type weightedset<float> {}
+      field mynestedwsinteger type weightedset<int> {}
 
       field myarrayint type array<int> {
         indexing: attribute
@@ -80,9 +80,7 @@ search book {
       }
    }
    rank-profile rp1 inherits default {
-      #static-rank: weight1
    }
    rank-profile rp2 inherits default {
-      #static-rank: weight2
    }
 }
