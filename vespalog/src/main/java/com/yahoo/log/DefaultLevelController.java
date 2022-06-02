@@ -7,10 +7,9 @@ import java.util.logging.Level;
 /**
  * a levelcontroller that just implements a simple default
  * (possibly controlled by a system property or environment)
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@SuppressWarnings("removal")
-@Deprecated(since = "7", forRemoval = true)
+@SuppressWarnings("deprecation")
 class DefaultLevelController implements LevelController {
     private String levelstring;
     private Level levelLimit = LogLevel.EVENT;

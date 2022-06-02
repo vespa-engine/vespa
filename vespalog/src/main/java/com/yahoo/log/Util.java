@@ -9,10 +9,9 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  * @author arnej27959
  * @author bjorncs
  *
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@Deprecated(since = "7", forRemoval = true)
-public class Util {
+class Util {
 
     public static String getHostName () {
         return getDefaults().vespaHostname();

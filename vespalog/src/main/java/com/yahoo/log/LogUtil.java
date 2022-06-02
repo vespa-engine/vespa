@@ -4,9 +4,8 @@ package com.yahoo.log;
 /**
  * @author Ulf Lilleengen
  * @since 5.1
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@Deprecated(since = "7", forRemoval = true)
 class LogUtil {
     static boolean empty(String s) {
         return (s == null || s.equals(""));

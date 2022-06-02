@@ -7,11 +7,9 @@ package com.yahoo.log;
  *
  * @author Ulf Lilleengen
  * @since 5.1
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@SuppressWarnings("removal")
-@Deprecated(since = "7", forRemoval = true)
-public interface LevelControllerRepo {
+interface LevelControllerRepo {
     /**
      * Return the level controller for a given component.
      * @param component The component name string.
