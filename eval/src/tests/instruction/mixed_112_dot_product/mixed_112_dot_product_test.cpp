@@ -2,7 +2,7 @@
 
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/instruction/sparse_112_dot_product.h>
+#include <vespa/eval/instruction/mixed_112_dot_product.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -16,7 +16,7 @@ using vespalib::make_string_short::fmt;
 //-----------------------------------------------------------------------------
 
 struct FunInfo {
-    using LookFor = Sparse112DotProduct;
+    using LookFor = Mixed112DotProduct;
     void verify(const LookFor &fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
     }
@@ -24,9 +24,11 @@ struct FunInfo {
 
 void verify_optimized_cell_types(const vespalib::string &expr)
 {
-    CellTypeSpace types(CellTypeUtils::list_types(), 3);
-    EvalFixture::verify<FunInfo>(expr, {FunInfo()}, CellTypeSpace(types).same());
-    EvalFixture::verify<FunInfo>(expr, {}, CellTypeSpace(types).different());
+    CellTypeSpace stable(CellTypeUtils::list_stable_types(), 3);
+    CellTypeSpace unstable(CellTypeUtils::list_unstable_types(), 3);
+    EvalFixture::verify<FunInfo>(expr, {FunInfo()}, CellTypeSpace(stable).same());
+    EvalFixture::verify<FunInfo>(expr, {}, CellTypeSpace(stable).different());
+    EvalFixture::verify<FunInfo>(expr, {}, unstable);
 }
 
 void verify_optimized(const vespalib::string &expr, size_t num_params = 3)
@@ -42,14 +44,18 @@ void verify_not_optimized(const vespalib::string &expr) {
 
 //-----------------------------------------------------------------------------
 
-TEST(Sparse112DotProduct, expression_can_be_optimized)
+TEST(Mixed112DotProduct, expression_can_be_optimized)
 {
-    verify_optimized_cell_types("reduce(x5_2*y4_2*x5_1y4_1,sum)");
+    verify_optimized_cell_types("reduce(x5_2*y8*x7_1y8,sum)");
 }
 
-TEST(Sparse112DotProduct, different_input_placement_is_handled)
+TEST(Mixed112DotProduct, inverse_dimension_matching_is_handled) {
+    verify_optimized("reduce(y5_2*x8*x8y7_1,sum)");
+}
+
+TEST(Mixed112DotProduct, different_input_placement_is_handled)
 {
-    std::array<vespalib::string,3> params = {"x3_1", "y3_1", "x3_1y3_1"};
+    std::array<vespalib::string,3> params = {"x3_1", "y3", "x3_1y3"};
     for (size_t p1 = 0; p1 < params.size(); ++p1) {
         for (size_t p2 = 0; p2 < params.size(); ++p2) {
             for (size_t p3 = 0; p3 < params.size(); ++p3) {
@@ -62,23 +68,23 @@ TEST(Sparse112DotProduct, different_input_placement_is_handled)
     }
 }
 
-TEST(Sparse112DotProduct, expression_can_be_optimized_with_extra_tensors)
+TEST(Mixed112DotProduct, expression_can_be_optimized_with_extra_tensors)
 {
-    verify_optimized("reduce((x5_2*y4_2)*(x5_1y4_1*x3_1),sum)", 4);
-    verify_optimized("reduce((x5_2*x3_1)*(y4_2*x5_1y4_1),sum)", 4);
+    verify_optimized("reduce((x5_2*y4)*(x5_1y4*x3_1),sum)", 4);
+    verify_optimized("reduce((x5_2*x3_1)*(y4*x5_1y4),sum)", 4);
 }
 
-TEST(Sparse112DotProduct, similar_expressions_are_not_optimized)
+TEST(Mixed112DotProduct, similar_expressions_are_not_optimized)
 {
-    verify_not_optimized("reduce(x5_2*y4_2*x5_1y4_1,prod)");
-    verify_not_optimized("reduce(x5_2+y4_2*x5_1y4_1,sum)");
-    verify_not_optimized("reduce(x5_2*y4_2+x5_1y4_1,sum)");
-    verify_not_optimized("reduce(x5_2*z4_2*x5_1y4_1,sum)");
-    verify_not_optimized("reduce(x5_2*y4_2*x5_1z4_1,sum)");
-    verify_not_optimized("reduce(x5_2*x1_1y4_2*x5_1y4_1,sum)");
-    verify_not_optimized("reduce(x5_2*y4_2*x5_1,sum)");
+    verify_not_optimized("reduce(x5_2*y4*x5_1y4,prod)");
+    verify_not_optimized("reduce(x5_2+y4*x5_1y4,sum)");
+    verify_not_optimized("reduce(x5_2*y4+x5_1y4,sum)");
+    verify_not_optimized("reduce(x5_2*z4*x5_1y4,sum)");
+    verify_not_optimized("reduce(x5_2*y4*x5_1z4,sum)");
+    verify_not_optimized("reduce(x5_2*x1_1y4*x5_1y4,sum)");
+    verify_not_optimized("reduce(x5_2*y4*x5_1,sum)");
     verify_not_optimized("reduce(x5*y4*x5y4,sum)");
-    verify_not_optimized("reduce(x5*y4_1*x5y4_1,sum)");
+    verify_not_optimized("reduce(x5_1*y4_1*x5_1y4_1,sum)");
 }
 
 //-----------------------------------------------------------------------------
