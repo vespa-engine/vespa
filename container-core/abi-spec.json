@@ -1493,7 +1493,6 @@
       "public static java.lang.String toCookieHeader(java.lang.Iterable)",
       "public static java.util.List fromCookieHeader(java.lang.String)",
       "public static java.util.List toSetCookieHeaders(java.lang.Iterable)",
-      "public static java.util.List toSetCookieHeaderAll(java.lang.Iterable)",
       "public static com.yahoo.jdisc.http.Cookie fromSetCookieHeader(java.lang.String)"
     ],
     "fields": []
