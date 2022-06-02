@@ -2167,8 +2167,6 @@
       "public java.lang.String getMethod()",
       "public com.yahoo.jdisc.http.HttpRequest$Version getVersion()",
       "public java.net.URI getUri()",
-      "public void setUri(java.net.URI)",
-      "public com.yahoo.jdisc.http.HttpRequest getParentRequest()",
       "public java.lang.String getRemoteAddr()",
       "public void setRemoteAddr(java.lang.String)",
       "public java.lang.String getLocalAddr()",
@@ -2210,7 +2208,6 @@
       "public java.lang.String getRequestURI()",
       "public java.lang.String getRequestedSessionId()",
       "public java.lang.String getScheme()",
-      "public void setScheme(java.lang.String, boolean)",
       "public java.lang.String getServerName()",
       "public int getServerPort()",
       "public java.security.Principal getUserPrincipal()",
@@ -2262,7 +2259,6 @@
       "public void setCookies(java.util.List)",
       "public int getStatus()",
       "public void setStatus(int)",
-      "public com.yahoo.jdisc.http.HttpResponse getParentResponse()",
       "public void addCookie(com.yahoo.jdisc.http.filter.JDiscCookieWrapper)",
       "public void sendError(int)",
       "public void setCookie(java.lang.String, java.lang.String)"
@@ -2307,17 +2303,6 @@
       "public void setSecure(boolean)",
       "public void setValue(java.lang.String)",
       "public com.yahoo.jdisc.http.Cookie getCookie()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.filter.JdiscFilterRequest": {
-    "superClass": "com.yahoo.jdisc.http.filter.DiscFilterRequest",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.HttpRequest)"
     ],
     "fields": []
   },

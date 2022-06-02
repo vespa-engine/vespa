@@ -101,14 +101,4 @@ public class DiscFilterResponseTest {
         Assert.assertEquals(response.getHeader("name"), "value");
     }
 
-    @Test
-    @SuppressWarnings("removal")
-    public void testGetParentResponse() {
-        URI uri = URI.create("http://example.com/test");
-        HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-        HttpResponse httpResp = newResponse(httpReq, 200);
-        DiscFilterResponse response = new DiscFilterResponse(httpResp);
-        Assert.assertSame(response.getParentResponse(), httpResp);
-    }
-
 }
