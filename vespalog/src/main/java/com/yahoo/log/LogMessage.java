@@ -70,24 +70,9 @@ public class LogMessage
     }
 
     public Instant  getTimestamp()       {return time;}
-    /**
-     * @deprecated Use {@link #getTimestamp()}
-     */
-    @Deprecated(since = "7", forRemoval = true)
-    public long     getTime ()          {return time.toEpochMilli();}
-    /**
-     * @deprecated Use {@link #getTimestamp()}
-     */
-    @Deprecated(since = "7", forRemoval = true)
-    public long     getTimeInSeconds () {return time.getEpochSecond();}
     public String   getHost ()          {return host;}
     public long     getProcessId()      {return processId;}
     public OptionalLong getThreadId()      {return threadId > 0 ? OptionalLong.of(threadId) : OptionalLong.empty();}
-    /**
-     * @deprecated Use {@link #getProcessId()} / {@link #getThreadId()}
-     */
-    @Deprecated(since = "7", forRemoval = true)
-    public String   getThreadProcess () {return VespaFormat.formatThreadProcess(processId, threadId);}
     public String   getService ()       {return service;}
     public String   getComponent ()     {return component;}
     public Level    getLevel ()         {return level;}
