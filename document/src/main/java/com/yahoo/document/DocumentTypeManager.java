@@ -219,18 +219,6 @@ public class DocumentTypeManager {
     }
 
     /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    DataType getDataTypeAndReturnTemporary(int code, String detailedType) {
-        if (hasDataType(code)) {
-            return getDataType(code, detailedType);
-        }
-        return new TemporaryDataType(code, detailedType);
-    }
-
-    /**
      * Register a data type of any sort, including document types.
      * @param type The datatype to register
      * TODO Give unique ids to document types
@@ -247,9 +235,6 @@ public class DocumentTypeManager {
     @SuppressWarnings("deprecation")
     void registerSingleType(DataType type) {
         if (type instanceof TensorDataType) return; // built-in dynamic: Created on the fly
-        if (type instanceof TemporaryDataType) {
-            throw new IllegalArgumentException("TemporaryDataType no longer supported: " + type);
-        }
         if (type instanceof TemporaryStructuredDataType) {
             throw new IllegalArgumentException("TemporaryStructuredDataType no longer supported: " + type);
         }
