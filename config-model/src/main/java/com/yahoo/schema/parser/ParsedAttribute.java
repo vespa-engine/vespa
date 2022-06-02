@@ -19,7 +19,6 @@ class ParsedAttribute extends ParsedBlock {
     private boolean enableFastAccess = false;
     private boolean enableFastRank = false;
     private boolean enableFastSearch = false;
-    private boolean enableHuge = false;
     private boolean enableMutable = false;
     private boolean enablePaged = false;
     private final Map<String, String> aliases = new LinkedHashMap<>();
@@ -38,7 +37,6 @@ class ParsedAttribute extends ParsedBlock {
     boolean getFastAccess() { return this.enableFastAccess; }
     boolean getFastRank() { return this.enableFastRank; }
     boolean getFastSearch() { return this.enableFastSearch; }
-    boolean getHuge() { return this.enableHuge; }
     boolean getMutable() { return this.enableMutable; }
     boolean getPaged() { return this.enablePaged; }
     Optional<ParsedSorting> getSorting() { return Optional.ofNullable(sortSettings); }
@@ -63,7 +61,6 @@ class ParsedAttribute extends ParsedBlock {
     void setFastAccess(boolean value) { this.enableFastAccess = true; }
     void setFastRank(boolean value) { this.enableFastRank = true; }
     void setFastSearch(boolean value) { this.enableFastSearch = true; }
-    void setHuge(boolean value) { this.enableHuge = true; }
     void setMutable(boolean value) { this.enableMutable = true; }
     void setPaged(boolean value) { this.enablePaged = true; }
 }
