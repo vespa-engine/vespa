@@ -72,6 +72,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         provisionServiceProvider.getHostProvisioner()
                                 .map(hostProvisioner -> new DynamicProvisioningMaintainer(nodeRepository, defaults.dynamicProvisionerInterval, hostProvisioner, flagSource, metric))
                                 .ifPresent(maintainers::add);
+        provisionServiceProvider.getHostProvisioner()
+                                .map(hostProvisioner -> new HostRetirer(nodeRepository, defaults.hostRetirerInterval, metric, hostProvisioner))
+                                .ifPresent(maintainers::add);
         // The DuperModel is filled with infrastructure applications by the infrastructure provisioner, so explicitly run that now
         infrastructureProvisioner.maintainButThrowOnException();
     }
@@ -116,6 +119,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration autoscalingInterval;
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
+        private final Duration hostRetirerInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -145,6 +149,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             inactiveConfigServerExpiry = Duration.ofMinutes(5);
             inactiveControllerExpiry = Duration.ofMinutes(5);
+            hostRetirerInterval = Duration.ofMinutes(30);
 
             if (zone.environment().isProduction() && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
