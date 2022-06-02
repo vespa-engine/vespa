@@ -2,10 +2,7 @@
 package com.yahoo.config.subscription;
 
 import com.yahoo.foo.AppConfig;
-
 import org.junit.Test;
-
-import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -16,7 +13,7 @@ import static org.junit.Assert.assertTrue;
  * @author gjoranv
  */
 public class ConfigGetterTest {
-    private ConfigSourceSet sourceSet = new ConfigSourceSet("config-getter-test");
+    private final ConfigSourceSet sourceSet = new ConfigSourceSet("config-getter-test");
 
     @Test
     public void testGetConfig() {
@@ -41,13 +38,6 @@ public class ConfigGetterTest {
     }
 
     @Test
-    public void testGetFromRawSource() {
-        ConfigGetter<AppConfig> getter = new ConfigGetter<>(new RawSource("message \"one\""), AppConfig.class);
-        AppConfig config = getter.getConfig("test");
-        assertEquals("one", config.message());
-    }
-
-    @Test
     public void testGetTwice() {
         ConfigGetter<AppConfig> getter = new ConfigGetter<>(AppConfig.class);
         AppConfig config = getter.getConfig("raw:message \"one\"");
@@ -63,23 +53,10 @@ public class ConfigGetterTest {
         verifyFooValues(config);
     }
 
-     @Test
-    public void testGetFromFileSource() {
-        ConfigGetter<AppConfig> getter = new ConfigGetter<>(new FileSource(new File("src/test/resources/configs/foo/app.cfg")), AppConfig.class);
-        AppConfig config = getter.getConfig("test");
-        verifyFooValues(config);
-    }
-
     @Test
     public void testGetFromDir() {
         ConfigGetter<AppConfig> getter = new ConfigGetter<>(AppConfig.class);
         AppConfig config = getter.getConfig("dir:src/test/resources/configs/foo/");
-        verifyFooValues(config);
-    }
-
-    @Test
-    public void testGetFromDirSource() {
-        AppConfig config = ConfigGetter.getConfig(AppConfig.class, "test", new DirSource(new File("src/test/resources/configs/foo/")));
         verifyFooValues(config);
     }
 

@@ -26,7 +26,6 @@ public class FileDistributionAndUrlDownload {
     private final ScheduledExecutorService cleanupExecutor =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("file references and downloads cleanup"));
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public FileDistributionAndUrlDownload(Supervisor supervisor, ConfigSourceSet source) {
         fileDistributionRpcServer = new FileDistributionRpcServer(supervisor, createDownloader(supervisor, source));
         urlDownloadRpcServer = new UrlDownloadRpcServer(supervisor);
@@ -45,7 +44,6 @@ public class FileDistributionAndUrlDownload {
         }
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private FileDownloader createDownloader(Supervisor supervisor, ConfigSourceSet source) {
         return new FileDownloader(new FileDistributionConnectionPool(source, supervisor),
                                   supervisor,

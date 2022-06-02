@@ -47,7 +47,6 @@ import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 public abstract class DocumentAccess {
 
     private final DocumentTypeManager documentTypeManager;
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ConfigSubscriber documentTypeConfigSubscriber;
 
     /**

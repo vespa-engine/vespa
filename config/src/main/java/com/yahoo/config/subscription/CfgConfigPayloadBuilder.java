@@ -17,9 +17,7 @@ import static java.util.logging.Level.FINEST;
  * Deserializes config payload (cfg format) to a ConfigPayload.
  *
  * @author hmusum
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class CfgConfigPayloadBuilder {
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(CfgConfigPayloadBuilder.class.getName());
 

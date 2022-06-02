@@ -28,9 +28,7 @@ import static java.util.stream.Collectors.toList;
  * {@link ConfigHandle} which {@link #subscribe(Class, String)} returned.
  *
  * @author Vegard Havdal
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class ConfigSubscriber implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(ConfigSubscriber.class.getName());

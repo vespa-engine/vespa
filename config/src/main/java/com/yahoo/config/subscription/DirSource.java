@@ -6,9 +6,7 @@ import java.io.File;
 /**
  * Source specifying config from a local directory
  * @author Vegard Havdal
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class DirSource implements ConfigSource {
     private final File dir;
 
