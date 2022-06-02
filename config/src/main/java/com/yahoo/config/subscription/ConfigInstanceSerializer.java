@@ -9,9 +9,7 @@ import com.yahoo.slime.Slime;
  * Implements a config instance serializer, serializing a config instance to a slime object.
  *
  * @author Ulf Lilleengen
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class ConfigInstanceSerializer implements Serializer {
     private final Slime slime;
     private final Cursor root;
