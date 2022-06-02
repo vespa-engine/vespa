@@ -4,7 +4,9 @@
 #include "threadimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <cassert>
 #include <thread>
+
 #include <vespa/log/log.h>
 LOG_SETUP(".storageframework.thread_pool_impl");
 
@@ -52,9 +54,7 @@ ThreadPoolImpl::startThread(Runnable& runnable, vespalib::stringref id, vespalib
                             std::optional<vespalib::CpuUsage::Category> cpu_category)
 {
     std::lock_guard lock(_threadVectorLock);
-    if (_stopping) {
-        throw IllegalStateException("Threadpool is stopping", VESPA_STRLOC);
-    }
+    assert(!_stopping);
     auto thread = std::make_unique<ThreadImpl>(*this, runnable, id, waitTime, maxProcessTime, ticksBeforeWait, cpu_category);
     _threads.push_back(thread.get());
     return thread;
@@ -65,7 +65,7 @@ ThreadPoolImpl::visitThreads(ThreadVisitor& visitor) const
 {
     std::lock_guard lock(_threadVectorLock);
     for (const ThreadImpl * thread : _threads) {
-        visitor.visitThread(thread->getId(), thread->getProperties(), thread->getTickData());
+        visitor.visitThread(*thread);
     }
 }
 

@@ -13,7 +13,7 @@ namespace storage::framework::defaultimplementation {
 
 struct ThreadPoolImpl;
 
-class ThreadImpl : public Thread
+class ThreadImpl final : public Thread
 {
     struct BackendThread : public document::Runnable {
         ThreadImpl& _impl;
@@ -61,12 +61,15 @@ public:
     ThreadImpl(ThreadPoolImpl&, Runnable&, vespalib::stringref id, vespalib::duration waitTime,
                vespalib::duration maxProcessTime, int ticksBeforeWait,
                std::optional<vespalib::CpuUsage::Category> cpu_category);
-    ~ThreadImpl();
+    ~ThreadImpl() override;
 
     bool interrupted() const override;
     bool joined() const override;
     void interrupt() override;
     void join() override;
+
+    vespalib::string get_live_thread_stack_trace() const override;
+
     void registerTick(CycleType, vespalib::steady_time) override;
     vespalib::duration getWaitTime() const override {
         return _properties.getWaitTime();
@@ -76,8 +79,8 @@ public:
     }
 
     void setTickData(const ThreadTickData&);
-    ThreadTickData getTickData() const;
-    const ThreadProperties& getProperties() const { return _properties; }
+    ThreadTickData getTickData() const override;
+    const ThreadProperties& getProperties() const override { return _properties; }
 };
 
 }

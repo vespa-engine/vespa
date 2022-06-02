@@ -381,7 +381,7 @@ public:
     /**
      * Returns the id of this thread.
      */
-    virtual FastOS_ThreadId GetThreadId ()=0;
+    virtual FastOS_ThreadId GetThreadId () const noexcept = 0;
 };
 
 

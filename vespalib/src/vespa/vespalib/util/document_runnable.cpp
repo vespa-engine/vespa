@@ -72,6 +72,11 @@ bool Runnable::join() const
     return true;
 }
 
+FastOS_ThreadId Runnable::native_thread_id() const noexcept
+{
+    return GetThread()->GetThreadId();
+}
+
 void Runnable::Run(FastOS_ThreadInterface*, void*)
 {
     {

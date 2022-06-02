@@ -9,7 +9,7 @@ namespace storage::framework::defaultimplementation {
 
 class ThreadImpl;
 
-struct ThreadPoolImpl : public ThreadPool
+struct ThreadPoolImpl final : public ThreadPool
 {
     FastOS_ThreadPool          _backendThreadPool;
     std::vector<ThreadImpl*>   _threads;

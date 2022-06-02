@@ -273,7 +273,6 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
     // we want to handle.
 
     if (_newServerConfig) {
-        bool updated = false;
         StorServerConfigBuilder oldC(*_serverConfig);
         StorServerConfig& newC(*_newServerConfig);
         DIFFERWARN(rootFolder, "Cannot alter root folder of node live");
@@ -282,7 +281,10 @@ StorageNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
         DIFFERWARN(isDistributor, "Cannot alter role of node live");
         _serverConfig = std::make_unique<StorServerConfig>(oldC);
         _newServerConfig.reset();
-        (void)updated;
+        _deadLockDetector->enableWarning(_serverConfig->enableDeadLockDetectorWarnings);
+        _deadLockDetector->enableShutdown(_serverConfig->enableDeadLockDetector);
+        _deadLockDetector->setProcessSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
+        _deadLockDetector->setWaitSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));
     }
     if (_newDistributionConfig) {
         StorDistributionConfigBuilder oldC(*_distributionConfig);

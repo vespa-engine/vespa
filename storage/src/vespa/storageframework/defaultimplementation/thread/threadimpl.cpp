@@ -4,6 +4,7 @@
 #include "threadpoolimpl.h"
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/util/atomic.h>
+#include <vespa/vespalib/util/signalhandler.h>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".framework.thread.impl");
@@ -76,6 +77,12 @@ void
 ThreadImpl::join()
 {
     _thread.join();
+}
+
+vespalib::string
+ThreadImpl::get_live_thread_stack_trace() const
+{
+    return vespalib::SignalHandler::get_cross_thread_stack_trace(_thread.native_thread_id());
 }
 
 void

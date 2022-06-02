@@ -65,17 +65,17 @@ disable_queue_limits_for_chained_merges bool default=true
 
 ## Whether the deadlock detector should be enabled or not. If disabled, it will
 ## still run, but it will never actually abort the process it is running in.
-enable_dead_lock_detector bool default=false restart
+enable_dead_lock_detector bool default=false
 
 ## Whether to enable deadlock detector warnings in log or not. If enabled,
 ## warnings will be written even if dead lock detecting is not enabled.
-enable_dead_lock_detector_warnings bool default=true restart
+enable_dead_lock_detector_warnings bool default=true
 
 ## Each thread registers how often it will at minimum register ticks (given that
 ## the system is not overloaded. If you are running Vespa on overloaded nodes,
 ## you can use this slack timeout to add to the thread timeouts in order to
 ## allow for more slack before dead lock detector kicks in. The value is in seconds.
-dead_lock_detector_timeout_slack double default=240 restart
+dead_lock_detector_timeout_slack double default=240
 
 ## If set to 0, storage will attempt to auto-detect the number of VDS mount
 ## points to use. If set to a number, force this number. This number only makes

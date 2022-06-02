@@ -56,6 +56,7 @@ App::setupSignals()
     SIG::PIPE.ignore();
     SIG::INT.hook();
     SIG::TERM.hook();
+    SIG::enable_cross_thread_stack_tracing();
 }
 
 void

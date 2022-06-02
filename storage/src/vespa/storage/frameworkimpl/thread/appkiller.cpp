@@ -9,10 +9,10 @@ LOG_SETUP(".deadlock.killer");
 namespace storage {
 
 void RealAppKiller::kill() {
-    LOG(info, "Aborting the server to dump core, as we're "
-              "most likely deadlocked and want a core file "
-              "to view the stack traces.");
-    LOG_ABORT("should not be reached");
+    LOG(error, "One or more threads have failed internal liveness checks; aborting process. "
+               "A core dump will be generated (if enabled by the kernel). "
+               "Please report this to the Vespa team at https://github.com/vespa-engine/vespa/issues");
+    abort();
 }
 
 } // storage
