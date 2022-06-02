@@ -226,12 +226,6 @@ public class JsonFormatTestCase {
         assertEquals(str, a.asString());
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    @SuppressWarnings("removal")
-    public void testThatDecodeIsNotImplemented()  {
-        new JsonFormat(true).decode(null, null);
-    }
-
     private void verifyEncoding(Slime slime, String expected) {
         verifyEncoding(slime, expected, true);
     }
