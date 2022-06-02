@@ -1,6 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "value.h"
+#include "value_builder_factory.h"
 #include "fast_addr_map.h"
 #include "inline_operation.h"
 #include <vespa/eval/instruction/generic_join.h>

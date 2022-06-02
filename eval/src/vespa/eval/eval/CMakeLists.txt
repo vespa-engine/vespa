@@ -34,6 +34,7 @@ vespa_add_library(eval_eval OBJECT
     tensor_spec.cpp
     typed_cells.cpp
     value.cpp
+    value_builder_factory.cpp
     value_codec.cpp
     value_type.cpp
     value_type_spec.cpp

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "streamed_value.h"
+#include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 
 namespace vespalib::eval {
