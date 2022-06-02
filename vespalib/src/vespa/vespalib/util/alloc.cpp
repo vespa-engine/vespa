@@ -228,6 +228,9 @@ getDefaultAutoAllocator(AutoAllocatorsMap & map) {
 }
 
 AutoAllocatorsMapWithDefault
+createAutoAllocatorsWithDefault() __attribute__((noinline));
+
+AutoAllocatorsMapWithDefault
 createAutoAllocatorsWithDefault() {
     AutoAllocatorsMapWithDefault tmp(createAutoAllocators(), nullptr);
     tmp.second = &getDefaultAutoAllocator(tmp.first);
