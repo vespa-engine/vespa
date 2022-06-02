@@ -25,7 +25,7 @@ search book {
 
       field mystruct2 type ss2 {}
 
-      field mywsfloat type weightedset<float> {
+      field mywsinteger type weightedset<int> {
         indexing: attribute
       }
 
