@@ -6,13 +6,13 @@
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/vespalib/util/programoptions.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <iostream>
 #include <thread>
 #include <fcntl.h>
@@ -239,7 +239,7 @@ App::startAndRun(FastOS_ThreadPool & threadPool, FNET_Transport & transport, int
     } else {
         const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
         vespalib::string basedir = protonConfig.basedir;
-        vespalib::mkdir(basedir, true);
+        std::filesystem::create_directories(std::filesystem::path(basedir));
         {
             ExitOnSignal exit_on_signal;
             proton.init(configSnapshot);

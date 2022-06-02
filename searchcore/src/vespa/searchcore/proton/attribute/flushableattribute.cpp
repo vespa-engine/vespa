@@ -14,6 +14,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/isequencedtaskexecutor.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <filesystem>
 #include <fstream>
 #include <future>
 
@@ -79,7 +80,7 @@ FlushableAttribute::Flusher::~Flusher() = default;
 bool
 FlushableAttribute::Flusher::saveAttribute()
 {
-    vespalib::mkdir(vespalib::dirname(_flushFile), false);
+    std::filesystem::create_directory(std::filesystem::path(vespalib::dirname(_flushFile)));
     SerialNumFileHeaderContext fileHeaderContext(_fattr._fileHeaderContext, _syncToken);
     bool saveSuccess = true;
     if (_saver && _saver->hasGenerationGuard() &&

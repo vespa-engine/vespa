@@ -601,7 +601,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     }
 
     vespalib::string db_dir = config.basedir + "/documents/" + docTypeName.toString();
-    vespalib::mkdir(db_dir, false); // Assume parent is created.
+    std::filesystem::create_directory(std::filesystem::path(db_dir)); // Assume parent is created.
     auto config_store = std::make_unique<FileConfigManager>(_transport, db_dir + "/config",
                                                             documentDBConfig->getConfigId(), docTypeName.getName());
     config_store->setProtonConfig(bootstrapConfig->getProtonConfigSP());

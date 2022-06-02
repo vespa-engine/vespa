@@ -19,6 +19,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <sstream>
 #include <cassert>
 #include <fcntl.h>
@@ -220,7 +221,7 @@ FileConfigManager::FileConfigManager(FNET_Transport & transport,
       _info(baseDir),
       _protonConfig()
 {
-    vespalib::mkdir(baseDir, false);
+    std::filesystem::create_directory(std::filesystem::path(baseDir));
     vespalib::File::sync(vespalib::dirname(baseDir));
     if (!_info.load())
         _info.save();
@@ -266,7 +267,7 @@ FileConfigManager::saveConfig(const DocumentDBConfig &snapshot, SerialNum serial
     bool saveInvalidSnap = _info.save();
     assert(saveInvalidSnap);
     (void) saveInvalidSnap;
-    vespalib::mkdir(snapDir, false);
+    std::filesystem::create_directory(std::filesystem::path(snapDir));
     save(snapDir, snapshot.getRankProfilesConfig());
     save(snapDir, snapshot.getIndexschemaConfig());
     save(snapDir, snapshot.getAttributesConfig());
@@ -477,7 +478,7 @@ FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
         bool saveInvalidSnap = _info.save();
         assert(saveInvalidSnap);
         (void) saveInvalidSnap;
-        vespalib::mkdir(snapDir, false);
+        std::filesystem::create_directory(std::filesystem::path(snapDir));
     }
 
     uint32_t numConfigs;
