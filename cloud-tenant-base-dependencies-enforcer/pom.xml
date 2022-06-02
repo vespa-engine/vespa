@@ -103,9 +103,6 @@
                                         <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
                                         <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                         <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
-                                        <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:provided</include>
-                                        <include>org.eclipse.jetty:jetty-io:[${jetty.version}]:jar:provided</include>
-                                        <include>org.eclipse.jetty:jetty-util:[${jetty.version}]:jar:provided</include>
                                         <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
@@ -233,16 +230,19 @@
                                         <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-hpack:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-server:[${jetty.version}]:jar:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-java-server:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-client:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-continuation:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-io:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-jmx:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-security:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-servlet:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-servlets:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-util-ajax:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-util:[${jetty.version}]:jar:test</include>
                                         <include>org.hamcrest:hamcrest-core:1.3:jar:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:2.1.8:jar:test</include>
                                         <include>org.json:json:20090211:jar:test</include>

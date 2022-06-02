@@ -21,6 +21,17 @@
         <pig.version>0.14.0</pig.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <!-- Force newer version of jetty-util (to match Jetty version of jdisc) -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <!-- Hadoop dependencies -->
         <dependency>
