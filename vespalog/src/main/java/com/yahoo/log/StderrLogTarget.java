@@ -6,11 +6,9 @@ import java.io.OutputStream;
 /**
  * @author Ulf Lilleengen
  * @since 5.1
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@SuppressWarnings("removal")
-@Deprecated(since = "7", forRemoval = true)
-public class StderrLogTarget implements LogTarget {
+class StderrLogTarget implements LogTarget {
 
     @Override
     public OutputStream open() {

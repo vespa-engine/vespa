@@ -20,7 +20,6 @@ import java.util.logging.Logger;
  * @author  Bjorn Borud
  * @author arnej27959
  */
-@SuppressWarnings("removal")
 public class LogSetup {
 
     private static final Timer taskRunner = new Timer(true);
