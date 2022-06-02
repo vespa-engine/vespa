@@ -14,11 +14,9 @@ import java.util.regex.Pattern;
  * @author arnej27959
  * @author bjorncs
  *
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@SuppressWarnings("removal")
-@Deprecated(since = "7", forRemoval = true)
-public class VespaFormat {
+class VespaFormat {
 
     private static final Pattern special   = Pattern.compile("[\r\\\n\\\t\\\\]+");
     private static final Pattern newLine   = Pattern.compile("\n");
