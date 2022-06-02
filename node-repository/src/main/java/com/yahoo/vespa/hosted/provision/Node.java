@@ -122,10 +122,6 @@ public final class Node implements Nodelike {
             if (cloudAccount().isPresent()) throw new IllegalArgumentException("A child node cannot have cloud account set");
         }
 
-        if (cloudAccount.isPresent() && exclusiveToApplicationId.isEmpty()) {
-            throw new IllegalArgumentException("Host in a custom cloud account must be exclusive to an application");
-        }
-
         if (type != NodeType.host && reservedTo.isPresent())
             throw new IllegalArgumentException("Only tenant hosts can be reserved to a tenant");
 
