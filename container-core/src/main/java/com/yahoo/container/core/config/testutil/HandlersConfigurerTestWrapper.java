@@ -39,7 +39,6 @@ import java.util.concurrent.Executors;
  */
 public class HandlersConfigurerTestWrapper {
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ConfigSourceSet configSources =
             new ConfigSourceSet(this.getClass().getSimpleName() + ": " + new Random().nextLong());
     private final HandlersConfigurerDi configurer;

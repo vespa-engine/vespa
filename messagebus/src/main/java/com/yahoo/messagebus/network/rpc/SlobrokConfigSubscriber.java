@@ -13,7 +13,6 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class SlobrokConfigSubscriber implements ConfigSubscriber.SingleSubscriber<SlobroksConfig>{
 
     private static final Logger log = Logger.getLogger(SlobrokConfigSubscriber.class.getName());

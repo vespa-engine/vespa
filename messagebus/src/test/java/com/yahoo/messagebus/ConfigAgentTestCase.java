@@ -22,7 +22,6 @@ public class ConfigAgentTestCase {
     @Rule
     public TemporaryFolder tmpFolder = new TemporaryFolder();
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     @Test
     public void testRoutingConfig() throws InterruptedException {
         LocalHandler handler = new LocalHandler();

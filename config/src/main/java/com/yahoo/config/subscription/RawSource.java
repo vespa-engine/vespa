@@ -5,9 +5,7 @@ package com.yahoo.config.subscription;
  * Source specifying raw config, where payload is given programmatically
  *
  * @author Vegard Havdal
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class RawSource implements ConfigSource {
 
     public final String payload;

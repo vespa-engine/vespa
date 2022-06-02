@@ -20,7 +20,6 @@ import java.util.WeakHashMap;
  * @author Tony Vaagenes
  * @author ollivir
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class CloudSubscriberFactory implements SubscriberFactory {
 
     private final ConfigSource configSource;

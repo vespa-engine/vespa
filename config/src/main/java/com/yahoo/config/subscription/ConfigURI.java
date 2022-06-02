@@ -1,18 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-import java.io.File;
-
 import com.yahoo.config.subscription.impl.JRTConfigRequester;
+import java.io.File;
 
 /**
  * A Config URI is a class that can be used to encapsulate a config source and a config id into one
  * object to simplify parameter passing.
  *
  * @author Ulf Lilleengen
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class ConfigURI {
 
     private String configId;

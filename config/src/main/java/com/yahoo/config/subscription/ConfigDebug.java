@@ -9,7 +9,6 @@ import java.util.logging.Logger;
 import static java.util.logging.Level.INFO;
 
 // Debug class that provides useful helper routines
-@Deprecated(forRemoval = true, since = "7")
 public class ConfigDebug {
     public static void logDebug(Logger logger, long timestamp, ConfigKey<?> key, String logmessage) {
         if (key.getConfigId().matches(".*container.?\\d+.*") || key.getConfigId().matches(".*doc.api.*")) {
