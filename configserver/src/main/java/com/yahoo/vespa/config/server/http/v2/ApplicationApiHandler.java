@@ -80,6 +80,7 @@ public class ApplicationApiHandler extends SessionHandler {
                 .orElse(false);
         if (multipartRequest) {
             try {
+                // TODO Remove direct dependency on Jetty for parsing multi-part response (add helper in container-core)
                 MultiPartFormInputStream multiPartFormInputStream = new MultiPartFormInputStream(request.getData(), request.getHeader(CONTENT_TYPE), /* config */null, /* contextTmpDir */null);
                 Map<String, Part> parts = multiPartFormInputStream.getParts().stream()
                         .collect(Collectors.toMap(Part::getName, p -> p));

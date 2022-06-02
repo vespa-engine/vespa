@@ -34,6 +34,13 @@
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <!-- TODO Remove when Jetty is embedded inside container-core -->
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-http</artifactId>
+            <scope>test</scope>
+            <version>${jetty.version}</version>
+        </dependency>
 
         <!-- provided -->
         <dependency>
