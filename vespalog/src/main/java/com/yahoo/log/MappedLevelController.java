@@ -9,10 +9,9 @@ import java.util.logging.Level;
 /**
  * a level controller that does lookup in a file via a memory-mapped
  * buffer for realtime logging control.
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@SuppressWarnings("removal")
-@Deprecated(since = "7", forRemoval = true)
+@SuppressWarnings("deprecation")
 class MappedLevelController implements LevelController {
     private static final int ONVAL  = 0x20204f4e; // equals "  ON" in file
     private static final int OFFVAL = 0x204f4646; // equals " OFF" in file

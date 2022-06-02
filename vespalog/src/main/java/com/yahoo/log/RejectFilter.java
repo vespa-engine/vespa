@@ -9,10 +9,9 @@ import java.util.List;
  *
  * @author Ulf Lilleengen
  * @since 5.1
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@Deprecated(since = "7", forRemoval = true)
-public class RejectFilter {
+class RejectFilter {
     private final List<String> rejectedMessages = new ArrayList<>();
 
     public boolean shouldReject(String message) {
