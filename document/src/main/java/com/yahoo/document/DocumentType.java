@@ -67,27 +67,10 @@ public class DocumentType extends StructuredDataType {
         this(name, headerType, Collections.emptySet());
     }
 
-    /**
-     * @deprecated //TODO Will be removed on Vespa 8
-     */
-    @Deprecated
-    public DocumentType(String name, StructDataType headerType, StructDataType bodyType) {
-        this(name, headerType, Collections.emptySet());
-    }
-
     public DocumentType(String name, StructDataType headerType, Set<String> importedFieldNames) {
         super(name);
         this.headerType = headerType;
         this.importedFieldNames = Collections.unmodifiableSet(importedFieldNames);
-    }
-
-    /**
-     * @deprecated //TODO Will be removed on Vespa 8
-     */
-    @Deprecated
-    public DocumentType(String name, StructDataType headerType,
-                        StructDataType bodyType, Set<String> importedFieldNames) {
-        this(name, headerType, importedFieldNames);
     }
 
     public DocumentType(String name, Set<String> importedFieldNames) {
@@ -183,12 +166,6 @@ public class DocumentType extends StructuredDataType {
         if (old != null) {
             throw new IllegalArgumentException("Already had declared struct for "+name);
         }
-    }
-
-    /** @deprecated use contentStruct instead */
-    @Deprecated // TODO: Remove on Vespa 8
-    public StructDataType getHeaderType() {
-        return contentStruct();
     }
 
     @Override

@@ -232,18 +232,6 @@ public class ProxyDocument extends Document implements DocumentOperationWrapper 
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public Struct getHeader() {
-        return doc.getHeader();
-    }
-
-    @Override
-    @SuppressWarnings("deprecation")
-    public Struct getBody() {
-        return null;
-    }
-
-    @Override
     public void assign(Object o) {
         doc.assign(o);
     }
