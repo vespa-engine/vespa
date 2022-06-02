@@ -652,12 +652,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, int, com.yahoo.document.DataType, boolean)",
       "public void <init>(java.lang.String, int, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, com.yahoo.document.DataType, boolean, com.yahoo.document.DocumentType)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType, com.yahoo.document.DocumentType)",
-      "public void <init>(java.lang.String, com.yahoo.document.DataType, boolean)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String, com.yahoo.document.Field)",
       "public int compareTo(java.lang.Object)",
@@ -665,7 +662,6 @@
       "public void setId(int, com.yahoo.document.DocumentType)",
       "public final com.yahoo.document.DataType getDataType()",
       "public void setDataType(com.yahoo.document.DataType)",
-      "public final int getId(int)",
       "public final int getId()",
       "public final boolean hasForcedId()",
       "public boolean equals(java.lang.Object)",
