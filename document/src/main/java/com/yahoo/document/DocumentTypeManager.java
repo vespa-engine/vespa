@@ -40,7 +40,6 @@ public class DocumentTypeManager {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManager.class.getName());
 
-    private ConfigSubscriber subscriber;
 
     // *Configured data types* (not built-in/primitive) indexed by their id
     //
@@ -70,16 +69,6 @@ public class DocumentTypeManager {
         dataTypes = other.dataTypes;
         documentTypes = other.documentTypes;
         annotationTypeRegistry = other.annotationTypeRegistry;
-    }
-
-    /**
-     * For testing, use fromFile factory method instead
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @Deprecated
-    public DocumentTypeManager configure(String configId) {
-        subscriber = DocumentTypeManagerConfigurer.configure(this, configId);
-        return this;
     }
 
     /** Only for unit tests */
@@ -126,21 +115,12 @@ public class DocumentTypeManager {
 
     /**
      * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @Deprecated
-    public boolean hasDataType(int code) {
-        if (code == DataType.tensorDataTypeCode) return true; // built-in dynamic: Always present
-        return dataTypes.containsKey(code);
-    }
-
-    /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
      * Use constants and factories in DataType instead.
      * For structs, use getStructType() in DocumentType.
      * For annotation payloads, use getDataType() in AnnotationType.
      **/
     @Deprecated
-    public DataType getDataType(String name) {
+    DataType getDataType(String name) {
         var type = getDataTypeInternal(name);
         if (type == null) {
             throw new IllegalArgumentException("No datatype named " + name);
@@ -189,7 +169,7 @@ public class DocumentTypeManager {
      * @deprecated //TODO Will be package-private or removed on Vespa 8
      */
     @Deprecated
-    public DataType getDataType(int code) { return getDataType(code, ""); }
+    DataType getDataType(int code) { return getDataType(code, ""); }
 
     /**
      * Return a data type instance
@@ -201,7 +181,7 @@ public class DocumentTypeManager {
      * @deprecated //TODO Will be package-private or removed on Vespa 8
      */
     @Deprecated
-    public DataType getDataType(int code, String detailedType) {
+    DataType getDataType(int code, String detailedType) {
         if (code == DataType.tensorDataTypeCode) // built-in dynamic
             return new TensorDataType(TensorType.fromSpec(detailedType));
 
@@ -325,7 +305,7 @@ public class DocumentTypeManager {
      * @deprecated //TODO Will be package-private or removed on Vespa 8
      */
     @Deprecated
-    public void clear() {
+    void clear() {
         documentTypes.clear();
         dataTypes.clear();
         registerDefaultDataTypes();
@@ -335,11 +315,4 @@ public class DocumentTypeManager {
         return annotationTypeRegistry;
     }
 
-    /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @Deprecated
-    public void shutdown() {
-        if (subscriber!=null) subscriber.close();
-    }
 }
