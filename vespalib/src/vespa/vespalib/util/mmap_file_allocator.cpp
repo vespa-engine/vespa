@@ -6,6 +6,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <cassert>
+#include <filesystem>
 
 namespace vespalib::alloc {
 
@@ -16,7 +17,7 @@ MmapFileAllocator::MmapFileAllocator(const vespalib::string& dir_name)
       _allocations(),
       _freelist()
 {
-    mkdir(_dir_name, true);
+    std::filesystem::create_directories(std::filesystem::path(_dir_name));
     _file.open(O_RDWR | O_CREAT | O_TRUNC, false);
 }
 
@@ -25,7 +26,7 @@ MmapFileAllocator::~MmapFileAllocator()
     assert(_allocations.empty());
     _file.close();
     _file.unlink();
-    rmdir(_dir_name, true);
+    std::filesystem::remove_all(std::filesystem::path(_dir_name));
 }
 
 uint64_t
