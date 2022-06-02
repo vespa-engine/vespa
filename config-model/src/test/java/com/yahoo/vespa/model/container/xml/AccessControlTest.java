@@ -62,31 +62,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertEquals("Wrong domain.", "my-tenant-domain", accessControl.domain);
     }
 
-    @Test
-    public void read_is_disabled_and_write_is_enabled_by_default() {
-        Http http = createModelAndGetHttp(
-                "  <http>",
-                "    <filtering>",
-                "      <access-control domain='my-tenant-domain'/>",
-                "    </filtering>",
-                "  </http>");
-
-        assertFalse("Wrong default value for read.", http.getAccessControl().get().readEnabled);
-        assertTrue("Wrong default value for write.", http.getAccessControl().get().writeEnabled);
-    }
-
-    @Test
-    public void read_and_write_can_be_overridden() {
-        Http http = createModelAndGetHttp(
-                "  <http>",
-                "    <filtering>",
-                "      <access-control domain='my-tenant-domain' read='true' write='false'/>",
-                "    </filtering>",
-                "  </http>");
-
-        assertTrue("Given read value not honoured.", http.getAccessControl().get().readEnabled);
-        assertFalse("Given write value not honoured.", http.getAccessControl().get().writeEnabled);
-    }
 
     @Test
     public void access_control_excluded_filter_chain_has_all_bindings_from_excluded_handlers() {
@@ -176,8 +151,6 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         Optional<AccessControl> maybeAccessControl = http.getAccessControl();
         assertTrue(maybeAccessControl.isPresent());
         AccessControl accessControl = maybeAccessControl.get();
-        assertFalse(accessControl.writeEnabled);
-        assertFalse(accessControl.readEnabled);
         assertEquals(AccessControl.ClientAuthentication.need, accessControl.clientAuthentication);
         assertEquals("my-tenant-domain", accessControl.domain);
     }
