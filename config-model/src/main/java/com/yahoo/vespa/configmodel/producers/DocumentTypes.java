@@ -167,9 +167,7 @@ public class DocumentTypes {
             return;
         }
         indexMap.setDone(type);
-        if (type instanceof TemporaryStructuredDataType) {
-            throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
-        } else if (type instanceof TemporaryUnknownType) {
+        if (type instanceof TemporaryUnknownType) {
             throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
         } else if (type instanceof OwnedTemporaryType) {
             throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
