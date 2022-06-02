@@ -52,26 +52,6 @@ public class MapDataType extends DataType {
         return valueType;
     }
 
-    /**
-     * WARNING! Do not use! Only to be used by config system!
-     * Sets the key type of this MapDataType.
-     * @deprecated // TODO Vespa 8 remove
-     */
-    @Deprecated(forRemoval = true, since = "7")
-    public void setKeyType(DataType keyType) {
-        this.keyType = keyType;
-    }
-
-    /**
-     * WARNING! Do not use! Only to be used by config system!
-     * Sets the value type of this MapDataType.
-     * @deprecated // TODO Vespa 8 remove
-     */
-    @Deprecated(forRemoval = true, since = "7")
-    public void setValueType(DataType valueType) {
-        this.valueType = valueType;
-    }
-
     @Override
     public MapFieldValue createFieldValue() {
         return new MapFieldValue(this);

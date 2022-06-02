@@ -2,10 +2,12 @@
 package com.yahoo.vespa.feed.perf;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.DocumentTypeManagerConfigurer;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.json.JsonFeedReader;
@@ -63,8 +65,8 @@ import java.util.stream.Stream;
  */
 public class SimpleFeeder implements ReplyHandler {
 
-
     private final DocumentTypeManager docTypeMgr = new DocumentTypeManager();
+    private final ConfigSubscriber documentTypeConfigSubscriber;
     private final List<InputStream> inputStreams;
     private final PrintStream out;
     private final RPCMessageBus mbus;
@@ -359,7 +361,7 @@ public class SimpleFeeder implements ReplyHandler {
         numMessagesToSend = params.getNumMessagesToSend();
         mbus = newMessageBus(docTypeMgr, params);
         session = newSession(mbus, this, params);
-        docTypeMgr.configure(params.getConfigId());
+        documentTypeConfigSubscriber = DocumentTypeManagerConfigurer.configure(docTypeMgr, params.getConfigId());
         benchmarkMode = params.isBenchmarkMode();
         destination = (params.getDumpStream() != null)
                 ? createDumper(params)

@@ -884,9 +884,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
 
         int size_uncompressed;
         {
-            DocumentTypeManager docMan = new DocumentTypeManager();
-            docMan.configure("file:src/tests/data/cppdocument.cfg");
-
+            DocumentTypeManager docMan = DocumentTypeManager.fromFile("src/tests/data/cppdocument.cfg");
             Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
 
             doc.setFieldValue("stringfield",
@@ -897,9 +895,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             size_uncompressed = data.position();
         }
 
-        DocumentTypeManager docMan = new DocumentTypeManager();
-        docMan.configure("file:src/tests/data/compressed.cfg");
-
+        DocumentTypeManager docMan = DocumentTypeManager.fromFile("src/tests/data/compressed.cfg");
         Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
 
         doc.setFieldValue("stringfield",
