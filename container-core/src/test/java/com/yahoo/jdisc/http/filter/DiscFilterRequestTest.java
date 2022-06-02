@@ -262,41 +262,36 @@ public class DiscFilterRequestTest {
 	}
 
 	@Test
-	@SuppressWarnings("deprecation")
-	public void testSetScheme() {
-		URI uri = URI.create("https://example.yahoo.com:8080/test");
-		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new DiscFilterRequest(httpReq);
-
-		request.setScheme("http", true);
-		System.out.println(request.getUri().toString());
-		Assert.assertEquals(request.getUri().toString(), "http://example.yahoo.com:8080/test");
-	}
-
-	@Test
-	@SuppressWarnings("deprecation")
 	public void testGetServerPort() {
-		URI uri = URI.create("http://example.yahoo.com/test");
-		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new DiscFilterRequest(httpReq);
-		Assert.assertEquals(request.getServerPort(), 80);
+		{
+			URI uri = URI.create("http://example.yahoo.com/test");
+			HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
+			DiscFilterRequest request = new DiscFilterRequest(httpReq);
+			Assert.assertEquals(request.getServerPort(), 80);
 
-		request.setUri(URI.create("https://example.yahoo.com/test"));
-		Assert.assertEquals(request.getServerPort(), 443);
-
+		}
+		{
+			URI uri = URI.create("https://example.yahoo.com/test");
+			HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
+			DiscFilterRequest request = new DiscFilterRequest(httpReq);
+			Assert.assertEquals(request.getServerPort(), 443);
+		}
 	}
 
 	@Test
-	@SuppressWarnings("deprecation")
 	public void testIsSecure() {
-		URI uri = URI.create("http://example.yahoo.com/test");
-		HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
-		DiscFilterRequest request = new DiscFilterRequest(httpReq);
-		Assert.assertFalse(request.isSecure());
-
-		request.setUri(URI.create("https://example.yahoo.com/test"));
-		Assert.assertTrue(request.isSecure());
-
+		{
+			URI uri = URI.create("http://example.yahoo.com/test");
+			HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
+			DiscFilterRequest request = new DiscFilterRequest(httpReq);
+			Assert.assertFalse(request.isSecure());
+		}
+		{
+			URI uri = URI.create("https://example.yahoo.com/test");
+			HttpRequest httpReq = newRequest(uri, HttpRequest.Method.GET, HttpRequest.Version.HTTP_1_1);
+			DiscFilterRequest request = new DiscFilterRequest(httpReq);
+			Assert.assertTrue(request.isSecure());
+		}
 	}
 
     @Test
