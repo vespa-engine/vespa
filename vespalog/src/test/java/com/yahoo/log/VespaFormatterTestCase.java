@@ -228,45 +228,4 @@ public class VespaFormatterTestCase {
         assertTrue(formatter.format(r).contains("meldingen her"));
     }
 
-    /**
-     * This test doesn't really do that much.  It is just here
-     * to ensure this doesn't crash.  XXX TODO: make this test
-     * actually test something more than just the non-generation
-     * of runtime errors. -bb
-     */
-    @Test
-    @SuppressWarnings("removal") // for VespaFormat.formatException
-    public void testExceptionFormatting () {
-        StringBuilder sb = new StringBuilder(128);
-        Exception e = new Exception("testing", new Exception("nested"));
-        VespaFormat.formatException(e, sb);
-    }
-
-
-    @Test
-    @SuppressWarnings("removal")
-    public void testGeneralFormat() { // for VespaFormat.format
-        String[] expected = new String[] {
-                "54.321000",
-                "hostname",
-                "26019/UnitTest-Thread-37",
-                "UnitTestRunner",
-                "com.UnitTest",
-                "INFO",
-                "Just check it looks OK\\nmsg=\"boom\"\\nname=\"java.lang.Throwable\"\\nstack=\"\\n" + this.getClass().getName() // Clover rewrites class names, get the current one to avoid test failure
-        };
-        String formatted = VespaFormat.format("INFO",
-                "UnitTest", "com", 54321L,
-                "UnitTest-Thread-37", "UnitTestRunner",
-                "Just check it looks OK",
-                new Throwable("boom"));
-        String[] split = formatted.split("\t");
-        assertEquals(expected[0], split[0]);
-        assertEquals(expected[2].split("/")[1], split[2].split("/")[1]);
-        assertEquals(expected[3], split[3]);
-        assertEquals(expected[4], split[4]);
-        assertEquals(expected[5], split[5]);
-        assertEquals(expected[6], split[6].substring(0, expected[6].length()));
-        assertEquals(expected.length, split.length);
-    }
 }
