@@ -35,16 +35,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         this.managerToConfigure = manager;
     }
 
-    /** Deprecated and will go away on Vespa 8 */
-    @Deprecated
-    public static CompressionType toCompressorType(DocumentmanagerConfig.Datatype.Structtype.Compresstype.Enum value) {
-        switch (value) {
-            case NONE: return CompressionType.NONE;
-            case LZ4: return CompressionType.LZ4;
-            case UNCOMPRESSABLE: return CompressionType.INCOMPRESSIBLE;
-        }
-        throw new IllegalArgumentException("Compression type " + value + " is not supported");
-    }
     /**
      * <p>Makes the DocumentTypeManager subscribe on its config.</p>
      *
