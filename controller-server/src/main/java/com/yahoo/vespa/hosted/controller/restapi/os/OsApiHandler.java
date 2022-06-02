@@ -19,6 +19,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringJoiner;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -71,7 +73,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse patch(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/os/v1/")) return new SlimeJsonResponse(setOsVersion(request));
+        if (path.matches("/os/v1/")) return setOsVersion(request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -130,36 +132,20 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         return zones.zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
     }
 
-    private Slime setOsVersion(HttpRequest request) {
+    private HttpResponse setOsVersion(HttpRequest request) {
         Slime requestData = toSlime(request.getData());
         Inspector root = requestData.get();
-        Inspector versionField = root.field("version");
-        Inspector cloudField = root.field("cloud");
-        Inspector upgradeBudgetField = root.field("upgradeBudget");
+        CloudName cloud = parseStringField("cloud", root, CloudName::from);
+        if (requireField("version", root).type() == Type.NIX) {
+            controller.cancelOsUpgradeIn(cloud);
+            return new MessageResponse("Cleared target OS version for cloud '" + cloud.value() + "'");
+        }
+        Version target = parseStringField("version", root, Version::fromString);
+        Duration upgradeBudget = parseStringField("upgradeBudget", root, Duration::parse);
         boolean force = root.field("force").asBool();
-        if (!versionField.valid() || !cloudField.valid() || !upgradeBudgetField.valid()) {
-            throw new IllegalArgumentException("Fields 'version', 'cloud' and 'upgradeBudget' are required");
-        }
-
-        CloudName cloud = CloudName.from(cloudField.asString());
-        Version target;
-        try {
-            target = Version.fromString(versionField.asString());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid version '" + versionField.asString() + "'", e);
-        }
-        Duration upgradeBudget;
-        try {
-            upgradeBudget = Duration.parse(upgradeBudgetField.asString());
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid duration '" + upgradeBudgetField.asString() + "'", e);
-        }
         controller.upgradeOsIn(cloud, target, upgradeBudget, force);
-        Slime response = new Slime();
-        Cursor cursor = response.setObject();
-        cursor.setString("message", "Set target OS version for cloud '" + cloud.value() + "' to " +
-                                    target.toFullString() + " with upgrade budget " + upgradeBudget);
-        return response;
+        return new MessageResponse("Set target OS version for cloud '" + cloud.value() + "' to " +
+                                   target.toFullString() + " with upgrade budget " + upgradeBudget);
     }
 
     private Slime osVersions() {
@@ -194,6 +180,21 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    private static <T> T parseStringField(String name, Inspector root, Function<String, T> parser) {
+        String fieldValue = requireField(name, root).asString();
+        try {
+            return parser.apply(fieldValue);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid " + name + " '" + fieldValue + "'", e);
+        }
+    }
+
+    private static Inspector requireField(String name, Inspector root) {
+        Inspector field = root.field(name);
+        if (!field.valid()) throw new IllegalArgumentException("Field '" + name + "' is required");
+        return field;
     }
 
 }

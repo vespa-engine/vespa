@@ -251,6 +251,19 @@ public class Controller extends AbstractComponent {
         }
     }
 
+    /** Clear the target OS version for given cloud in this system */
+    public void cancelOsUpgradeIn(CloudName cloudName) {
+        try (Mutex lock = curator.lockOsVersions()) {
+            Map<CloudName, OsVersionTarget> targets = curator.readOsVersionTargets().stream()
+                                                             .collect(Collectors.toMap(t -> t.osVersion().cloud(),
+                                                                                       Function.identity()));
+            if (targets.remove(cloudName) == null) {
+                throw new IllegalArgumentException("Cloud '" + cloudName.value() + " has no OS upgrade target");
+            }
+            curator.writeOsVersionTargets(new TreeSet<>(targets.values()));
+        }
+    }
+
     /** Returns the current OS version status */
     public OsVersionStatus osVersionStatus() {
         return curator.readOsVersionStatus();

@@ -95,14 +95,18 @@ public class OsApiTest extends ControllerContainerTest {
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true, \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1 with upgrade budget PT0S\"}", 200);
 
+        // Clear target for a given cloud
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud2\"}", Request.Method.PATCH),
+                       "{\"message\":\"Cleared target OS version for cloud 'cloud2'\"}", 200);
+
         // Error: Missing fields
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version', 'cloud' and 'upgradeBudget' are required\"}", 400);
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Field 'cloud' is required\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version', 'cloud' and 'upgradeBudget' are required\"}", 400);
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Field 'version' is required\"}", 400);
 
         // Error: Invalid versions
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"0.0.0\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version '0.0.0'\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': For input string: \\\"foo\\\"\"}", 400);
