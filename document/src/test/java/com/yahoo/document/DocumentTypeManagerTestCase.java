@@ -528,14 +528,12 @@ search annotationsimplicitstruct {
         assertReferenceTypePresentInManager(manager, 87654321, "referenced_type2");
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void no_temporary_targets_in_references_or_names() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.replaced_temporary.cfg");
         DocumentType docType = manager.getDocumentType("ad");
         Field f = docType.getField("campaign_ref");
         assertTrue(f.getDataType() instanceof ReferenceDataType);
-        assertFalse(((ReferenceDataType)f.getDataType()).getTargetType() instanceof TemporaryStructuredDataType);
         assertEquals("Reference<mystiqueCampaign>", f.getDataType().getName());
     }
 

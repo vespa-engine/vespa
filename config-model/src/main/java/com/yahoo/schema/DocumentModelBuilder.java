@@ -8,7 +8,6 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
@@ -232,9 +231,6 @@ public class DocumentModelBuilder {
             return replacements.get(type);
         }
         DataType original = type;
-        if (type instanceof TemporaryStructuredDataType) {
-            throw new IllegalArgumentException("Cannot handle temporary: " + type);
-        }
         if (type instanceof TemporaryUnknownType) {
             // must be a known struct or document type
             DataType other = repo.getDataType(type.getId());

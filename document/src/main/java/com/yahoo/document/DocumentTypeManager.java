@@ -235,9 +235,6 @@ public class DocumentTypeManager {
     @SuppressWarnings("deprecation")
     void registerSingleType(DataType type) {
         if (type instanceof TensorDataType) return; // built-in dynamic: Created on the fly
-        if (type instanceof TemporaryStructuredDataType) {
-            throw new IllegalArgumentException("TemporaryStructuredDataType no longer supported: " + type);
-        }
         if (dataTypes.containsKey(type.getId())) {
             DataType existingType = dataTypes.get(type.getId());
             if ((existingType == type) || existingType.equals(type)) {
