@@ -186,14 +186,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <!-- TODO Vespa 8: remove configuration.
-             Included to allow 'removal' warnings for classes in its own module -->
-        <configuration>
-          <compilerArgs>
-            <arg>-Xlint:all,-serial,-try,-processing,-removal</arg>
-            <arg>-Werror</arg>
-          </compilerArgs>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -7,24 +7,23 @@ import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.internal.GeoPosType;
-import java.util.logging.Level;
+import com.yahoo.tensor.TensorType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.function.Supplier;
-import com.yahoo.tensor.TensorType;
 
 /**
  * Configures the Vespa document manager from a config id.
  *
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSubscriber<DocumentmanagerConfig> {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManagerConfigurer.class.getName());

@@ -57,7 +57,6 @@ public class StandaloneSubscriberFactory implements SubscriberFactory {
             return ret;
         }
 
-        @SuppressWarnings("removal") // TODO Vespa 8: remove
         @Override
         public long waitNextGeneration(boolean isInitializing) {
             generation++;

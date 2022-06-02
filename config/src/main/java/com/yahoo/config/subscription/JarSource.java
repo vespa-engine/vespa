@@ -6,9 +6,7 @@ import java.util.jar.JarFile;
 /**
  * Source specifying config as a jar file entry
  * @author Vegard Havdal
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class JarSource implements ConfigSource {
     private final String path;
     private final JarFile jarFile;
