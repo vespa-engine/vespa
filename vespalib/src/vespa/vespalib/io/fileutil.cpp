@@ -5,9 +5,10 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/fastos/file.h>
 #include <ostream>
 #include <cassert>
+#include <filesystem>
+#include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -534,50 +535,12 @@ chdir(const string & directory)
 bool
 rmdir(const string & directory, bool recursive)
 {
-    string dirname(directory);
-    if (!dirname.empty() && *dirname.rbegin() == '/') {
-        dirname.resize(dirname.size() - 1);
-    }
-    if (dirname.empty()) {
-        LOG(debug, "rmdir(%s): Not allowing deletion of '/'.", directory.c_str());
-        return false;
-    }
+    std::filesystem::path path(directory);
     if (recursive) {
-        FastOS_DirectoryScan dir(dirname.c_str());
-        while (dir.ReadNext()) {
-            if (strcmp(dir.GetName(), "..") != 0 &&
-                strcmp(dir.GetName(), ".") != 0)
-            {
-                string fullpath(dirname + "/" + dir.GetName());
-                if (dir.IsDirectory()) {
-                    rmdir(fullpath, true);
-                } else {
-                    if (::unlink(fullpath.c_str()) != 0) {
-                        asciistream ost;
-                        ost << "rmdir(" << fullpath
-                            << (recursive ? ", recursive" : "")
-                            << "): Failed, errno(" << errno << "): "
-                            << safeStrerror(errno);
-                        throw IoException(ost.str(),
-                                          IoException::getErrorType(errno),
-                                          VESPA_STRLOC);
-                    }
-                }
-            }
-        }
+        return std::filesystem::remove_all(path) > 0;
+    } else {
+        return std::filesystem::remove(path);
     }
-    if (::rmdir(dirname.c_str()) == 0) {
-        LOG(debug, "rmdir(%s): Directory deleted.", directory.c_str());
-        return true;
-    }
-    if (errno == ENOENT) {
-        LOG(debug, "rmdir(%s): No directory to delete.", directory.c_str());
-        return false;
-    }
-    asciistream ost;
-    ost << "rmdir(" << dirname << (recursive ? ", recursive" : "")
-        << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
 }
 
 FileInfo::UP
