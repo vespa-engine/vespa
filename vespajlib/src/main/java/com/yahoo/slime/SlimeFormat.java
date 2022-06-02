@@ -2,7 +2,6 @@
 package com.yahoo.slime;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 
 /**
@@ -17,15 +16,5 @@ public interface SlimeFormat {
      * @param slime The slime object to encode.
      */
     void encode(OutputStream os, Slime slime) throws IOException;
-
-    /**
-     * Decode an input stream into the provided slime object
-     *
-     * @param is The input stream to read from.
-     * @param slime The slime object to decode into.
-     * @deprecated use e.g. {@link JsonDecoder} instead
-     */
-    @Deprecated(since = "7", forRemoval = true)
-    void decode(InputStream is, Slime slime) throws IOException;
 
 }
