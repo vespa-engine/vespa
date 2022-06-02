@@ -154,7 +154,6 @@ public class DocumentTypeManagerTestCase {
         assertTrue(foobarfield0.getDataType().getCode() == 2);
 
         Field foobarfield1 = type.getField("foobarfield1");
-        assertTrue(foobarfield1.isHeader());
         assertTrue(foobarfield1.getDataType().getCode() == 4);
 
 
@@ -169,7 +168,6 @@ public class DocumentTypeManagerTestCase {
         assertTrue(type.hasField("bananafield0"));
 
         Field bananafield0 = type.getField("bananafield0");
-        assertTrue(bananafield0.isHeader());
         assertTrue(bananafield0.getDataType().getCode() == 16);
 
         //inheritance:
