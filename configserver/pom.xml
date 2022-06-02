@@ -279,6 +279,13 @@
       <artifactId>http-utils</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <!-- TODO Remove dependency on Jetty once no longer required for multi-part response parsing -->
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-http</artifactId>
+      <version>${jetty.version}</version>
+      <scope>provided</scope>
+    </dependency>
 
   </dependencies>
   <build>
