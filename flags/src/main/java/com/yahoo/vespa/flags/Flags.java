@@ -238,7 +238,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_SERVER_OCSP_STAPLING = defineFeatureFlag(
             "enable-server-ocsp-stapling", false,
-            List.of("bjorncs"), "2021-12-17", "2022-06-01",
+            List.of("bjorncs"), "2021-12-17", "2022-09-01",
             "Enable server OCSP stapling for jdisc containers",
             "Takes effect on redeployment",
             ZONE_ID, APPLICATION_ID);
