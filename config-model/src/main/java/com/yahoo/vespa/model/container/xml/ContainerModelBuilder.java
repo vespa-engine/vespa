@@ -526,8 +526,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
         new AccessControl.Builder(tenantDomain.value())
                 .setHandlers(cluster)
-                .readEnabled(false)
-                .writeEnabled(false)
                 .clientAuthentication(AccessControl.ClientAuthentication.need)
                 .build()
                 .configureHttpFilterChains(http);
