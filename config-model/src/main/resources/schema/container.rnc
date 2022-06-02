@@ -23,11 +23,10 @@ Server = element server {
 }
 
 AccessControl = element access-control {
-    attribute domain { xsd:NCName }? &  # TODO Vespa 8 Remove
-    attribute read { string "true" | string "false" }? & # TODO Vespa 8 Remove
-    attribute write { string "true" | string "false" }? & # TODO Vespa 8 Remove
+    attribute domain { xsd:NCName }? & # TODO(tokle,bjorncs) Remove after Vespa 8
+    attribute read { string "true" | string "false" }? &  # TODO(tokle,bjorncs) Remove after Vespa 8
+    attribute write { string "true" | string "false" }? &  # TODO(tokle,bjorncs) Remove after Vespa 8
     attribute tls-handshake-client-auth {string "want" | string "need"}? &
-    element vespa-domain { xsd:NCName }? & # TODO Remove after end of March 2020
     element exclude {
         Binding+
     }?

@@ -60,11 +60,10 @@
 
     <http>
       <filtering strict-mode="true">
-        <access-control domain="my.athens-domain" read="true">
+        <access-control>
           <exclude>
             <binding>http//*/foo/*</binding>
           </exclude>
-          <vespa-domain>vespa.vespa.cd</vespa-domain>
         </access-control>
 
         <filter id="com.yahoo.YcaFilter" bundle="mybundle">
