@@ -5,15 +5,20 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * @author jonmv
  */
 public class AggregateTestRunner implements TestRunner {
 
+    private static final Logger log = Logger.getLogger(AggregateTestRunner.class.getName());
+
     private final List<TestRunner> wrapped;
     private int current = -1;
+    private boolean error = false;
     private final Object monitor = new Object();
 
     private AggregateTestRunner(List<TestRunner> testRunners) {
@@ -36,6 +41,7 @@ public class AggregateTestRunner implements TestRunner {
 
     @Override
     public Status getStatus() {
+        if (error) return Status.ERROR;
         synchronized (monitor) {
             if (current == -1)
                 return Status.NOT_STARTED;
@@ -70,7 +76,13 @@ public class AggregateTestRunner implements TestRunner {
         vessel.whenComplete((__, ___) -> {
             synchronized (monitor) {
                 if (++current < wrapped.size())
-                    runNext(suite, config, wrapped.get(current).test(suite, config), aggregate);
+                    try {
+                        runNext(suite, config, wrapped.get(current).test(suite, config), aggregate);
+                    }
+                    catch (Throwable t) {
+                        log.log(Level.SEVERE, "Failed running next suite (" + wrapped.get(current) + ")", t);
+                        error = true;
+                    }
                 else
                     aggregate.complete(null);
             }
