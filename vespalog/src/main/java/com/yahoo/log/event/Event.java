@@ -29,9 +29,8 @@ import java.util.regex.Pattern;
  *
  * @author  Bjorn Borud
  *
- * @deprecated Only for internal Vespa usage
+ * Only for internal Vespa usage
  */
-@Deprecated(forRemoval = true, since = "7")
 public abstract class Event implements Serializable {
     private static Logger log = Logger.getLogger(Event.class.getName());
 
@@ -426,20 +425,6 @@ public abstract class Event implements Serializable {
     }
 
     /**
-     * Static method for logging the <b>reloading</b> event.
-     */
-    public static final void reloading (String name) {
-        log(getCallerLogger(), new Reloading(name));
-    }
-
-    /**
-     * Static method for logging the <b>reloaded</b> event.
-     */
-    public static final void reloaded (String name) {
-        log(getCallerLogger(), new Reloaded(name));
-    }
-
-    /**
      * Static method for logging the <b>count</b> event.
      */
     public static final void count (String name, long value) {
@@ -451,29 +436,6 @@ public abstract class Event implements Serializable {
      */
     public static final void value (String name, double value) {
         log(getCallerLogger(), new Value(name, value));
-    }
-
-    /**
-     * Static method for logging the <b>histogram</b> event.
-     */
-    public static final void histogram (String name, String value,
-                                        String representation) {
-        log(getCallerLogger(), new Histogram(name, value,
-                                             representation));
-    }
-
-    /**
-     * Static method for logging a set of <b>value</b> events.
-     */
-    public static final void valueGroup (String name, String value) {
-        log(getCallerLogger(), new ValueGroup(name, value));
-    }
-
-    /**
-     * Static method for logging a set of <b>count</b> events.
-     */
-    public static final void countGroup (String name, String value) {
-        log(getCallerLogger(), new CountGroup(name, value));
     }
 
     /**

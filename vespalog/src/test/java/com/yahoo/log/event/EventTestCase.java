@@ -23,13 +23,10 @@ public class EventTestCase {
     Crash     crashEvent;
     Progress  progressEvent1;
     Progress  progressEvent2;
-    Reloading reloadingEvent;
-    Reloaded  reloadedEvent;
     Starting  startingEvent;
     Started   startedEvent;
     Stopping  stoppingEvent;
     Stopped   stoppedEvent;
-    Collection collectionEvent;
     Unknown   unknownEvent;
 
     @Before
@@ -41,13 +38,10 @@ public class EventTestCase {
         crashEvent     = new Crash("appname", 1234, 11);
         progressEvent1 = new Progress("thename", 1);
         progressEvent2 = new Progress("thename", 1.0, 2.0);
-        reloadingEvent = new Reloading("thefilewereloading");
-        reloadedEvent  = new Reloaded("thefilewereloaded");
         startingEvent  = new Starting("startingName");
         startedEvent   = new Started("startedName");
         stoppingEvent  = new Stopping("stoppingName", "because we want to");
         stoppedEvent   = new Stopped("stoppedName", 1234, 1);
-        collectionEvent=new Collection(123456, "thename");
         unknownEvent   = new Unknown();
     }
 
@@ -61,13 +55,10 @@ public class EventTestCase {
         assertNotNull(crashEvent);
         assertNotNull(progressEvent1);
         assertNotNull(progressEvent2);
-        assertNotNull(reloadingEvent);
-        assertNotNull(reloadedEvent);
         assertNotNull(startingEvent);
         assertNotNull(startedEvent);
         assertNotNull(stoppingEvent);
         assertNotNull(stoppedEvent);
-        assertNotNull(collectionEvent);
         assertNotNull(unknownEvent);
     }
 
@@ -88,12 +79,6 @@ public class EventTestCase {
         assertEquals("progress/1 name=thename value=1.0 total=2.0",
                      progressEvent2.toString());
 
-        assertEquals("reloaded/1 name=thefilewereloaded",
-                     reloadedEvent.toString());
-
-        assertEquals("reloading/1 name=thefilewereloading",
-                     reloadingEvent.toString());
-
         assertEquals("started/1 name=startedName",
                      startedEvent.toString());
 
@@ -102,9 +87,6 @@ public class EventTestCase {
 
         assertEquals("stopping/1 name=stoppingName why=\"because we want to\"",
                      stoppingEvent.toString());
-
-        assertEquals("collection/1 collectionId=123456 name=thename",
-                     collectionEvent.toString());
 
         assertEquals("stopped/1 name=stoppedName pid=1234 exitcode=1",
                      stoppedEvent.toString());
@@ -124,8 +106,6 @@ public class EventTestCase {
         parseEvent(crashEvent);
         parseEvent(progressEvent1);
         parseEvent(progressEvent2);
-        parseEvent(reloadingEvent);
-        parseEvent(reloadedEvent);
         parseEvent(startingEvent);
         parseEvent(startedEvent);
         parseEvent(stoppingEvent);
@@ -166,8 +146,6 @@ public class EventTestCase {
             Event.started("startedName");
             Event.stopping("stoppingName", "whyParam");
             Event.stopped("stoppedName", 1, 2);
-            Event.reloading("reloadingName");
-            Event.reloaded("reloadedName");
             Event.count("countName", 1);
             Event.progress("progressName", 1, 2);
             Event.crash("crashName", 1, 2);
@@ -176,7 +154,7 @@ public class EventTestCase {
 
     @Test
     public void testFunnyEvent () {
-        String funnyEvent = "collection/1 collectionId=1111111111 name=\"syncrows\" params=\"column=0 badrow=1 goodrow=0\"";
+        String funnyEvent = "value/1 collectionId=1111111111 name=\"syncrows\" params=\"column=0 badrow=1 goodrow=0\"";
         try {
 			Event e = Event.parse(funnyEvent);
         }
