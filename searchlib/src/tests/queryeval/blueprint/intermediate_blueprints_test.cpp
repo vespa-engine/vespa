@@ -10,10 +10,10 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("blueprint_test");
@@ -1246,7 +1246,7 @@ makeTerm(const std::string & term)
 TEST("require that children does not optimize when parents refuse them to") {
     FakeRequestContext requestContext;
     search::diskindex::TestDiskIndex index;
-    vespalib::mkdir("index", false);
+    std::filesystem::create_directory(std::filesystem::path("index"));
     index.buildSchema();
     index.openIndex("index/1", false, true, false, false, false);
     FieldSpecBaseList fields;

@@ -14,6 +14,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/document/util/queue.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 
@@ -123,7 +124,7 @@ Fusion::merge(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> 
         }
     }
 
-    vespalib::mkdir(_fusion_out_index.get_path(), false);
+    std::filesystem::create_directory(std::filesystem::path(_fusion_out_index.get_path()));
     _fusion_out_index.get_schema().saveToFile(_fusion_out_index.get_path() + "/schema.txt");
     if (!DocumentSummary::writeDocIdLimit(_fusion_out_index.get_path(), _fusion_out_index.get_doc_id_limit())) {
         LOG(error, "Could not write docsum count in dir %s: %s", _fusion_out_index.get_path().c_str(), getLastErrorString().c_str());

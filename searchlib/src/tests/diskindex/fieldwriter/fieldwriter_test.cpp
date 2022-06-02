@@ -13,7 +13,6 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -22,6 +21,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <unistd.h>
+#include <filesystem>
 #include <vespa/log/log.h>
 LOG_SETUP("fieldwriter_test");
 
@@ -702,7 +702,7 @@ FieldWriterTest::main(int argc, char **argv)
     _wordSet.setupParams(false, false);
     _wordSet.setupWords(_rnd, _numDocs, _commonDocFreq, _numWordsPerClass);
 
-    vespalib::mkdir("index", false);
+    std::filesystem::create_directory(std::filesystem::path("index"));
     testFieldWriterVariants(_wordSet, _numDocs, _verbose);
 
     _wordSet2.setupParams(false, false);
@@ -711,7 +711,7 @@ FieldWriterTest::main(int argc, char **argv)
     _wordSet2.addDocIdBias(docIdBias);  // Large skip numbers
     testFieldWriterVariantsWithHighLids(_wordSet2, _numDocs + docIdBias,
                                         _verbose);
-    vespalib::rmdir("index", true);
+    std::filesystem::remove_all(std::filesystem::path("index"));
     return 0;
 }
 

@@ -16,10 +16,10 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/enumstore.hpp>
+#include <filesystem>
 #include <iostream>
 
 #include <vespa/log/log.h>
@@ -1199,9 +1199,9 @@ int
 main(int argc, char* argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
-    vespalib::rmdir(tmp_dir, true);
-    vespalib::mkdir(tmp_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(tmp_dir));
+    std::filesystem::create_directories(std::filesystem::path(tmp_dir));
     int retval = RUN_ALL_TESTS();
-    vespalib::rmdir(tmp_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(tmp_dir));
     return retval;
 }

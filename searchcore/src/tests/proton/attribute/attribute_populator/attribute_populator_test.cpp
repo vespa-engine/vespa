@@ -115,6 +115,6 @@ TEST_F("require that reprocess with document populates attribute", Fixture)
 
 TEST_MAIN()
 {
-    vespalib::rmdir(TEST_DIR, true);
+    std::filesystem::remove_all(std::filesystem::path(TEST_DIR));
     TEST_RUN_ALL();
 }

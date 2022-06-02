@@ -17,6 +17,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 
@@ -83,7 +84,7 @@ void
 FieldMerger::make_tmp_dirs()
 {
     for (const auto & index : _fusion_out_index.get_old_indexes()) {
-        vespalib::mkdir(createTmpPath(_field_dir, index.getIndex()), false);
+        std::filesystem::create_directory(std::filesystem::path(createTmpPath(_field_dir, index.getIndex())));
     }
 }
 
@@ -484,7 +485,7 @@ FieldMerger::merge_field_start()
         _state = State::MERGE_DONE;
         return;
     }
-    vespalib::mkdir(_field_dir, false);
+    std::filesystem::create_directory(std::filesystem::path(_field_dir));
 
     LOG(debug, "merge_field for field %s dir %s", _field_name.c_str(), _field_dir.c_str());
 

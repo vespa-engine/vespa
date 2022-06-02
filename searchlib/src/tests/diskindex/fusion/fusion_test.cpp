@@ -19,12 +19,12 @@
 #include <vespa/vespalib/btree/btreenode.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("fusion_test");
@@ -542,9 +542,9 @@ namespace {
 
 void clean_field_length_testdirs()
 {
-    vespalib::rmdir("fldump2", true);
-    vespalib::rmdir("fldump3", true);
-    vespalib::rmdir("fldump4", true);
+    std::filesystem::remove_all(std::filesystem::path("fldump2"));
+    std::filesystem::remove_all(std::filesystem::path("fldump3"));
+    std::filesystem::remove_all(std::filesystem::path("fldump4"));
 }
 
 }
@@ -593,8 +593,8 @@ namespace {
 
 void clean_stopped_fusion_testdirs()
 {
-    vespalib::rmdir("stopdump2", true);
-    vespalib::rmdir("stopdump3", true);
+    std::filesystem::remove_all(std::filesystem::path("stopdump2"));
+    std::filesystem::remove_all(std::filesystem::path("stopdump3"));
 }
 
 class MyFlushToken : public FlushToken
@@ -631,11 +631,11 @@ TEST_F(FusionTest, require_that_fusion_can_be_stopped)
     make_simple_index("stopdump2", MockFieldLengthInspector());
     ASSERT_TRUE(try_merge_simple_indexes("stopdump3", {"stopdump2"}, flush_token));
     EXPECT_EQ(48, flush_token->get_checks());
-    vespalib::rmdir("stopdump3", true);
+    std::filesystem::remove_all(std::filesystem::path("stopdump3"));
     flush_token = std::make_shared<MyFlushToken>(1);
     ASSERT_FALSE(try_merge_simple_indexes("stopdump3", {"stopdump2"}, flush_token));
     EXPECT_EQ(8, flush_token->get_checks());
-    vespalib::rmdir("stopdump3", true);
+    std::filesystem::remove_all(std::filesystem::path("stopdump3"));
     flush_token = std::make_shared<MyFlushToken>(47);
     ASSERT_FALSE(try_merge_simple_indexes("stopdump3", {"stopdump2"}, flush_token));
     EXPECT_LE(48, flush_token->get_checks());

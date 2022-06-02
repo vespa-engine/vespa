@@ -2,8 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <filesystem>
 
 namespace search::test {
 
@@ -25,11 +25,11 @@ public:
           _rmdir(rmdir),
           _cleanup(true)
     {
-        vespalib::mkdir(_mkdir);
+        std::filesystem::create_directories(std::filesystem::path(_mkdir));
     }
     ~DirectoryHandler() {
         if (_cleanup) {
-            vespalib::rmdir(_rmdir, true);
+            std::filesystem::remove_all(std::filesystem::path(_rmdir));
         }
     }
     void cleanup(bool v) { _cleanup = v; }

@@ -67,7 +67,7 @@ saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, S
     auto writer = dir->getWriter();
     writer->createInvalidSnapshot(serialNum);
     auto snapshotdir = writer->getSnapshotDir(serialNum);
-    vespalib::mkdir(snapshotdir);
+    std::filesystem::create_directory(std::filesystem::path(snapshotdir));
     auto av = search::AttributeFactory::createAttribute(snapshotdir + "/" + name, cfg);
     av->setCreateSerialNum(createSerialNum);
     av->addReservedDoc();
@@ -245,6 +245,6 @@ TEST("require that transient memory usage is reported for attribute load without
 
 TEST_MAIN()
 {
-    vespalib::rmdir(test_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(test_dir));
     TEST_RUN_ALL();
 }

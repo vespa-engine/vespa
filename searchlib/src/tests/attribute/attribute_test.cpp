@@ -20,7 +20,6 @@
 #include <vespa/document/update/arithmeticvalueupdate.h>
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/mapvalueupdate.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/round_up_to_page_size.h>
@@ -28,6 +27,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/file.h>
 #include <cmath>
+#include <filesystem>
 #include <iostream>
 
 #include <vespa/log/log.h>
@@ -291,7 +291,6 @@ protected:
     void testPendingCompaction();
     void testConditionalCommit();
 
-    static int64_t stat_size(const vespalib::string& swapfile);
     int test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg);
     void test_paged_attributes();
 
@@ -2292,14 +2291,6 @@ AttributeTest::testConditionalCommit() {
     EXPECT_EQ(0u, iv.getChangeVectorMemoryUsage().usedBytes());
 }
 
-int64_t
-AttributeTest::stat_size(const vespalib::string& swapfile)
-{
-    auto stat = vespalib::stat(swapfile);
-    EXPECT_TRUE(stat);
-    return stat ? stat->_size : 0u;
-}
-
 int
 AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib::string& swapfile, const search::attribute::Config& cfg)
 {
@@ -2322,10 +2313,10 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
     if (failed) {
         return 0;
     }
-    auto size1 = stat_size(swapfile);
+    auto size1 = std::filesystem::file_size(std::filesystem::path(swapfile));
     // Grow mapping from lid to value or multivalue index
     addClearedDocs(av, lid_mapping_size);
-    auto size2 = stat_size(swapfile);
+    auto size2 = std::filesystem::file_size(std::filesystem::path(swapfile));
     auto size3 = size2;
     EXPECT_LT(size1, size2);
     if (cfg.collectionType().isMultiValue()) {
@@ -2337,7 +2328,7 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
             }
             av->commit();
         }
-        size3 = stat_size(swapfile);
+        size3 = std::filesystem::file_size(std::filesystem::path(swapfile));
         EXPECT_LT(size2, size3);
         result += 2;
     }
@@ -2355,7 +2346,7 @@ AttributeTest::test_paged_attribute(const vespalib::string& name, const vespalib
             }
             av->commit();
         }
-        auto size4 = stat_size(swapfile);
+        auto size4 = std::filesystem::file_size(std::filesystem::path(swapfile));
         EXPECT_LT(size3, size4);
         result += 4;
     }
@@ -2385,7 +2376,7 @@ AttributeTest::test_paged_attributes()
     cfg5.setPaged(true);
     EXPECT_EQ(1, test_paged_attribute("std-bool-sv-paged", basedir + "/4.std-bool-sv-paged/swapfile", cfg5));
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
-    vespalib::rmdir(basedir, true);
+    std::filesystem::remove_all(std::filesystem::path(basedir));
 }
 
 void testNamePrefix() {
@@ -2545,17 +2536,17 @@ TEST_F(AttributeTest, paged_attributes)
 void
 deleteDataDirs()
 {
-    vespalib::rmdir(tmpDir, true);
-    vespalib::rmdir(clsDir, true);
-    vespalib::rmdir(asuDir, true);
+    std::filesystem::remove_all(std::filesystem::path(tmpDir));
+    std::filesystem::remove_all(std::filesystem::path(clsDir));
+    std::filesystem::remove_all(std::filesystem::path(asuDir));
 }
 
 void
 createDataDirs()
 {
-    vespalib::mkdir(tmpDir, true);
-    vespalib::mkdir(clsDir, true);
-    vespalib::mkdir(asuDir, true);
+    std::filesystem::create_directories(std::filesystem::path(tmpDir));
+    std::filesystem::create_directories(std::filesystem::path(clsDir));
+    std::filesystem::create_directories(std::filesystem::path(asuDir));
 }
 
 int
