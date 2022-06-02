@@ -133,14 +133,6 @@ public class DiscFilterResponse {
 		parent.setStatus(status);
 	}
 
-	/**
-	 * Return the parent HttpResponse
-	 *
-	 * @deprecated Use methods on {@link DiscFilterResponse} instead
-     */
-	@Deprecated(forRemoval = true, since = "7.511")
-	public HttpResponse getParentResponse() { return (HttpResponse) parent; }
-
     public void addCookie(JDiscCookieWrapper cookie) {
         if(cookie != null) {
             List<Cookie> cookies = new ArrayList<>();
