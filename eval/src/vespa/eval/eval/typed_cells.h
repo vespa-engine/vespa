@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <assert.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/eval/eval/cell_type.h>
 

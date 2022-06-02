@@ -6,10 +6,6 @@
 #include "value_type.h"
 #include "typed_cells.h"
 #include <vespa/vespalib/util/string_id.h>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/traits.h>
-#include <vector>
-#include <memory>
 
 namespace vespalib::eval {
 
@@ -193,8 +189,7 @@ private:
     {
         assert(check_cell_type<T>(type.cell_type()));
         auto base = create_value_builder_base(type, transient, num_mapped_dims_in, subspace_size_in, expected_subspaces);
-        ValueBuilder<T> *builder = dynamic_cast<ValueBuilder<T>*>(base.get());
-        assert(builder);
+        ValueBuilder<T> *builder = static_cast<ValueBuilder<T>*>(base.get());
         base.release();
         return std::unique_ptr<ValueBuilder<T>>(builder);
     }
