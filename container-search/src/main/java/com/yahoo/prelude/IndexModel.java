@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -35,8 +36,11 @@ public final class IndexModel {
 
     public IndexModel(Map<String, List<String>> masterClusters, Collection<SearchDefinition> searchDefinitions) {
         this.masterClusters = masterClusters;
-        this.searchDefinitions = searchDefinitions.stream().collect(Collectors.toMap(sd -> sd.getName(), sd -> sd));
+        this.searchDefinitions = new LinkedHashMap<>();
         this.unionSearchDefinition = unionOf(searchDefinitions);
+        for (var sd : searchDefinitions) {
+            this.searchDefinitions.put(sd.getName(), sd);
+        }
     }
 
     public IndexModel(IndexInfoConfig indexInfo, QrSearchersConfig clusters) {
