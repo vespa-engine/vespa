@@ -5,8 +5,7 @@ package com.yahoo.log.event;
  *
  * @author  Bjorn Borud
  */
-@Deprecated(forRemoval = true, since = "7")
-public class Count extends Event {
+class Count extends Event {
     public Count () {
     }
 
