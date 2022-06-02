@@ -3,18 +3,18 @@
 #include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/assert.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <vespa/defaults.h>
+#include <filesystem>
 
 using namespace vespalib;
 
 TEST("that it borks the first time.") {
     std::string assertName;
     const char * assertDir = "var/db/vespa/tmp";
-    vespalib::rmdir("var", true);
-    ASSERT_TRUE(vespalib::mkdir(assertDir, true));
+    std::filesystem::remove_all(std::filesystem::path("var"));
+    ASSERT_TRUE(std::filesystem::create_directories(std::filesystem::path(assertDir)));
     {
         Process proc("ulimit -c 0 && exec env VESPA_HOME=./ ./vespalib_asserter_app myassert 10000");
         ASSERT_EQUAL(proc.join() & 0x7f, 6);
@@ -30,7 +30,7 @@ TEST("that it borks the first time.") {
         ASSERT_EQUAL(proc.join() & 0x7f, 6);
     }
     ASSERT_EQUAL(0, unlink(assertName.c_str()));
-    ASSERT_TRUE(vespalib::rmdir("var", true));
+    ASSERT_LESS(0u, std::filesystem::remove_all(std::filesystem::path("var")));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

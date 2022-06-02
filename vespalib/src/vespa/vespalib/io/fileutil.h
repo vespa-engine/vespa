@@ -223,6 +223,9 @@ extern vespalib::string getCurrentDirectory();
  * @throw IoException If we failed create the directory.
  *
  * @return True if it did not exist, false if it did.
+ *
+ * This function is deprecated. Use std::filesystem::create_directory or std::filesystem::create_directories
+ * instead.
  */
 extern bool mkdir(const vespalib::string & directory, bool recursive = true);
 
