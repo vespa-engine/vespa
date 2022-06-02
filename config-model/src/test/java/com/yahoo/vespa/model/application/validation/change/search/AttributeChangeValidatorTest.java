@@ -116,14 +116,6 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
-    public void changing_huge_require_restart() throws Exception {
-        new Fixture("field f1 type string { indexing: attribute }",
-                "field f1 type string { indexing: attribute \n attribute: huge }").
-                assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
-                                                  "Field 'f1' changed: add attribute 'huge'"));
-    }
-
-    @Test
     public void changing_dense_posting_list_threshold_require_restart() throws Exception {
         new Fixture(
                 "field f1 type predicate { indexing: attribute \n index { arity: 8 \n dense-posting-list-threshold: 0.2 } }",
