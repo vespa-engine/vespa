@@ -31,8 +31,7 @@ public class SimpleServer {
     @SuppressWarnings("deprecation")
     public SimpleServer(String configDir, MessageHandler msgHandler) throws IOException, ListenFailedException {
         slobrok = new Slobrok();
-        documentMgr = new DocumentTypeManager();
-        documentMgr.configure("dir:" + configDir);
+        documentMgr = DocumentTypeManager.fromFile(configDir + "/documentmanager.cfg");
         mbus = new MessageBus(new RPCNetwork(new RPCNetworkParams()
                                                      .setSlobrokConfigId(slobrok.configId())
                                                      .setIdentity(new Identity("server"))),
