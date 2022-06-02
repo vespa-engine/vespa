@@ -56,7 +56,6 @@ public final class Attribute implements Cloneable, Serializable {
     private boolean fastRank = false;
     private boolean fastSearch = false;
     private boolean fastAccess = false;
-    private boolean huge = false;
     private boolean mutable = false;
     private boolean paged = false;
     private int arity = BooleanIndexDefinition.DEFAULT_ARITY;
@@ -199,7 +198,6 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean isFastSearch()           { return fastSearch; }
     public boolean isFastRank()            {  return fastRank; }
     public boolean isFastAccess()           { return fastAccess; }
-    public boolean isHuge()                 { return huge; }
     public boolean isPaged()                { return paged; }
     public boolean isPosition()             { return isPosition; }
     public boolean isMutable()              { return mutable; }
@@ -245,7 +243,6 @@ public final class Attribute implements Cloneable, Serializable {
         throw badGen.get();
     }
     public void setFastSearch(boolean fastSearch)                { this.fastSearch = fastSearch; }
-    public void setHuge(boolean huge)                            { this.huge = huge; }
     public void setPaged(boolean paged)                          { this.paged = paged; }
     public void setFastAccess(boolean fastAccess)                { this.fastAccess = fastAccess; }
     public void setPosition(boolean position)                    { this.isPosition = position; }
@@ -379,7 +376,7 @@ public final class Attribute implements Cloneable, Serializable {
     public int hashCode() {
         return Objects.hash(
                 name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero,
-                createIfNonExistent, isPosition, huge, mutable, paged, enableBitVectors, enableOnlyBitVector,
+                createIfNonExistent, isPosition, mutable, paged, enableBitVectors, enableOnlyBitVector,
                 tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
     }
 
@@ -402,7 +399,6 @@ public final class Attribute implements Cloneable, Serializable {
         if (this.enableBitVectors != other.enableBitVectors) return false;
         if (this.enableOnlyBitVector != other.enableOnlyBitVector) return false;
         if (this.fastSearch != other.fastSearch) return false;
-        if (this.huge != other.huge) return false;
         if (this.mutable != other.mutable) return false;
         if (this.paged != other.paged) return false;
         if (! this.sorting.equals(other.sorting)) return false;
