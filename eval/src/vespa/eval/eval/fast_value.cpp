@@ -25,6 +25,125 @@ struct CreateFastValueBuilderBase {
     }
 };
 
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+
+// look up a full address in the map directly
+struct FastLookupView : public Value::Index::View {
+
+    const FastAddrMap &map;
+    size_t             subspace;
+
+    FastLookupView(const FastAddrMap &map_in)
+            : map(map_in), subspace(FastAddrMap::npos()) {}
+
+    void lookup(ConstArrayRef<const string_id*> addr) override {
+        subspace = map.lookup(addr);
+    }
+
+    bool next_result(ConstArrayRef<string_id*>, size_t &idx_out) override {
+        if (subspace == FastAddrMap::npos()) {
+            return false;
+        }
+        idx_out = subspace;
+        subspace = FastAddrMap::npos();
+        return true;
+    }
+};
+
+//-----------------------------------------------------------------------------
+
+// iterate all mappings
+struct FastIterateView : public Value::Index::View {
+
+    const FastAddrMap &map;
+    size_t             pos;
+
+    FastIterateView(const FastAddrMap &map_in)
+            : map(map_in), pos(FastAddrMap::npos()) {}
+
+    void lookup(ConstArrayRef<const string_id*>) override {
+        pos = 0;
+    }
+
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
+        if (pos >= map.size()) {
+            return false;
+        }
+        auto addr = map.get_addr(pos);
+        assert(addr.size() == addr_out.size());
+        for (size_t i = 0; i < addr.size(); ++i) {
+            *addr_out[i] = addr[i];
+        }
+        idx_out = pos++;
+        return true;
+    }
+};
+// find matching mappings for a partial address with brute force filtering
+struct FastFilterView : public Value::Index::View {
+
+    const FastAddrMap        &map;
+    SmallVector<size_t>       match_dims;
+    SmallVector<size_t>       extract_dims;
+    SmallVector<string_id>    query;
+    size_t                    pos;
+
+    bool is_match(ConstArrayRef<string_id> addr) const {
+        for (size_t i = 0; i < query.size(); ++i) {
+            if (query[i] != addr[match_dims[i]]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    FastFilterView(const FastAddrMap &map_in, ConstArrayRef<size_t> match_dims_in) __attribute__((noinline));
+    FastFilterView(const FastFilterView &) = delete;
+    FastFilterView & operator =(const FastFilterView &) = delete;
+    ~FastFilterView() override;
+
+    void lookup(ConstArrayRef<const string_id*> addr) override {
+        assert(addr.size() == query.size());
+        for (size_t i = 0; i < addr.size(); ++i) {
+            query[i] = *addr[i];
+        }
+        pos = 0;
+    }
+
+    bool next_result(ConstArrayRef<string_id*> addr_out, size_t &idx_out) override {
+        while (pos < map.size()) {
+            auto addr = map.get_addr(pos);
+            if (is_match(addr)) {
+                assert(addr_out.size() == extract_dims.size());
+                for (size_t i = 0; i < extract_dims.size(); ++i) {
+                    *addr_out[i] = addr[extract_dims[i]];
+                }
+                idx_out = pos++;
+                return true;
+            }
+            ++pos;
+        }
+        return false;
+    }
+};
+
+FastFilterView::FastFilterView(const FastAddrMap &map_in, ConstArrayRef<size_t> match_dims_in)
+    : map(map_in), match_dims(match_dims_in.begin(), match_dims_in.end()),
+      extract_dims(), query(match_dims.size()), pos(FastAddrMap::npos())
+{
+    auto my_pos = match_dims.begin();
+    for (size_t i = 0; i < map.addr_size(); ++i) {
+        if ((my_pos == match_dims.end()) || (*my_pos != i)) {
+            extract_dims.push_back(i);
+        } else {
+            ++my_pos;
+        }
+    }
+    assert(my_pos == match_dims.end());
+    assert((match_dims.size() + extract_dims.size()) == map.addr_size());
+}
+
+FastFilterView::~FastFilterView() = default;
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
