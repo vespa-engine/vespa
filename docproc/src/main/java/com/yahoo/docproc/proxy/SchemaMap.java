@@ -16,7 +16,6 @@ import java.util.Map.Entry;
  * 
  * @author vegardh
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class SchemaMap implements ConfigSubscriber.SingleSubscriber<SchemamappingConfig> {
 
     /** Map key. Doctype can be null, not the others. */

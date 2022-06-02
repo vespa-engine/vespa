@@ -40,7 +40,6 @@ public class DocumentTypeManager {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManager.class.getName());
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private ConfigSubscriber subscriber;
 
     // *Configured data types* (not built-in/primitive) indexed by their id
