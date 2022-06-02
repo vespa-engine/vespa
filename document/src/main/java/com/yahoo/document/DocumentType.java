@@ -32,12 +32,11 @@ import java.util.Set;
  * @author Thomas Gundersen
  * @author bratseth
  */
-// TODO: Remove header/body concept on Vespa 8
 public class DocumentType extends StructuredDataType {
 
     public static final String DOCUMENT = "[document]";
     public static final int classId = registerClass(Ids.document + 58, DocumentType.class);
-    private StructDataType headerType;
+    private StructDataType contentStructType;
     private List<DocumentType> inherits = new ArrayList<>(1);
     private Map<String, Set<Field>> fieldSets = new HashMap<>();
     private final Set<String> importedFieldNames;
@@ -52,7 +51,7 @@ public class DocumentType extends StructuredDataType {
      * @param name The name of the new document type
      */
     public DocumentType(String name) {
-        this(name, createHeaderStructType(name));
+        this(name, createContentStructType(name));
     }
 
     /**
@@ -61,30 +60,30 @@ public class DocumentType extends StructuredDataType {
      * The document type id will be generated as a hash from the document type name.
      *
      * @param name       The name of the new document type
-     * @param headerType The type of the header struct
+     * @param contentStructType The type of the content struct
      */
-    public DocumentType(String name, StructDataType headerType) {
-        this(name, headerType, Collections.emptySet());
+    public DocumentType(String name, StructDataType contentStructType) {
+        this(name, contentStructType, Collections.emptySet());
     }
 
-    public DocumentType(String name, StructDataType headerType, Set<String> importedFieldNames) {
+    public DocumentType(String name, StructDataType contentStructType, Set<String> importedFieldNames) {
         super(name);
-        this.headerType = headerType;
+        this.contentStructType = contentStructType;
         this.importedFieldNames = Collections.unmodifiableSet(importedFieldNames);
     }
 
     public DocumentType(String name, Set<String> importedFieldNames) {
-        this(name, createHeaderStructType(name), importedFieldNames);
+        this(name, createContentStructType(name), importedFieldNames);
     }
 
-    private static StructDataType createHeaderStructType(String name) {
+    private static StructDataType createContentStructType(String name) {
         return new StructDataType(name + ".header");
     }
 
     @Override
     public DocumentType clone() {
         DocumentType type = (DocumentType) super.clone();
-        type.headerType = headerType.clone();
+        type.contentStructType = contentStructType.clone();
         type.inherits = new ArrayList<>(inherits.size());
         type.inherits.addAll(inherits);
         return type;
@@ -119,7 +118,7 @@ public class DocumentType extends StructuredDataType {
      * @return a struct describing the document fields.
      */
     public StructDataType contentStruct() {
-        return headerType;
+        return contentStructType;
     }
 
     /**
@@ -177,17 +176,17 @@ public class DocumentType extends StructuredDataType {
             }
         }
         // Get parent fields into fields specified in this type
-        StructDataType header = headerType.clone();
+        StructDataType header = contentStructType.clone();
 
         header.clearFields();
 
         for (Field field : getAllUniqueFields()) {
             header.addField(field);
         }
-        headerType.assign(header);
+        contentStructType.assign(header);
 
-        if (!seenTypes.contains(headerType)) {
-            headerType.register(manager, seenTypes);
+        if (!seenTypes.contains(contentStructType)) {
+            contentStructType.register(manager, seenTypes);
         }
         manager.registerSingleType(this);
     }
@@ -217,7 +216,7 @@ public class DocumentType extends StructuredDataType {
         if (isRegistered()) {
             throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
         }
-        headerType.addField(field);
+        contentStructType.addField(field);
     }
 
     // Do not use, public only for testing
@@ -257,7 +256,7 @@ public class DocumentType extends StructuredDataType {
             throw new IllegalStateException("You cannot add fields to a document type that is already registered.");
         }
         Field field = new Field(name, type);
-        headerType.addField(field);
+        contentStructType.addField(field);
         return field;
     }
 
@@ -301,8 +300,8 @@ public class DocumentType extends StructuredDataType {
 
         inherits.add(type);
         for (var field : type.getAllUniqueFields()) {
-            if (! headerType.hasField(field)) {
-                headerType.addField(field);
+            if (! contentStructType.hasField(field)) {
+                contentStructType.addField(field);
             }
         }
     }
@@ -368,7 +367,7 @@ public class DocumentType extends StructuredDataType {
      * @return returns the matching field, or null if not found
      */
     public Field getField(String name) {
-        Field field = headerType.getField(name);
+        Field field = contentStructType.getField(name);
         if (field == null && !isRegistered()) {
             for (DocumentType inheritedType : inherits) {
                 field = inheritedType.getField(name);
@@ -380,7 +379,7 @@ public class DocumentType extends StructuredDataType {
 
     @Override
     public Field getField(int id) {
-        Field field = headerType.getField(id);
+        Field field = contentStructType.getField(id);
         if (field == null && !isRegistered()) {
             for (DocumentType inheritedType : inherits) {
                 field = inheritedType.getField(id);
@@ -401,7 +400,7 @@ public class DocumentType extends StructuredDataType {
     }
 
     public int getFieldCount() {
-        return headerType.getFieldCount();
+        return contentStructType.getFieldCount();
     }
 
     public Set<String> getImportedFieldNames() {
@@ -422,7 +421,7 @@ public class DocumentType extends StructuredDataType {
         if (isRegistered()) {
             throw new IllegalStateException("You cannot remove fields from a document type that is already registered.");
         }
-        Field field = headerType.removeField(name);
+        Field field = contentStructType.removeField(name);
         if (field == null) {
             for (DocumentType inheritedType : inherits) {
                 field = inheritedType.removeField(name);
@@ -446,7 +445,7 @@ public class DocumentType extends StructuredDataType {
             collection.addAll(type.getFields());
         }
 
-        collection.addAll(headerType.getFields());
+        collection.addAll(contentStructType.getFields());
         return ImmutableList.copyOf(collection);
     }
 
@@ -496,14 +495,14 @@ public class DocumentType extends StructuredDataType {
      * @return An iterator for iterating the fields in this documenttype.
      */
     public Iterator<Field> fieldIteratorThisTypeOnly() {
-        return headerType.getFields().iterator();
+        return contentStructType.getFields().iterator();
     }
 
     public boolean equals(Object o) {
         if (!(o instanceof DocumentType)) return false;
         DocumentType other = (DocumentType) o;
         // Ignore whether one of them have added inheritance to super Document.0 type
-        if (super.equals(o) && headerType.equals(other.headerType)) {
+        if (super.equals(o) && contentStructType.equals(other.contentStructType)) {
             if ((inherits.size() > 1 || other.inherits.size() > 1) ||
                 (inherits.size() == 1 && other.inherits.size() == 1)) {
                 return inherits.equals(other.inherits);
@@ -515,7 +514,7 @@ public class DocumentType extends StructuredDataType {
     }
 
     public int hashCode() {
-        return super.hashCode() + headerType.hashCode() + inherits.hashCode();
+        return super.hashCode() + contentStructType.hashCode() + inherits.hashCode();
     }
 
     @Override
@@ -530,7 +529,7 @@ public class DocumentType extends StructuredDataType {
     @Override
     public void visitMembers(ObjectVisitor visitor) {
         super.visitMembers(visitor);
-        visitor.visit("headertype", headerType);
+        visitor.visit("headertype", contentStructType);
         visitor.visit("inherits", inherits);
     }
 }
