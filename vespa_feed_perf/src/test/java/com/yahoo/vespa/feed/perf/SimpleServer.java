@@ -57,7 +57,6 @@ public class SimpleServer {
     public final void close() {
         session.destroy();
         mbus.destroy();
-        documentMgr.shutdown();
         slobrok.stop();
     }
 

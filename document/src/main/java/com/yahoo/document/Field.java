@@ -201,16 +201,6 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         return forcedId;
     }
 
-    /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean isHeader() {
-        return true;
-    }
-
-    /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void setHeader(boolean header) { }
-
     /** Two fields are equal if they have the same name and the same data type */
     @Override
     public boolean equals(Object o) {
