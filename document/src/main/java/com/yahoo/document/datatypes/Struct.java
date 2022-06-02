@@ -65,22 +65,6 @@ public class Struct extends StructuredFieldValue {
         return this.version;
     }
 
-    /** @deprecated Will go away on Vespa 8 */
-    @Deprecated
-    public com.yahoo.compress.CompressionType getCompressionType() {
-        return com.yahoo.compress.CompressionType.NONE;
-    }
-
-    /** @deprecated Will go away on Vespa 8 */
-    @Deprecated
-    public int getCompressionLevel() { return 9; }
-
-    /** @deprecated Will go away on Vespa 8 */
-    @Deprecated
-    public float getCompressionThreshold() {
-        return .95f;
-    }
-
     @Override
     public Struct clone() {
         Struct struct = (Struct) super.clone();
