@@ -24,7 +24,6 @@ import com.yahoo.logserver.handlers.AbstractLogHandler;
  *
  * @author hmusum
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove (com.yahoo.log.event)
 public class LogMetricsHandler extends AbstractLogHandler {
     private static final long EVENTINTERVAL = 5 * 60; // in seconds
 

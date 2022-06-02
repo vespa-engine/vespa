@@ -98,20 +98,6 @@ do {                                                    \
     }                                                   \
 } while (false)
 
-#define EV_RELOADING(name)                      \
-do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventReloading(name);          \
-    }                                           \
-} while (false)
-
-#define EV_RELOADED(name)                       \
-do {                                            \
-    if (logger.wants(ns_log::Logger::event)) {  \
-        logger.doEventReloaded(name);           \
-    }                                           \
-} while (false)
-
 #define EV_CRASH(name,pid,signal)               \
 do {                                            \
     if (logger.wants(ns_log::Logger::event)) {  \
