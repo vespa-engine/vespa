@@ -64,7 +64,6 @@ using searchcorespi::index::IThreadingService;
 using storage::spi::Timestamp;
 using vespa::config::search::core::ProtonConfig;
 using vespa::config::content::core::BucketspacesConfig;
-using vespalib::mkdir;
 using vespalib::datastore::CompactionStrategy;
 using proton::index::IndexConfig;
 

@@ -869,6 +869,6 @@ TEST_F("require that shrink flushtarget is handed over to new attribute manager"
 
 TEST_MAIN()
 {
-    vespalib::rmdir(test_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(test_dir));
     TEST_RUN_ALL();
 }

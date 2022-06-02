@@ -11,6 +11,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <filesystem>
 #include <fstream>
 #include <thread>
 
@@ -345,14 +346,14 @@ writeDomainDir(std::shared_lock<std::shared_mutex> &guard,
 {
     (void) guard;
     vespalib::string domainListTmp(domainList + ".tmp");
-    vespalib::unlink(domainListTmp);
+    std::filesystem::remove(std::filesystem::path(domainListTmp));
     std::ofstream domainDir(domainListTmp.c_str(), std::ios::trunc);
     for (const auto &domainEntry : domains) {
         domainDir << domainEntry.first << std::endl;
     }
     domainDir.close();
     vespalib::File::sync(domainListTmp);
-    vespalib::rename(domainListTmp, domainList, false, false);
+    std::filesystem::rename(std::filesystem::path(domainListTmp), std::filesystem::path(domainList));
     vespalib::File::sync(dir);
 }
 
@@ -475,7 +476,7 @@ TransLogServer::deleteDomain(FRT_RPCRequest *req)
                 WriteGuard domainGuard(_domainMutex);
                 _domains.erase(domainName);
             }
-            vespalib::rmdir(Domain::getDir(dir(), domainName), true);
+            std::filesystem::remove_all(std::filesystem::path(Domain::getDir(dir(), domainName)));
             vespalib::File::sync(dir());
             ReadGuard domainGuard(_domainMutex);
             writeDomainDir(domainGuard, dir(), domainList(), _domains);

@@ -307,7 +307,7 @@ TEST(InterruptedTest, require_that_added_attribute_aspect_with_flushed_attribute
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(INIT_SERIAL_NUM);
         auto snapshotdir = writer->getSnapshotDir(INIT_SERIAL_NUM);
-        vespalib::mkdir(snapshotdir);
+        std::filesystem::create_directory(std::filesystem::path(snapshotdir));
         writer->markValidSnapshot(INIT_SERIAL_NUM);
         auto av = AttributeFactory::createAttribute(snapshotdir + "/a",
                                                     Config(BasicType::STRING));
