@@ -132,12 +132,10 @@ public class JRTConfigSubscription<T extends ConfigInstance> extends ConfigSubsc
      * @param jrtRequest a config request
      * @return an instance of a config class (subclass of ConfigInstance)
      */
-    @SuppressWarnings("deprecation")
     private T toConfigInstance(JRTClientConfigRequest jrtRequest) {
         Payload payload = jrtRequest.getNewPayload();
         ConfigPayload configPayload = ConfigPayload.fromUtf8Array(payload.withCompression(CompressionType.UNCOMPRESSED).getData());
         T configInstance = configPayload.toInstance(configClass, jrtRequest.getConfigKey().getConfigId());
-        configInstance.setConfigMd5(jrtRequest.getNewChecksums().getForType(MD5).asString()); // Note: Sets configmd5 in ConfigInstance
         return configInstance;
     }
 
