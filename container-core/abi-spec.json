@@ -401,8 +401,6 @@
       "public void setInRotation(java.lang.Boolean)",
       "public void addToRotation(java.lang.String)",
       "public void removeFromRotation(java.lang.String)",
-      "public void addToRotation(java.lang.Object)",
-      "public void removeFromRotation(java.lang.Object)",
       "public boolean isInRotation()"
     ],
     "fields": []
