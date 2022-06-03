@@ -114,22 +114,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void deprecated_jdisc_tag_is_allowed() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
-                nodesXml,
-                "</jdisc>" );
-        TestLogger logger = new TestLogger();
-        createModel(root, logger, clusterElem);
-        AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
-        assertNotNull(container);
-
-        assertFalse(logger.msgs.isEmpty());
-        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
-        assertEquals("'jdisc' is deprecated as tag name. Use 'container' instead.", logger.msgs.get(0).getSecond());
-    }
-
-    @Test
     public void default_port_is_4080() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",

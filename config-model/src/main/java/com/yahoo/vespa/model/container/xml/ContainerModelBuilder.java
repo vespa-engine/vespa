@@ -89,7 +89,6 @@ import com.yahoo.vespa.model.container.xml.embedder.EmbedderConfig;
 import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -121,7 +120,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
     private static final String CONTAINER_TAG = "container";
-    private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     // The node count to enforce in a cluster running ZooKeeper
@@ -137,8 +135,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean httpServerEnabled;
     protected DeployLogger log;
 
-    public static final List<ConfigModelId> configModelIds =  
-            ImmutableList.of(ConfigModelId.fromName(CONTAINER_TAG), ConfigModelId.fromName(DEPRECATED_CONTAINER_TAG));
+    public static final List<ConfigModelId> configModelIds = ImmutableList.of(ConfigModelId.fromName(CONTAINER_TAG));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
@@ -163,7 +160,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         app = modelContext.getApplicationPackage();
 
         checkVersion(spec);
-        checkTagName(spec, log);
 
         ApplicationContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
@@ -650,13 +646,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             throw new IllegalArgumentException("Expected container version to be 1.0, but got " + version);
     }
 
-    private void checkTagName(Element spec, DeployLogger logger) {
-        if (spec.getTagName().equals(DEPRECATED_CONTAINER_TAG)) {
-            logger.logApplicationPackage(WARNING, "'" + DEPRECATED_CONTAINER_TAG +
-                                                  "' is deprecated as tag name. Use '" + CONTAINER_TAG + "' instead.");
-        }
-    }
-
     private void addNodes(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         if (standaloneBuilder)
             addStandaloneNode(cluster, context.getDeployState());
@@ -1059,7 +1048,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     public static boolean isContainerTag(Element element) {
-        return CONTAINER_TAG.equals(element.getTagName()) || DEPRECATED_CONTAINER_TAG.equals(element.getTagName());
+        return CONTAINER_TAG.equals(element.getTagName());
     }
 
     /**

@@ -249,108 +249,101 @@ public class ModelProvisioningTest {
 
     @Test
     public void testCombinedCluster() {
-        var containerElements = Set.of("jdisc", "container");
-        for (var containerElement : containerElements) {
-            String xmlWithNodes =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                    "<services>" +
-                    "  <" + containerElement + " version='1.0' id='container1'>" +
-                    "     <search/>" +
-                    "     <nodes of='content1'/>" +
-                    "  </" + containerElement + ">" +
-                    "  <content version='1.0' id='content1'>" +
-                    "     <redundancy>2</redundancy>" +
-                    "     <documents>" +
-                    "       <document type='type1' mode='index'/>" +
-                    "     </documents>" +
-                    "     <nodes count='2'>" +
-                    "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
-                    "     </nodes>" +
-                    "   </content>" +
-                    "</services>";
-            VespaModelTester tester = new VespaModelTester();
-            tester.addHosts(5);
-            VespaModel model = tester.createModel(xmlWithNodes, true);
-            assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
-            assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
-            assertEquals("Heap size is lowered with combined clusters",
-                         18, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
-            assertEquals("Memory for proton is lowered to account for the jvm heap",
-                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.18)), protonMemorySize(model.getContentClusters().get("content1")));
-            assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
-            assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
-        }
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='container1'>" +
+                        "     <search/>" +
+                        "     <nodes of='content1'/>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content1'>" +
+                        "     <redundancy>2</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "     <nodes count='2'>" +
+                        "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
+                        "     </nodes>" +
+                        "   </content>" +
+                        "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(5);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+        assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Heap size is lowered with combined clusters",
+                     18, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertEquals("Memory for proton is lowered to account for the jvm heap",
+                     (long) ((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.18)), protonMemorySize(model.getContentClusters()
+                                                                                                               .get("content1")));
+        assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
+        assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
     }
 
     @Test
     public void testCombinedClusterWithJvmHeapSizeOverride() {
-        var containerElements = Set.of("jdisc", "container");
-        for (var containerElement : containerElements) {
-            String xmlWithNodes =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                            "<services>" +
-                            "  <" + containerElement + " version='1.0' id='container1'>" +
-                            "     <search/>" +
-                            "     <nodes of='content1'>" +
-                            "      <jvm allocated-memory=\"30%\"/>" +
-                            "     </nodes>" +
-                            "  </" + containerElement + ">" +
-                            "  <content version='1.0' id='content1'>" +
-                            "     <redundancy>2</redundancy>" +
-                            "     <documents>" +
-                            "       <document type='type1' mode='index'/>" +
-                            "     </documents>" +
-                            "     <nodes count='2'>" +
-                            "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
-                            "     </nodes>" +
-                            "   </content>" +
-                            "</services>";
-            VespaModelTester tester = new VespaModelTester();
-            tester.addHosts(5);
-            VespaModel model = tester.createModel(xmlWithNodes, true);
-            assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
-            assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
-            assertEquals("Heap size is lowered with combined clusters",
-                    30, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
-            assertEquals("Memory for proton is lowered to account for the jvm heap",
-                    (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.30)), protonMemorySize(model.getContentClusters().get("content1")));
-            assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
-            assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
-        }
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='container1'>" +
+                        "     <search/>" +
+                        "     <nodes of='content1'>" +
+                        "      <jvm allocated-memory=\"30%\"/>" +
+                        "     </nodes>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content1'>" +
+                        "     <redundancy>2</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "     <nodes count='2'>" +
+                        "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
+                        "     </nodes>" +
+                        "   </content>" +
+                        "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(5);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+        assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Heap size is lowered with combined clusters",
+                     30, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertEquals("Memory for proton is lowered to account for the jvm heap",
+                     (long) ((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.30)), protonMemorySize(model.getContentClusters()
+                                                                                                               .get("content1")));
+        assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
+        assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
     }
 
     /** For comparison with the above */
     @Test
     public void testNonCombinedCluster() {
-        var containerElements = Set.of("jdisc", "container");
-        for (var containerElement : containerElements) {
-            String xmlWithNodes =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                    "<services>" +
-                    "  <" + containerElement + " version='1.0' id='container1'>" +
-                    "     <search/>" +
-                    "     <nodes count='2'/>" +
-                    "  </" + containerElement + ">" +
-                    "  <content version='1.0' id='content1'>" +
-                    "     <redundancy>2</redundancy>" +
-                    "     <documents>" +
-                    "       <document type='type1' mode='index'/>" +
-                    "     </documents>" +
-                    "     <nodes count='2'>" +
-                    "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
-                    "     </nodes>" +
-                    "   </content>" +
-                    "</services>";
-            VespaModelTester tester = new VespaModelTester();
-            tester.addHosts(7);
-            VespaModel model = tester.createModel(xmlWithNodes, true);
-            assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
-            assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
-            assertEquals("Heap size is normal",
-                         70, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
-            assertEquals("Memory for proton is normal",
-                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")));
-        }
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='container1'>" +
+                        "     <search/>" +
+                        "     <nodes count='2'/>" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content1'>" +
+                        "     <redundancy>2</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "     <nodes count='2'>" +
+                        "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
+                        "     </nodes>" +
+                        "   </content>" +
+                        "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(7);
+        VespaModel model = tester.createModel(xmlWithNodes, true);
+        assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
+        assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
+        assertEquals("Heap size is normal",
+                     70, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
+        assertEquals("Memory for proton is normal",
+                     (long) ((3 - reservedMemoryGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")));
     }
 
     @Test
@@ -463,35 +456,31 @@ public class ModelProvisioningTest {
 
     @Test
     public void testCombinedClusterWithZooKeeperFails() {
-        var containerElements = Set.of("jdisc", "container");
-        for (var containerElement : containerElements) {
-            String xmlWithNodes =
-                    "<?xml version='1.0' encoding='utf-8' ?>" +
-                    "<services>" +
-                    "  <" + containerElement + " version='1.0' id='container1'>" +
-                    "     <search/>" +
-                    "     <nodes of='content1'/>" +
-                    "     <zookeeper />" +
-                    "  </" + containerElement + ">" +
-                    "  <content version='1.0' id='content1'>" +
-                    "     <redundancy>2</redundancy>" +
-                    "     <documents>" +
-                    "       <document type='type1' mode='index'/>" +
-                    "     </documents>" +
-                    "     <nodes count='2'>" +
-                    "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
-                    "     </nodes>" +
-                    "   </content>" +
-                    "</services>";
-            VespaModelTester tester = new VespaModelTester();
-            tester.addHosts(2);
-            try {
-                tester.createModel(xmlWithNodes, true);
-                fail("ZooKeeper should not be allowed on combined clusters");
-            }
-            catch (IllegalArgumentException e) {
-                assertEquals("A combined cluster cannot run ZooKeeper", e.getMessage());
-            }
+        String xmlWithNodes =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "  <container version='1.0' id='container1'>" +
+                        "     <search/>" +
+                        "     <nodes of='content1'/>" +
+                        "     <zookeeper />" +
+                        "  </container>" +
+                        "  <content version='1.0' id='content1'>" +
+                        "     <redundancy>2</redundancy>" +
+                        "     <documents>" +
+                        "       <document type='type1' mode='index'/>" +
+                        "     </documents>" +
+                        "     <nodes count='2'>" +
+                        "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
+                        "     </nodes>" +
+                        "   </content>" +
+                        "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(2);
+        try {
+            tester.createModel(xmlWithNodes, true);
+            fail("ZooKeeper should not be allowed on combined clusters");
+        } catch (IllegalArgumentException e) {
+            assertEquals("A combined cluster cannot run ZooKeeper", e.getMessage());
         }
     }
 

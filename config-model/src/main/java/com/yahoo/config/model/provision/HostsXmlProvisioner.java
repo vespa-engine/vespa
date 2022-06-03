@@ -27,7 +27,7 @@ public class HostsXmlProvisioner implements HostProvisioner {
 
     @Override
     public HostSpec allocateHost(String alias) {
-        // Some special rules to allow no admin elements as well as jdisc element without nodes.
+        // Some special rules to allow no admin elements as well as container element without nodes.
         if (alias.equals(IMPLICIT_ADMIN_HOSTALIAS)) {
             if (hosts.asCollection().size() > 1) {
                 throw new IllegalArgumentException("More than 1 host specified (" + hosts.asCollection().size() + ") and <admin> not specified");
