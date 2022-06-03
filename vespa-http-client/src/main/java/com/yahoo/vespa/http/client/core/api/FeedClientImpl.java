@@ -52,8 +52,8 @@ public class FeedClientImpl implements FeedClient {
                 timeoutExecutor,
                 clock);
         if (warningPrinted.compareAndSet(false, true)) {
-            log.warning("The vespa-http-client is deprecated and will be removed in Vespa 8. " +
-                    "See https://docs.vespa.ai/en/vespa8-release-notes.html");
+            log.warning("The vespa-http-client is deprecated and will be removed on Vespa 8. " +
+                        "See https://docs.vespa.ai/en/vespa8-release-notes.html");
         }
     }
 

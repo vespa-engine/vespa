@@ -23,7 +23,7 @@ public class CallbackTestCase {
 
     private DocumentPut put1;
     private DocumentPut put2;
-    private List<DocumentOperation> operations = new ArrayList<>(2);
+    private final List<DocumentOperation> operations = new ArrayList<>(2);
     DocprocService service;
 
     @Before
