@@ -877,9 +877,7 @@
       "public static com.yahoo.document.datatypes.Struct fromString(java.lang.String)",
       "public static com.yahoo.document.datatypes.IntegerFieldValue getXValue(com.yahoo.document.datatypes.FieldValue)",
       "public static com.yahoo.document.datatypes.IntegerFieldValue getYValue(com.yahoo.document.datatypes.FieldValue)",
-      "public static java.lang.String getZCurveFieldName(java.lang.String)",
-      "public static java.lang.String getPositionSummaryFieldName(java.lang.String)",
-      "public static java.lang.String getDistanceSummaryFieldName(java.lang.String)"
+      "public static java.lang.String getZCurveFieldName(java.lang.String)"
     ],
     "fields": [
       "public static final com.yahoo.document.StructDataType INSTANCE",

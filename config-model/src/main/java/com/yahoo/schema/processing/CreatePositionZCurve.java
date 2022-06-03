@@ -78,11 +78,11 @@ public class CreatePositionZCurve extends Processor {
             Collection<String> summaryTo = removeSummaryTo(field);
             if (! useV8GeoPositions) {
                 ensureCompatibleSummary(field, zName,
-                                        PositionDataType.getPositionSummaryFieldName(fieldName),
+                                        AdjustPositionSummaryFields.getPositionSummaryFieldName(fieldName),
                                         DataType.getArray(DataType.STRING), // will become "xmlstring"
                                         SummaryTransform.POSITIONS, summaryTo, validate);
                 ensureCompatibleSummary(field, zName,
-                                        PositionDataType.getDistanceSummaryFieldName(fieldName),
+                                        AdjustPositionSummaryFields.getDistanceSummaryFieldName(fieldName),
                                         DataType.INT,
                                         SummaryTransform.DISTANCE, summaryTo, validate);
             }
