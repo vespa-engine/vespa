@@ -102,6 +102,7 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
+
     @Rule
     public TemporaryFolder applicationFolder = new TemporaryFolder();
 
@@ -293,7 +294,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(discBindingsConfig, containsString("{discHandler}"));
         assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
         assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
-        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"http://*/clientBinding\""));
     }
 
     @Test
@@ -308,7 +308,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <handler id='discHandler'>",
                 "    <binding>http://*/binding0</binding>",
                 "    <binding>http://*/binding1</binding>",
-                "    <clientBinding>http://*/clientBinding</clientBinding>",
                 "  </handler>",
                 "</container>");
 
