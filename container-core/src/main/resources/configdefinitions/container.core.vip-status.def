@@ -7,3 +7,6 @@ accessdisk bool default=false
 ## The file to serve as the status file.
 ## If the path is relative vespa home is prepended
 statusfile string default="share/qrsdocs/status.html"
+
+## Not used TODO: Remove on Vespa 8? - always set to true?
+initiallyInRotation bool default=true
