@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <filesystem>
 #include <fstream>
 #include <regex>
 #include <thread>
@@ -132,7 +133,7 @@ WatcherTest::WatcherTest()
 {
     remove_files();
     setenv("VESPA_LOG_TARGET", "file:vespa.log", true);
-    vespalib::mkdir("var/db/vespa", true); // for logd.donestate
+    std::filesystem::create_directories(std::filesystem::path("var/db/vespa")); // for logd.donestate
     _cfg = std::make_unique<ConfigFixture>("testconfigid");
 }
 
@@ -177,9 +178,9 @@ WatcherTest::assert_lines(const std::vector<std::string> &lines)
 void
 WatcherTest::remove_files()
 {
-    vespalib::rmdir("var", true);
+    std::filesystem::remove_all(std::filesystem::path("var"));
     remove_rotated();
-    vespalib::unlink("vespa.log");
+    std::filesystem::remove(std::filesystem::path("vespa.log"));
 }
 
 void
@@ -188,7 +189,7 @@ WatcherTest::remove_rotated()
     auto dirlist = vespalib::listDirectory(".");
     for (const auto &entry : dirlist) {
         if (std::regex_match(entry.data(), entry.data() + entry.size(), rotated_log)) {
-            vespalib::unlink(entry);
+            std::filesystem::remove(std::filesystem::path(entry));
         }
     }
 }
@@ -242,7 +243,7 @@ TEST_F(WatcherTest, require_that_watching_can_resume)
     stop_watcher();
     assert_lines({"bar", "baz"});
     // remove state file. Old entry will resurface
-    vespalib::unlink("var/db/vespa/logd.donestate");
+    std::filesystem::remove(std::filesystem::path("var/db/vespa/logd.donestate"));
     setup_watcher();
     run_watcher();
     _watcher->fwd.waitLineCount(3);
