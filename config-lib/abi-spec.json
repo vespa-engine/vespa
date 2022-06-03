@@ -201,7 +201,7 @@
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "protected final java.util.Map getChildren()",
-      "protected java.util.Map getChildrenWithVectorsFlattened()",
+      "protected final java.util.Map getChildrenWithVectorsFlattened()",
       "protected static java.util.Map getAllDescendantLeafNodes(com.yahoo.config.InnerNode)"
     ],
     "fields": []
