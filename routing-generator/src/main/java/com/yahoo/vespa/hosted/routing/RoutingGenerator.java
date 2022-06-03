@@ -51,7 +51,6 @@ public class RoutingGenerator extends AbstractComponent {
 
     private final Router router;
     private final Clock clock;
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ConfigSubscriber configSubscriber;
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("routing-generator-config-subscriber"));
