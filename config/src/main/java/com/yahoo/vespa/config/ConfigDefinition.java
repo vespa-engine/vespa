@@ -54,13 +54,6 @@ public class ConfigDefinition {
     private static final Double DOUBLE_MIN = -1e308d;
     private static final Double DOUBLE_MAX = 1e308d;
 
-    // TODO: Remove in Vespa 8
-    @Deprecated
-    public ConfigDefinition(String name, String version, String namespace) {
-        this.name = name;
-        this.namespace = namespace;
-    }
-
     public ConfigDefinition(String name, String namespace) {
         this.name = name;
         this.namespace = namespace;
