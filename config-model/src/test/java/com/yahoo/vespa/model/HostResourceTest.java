@@ -34,9 +34,9 @@ public class HostResourceTest {
     }
 
     @Test
-    public void host_witrh_membership() {
-        HostResource host = hostResourceWithMemberships(ClusterMembership.from(clusterSpec(container, "jdisc"), 0));
-        assertClusterMembership(host, container, "jdisc");
+    public void host_with_membership() {
+        HostResource host = hostResourceWithMemberships(ClusterMembership.from(clusterSpec(container, "container"), 0));
+        assertClusterMembership(host, container, "container");
     }
 
     private void assertClusterMembership(HostResource host, ClusterSpec.Type type, String id) {
