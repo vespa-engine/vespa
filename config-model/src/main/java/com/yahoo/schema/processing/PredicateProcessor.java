@@ -24,6 +24,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.SetVarExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,7 +70,7 @@ public class PredicateProcessor extends Processor {
                         attribute.setDensePostingListThreshold(threshold);
                         addPredicateOptimizationIlScript(field, booleanDefinition);
                     }
-                    DocumentSummary summary = schema.getSummariesInThis().get("attributeprefetch");
+                    DocumentSummary summary = schema.getSummariesInThis().get(SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
                     if (summary != null) {
                         summary.remove(attribute.getName());
                     }
