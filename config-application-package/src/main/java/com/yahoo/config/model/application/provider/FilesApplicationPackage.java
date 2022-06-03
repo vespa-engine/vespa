@@ -166,12 +166,6 @@ public class FilesApplicationPackage extends AbstractApplicationPackage {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
-    public String getApplicationName() {
-        return metaData.getApplicationId().application().value();
-    }
-
-    @Override
     public ApplicationId getApplicationId() { return metaData.getApplicationId(); }
 
     @Override
