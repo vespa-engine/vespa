@@ -112,20 +112,16 @@ LoadAttribute::main(int argc, char **argv)
     bool doApplyUpdate = false;
     bool doSave = false;
     bool doFastSearch = false;
-    bool doHuge = false;
 
     int opt;
     bool optError = false;
-    while ((opt = getopt(argc, argv, "pasf:h")) != -1) {
+    while ((opt = getopt(argc, argv, "pasf:")) != -1) {
         switch (opt) {
         case 'p':
             doPrintContent = true;
             break;
         case 'a':
             doApplyUpdate = true;
-            break;
-        case 'h':
-            doHuge = true;
             break;
         case 'f':
             if (strcmp(optarg, "search") == 0) {
@@ -162,7 +158,6 @@ LoadAttribute::main(int argc, char **argv)
     attribute::CollectionType ct(fh.getTag("collectiontype").asString());
     attribute::Config c(bt, ct);
     c.setFastSearch(doFastSearch);
-    c.setHuge(doHuge);
     AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
     vespalib::Timer timer;
     load(ptr);

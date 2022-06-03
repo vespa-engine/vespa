@@ -11,15 +11,14 @@ static constexpr uint64_t MAX_UNCOMMITTED_MEMORY = 8000;
 }
 
 Config::Config() noexcept
-    : Config(BasicType::NONE, CollectionType::SINGLE, false, false)
+    : Config(BasicType::NONE, CollectionType::SINGLE, false)
 {
 }
 
-Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) noexcept
+Config::Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
     : _basicType(bt),
       _type(ct),
       _fastSearch(fastSearch_),
-      _huge(huge_),
       _enableBitVectors(false),
       _enableOnlyBitVector(false),
       _isFilter(false),
@@ -49,7 +48,6 @@ Config::operator==(const Config &b) const
 {
     return _basicType == b._basicType &&
            _type == b._type &&
-           _huge == b._huge &&
            _fastSearch == b._fastSearch &&
            _enableBitVectors == b._enableBitVectors &&
            _enableOnlyBitVector == b._enableOnlyBitVector &&
