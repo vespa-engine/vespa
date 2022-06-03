@@ -30,7 +30,6 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class VdsVisitorTestCase {
 
     private SearchResult createSR(String docId, double rank) {

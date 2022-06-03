@@ -20,7 +20,6 @@ import static com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher.STREAMING_S
 /**
  * Generates mail-specific query metrics.
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove (com.yahoo.log.event)
 public class MetricsSearcher extends Searcher {
 
     private static final CompoundName metricsearcherId=new CompoundName("metricsearcher.id");
