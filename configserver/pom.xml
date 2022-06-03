@@ -14,8 +14,8 @@
   <dependencies>
 
     <!-- BEGIN Jersey deps.
-     TODO: remove after Vespa 8 is released, and provision-controller does not import any Jersey related packages.
-           Also, remove all package-info.java files for jersey/jackson packages. -->
+     TODO: Vespa > 8, and provision-controller does not import any Jersey related packages:
+           Remove, and remove all package-info.java files for jersey/jackson packages. -->
 
     <dependency>
       <groupId>com.fasterxml.jackson.jaxrs</groupId>
@@ -288,7 +288,7 @@
         <artifactId>bundle-plugin</artifactId>
         <extensions>true</extensions>
         <configuration>
-          <!-- TODO Vespa 8: remove importPackage when the jackson-jaxrs-json-provider bundle is no longer installed in jdisc -->
+          <!-- TODO: Vespa > 8: remove importPackage when the jackson-jaxrs-json-provider bundle is no longer installed in jdisc -->
           <!--   added to ensure using the same class as orchestrator, core-dump-reporter, provision-controller and controller-clients -->
           <importPackage>com.fasterxml.jackson.jaxrs.json;version="[2.12.6,3)"</importPackage>
         </configuration>
