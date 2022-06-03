@@ -1751,20 +1751,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.jdisc.http.SecretStore": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract java.lang.String getSecret(java.lang.String)",
-      "public java.lang.String getSecret(java.lang.String, int)"
-    ],
-    "fields": []
-  },
   "com.yahoo.jdisc.http.ServerConfig$AccessLog$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [
