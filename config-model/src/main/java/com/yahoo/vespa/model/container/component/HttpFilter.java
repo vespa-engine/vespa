@@ -10,7 +10,7 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 /**
  * This is only for the legacy certificate filter setup, outside http.
  *
- * TODO: Remove when 'filter' directly under 'jdisc' can be removed from services.xml
+ * TODO: Remove when 'filter' directly under 'container' can be removed from services.xml
  *
  * @author Tony Vaagenes
  */

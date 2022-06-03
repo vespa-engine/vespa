@@ -391,12 +391,8 @@ public class NodesSpecification {
     /** Returns the ID of the parent container element of nodesElement, if any  */
     private static Optional<String> containerIdOf(ModelElement nodesElement) {
         var element = nodesElement.getXml();
-        for (var containerTag : List.of("container", "jdisc")) {
-            var container = findParentByTag(containerTag, element);
-            if (container.isEmpty()) continue;
-            return container.map(el -> el.getAttribute("id"));
-        }
-        return Optional.empty();
+        var container = findParentByTag("container", element);
+        return container.map(el -> el.getAttribute("id"));
     }
 
     /** Returns the ID of the container element referencing nodesElement, if any */
