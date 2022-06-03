@@ -5,8 +5,6 @@ import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.IndexedHierarchicDistributionValidator;
 import com.yahoo.vespa.model.content.Redundancy;
 
-import java.util.Optional;
-
 /**
  * Builds redundancy config for a content cluster.
  */
@@ -39,13 +37,7 @@ public class RedundancyBuilder {
             }
         }
     }
-    public Redundancy build(String clusterName, boolean isHosted, int subGroups, int leafGroups,  int totalNodes,
-                            Optional<Integer> maxRedundancy) {
-        if (maxRedundancy.isPresent()) {
-            initialRedundancy = Math.min(initialRedundancy, maxRedundancy.get());
-            finalRedundancy = Math.min(finalRedundancy, maxRedundancy.get());
-            readyCopies = Math.min(readyCopies, maxRedundancy.get());
-        }
+    public Redundancy build(String clusterName, boolean isHosted, int subGroups, int leafGroups,  int totalNodes) {
         if (isHosted) {
             return new Redundancy(initialRedundancy, finalRedundancy, readyCopies, leafGroups, totalNodes);
         } else {
