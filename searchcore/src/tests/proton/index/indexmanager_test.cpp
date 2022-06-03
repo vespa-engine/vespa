@@ -19,13 +19,13 @@
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <set>
 #include <thread>
 
@@ -122,7 +122,7 @@ struct IndexManagerTest : public ::testing::Test {
           _builder(_schema)
     {
         removeTestData();
-        vespalib::mkdir(index_dir, false);
+        std::filesystem::create_directory(std::filesystem::path(index_dir));
         resetIndexManager();
     }
 

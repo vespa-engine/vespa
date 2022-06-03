@@ -35,7 +35,7 @@
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("feedhandler_test");
@@ -784,5 +784,5 @@ TEST_MAIN()
 {
     DummyFileHeaderContext::setCreator("feedhandler_test");
     TEST_RUN_ALL();
-    vespalib::rmdir("mytlsdir", true);
+    std::filesystem::remove_all(std::filesystem::path("mytlsdir"));
 }

@@ -7,8 +7,8 @@
 #include <vespa/searchcore/proton/common/hw_info_sampler.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/config/retriever/configsnapshot.hpp>
+#include <filesystem>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -122,7 +122,7 @@ BootstrapConfigManager::update(const ConfigSnapshot & snapshot)
     const auto &hwCpuCfg = protonConfig.hwinfo.cpu;
     HwInfoSampler::Config samplerCfg(hwDiskCfg.size, hwDiskCfg.writespeed, hwDiskCfg.slowwritespeedlimit,
                                      hwDiskCfg.samplewritesize, hwDiskCfg.shared, hwMemoryCfg.size, hwCpuCfg.cores);
-    vespalib::mkdir(protonConfig.basedir, true);
+    std::filesystem::create_directories(std::filesystem::path(protonConfig.basedir));
     HwInfoSampler sampler(protonConfig.basedir, samplerCfg);
 
     auto newSnapshot(std::make_shared<BootstrapConfig>(snapshot.getGeneration(), newDocumenttypesConfig, newRepo,

@@ -3,10 +3,10 @@
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchlib/test/directory_handler.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_directory_test");
@@ -65,9 +65,7 @@ struct Fixture : public DirectoryHandler
     vespalib::string getAttrDir(const vespalib::string &name) { return getDir() + "/" + name; }
 
     void assertDiskDir(const vespalib::string &name) {
-        auto fileinfo = vespalib::stat(name);
-        EXPECT_TRUE(static_cast<bool>(fileinfo));
-        EXPECT_TRUE(fileinfo->_directory);
+        EXPECT_TRUE(std::filesystem::is_directory(std::filesystem::path(name)));
     }
 
     void assertAttributeDiskDir(const vespalib::string &name) {
@@ -75,8 +73,7 @@ struct Fixture : public DirectoryHandler
     }
 
     void assertNotDiskDir(const vespalib::string &name) {
-        auto fileinfo = vespalib::stat(name);
-        EXPECT_FALSE(static_cast<bool>(fileinfo));
+        EXPECT_FALSE(std::filesystem::exists(std::filesystem::path(name)));
     }
 
     void assertNotAttributeDiskDir(const vespalib::string &name) {
@@ -137,7 +134,7 @@ struct Fixture : public DirectoryHandler
         EXPECT_TRUE(hasAttributeDir(dir));
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
-        vespalib::mkdir(writer->getSnapshotDir(serialNum), false);
+        std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(serialNum)));
         writer->markValidSnapshot(serialNum);
         TEST_DO(assertAttributeDiskDir("foo"));
     }
@@ -163,7 +160,7 @@ struct Fixture : public DirectoryHandler
         auto dir = createFooAttrDir();
         auto writer = dir->getWriter();
         writer->createInvalidSnapshot(serialNum);
-        vespalib::mkdir(writer->getSnapshotDir(serialNum), false);
+        std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(serialNum)));
         writer->markValidSnapshot(serialNum);
     }
 
@@ -210,10 +207,10 @@ TEST_F("Test that we can prune attribute snapshots", Fixture)
     TEST_DO(f.assertNotAttributeDiskDir("foo"));
     auto writer = dir->getWriter();
     writer->createInvalidSnapshot(2);
-    vespalib::mkdir(writer->getSnapshotDir(2), false);
+    std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(2)));
     writer->markValidSnapshot(2);
     writer->createInvalidSnapshot(4);
-    vespalib::mkdir(writer->getSnapshotDir(4), false);
+    std::filesystem::create_directory(std::filesystem::path(writer->getSnapshotDir(4)));
     writer->markValidSnapshot(4);
     writer.reset();
     TEST_DO(f.assertAttributeDiskDir("foo"));
@@ -264,9 +261,9 @@ TEST_F("Test that attribute directory is not removed due to pruning but disk dir
 
 TEST("Test that initial state tracks disk layout")
 {
-    vespalib::mkdir("attributes");
-    vespalib::mkdir("attributes/foo");
-    vespalib::mkdir("attributes/bar");
+    std::filesystem::create_directory(std::filesystem::path("attributes"));
+    std::filesystem::create_directory(std::filesystem::path("attributes/foo"));
+    std::filesystem::create_directory(std::filesystem::path("attributes/bar"));
     IndexMetaInfo fooInfo("attributes/foo");
     IndexMetaInfo barInfo("attributes/bar");
     fooInfo.addSnapshot({true, 4, "snapshot-4"});
@@ -292,8 +289,8 @@ TEST("Test that initial state tracks disk layout")
 TEST_F("Test that snapshot removal removes correct snapshot directory", Fixture)
 {
     TEST_DO(f.setupFooSnapshots(5));
-    vespalib::mkdir(f.getSnapshotDir("foo", 5));
-    vespalib::mkdir(f.getSnapshotDir("foo", 6));
+    std::filesystem::create_directory(std::filesystem::path(f.getSnapshotDir("foo", 5)));
+    std::filesystem::create_directory(std::filesystem::path(f.getSnapshotDir("foo", 6)));
     TEST_DO(f.assertSnapshotDir("foo", 5));
     TEST_DO(f.assertSnapshotDir("foo", 6));
     TEST_DO(f.invalidateFooSnapshots(false));

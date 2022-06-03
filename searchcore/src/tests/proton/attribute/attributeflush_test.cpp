@@ -15,13 +15,13 @@
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/datastore/datastorebase.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <filesystem>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -436,9 +436,9 @@ Test::requireThatCleanUpIsPerformedAfterFlush()
     std::string base = "flush/a6";
     std::string snap10 = "flush/a6/snapshot-10";
     std::string snap20 = "flush/a6/snapshot-20";
-    vespalib::mkdir(base, false);
-    vespalib::mkdir(snap10, false);
-    vespalib::mkdir(snap20, false);
+    std::filesystem::create_directory(std::filesystem::path(base));
+    std::filesystem::create_directory(std::filesystem::path(snap10));
+    std::filesystem::create_directory(std::filesystem::path(snap20));
     IndexMetaInfo info("flush/a6");
     info.addSnapshot(IndexMetaInfo::Snapshot(true, 10, "snapshot-10"));
     info.addSnapshot(IndexMetaInfo::Snapshot(false, 20, "snapshot-20"));
@@ -662,7 +662,7 @@ Test::Main()
     if (_argc > 0) {
         DummyFileHeaderContext::setCreator(_argv[0]);
     }
-    vespalib::rmdir(test_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(test_dir));
     TEST_DO(requireThatUpdaterAndFlusherCanRunConcurrently());
     TEST_DO(requireThatFlushableAttributeReportsMemoryUsage());
     TEST_DO(requireThatFlushableAttributeManagesSyncTokenInfo());

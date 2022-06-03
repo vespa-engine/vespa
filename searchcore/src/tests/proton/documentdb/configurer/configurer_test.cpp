@@ -26,10 +26,10 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <filesystem>
 
 using namespace config;
 using namespace document;
@@ -173,8 +173,8 @@ Fixture::Fixture()
       _resolver(),
       _configurer()
 {
-    vespalib::rmdir(BASE_DIR, true);
-    vespalib::mkdir(BASE_DIR);
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+    std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
     initViewSet(_views);
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
                                                _constantValueRepo, _clock.clock(), "test", 0);
@@ -284,8 +284,8 @@ struct FastAccessFixture
           _view(_service.write()),
           _configurer(_view._feedView, std::make_unique<AttributeWriterFactory>(), "test")
     {
-        vespalib::rmdir(BASE_DIR, true);
-        vespalib::mkdir(BASE_DIR);
+        std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+        std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
     }
     ~FastAccessFixture() {
         _service.shutdown();
@@ -692,5 +692,5 @@ TEST("require that subdbs should change if relevant config changed")
 TEST_MAIN()
 {
     TEST_RUN_ALL();
-    vespalib::rmdir(BASE_DIR, true);
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
 }
