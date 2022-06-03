@@ -16,10 +16,10 @@
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
 #include <fcntl.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 
@@ -41,7 +41,7 @@ namespace {
         vespalib::string mypid = vespalib::make_string("%d\n", getpid());
         size_t lastSlash = pidfile.rfind('/');
         if (lastSlash != vespalib::string::npos) {
-            vespalib::mkdir(pidfile.substr(0, lastSlash));
+            std::filesystem::create_directories(std::filesystem::path(pidfile.substr(0, lastSlash)));
         }
         int fd = open(pidfile.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
         if (fd != -1) {
@@ -172,7 +172,7 @@ StorageNode::initialize()
     // Create VDS root folder, in case it doesn't already exist.
     // Maybe better to rather fail if it doesn't exist, but tests
     // might break if we do that. Might alter later.
-    vespalib::mkdir(_rootFolder);
+    std::filesystem::create_directories(std::filesystem::path(_rootFolder));
 
     initializeNodeSpecific();
 
