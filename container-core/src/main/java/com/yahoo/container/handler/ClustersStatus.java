@@ -51,11 +51,6 @@ public class ClustersStatus extends AbstractComponent {
         }
     }
 
-    /** @deprecated this is ignored */
-    @Deprecated // TODO: remove on Vespa 8
-    public void setReceiveTrafficByDefault(boolean receiveTrafficByDefault) {
-    }
-
     void setUp(String clusterIdentifier) {
         synchronized (mutex) {
             clusterStatus.put(clusterIdentifier, Boolean.TRUE);
@@ -66,23 +61,6 @@ public class ClustersStatus extends AbstractComponent {
         synchronized (mutex) {
             clusterStatus.put(clusterIdentifier, Boolean.FALSE);
         }
-    }
-
-    /** @deprecated use setUp(String) instead */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void setUp(Object clusterIdentifier) {
-        setUp((String) clusterIdentifier);
-    }
-
-    /** @deprecated use setDown(String) instead */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void setDown(Object clusterIdentifier) {
-        setDown((String) clusterIdentifier);
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean containerShouldReceiveTraffic() {
-        return containerShouldReceiveTraffic(Require.ONE);
     }
 
     /**
