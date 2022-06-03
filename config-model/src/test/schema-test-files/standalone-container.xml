@@ -95,14 +95,6 @@
     <binding>http://*:*/Status</binding>
   </handler>
 
-  <client id="client-provider">
-    <binding>http://*:*/HelloWorld</binding>
-    <binding>http://*:*/Status</binding>
-    <serverBinding>http://*:*/foo</serverBinding>
-    <serverBinding>http://*:*/bar</serverBinding>
-  </client>
-
   <server id="server-provider" />
-
 
 </container>
