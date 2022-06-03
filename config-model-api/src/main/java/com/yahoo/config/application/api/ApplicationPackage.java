@@ -73,15 +73,6 @@ public interface ApplicationPackage {
 
     String PERMANENT_SERVICES = "permanent-services.xml";
 
-    /**
-     * The name of the application package
-     *
-     * @return the name of the application (i.e the directory where the application package was deployed from)
-     * @deprecated do not use
-     */
-    @Deprecated // TODO: Remove in Vespa 8
-    String getApplicationName();
-
     ApplicationId getApplicationId();
 
     /**
