@@ -4,9 +4,7 @@ package com.yahoo.container.jdisc.metric;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.MetricConsumerFactory;
-import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.jdisc.application.MetricConsumer;
-import com.yahoo.metrics.MetricsPresentationConfig;
 
 /**
  * @author Simon Thoresen Hult
