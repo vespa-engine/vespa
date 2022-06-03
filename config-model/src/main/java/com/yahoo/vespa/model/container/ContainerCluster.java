@@ -191,7 +191,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addSimpleComponent("com.yahoo.container.jdisc.DisabledConnectionLogProvider");
         addSimpleComponent(com.yahoo.jdisc.http.server.jetty.Janitor.class);
-        addJaxProviders();
     }
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(getName()); }
@@ -241,19 +240,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
         vipHandler.addServerBindings(VIP_HANDLER_BINDING);
         addComponent(vipHandler);
-    }
-
-    @SuppressWarnings("deprecation")
-    private void addJaxProviders() {
-        addSimpleComponent(com.yahoo.container.xml.providers.DatatypeFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.DocumentBuilderFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.SAXParserFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.SchemaFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.TransformerFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XMLEventFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XMLInputFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XMLOutputFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XPathFactoryProvider.class);
     }
 
     public final void addComponent(Component<?, ?> component) {
