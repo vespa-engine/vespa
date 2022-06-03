@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generic_rename.h"
-#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "value.h"
+#include "value_builder_factory.h"
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vector>
 #include <map>

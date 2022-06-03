@@ -5,8 +5,9 @@
 #include "constant_value.h"
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
+
+class ValueBuilderFactory;
 
 /**
  * A ConstantValueFactory that will load constant tensor values from
@@ -23,5 +24,4 @@ public:
     ConstantValue::UP create(const vespalib::string &path, const vespalib::string &type) const override;
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

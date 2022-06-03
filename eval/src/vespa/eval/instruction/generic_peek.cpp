@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generic_peek.h"
+#include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>

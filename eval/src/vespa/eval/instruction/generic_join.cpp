@@ -3,6 +3,7 @@
 #include "generic_join.h"
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/wrap_param.h>
+#include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>

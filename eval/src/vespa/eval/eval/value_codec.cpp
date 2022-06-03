@@ -3,6 +3,7 @@
 #include "value_codec.h"
 #include "tensor_spec.h"
 #include "array_array_map.h"
+#include "value_builder_factory.h"
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/typify.h>
