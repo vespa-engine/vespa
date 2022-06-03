@@ -93,8 +93,6 @@
   <handler id="jdisc-handler">
     <binding>http://*:*/HelloWorld</binding>
     <binding>http://*:*/Status</binding>
-    <clientBinding>http://*:*/foo</clientBinding>
-    <clientBinding>http://*:*/bar</clientBinding>
   </handler>
 
   <client id="client-provider">
