@@ -54,7 +54,7 @@ public class VipStatus {
 
     /** For testing */
     public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
-        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, StateMonitor.createForTesting());
+        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, StateMonitor.createForTesting(), new NullMetric());
     }
 
     @Inject
@@ -69,24 +69,6 @@ public class VipStatus {
         initiallyInRotation = vipStatusConfig.initiallyInRotation();
         clustersStatus.setClusters(dispatchers.searchcluster().stream().map(c -> c.name()).collect(Collectors.toSet()));
         updateCurrentlyInRotation();
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public VipStatus(QrSearchersConfig dispatchers,
-                     VipStatusConfig vipStatusConfig,
-                     ClustersStatus clustersStatus,
-                     StateMonitor healthState) {
-        this(dispatchers, vipStatusConfig, clustersStatus, healthState, new NullMetric());
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
-        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, healthState);
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig ignored, ClustersStatus clustersStatus) {
-        this(dispatchers, clustersStatus);
     }
 
     /**
