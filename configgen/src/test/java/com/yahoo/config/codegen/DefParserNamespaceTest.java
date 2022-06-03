@@ -19,7 +19,7 @@ public class DefParserNamespaceTest {
 
     @Test
     public void namespace_is_set_on_root_node() {
-        DefParser parser = createParser("version=1\nnamespace=myproject.config\n");
+        DefParser parser = createParser("namespace=myproject.config\n");
         CNode root = parser.getTree();
         assertEquals("myproject.config", root.getNamespace());
     }
@@ -34,18 +34,17 @@ public class DefParserNamespaceTest {
 
     @Test(expected = CodegenRuntimeException.class)
     public void uppercase_chars_are_not_allowed() {
-        createParser("version=1\nnamespace=Foo\n").getTree();
+        createParser("namespace=Foo\n").getTree();
     }
 
     @Test(expected = CodegenRuntimeException.class)
     public void explicit_com_yahoo_prefix_is_not_allowed() {
-        createParser("version=1\n" +
-                             "namespace=com.yahoo.myproject.config\n").getTree();
+        createParser("namespace=com.yahoo.myproject.config\n").getTree();
     }
 
     @Test
     public void spaces_are_allowed_around_equals_sign() {
-        DefParser parser = createParser("version=1\nnamespace =  myproject.config\n");
+        DefParser parser = createParser("namespace =  myproject.config\n");
         CNode root = parser.getTree();
         assertEquals("myproject.config", root.getNamespace());
     }
@@ -62,10 +61,10 @@ public class DefParserNamespaceTest {
 
     @Test
     public void namespace_alters_def_md5() {
-        DefParser parser = createParser("version=1\n");
+        DefParser parser = createParser("");
         CNode root = parser.getTree();
 
-        parser = createParser("version=1\nnamespace=myproject.config\n");
+        parser = createParser("namespace=myproject.config\n");
         CNode namespaceRoot = parser.getTree();
 
         assertNotEquals(root.defMd5, namespaceRoot.defMd5);

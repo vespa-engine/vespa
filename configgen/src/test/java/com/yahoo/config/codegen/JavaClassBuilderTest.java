@@ -29,7 +29,7 @@ public class JavaClassBuilderTest {
     @Ignore
     @Test
     public void visual_inspection_of_generated_class() {
-        final String testDefinition = "version=1\n" + //
+        final String testDefinition =
                 "namespace=test\n" + //
                 "p path\n" + //
                 "pathArr[] path\n" + //
@@ -74,7 +74,7 @@ public class JavaClassBuilderTest {
 
     @Test
     public void testCreateUniqueSymbol() {
-        final String testDefinition = "version=1\n" + //
+        final String testDefinition =
                 "namespace=test\n" + //
                 "m int\n" + //
                 "n int\n";
