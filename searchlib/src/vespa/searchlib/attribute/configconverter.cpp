@@ -103,7 +103,6 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     Config retval(bType, cType);
     PredicateParams predicateParams;
     retval.setFastSearch(cfg.fastsearch);
-    retval.setHuge(cfg.huge);
     retval.setEnableBitVectors(cfg.enablebitvectors);
     retval.setEnableOnlyBitVector(cfg.enableonlybitvector);
     retval.setIsFilter(cfg.enableonlybitvector);
