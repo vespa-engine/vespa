@@ -88,10 +88,9 @@ public abstract class InnerNode extends Node {
         return res;
      }
 
-    // TODO Make final before Vespa 8 as correct order is required
-    protected Map<String, Object> getChildren() {
+    protected final Map<String, Object> getChildren() {
         HashMap<String, Object> ret = new LinkedHashMap<>();
-        Field fields[] = getClass().getDeclaredFields();
+        Field[] fields = getClass().getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
             Object fieldValue;
