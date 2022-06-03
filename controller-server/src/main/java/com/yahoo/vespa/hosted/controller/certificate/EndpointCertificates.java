@@ -67,8 +67,8 @@ public class EndpointCertificates {
             if(metadata.isPresent()) {
                 var m = metadata.get();
                 CloudSecretStore cloudSecretStore = controller.serviceRegistry().cloudSecretStore();
-                String mangledCertName = m.certName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
-                String mangledKeyName = m.keyName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
+                String mangledCertName = "endpointCert_" + m.certName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
+                String mangledKeyName = "endpointCert_" + m.keyName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
                 if (cloudSecretStore.getSecret(mangledCertName, m.version()) == null)
                     cloudSecretStore.createSecret(mangledCertName + "-v" + m.version(), controller.secretStore().getSecret(m.certName(), m.version()));
                 if (cloudSecretStore.getSecret(mangledKeyName, m.version()) == null)
