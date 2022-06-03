@@ -248,7 +248,7 @@ void constant() :
             }
         }
         )
-        | // Deprecated forms (TODO: Add warning on Vespa 8):
+        | // Deprecated forms (TODO: Vespa > 8: Add warning ):
         ( constantValue(name) | constantTensor(name) )
       )
     )
