@@ -24,7 +24,7 @@ import static java.util.stream.Collectors.toList;
  * Used for subscribing to one or more configs. Can optionally be given a {@link ConfigSource} for the configs
  * that will be used when {@link #subscribe(Class, String)} is called.
  *
- * {@link #subscribe(Class, String)} on the configs needed, call {@link #nextConfig(long)} and get the config from the
+ * {@link #subscribe(Class, String)} on the configs needed, call {@link #nextConfig(boolean)} and get the config from the
  * {@link ConfigHandle} which {@link #subscribe(Class, String)} returned.
  *
  * @author Vegard Havdal
@@ -187,11 +187,6 @@ public class ConfigSubscriber implements AutoCloseable {
         return acquireSnapshot(timeoutMillis, true, isInitializing);
     }
 
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean nextConfig(long timeoutMillis) {
-        return nextConfig(timeoutMillis, false);
-    }
-
     /**
      * Use this for waiting for a new config generation.
      *
@@ -219,11 +214,6 @@ public class ConfigSubscriber implements AutoCloseable {
         return nextGeneration(TimingValues.defaultNextConfigTimeout, isInitializing);
     }
 
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean nextGeneration() {
-        return nextGeneration(false);
-    }
-
     /**
      * Use this for waiting for a new config generation, with the given timeout
      *
@@ -249,11 +239,6 @@ public class ConfigSubscriber implements AutoCloseable {
      */
     public boolean nextGeneration(long timeoutMillis, boolean isInitializing) {
         return acquireSnapshot(timeoutMillis, false, isInitializing);
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean nextGeneration(long timeoutMillis) {
-        return nextGeneration(timeoutMillis, false);
     }
 
     /**
