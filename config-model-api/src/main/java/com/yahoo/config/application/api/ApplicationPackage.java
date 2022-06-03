@@ -103,15 +103,6 @@ public interface ApplicationPackage {
     }
 
     /**
-     * Readers for all the search definition files for this.
-     * @deprecated use {@link #getSchemas()} instead
-     * @return a list of readers for search definitions
-     */
-    @Deprecated
-    // TODO: Remove in Vespa 8
-    default Collection<NamedReader> searchDefinitionContents() { return getSchemas(); }
-
-    /**
      * Returns all the config definitions available in this package as unparsed data.
      */
     Map<ConfigDefinitionKey, UnparsedConfigDefinition> getAllExistingConfigDefs();
@@ -231,13 +222,6 @@ public interface ApplicationPackage {
     default Map<String, String> legacyOverrides() {
         return Collections.emptyMap();
     }
-
-    /**
-     * @deprecated use {@link #getSchemas()} instead
-     */
-    @Deprecated
-    // TODO: Remove in Vespa 8
-    default Collection<NamedReader> getSearchDefinitions() { return getSchemas(); }
 
     /**
      * Readers for all the schema files.
