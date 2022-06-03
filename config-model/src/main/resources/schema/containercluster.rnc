@@ -19,7 +19,6 @@ ContainerServices =
     Component* &
     Embedder* &
     Handler* &
-    Client* &
     Server* &
     Http? &
     AccessLog* &
