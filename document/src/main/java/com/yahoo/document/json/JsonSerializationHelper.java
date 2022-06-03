@@ -183,11 +183,6 @@ public class JsonSerializationHelper {
 
     public static void serializeStructField(FieldWriter fieldWriter, JsonGenerator generator, FieldBase field, Struct value) {
         DataType dt = value.getDataType();
-        // TODO remove in Vespa 8:
-        if (dt == PositionDataType.INSTANCE) {
-            serializeString(generator, field, PositionDataType.renderAsString(value));
-            return;
-        }
         if (dt instanceof GeoPosType) {
             var gpt = (GeoPosType)dt;
             if (gpt.renderJsonAsVespa8()) {
