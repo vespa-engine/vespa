@@ -74,18 +74,6 @@
             <classifier>no_aop</classifier> <!-- Non-AOP version required for Java 8 compatibility -->
         </dependency>
         <dependency>
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-assistedinject</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <!-- Depends on AOP version of Guice, which is not Java 8 compatible -->
-                <exclusion>
-                    <groupId>com.google.inject</groupId>
-                    <artifactId>guice</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.framework</artifactId>
             <scope>compile</scope>
@@ -227,7 +215,6 @@
                                 <argument>${exportPackagesFile}</argument>
                                 <argument>__REPLACE_VERSION__${project.build.directory}/dependency/guava.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-no_aop.jar</argument>
-                                <argument>${project.build.directory}/dependency/guice-assistedinject.jar</argument>
                                 <argument>${project.build.directory}/dependency/org.apache.felix.log.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-jdk14.jar</argument>
