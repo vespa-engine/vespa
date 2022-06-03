@@ -9,6 +9,7 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
@@ -67,6 +68,8 @@ public class InMemoryProvisioner implements HostProvisioner {
 
     private Provisioned provisioned = new Provisioned();
 
+    private Environment environment = Environment.prod;
+
     /** Creates this with a number of nodes with resources 1, 3, 9, 1 */
     public InMemoryProvisioner(int nodeCount, boolean sharedHosts) {
         this(nodeCount, defaultResources, sharedHosts);
@@ -115,6 +118,12 @@ public class InMemoryProvisioner implements HostProvisioner {
         this.retiredHostNames = Set.of(retiredHostNames);
     }
 
+    /** May affect e.g. the number of nodes/cluster. */
+    public InMemoryProvisioner setEnvironment(Environment environment) {
+        this.environment = environment;
+        return this;
+    }
+
     private static Collection<Host> toHostInstances(String[] hostnames) {
         return Arrays.stream(hostnames).map(Host::new).collect(Collectors.toList());
     }
@@ -137,6 +146,10 @@ public class InMemoryProvisioner implements HostProvisioner {
     @Override
     public List<HostSpec> prepare(ClusterSpec cluster, Capacity requested, ProvisionLogger logger) {
         provisioned.add(cluster.id(), requested);
+        if (environment == Environment.dev) {
+            requested = requested.withLimits(requested.minResources().withNodes(1),
+                                             requested.maxResources().withNodes(1));
+        }
         if (useMaxResources)
             return prepare(cluster, requested.maxResources(), requested.isRequired(), requested.canFail());
         else
