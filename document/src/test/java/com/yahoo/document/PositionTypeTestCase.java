@@ -38,8 +38,6 @@ public class PositionTypeTestCase {
         assertEquals("x", PositionDataType.FIELD_X);
         assertEquals("y", PositionDataType.FIELD_Y);
         assertEquals("foo_zcurve", PositionDataType.getZCurveFieldName("foo"));
-        assertEquals("foo.position", PositionDataType.getPositionSummaryFieldName("foo"));
-        assertEquals("foo.distance", PositionDataType.getDistanceSummaryFieldName("foo"));
     }
 
     @Test

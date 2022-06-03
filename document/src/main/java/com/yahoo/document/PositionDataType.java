@@ -99,16 +99,6 @@ public final class PositionDataType {
         return fieldName + "_zcurve";
     }
 
-    public static String getPositionSummaryFieldName(String fieldName) {
-        // Only used in v7 legacy mode, remove in Vespa 9
-        return fieldName + ".position";
-    }
-
-    public static String getDistanceSummaryFieldName(String fieldName) {
-        // Only used in v7 legacy mode, remove in Vespa 9
-        return fieldName + ".distance";
-    }
-
     private static StructDataType newInstance() {
         StructDataType ret = new StructDataType(STRUCT_NAME);
         ret.addField(new Field(FIELD_X, DataType.INT));
