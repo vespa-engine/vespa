@@ -291,7 +291,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     public void handler_bindings_are_included_in_discBindings_config() {
         createClusterWithJDiscHandler();
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString("{discHandler}"));
         assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
         assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
     }
@@ -330,35 +329,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
         assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
         assertThat(discBindingsConfig, not(containsString("/processing/*")));
-    }
-
-    @Test
-    public void clientProvider_bindings_are_included_in_discBindings_config() {
-        createModelWithClientProvider();
-        String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString("{discClient}"));
-        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"http://*/binding0\""));
-        assertThat(discBindingsConfig, containsString(".clientBindings[1] \"http://*/binding1\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/serverBinding\""));
-    }
-
-    @Test
-    public void clientProviders_are_included_in_components_config() {
-        createModelWithClientProvider();
-        assertThat(componentsConfig().toString(), containsString(".id \"discClient\""));
-    }
-
-    private void createModelWithClientProvider() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>" +
-                "  <client id='discClient'>" +
-                "    <binding>http://*/binding0</binding>" +
-                "    <binding>http://*/binding1</binding>" +
-                "    <serverBinding>http://*/serverBinding</serverBinding>" +
-                "  </client>" +
-                "</container>" );
-
-        createModel(root, clusterElem);
     }
 
     @Test
@@ -447,17 +417,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <handler id='myHandler'>",
                 "    <component id='injected' />",
                 "  </handler>",
-                "  <client id='myClient'>",  // remember, a client is also a request handler
-                "    <component id='injected' />",
-                "  </client>",
                 "</container>");
 
         createModel(root, clusterElem);
         Component<?,?> handler = getContainerComponent("default", "myHandler");
         assertThat(handler.getInjectedComponentIds(), hasItem("injected@myHandler"));
-
-        Component<?,?> client = getContainerComponent("default", "myClient");
-        assertThat(client.getInjectedComponentIds(), hasItem("injected@myClient"));
     }
 
     @Test
