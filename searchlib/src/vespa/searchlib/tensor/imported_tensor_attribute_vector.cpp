@@ -2,7 +2,6 @@
 
 #include "imported_tensor_attribute_vector.h"
 #include "imported_tensor_attribute_vector_read_guard.h"
-#include <vespa/eval/eval/value.h>
 
 namespace search::tensor {
 
@@ -34,9 +33,7 @@ ImportedTensorAttributeVector::ImportedTensorAttributeVector(vespalib::stringref
 {
 }
 
-ImportedTensorAttributeVector::~ImportedTensorAttributeVector()
-{
-}
+ImportedTensorAttributeVector::~ImportedTensorAttributeVector() = default;
 
 std::unique_ptr<attribute::AttributeReadGuard>
 ImportedTensorAttributeVector::makeReadGuard(bool stableEnumGuard) const
