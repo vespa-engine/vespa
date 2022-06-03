@@ -13,9 +13,18 @@
 #pragma once
 
 #include "runnable.h"
+#include "thread_properties.h"
 #include <condition_variable>
 
 namespace storage::framework {
+
+/** Data kept on each thread due to the registerTick functionality. */
+struct ThreadTickData {
+    CycleType _lastTickType;
+    vespalib::steady_time _lastTick;
+    vespalib::duration _maxProcessingTimeSeen;
+    vespalib::duration _maxWaitTimeSeen;
+};
 
 class Thread : public ThreadHandle {
     vespalib::string _id;
@@ -44,6 +53,11 @@ public:
      * called after thread has already finished, it is a noop.
      */
     virtual void join() = 0;
+
+    virtual ThreadTickData getTickData() const = 0;
+    virtual const ThreadProperties& getProperties() const = 0;
+
+    virtual vespalib::string get_live_thread_stack_trace() const = 0;
 
     /**
      * Utility function to interrupt and join a thread, possibly broadcasting

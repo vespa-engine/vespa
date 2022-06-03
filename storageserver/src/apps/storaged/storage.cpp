@@ -209,6 +209,7 @@ int StorageApp::main(int argc, char **argv)
 
 int main(int argc, char **argv) {
     vespalib::SignalHandler::PIPE.ignore();
+    vespalib::SignalHandler::enable_cross_thread_stack_tracing();
     storage::StorageApp app;
     storage::sigtramp = &app;
     int retval = app.main(argc,argv);

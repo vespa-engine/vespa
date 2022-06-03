@@ -4,6 +4,7 @@
 #include "htmltable.h"
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/common/content_bucket_space_repo.h>
+#include <vespa/storageframework/generic/thread/thread.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/bufferedlogger.h>
@@ -22,8 +23,7 @@ DeadLockDetector::DeadLockDetector(StorageComponentRegister& compReg, AppKiller:
       _enableWarning(true),
       _enableShutdown(false),
       _processSlack(30s),
-      _waitSlack(5s),
-      _reportedBucketDBLocksAtState(OK)
+      _waitSlack(5s)
 {
     auto* dComp(dynamic_cast<DistributorComponentRegister*>(&compReg));
     if (dComp) {
@@ -49,19 +49,21 @@ DeadLockDetector::~DeadLockDetector()
 void
 DeadLockDetector::enableWarning(bool enable)
 {
-    if (enable == _enableWarning) return;
-    LOG(debug, "%s dead lock detection warnings",
-        enable ? "Enabling" : "Disabling");
-    _enableWarning = enable;
+    if (enable == warning_enabled_relaxed()) {
+        return;
+    }
+    LOG(debug, "%s dead lock detection warnings", enable ? "Enabling" : "Disabling");
+    _enableWarning.store(enable, std::memory_order_relaxed);
 }
 
 void
 DeadLockDetector::enableShutdown(bool enable)
 {
-    if (enable == _enableShutdown) return;
-    LOG(debug, "%s dead lock detection",
-        enable ? "Enabling" : "Disabling");
-    _enableShutdown = enable;
+    if (enable == shutdown_enabled_relaxed()) {
+        return;
+    }
+    LOG(debug, "%s dead lock detection", enable ? "Enabling" : "Disabling");
+    _enableShutdown.store(enable, std::memory_order_relaxed);
 }
 
 namespace {
@@ -76,14 +78,11 @@ namespace {
         {
         }
 
-        void visitThread(const vespalib::string& id,
-                         const framework::ThreadProperties& p,
-                         const framework::ThreadTickData& td) override
-        {
-            if (_states.find(id) == _states.end()) {
-                _states[id] = DeadLockDetector::OK;
+        void visitThread(const framework::Thread& thread) override {
+            if (_states.find(thread.getId()) == _states.end()) {
+                _states[thread.getId()] = DeadLockDetector::OK;
             }
-            _visitor.visitThread(id, p, td, _states[id]);
+            _visitor.visitThread(thread, _states[thread.getId()]);
         }
     };
 }
@@ -145,25 +144,26 @@ namespace {
         ThreadChecker(DeadLockDetector& d, vespalib::steady_time time)
             : _detector(d), _currentTime(time) {}
 
-        void visitThread(const vespalib::string& id,
-                         const framework::ThreadProperties& tp,
-                         const framework::ThreadTickData& tick,
+        void visitThread(const framework::Thread& thread,
                          DeadLockDetector::State& state) override
         {
-                // In case we just got a new tick, ignore the thread
+            const auto& id  = thread.getId();
+            const auto& tp  = thread.getProperties();
+            const auto tick = thread.getTickData();
+            // In case we just got a new tick, ignore the thread
             if (tick._lastTick > _currentTime) return;
-                // If thread is already in halted state, ignore it.
+            // If thread is already in halted state, ignore it.
             if (state == DeadLockDetector::HALTED) return;
 
             if (_detector.isAboveFailThreshold(_currentTime, tp, tick)) {
                 state = DeadLockDetector::HALTED;
-                _detector.handleDeadlock(_currentTime, id, tp, tick, false);
+                _detector.handleDeadlock(_currentTime, thread, id, tp, tick, false);
             } else if (_detector.isAboveWarnThreshold(_currentTime, tp, tick)) {
                 state = DeadLockDetector::WARNED;
-                _detector.handleDeadlock(_currentTime, id, tp, tick, true);
+                _detector.handleDeadlock(_currentTime, thread, id, tp, tick, true);
             } else if (state != DeadLockDetector::OK) {
                 vespalib::asciistream ost;
-                ost << "Thread " << id << " has registered tick again.\n";
+                ost << "Thread " << id << " has registered tick again.";
                 LOGBP(info, "%s", ost.str().data());
                 state = DeadLockDetector::OK;
             }
@@ -173,6 +173,7 @@ namespace {
 
 void
 DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
+                                 const framework::Thread& deadlocked_thread,
                                  const vespalib::string& id,
                                  const framework::ThreadProperties&,
                                  const framework::ThreadTickData& tick,
@@ -182,40 +183,30 @@ DeadLockDetector::handleDeadlock(vespalib::steady_time currentTime,
     error << "Thread " << id << " has gone "
           << vespalib::count_ms(currentTime - tick._lastTick)
           << " milliseconds without registering a tick.";
+    const bool shutdown_enabled = shutdown_enabled_relaxed();
+    const bool warning_enabled  = warning_enabled_relaxed();
     if (!warnOnly) {
-        if (_enableShutdown && !warnOnly) {
-            error << " Restarting process due to deadlock.";
+        if (shutdown_enabled) {
+            error << " Restarting process due to presumed internal deadlock.";
         } else {
-            error << " Would have restarted process due to "
-                  << "deadlock if shutdown had been enabled.";
+            error << " Would have restarted process due to deadlock if shutdown had been enabled.";
         }
     } else {
-        error << " Global slack not expended yet. Warning for now.";
+        // TODO would ideally print thread ID here, but it's not well-defined how to print a pthread_t...
+        error << " Global slack not expended yet. Warning for now. Attempting to dump stack of thread...\n";
+        error << deadlocked_thread.get_live_thread_stack_trace();
     }
     if (warnOnly) {
-        if (_enableWarning) {
-            LOGBT(warning, "deadlockw-" + id, "%s",
-                  error.str().data());
-            if (_reportedBucketDBLocksAtState != WARNED) {
-                _reportedBucketDBLocksAtState = WARNED;
-                LOG(info, "Locks in bucket database at deadlock time:\n%s",
-                    getBucketLockInfo().c_str());
-            }
+        if (warning_enabled) {
+            LOGBT(warning, "deadlockw-" + id, "%s", vespalib::string(error.str()).c_str());
         }
         return;
     } else {
-        if (_enableShutdown || _enableWarning) {
-            LOGBT(error, "deadlock-" + id, "%s",
-                  error.str().data());
+        if (shutdown_enabled || warning_enabled) {
+            LOGBT(error, "deadlock-" + id, "%s", vespalib::string(error.str()).c_str());
         }
     }
-    if (!_enableShutdown) return;
-    if (_reportedBucketDBLocksAtState != HALTED) {
-        _reportedBucketDBLocksAtState = HALTED;
-        LOG(info, "Locks in bucket database at deadlock time:"
-                  "\n%s", getBucketLockInfo().c_str());
-    }
-    if (_enableShutdown) {
+    if (shutdown_enabled) {
         _killer->kill();
     }
 }
@@ -278,13 +269,13 @@ namespace {
             return ost.str();
         }
 
-        void visitThread(const vespalib::string& id,
-                         const framework::ThreadProperties& tp,
-                         const framework::ThreadTickData& tick,
+        void visitThread(const framework::Thread& thread,
                          DeadLockDetector::State& /*state*/) override
         {
-            _table._table.addRow(id);
+            _table._table.addRow(thread.getId());
             uint32_t i = _table._table.getRowCount() - 1;
+            const auto& tp = thread.getProperties();
+            const auto tick = thread.getTickData();
             _table._msSinceLastTick[i] = vespalib::count_ms(_time - tick._lastTick);
             _table._maxProcTickTime[i] = vespalib::count_ms(tp.getMaxProcessTime());
             _table._maxWaitTickTime[i] = vespalib::count_ms(tp.getWaitTime());
@@ -315,7 +306,7 @@ DeadLockDetector::reportHtmlStatus(std::ostream& os,
         << " appear before this slack time is expendede on top of the per"
         << " thread value.\n"
         << "</p>\n";
-    if (_enableShutdown) {
+    if (shutdown_enabled_relaxed()) {
         out << "<p>The deadlock detector is enabled and will kill the process "
             << "if a deadlock is detected</p>\n";
     } else {

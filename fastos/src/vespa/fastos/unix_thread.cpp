@@ -102,7 +102,7 @@ FastOS_UNIX_Thread::~FastOS_UNIX_Thread()
     }
 }
 
-FastOS_ThreadId FastOS_UNIX_Thread::GetThreadId ()
+FastOS_ThreadId FastOS_UNIX_Thread::GetThreadId () const noexcept
 {
     return _handle;
 }
