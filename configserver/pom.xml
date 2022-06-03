@@ -280,11 +280,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <!-- TODO Remove dependency on Jetty once no longer required for multi-part response parsing -->
+      <!-- TODO Remove when Jetty is embedded inside container-core -->
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-http</artifactId>
       <version>${jetty.version}</version>
-      <scope>provided</scope>
+      <scope>test</scope>
     </dependency>
 
   </dependencies>
