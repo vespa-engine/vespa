@@ -135,7 +135,7 @@ public class ReindexingCurator implements Closeable {
 
         private Reindexing deserialize(byte[] json) {
             return new Reindexing(SlimeUtils.entriesStream(SlimeUtils.jsonToSlimeOrThrow(json).get().field(STATUS))
-                                            .filter(object -> require(TYPE, object, field -> types.hasDataType(field.asString()))) // Forget unknown documents.
+                                            .filter(object -> require(TYPE, object, field -> types.hasDocumentType(field.asString()))) // Forget unknown documents.
                                             .collect(toUnmodifiableMap(object -> require(TYPE, object, field -> types.getDocumentType(field.asString())),
                                                                        object -> new Status(require(STARTED_MILLIS, object, field -> Instant.ofEpochMilli(field.asLong())),
                                                                                             get(ENDED_MILLIS, object, field -> Instant.ofEpochMilli(field.asLong())),
