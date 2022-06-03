@@ -41,7 +41,6 @@ import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
-import com.yahoo.vespa.model.builder.xml.dom.DomClientProviderBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomHandlerBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -208,7 +207,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addAccessLogs(deployState, cluster, spec);
         addNodes(cluster, spec, context);
 
-        addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
         // Must be added after nodes:
@@ -383,17 +381,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                             SystemBindingPattern.fromHttpPath("/" + name)));
         } else {
             cluster.addVipHandler();
-        }
-    }
-
-    private void addClientProviders(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        List<Element> clientElements = XML.getChildren(spec, "client");
-        if (! clientElements.isEmpty()) {
-            log.logApplicationPackage(
-                    Level.WARNING, "The 'client' element is deprecated for removal in Vespa 8, with no replacement");
-        }
-        for (Element clientSpec : clientElements) {
-            cluster.addComponent(new DomClientProviderBuilder(cluster).build(deployState, cluster, clientSpec));
         }
     }
 

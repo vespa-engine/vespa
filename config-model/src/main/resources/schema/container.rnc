@@ -11,12 +11,6 @@ Handler = element handler {
 Binding = element binding {text}
 ServerBindings = Binding*
 
-Client = element client {
-   ComponentDefinition &
-   element binding {text}* &
-   element serverBinding {text}*
-}
-
 Server = element server {
    ComponentDefinition
 }

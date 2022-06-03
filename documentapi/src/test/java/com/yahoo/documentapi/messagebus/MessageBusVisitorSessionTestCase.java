@@ -718,7 +718,6 @@ public class MessageBusVisitorSessionTestCase {
     }
 
     @Test
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public void testMessageParameters() {
         MockSender sender = new MockSender();
         MockReceiver receiver = new MockReceiver();
