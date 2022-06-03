@@ -171,10 +171,6 @@
     "methods": [
       "public void <init>()",
       "public void setClusters(java.util.Set)",
-      "public void setReceiveTrafficByDefault(boolean)",
-      "public void setUp(java.lang.Object)",
-      "public void setDown(java.lang.Object)",
-      "public boolean containerShouldReceiveTraffic()",
       "public boolean containerShouldReceiveTraffic(com.yahoo.container.handler.ClustersStatus$Require)"
     ],
     "fields": []
@@ -402,9 +398,6 @@
       "public void <init>(com.yahoo.container.handler.ClustersStatus)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor, com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
-      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
-      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void setInRotation(java.lang.Boolean)",
       "public void addToRotation(java.lang.String)",
       "public void removeFromRotation(java.lang.String)",

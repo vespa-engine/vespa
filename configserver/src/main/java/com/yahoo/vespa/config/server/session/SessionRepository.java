@@ -782,7 +782,7 @@ public class SessionRepository {
         }
     }
 
-    // TODO: Remove in Vespa 8 (when we don't allow files in SEARCH_DEFINITIONS_DIR)
+    // TODO: Remove on Vespa 9 (when we don't allow files in SEARCH_DEFINITIONS_DIR)
     // Copies schemas from searchdefinitions/ to schemas/ if searchdefinitions/ exists
     private void moveSearchDefinitionsToSchemasDir(java.nio.file.Path applicationDir) throws IOException {
         File schemasDir = applicationDir.resolve(ApplicationPackage.SCHEMAS_DIR.getRelative()).toFile();
