@@ -1107,16 +1107,13 @@ public class ModelProvisioningTest {
         int numberOfHosts = 3;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, false, "node-1-3-50-03");
-        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
-
-        ContentCluster cluster = model.getContentClusters().get("bar");
-        assertEquals(2, cluster.redundancy().effectiveInitialRedundancy());
-        assertEquals(2, cluster.redundancy().effectiveFinalRedundancy());
-        assertEquals(2, cluster.redundancy().effectiveReadyCopies());
-        assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
-        assertEquals(0, cluster.getRootGroup().getNodes().size());
-        assertEquals(2, cluster.getRootGroup().getSubgroups().size());
+        try {
+            VespaModel model = tester.createModel(services, false, "node-1-3-50-03");
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Cluster 'bar' specifies redundancy 2, but it cannot be higher than the minimum nodes per group, which is 1", Exceptions.toMessageString(e));
+        }
     }
 
     @Test
