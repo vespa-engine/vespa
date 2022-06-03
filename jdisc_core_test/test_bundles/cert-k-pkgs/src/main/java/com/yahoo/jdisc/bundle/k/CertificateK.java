@@ -20,7 +20,6 @@ public class CertificateK {
     private final com.google.common.reflect.Reflection reflection = null;
     private final com.google.common.util.concurrent.AbstractIdleService idleService = null;
     private final com.google.inject.AbstractModule module = null;
-    private final com.google.inject.assistedinject.Assisted assisted = null;
     private final com.google.inject.binder.AnnotatedConstantBindingBuilder builder = null;
     private final com.google.inject.matcher.Matchers matchers = null;
     private final com.google.inject.multibindings.MapBinder<String, String> mapBinder = null;
