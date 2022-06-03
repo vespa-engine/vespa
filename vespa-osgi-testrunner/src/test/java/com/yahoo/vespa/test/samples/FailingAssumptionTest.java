@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@Expect(aborted = 1)
+@Expect(aborted = 1, status = 2)
 public class FailingAssumptionTest {
 
     @Test

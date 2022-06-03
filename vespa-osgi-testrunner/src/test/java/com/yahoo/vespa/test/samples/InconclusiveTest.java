@@ -6,7 +6,7 @@ import com.yahoo.vespa.testrunner.Expect;
 import org.junit.jupiter.api.Test;
 
 @ProductionTest
-@Expect(inconclusive = 1)
+@Expect(inconclusive = 1, status = 3)
 public class InconclusiveTest {
 
     @Test

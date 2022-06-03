@@ -7,7 +7,7 @@ import org.junit.jupiter.api.extension.Extension;
 
 import static java.util.Objects.requireNonNull;
 
-@Expect(error = 1)
+@Expect(error = 1, status = 5)
 public class FailingExtensionTest {
 
     @Test

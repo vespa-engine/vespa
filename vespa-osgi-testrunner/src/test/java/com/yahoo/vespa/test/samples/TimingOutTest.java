@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Timeout;
 
 import java.util.concurrent.TimeUnit;
 
-@Expect(error = 1)
+@Expect(error = 1, status = 5)
 public class TimingOutTest {
 
     @Test

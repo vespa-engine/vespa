@@ -4,7 +4,7 @@ import com.yahoo.vespa.testrunner.Expect;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-@Expect(failure = 1, error = 1)
+@Expect(failed = 1, error = 1, status = 5)
 public class FailingClassLoadingTest {
 
     static { Assertions.fail(); }

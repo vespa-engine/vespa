@@ -5,11 +5,11 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-@Expect(error = 2)
+@Expect(skipped = 2, status = 4)
 public class FailingBeforeAllAssertionTest {
 
     @BeforeAll
-    void fail() { Assertions.fail(); }
+    static void fail() { Assertions.fail(); }
 
     @Test
     void test() { }

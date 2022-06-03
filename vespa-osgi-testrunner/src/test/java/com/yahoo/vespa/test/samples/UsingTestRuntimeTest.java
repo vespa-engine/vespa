@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-@Expect(success = 1)
+@Expect(successful = 1, status = 0)
 public class UsingTestRuntimeTest {
 
     @Test

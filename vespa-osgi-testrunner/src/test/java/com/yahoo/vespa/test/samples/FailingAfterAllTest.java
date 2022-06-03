@@ -4,7 +4,7 @@ import com.yahoo.vespa.testrunner.Expect;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-@Expect(error = 2)
+@Expect(successful = 2, status = 5)
 public class FailingAfterAllTest {
 
     @AfterAll

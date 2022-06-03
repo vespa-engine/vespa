@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Expect(failure = 2)
+@Expect(failed = 2, status = 4)
 public class FailingInstantiationAssertionTest {
 
     { fail(); }

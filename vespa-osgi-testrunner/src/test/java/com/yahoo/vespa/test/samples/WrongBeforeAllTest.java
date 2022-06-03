@@ -4,7 +4,7 @@ import com.yahoo.vespa.testrunner.Expect;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-@Expect(error = 2)
+@Expect(skipped = 2, status = 5)
 public class WrongBeforeAllTest {
 
     @BeforeAll

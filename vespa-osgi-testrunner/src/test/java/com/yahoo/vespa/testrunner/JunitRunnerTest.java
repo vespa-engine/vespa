@@ -4,6 +4,7 @@ import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.cd.Deployment;
 import ai.vespa.hosted.cd.TestRuntime;
+import com.yahoo.vespa.testrunner.TestReport.Status;
 import com.yahoo.vespa.testrunner.TestRunner.Suite;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
@@ -25,7 +26,12 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -41,6 +47,8 @@ import static org.junit.platform.launcher.core.EngineDiscoveryOrchestrator.Phase
  * @author jonmv
  */
 class JunitRunnerTest {
+
+    static final Clock clock = Clock.fixed(Instant.EPOCH, ZoneId.of("UTC"));
 
     @TestFactory
     Stream<DynamicTest> runSampleTests() {
@@ -61,8 +69,17 @@ class JunitRunnerTest {
     }
 
     static void verify(Class<?> testClass) {
-        assertEquals(getTestReport(testClass),
-                     test(getSuite(testClass), new byte[0], testClass).getReport());
+        Expect expected = requireNonNull(testClass.getAnnotation(Expect.class), "sample tests must be annotated with @Expect");
+        TestReport report = test(getSuite(testClass), new byte[0], testClass).getReport();
+        assertEquals(Status.values()[expected.status()], report.root().status());
+        Map<Status, Long> tally = new EnumMap<>(Status.class);
+        if (expected.successful() > 0) tally.put(Status.successful, expected.successful());
+        if (expected.skipped() > 0) tally.put(Status.skipped, expected.skipped());
+        if (expected.aborted() > 0) tally.put(Status.aborted, expected.aborted());
+        if (expected.inconclusive() > 0) tally.put(Status.inconclusive, expected.inconclusive());
+        if (expected.failed() > 0) tally.put(Status.failed, expected.failed());
+        if (expected.error() > 0) tally.put(Status.error, expected.error());
+        assertEquals(tally, report.root().tally());
     }
 
     static Suite getSuite(Class<?> testClass) {
@@ -77,19 +94,9 @@ class JunitRunnerTest {
         return null;
     }
 
-    static TestReport getTestReport(Class<?> testClass) {
-        Expect outcomes = requireNonNull(testClass.getAnnotation(Expect.class), "sample tests must be annotated with @Expect");
-        return TestReport.builder()
-                         .withSuccessCount(outcomes.success())
-                         .withFailedCount(outcomes.failure() + outcomes.error())
-                         .withAbortedCount(outcomes.aborted())
-                         .withIgnoredCount(outcomes.skipped())
-                         .withInconclusiveCount(outcomes.inconclusive())
-                         .build();
-    }
-
     static TestRunner test(Suite suite, byte[] testConfig, Class<?>... testClasses) {
-        JunitRunner runner = new JunitRunner(config -> { assertSame(testConfig, config); testRuntime.set(new MockTestRuntime()); },
+        JunitRunner runner = new JunitRunner(clock,
+                                             config -> { assertSame(testConfig, config); testRuntime.set(new MockTestRuntime()); },
                                              __ -> List.of(testClasses),
                                              JunitRunnerTest::execute);
         try {

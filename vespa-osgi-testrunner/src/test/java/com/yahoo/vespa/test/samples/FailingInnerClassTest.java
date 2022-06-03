@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-@Expect(success = 1, failure = 1)
+@Expect(successful = 1, failed = 1, status = 4)
 public class FailingInnerClassTest {
 
     @Nested

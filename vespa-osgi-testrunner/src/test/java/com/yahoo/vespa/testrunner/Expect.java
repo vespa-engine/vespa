@@ -12,16 +12,18 @@ import java.lang.annotation.RetentionPolicy;
 @Tag("integration")
 public @interface Expect {
 
-    int success() default 0;
+    int status();
 
-    int inconclusive() default 0;
+    long aborted() default 0;
 
-    int aborted() default 0;
+    long skipped() default 0;
 
-    int skipped() default 0;
+    long successful() default 0;
 
-    int failure() default 0;
+    long inconclusive() default 0;
 
-    int error() default 0;
+    long failed() default 0;
+
+    long error() default 0;
 
 }
