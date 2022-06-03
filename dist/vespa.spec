@@ -84,6 +84,7 @@ BuildRequires: python36-devel
 BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
+%global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 BuildRequires: gcc-c++
 BuildRequires: libatomic
 BuildRequires: pybind11-devel
@@ -124,7 +125,7 @@ BuildRequires: libarchive
 %endif
 %define _command_cmake cmake
 %if 0%{?_centos_stream}
-BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
+BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
 %else
 BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
@@ -149,7 +150,11 @@ BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.11.0
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 BuildRequires: protobuf-devel
+%if 0%{?_centos_stream}
+BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
+%else
 BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
+%endif
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -294,7 +299,7 @@ Requires: vespa-gtest = 1.11.0
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
 %if 0%{?_centos_stream}
-%define _vespa_llvm_version 13
+%define _vespa_llvm_version 14
 %else
 %define _vespa_llvm_version 13
 %endif
@@ -306,7 +311,11 @@ Requires: vespa-gtest = 1.11.0
 %define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 %if 0%{?el9}
+%if 0%{?_centos_stream}
+%define _vespa_llvm_version 14
+%else
 %define _vespa_llvm_version 13
+%endif
 Requires: gtest
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
@@ -425,7 +434,7 @@ Requires: openssl-libs
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
 %if 0%{?_centos_stream}
-Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
+Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
 %else
 Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
@@ -435,7 +444,11 @@ Requires: (llvm-libs >= 12.0.1 and llvm-libs < 13)
 Requires: vespa-protobuf = 3.19.1
 %endif
 %if 0%{?el9}
+%if 0%{?_centos_stream}
+Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
+%else
 Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
+%endif
 Requires: protobuf
 %endif
 %if 0%{?fedora}
