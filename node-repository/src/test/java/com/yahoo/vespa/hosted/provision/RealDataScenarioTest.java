@@ -129,7 +129,7 @@ public class RealDataScenarioTest {
     private static FlavorsConfig parseFlavors(Path path) {
         try {
             var element = XmlHelper.getDocumentBuilder().parse(path.toFile()).getDocumentElement();
-            return ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null, null).build(element)).toInstance(FlavorsConfig.class, "");
+            return ConfigPayload.fromBuilder(new DomConfigPayloadBuilder(null).build(element)).toInstance(FlavorsConfig.class, "");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

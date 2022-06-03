@@ -55,10 +55,12 @@ public class UserConfigBuilderTest {
     @Test
     public void require_that_arrays_config_is_resolved() {
         Element configRoot = getDocument("<config name=\"test.arraytypes\">" +
-                "    <intarr operation=\"append\">13</intarr>" +
-                "    <intarr operation=\"append\">10</intarr>" +
-                "    <intarr operation=\"append\">1337</intarr>" +
-                "</config>");
+                                                 "  <intarr>" +
+                                                 "    <item>13</item>" +
+                                                 "    <item>10</item>" +
+                                                 "    <item>1337</item>" +
+                                                 "  </intarr>" +
+                                                 "</config>");
         UserConfigRepo map = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
         assertFalse(map.isEmpty());
         ConfigDefinitionKey key = new ConfigDefinitionKey("arraytypes", "test");
@@ -74,11 +76,15 @@ public class UserConfigBuilderTest {
     public void require_that_arrays_of_structs_are_resolved() {
         Element configRoot = getDocument(
                 "  <config name='vespa.configdefinition.specialtokens'>" +
-                        "    <tokenlist operation='append'>" +
-                        "      <name>default</name>" +
-                        "      <tokens operation='append'>" +
-                        "        <token>dvd+-r</token>" +
-                        "      </tokens>" +
+                        "    <tokenlist>" +
+                        "      <item>" +
+                        "        <name>default</name>" +
+                        "        <tokens>" +
+                        "          <item>" +
+                        "            <token>dvd+-r</token>" +
+                        "          </item>" +
+                        "        </tokens>" +
+                        "      </item>" +
                         "    </tokenlist>" +
                         "  </config>"
         );
