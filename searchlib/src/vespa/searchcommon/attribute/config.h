@@ -27,10 +27,7 @@ public:
     Config() noexcept;
     Config(BasicType bt) noexcept : Config(bt, CollectionType::SINGLE) { }
     Config(BasicType bt, CollectionType ct) noexcept : Config(bt, ct, false) { }
-    Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
-        : Config(bt, ct, fastSearch_, false)
-    {}
-    Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) noexcept;
+    Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept;
     Config(const Config &);
     Config & operator = (const Config &);
     Config(Config &&) noexcept;
@@ -40,7 +37,6 @@ public:
     BasicType basicType()                 const { return _basicType; }
     CollectionType collectionType()       const { return _type; }
     bool fastSearch()                     const { return _fastSearch; }
-    bool huge()                           const { return _huge; }
     bool paged()                          const { return _paged; }
     const PredicateParams &predicateParams() const { return _predicateParams; }
     const vespalib::eval::ValueType & tensorType() const { return _tensorType; }
@@ -72,7 +68,6 @@ public:
     const CompactionStrategy &getCompactionStrategy() const { return _compactionStrategy; }
     const DictionaryConfig & get_dictionary_config() const { return _dictionary; }
     Match get_match() const { return _match; }
-    Config & setHuge(bool v)                         { _huge = v; return *this;}
     Config & setFastSearch(bool v)                   { _fastSearch = v; return *this; }
     Config & setPredicateParams(const PredicateParams &v) { _predicateParams = v; return *this; }
     Config & setTensorType(const vespalib::eval::ValueType &tensorType_in) {
@@ -137,7 +132,6 @@ private:
     BasicType      _basicType;
     CollectionType _type;
     bool           _fastSearch;
-    bool           _huge;
     bool           _enableBitVectors;
     bool           _enableOnlyBitVector;
     bool           _isFilter;
