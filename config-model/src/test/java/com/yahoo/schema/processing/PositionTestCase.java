@@ -113,8 +113,8 @@ public class PositionTestCase {
                            PositionDataType.getZCurveFieldName(fieldName),
                            (isArray ? DataType.getArray(PositionDataType.INSTANCE) : PositionDataType.INSTANCE),
                            SummaryTransform.GEOPOS);
-        assertNull(schema.getSummaryField(PositionDataType.getDistanceSummaryFieldName(fieldName)));
-        assertNull(schema.getSummaryField(PositionDataType.getPositionSummaryFieldName(fieldName)));
+        assertNull(schema.getSummaryField(AdjustPositionSummaryFields.getDistanceSummaryFieldName(fieldName)));
+        assertNull(schema.getSummaryField(AdjustPositionSummaryFields.getPositionSummaryFieldName(fieldName)));
     }
 
     private static void assertSummaryField(Schema schema, String fieldName, String sourceName, DataType dataType,

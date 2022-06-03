@@ -92,12 +92,12 @@ public class ImplicitSummaries extends Processor {
         if (field.doesSummarying()) {
             for (Attribute attribute : field.getAttributes().values()) {
                 if ( ! attribute.isPosition()) continue;
-                var distField = field.getSummaryField(PositionDataType.getDistanceSummaryFieldName(fieldName));
+                var distField = field.getSummaryField(AdjustPositionSummaryFields.getDistanceSummaryFieldName(fieldName));
                 if (distField != null) {
                     DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
                     attributePrefetchSummary.add(distField);
                 }
-                var posField = field.getSummaryField(PositionDataType.getPositionSummaryFieldName(fieldName));
+                var posField = field.getSummaryField(AdjustPositionSummaryFields.getPositionSummaryFieldName(fieldName));
                 if (posField != null) {
                     DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
                     attributePrefetchSummary.add(posField);
