@@ -165,7 +165,7 @@ public class HostedDeployTest {
                                                                        .hostedConfigserverConfig(Zone.defaultZone())
                                                                        .build();
         tester.deployApp("src/test/apps/hosted/", "6.2.0");
-        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
     }
 
     /**
@@ -174,7 +174,7 @@ public class HostedDeployTest {
      */
     @Test
     public void testCreateOnlyNeededModelVersions() {
-        List<Host> hosts = createHosts(7, "6.0.0", "6.1.0", null, "6.1.0"); // Use a host without a version as well.
+        List<Host> hosts = createHosts(9, "6.0.0", "6.1.0", null, "6.1.0"); // Use a host without a version as well.
 
         CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
         CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"));
@@ -188,7 +188,7 @@ public class HostedDeployTest {
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
         tester.deployApp("src/test/apps/hosted/", "7.0.0");
-        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory600.creationCount() > 0);
@@ -205,7 +205,7 @@ public class HostedDeployTest {
      */
     @Test
     public void testCreateOnlyNeededModelVersionsNewNodes() {
-        List<Host> hosts = createHosts(7, (String) null);
+        List<Host> hosts = createHosts(9, (String) null);
 
         CountingModelFactory factory600 = createHostedModelFactory(Version.fromString("6.0.0"));
         CountingModelFactory factory610 = createHostedModelFactory(Version.fromString("6.1.0"));
@@ -216,7 +216,7 @@ public class HostedDeployTest {
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
         tester.deployApp("src/test/apps/hosted/", "7.0.0");
-        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory700.creationCount() > 0);
@@ -229,7 +229,7 @@ public class HostedDeployTest {
      */
     @Test
     public void testCreateNeededModelVersionsForManuallyDeployedApps() {
-        List<Host> hosts = createHosts(5, "7.0.0");
+        List<Host> hosts = createHosts(7, "7.0.0");
 
         CountingModelFactory factory700 = createHostedModelFactory(Version.fromString("7.0.0"), devZone);
         CountingModelFactory factory710 = createHostedModelFactory(Version.fromString("7.1.0"), devZone);
@@ -239,7 +239,7 @@ public class HostedDeployTest {
         DeployTester tester = createTester(hosts, modelFactories, devZone);
         // Deploy with version that does not exist on hosts, the model for this version should also be created
         tester.deployApp("src/test/apps/hosted/", "7.2.0");
-        assertEquals(5, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         // Nodes are on 7.0.0 (should be created), no nodes on 7.1.0 (should not be created), 7.2.0 should always be created
@@ -254,7 +254,7 @@ public class HostedDeployTest {
      */
     @Test
     public void testCreateModelVersionsForManuallyDeployedAppsWhenCreatingFailsForOneVersion() {
-        List<Host> hosts = createHosts(5, "7.0.0");
+        List<Host> hosts = createHosts(7, "7.0.0");
 
         ModelFactory factory700 = createFailingModelFactory(Version.fromString("7.0.0"));
         CountingModelFactory factory720 = createHostedModelFactory(Version.fromString("7.2.0"), devZone);
@@ -264,7 +264,7 @@ public class HostedDeployTest {
         // Deploy with version that does not exist on hosts, the model for this version should be created even
         // if creating 7.0.0 fails
         tester.deployApp("src/test/apps/hosted/", "7.2.0");
-        assertEquals(5, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue("Newest model for latest major version is always included", factory720.creationCount() > 0);
@@ -299,7 +299,7 @@ public class HostedDeployTest {
         String oldestVersion = oldestMajorVersion + ".0.0";
         String newestOnOldMajorVersion = oldestMajorVersion + ".1.0";
         String newestOnNewMajorVersion = newestMajorVersion + ".2.0";
-        List<Host> hosts = createHosts(7, oldestVersion, newestOnNewMajorVersion);
+        List<Host> hosts = createHosts(9, oldestVersion, newestOnNewMajorVersion);
 
         CountingModelFactory factory1 = createHostedModelFactory(Version.fromString(oldestVersion));
         CountingModelFactory factory2 = createHostedModelFactory(Version.fromString(newestOnOldMajorVersion));
@@ -308,7 +308,7 @@ public class HostedDeployTest {
 
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         tester.deployApp("src/test/apps/hosted/", oldestVersion);
-        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue(factory1.creationCount() > 0);
@@ -350,7 +350,7 @@ public class HostedDeployTest {
     @Test
     public void testAccessControlIsOnlyCheckedWhenNoProdDeploymentExists() {
         // Provisioner does not reuse hosts, so need twice as many hosts as app requires
-        List<Host> hosts = createHosts(14, "6.0.0");
+        List<Host> hosts = createHosts(18, "6.0.0");
 
         List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("6.0.0")),
                                                     createHostedModelFactory(Version.fromString("6.1.0")),
@@ -360,12 +360,12 @@ public class HostedDeployTest {
         ApplicationId applicationId = tester.applicationId();
         // Deploy with oldest version
         tester.deployApp("src/test/apps/hosted/", "6.0.0");
-        assertEquals(7, tester.getAllocatedHostsOf(applicationId).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(applicationId).getHosts().size());
 
         // Deploy with version that does not exist on hosts and with app package that has no write access control,
         // validation of access control should not be done, since the app is already deployed in prod
         tester.deployApp("src/test/apps/hosted-no-write-access-control", "6.1.0");
-        assertEquals(7, tester.getAllocatedHostsOf(applicationId).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(applicationId).getHosts().size());
     }
 
     @Test
@@ -408,7 +408,7 @@ public class HostedDeployTest {
 
     @Test
     public void testThatConfigChangeActionsAreCollectedFromAllModels() {
-        List<Host> hosts = createHosts(7, "6.1.0", "6.2.0");
+        List<Host> hosts = createHosts(9, "6.1.0", "6.2.0");
         List<ServiceInfo> services = List.of(
                 new ServiceInfo("serviceName", "serviceType", null, new HashMap<>(), "configId", "hostName"));
 
@@ -421,12 +421,12 @@ public class HostedDeployTest {
         DeployTester tester = createTester(hosts, modelFactories, prodZone);
         tester.deployApp("src/test/apps/hosted/", "6.2.0");
 
-        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
     }
 
     @Test
     public void testThatAllowedConfigChangeActionsAreActedUpon() {
-        List<Host> hosts = createHosts(7, "6.1.0");
+        List<Host> hosts = createHosts(9, "6.1.0");
         List<ServiceInfo> services = List.of(
                 new ServiceInfo("serviceName", "serviceType", null, Map.of("clustername", "cluster"), "configId", "hostName"));
 
@@ -447,7 +447,7 @@ public class HostedDeployTest {
                 .build();
         PrepareResult prepareResult = tester.deployApp("src/test/apps/hosted/", "6.1.0");
 
-        assertEquals(7, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
         assertTrue(prepareResult.configChangeActions().getRestartActions().isEmpty()); // Handled by deployment.
         assertEquals(Optional.of(ApplicationReindexing.empty()
                                                       .withPending("cluster", "music", prepareResult.sessionId())),
