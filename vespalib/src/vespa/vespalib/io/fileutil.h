@@ -216,41 +216,12 @@ public:
 extern vespalib::string getCurrentDirectory();
 
 /**
- * Creates a directory.
- *
- * @param directory   The directory to create.
- * @param recursive   If set, create all parent directories needed if missing.
- * @throw IoException If we failed create the directory.
- *
- * @return True if it did not exist, false if it did.
- *
- * This function is deprecated. Use std::filesystem::create_directory or std::filesystem::create_directories
- * instead.
- */
-extern bool mkdir(const vespalib::string & directory, bool recursive = true);
-
-/**
  * Change working directory.
  *
  * @param directory   The directory to change to.
  * @throw IoException If we failed to change to the new working directory.
  */
 extern void chdir(const vespalib::string & directory);
-
-/**
- * Remove a directory.
- *
- * @param directory   The directory name.
- * @param recursive   If set, remove all content of the directory to. If not
- *                    set, fail if the directory is not empty.
- * @throw std::filesystem::filesystem_error If we failed to remove the directory.
- *
- * @return True if directory existed, false if not.
- *
- * This function is deprecated. Use std::filesystem::remove or std::filesystem::remove_all
- * instead.
- */
-extern bool rmdir(const vespalib::string & directory, bool recursive = false);
 
 /**
  * Stat a file.
@@ -376,6 +347,7 @@ extern bool unlink(const vespalib::string & filename);
  * should be created if it's missing, or not.
  *
  * @throw IoException If we failed to rename the file.
+ * @throw std::filesystem::filesystem_error If we failed to create a target directory
  * @return True if file was renamed, false if frompath did not exist.
  */
 extern bool rename(const vespalib::string & frompath,

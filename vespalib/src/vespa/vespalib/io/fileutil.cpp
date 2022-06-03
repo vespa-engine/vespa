@@ -151,7 +151,7 @@ namespace {
             auto pos = filename.rfind('/');
             if (pos != string::npos) {
                 string path(filename.substr(0, pos));
-                mkdir(path);
+                std::filesystem::create_directories(std::filesystem::path(path));
                 LOG(spam, "open(%s, %d): Retrying open after creating parent "
                           "directories.", filename.c_str(), flags);
                 fd = ::open(filename.c_str(), flags, 0644);
@@ -448,50 +448,6 @@ getCurrentDirectory()
     throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
 }
 
-bool
-mkdir(const string & directory, bool recursive)
-{
-    if (::mkdir(directory.c_str(), 0777) == 0) {
-        LOG(debug, "mkdir(%s): Created directory", directory.c_str());
-        return true;
-    }
-    if (recursive && errno == ENOENT) {
-        auto slashpos = directory.rfind('/');
-        if (slashpos != string::npos) {
-            /* Recursively make superdirs.*/
-            string superdir = directory.substr(0, slashpos);
-            mkdir(superdir, recursive);
-            if (::mkdir(directory.c_str(), 0777) == 0) {
-                LOG(debug, "mkdir(%s): Created directory recursively", directory.c_str());
-                return true;
-            }
-        }
-    }
-    if (errno == EEXIST) {
-        // Use stat rather than lstat since we don't really care if the path
-        // component is a symbolic link as long as it points to a directory.
-        FileInfo::UP info(vespalib::stat(directory));
-        if (info.get() != 0 && info->_directory) {
-            LOG(debug, "mkdir(%s): Directory existed", directory.c_str());
-            return false;
-        } else if (info.get() != 0) {
-            asciistream ost;
-            ost << "mkdir(" << directory << (recursive ? ", recursive" : "")
-                << "): Failed.";
-            if (info->_plainfile) {
-                ost << " A plain file already exist.";
-            } else {
-                ost << " A file of some sort already exist.";
-            }
-            throw IoException(ost.str(), IoException::ILLEGAL_PATH, VESPA_STRLOC);
-        }
-    }
-    asciistream ost;
-    ost << "mkdir(" << directory << (recursive ? ", recursive" : "")
-        << "): Failed, errno(" << errno << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
-}
-
 void
 symlink(const string & oldPath, const string & newPath)
 {
@@ -530,17 +486,6 @@ chdir(const string & directory)
         throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
     }
     LOG(debug, "chdir(%s): Working directory changed.", directory.c_str());
-}
-
-bool
-rmdir(const string & directory, bool recursive)
-{
-    std::filesystem::path path(directory);
-    if (recursive) {
-        return std::filesystem::remove_all(path) > 0;
-    } else {
-        return std::filesystem::remove(path);
-    }
 }
 
 FileInfo::UP
@@ -593,7 +538,7 @@ rename(const string & frompath, const string & topath,
                 string::size_type pos = topath.rfind('/');
                 if (pos != string::npos) {
                     string path(topath.substr(0, pos));
-                    vespalib::mkdir(path);
+                    std::filesystem::create_directories(std::filesystem::path(path));
                     LOG(debug, "rename(%s, %s): Created target directory. Calling recursively.",
                         frompath.c_str(), topath.c_str());
                     return rename(frompath, topath, copyDeleteBetweenFilesystems, false);
