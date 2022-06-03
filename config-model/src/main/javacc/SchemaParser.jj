@@ -404,7 +404,7 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | rawAsBase64(schema)
       | searchStemming(schema)
       | importField(schema)
-      | rankingConstant(schema) // Deprecated: TODO: Emit warning when on Vespa 8
+      | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
       | rankProfile(schema)
       | documentSummary(schema)
       | fieldOutsideDoc(schema)
@@ -412,7 +412,7 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | structOutside(schema)
       | annotationOutside(schema)
       | fieldSet(schema)
-      | onnxModelInSchema(schema) // Deprecated: TODO: Emit warning when on Vespa 8
+      | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
  )
 }
 
@@ -2258,7 +2258,7 @@ void constant(ParsedSchema schema, ParsedRankProfile profile) :
                 profile.add(new RankProfile.Constant(name, type, valuePath));
         }
         )
-        | // Deprecated forms (TODO: Add warning on Vespa 8):
+        | // Deprecated forms (TODO: Vespa > 8: Add warning):
         ( constantValue(profile, name) | constantTensor(profile, name) )
       )
     )

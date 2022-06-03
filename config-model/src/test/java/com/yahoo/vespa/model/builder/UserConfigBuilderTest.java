@@ -53,24 +53,6 @@ public class UserConfigBuilderTest {
     }
 
     @Test
-    public void require_that_arrays_config_is_resolved() {
-        Element configRoot = getDocument("<config name=\"test.arraytypes\">" +
-                "    <intarr operation=\"append\">13</intarr>" +
-                "    <intarr operation=\"append\">10</intarr>" +
-                "    <intarr operation=\"append\">1337</intarr>" +
-                "</config>");
-        UserConfigRepo map = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
-        assertFalse(map.isEmpty());
-        ConfigDefinitionKey key = new ConfigDefinitionKey("arraytypes", "test");
-        assertNotNull(map.get(key));
-        ArraytypesConfig config = createConfig(ArraytypesConfig.class, map.get(key));
-        assertEquals(3, config.intarr().size());
-        assertEquals(13, config.intarr(0));
-        assertEquals(10, config.intarr(1));
-        assertEquals(1337, config.intarr(2));
-    }
-
-    @Test
     public void require_that_arrays_of_structs_are_resolved() {
         Element configRoot = getDocument(
                 "  <config name='vespa.configdefinition.specialtokens'>" +

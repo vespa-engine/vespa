@@ -122,17 +122,6 @@ public class DomConfigPayloadBuilderTest {
     }
 
     @Test
-    public void append_to_leaf_array() {
-        // Simulate user config from vespa-services.xml
-        Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
-                "<config name=\"a.function-test\">" +
-                "  <intarr operation=\"append\">1</intarr>" +
-                "  <intarr operation=\"append\">2</intarr>" +
-                "</config> ");
-        assertPayload("{\"intarr\":[\"1\",\"2\"]}", getDocument(xmlConfig));
-    }
-
-    @Test
     public void camel_case_via_dashes() {
         Reader xmlConfig = new StringReader("<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                 "<config name=\"test.function-test\">" +
