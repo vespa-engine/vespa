@@ -10,14 +10,6 @@ logserver.host string default="localhost"
 ## RPC port of logserver.
 logserver.rpcport int default=5822
 
-## Legacy port to contact the logserver on.
-## Deprecated (not used). TODO: Remove on Vespa 8.
-logserver.port int default=5821
-
-## Use RPC protocol
-## Deprecated (always true). TODO: Remove on Vespa 8.
-logserver.userpc bool default=true
-
 ## Forward to a logserver. Other logserver configuration is irrelevant if false.
 logserver.use bool default=true
 
