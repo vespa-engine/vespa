@@ -79,7 +79,7 @@ public class ConfigSubscriber implements AutoCloseable {
     /**
      * Subscribes on the given type of {@link ConfigInstance} with the given config id.
      *
-     * The method blocks until the first config is ready to be fetched with {@link #nextConfig()}.
+     * The method blocks until the first config is ready to be fetched with {@link #nextConfig(boolean)}.
      *
      * @param configClass The class, typically generated from a def-file using config-class-plugin
      * @param configId Identifies the service in vespa-services.xml, or null if you are using a local {@link ConfigSource} which does not use config id.
@@ -94,7 +94,7 @@ public class ConfigSubscriber implements AutoCloseable {
     /**
      * Subscribes on the given type of {@link ConfigInstance} with the given config id and subscribe timeout.
      *
-     * The method blocks until the first config is ready to be fetched with {@link #nextConfig()}.
+     * The method blocks until the first config is ready to be fetched with {@link #nextConfig(boolean)}.
      *
      * @param configClass The class, typically generated from a def-file using config-class-plugin
      * @param configId    Identifies the service in vespa-services.xml, or possibly raw:, file:, dir: or jar: type config which addresses config locally.
@@ -158,11 +158,6 @@ public class ConfigSubscriber implements AutoCloseable {
      */
     public boolean nextConfig(boolean isInitializing) {
         return nextConfig(TimingValues.defaultNextConfigTimeout, isInitializing);
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean nextConfig() {
-        return nextConfig(false);
     }
 
     /**
@@ -462,7 +457,7 @@ public class ConfigSubscriber implements AutoCloseable {
 
         ConfigHandle<T> handle = subscribe(configClass, configId);
 
-        if ( ! nextConfig())
+        if ( ! nextConfig(false))
             throw new ConfigurationRuntimeException("Initial config of " + configClass.getName() + " failed");
 
         singleSubscriber.configure(handle.getConfig());
@@ -471,7 +466,7 @@ public class ConfigSubscriber implements AutoCloseable {
                     boolean hasNewConfig = false;
 
                     try {
-                        hasNewConfig = nextConfig();
+                        hasNewConfig = nextConfig(false);
                     }
                     catch (Exception e) {
                         log.log(SEVERE, "Exception on receiving config. Ignoring this change.", e);
