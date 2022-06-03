@@ -135,12 +135,7 @@ public class DomConfigPayloadBuilder {
             throw new ConfigurationRuntimeException("Element '" + name + "' must have either children or a value");
         }
 
-        if (element.hasAttribute("operation")) {
-            // leaf array, currently the only supported operation is 'append'
-            verifyLegalOperation(element);
-            ConfigPayloadBuilder.Array a = payloadBuilder.getArray(name);
-            a.append(value);
-        } else if ("item".equals(name)) {
+        if ("item".equals(name)) {
             if (parentName == null)
                 throw new ConfigurationRuntimeException("<item> is a reserved keyword for array and map elements");
             if (element.hasAttribute("key")) {
@@ -157,16 +152,7 @@ public class DomConfigPayloadBuilder {
     private void parseComplex(Element element, List<Element> children, ConfigPayloadBuilder payloadBuilder, String parentName) {
         String name = extractName(element);
          // Inner value
-        if (element.hasAttribute("operation")) {
-            // inner array, currently the only supported operation is 'append'
-            verifyLegalOperation(element);
-            ConfigPayloadBuilder childPayloadBuilder = payloadBuilder.getArray(name).append();
-            //Cursor array = node.setArray(name);
-            for (Element child : children) {
-                //Cursor struct = array.addObject();
-                parseElement(child, childPayloadBuilder, name);
-            }
-        } else if ("item".equals(name)) {
+        if ("item".equals(name)) {
             // Reserved item means array/map element as struct
             if (element.hasAttribute("key")) {
                 ConfigPayloadBuilder childPayloadBuilder = payloadBuilder.getMap(parentName).get(element.getAttribute("key"));
@@ -220,16 +206,6 @@ public class DomConfigPayloadBuilder {
             throw new ConfigurationRuntimeException("Error parsing element at " + XML.getNodePath(currElem, " > ") + ": " +
                     Exceptions.toMessageString(exception));
         }
-    }
-
-    private void verifyLegalOperation(Element currElem) {
-        logger.ifPresent(log -> log.logApplicationPackage(
-                Level.WARNING, "The 'operation' attribute is deprecated for removal in Vespa 8. Use 'item' instead."));
-
-        String operation = currElem.getAttribute("operation");
-        if (! operation.equalsIgnoreCase("append"))
-            throw new ConfigurationRuntimeException("The only supported array operation is 'append', got '"
-                    + operation + "' at XML node '" + XML.getNodePath(currElem, " > ") + "'.");
     }
 
 }
