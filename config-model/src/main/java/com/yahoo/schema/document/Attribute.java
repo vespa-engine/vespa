@@ -181,6 +181,9 @@ public final class Attribute implements Cloneable, Serializable {
     public boolean isPrefetch() {
         if (prefetch!=null) return prefetch.booleanValue();
 
+        if (tensorType.isPresent()) {
+            return false;
+        }
         if (CollectionType.SINGLE.equals(collectionType)) {
             return true;
         }
