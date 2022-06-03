@@ -65,7 +65,7 @@ public class DocumentTypeManager {
         DocumentTypeManagerConfigurer.configureNewManager(config, this);
     }
 
-    public void assign(DocumentTypeManager other) {
+    void internalAssign(DocumentTypeManager other) {
         dataTypes = other.dataTypes;
         documentTypes = other.documentTypes;
         annotationTypeRegistry = other.annotationTypeRegistry;
@@ -103,7 +103,7 @@ public class DocumentTypeManager {
         }
     }
 
-    public boolean hasDataType(String name) {
+    boolean hasDataTypeInternal(String name) {
         if (name.startsWith("tensor(")) return true; // built-in dynamic: Always present
         for (DataType type : dataTypes.values()) {
             if (type.getName().equalsIgnoreCase(name)) {
@@ -111,19 +111,6 @@ public class DocumentTypeManager {
             }
         }
         return false;
-    }
-
-    /**
-     * Use constants and factories in DataType instead.
-     * For structs, use getStructType() in DocumentType.
-     * For annotation payloads, use getDataType() in AnnotationType.
-     */
-    DataType getDataType(String name) {
-        var type = getDataTypeInternal(name);
-        if (type == null) {
-            throw new IllegalArgumentException("No datatype named " + name);
-        }
-        return type;
     }
 
     /**
@@ -163,7 +150,12 @@ public class DocumentTypeManager {
         return foundTypes.get(0);
     }
 
-    DataType getDataType(int code) { return getDataType(code, ""); }
+    /**
+     * Return a data type instance
+     *
+     * @param code the code of the data type to return, which must be either built in or present in this manager
+     */
+    DataType getDataTypeByCode(int code) { return getDataTypeByCode(code, ""); }
 
     /**
      * Return a data type instance
@@ -172,7 +164,7 @@ public class DocumentTypeManager {
      * @param detailedType detailed type information, or the empty string if none
      * @return the appropriate DataType instance
      */
-    DataType getDataType(int code, String detailedType) {
+    DataType getDataTypeByCode(int code, String detailedType) {
         if (code == DataType.tensorDataTypeCode) // built-in dynamic
             return new TensorDataType(TensorType.fromSpec(detailedType));
 
@@ -202,7 +194,6 @@ public class DocumentTypeManager {
      *
      * @param type The datatype to register
      */
-    @SuppressWarnings("deprecation")
     void registerSingleType(DataType type) {
         if (type instanceof TensorDataType) return; // built-in dynamic: Created on the fly
         if (dataTypes.containsKey(type.getId())) {
@@ -259,6 +250,15 @@ public class DocumentTypeManager {
         return documentTypes.get(new DataTypeName(name));
     }
 
+    /**
+     * Convenience method
+     * @param name the name of a document type
+     * @return returns true if a document type having this name is registered in this manager
+     */
+    public boolean hasDocumentType(String name) {
+        return (getDocumentType(name) != null);
+    }
+
     final public Document createDocument(GrowableByteBuffer buf) {
         DocumentDeserializer data = DocumentDeserializerFactory.create6(this, buf);
         return new Document(data);
@@ -293,7 +293,7 @@ public class DocumentTypeManager {
      * Clears the DocumentTypeManager. After this operation,
      * only the default document type and data types are available.
      */
-    void clear() {
+    void internalClear() {
         documentTypes.clear();
         dataTypes.clear();
         registerDefaultDataTypes();
