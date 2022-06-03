@@ -5,8 +5,6 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.jdisc.MetricConsumerFactory;
-import com.yahoo.container.jdisc.state.StateMonitor;
-import com.yahoo.metrics.MetricsPresentationConfig;
 
 /**
  * A dependency injection provider which provides the default metrics provider
