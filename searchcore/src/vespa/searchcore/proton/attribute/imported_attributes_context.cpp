@@ -21,7 +21,7 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, Att
     if (itr != attributes.end()) {
         return itr->second->attribute();
     }
-    ImportedAttributeVector::SP result = _repo.get(name);
+    const ImportedAttributeVector::SP & result = _repo.get(name);
     if (result) {
         auto insRes = attributes.emplace(name, result->makeReadGuard(stableEnumGuard));
         return insRes.first->second->attribute();

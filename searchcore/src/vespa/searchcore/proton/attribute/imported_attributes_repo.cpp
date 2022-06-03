@@ -8,14 +8,14 @@ namespace proton {
 
 using search::attribute::ImportedAttributeVector;
 
-ImportedAttributesRepo::ImportedAttributesRepo()
-    : _repo()
-{
+namespace {
+
+ImportedAttributeVector::SP _empty;
+
 }
 
-ImportedAttributesRepo::~ImportedAttributesRepo()
-{
-}
+ImportedAttributesRepo::ImportedAttributesRepo() = default;
+ImportedAttributesRepo::~ImportedAttributesRepo() = default;
 
 void
 ImportedAttributesRepo::add(const vespalib::string &name,
@@ -24,14 +24,14 @@ ImportedAttributesRepo::add(const vespalib::string &name,
     _repo[name] = std::move(attr);
 }
 
-ImportedAttributeVector::SP
+const ImportedAttributeVector::SP &
 ImportedAttributesRepo::get(const vespalib::string &name) const
 {
     auto itr = _repo.find(name);
     if (itr != _repo.end()) {
         return itr->second;
     }
-    return ImportedAttributeVector::SP();
+    return _empty;
 }
 
 void

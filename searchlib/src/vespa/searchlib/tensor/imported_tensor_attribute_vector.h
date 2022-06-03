@@ -29,9 +29,9 @@ public:
                                   std::shared_ptr<attribute::ReadableAttributeVector> target_attribute,
                                   std::shared_ptr<const IDocumentMetaStoreContext> target_document_meta_store,
                                   std::shared_ptr<BitVectorSearchCache> search_cache);
-    ~ImportedTensorAttributeVector();
+    ~ImportedTensorAttributeVector() override;
 
-    virtual std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
+    std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
 };
 
 }
