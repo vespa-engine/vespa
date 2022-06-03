@@ -40,17 +40,6 @@ public class Result {
     /**
      * Creates a unsuccessful result
      *
-     * @deprecated Will be removed on Vespa 8 due to incorrect java.lang.Error
-     */
-    @Deprecated(forRemoval = true, since="7")
-    public Result(ResultType type, java.lang.Error error) {
-        this.type = type;
-        this.error = new Error(0, error.getMessage());
-        this.requestId = 0;
-    }
-    /**
-     * Creates a unsuccessful result
-     *
      * @param type  the type of failure
      * @param error the error to encapsulate in this Result
      * @see com.yahoo.documentapi.Result.ResultType

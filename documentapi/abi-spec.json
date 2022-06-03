@@ -469,7 +469,6 @@
     "methods": [
       "public void <init>()",
       "public void <init>(long)",
-      "public void <init>(com.yahoo.documentapi.Result$ResultType, java.lang.Error)",
       "public void <init>(com.yahoo.documentapi.Result$ResultType, com.yahoo.messagebus.Error)",
       "public boolean isSuccess()",
       "public java.lang.Error getError()",
