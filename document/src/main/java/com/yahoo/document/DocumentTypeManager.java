@@ -114,12 +114,10 @@ public class DocumentTypeManager {
     }
 
     /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
      * Use constants and factories in DataType instead.
      * For structs, use getStructType() in DocumentType.
      * For annotation payloads, use getDataType() in AnnotationType.
-     **/
-    @Deprecated
+     */
     DataType getDataType(String name) {
         var type = getDataTypeInternal(name);
         if (type == null) {
@@ -165,10 +163,6 @@ public class DocumentTypeManager {
         return foundTypes.get(0);
     }
 
-    /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @Deprecated
     DataType getDataType(int code) { return getDataType(code, ""); }
 
     /**
@@ -177,10 +171,7 @@ public class DocumentTypeManager {
      * @param code the code of the data type to return, which must be either built in or present in this manager
      * @param detailedType detailed type information, or the empty string if none
      * @return the appropriate DataType instance
-     *
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
      */
-    @Deprecated
     DataType getDataType(int code, String detailedType) {
         if (code == DataType.tensorDataTypeCode) // built-in dynamic
             return new TensorDataType(TensorType.fromSpec(detailedType));
@@ -301,10 +292,7 @@ public class DocumentTypeManager {
     /**
      * Clears the DocumentTypeManager. After this operation,
      * only the default document type and data types are available.
-     *
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
      */
-    @Deprecated
     void clear() {
         documentTypes.clear();
         dataTypes.clear();
