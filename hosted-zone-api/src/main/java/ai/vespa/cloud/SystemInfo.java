@@ -23,12 +23,6 @@ public class SystemInfo {
         this.node = Objects.requireNonNull(node, "Node cannot be null");
     }
 
-    /** @deprecated pass an application id */
-    @Deprecated // Remove on Vespa 8
-    public SystemInfo(Zone zone, Cluster cluster, Node node) {
-        this(new ApplicationId("default", "default", "default"), zone, cluster, node);
-    }
-
     /** Returns the application this is running as a part of */
     public ApplicationId application() { return application; }
 

@@ -22,12 +22,4 @@ public interface Tokenizer {
      */
     Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents);
 
-    /**
-     * Not used.
-     *
-     * @deprecated replacements are already applied in tokens returned by tokenize
-     */
-    @Deprecated // Remove on Vespa 8
-    default String getReplacementTerm(String tokenString) { return tokenString; }
-
 }
