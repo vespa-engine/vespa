@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.utils.MultiPartFormParser;
+import com.yahoo.container.jdisc.utils.MultiPartFormParser.PartItem;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.vespa.config.server.ApplicationRepository;
@@ -18,9 +20,7 @@ import com.yahoo.vespa.config.server.http.v2.response.SessionPrepareAndActivateR
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import org.apache.hc.core5.http.ContentType;
-import org.eclipse.jetty.http.MultiPartFormInputStream;
 
-import javax.servlet.http.Part;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.application.CompressedApplicationInputStream.createFromCompressedStream;
 import static com.yahoo.vespa.config.server.http.Utils.checkThatTenantExists;
@@ -80,16 +79,12 @@ public class ApplicationApiHandler extends SessionHandler {
                 .orElse(false);
         if (multipartRequest) {
             try {
-                // TODO Remove direct dependency on Jetty for parsing multi-part response (add helper in container-core)
-                MultiPartFormInputStream multiPartFormInputStream = new MultiPartFormInputStream(request.getData(), request.getHeader(CONTENT_TYPE), /* config */null, /* contextTmpDir */null);
-                Map<String, Part> parts = multiPartFormInputStream.getParts().stream()
-                        .collect(Collectors.toMap(Part::getName, p -> p));
-
-                byte[] params = parts.get(MULTIPART_PARAMS).getInputStream().readAllBytes();
+                Map<String, PartItem> parts = new MultiPartFormParser(request).readParts();
+                byte[] params = parts.get(MULTIPART_PARAMS).data().readAllBytes();
                 log.log(Level.FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
                 prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout);
-                Part appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
-                compressedStream = createFromCompressedStream(appPackagePart.getInputStream(), appPackagePart.getContentType(), maxApplicationPackageSize);
+                PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
+                compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
                 log.log(Level.WARNING, "Unable to parse multipart in deploy", e);
                 throw new BadRequestException("Request contains invalid data");
