@@ -25,7 +25,7 @@ public class AbstractConfigProducerTest {
         producer.getConfig(builder);
         LogdConfig config = new LogdConfig(builder);
         assertEquals("bar", config.logserver().host());
-        assertEquals(1338, config.logserver().port());
+        assertEquals(1338, config.logserver().rpcport());
     }
 
     @Test
@@ -38,7 +38,7 @@ public class AbstractConfigProducerTest {
         producer.getConfig(builder);
         LogdConfig config = new LogdConfig(builder);
         assertEquals("foo", config.logserver().host());
-        assertEquals(1337, config.logserver().port());
+        assertEquals(1337, config.logserver().rpcport());
     }
 
     private static class MockLogdProducer extends AbstractConfigProducer implements LogdConfig.Producer {
@@ -49,7 +49,7 @@ public class AbstractConfigProducerTest {
 
         @Override
         public void getConfig(LogdConfig.Builder builder) {
-            builder.logserver(new LogdConfig.Logserver.Builder().host("bar").port(1338));
+            builder.logserver(new LogdConfig.Logserver.Builder().host("bar").rpcport(1338));
         }
     }
 
@@ -67,7 +67,7 @@ public class AbstractConfigProducerTest {
 
         @Override
         public void getConfig(LogdConfig.Builder builder) {
-            builder.logserver(new LogdConfig.Logserver.Builder().host("foo").port(1337));
+            builder.logserver(new LogdConfig.Logserver.Builder().host("foo").rpcport(1337));
         }
     }
 }
