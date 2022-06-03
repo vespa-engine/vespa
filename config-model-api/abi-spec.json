@@ -97,7 +97,6 @@
       "abstract"
     ],
     "methods": [
-      "public abstract java.lang.String getApplicationName()",
       "public abstract com.yahoo.config.provision.ApplicationId getApplicationId()",
       "public abstract java.io.Reader getServices()",
       "public abstract java.io.Reader getHosts()",
