@@ -173,7 +173,7 @@ public class DeployTester {
     }
 
     private static HostProvisioner createProvisioner() {
-        return new InMemoryProvisioner(7, false);
+        return new InMemoryProvisioner(9, false);
     }
 
     private static class FailingModelFactory implements ModelFactory {
