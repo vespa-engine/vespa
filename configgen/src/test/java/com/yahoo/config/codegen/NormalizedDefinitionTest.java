@@ -23,7 +23,6 @@ public class NormalizedDefinitionTest {
     @Test
     public void testNormalizingFromReader() {
         String def =
-                "version=1\n" +
                 "aString string \n" +
                 "anInt int #comment \n" +
                 "aStringCommentCharacterAfter string default=\"ab\" #foo\n" +
@@ -42,13 +41,12 @@ public class NormalizedDefinitionTest {
         }
 
         assertNotNull(out);
-        assertEquals(6, out.size());
-        assertEquals("version=1\n", out.get(0));
-        assertEquals("aString string\n", out.get(1));
-        assertEquals("anInt int\n", out.get(2));
-        assertEquals("aStringCommentCharacterAfter string default=\"ab\"\n", out.get(3));
-        assertEquals("aStringWithCommentCharacter string default=\"a#b\"\n", out.get(4));
-        assertEquals("aStringWithEscapedQuote string default=\"a\"b\"\n", out.get(5));
+        assertEquals(5, out.size());
+        assertEquals("aString string\n", out.get(0));
+        assertEquals("anInt int\n", out.get(1));
+        assertEquals("aStringCommentCharacterAfter string default=\"ab\"\n", out.get(2));
+        assertEquals("aStringWithCommentCharacter string default=\"a#b\"\n", out.get(3));
+        assertEquals("aStringWithEscapedQuote string default=\"a\"b\"\n", out.get(4));
 
         reader.close();
     }
