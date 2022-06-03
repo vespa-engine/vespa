@@ -5,8 +5,7 @@ include "processing.rnc"
 
 Handler = element handler {
    ComponentDefinition &
-   ServerBindings &
-   element clientBinding {text}*
+   ServerBindings
 }
 
 Binding = element binding {text}
