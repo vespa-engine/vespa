@@ -142,7 +142,6 @@ public class CertificateK {
     private final org.osgi.framework.AdminPermission permission = null;
     private final org.osgi.framework.hooks.service.FindHook hook = null;
     private final org.osgi.framework.launch.Framework framework = null;
-    private final org.osgi.service.log.LogEntry entry = null;
     private final org.osgi.service.packageadmin.ExportedPackage pkg = null;
     private final org.osgi.service.startlevel.StartLevel level = null;
     private final org.osgi.service.url.URLConstants constants = null;

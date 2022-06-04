@@ -49,10 +49,6 @@
       <artifactId>guice</artifactId>
       <classifier>no_aop</classifier>
     </dependency>
-    <dependency>
-      <groupId>org.apache.felix</groupId>
-      <artifactId>org.apache.felix.main</artifactId>
-    </dependency>
 
     <!-- Dependencies used by container-core -->
     <dependency>
