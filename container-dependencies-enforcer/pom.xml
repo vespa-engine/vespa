@@ -80,7 +80,6 @@
                                         <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                         <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
-                                        <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:provided</include>
                                         <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
                                         <include>org.apache.felix:org.apache.felix.log:[${felix.log.version}]:jar:provided</include>
                                         <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
