@@ -38,7 +38,6 @@ public final class AllfeaturesConfig extends ConfigInstance {
   public final static String CONFIG_DEF_MD5 = "f901bdc5c96e7005130399c63f247823";
   public final static String CONFIG_DEF_NAME = "allfeatures";
   public final static String CONFIG_DEF_NAMESPACE = "configgen";
-  public final static String CONFIG_DEF_VERSION = "";
   public final static String[] CONFIG_DEF_SCHEMA = {
     "namespace=configgen",
     "boolVal bool",
@@ -92,7 +91,6 @@ public final class AllfeaturesConfig extends ConfigInstance {
   public static String getDefMd5()       { return CONFIG_DEF_MD5; }
   public static String getDefName()      { return CONFIG_DEF_NAME; }
   public static String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }
-  public static String getDefVersion()   { return CONFIG_DEF_VERSION; }
 
   public interface Producer extends ConfigInstance.Producer {
     void getConfig(Builder builder);

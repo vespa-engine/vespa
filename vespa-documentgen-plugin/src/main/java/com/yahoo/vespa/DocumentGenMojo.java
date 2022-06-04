@@ -58,19 +58,9 @@ public class DocumentGenMojo extends AbstractMojo {
     private MavenProject project;
 
     /**
-     * Directory containing the searchdefinition files
-     * @deprecated use {@link #schemasDirectory} instead
-     */
-    // TODO: Remove in Vespa 8
-    @Deprecated
-    @Parameter(defaultValue = ".", required = false)
-    private File sdDirectory;
-
-    /**
      * Directory containing the schema files
      */
-    // TODO: Make this required and with defaultValue "." when sdDirectory is removed in Vespa 8
-    @Parameter
+    @Parameter(defaultValue = ".", required = true)
     private File schemasDirectory;
 
     /**
@@ -982,12 +972,7 @@ public class DocumentGenMojo extends AbstractMojo {
 
     @Override
     public void execute() {
-        File dir = sdDirectory;
-        // Prefer schemasDirectory if set
-        if (this.schemasDirectory != null)
-            dir = this.schemasDirectory;
-
-        execute(dir, this.outputDirectory, packageName);
+        execute(this.schemasDirectory, this.outputDirectory, packageName);
     }
 
     Map<String, Schema> getSearches() {

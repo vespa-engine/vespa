@@ -239,7 +239,6 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.application.MockApplicationConfig$Builder)",
       "public com.yahoo.application.MockApplicationConfig$Mystruct mystruct()",
       "public java.util.List mystructlist()",
@@ -255,7 +254,6 @@
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
