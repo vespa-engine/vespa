@@ -31,7 +31,9 @@ public:
                                   std::shared_ptr<BitVectorSearchCache> search_cache);
     ~ImportedTensorAttributeVector() override;
 
+    // TODO balder: Can we fail the default makeReadGuard, and only use a reference for the targetMetaStoreReadGuard
     std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
+    std::unique_ptr<attribute::AttributeReadGuard> makeReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, bool stableEnumGuard) const override;
 };
 
 }

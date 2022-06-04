@@ -38,7 +38,13 @@ ImportedTensorAttributeVector::~ImportedTensorAttributeVector() = default;
 std::unique_ptr<attribute::AttributeReadGuard>
 ImportedTensorAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
-    return std::make_unique<ImportedTensorAttributeVectorReadGuard>(*this, stableEnumGuard);
+    return makeReadGuard(_target_document_meta_store->getReadGuard(), stableEnumGuard);
+}
+
+std::unique_ptr<attribute::AttributeReadGuard>
+ImportedTensorAttributeVector::makeReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard,  bool stableEnumGuard) const
+{
+    return std::make_unique<ImportedTensorAttributeVectorReadGuard>(std::move(targetMetaStoreReadGuard), *this, stableEnumGuard);
 }
 
 }
