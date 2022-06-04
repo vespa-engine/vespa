@@ -29,6 +29,14 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>org.apache.felix.framework</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>org.apache.felix.log</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.jvnet.hudson</groupId>
           <artifactId>annotation-indexer</artifactId>
         </exclusion>
@@ -51,10 +59,6 @@
       <groupId>com.google.inject</groupId>
       <artifactId>guice</artifactId>
       <classifier>no_aop</classifier>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.felix</groupId>
-      <artifactId>org.apache.felix.main</artifactId>
     </dependency>
     <dependency>
       <groupId>commons-logging</groupId>
