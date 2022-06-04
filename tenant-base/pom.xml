@@ -155,7 +155,7 @@
                                 </goals>
                                 <configuration>
                                     <includeTypes>jar,test-jar</includeTypes>
-                                    <!-- felix is not needed in the fat jar, and felix-main:7.0.1 fails upon unpacking because of bogus timestamps -->
+                                    <!-- felix is not needed in the fat jar -->
                                     <excludeGroupIds>org.apache.felix</excludeGroupIds>
                                     <outputDirectory>target/fat-test-classes</outputDirectory>
                                     <!-- WARNING(2018-06-27): bcpkix-jdk15on-1.58.jar and
