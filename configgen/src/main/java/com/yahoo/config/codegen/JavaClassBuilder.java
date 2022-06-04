@@ -86,15 +86,13 @@ public class JavaClassBuilder implements ClassBuilder {
                 "  public final static String CONFIG_DEF_MD5 = \"" + root.getMd5() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAME = \"" + root.getName() + "\";\n" + //
                 "  public final static String CONFIG_DEF_NAMESPACE = \"" + root.getNamespace() + "\";\n" + //
-                "  public final static String CONFIG_DEF_VERSION = \"\";\n" + // TODO: Remove in Vespa 8
                 "  public final static String[] CONFIG_DEF_SCHEMA = {\n" + //
                 "" + indentCode(INDENTATION + INDENTATION, getDefSchema()) + "\n" + //
                 "  };\n" + //
                 "\n" + //
                 "  public static String getDefMd5()       { return CONFIG_DEF_MD5; }\n" + //
                 "  public static String getDefName()      { return CONFIG_DEF_NAME; }\n" + //
-                "  public static String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }\n" + //
-                "  public static String getDefVersion()   { return CONFIG_DEF_VERSION; }";
+                "  public static String getDefNamespace() { return CONFIG_DEF_NAMESPACE; }";
     }
 
     private String getDefSchema() {

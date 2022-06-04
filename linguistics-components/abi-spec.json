@@ -134,7 +134,6 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.language.sentencepiece.SentencePieceConfig$Builder)",
       "public boolean collapseUnknowns()",
       "public com.yahoo.language.sentencepiece.SentencePieceConfig$Scoring$Enum scoring()",
@@ -145,7 +144,6 @@
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
@@ -273,7 +271,6 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.language.wordpiece.WordPieceConfig$Builder)",
       "public java.lang.String subwordPrefix()",
       "public java.util.List model()",
@@ -283,7 +280,6 @@
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
