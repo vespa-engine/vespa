@@ -95,7 +95,6 @@
                                         <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                         <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
-                                        <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:provided</include>
                                         <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
                                         <include>org.apache.felix:org.apache.felix.log:[${felix.log.version}]:jar:provided</include>
                                         <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
@@ -250,6 +249,7 @@
                                         <include>org.junit.platform:junit-platform-engine:[${junit5.platform.version}]:jar:test</include>
                                         <include>org.junit.vintage:junit-vintage-engine:[${junit5.version}]:jar:test</include>
                                         <include>org.kohsuke:libpam4j:1.11:jar:test</include>
+                                        <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
                                         <include>software.amazon.ion:ion-java:1.0.2:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.1:jar:test</include>
