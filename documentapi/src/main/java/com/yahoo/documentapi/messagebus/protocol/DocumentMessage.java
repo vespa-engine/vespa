@@ -8,7 +8,6 @@ import com.yahoo.text.Utf8String;
 /**
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public abstract class DocumentMessage extends Message {
 
     private DocumentProtocol.Priority priority = DocumentProtocol.Priority.NORMAL_3;

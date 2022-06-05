@@ -402,7 +402,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
-            // TODO: clean up after Vespa 8
+            // TODO: Vespa > 8: Clean up
             if (cluster.isHostedVespa() || deployState.getVespaVersion().getMajor() == 8) {
                 cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "access"));
             } else {

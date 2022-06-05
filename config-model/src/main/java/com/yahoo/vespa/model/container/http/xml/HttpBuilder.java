@@ -104,7 +104,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return builder.build();
     }
 
-    // TODO(tokle,bjorncs) After Vespa 8 fail if domain is not provided through deploy properties
+    // TODO(tokle,bjorncs) Vespa > 8: Fail if domain is not provided through deploy properties
     private static AthenzDomain getAccessControlDomain(DeployState deployState, Element accessControlElem) {
         AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
         AthenzDomain explicitDomain = XmlHelper.getOptionalAttribute(accessControlElem, "domain")
