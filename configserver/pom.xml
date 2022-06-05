@@ -280,6 +280,10 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
+    </dependency>
+    <dependency>
       <!-- TODO Remove when Jetty is embedded inside container-core -->
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-http</artifactId>
