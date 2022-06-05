@@ -240,7 +240,6 @@ class ClientFeederV3 {
         return message;
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private void setMessageParameters(DocumentOperationMessageV3 msg, FeederSettings settings) {
         msg.getMessage().setContext(new ReplyContext(msg.getOperationId(), feedReplies));
         if (settings.traceLevel != null) {
@@ -249,9 +248,6 @@ class ClientFeederV3 {
         if (settings.priority != null) {
             try {
                 DocumentProtocol.Priority priority = DocumentProtocol.Priority.valueOf(settings.priority);
-                if (msg.getMessage() instanceof DocumentMessage) {
-                    ((DocumentMessage) msg.getMessage()).setPriority(priority); // TODO: Remove on Vespa 8
-                }
             }
             catch (IllegalArgumentException i) {
                 log.severe(i.getMessage());
