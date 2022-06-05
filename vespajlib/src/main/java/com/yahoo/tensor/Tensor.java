@@ -327,11 +327,6 @@ public interface Tensor {
     /** Returns an abbreviated string representation of this tensor suitable for human-readable messages */
     String toAbbreviatedString();
 
-    // TODO: Remove on Vespa 8
-    /** @deprecated use toAbbreviatedString */
-    @Deprecated
-    default String toShortString() { return toAbbreviatedString(); }
-
     /**
      * Call this from toString in implementations to return this tensor on the
      * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">tensor literal form</a>.
