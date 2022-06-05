@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
-<vespafeed>
-    <document documenttype="biz" transformver="5681" documentid="id:lsbe:biz::21336977"><attrlist><![CDATA[<other_urls><n>2</n><l><m><url>http://www.facebook.com/pages/City-of-Sunnyvale-California/132586463442411</url><URLTYPE>facebook</URLTYPE></m><m><url>http://www.twitter.com/CityofSunnyvale</url><URLTYPE>twitter</URLTYPE></m></l></other_urls><toc>19,22,36,42,48,74</toc><website><m><src>GRID</src><url>http://www.sunnyvale.ca.gov/</url></m></website><neighbor>Downtown|Sunnyvale Town Center</neighbor><woeId>Zip:12797147;DMA:24701119;State:2347563</woeId><consumersubmit><addbyuser>0</addbyuser></consumersubmit>]]></attrlist></document>
-
-</vespafeed>
