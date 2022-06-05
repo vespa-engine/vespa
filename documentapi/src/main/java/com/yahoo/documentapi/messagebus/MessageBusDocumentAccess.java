@@ -53,7 +53,6 @@ public class MessageBusDocumentAccess extends DocumentAccess {
      *
      * @param params All parameters for construction.
      */
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public MessageBusDocumentAccess(MessageBusParams params) {
         super(params);
         this.params = params;

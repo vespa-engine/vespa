@@ -27,7 +27,6 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 final class RoutableRepository {
 
     private static final Logger log = Logger.getLogger(RoutableRepository.class.getName());
