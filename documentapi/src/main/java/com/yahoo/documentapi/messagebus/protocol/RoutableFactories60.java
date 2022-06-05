@@ -129,7 +129,6 @@ public abstract class RoutableFactories60 {
             return doEncode(reply, out);
         }
 
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public Routable decode(DocumentDeserializer in) {
             byte pri = in.getByte(null);
             DocumentReply reply = doDecode(in);

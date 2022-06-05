@@ -60,20 +60,6 @@ public class Result {
      */
     public boolean isSuccess() { return type == ResultType.SUCCESS; }
 
-    /**
-     * Returns the error causes by this. If this was not a success, this method always returns an error
-     * If this was a success, this method returns null.
-     *
-     * @return the Error, or null
-     * @deprecated Will be removed on Vespa 8
-     */
-    @Deprecated(forRemoval = true, since="7")
-    public java.lang.Error getError() {
-        return error != null
-                ? new java.lang.Error(error.getMessage())
-                : null;
-    }
-
     public Error error() { return error; }
 
     /**
