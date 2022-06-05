@@ -80,8 +80,6 @@
                                         <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                         <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
-                                        <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
-                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                         <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
