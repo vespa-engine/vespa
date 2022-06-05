@@ -756,7 +756,6 @@ fi
 %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/document.jar
 %{_prefix}/lib/jars/filedistribution-jar-with-dependencies.jar
-%{_prefix}/lib/jars/http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_jetty.jar
 %{_prefix}/lib/jars/logserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/metrics-proxy-jar-with-dependencies.jar
@@ -860,7 +859,6 @@ fi
 %{_prefix}/bin/vespa
 %{_prefix}/bin/vespa-feed-client
 %{_prefix}/conf/vespa-feed-client/logging.properties
-%{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-feed-client-cli-jar-with-dependencies.jar
 %docdir /usr/share/man
 /usr/share/man
