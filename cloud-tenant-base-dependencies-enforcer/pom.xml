@@ -21,6 +21,7 @@
 
         <!-- MUST BE KEPT IN SYNC WITH parent/pom.xml -->
         <athenz.version>1.10.54</athenz.version>
+        <bouncycastle.version>1.68</bouncycastle.version>
         <felix.version>7.0.1</felix.version>
         <httpclient5.version>5.1.2</httpclient5.version>
         <httpclient.version>4.5.13</httpclient.version>
@@ -33,7 +34,6 @@
         <!-- ALL BELOW MUST BE KEPT IN SYNC WITH container-dependency-versions pom
              Copied here because vz-tenant-base does not have a parent. -->
         <aopalliance.version>1.0</aopalliance.version>
-        <bouncycastle.version>1.68</bouncycastle.version>
         <guava.version>27.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
         <jackson2.version>2.13.3</jackson2.version>
@@ -94,8 +94,6 @@
                                         <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                         <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
-                                        <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
-                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
                                         <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
@@ -219,7 +217,8 @@
                                         <include>org.apache.httpcomponents:httpmime:${httpclient.version}:jar:test</include>
                                         <include>org.apache.opennlp:opennlp-tools:1.9.3:jar:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
-                                        <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
+                                        <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:test</include>
+                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:test</include>                                        <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
                                         <include>org.eclipse.jetty.alpn:alpn-api:[${jetty-alpn.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-hpack:[${jetty.version}]:jar:test</include>

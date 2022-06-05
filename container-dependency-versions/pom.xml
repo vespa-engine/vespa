@@ -130,16 +130,6 @@
             <!-- jaxb end -->
 
             <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
-                <version>${bouncycastle.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jcl-over-slf4j</artifactId>
                 <version>${slf4j.version}</version>
@@ -245,7 +235,6 @@
 
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
-        <bouncycastle.version>1.68</bouncycastle.version>
         <guava.version>27.1-jre</guava.version>
         <guice.version>4.2.3</guice.version>
         <jackson2.version>2.13.3</jackson2.version>
