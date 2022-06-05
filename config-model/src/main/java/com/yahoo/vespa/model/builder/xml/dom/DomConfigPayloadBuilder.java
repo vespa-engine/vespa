@@ -3,19 +3,14 @@ package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.text.XML;
 import com.yahoo.vespa.config.ConfigDefinition;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayloadBuilder;
-import com.yahoo.yolean.Exceptions;
-import com.yahoo.text.XML;
-
 import com.yahoo.vespa.config.util.ConfigUtils;
+import com.yahoo.yolean.Exceptions;
 import org.w3c.dom.Element;
-
 import java.util.List;
-import java.util.Optional;
-import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -34,11 +29,9 @@ public class DomConfigPayloadBuilder {
 
     /** The config definition, not null if not found */
     private final ConfigDefinition configDefinition;
-    private final Optional<DeployLogger> logger;
 
-    public DomConfigPayloadBuilder(ConfigDefinition configDefinition, DeployLogger logger) {
+    public DomConfigPayloadBuilder(ConfigDefinition configDefinition) {
         this.configDefinition = configDefinition;
-        this.logger = Optional.ofNullable(logger);
     }
 
     /**

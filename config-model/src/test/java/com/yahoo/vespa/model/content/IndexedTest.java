@@ -45,14 +45,6 @@ public class IndexedTest extends ContentBaseTest {
                 "  <admin version='2.0'>" +
                 "    <adminserver hostalias='node0'/>" +
                 "  </admin>" +
-                "  <config name='vespa.configdefinition.specialtokens'>" +
-                "    <tokenlist operation='append'>" +
-                "      <name>default</name>" +
-                "      <tokens operation='append'>" +
-                "        <token>dvd+-r</token>" +
-                "      </tokens>" +
-                "    </tokenlist>" +
-                "  </config>" +
                 "  <container version='1.0'>" +
                 "    <search/>" +
                 "    <nodes>" +
