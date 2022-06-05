@@ -78,6 +78,12 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>model-evaluation</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.lz4</groupId>
+          <artifactId>lz4-java</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -177,12 +183,22 @@
           <groupId>org.json</groupId>
           <artifactId>json</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>org.lz4</groupId>
+          <artifactId>lz4-java</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.lz4</groupId>
+          <artifactId>lz4-java</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
