@@ -331,29 +331,5 @@
       "public void <init>(java.lang.String)"
     ],
     "fields": []
-  },
-  "com.yahoo.docproc.util.JoinerDocumentProcessor": {
-    "superClass": "com.yahoo.docproc.DocumentProcessor",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.config.docproc.SplitterJoinerDocumentProcessorConfig, com.yahoo.document.config.DocumentmanagerConfig)",
-      "public com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.docproc.util.SplitterDocumentProcessor": {
-    "superClass": "com.yahoo.docproc.DocumentProcessor",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.config.docproc.SplitterJoinerDocumentProcessorConfig, com.yahoo.document.config.DocumentmanagerConfig)",
-      "public com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)"
-    ],
-    "fields": []
   }
 }
