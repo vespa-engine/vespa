@@ -10,6 +10,9 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.testrunner.TestReport.ContainerNode;
+import com.yahoo.vespa.testrunner.TestReport.FailureNode;
+import com.yahoo.vespa.testrunner.TestReport.Status;
 import org.junit.jupiter.engine.JupiterTestEngine;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
@@ -19,8 +22,10 @@ import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.concurrent.CompletableFuture;
@@ -36,12 +41,16 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * @author mortent
+ * @author jonmv
  */
 public class JunitRunner extends AbstractComponent implements TestRunner {
 
     private static final Logger logger = Logger.getLogger(JunitRunner.class.getName());
 
+    private final Clock clock;
     private final SortedMap<Long, LogRecord> logRecords = new ConcurrentSkipListMap<>();
+    private final TeeStream stdoutTee = TeeStream.ofSystemOut();
+    private final TeeStream stderrTee = TeeStream.ofSystemErr();
     private final TestRuntimeProvider testRuntimeProvider;
     private final Function<Suite, List<Class<?>>> classLoader;
     private final BiConsumer<LauncherDiscoveryRequest, TestExecutionListener[]> testExecutor;
@@ -52,18 +61,22 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                        JunitTestRunnerConfig config,
                        TestRuntimeProvider testRuntimeProvider,
                        SystemInfo systemInfo) {
-        this(testRuntimeProvider,
+        this(Clock.systemUTC(),
+             testRuntimeProvider,
              new TestBundleLoader(osgiFramework)::loadTestClasses,
              (discoveryRequest, listeners) -> LauncherFactory.create(LauncherConfig.builder()
                                                                                    .addTestEngines(new JupiterTestEngine())
                                                                                    .build()).execute(discoveryRequest, listeners));
 
         uglyHackSetCredentialsRootSystemProperty(config, systemInfo.zone());
+
     }
 
-    JunitRunner(TestRuntimeProvider testRuntimeProvider,
-                       Function<Suite, List<Class<?>>> classLoader,
-                       BiConsumer<LauncherDiscoveryRequest, TestExecutionListener[]> testExecutor) {
+    JunitRunner(Clock clock,
+                TestRuntimeProvider testRuntimeProvider,
+                Function<Suite, List<Class<?>>> classLoader,
+                BiConsumer<LauncherDiscoveryRequest, TestExecutionListener[]> testExecutor) {
+        this.clock = clock;
         this.classLoader = classLoader;
         this.testExecutor = testExecutor;
         this.testRuntimeProvider = testRuntimeProvider;
@@ -76,10 +89,9 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         }
         try {
             logRecords.clear();
-            testRuntimeProvider.initialize(testConfig);
-            execution = CompletableFuture.supplyAsync(() -> launchJunit(suite));
+            execution = CompletableFuture.supplyAsync(() -> launchJunit(suite, testConfig));
         } catch (Exception e) {
-            execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
+            execution = CompletableFuture.completedFuture(TestReport.createFailed(clock, suite, e));
         }
         return execution;
     }
@@ -89,52 +101,25 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         return logRecords.tailMap(after + 1).values();
     }
 
-    static TestReport createReportWithFailedInitialization(Exception exception) {
-        TestReport.Failure failure = new TestReport.Failure("init", exception);
-        return new TestReport.Builder().withFailures(List.of(failure))
-                                       .withFailedCount(1)
-                                       .build();
-    }
-
-
-    private TestReport launchJunit(Suite suite) {
+    private TestReport launchJunit(Suite suite, byte[] testConfig) {
         List<Class<?>> testClasses = classLoader.apply(suite);
         if (testClasses == null)
             return  null;
 
-        VespaJunitLogListener logListener = new VespaJunitLogListener(record -> logRecords.put(record.getSequenceNumber(), record));
-        SummaryGeneratingListener summaryListener = new SummaryGeneratingListener();
+        testRuntimeProvider.initialize(testConfig);
+        TestReportGeneratingListener testReportListener = new TestReportGeneratingListener(suite,
+                                                                                           record -> logRecords.put(record.getSequenceNumber(), record),
+                                                                                           stdoutTee,
+                                                                                           stderrTee,
+                                                                                           clock);
         LauncherDiscoveryRequest discoveryRequest = LauncherDiscoveryRequestBuilder.request()
                                                                                    .selectors(testClasses.stream()
                                                                                                          .map(DiscoverySelectors::selectClass)
                                                                                                          .collect(toList()))
                                                                                    .build();
+        testExecutor.accept(discoveryRequest, new TestExecutionListener[] { testReportListener });
 
-        testExecutor.accept(discoveryRequest, new TestExecutionListener[] { logListener, summaryListener });
-
-        var report = summaryListener.getSummary();
-        var failures = report.getFailures().stream()
-                             .map(failure -> {
-                                 TestReport.trimStackTraces(failure.getException(), JunitRunner.class.getName());
-                                 return new TestReport.Failure(VespaJunitLogListener.toString(failure.getTestIdentifier().getUniqueIdObject()),
-                                                               failure.getException());
-                             })
-                             .collect(toList());
-
-        // TODO: move to aggregator.
-        long inconclusive = suite == Suite.PRODUCTION_TEST ? failures.stream()
-                                                                     .filter(failure -> failure.exception() instanceof InconclusiveTestException)
-                                                                     .count()
-                                                           : 0;
-        return TestReport.builder()
-                         .withSuccessCount(report.getTestsSucceededCount())
-                         .withAbortedCount(report.getTestsAbortedCount())
-                         .withIgnoredCount(report.getTestsSkippedCount())
-                         .withFailedCount(report.getTestsFailedCount() - inconclusive)
-                         .withInconclusiveCount(inconclusive)
-                         .withFailures(failures)
-                         .withLogs(logRecords.values())
-                         .build();
+        return testReportListener.report();
     }
 
     @Override
@@ -147,10 +132,24 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         if (execution == null) return TestRunner.Status.NOT_STARTED;
         if ( ! execution.isDone()) return TestRunner.Status.RUNNING;
         try {
-            return execution.get() == null ? Status.NO_TESTS : execution.get().status();
+            return testRunnerStatus(execution.get());
         } catch (InterruptedException | ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
             return TestRunner.Status.ERROR;
+        }
+    }
+
+    static TestRunner.Status testRunnerStatus(TestReport report) {
+        if (report == null) return Status.NO_TESTS;
+        switch (report.root().status()) {
+            case error:
+            case failed:       return Status.FAILURE;
+            case inconclusive: return Status.INCONCLUSIVE;
+            case successful:
+            case skipped:
+            case aborted:     return report.root().tally().containsKey(TestReport.Status.successful) ? Status.SUCCESS
+                                                                                                     : Status.NO_TESTS;
+            default: throw new IllegalStateException("unknown status '" + report.root().status() + "'");
         }
     }
 
@@ -163,7 +162,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                 logger.log(Level.WARNING, "Error getting test report", e);
                 // Likely this is something wrong with the provided test bundle. Create a test report
                 // and present in the console to enable tenants to act on it.
-                return createReportWithFailedInitialization(e);
+                return TestReport.createFailed(clock, null, e);
             }
         } else {
             return null;

@@ -1,12 +1,12 @@
 package com.yahoo.vespa.test.samples;
 
 import com.yahoo.vespa.testrunner.Expect;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-@Expect(error = 2, status = 5)
-public class FailingInstantiationTest {
-
-    final int i = Integer.parseInt("");
+@Disabled("because")
+@Expect(skipped = 2, status = 1)
+public class DisabledClassTest {
 
     @Test
     void test() { }

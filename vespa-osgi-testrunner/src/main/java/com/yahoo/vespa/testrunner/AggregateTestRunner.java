@@ -88,23 +88,7 @@ public class AggregateTestRunner implements TestRunner {
     }
 
     static TestReport merge(TestReport first, TestReport second) {
-        return first == null ? second
-                             : second == null ? first
-                                              : TestReport.builder()
-                                                          .withAbortedCount(first.abortedCount + second.abortedCount)
-                                                          .withFailedCount(first.failedCount + second.failedCount)
-                                                          .withIgnoredCount(first.ignoredCount + second.ignoredCount)
-                                                          .withSuccessCount(first.successCount + second.successCount)
-                                                          .withFailures(merged(first.failures, second.failures))
-                                                          .withLogs(merged(first.logLines, second.logLines))
-                                                          .build();
-    }
-
-    static <T> List<T> merged(List<T> first, List<T> second) {
-        ArrayList<T> merged = new ArrayList<>();
-        merged.addAll(first);
-        merged.addAll(second);
-        return merged;
+        return first == null ? second : second == null ? first : first.mergedWith(second);
     }
 
 }

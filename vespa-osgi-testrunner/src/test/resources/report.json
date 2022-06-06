@@ -1,0 +1,312 @@
+{
+  "report": {
+    "type": "container",
+    "name": "System test",
+    "status": "error",
+    "start": 0,
+    "end": 0,
+    "children": [
+      {
+        "type": "container",
+        "name": "junit-jupiter",
+        "status": "error",
+        "start": 0,
+        "end": 0,
+        "children": [
+          {
+            "type": "container",
+            "name": "com.yahoo.vespa.test.samples.SampleTest",
+            "status": "error",
+            "start": 0,
+            "end": 0,
+            "children": [
+              {
+                "type": "test",
+                "name": "aborted()",
+                "status": "aborted",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "output",
+                    "children": [
+                      {
+                        "message": "spam",
+                        "at": 0,
+                        "level": "info"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "test",
+                "name": "error()",
+                "status": "error",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "output",
+                    "children": [
+                      {
+                        "message": "spam",
+                        "at": 0,
+                        "level": "info"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "failure",
+                    "status": "error",
+                    "trace": "java.lang.NoClassDefFoundError\n\tat com.yahoo.vespa.test.samples.SampleTest.error(SampleTest.java:87)\n"
+                  }
+                ]
+              },
+              {
+                "type": "test",
+                "name": "failing()",
+                "status": "failed",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "output",
+                    "children": [
+                      {
+                        "message": "spam",
+                        "at": 0,
+                        "level": "info"
+                      },
+                      {
+                        "message": "com.yahoo.vespa.test.samples.SampleTest: I have a bad feeling about this",
+                        "at": 0,
+                        "level": "info"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "failure",
+                    "status": "failed",
+                    "trace": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n"
+                  }
+                ]
+              },
+              {
+                "type": "test",
+                "name": "ignored()",
+                "status": "skipped",
+                "start": 0,
+                "end": 0
+              },
+              {
+                "type": "test",
+                "name": "inconclusive(org.junit.jupiter.api.TestReporter)",
+                "status": "error",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "output",
+                    "children": [
+                      {
+                        "message": "spam",
+                        "at": 0,
+                        "level": "info"
+                      },
+                      {
+                        "message": "I'm here with Erwin today; Erwin, what can you tell us about your cat?",
+                        "at": 0,
+                        "level": "info"
+                      }
+                    ]
+                  },
+                  {
+                    "type": "failure",
+                    "status": "error",
+                    "trace": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:93)\n"
+                  }
+                ]
+              },
+              {
+                "type": "test",
+                "name": "successful()",
+                "status": "successful",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "output",
+                    "children": [
+                      {
+                        "message": "spam",
+                        "at": 0,
+                        "level": "info"
+                      },
+                      {
+                        "message": "com.yahoo.vespa.test.samples.SampleTest: <body />",
+                        "at": 0,
+                        "level": "info"
+                      },
+                      {
+                        "message": "com.yahoo.vespa.test.samples.SampleTest: Very informative",
+                        "at": 0,
+                        "level": "info"
+                      },
+                      {
+                        "message": "com.yahoo.vespa.test.samples.SampleTest: Oh no",
+                        "at": 0,
+                        "level": "warning",
+                        "trace": "java.lang.IllegalArgumentException: error\n\tat com.yahoo.vespa.test.samples.SampleTest.successful(SampleTest.java:75)\nCaused by: java.lang.RuntimeException: wrapped\n\t... 1 more\n"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "container",
+                "name": "Inner",
+                "status": "failed",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "container",
+                    "name": "others()",
+                    "status": "failed",
+                    "start": 0,
+                    "end": 0,
+                    "children": [
+                      {
+                        "type": "output",
+                        "children": [
+                          {
+                            "message": "spam",
+                            "at": 0,
+                            "level": "info"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "test",
+                        "name": "#1",
+                        "status": "successful",
+                        "start": 0,
+                        "end": 0,
+                        "children": [
+                          {
+                            "type": "output",
+                            "children": [
+                              {
+                                "message": "Catch me if you can!",
+                                "at": 0,
+                                "level": "info"
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      {
+                        "type": "test",
+                        "name": "#2",
+                        "status": "failed",
+                        "start": 0,
+                        "end": 0,
+                        "children": [
+                          {
+                            "type": "failure",
+                            "status": "failed",
+                            "trace": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "test",
+                    "name": "first()",
+                    "status": "successful",
+                    "start": 0,
+                    "end": 0,
+                    "children": [
+                      {
+                        "type": "output",
+                        "children": [
+                          {
+                            "message": "spam",
+                            "at": 0,
+                            "level": "info"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "container",
+                "name": "Skipped",
+                "status": "skipped",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "test",
+                    "name": "disabled()",
+                    "status": "skipped",
+                    "start": 0,
+                    "end": 0
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "success": 3,
+    "failed": 4,
+    "ignored": 2,
+    "aborted": 1,
+    "inconclusive": 0,
+    "failures": [
+      {
+        "testName": "error()",
+        "testError": null,
+        "exception": "java.lang.NoClassDefFoundError\n\tat com.yahoo.vespa.test.samples.SampleTest.error(SampleTest.java:87)\n"
+      },
+      {
+        "testName": "failing()",
+        "testError": "baz ==> expected: <foo> but was: <bar>",
+        "exception": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n"
+      },
+      {
+        "testName": "inconclusive(org.junit.jupiter.api.TestReporter)",
+        "testError": "the cat is both dead _and_ alive",
+        "exception": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:93)\n"
+      },
+      {
+        "testName": "#2",
+        "testError": "no charm",
+        "exception": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n"
+      }
+    ]
+  },
+  "output": [
+    "00:00:00.000 spam",
+    "00:00:00.000 spam",
+    "00:00:00.000 spam",
+    "00:00:00.000 I have a bad feeling about this",
+    "00:00:00.000 spam",
+    "00:00:00.000 I'm here with Erwin today; Erwin, what can you tell us about your cat?",
+    "00:00:00.000 spam",
+    "00:00:00.000 <body />",
+    "00:00:00.000 Very informative",
+    "00:00:00.000 Oh no",
+    "00:00:00.000 spam",
+    "00:00:00.000 Catch me if you can!",
+    "00:00:00.000 spam"
+  ]
+}

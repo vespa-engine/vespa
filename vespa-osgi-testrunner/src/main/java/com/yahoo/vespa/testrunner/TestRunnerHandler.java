@@ -12,6 +12,11 @@ import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
+import com.yahoo.vespa.testrunner.TestReport.ContainerNode;
+import com.yahoo.vespa.testrunner.TestReport.FailureNode;
+import com.yahoo.vespa.testrunner.TestReport.Node;
+import com.yahoo.vespa.testrunner.TestReport.OutputNode;
+import com.yahoo.vespa.testrunner.TestReport.TestNode;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.ByteArrayOutputStream;
@@ -20,12 +25,14 @@ import java.io.PrintStream;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static com.yahoo.jdisc.Response.Status;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * @author valerijf
@@ -74,7 +81,6 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
                                                  .orElse(-1L);
                 return new SlimeJsonResponse(logToSlime(testRunner.getLog(fetchRecordsAfter)));
             case "/tester/v1/status":
-                log.info("Responding with status " + testRunner.getStatus());
                 return new MessageResponse(testRunner.getStatus().name());
             case "/tester/v1/report":
                 TestReport report = testRunner.getReport();
@@ -139,32 +145,91 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
                 : "error";
     }
 
-    private static Slime toSlime(TestReport testReport) {
+    private static Slime toSlime(TestReport report) {
         var slime = new Slime();
         var root = slime.setObject();
-        if (testReport == null)
-            return slime;
 
+        toSlime(root.setObject("report"), (Node) report.root());
+
+        // TODO jonmv: remove
+        Map<TestReport.Status, Long> tally = report.root().tally();
         var summary = root.setObject("summary");
-        summary.setLong("success", testReport.successCount);
-        summary.setLong("failed", testReport.failedCount);
-        summary.setLong("ignored", testReport.ignoredCount);
-        summary.setLong("aborted", testReport.abortedCount);
-        summary.setLong("inconclusive", testReport.inconclusiveCount);
-        var failureRoot = summary.setArray("failures");
-        testReport.failures.forEach(failure -> serializeFailure(failure, failureRoot.addObject()));
-
-        var output = root.setArray("output");
-        for (LogRecord record : testReport.logLines)
-            output.addString(formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage());
+        summary.setLong("success", tally.getOrDefault(TestReport.Status.successful, 0L));
+        summary.setLong("failed", tally.getOrDefault(TestReport.Status.failed, 0L) + tally.getOrDefault(TestReport.Status.error, 0L));
+        summary.setLong("ignored", tally.getOrDefault(TestReport.Status.skipped, 0L));
+        summary.setLong("aborted", tally.getOrDefault(TestReport.Status.aborted, 0L));
+        summary.setLong("inconclusive", tally.getOrDefault(TestReport.Status.inconclusive, 0L));
+        toSlime(summary.setArray("failures"), root.setArray("output"), report.root());
 
         return slime;
     }
 
-    private static void serializeFailure(TestReport.Failure failure, Cursor slime) {
-        slime.setString("testName", failure.testId());
-        slime.setString("testError",failure.exception().getMessage());
-        slime.setString("exception", ExceptionUtils.getStackTraceAsString(failure.exception()));
+    static void toSlime(Cursor failuresArray, Cursor outputArray, Node node) {
+        for (Node child : node.children())
+            TestRunnerHandler.toSlime(failuresArray, outputArray, child);
+
+        if (node instanceof FailureNode) {
+            Cursor failureObject = failuresArray.addObject();
+            failureObject.setString("testName", node.parent.name());
+            failureObject.setString("testError", ((FailureNode) node).thrown().getMessage());
+            failureObject.setString("exception", ExceptionUtils.getStackTraceAsString(((FailureNode) node).thrown()));
+        }
+        if (node instanceof OutputNode)
+            for (LogRecord record : ((OutputNode) node).log())
+                outputArray.addString(formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage());
+    }
+
+    static void toSlime(Cursor nodeObject, Node node) {
+        if (node instanceof ContainerNode) toSlime(nodeObject, (ContainerNode) node);
+        if (node instanceof TestNode) toSlime(nodeObject, (TestNode) node);
+        if (node instanceof OutputNode) toSlime(nodeObject, (OutputNode) node);
+        if (node instanceof FailureNode) toSlime(nodeObject, (FailureNode) node);
+
+        if ( ! node.children().isEmpty()) {
+            Cursor childrenArray = nodeObject.setArray("children");
+            for (Node child : node.children)
+                toSlime(childrenArray.addObject(), child);
+        }
+    }
+
+    static void toSlime(Cursor nodeObject, ContainerNode node) {
+        nodeObject.setString("type", "container");
+        nodeObject.setString("name", node.name());
+        nodeObject.setString("status", node.status().name());
+        nodeObject.setLong("start", node.start().toEpochMilli());
+        nodeObject.setLong("end", node.duration().toMillis());
+    }
+
+    static void toSlime(Cursor nodeObject, TestNode node) {
+        nodeObject.setString("type", "test");
+        nodeObject.setString("name", node.name());
+        nodeObject.setString("status", node.status().name());
+        nodeObject.setLong("start", node.start().toEpochMilli());
+        nodeObject.setLong("end", node.duration().toMillis());
+    }
+
+    static void toSlime(Cursor nodeObject, OutputNode node) {
+        nodeObject.setString("type", "output");
+        Cursor childrenArray = nodeObject.setArray("children");
+        for (LogRecord record : node.log()) {
+            Cursor recordObject = childrenArray.addObject();
+            recordObject.setString("message", (record.getLoggerName() == null ? "" : record.getLoggerName() + ": ") + record.getMessage());
+            recordObject.setLong("at", record.getInstant().toEpochMilli());
+            recordObject.setString("level", typeOf(record.getLevel()));
+            if (record.getThrown() != null) recordObject.setString("trace", traceToString(record.getThrown()));
+        }
+    }
+
+    static void toSlime(Cursor nodeObject, FailureNode node) {
+        nodeObject.setString("type", "failure");
+        nodeObject.setString("status", node.status().name());
+        nodeObject.setString("trace", traceToString(node.thrown()));
+    }
+
+    private static String traceToString(Throwable thrown) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        thrown.printStackTrace(new PrintStream(buffer));
+        return buffer.toString(UTF_8);
     }
 
 }
