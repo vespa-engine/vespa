@@ -99,8 +99,6 @@ public class JSONString implements Inspectable {
             return content;
         } else if (parsedJSON.getClass() == JSONArray.class) {
             return render((JSONArray) parsedJSON);
-        } else if (parsedJSON.getClass() == JSONObject.class) {
-            return render((JSONObject) parsedJSON);
         } else {
             return content;
         }
@@ -152,10 +150,6 @@ public class JSONString implements Inspectable {
         return FieldRenderer.renderMapOrArray(new StringBuilder(), sequence, 2).toString();
     }
 
-    private static String render(JSONObject structure) {
-        return FieldRenderer.renderStruct(new StringBuilder(), structure, 2).toString();
-    }
-
     private static abstract class FieldRenderer {
 
         protected static void indent(StringBuilder renderTarget, int nestingLevel) {
@@ -175,13 +169,6 @@ public class JSONString implements Inspectable {
             } else {
                 ArrayFieldRenderer.renderArray(renderTarget, sequence, nestingLevel + 1);
             }
-            indent(renderTarget, nestingLevel);
-            return renderTarget;
-        }
-
-        @Deprecated // TODO: Remove on Vespa 8
-        public static StringBuilder renderStruct(StringBuilder renderTarget, JSONObject object, int nestingLevel) {
-            StructureFieldRenderer.renderStructure(renderTarget, object, nestingLevel + 1);
             indent(renderTarget, nestingLevel);
             return renderTarget;
         }
@@ -208,8 +195,6 @@ public class JSONString implements Inspectable {
                 NumberFieldRenderer.renderNumber(renderTarget, (Number) value);
             } else if (value.getClass() == String.class) {
                 StringFieldRenderer.renderString(renderTarget, (String) value);
-            } else if (value.getClass() == JSONObject.class) {
-                renderStruct(renderTarget, (JSONObject) value, nestingLevel);
             } else {
                 renderTarget.append(value);
             }
