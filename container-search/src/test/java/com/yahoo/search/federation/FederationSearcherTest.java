@@ -20,8 +20,6 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.Execution.Context;
 import com.yahoo.search.searchchain.model.federation.FederationOptions;
 
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -173,7 +171,6 @@ public class FederationSearcherTest {
 
         FederationSearcher searcher = new FederationSearcher(
                 new FederationConfig(new FederationConfig.Builder().targetSelector(targetSelectorId.toString())),
-                new StrictContractsConfig(new StrictContractsConfig.Builder()),
                 targetSelectors);
 
         Query query = new Query();
@@ -192,7 +189,6 @@ public class FederationSearcherTest {
 
         FederationSearcher searcher = new FederationSearcher(
                 new FederationConfig(new FederationConfig.Builder().targetSelector(targetSelectorId.toString())),
-                new StrictContractsConfig(new StrictContractsConfig.Builder()),
                 targetSelectors);
 
         Query query = new Query();
