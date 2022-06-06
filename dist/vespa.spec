@@ -756,6 +756,7 @@ fi
 %{_prefix}/lib/jars/configserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/document.jar
 %{_prefix}/lib/jars/filedistribution-jar-with-dependencies.jar
+%{_prefix}/lib/jars/http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_jetty.jar
 %{_prefix}/lib/jars/logserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/metrics-proxy-jar-with-dependencies.jar
