@@ -137,7 +137,6 @@
                                         <include>com.yahoo.vespa:searchlib:*:jar:provided</include>
                                         <include>com.yahoo.vespa:security-utils:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vdslib:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:vespa-http-client:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vespa_jersey2:*:pom:provided</include>
                                         <include>com.yahoo.vespa:vespaclient-container-plugin:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vespajlib:*:jar:provided</include>
