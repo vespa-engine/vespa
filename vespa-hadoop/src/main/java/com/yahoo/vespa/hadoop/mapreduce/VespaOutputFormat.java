@@ -10,23 +10,15 @@ import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.Properties;
-import java.util.logging.Logger;
-
-import static com.yahoo.vespa.http.client.config.FeedParams.DataFormat.XML_UTF8;
 
 /**
  * An output specification for writing to Vespa instances in a Map-Reduce job.
- * Mainly returns an instance of a {@link LegacyVespaRecordWriter} that does the
- * actual feeding to Vespa.
  *
  * @author lesters
  */
 @SuppressWarnings("rawtypes")
 public class VespaOutputFormat extends OutputFormat {
-
-    private static final Logger log = Logger.getLogger(VespaOutputFormat.class.getName());
 
     final Properties configOverride;
 
@@ -42,18 +34,10 @@ public class VespaOutputFormat extends OutputFormat {
 
 
     @Override
-    @SuppressWarnings("deprecation")
     public RecordWriter getRecordWriter(TaskAttemptContext context) throws IOException {
         VespaCounters counters = VespaCounters.get(context);
         VespaConfiguration configuration = VespaConfiguration.get(context.getConfiguration(), configOverride);
-        Boolean useLegacyClient = configuration.useLegacyClient().orElse(null);
-        if (Objects.equals(useLegacyClient, Boolean.TRUE) || configuration.dataFormat() == XML_UTF8) {
-            log.warning("Feeding with legacy client or XML will no longer be supported on Vespa 8. " +
-                    "See https://docs.vespa.ai/en/vespa8-release-notes.html");
-            return new LegacyVespaRecordWriter(configuration, counters);
-        } else {
-            return new VespaRecordWriter(configuration, counters);
-        }
+        return new VespaRecordWriter(configuration, counters);
     }
 
 

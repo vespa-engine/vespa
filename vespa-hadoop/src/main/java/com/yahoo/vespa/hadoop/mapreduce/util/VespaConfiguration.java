@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.mapreduce.util;
 
-import com.yahoo.vespa.http.client.config.FeedParams;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.IOException;
@@ -19,7 +18,6 @@ public class VespaConfiguration {
     public static final String PROXY_SCHEME = "vespa.feed.proxy.scheme";
     public static final String DRYRUN = "vespa.feed.dryrun";
     public static final String USE_COMPRESSION = "vespa.feed.usecompression";
-    public static final String DATA_FORMAT = "vespa.feed.data.format";
     public static final String PROGRESS_REPORT = "vespa.feed.progress.interval";
     public static final String CONNECTIONS = "vespa.feed.connections";
     public static final String THROTTLER_MIN_SIZE = "vespa.feed.throttler.min.size";
@@ -29,7 +27,6 @@ public class VespaConfiguration {
     public static final String MAX_IN_FLIGHT_REQUESTS = "vespa.feed.max.in.flight.requests";
     public static final String RANDOM_STARTUP_SLEEP = "vespa.feed.random.startup.sleep.ms";
     public static final String NUM_RETRIES = "vespa.feed.num.retries";
-    public static final String USE_LEGACY_CLIENT = "vespa.feed.uselegacyclient";
 
     private final Configuration conf;
     private final Properties override;
@@ -39,21 +36,17 @@ public class VespaConfiguration {
         this.override = override;
     }
 
-
     public static VespaConfiguration get(Configuration conf, Properties override) {
         return new VespaConfiguration(conf, override);
     }
-
 
     public String endpoint() {
         return getString(ENDPOINT);
     }
 
-
     public int defaultPort() {
         return getInt(DEFAULT_PORT, 4080);
     }
-
 
     public Optional<Boolean> useSSL() {
         String raw = getString(USE_SSL);
@@ -61,16 +54,13 @@ public class VespaConfiguration {
         return Optional.of(Boolean.parseBoolean(raw));
     }
 
-
     public String proxyHost() {
         return getString(PROXY_HOST);
     }
 
-
     public int proxyPort() {
         return getInt(PROXY_PORT, 4080);
     }
-
 
     public String proxyScheme() {
         String raw = getString(PROXY_SCHEME);
@@ -78,74 +68,48 @@ public class VespaConfiguration {
         return raw;
     }
 
-
     public boolean dryrun() {
         return getBoolean(DRYRUN, false);
     }
-
 
     public boolean useCompression() {
         return getBoolean(USE_COMPRESSION, true);
     }
 
-
     public int numConnections() {
         return getInt(CONNECTIONS, 1);
     }
-
 
     public int throttlerMinSize() {
         return getInt(THROTTLER_MIN_SIZE, 0);
     }
 
-
     public int queryConnectionTimeout() {
         return getInt(QUERY_CONNECTION_TIMEOUT, 10000);
     }
-
 
     public String route() {
         return getString(ROUTE);
     }
 
-
     public int maxSleepTimeMs() {
         return getInt(MAX_SLEEP_TIME_MS, 10000);
     }
-
 
     public int maxInFlightRequests() {
         return getInt(MAX_IN_FLIGHT_REQUESTS, 500);
     }
 
-
     public int randomStartupSleepMs() {
         return getInt(RANDOM_STARTUP_SLEEP, 30000);
     }
-
 
     public int numRetries() {
         return getInt(NUM_RETRIES, 100);
     }
 
-
-    public FeedParams.DataFormat dataFormat() {
-        String format = getString(DATA_FORMAT);
-        if ("xml".equalsIgnoreCase(format)) {
-            return FeedParams.DataFormat.XML_UTF8;
-        }
-        return FeedParams.DataFormat.JSON_UTF8;
-    }
-
-
     public int progressInterval() {
         return getInt(PROGRESS_REPORT, 1000);
-    }
-
-    public Optional<Boolean> useLegacyClient() {
-        String raw = getString(USE_LEGACY_CLIENT);
-        if (raw == null || raw.trim().isEmpty()) return Optional.empty();
-        return Optional.of(Boolean.parseBoolean(raw));
     }
 
     public String getString(String name) {
@@ -197,7 +161,6 @@ public class VespaConfiguration {
         sb.append(PROXY_SCHEME + ": " + proxyScheme() + "\n");
         sb.append(DRYRUN + ": " +  dryrun() +"\n");
         sb.append(USE_COMPRESSION + ": " +  useCompression() +"\n");
-        sb.append(DATA_FORMAT + ": " +  dataFormat() +"\n");
         sb.append(PROGRESS_REPORT + ": " +  progressInterval() +"\n");
         sb.append(CONNECTIONS + ": " +  numConnections() +"\n");
         sb.append(THROTTLER_MIN_SIZE + ": " +  throttlerMinSize() +"\n");
@@ -207,7 +170,6 @@ public class VespaConfiguration {
         sb.append(MAX_IN_FLIGHT_REQUESTS + ": " +  maxInFlightRequests() +"\n");
         sb.append(RANDOM_STARTUP_SLEEP + ": " +  randomStartupSleepMs() +"\n");
         sb.append(NUM_RETRIES + ": " +  numRetries() +"\n");
-        sb.append(USE_LEGACY_CLIENT + ": " +  useLegacyClient().map(Object::toString).orElse("<empty>") +"\n");
         return sb.toString();
     }
 
