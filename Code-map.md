@@ -61,7 +61,7 @@ Document operation modules:
 - [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition. 
 - [docprocs](https://github.com/vespa-engine/vespa/tree/master/docprocs) - document processor components bundled with Vespa. Notably the Indexingprocessor - a document processor invoking the indexing language statements configured for the document type in question on document operations.
 - [vespaclient-container-plugin](https://github.com/vespa-engine/vespa/tree/master/vespaclient-container-plugin) - implements the document/v1 API and internal API used by the Java HTTP client on top of the jDisc container, forwarding to the Document API.
-- [vespa-http-client](https://github.com/vespa-engine/vespa/tree/master/vespa-http-client) - client for fast writing to the internal API implemented by vespaclient-container-plugin.
+- [vespa-feed-client](https://github.com/vespa-engine/vespa/tree/master/vespa-feed-client) - client for fast writing to the internal API implemented by vespaclient-container-plugin.
 
 ## Content nodes
 
