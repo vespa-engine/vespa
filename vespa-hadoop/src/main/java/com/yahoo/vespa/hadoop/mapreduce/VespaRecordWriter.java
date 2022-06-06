@@ -7,7 +7,6 @@ import ai.vespa.feed.client.JsonFeeder;
 import ai.vespa.feed.client.OperationParseException;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaCounters;
-import com.yahoo.vespa.http.client.config.FeedParams;
 import org.apache.hadoop.mapreduce.RecordWriter;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
@@ -85,16 +84,9 @@ public class VespaRecordWriter extends RecordWriter<Object, Object> {
 
     private void initializeOnFirstWrite() {
         if (initialized) return;
-        validateConfig();
         useRandomizedStartupDelayIfEnabled();
         feeder = createJsonStreamFeeder();
         initialized = true;
-    }
-
-    private void validateConfig() {
-        if (config.dataFormat() != FeedParams.DataFormat.JSON_UTF8) {
-            throw new IllegalArgumentException("Only JSON is support by this feed client implementation");
-        }
     }
 
     private void useRandomizedStartupDelayIfEnabled() {
