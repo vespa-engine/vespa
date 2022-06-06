@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.http.server;
+package com.yahoo.documentapi.metrics;
 
 /**
  * Place to store the metric names so where the metrics are logged can be found
