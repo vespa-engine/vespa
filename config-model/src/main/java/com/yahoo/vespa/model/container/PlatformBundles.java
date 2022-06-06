@@ -60,8 +60,6 @@ public class PlatformBundles {
             "com.yahoo.docproc.AbstractConcreteDocumentFactory",
             "com.yahoo.docproc.DocumentProcessor",
             "com.yahoo.docproc.SimpleDocumentProcessor",
-            "com.yahoo.docproc.util.JoinerDocumentProcessor",
-            "com.yahoo.docproc.util.SplitterDocumentProcessor",
             "com.yahoo.example.TimingSearcher",
             "com.yahoo.language.simple.SimpleLinguistics",
             "com.yahoo.prelude.cluster.ClusterSearcher",
