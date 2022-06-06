@@ -155,27 +155,6 @@ public class JSONStringTestCase {
     @Test
     public void testStruct() {
         {
-            String json = "{\"as1\":[\"per\",\"paal\"],\"l1\":1122334455667788991,\"d1\":81.790001,\"i1\":1,\"al1\":[11223344556677881,11223344556677883],\"s1\":\"string\\n"
-                    + "espa\u00F1a ssf1.s1\"}";
-            JSONString js = new JSONString(json);
-            String[] renderedFields = {
-                    "      <struct-field name=\"l1\">1122334455667788991</struct-field>\n",
-                    "      <struct-field name=\"al1\">\n"
-                            + "        <item>11223344556677881</item>\n"
-                            + "        <item>11223344556677883</item>\n"
-                            + "      </struct-field>\n",
-                    "      <struct-field name=\"i1\">1</struct-field>\n",
-                    "      <struct-field name=\"d1\">81.790001</struct-field>\n",
-                    "      <struct-field name=\"as1\">\n"
-                            + "        <item>per</item>\n"
-                            + "        <item>paal</item>\n"
-                            + "      </struct-field>\n",
-                    "      <struct-field name=\"s1\">string\n"
-                            + "españa ssf1.s1</struct-field>\n" };
-            String rendered = js.toString();
-            checkSubstrings(renderedFields, rendered);
-        }
-        {
             Value.ObjectValue top = new Value.ObjectValue();
             top.put("d1", new Value.DoubleValue(81.790001))
                     .put("s1",
@@ -211,24 +190,6 @@ public class JSONStringTestCase {
             checkSubstrings(renderedFields, rendered);
         }
         {
-            String json = "{\"as1\":[\"per\",\"paal\"],\"d1\":84.790001,\"i1\":4,\"al1\":[11223344556677881,11223344556677883]}";
-            JSONString js = new JSONString(json);
-            String[] renderedFields = {
-                    "      <struct-field name=\"al1\">\n"
-                            + "        <item>11223344556677881</item>\n"
-                            + "        <item>11223344556677883</item>\n"
-                            + "      </struct-field>\n",
-                    "      <struct-field name=\"i1\">4</struct-field>\n",
-                    "      <struct-field name=\"d1\">84.790001</struct-field>\n",
-                    "      <struct-field name=\"as1\">\n"
-                            + "        <item>per</item>\n"
-                            + "        <item>paal</item>\n"
-                            + "      </struct-field>\n    " };
-            String rendered = js.toString();
-
-            checkSubstrings(renderedFields, rendered);
-        }
-        {
             Value.ObjectValue top = new Value.ObjectValue();
             top.put("d1", new Value.DoubleValue(84.790001))
                     .put("al1",
@@ -257,36 +218,6 @@ public class JSONStringTestCase {
             String rendered = js.renderFromInspector();
             checkSubstrings(renderedFields, rendered);
 
-        }
-        {
-            String json = "{\"s2\":\"string espa\u00F1a\\n"
-                    + "ssf5.s2\",\"nss1\":{\"as1\":[\"per\",\"paal\"],\"l1\":1122334455667788995,\"d1\":85.790001,\"i1\":5,\"al1\":[11223344556677881,11223344556677883],\"s1\":\"string\\n"
-                    + "espa\u00F1a ssf5.nss1.s1\"}}";
-            JSONString js = new JSONString(json);
-            String[] renderedFields = {
-                    "      <struct-field name=\"nss1\">\n",
-                    "      <struct-field name=\"s1\">string\n"
-                            + "españa ssf5.nss1.s1</struct-field>\n",
-                    "      <struct-field name=\"s2\">string españa\n"
-                            + "ssf5.s2</struct-field>\n    " };
-            String nss1Fields[] = {
-                    "       <struct-field name=\"l1\">1122334455667788995</struct-field>\n",
-                    "        <struct-field name=\"al1\">\n"
-                            + "          <item>11223344556677881</item>\n"
-                            + "          <item>11223344556677883</item>\n"
-                            + "        </struct-field>\n",
-                    "        <struct-field name=\"i1\">5</struct-field>\n",
-                    "        <struct-field name=\"d1\">85.790001</struct-field>\n",
-                    "        <struct-field name=\"as1\">\n"
-                            + "          <item>per</item>\n"
-                            + "          <item>paal</item>\n"
-                            + "        </struct-field>\n" };
-
-            String rendered = js.toString();
-            checkSubstrings(renderedFields, rendered);
-            int nss1Offset = rendered.indexOf(renderedFields[0])
-                    + renderedFields[0].length();
-            checkSubstrings(nss1Fields, rendered, nss1Offset);
         }
         {
             Value.ObjectValue top = new Value.ObjectValue();
@@ -345,34 +276,6 @@ public class JSONStringTestCase {
                     rendered.indexOf(
                             f2_end,
                             expectedEnd));
-        }
-        {
-            String json = "{\"s2\":\"string espa\u00F1a\\n"
-                    + "ssf8.s2\",\"nss1\":{\"as1\":[\"per\",\"paal\"],\"d1\":88.790001,\"i1\":8,\"al1\":[11223344556677881,11223344556677883]}}";
-            JSONString js = new JSONString(json);
-
-            String[] renderedFields = {
-                    "      <struct-field name=\"nss1\">\n",
-                    "      <struct-field name=\"s2\">string españa\n"
-                            + "ssf8.s2</struct-field>\n    " };
-            String nss1Fields[] = {
-                    "        <struct-field name=\"al1\">\n"
-                            + "          <item>11223344556677881</item>\n"
-                            + "          <item>11223344556677883</item>\n"
-                            + "        </struct-field>\n",
-                    "        <struct-field name=\"i1\">8</struct-field>\n",
-                    "        <struct-field name=\"d1\">88.790001</struct-field>\n",
-                    "        <struct-field name=\"as1\">\n"
-                            + "          <item>per</item>\n"
-                            + "          <item>paal</item>\n"
-                            + "        </struct-field>\n" };
-
-            String rendered = js.toString();
-            checkSubstrings(renderedFields, rendered);
-            int nss1Offset = rendered.indexOf(renderedFields[0])
-                    + renderedFields[0].length();
-            checkSubstrings(nss1Fields, rendered, nss1Offset);
-
         }
         {
             Value.ObjectValue top = new Value.ObjectValue();
