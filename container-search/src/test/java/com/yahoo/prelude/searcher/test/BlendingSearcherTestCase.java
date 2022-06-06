@@ -12,7 +12,6 @@ import com.yahoo.component.chain.Chain;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.search.federation.FederationConfig;
 import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.search.federation.StrictContractsConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.prelude.fastsearch.FastHit;
@@ -113,10 +112,8 @@ public class BlendingSearcherTestCase {
                                 entry.getValue()));
             }
 
-            StrictContractsConfig contracts = new StrictContractsConfig.Builder().build();
-
             FederationSearcher fedSearcher =
-                    new FederationSearcher(new FederationConfig(builder), contracts, new ComponentRegistry<>());
+                    new FederationSearcher(new FederationConfig(builder), new ComponentRegistry<>());
             BlendingSearcher blendingSearcher = new BlendingSearcher(blendingField);
             blendingChain = new SearchChain(ComponentId.createAnonymousComponentId("blendingChain"), blendingSearcher, fedSearcher);
             return true;
