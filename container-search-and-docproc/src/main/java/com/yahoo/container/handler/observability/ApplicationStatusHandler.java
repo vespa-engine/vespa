@@ -274,7 +274,6 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
             return jsonMapper.createObjectNode();
         }
 
-        @SuppressWarnings("removal") // TODO Vespa 8: remove
         private static JsonNode renderDocprocChains(Container container) {
             ObjectNode ret = jsonMapper.createObjectNode();
             for (RequestHandler h : container.getRequestHandlerRegistry().allComponents()) {
