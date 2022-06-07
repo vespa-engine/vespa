@@ -283,13 +283,6 @@
       <groupId>org.lz4</groupId>
       <artifactId>lz4-java</artifactId>
     </dependency>
-    <dependency>
-      <!-- TODO Remove when Jetty is embedded inside container-core -->
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-http</artifactId>
-      <version>${jetty.version}</version>
-      <scope>test</scope>
-    </dependency>
 
   </dependencies>
   <build>

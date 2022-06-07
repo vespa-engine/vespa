@@ -39,13 +39,6 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <!-- TODO Remove when Jetty is embedded inside container-core -->
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-http</artifactId>
-            <version>${jetty.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <!-- TODO: remove dependency on container-dev, and instead depend directly on what this module needs! -->
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-dev</artifactId>
