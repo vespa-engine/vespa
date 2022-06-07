@@ -760,15 +760,11 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
         auto dm_metrics = usageFilter.get_metrics();
         metrics.resourceUsage.disk.set(dm_metrics.non_transient_disk_usage());
-        metrics.resourceUsage.diskUtilization.set(dm_metrics.total_disk_utilization());
-        metrics.resourceUsage.transient_disk.set(dm_metrics.transient_disk_usage());
         metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
         metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
         metrics.resourceUsage.disk_usage.transient.set(dm_metrics.transient_disk_usage());
 
         metrics.resourceUsage.memory.set(dm_metrics.non_transient_memory_usage());
-        metrics.resourceUsage.memoryUtilization.set(dm_metrics.total_memory_utilization());
-        metrics.resourceUsage.transient_memory.set(dm_metrics.transient_memory_usage());
         metrics.resourceUsage.memory_usage.total.set(dm_metrics.total_memory_usage());
         metrics.resourceUsage.memory_usage.total_util.set(dm_metrics.total_memory_utilization());
         metrics.resourceUsage.memory_usage.transient.set(dm_metrics.transient_memory_usage());
