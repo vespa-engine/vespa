@@ -8,14 +8,14 @@
     "children": [
       {
         "type": "container",
-        "name": "junit-jupiter",
+        "name": "JUnit Jupiter",
         "status": "error",
         "start": 0,
         "end": 0,
         "children": [
           {
             "type": "container",
-            "name": "com.yahoo.vespa.test.samples.SampleTest",
+            "name": "SampleTest",
             "status": "error",
             "start": 0,
             "end": 0,
@@ -101,7 +101,7 @@
               },
               {
                 "type": "test",
-                "name": "inconclusive(org.junit.jupiter.api.TestReporter)",
+                "name": "inconclusive(TestReporter)",
                 "status": "inconclusive",
                 "start": 0,
                 "end": 0,
@@ -189,7 +189,7 @@
                       },
                       {
                         "type": "test",
-                        "name": "#1",
+                        "name": "second",
                         "status": "successful",
                         "start": 0,
                         "end": 0,
@@ -208,7 +208,7 @@
                       },
                       {
                         "type": "test",
-                        "name": "#2",
+                        "name": "third",
                         "status": "failed",
                         "start": 0,
                         "end": 0,
@@ -283,12 +283,12 @@
         "exception": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n"
       },
       {
-        "testName": "inconclusive(org.junit.jupiter.api.TestReporter)",
+        "testName": "inconclusive(TestReporter)",
         "testError": "the cat is both dead _and_ alive",
         "exception": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:93)\n"
       },
       {
-        "testName": "#2",
+        "testName": "third",
         "testError": "no charm",
         "exception": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n"
       }

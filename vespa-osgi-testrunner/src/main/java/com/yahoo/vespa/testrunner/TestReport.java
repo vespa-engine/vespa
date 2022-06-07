@@ -45,7 +45,7 @@ public class TestReport {
     }
 
     TestReport(Clock clock, Suite suite) {
-        this(clock, suite, new ContainerNode(null, toString(suite), clock.instant()));
+        this(clock, suite, new ContainerNode(null, null, toString(suite), clock.instant()));
     }
 
     static TestReport createFailed(Clock clock, Suite suite, Throwable thrown) {
@@ -60,7 +60,7 @@ public class TestReport {
     private void verifyStructure(NamedNode node, UniqueId id) {
         Deque<String> path = new ArrayDeque<>();
         while (node != root)  {
-            path.push(node.name);
+            path.push(node.id);
             node = node.parent;
         }
         Deque<String> segments = new ArrayDeque<>();
@@ -79,8 +79,8 @@ public class TestReport {
 
     void start(TestIdentifier id) {
         synchronized (monitor) {
-            NamedNode child = id.isTest() ? new TestNode(current, id.getUniqueIdObject().getLastSegment().getValue(), clock.instant())
-                                          : new ContainerNode(current, id.getUniqueIdObject().getLastSegment().getValue(), clock.instant());
+            NamedNode child = id.isTest() ? new TestNode(current, id.getUniqueIdObject().getLastSegment().getValue(), id.getDisplayName(), clock.instant())
+                                          : new ContainerNode(current, id.getUniqueIdObject().getLastSegment().getValue(), id.getDisplayName(), clock.instant());
             verifyStructure(child, id.getUniqueIdObject());
             current.children.add(child);
             current = child;
@@ -154,7 +154,7 @@ public class TestReport {
                 if (root.start().isAfter(other.root.start()))
                     throw new IllegalArgumentException("appended test report cannot have started before the one appended to");
 
-                ContainerNode newRoot = new ContainerNode(null, root.name(), root.start());
+                ContainerNode newRoot = new ContainerNode(null, null, root.name(), root.start());
                 newRoot.children.addAll(root.children);
                 newRoot.children.addAll(other.root.children);
                 TestReport merged = new TestReport(clock, suite, newRoot);
@@ -203,13 +203,15 @@ public class TestReport {
 
     static abstract class NamedNode extends Node {
 
+        private final String id;
         private final String name;
         private final Instant start;
         private Status status;
         private Instant end;
 
-        NamedNode(NamedNode parent, String name, Instant now) {
+        NamedNode(NamedNode parent, String id, String name, Instant now) {
             super(parent);
+            this.id = id;
             this.name = name;
             this.start = now;
         }
@@ -236,16 +238,16 @@ public class TestReport {
 
     public static class ContainerNode extends NamedNode {
 
-        ContainerNode(NamedNode parent, String name, Instant now) {
-            super(parent, name, now);
+        ContainerNode(NamedNode parent, String name, String display, Instant now) {
+            super(parent, name, display, now);
         }
 
     }
 
     public static class TestNode extends NamedNode {
 
-        TestNode(NamedNode parent, String name, Instant now) {
-            super(parent, name, now);
+        TestNode(NamedNode parent, String name, String display, Instant now) {
+            super(parent, name, display, now);
         }
 
         @Override
