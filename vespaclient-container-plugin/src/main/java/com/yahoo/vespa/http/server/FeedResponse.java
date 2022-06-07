@@ -2,9 +2,6 @@
 package com.yahoo.vespa.http.server;
 
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.vespa.http.client.core.Headers;
-import com.yahoo.vespa.http.client.core.ErrorCode;
-import com.yahoo.vespa.http.client.core.OperationStatus;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -15,8 +12,7 @@ import java.util.concurrent.BlockingQueue;
  * Reads feed responses from a queue and renders them continuously to the
  * feeder.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1
+ * @author Steinar Knutsen
  */
 public class FeedResponse extends HttpResponse {
 

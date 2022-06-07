@@ -15,7 +15,6 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.metrics.simple.MetricReceiver;
-import com.yahoo.vespa.http.client.core.Headers;
 
 import javax.inject.Inject;
 import java.io.IOException;

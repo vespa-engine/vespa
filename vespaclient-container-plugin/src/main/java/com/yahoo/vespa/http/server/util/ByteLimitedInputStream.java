@@ -6,8 +6,6 @@ import java.io.InputStream;
 
 /**
  * @author Einar M R Rosenvinge
- *
- * @since 5.1.23
  */
 public class ByteLimitedInputStream extends InputStream {
 

@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.server;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
@@ -14,9 +13,6 @@ import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Result;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.http.client.core.ErrorCode;
-import com.yahoo.vespa.http.client.core.Headers;
-import com.yahoo.vespa.http.client.core.OperationStatus;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.yolean.Exceptions;
 
