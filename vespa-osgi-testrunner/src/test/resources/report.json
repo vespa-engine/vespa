@@ -1,7 +1,7 @@
 {
   "report": {
     "type": "container",
-    "name": "System test",
+    "name": "Production test",
     "status": "error",
     "start": 0,
     "end": 0,
@@ -102,7 +102,7 @@
               {
                 "type": "test",
                 "name": "inconclusive(org.junit.jupiter.api.TestReporter)",
-                "status": "error",
+                "status": "inconclusive",
                 "start": 0,
                 "end": 0,
                 "children": [
@@ -123,7 +123,7 @@
                   },
                   {
                     "type": "failure",
-                    "status": "error",
+                    "status": "inconclusive",
                     "trace": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:93)\n"
                   }
                 ]
@@ -267,10 +267,10 @@
   },
   "summary": {
     "success": 3,
-    "failed": 4,
+    "failed": 3,
     "ignored": 2,
     "aborted": 1,
-    "inconclusive": 0,
+    "inconclusive": 1,
     "failures": [
       {
         "testName": "error()",

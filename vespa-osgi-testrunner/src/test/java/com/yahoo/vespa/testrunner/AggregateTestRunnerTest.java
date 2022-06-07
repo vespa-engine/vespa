@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class AggregateTestRunnerTest {
 
-    static final TestReport report = JunitRunnerTest.test(Suite.SYSTEM_TEST, new byte[0], SampleTest.class).getReport();
+    static final TestReport report = JunitRunnerTest.test(Suite.PRODUCTION_TEST, new byte[0], SampleTest.class).getReport();
 
     @Test
     void onlySupportedRunnersAreUsed() {
