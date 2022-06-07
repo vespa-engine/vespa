@@ -53,17 +53,6 @@ TEST(SignalHandlerTest, can_dump_stack_of_another_thread)
     t.join();
 }
 
-TEST(SignalHandlerTest, dumping_stack_of_an_ex_thread_does_not_crash)
-{
-    std::thread t([]() noexcept {
-        // Do a lot of nothing at all.
-    });
-    auto tid = t.native_handle();
-    t.join();
-    auto trace = SignalHandler::get_cross_thread_stack_trace(tid);
-    EXPECT_EQ(trace, "(pthread_kill() failed; could not get backtrace)");
-}
-
 TEST(SignalHandlerTest, can_get_stack_trace_of_own_thread)
 {
     auto trace = my_totally_tubular_and_groovy_function();
