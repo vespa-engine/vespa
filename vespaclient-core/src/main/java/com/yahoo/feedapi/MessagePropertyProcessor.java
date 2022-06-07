@@ -17,7 +17,6 @@ import java.util.logging.Logger;
  * Utility class for assigning properties to messages, either from implicit
  * config values or from explicit values in requests.
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscriber<FeederConfig> {
 
     private static final Logger log = Logger.getLogger(MessagePropertyProcessor.class.getName());
@@ -201,6 +200,7 @@ public class MessagePropertyProcessor implements ConfigSubscriber.SingleSubscrib
         }
 
         @Override
+        @SuppressWarnings("removal") // TODO Vespa 9: remove
         public void process(Message msg) {
             if (route != null) {
                 msg.setRoute(route);
