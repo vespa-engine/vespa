@@ -3,7 +3,6 @@ package com.yahoo.document;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.compress.CompressionType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.ByteFieldValue;
@@ -29,8 +28,8 @@ import org.junit.Test;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 
@@ -217,7 +216,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         doc.setFieldValue("long", longVal);
     }
 
-    class VariableIteratorHandler extends FieldPathIteratorHandler {
+    static class VariableIteratorHandler extends FieldPathIteratorHandler {
 
         public String retVal = "";
 
@@ -462,7 +461,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         }
     }
 
-    class RemoveIteratorHandler extends FieldPathIteratorHandler {
+    static class RemoveIteratorHandler extends FieldPathIteratorHandler {
 
         public ModificationStatus doModify(FieldValue fv) {
             return ModificationStatus.REMOVED;
@@ -639,17 +638,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    public void testCppDocCompressed() throws IOException {
-        docMan = setUpCppDocType();
-        byte[] data = readFile("src/test/document/serializecpp-lz4-level9.dat");
-        ByteBuffer buf = ByteBuffer.wrap(data);
-
-        Document doc = docMan.createDocument(new GrowableByteBuffer(buf));
-
-        validateCppDoc(doc);
-    }
-
-    @Test
     public void testCppDoc() throws IOException {
         docMan = setUpCppDocType();
         byte[] data = readFile("src/test/document/serializecpp.dat");
@@ -794,7 +782,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         BufferSerializer buf = new BufferSerializer();
         try {
             new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
-            assertTrue(false);
+            fail();
         } catch (Exception e) {
             assertTrue(true);
         }
@@ -802,7 +790,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         buf = BufferSerializer.wrap("Hello world".getBytes());
         try {
             new Document(DocumentDeserializerFactory.create6(docMan, buf.getBuf()));
-            assertTrue(false);
+            fail();
         } catch (Exception e) {
             assertTrue(true);
         }
@@ -983,7 +971,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         setUpSertestDocType();
         Document doc = getSertestDocument();
         String json = doc.toJson();
-        Map<String, Object> parsed = new ObjectMapper().readValue(json, new TypeReference<Map<String, Object>>() {
+        Map<String, Object> parsed = new ObjectMapper().readValue(json, new TypeReference<>() {
         });
         assertEquals(parsed.get("id"), "id:ns:sertest::foobar");
         assertTrue(parsed.get("fields") instanceof Map);
@@ -1218,11 +1206,11 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    public void testDocumentIdWithNonTextCharacterCanBeDeserialized() throws UnsupportedEncodingException {
+    public void testDocumentIdWithNonTextCharacterCanBeDeserialized() {
         DocumentIdFixture f = new DocumentIdFixture();
 
         // Document id = "id:a:b::0x7c"
-        String docId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}, "UTF-8");
+        String docId = new String(new byte[]{105, 100, 58, 97, 58, 98, 58, 58, 7, 99}, StandardCharsets.UTF_8);
         f.serialize(docId);
 
         Document result = f.deserialize();

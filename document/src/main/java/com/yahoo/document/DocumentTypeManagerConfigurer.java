@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.compress.CompressionType;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
@@ -434,7 +433,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
 
             void createEmptyStructs() {
-                String docName = docTypeConfig.name();
                 for (var typeconf : docTypeConfig.structtype()) {
                     if (isPositionStruct(typeconf)) {
                         int geoVersion = usev8geopositions ? 8 : 7;

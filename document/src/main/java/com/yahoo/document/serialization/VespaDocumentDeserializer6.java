@@ -2,8 +2,6 @@
 package com.yahoo.document.serialization;
 
 import com.yahoo.collections.Tuple2;
-import com.yahoo.compress.CompressionType;
-import com.yahoo.compress.Compressor;
 import com.yahoo.document.annotation.AlternateSpanList;
 import com.yahoo.document.annotation.Annotation;
 import com.yahoo.document.annotation.AnnotationReference;
@@ -69,7 +67,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static com.yahoo.text.Utf8.calculateStringPositions;
 
@@ -80,8 +77,7 @@ import static com.yahoo.text.Utf8.calculateStringPositions;
  */
 public class VespaDocumentDeserializer6 extends BufferSerializer implements DocumentDeserializer {
 
-    private final Compressor compressor = new Compressor();
-    private DocumentTypeManager manager;
+    private final DocumentTypeManager manager;
     private short version;
     private List<SpanNode> spanNodes;
     private List<Annotation> annotations;
@@ -263,21 +259,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
 
         int dataSize = getInt(null);
-        byte comprCode = getByte(null);
-        CompressionType compression = CompressionType.valueOf(comprCode);
-
-        int uncompressedSize = 0;
-        if (compression != CompressionType.NONE &&
-            compression != CompressionType.INCOMPRESSIBLE)
-        {
-            // uncompressedsize (full size of FIELDS only, after decompression)
-            long pSize = getInt2_4_8Bytes(null);
-            //TODO: Look into how to support data segments larger than INT_MAX bytes
-            if (pSize > Integer.MAX_VALUE) {
-                throw new DeserializationException("Uncompressed size of data block is too large.");
-            }
-            uncompressedSize = (int) pSize;
-        }
+        byte ignoredComprCode = getByte(null);
 
         int numberOfFields = getInt1_4Bytes(null);
 
@@ -289,14 +271,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
         // save a reference to the big buffer we're reading from:
         GrowableByteBuffer bigBuf = buf;
-
-        byte[] destination = compressor.decompress(compression, getBuf().array(), position(), uncompressedSize, Optional.of(dataSize));
-
+        GrowableByteBuffer thisStructOnly = GrowableByteBuffer.wrap(getBuf().array(), position(), dataSize);
         // set position in original buffer to after data
         position(position() + dataSize);
 
         // for a while: deserialize from this buffer instead:
-        buf = GrowableByteBuffer.wrap(destination);
+        buf = thisStructOnly;
 
         s.clear();
         StructDataType type = s.getDataType();
@@ -325,21 +305,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
 
         int dataSize = getInt(null);
-        byte comprCode = getByte(null);
-        CompressionType compression = CompressionType.valueOf(comprCode);
-
-        int uncompressedSize = 0;
-        if (compression != CompressionType.NONE &&
-            compression != CompressionType.INCOMPRESSIBLE)
-        {
-            // uncompressedsize (full size of FIELDS only, after decompression)
-            long pSize = getInt2_4_8Bytes(null);
-            //TODO: Look into how to support data segments larger than INT_MAX bytes
-            if (pSize > Integer.MAX_VALUE) {
-                throw new DeserializationException("Uncompressed size of data block is too large.");
-            }
-            uncompressedSize = (int) pSize;
-        }
+        byte unusedComprCode = getByte(null);
 
         int numberOfFields = getInt1_4Bytes(null);
 
@@ -351,14 +317,13 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
         // save a reference to the big buffer we're reading from:
         GrowableByteBuffer bigBuf = buf;
-
-        byte[] destination = compressor.decompress(compression, getBuf().array(), position(), uncompressedSize, Optional.of(dataSize));
+        GrowableByteBuffer thisStructOnly = GrowableByteBuffer.wrap(getBuf().array(), position(), dataSize);
 
         // set position in original buffer to after data
         position(position() + dataSize);
 
         // for a while: deserialize from this buffer instead:
-        buf = GrowableByteBuffer.wrap(destination);
+        buf = thisStructOnly;
 
         StructDataType priType = target.getDataType().contentStruct();
 
@@ -613,7 +578,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         DocumentType docType = manager.getDocumentType(new DataTypeName(docTypeName));
         if (docType == null) {
             throw new DeserializationException("No known document type with name " + 
-                                               new Utf8String(docTypeName).toString());
+                                               new Utf8String(docTypeName));
         }
         return docType;
     }

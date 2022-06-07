@@ -15,5 +15,4 @@ testrunner
 *_test
 document_gtest_runner_app
 document_testrunner_app
-/serializecpp-lz4-level9.dat
 /serializecppsplit_body.dat
