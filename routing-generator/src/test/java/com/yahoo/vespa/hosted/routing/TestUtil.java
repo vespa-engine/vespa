@@ -18,7 +18,6 @@ public class TestUtil {
 
     private static final Path testData = Paths.get("src/test/resources/");
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public static RoutingTable readRoutingTable(String filename) {
         List<String> lines = Exceptions.uncheck(() -> Files.readAllLines(testFile(filename),
                                                                          StandardCharsets.UTF_8));
