@@ -757,7 +757,6 @@ fi
 %{_prefix}/lib/jars/document.jar
 %{_prefix}/lib/jars/filedistribution-jar-with-dependencies.jar
 %{_prefix}/lib/jars/http-client-jar-with-dependencies.jar
-%{_prefix}/lib/jars/jdisc_jetty.jar
 %{_prefix}/lib/jars/logserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/metrics-proxy-jar-with-dependencies.jar
 %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar
@@ -918,9 +917,6 @@ fi
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
 %{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
-%{_prefix}/lib/jars/alpn-*.jar
-%{_prefix}/lib/jars/http2-*.jar
-%{_prefix}/lib/jars/jetty-*.jar
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
 %{_prefix}/lib/jars/org.apache.aries.spifly.dynamic.bundle-*.jar
