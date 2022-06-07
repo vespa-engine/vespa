@@ -20,7 +20,6 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.deployment.ZipBuilder;
 import com.yahoo.yolean.Exceptions;
@@ -277,14 +276,6 @@ public class ApplicationPackage {
         /** Max size of each extracted file */
         private static final int maxSize = 10 << 20; // 10 Mb
 
-        // TODO: Vespa 8: Remove application/ directory support
-        private static final String applicationDir = "application/";
-
-        private static String withoutLegacyDir(String name) {
-            if (name.startsWith(applicationDir)) return name.substring(applicationDir.length());
-            return name;
-        }
-
         private final byte[] zip;
         private final Map<Path, Optional<byte[]>> cache;
 
@@ -310,11 +301,11 @@ public class ApplicationPackage {
 
         private Map<Path, Optional<byte[]>> read(Collection<String> names) {
             var entries = ZipEntries.from(zip,
-                                          name -> names.contains(withoutLegacyDir(name)),
+                                          name -> names.contains(name),
                                           maxSize,
                                           true)
                                     .asList().stream()
-                                    .collect(toMap(entry -> Paths.get(withoutLegacyDir(entry.name())).normalize(),
+                                    .collect(toMap(entry -> Paths.get(entry.name()).normalize(),
                                                    ZipEntries.ZipEntryWithContent::content));
             names.stream().map(Paths::get).forEach(path -> entries.putIfAbsent(path.normalize(), Optional.empty()));
             return entries;
