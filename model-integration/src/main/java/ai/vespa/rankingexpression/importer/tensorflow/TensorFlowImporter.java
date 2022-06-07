@@ -51,47 +51,7 @@ public class TensorFlowImporter extends ModelImporter {
      */
     @Override
     public ImportedModel importModel(String modelName, String modelDir) {
-        return convertToOnnxAndImport(modelName, modelDir);
-    }
-
-    private ImportedModel convertToOnnxAndImport(String modelName, String modelDir) {
-        Path tempDir = null;
-        try {
-            tempDir = Files.createTempDirectory("tf2onnx");
-            String convertedPath = tempDir.toString() + File.separatorChar + "converted.onnx";
-            String outputOfLastConversionAttempt = "";
-            for (int opset : onnxOpsetsToTry) {
-                log.info("Converting TensorFlow model '" + modelDir + "' to ONNX with opset " + opset + "...");
-                Pair<Integer, String> res = convertToOnnx(modelDir, convertedPath, opset);
-                if (res.getFirst() == 0) {
-                    log.info("Conversion to ONNX with opset " + opset + " successful.");
-
-                    /*
-                     * For now we have to import tensorflow models as native Vespa expressions.
-                     * The temporary ONNX file that is created by conversion needs to be put
-                     * in the application package so it can be file distributed.
-                     */
-                    return onnxImporter.importModelAsNative(modelName, convertedPath, ImportedMlModel.ModelType.TENSORFLOW);
-                }
-                log.fine("Conversion to ONNX with opset " + opset + " failed. Reason: " + res.getSecond());
-                outputOfLastConversionAttempt = res.getSecond();
-            }
-            throw new IllegalArgumentException("Unable to convert TensorFlow model in '" + modelDir + "' to ONNX: " +
-                                               outputOfLastConversionAttempt);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Conversion from TensorFlow to ONNX failed for '" + modelDir + "'");
-        } finally {
-            if (tempDir != null) {
-                IOUtils.recursiveDeleteDir(tempDir.toFile());
-            }
-        }
-    }
-
-    private Pair<Integer, String> convertToOnnx(String savedModel, String output, int opset) throws IOException {
-        ProcessExecuter executer = new ProcessExecuter();
-        String job = "vespa-convert-tf2onnx --saved-model " + savedModel + " --output " + output + " --opset " + opset
-                + " --use-graph-names";  // for backward compatibility with tf2onnx versions < 1.9.1
-        return executer.exec(job);
+        throw new IllegalArgumentException("Import of TensorFlow models is no longer supported");
     }
 
 }
