@@ -370,6 +370,11 @@ public:
         return _genHolder;
     }
 
+    // need object location before construction
+    static vespalib::GenerationHolder &getGenerationHolderLocation(DataStoreBase &self) {
+        return self._genHolder;
+    }
+
     uint32_t startCompactWorstBuffer(uint32_t typeId);
     std::vector<uint32_t> startCompactWorstBuffers(CompactionSpec compaction_spec, const CompactionStrategy &compaction_strategy);
     uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
