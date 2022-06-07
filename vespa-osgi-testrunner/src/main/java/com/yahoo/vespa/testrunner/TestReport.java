@@ -151,13 +151,15 @@ public class TestReport {
                 if (current != null || other.current != null)
                     throw new IllegalArgumentException("can only merge completed test reports");
 
-                if (root.start().isBefore(other.root.start()))
+                if (root.start().isAfter(other.root.start()))
                     throw new IllegalArgumentException("appended test report cannot have started before the one appended to");
 
                 ContainerNode newRoot = new ContainerNode(null, root.name(), root.start());
                 newRoot.children.addAll(root.children);
                 newRoot.children.addAll(other.root.children);
-                return new TestReport(clock, suite, newRoot);
+                TestReport merged = new TestReport(clock, suite, newRoot);
+                merged.complete();
+                return merged;
             }
         }
     }
