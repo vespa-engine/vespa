@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.secrets;
 /**
  * @author olaa
  */
-public class NoopCloudSecretStore implements CloudSecretStore {
+public class NoopGcpSecretStore implements GcpSecretStore {
 
     @Override
     public void createSecret(String secretName, String secret) {

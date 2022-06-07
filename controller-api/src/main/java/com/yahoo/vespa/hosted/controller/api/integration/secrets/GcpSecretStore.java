@@ -1,7 +1,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.secrets;
 
-public interface CloudSecretStore {
-    // TODO andreer: give this a better name
+public interface GcpSecretStore {
 
     void createSecret(String secretName, String secret);
 

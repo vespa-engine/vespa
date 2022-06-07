@@ -12,7 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidator;
-import com.yahoo.vespa.hosted.controller.api.integration.secrets.CloudSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
@@ -66,13 +66,13 @@ public class EndpointCertificates {
         if (controller.zoneRegistry().zones().ofCloud(CloudName.from("gcp")).ids().contains(zone)) { // Until CKMS is available from GCP
             if(metadata.isPresent()) {
                 var m = metadata.get();
-                CloudSecretStore cloudSecretStore = controller.serviceRegistry().cloudSecretStore();
+                GcpSecretStore gcpSecretStore = controller.serviceRegistry().gcpSecretStore();
                 String mangledCertName = "endpointCert_" + m.certName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
                 String mangledKeyName = "endpointCert_" + m.keyName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
-                if (cloudSecretStore.getSecret(mangledCertName, m.version()) == null)
-                    cloudSecretStore.createSecret(mangledCertName + "-v" + m.version(), controller.secretStore().getSecret(m.certName(), m.version()));
-                if (cloudSecretStore.getSecret(mangledKeyName, m.version()) == null)
-                    cloudSecretStore.createSecret(mangledKeyName + "-v" + m.version(), controller.secretStore().getSecret(m.keyName(), m.version()));
+                if (gcpSecretStore.getSecret(mangledCertName, m.version()) == null)
+                    gcpSecretStore.createSecret(mangledCertName + "-v" + m.version(), controller.secretStore().getSecret(m.certName(), m.version()));
+                if (gcpSecretStore.getSecret(mangledKeyName, m.version()) == null)
+                    gcpSecretStore.createSecret(mangledKeyName + "-v" + m.version(), controller.secretStore().getSecret(m.keyName(), m.version()));
 
                 return Optional.of(m.withVersion(1).withKeyName(mangledKeyName).withCertName(mangledCertName));
             }
