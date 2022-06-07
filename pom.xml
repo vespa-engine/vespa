@@ -139,7 +139,7 @@
         <module>vespa-osgi-testrunner</module>
         <module>vespa-testrunner-components</module>
         <module>vespa_feed_perf</module>
-        <module>vespa_jersey2</module>
+        <module>vespa-3party-bundles</module>
         <module>vespajlib</module>
         <module>vespalog</module>
         <module>yolean</module>
