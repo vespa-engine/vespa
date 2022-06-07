@@ -6,10 +6,10 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
+@SuppressWarnings("removal") // TODO: Vespa 9: Remove
 public class VisitorParametersTestCase {
 
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove
+    @SuppressWarnings("removal")// TODO: Vespa 9: Remove
     private VisitorParameters createVisitorParameters() {
         VisitorParameters params = new VisitorParameters("");
         params.setDocumentSelection("id.user==5678");
@@ -20,7 +20,7 @@ public class VisitorParametersTestCase {
         params.setLibraryParameter("groovy", "dudes");
         params.setLibraryParameter("ninja", "turtles");
         params.setMaxBucketsPerVisitor(55);
-        params.setPriority(DocumentProtocol.Priority.HIGHEST); // TODO: Remove on Vespa 8
+        params.setPriority(DocumentProtocol.Priority.HIGHEST);
         params.setRoute("extraterrestrial/highway");
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
