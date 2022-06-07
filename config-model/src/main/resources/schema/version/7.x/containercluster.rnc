@@ -1,0 +1,283 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+ContainerCluster = element container | jdisc {
+    attribute version { "1.0" } &
+    attribute id { xsd:NCName }? &
+    attribute jetty { xsd:boolean }? &
+    Include* &
+    ContainerServices &    
+    DocumentBinding* &
+    Aliases? &
+    NodesOfContainerCluster? &
+    ClientAuthorize?
+}
+
+ContainerServices =
+    SearchInContainer? &
+    DocprocInContainer? &
+    ProcessingInContainer? &
+    ModelEvaluation? &
+    DocumentApi? &
+    Components* &
+    Component* &
+    Embedder* &
+    Handler* &
+    Client* &
+    Server* &
+    Http? &
+    AccessLog* &
+    SecretStore? &
+    ZooKeeper? &
+    GenericConfig*
+
+# TODO(ogronnesby): Change this configuration syntax
+ClientAuthorize = element client-authorize { empty }
+
+Components = element components {
+    Include* &
+    Component*
+}
+
+Aliases = element aliases {
+    element service-alias { xsd:NCName }* &
+    element endpoint-alias { xsd:NCName }*
+}
+
+Include = element \include {
+    attribute dir { text }
+}
+
+Http = element http {
+    (Filtering & HttpServer+) |
+    HttpServer+ |
+    empty
+}
+
+Filtering = element filtering {
+    attribute strict-mode { xsd:boolean }? &
+    HttpFilter* &
+    AccessControl? &
+    element request-chain {
+        HttpFilterChain
+    }* &
+    element response-chain {
+        HttpFilterChain
+    }*
+}
+
+HttpServer =  element server {
+    attribute port { xsd:nonNegativeInteger }? &
+    attribute required { xsd:boolean }? &
+    attribute default-request-chain { xsd:string }? &
+    attribute default-response-chain { xsd:string }? &
+    ComponentId &
+    (Ssl | SslProvider)? &
+    GenericConfig*
+}
+
+AccessLog = element accesslog {
+    attribute type { string "yapache" | string "vespa" | string "json" | string "disabled" }? &
+    attribute fileNamePattern { string }? &
+    attribute compressOnRotation { xsd:boolean }? &
+    attribute symlinkName { string }? &
+    attribute compressionType { string "gzip" | string "zstd" }? &
+    attribute queueSize { xsd:nonNegativeInteger }? &
+    attribute bufferSize { xsd:nonNegativeInteger }? &
+    attribute rotationInterval { string }?
+}
+
+SecretStore = element secret-store {
+    attribute type { string "oath-ckms" | string "cloud" } &
+    element group {
+      attribute name { string } &
+      attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
+    } * &
+    element store {
+      attribute id { string } &
+      element aws-parameter-store {
+        attribute account { string } &
+        attribute aws-region { string }
+      } *
+    }?
+}
+
+ZooKeeper = element zookeeper {
+    empty
+}
+
+Embedder = element embedder {
+    attribute id { string }? &
+    attribute class { xsd:Name | JavaId }? &
+    attribute bundle { xsd:Name }? &
+    attribute def { xsd:Name }? &
+    anyElement*
+}
+
+ModelEvaluation = element model-evaluation {
+    element onnx {
+        element models {
+            element model {
+                attribute name { string } &
+                element intraop-threads { xsd:nonNegativeInteger }? &
+                element interop-threads { xsd:nonNegativeInteger }? &
+                element execution-mode { string "sequential" | string "parallel" }?
+            }*
+        }?
+    }?
+}
+
+Ssl = element ssl {
+    element private-key-file { string } &
+    element certificate-file { string } &
+    element ca-certificates-file { string }? &
+    element client-authentication { string "disabled" | string "want" | string "need" }? &
+    element cipher-suites { string }? &
+    element protocols { string }?
+}
+
+SslProvider = element ssl-provider {
+    BundleSpec
+}
+
+Threadpool = element threadpool {
+    element max-threads { xsd:nonNegativeInteger } &
+    element min-threads { xsd:nonNegativeInteger } &
+    element queue-size { xsd:nonNegativeInteger }
+}
+
+# SEARCH:
+
+SearchInContainer = element search {
+    Include* &
+    ServerBindings? &
+    Searcher* &
+    SearchChain* &
+    Provider* &
+    Renderer* &
+    GenericConfig* &
+    Threadpool?
+}
+
+SearchChain = element chain {
+    GenericSearchChain
+}
+
+GenericSearchChain =
+    ComponentId &
+    SearchChainInheritance &
+    attribute searchers { text }? &
+    Searcher* &
+    Phase* &
+    GenericConfig*
+
+SearchChainInheritance =
+    attribute inherits { text }? &
+    attribute excludes { text }? &
+    element inherits {
+        element chain { ComponentSpec }* &
+        element exclude { ComponentSpec }*
+    }?
+
+
+# DOCPROC:
+
+DocprocInContainer = element document-processing {
+    Include* &
+    DocprocClusterAttributes? &
+    DocumentProcessorV3* &
+    ChainInDocprocInContainerCluster* &
+    GenericConfig*
+}
+ChainInDocprocInContainerCluster = element chain {
+    DocprocChainV3Contents
+}
+
+
+
+# PROCESSING:
+
+ProcessingInContainer = element processing {
+    Include* &
+    ServerBindings? &
+    Processor* &
+    Chain* &
+    ProcessingRenderer* &
+    GenericConfig*
+}
+
+
+
+# DOCUMENT API:
+
+DocumentApi = element document-api {
+   ServerBindings &
+   GenericConfig* &
+   element abortondocumenterror { xsd:boolean }? &
+   element retryenabled { xsd:boolean }? &
+   element route { text }? &
+   element maxpendingdocs { xsd:positiveInteger }? &
+   element maxpendingbytes { xsd:positiveInteger }? &
+   element retrydelay { xsd:double { minInclusive = "0.0" } }? &
+   element timeout { xsd:double { minInclusive = "0.0" } }? &
+   element tracelevel { xsd:positiveInteger }? &
+   element mbusport { xsd:positiveInteger }? &
+   DocumentRestApi? &
+   HttpClientApi?
+}
+
+DocumentRestApi = element rest-api { empty }
+
+HttpClientApi = element http-client-api {
+    Threadpool?
+}
+
+# NODES:
+
+NodesOfContainerCluster = element nodes {
+    attribute jvmargs { text }? &
+    attribute jvm-options { text }? &
+    attribute jvm-gc-options { text }? &
+    attribute preload { text }? &
+    attribute allocated-memory { text }? &
+    attribute cpu-socket-affinity { xsd:boolean }? &
+    element jvm {
+        attribute options { text }? &
+        attribute gc-options { text }? &
+        attribute allocated-memory { text }?
+    } ? &
+    Resources? &
+    element environment-variables {
+      anyElement +
+    } ? &
+    (
+      (
+        attribute of { xsd:string } &
+        attribute required { xsd:boolean }?
+      )
+      |
+      attribute type { xsd:string }
+      |
+      (
+        attribute count { xsd:positiveInteger | xsd:string  } &
+        attribute flavor { xsd:string }? &
+        attribute required { xsd:boolean }? &
+        attribute exclusive { xsd:boolean }? &
+        attribute docker-image { xsd:string }?
+      )
+      |
+      element node {
+        attribute hostalias { xsd:NCName } &
+        attribute cpu-socket { xsd:positiveInteger }? &
+        GenericConfig*
+      }+
+    )
+}
+
+
+
+#DOCUMENT BINDINGS:
+
+DocumentBinding = element document {
+    attribute type { xsd:NCName } &
+    attribute class { xsd:NCName } &
+    attribute bundle { xsd:NCName }
+}
