@@ -1,0 +1,144 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# RELAX NG Compact Syntax
+# Vespa Deployment file
+
+start = element deployment {
+   attribute version { "1.0" } &
+   attribute major-version { text }? &
+   attribute athenz-domain { xsd:string }? &
+   attribute athenz-service { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
+   Step
+}
+
+Step =
+    StepExceptInstance &
+    Instance*
+
+StepExceptInstance =
+    Delay* &
+    ParallelInstances* &
+    Upgrade? &
+    BlockChange* &
+    Notifications? &
+    Endpoints? &
+    Test? &
+    Staging? &
+    Prod*
+
+PrimitiveStep =
+    Delay* &
+    Region* &
+    ProdTest*
+
+Instance = element instance {
+   attribute id { xsd:string } &
+   attribute athenz-service { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
+   StepExceptInstance
+}
+
+ParallelSteps = element parallel {
+    SerialSteps* &
+    PrimitiveStep*
+}
+
+SerialSteps = element steps {
+    ParallelSteps* &
+    PrimitiveStep*
+}
+
+ParallelInstances = element parallel {
+    Instance*
+}
+
+Upgrade = element upgrade {
+    attribute policy { xsd:string }? &
+    attribute revision-target { xsd:string }? &
+    attribute revision-change { xsd:string }? &
+    attribute min-risk { xsd:long }? &
+    attribute max-risk { xsd:long }? &
+    attribute max-idle-hours { xsd:long }? &
+    attribute rollout { xsd:string }?
+}
+
+BlockChange = element block-change {
+    attribute revision { xsd:boolean }? &
+    attribute version { xsd:boolean }? &
+    attribute days { xsd:string }? &
+    attribute hours { xsd:string }? &
+    attribute from-date { xsd:string }? &
+    attribute to-date { xsd:string }? &
+    attribute time-zone { xsd:string }?
+}
+
+Notifications = element notifications {
+    attribute when { xsd:string }? &
+    Email*
+}
+
+Email = element email {
+    attribute address { xsd:string }? &
+    attribute role { xsd:string }? &
+    attribute when { xsd:string }?
+}
+
+Test = element test {
+   attribute athenz-service { xsd:string }? &
+   attribute tester-flavor { xsd:string }? &
+   text
+}
+
+Staging = element staging {
+   attribute athenz-service { xsd:string }? &
+   attribute tester-flavor { xsd:string }? &
+   text
+}
+
+Prod = element prod {
+   attribute global-service-id { text }? &
+   attribute athenz-service { xsd:string }? &
+   attribute tester-flavor { xsd:string }? &
+   Region* &
+   Delay* &
+   ProdTest* &
+   ParallelSteps*
+}
+
+ProdTest = element test {
+   text
+}
+
+Region = element region {
+   attribute active { xsd:boolean }? &
+   attribute athenz-service { xsd:string }? &
+   attribute cloud-account { xsd:string }? &
+   text
+}
+
+Delay = element delay {
+   attribute hours { xsd:long }? &
+   attribute minutes { xsd:long }? &
+   attribute seconds { xsd:long }?
+}
+
+EndpointRegion = element region {
+    text
+}
+
+EndpointInstance = element instance {
+    attribute weight { xsd:long } &
+    text
+}
+
+Endpoint = element endpoint {
+    attribute id { xsd:string }? &
+    attribute container-id { xsd:string } &
+    attribute region { xsd:string }? &
+    EndpointRegion* &
+    EndpointInstance*
+}
+
+Endpoints = element endpoints {
+    Endpoint+
+}
