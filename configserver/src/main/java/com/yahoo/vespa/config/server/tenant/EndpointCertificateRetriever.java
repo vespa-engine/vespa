@@ -4,6 +4,7 @@ package com.yahoo.vespa.config.server.tenant;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.log.LogLevel;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateUtils;
 
@@ -11,6 +12,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 /**
  * Used to retrieve actual endpoint certificate/key from secret store.
@@ -25,6 +27,8 @@ public class EndpointCertificateRetriever {
         this.secretStore = secretStore;
     }
 
+    private static final Logger log = Logger.getLogger(EndpointCertificateRetriever.class.getName());
+
     public Optional<EndpointCertificateSecrets> readEndpointCertificateSecrets(EndpointCertificateMetadata metadata) {
         return Optional.of(readFromSecretStore(metadata));
     }
@@ -38,6 +42,7 @@ public class EndpointCertificateRetriever {
 
             return new EndpointCertificateSecrets(cert, key);
         } catch (RuntimeException e) {
+            log.log(LogLevel.WARNING, "Exception thrown during certificate retrieval", e);
             // Assume not ready yet
             return EndpointCertificateSecrets.MISSING;
         }
