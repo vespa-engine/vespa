@@ -6,7 +6,6 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.test.samples.FailingExtensionTest;
 import com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest;
 import com.yahoo.vespa.test.samples.WrongBeforeAllTest;
@@ -85,6 +84,7 @@ class TestRunnerHandlerTest {
         Inspector actualRoot = jsonToSlimeOrThrow(out.toByteArray()).get();
         Inspector expectedRoot = jsonToSlimeOrThrow(readTestResource("/output.json")).get();
         boolean ok = expectedRoot.field("logRecords").entries() == actualRoot.field("logRecords").entries();
+        long last = Long.MIN_VALUE;
         // Need custom comparison, because sequence ID may be influenced by other tests.
         for (int i = 0; i < expectedRoot.field("logRecords").entries(); i++) {
             Inspector expectedEntry = expectedRoot.field("logRecords").entry(i);
@@ -92,16 +92,13 @@ class TestRunnerHandlerTest {
             ok &= expectedEntry.field("at").equalTo(actualEntry.field("at"));
             ok &= expectedEntry.field("type").equalTo(actualEntry.field("type"));
             ok &= expectedEntry.field("message").equalTo(actualEntry.field("message"));
+            last = Math.max(last, actualEntry.field("id").asLong());
         }
         if ( ! ok)
             assertEquals(new String(toJsonBytes(expectedRoot, false), UTF_8),
                          new String(toJsonBytes(actualRoot, false), UTF_8));
 
         // Should not get old log
-        long last = SlimeUtils.entriesStream(jsonToSlimeOrThrow (readTestResource("/output.json")).get().field("logRecords"))
-                              .mapToLong(recordObject -> recordObject.field("id").asLong())
-                              .max()
-                              .orElse(0L);
         response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log?after=" + last, GET));
         out = new ByteArrayOutputStream();
         response.render(out);
