@@ -73,14 +73,11 @@ public class HttpRequestTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatAccessorsWork() {
         URI uri = URI.create("http://localhost/path?foo=bar&foo=baz&cox=69");
         InetSocketAddress address = new InetSocketAddress("remotehost", 69);
         final HttpRequest request = HttpRequest.newServerRequest(mockContainer(), uri, HttpRequest.Method.GET,
                                                                  HttpRequest.Version.HTTP_1_1, address, 1L);
-        assertEquals(uri, request.getUri());
-        request.setUri(uri = URI.create("http://remotehost/"));
         assertEquals(uri, request.getUri());
 
         assertEquals(HttpRequest.Method.GET, request.getMethod());
