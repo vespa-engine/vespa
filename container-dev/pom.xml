@@ -106,7 +106,7 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespa_jersey2</artifactId>
+      <artifactId>vespa-3party-bundles</artifactId>
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
