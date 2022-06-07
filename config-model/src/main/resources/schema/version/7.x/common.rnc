@@ -44,7 +44,7 @@ OptionalDedicatedNodes = element nodes {
 
 GenericConfig = element config {
     attribute name { text },
-    attribute namespace { text }?, # TODO: Remove in Vespa 8
+    attribute namespace { text }?,
     attribute version { text }?,
     anyElement*
 }
