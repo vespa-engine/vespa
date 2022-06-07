@@ -190,13 +190,13 @@
     "superClass": "com.yahoo.docproc.impl.ProcessingAccess",
     "interfaces": [],
     "attributes": [
-      "public"
+      "public",
+      "final"
     ],
     "methods": [
       "public void <init>()",
       "public static com.yahoo.docproc.Processing of(com.yahoo.document.DocumentOperation)",
       "public void <init>(java.lang.String, com.yahoo.document.DocumentOperation, com.yahoo.docproc.CallStack)",
-      "protected void <init>(java.lang.String, java.util.List, com.yahoo.docproc.CallStack, com.yahoo.docproc.impl.ProcessingEndpoint, boolean)",
       "public static com.yahoo.docproc.Processing createProcessingFromDocumentOperations(java.lang.String, java.util.List, com.yahoo.docproc.CallStack)",
       "public java.lang.String getServiceName()",
       "public void setServiceName(java.lang.String)",
@@ -206,13 +206,9 @@
       "public void setVariable(java.lang.String, java.lang.Object)",
       "public java.lang.Object removeVariable(java.lang.String)",
       "public boolean hasVariable(java.lang.String)",
-      "protected com.yahoo.docproc.impl.ProcessingEndpoint getEndpoint()",
-      "protected void setEndpoint(com.yahoo.docproc.impl.ProcessingEndpoint)",
       "public void addDocumentOperation(com.yahoo.document.DocumentOperation)",
       "public java.util.List getDocumentOperations()",
       "public com.yahoo.docproc.CallStack callStack()",
-      "protected void setCallStack(com.yahoo.docproc.CallStack)",
-      "protected java.util.List getOnceOperationsToBeProcessed()",
       "public java.lang.String toString()"
     ],
     "fields": []

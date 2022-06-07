@@ -19,7 +19,7 @@ import java.util.Map;
  *
  * @author bratseth
  */
-public class Processing extends ProcessingAccess {
+public final class Processing extends ProcessingAccess {
 
     /** The name of the service which owns this processing. Null is the same as "default". */
     private String service = null;
@@ -98,7 +98,7 @@ public class Processing extends ProcessingAccess {
     }
 
     @SuppressWarnings({"unused"})
-    protected Processing(String service, List<DocumentOperation> documentOpsAndUpdates, CallStack callStack, ProcessingEndpoint endp, boolean unused) {
+    private Processing(String service, List<DocumentOperation> documentOpsAndUpdates, CallStack callStack, ProcessingEndpoint endp, boolean unused) {
         this.service = service;
         this.documentOperations = new ArrayList<>(documentOpsAndUpdates.size());
         documentOperations.addAll(documentOpsAndUpdates);
