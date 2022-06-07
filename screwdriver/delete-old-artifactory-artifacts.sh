@@ -12,13 +12,13 @@ if [[ ! -f /etc/yum.repos.d/vespa.repo ]]; then
     cat << EOF > /etc/yum.repos.d/vespa.repo
 [vespa-release]
 name=Vespa releases
-baseurl=$ARTIFACTORY_URL/vespa/centos/7/release/\$basearch
+baseurl=$ARTIFACTORY_URL/vespa/centos/8/release/\$basearch
 gpgcheck=0
 enabled=1
 EOF
 fi
 
-VERSIONS_TO_DELETE=$(yum list --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-release vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -200)
+VERSIONS_TO_DELETE=$(dnf list --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-release vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -200)
 
 RPMS_TO_DELETE=$(mktemp)
 trap "rm -f $RPMS_TO_DELETE" EXIT

@@ -5,7 +5,7 @@ set -euo pipefail
 
 RPM=$1
 OS_DISTRO=centos
-RELEASEVER=7
+RELEASEVER=8
 MATURITY=release
 BASEARCH=x86_64
 
