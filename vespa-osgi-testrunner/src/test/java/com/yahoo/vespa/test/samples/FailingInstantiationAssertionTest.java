@@ -3,10 +3,12 @@ package com.yahoo.vespa.test.samples;
 import com.yahoo.vespa.testrunner.Expect;
 import org.junit.jupiter.api.Test;
 
-@Expect(error = 2, status = 5)
-public class FailingInstantiationTest {
+import static org.junit.jupiter.api.Assertions.fail;
 
-    final int i = Integer.parseInt("");
+@Expect(failed = 2, status = 4)
+public class FailingInstantiationAssertionTest {
+
+    { fail(); }
 
     @Test
     void test() { }

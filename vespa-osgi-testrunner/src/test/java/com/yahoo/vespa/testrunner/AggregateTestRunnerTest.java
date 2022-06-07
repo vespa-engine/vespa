@@ -2,9 +2,13 @@
 package com.yahoo.vespa.testrunner;
 
 import com.yahoo.exception.ExceptionUtils;
-import com.yahoo.vespa.testrunner.TestReport.Failure;
+import com.yahoo.vespa.test.samples.SampleTest;
+import com.yahoo.vespa.testrunner.TestReport.Node;
+import com.yahoo.vespa.testrunner.TestReport.Status;
+import com.yahoo.vespa.testrunner.TestRunner.Suite;
 import org.junit.jupiter.api.Test;
 
+import java.time.Clock;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -31,6 +35,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author jonmv
  */
 class AggregateTestRunnerTest {
+
+    static final TestReport report = JunitRunnerTest.test(Suite.PRODUCTION_TEST, new byte[0], SampleTest.class).getReport();
 
     @Test
     void onlySupportedRunnersAreUsed() {
@@ -125,15 +131,6 @@ class AggregateTestRunnerTest {
         // Verify reports are merged.
         assertNull(runner.getReport());
 
-        Failure failure = new Failure("test", null);
-        TestReport report = TestReport.builder()
-                                      .withLogs(List.of(record1))
-                                      .withFailures(List.of(failure))
-                                      .withSuccessCount(8)
-                                      .withIgnoredCount(4)
-                                      .withFailedCount(2)
-                                      .withAbortedCount(1)
-                                      .build();
         first.report = report;
         assertSame(report, runner.getReport());
         second.report = report;
@@ -141,24 +138,19 @@ class AggregateTestRunnerTest {
 
         second.future.complete(null);
         TestReport merged = runner.getReport();
-        assertEquals(List.of(record1, record1), merged.logLines);
-        assertEquals(List.of(failure, failure), merged.failures);
-        assertEquals(16, merged.successCount);
-        assertEquals(8, merged.ignoredCount);
-        assertEquals(4, merged.failedCount);
-        assertEquals(2, merged.abortedCount);
+        List<Node> expected = new ArrayList<>(first.report.root().children());
+        expected.addAll(second.report.root().children());
+        assertEquals(expected, new ArrayList<>(merged.root().children()));
 
+        for (Status status : Status.values())
+            assertEquals(  first.report.root().tally().getOrDefault(status, 0L)
+                         + second.report.root().tally().getOrDefault(status, 0L),
+                         merged.root().tally().getOrDefault(status, 0L));
     }
 
     @Test
     void testReportStatus() {
-        assertEquals(NO_TESTS, TestReport.builder().build().status());
-        assertEquals(SUCCESS, TestReport.builder().withSuccessCount(1).build().status());
-        assertEquals(INCONCLUSIVE, TestReport.builder().withSuccessCount(1).withInconclusiveCount(1).build().status());
-        assertEquals(FAILURE, TestReport.builder().withSuccessCount(1).withFailedCount(1).build().status());
-        assertEquals(NO_TESTS, TestReport.builder().withAbortedCount(1).build().status());
-        assertEquals(NO_TESTS, TestReport.builder().withIgnoredCount(1).build().status());
-        assertEquals(FAILURE, JunitRunner.createReportWithFailedInitialization(new RuntimeException("hello")).status());
+        assertEquals(FAILURE, JunitRunner.testRunnerStatus(TestReport.createFailed(Clock.systemUTC(), Suite.SYSTEM_TEST, new RuntimeException("hello"))));
     }
 
     @Test
@@ -172,11 +164,11 @@ class AggregateTestRunnerTest {
             }
         }
         catch (Exception e) {
-            TestReport.trimStackTraces(e, "org.junit.platform.launcher.core.SessionPerRequestLauncher");
+            TestReport.trimStackTraces(e, "org.junit.platform.commons.util.ReflectionUtils");
             assertEquals("java.lang.RuntimeException: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:171)\n" +
+                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:163)\n" +
                          "Caused by: java.lang.RuntimeException: inner\n" +
-                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:168)\n",
+                         "\tat com.yahoo.vespa.testrunner.AggregateTestRunnerTest.testStackTrimming(AggregateTestRunnerTest.java:160)\n",
                          ExceptionUtils.getStackTraceAsString(e));
         }
     }

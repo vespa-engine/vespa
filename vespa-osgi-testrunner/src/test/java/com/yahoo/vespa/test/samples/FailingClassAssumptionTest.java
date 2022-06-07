@@ -1,12 +1,13 @@
 package com.yahoo.vespa.test.samples;
 
 import com.yahoo.vespa.testrunner.Expect;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 
-@Expect(error = 2, status = 5)
-public class FailingInstantiationTest {
+@Expect(aborted = 2, status = 2)
+public class FailingClassAssumptionTest {
 
-    final int i = Integer.parseInt("");
+    { Assumptions.assumeTrue(false, "assumption"); }
 
     @Test
     void test() { }
@@ -15,3 +16,4 @@ public class FailingInstantiationTest {
     void fest() { }
 
 }
+

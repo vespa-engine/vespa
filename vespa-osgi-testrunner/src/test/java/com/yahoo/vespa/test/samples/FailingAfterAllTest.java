@@ -1,12 +1,14 @@
 package com.yahoo.vespa.test.samples;
 
 import com.yahoo.vespa.testrunner.Expect;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
-@Expect(error = 2, status = 5)
-public class FailingInstantiationTest {
+@Expect(successful = 2, status = 5)
+public class FailingAfterAllTest {
 
-    final int i = Integer.parseInt("");
+    @AfterAll
+    static void fail() { throw new RuntimeException(); }
 
     @Test
     void test() { }

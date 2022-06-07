@@ -1,0 +1,82 @@
+{
+  "logRecords": [
+    {
+      "id": 3,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 6,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 9,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 10,
+      "at": 0,
+      "type": "info",
+      "message": "I have a bad feeling about this"
+    },
+    {
+      "id": 14,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 15,
+      "at": 0,
+      "type": "info",
+      "message": "I'm here with Erwin today; Erwin, what can you tell us about your cat?"
+    },
+    {
+      "id": 18,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 19,
+      "at": 0,
+      "type": "info",
+      "message": "<body />"
+    },
+    {
+      "id": 20,
+      "at": 0,
+      "type": "info",
+      "message": "Very informative"
+    },
+    {
+      "id": 21,
+      "at": 0,
+      "type": "warning",
+      "message": "Oh no\njava.lang.IllegalArgumentException: error\n\tat com.yahoo.vespa.test.samples.SampleTest.successful(SampleTest.java:75)\nCaused by: java.lang.RuntimeException: wrapped\n\t... 1 more\n"
+    },
+    {
+      "id": 25,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    },
+    {
+      "id": 28,
+      "at": 0,
+      "type": "info",
+      "message": "Catch me if you can!"
+    },
+    {
+      "id": 35,
+      "at": 0,
+      "type": "info",
+      "message": "spam"
+    }
+  ]
+}
