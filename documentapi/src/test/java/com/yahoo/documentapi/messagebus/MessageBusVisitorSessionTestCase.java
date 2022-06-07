@@ -1432,28 +1432,6 @@ public class MessageBusVisitorSessionTestCase {
         doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
     }
 
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove
-    @Test
-    public void testVisitingCompletedFromSufficientFirstPassHits() {
-        VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
-        visitorParameters.setMaxFirstPassHits(10);
-        ReplyModifier replyModifier1 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setDocumentsReturned(9);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-        };
-        ReplyModifier replyModifier2 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setDocumentsReturned(1);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-        };
-        doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
-    }
-
     /**
      * Test that waitUntilDone on the session is forwarded to the control handler.
      */
@@ -2319,7 +2297,6 @@ public class MessageBusVisitorSessionTestCase {
         visitorParameters.setDynamicallyIncreaseMaxBucketsPerVisitor(true);
         visitorParameters.setMaxBucketsPerVisitor(2);
         visitorParameters.setDynamicMaxBucketsIncreaseFactor(10);
-        visitorParameters.setMaxFirstPassHits(10);
         MockComponents mc = createDefaultMock(visitorParameters);
 
         mc.visitorSession.start();

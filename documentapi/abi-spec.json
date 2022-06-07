@@ -895,8 +895,6 @@
       "public void setRoute(java.lang.String)",
       "public void setRoute(com.yahoo.messagebus.routing.Route)",
       "public com.yahoo.messagebus.routing.Route getRoute()",
-      "public void setMaxFirstPassHits(long)",
-      "public long getMaxFirstPassHits()",
       "public void setMaxTotalHits(long)",
       "public long getMaxTotalHits()",
       "public java.util.Set getBucketsToVisit()",
