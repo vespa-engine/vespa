@@ -32,15 +32,8 @@ struct ResourceUsageMetrics : metrics::MetricSet
         ~DetailedResourceMetrics();
     };
 
-    // TODO Vespa 8: Remove diskUtilization, memoryUtilization, transient_memory, transient_disk.
-    // These are now included in disk_usage and memory_usage.
-
     metrics::DoubleValueMetric disk;
-    metrics::DoubleValueMetric diskUtilization;
     metrics::DoubleValueMetric memory;
-    metrics::DoubleValueMetric memoryUtilization;
-    metrics::DoubleValueMetric transient_memory;
-    metrics::DoubleValueMetric transient_disk;
     DetailedResourceMetrics disk_usage;
     DetailedResourceMetrics memory_usage;
     metrics::LongValueMetric memoryMappings;
