@@ -660,7 +660,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             msg.setParameters(params.getLibraryParameters());
             msg.setRoute(params.getRoute());
             msg.setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
-            msg.setPriority(params.getPriority()); // TODO: remove on Vespa 8
+            msg.setPriority(params.getPriority()); // TODO: remove on Vespa 9
 
             msg.setRetryEnabled(false);
 

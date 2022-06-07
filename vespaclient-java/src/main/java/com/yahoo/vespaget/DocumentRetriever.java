@@ -24,7 +24,7 @@ import java.util.Iterator;
  *
  * @author bjorncs
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
+@SuppressWarnings("removal") // TODO: Remove on Vespa 9
 public class DocumentRetriever {
 
     private final ClusterList clusterList;
@@ -128,7 +128,7 @@ public class DocumentRetriever {
 
     private Message createDocumentRequest(String docid) {
         GetDocumentMessage msg = new GetDocumentMessage(new DocumentId(docid), params.fieldSet);
-        msg.setPriority(params.priority); // TODO: Remove on Vespa 8
+        msg.setPriority(params.priority); // TODO: Remove on Vespa 9
         msg.setRetryEnabled(!params.noRetry);
         return msg;
     }

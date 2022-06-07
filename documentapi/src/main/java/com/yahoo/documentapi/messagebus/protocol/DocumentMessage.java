@@ -45,7 +45,7 @@ public abstract class DocumentMessage extends Message {
      * @return The priority.
      * @deprecated explicit operation priority is deprecated
      */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 9
     public DocumentProtocol.Priority getPriority() { return priority; }
 
     /**
@@ -54,14 +54,14 @@ public abstract class DocumentMessage extends Message {
      * @param priority The priority to set.
      * @deprecated specifying explicit operation priority is deprecated
      */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
+    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 9
     public void setPriority(DocumentProtocol.Priority priority) {
         this.priority = priority;
     }
 
     @Override
     public int getApproxSize() {
-        return 4 + 1; // type + priority // TODO update on Vespa 8 to not include deprecated fields
+        return 4 + 1; // type + priority // TODO update on Vespa 9 to not include deprecated fields
     }
 
     @Override
