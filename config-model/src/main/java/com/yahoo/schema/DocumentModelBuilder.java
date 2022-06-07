@@ -189,11 +189,6 @@ public class DocumentModelBuilder {
         }
     }
 
-    private static String descT(DataType type) {
-        if (type == null) { return "<null>"; }
-        return "'" + type.getName() + "' [" + type.getId() + "] {"+type.getClass() + "}";
-    }
-
     private void addDocumentTypes(List<SDDocumentType> docList) {
         LinkedList<NewDocumentType> lst = new LinkedList<>();
         for (SDDocumentType doc : docList) {
@@ -266,7 +261,7 @@ public class DocumentModelBuilder {
                 type = other;
             } else if (type != DataType.DOCUMENT) {
                 throw new IllegalArgumentException
-                    ("Can not handle nested document definitions. Undefined document type: " + type.toString());
+                    ("Can not handle nested document definitions. Undefined document type: " + type);
             }
         } else if (type instanceof NewDocumentType) {
             DataType other = getDocumentType(docs, type.getName());
@@ -378,7 +373,7 @@ public class DocumentModelBuilder {
                 if (type.isStruct()) {
                     handleStruct(type);
                 } else {
-                    throw new IllegalArgumentException("Data type '" + type.getName() + "' is not a struct => tostring='" + type.toString() + "'.");
+                    throw new IllegalArgumentException("Data type '" + type.getName() + "' is not a struct => tostring='" + type + "'.");
                 }
             }
             for (SDDocumentType type : sdoc.getTypes()) {
@@ -470,7 +465,7 @@ public class DocumentModelBuilder {
 
         private boolean testAddType(DataType type) { return internalAddType(type, true); }
 
-        private boolean addType(DataType type) { return internalAddType(type, false); }
+        private void addType(DataType type) { internalAddType(type, false); }
 
         private boolean internalAddType(DataType type, boolean dryRun) {
             DataType oldType = targetDt.getDataTypeRecursive(type.getId());
@@ -573,7 +568,6 @@ public class DocumentModelBuilder {
             return null;
         }
 
-        @SuppressWarnings("deprecation")
         private StructDataType handleStruct(SDDocumentType type) {
             if (type.isStruct()) {
                 var st = type.getStruct();
@@ -610,7 +604,7 @@ public class DocumentModelBuilder {
     }
 
     private static Set<NewDocumentType.Name> convertDocumentReferencesToNames(Optional<DocumentReferences> documentReferences) {
-        if (!documentReferences.isPresent()) {
+        if (documentReferences.isEmpty()) {
             return Set.of();
         }
         return documentReferences.get().referenceMap().values().stream()

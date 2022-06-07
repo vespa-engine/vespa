@@ -41,12 +41,11 @@ import java.util.Map;
  *
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
 public final class XmlDocumentWriter implements DocumentWriter {
 
     private final String indent;
     private XmlStream buffer;
-    private Deque<FieldBase> optionalWrapperMarker = new ArrayDeque<FieldBase>();
+    private final Deque<FieldBase> optionalWrapperMarker = new ArrayDeque<>();
 
     public static XmlDocumentWriter createWriter(String indent) {
         return new XmlDocumentWriter(indent);
