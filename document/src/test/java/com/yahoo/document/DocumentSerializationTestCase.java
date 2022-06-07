@@ -58,7 +58,6 @@ import static org.junit.Assert.assertTrue;
 public class DocumentSerializationTestCase extends AbstractTypesTest {
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testSerializationAllVersions() throws IOException {
 
         DocumentType docInDocType = new DocumentType("docindoc");

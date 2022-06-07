@@ -37,7 +37,6 @@ import static org.junit.Assert.assertEquals;
  * test to fail, so you will need to update the
  * AnnotationDeserialization component to handle the format changes.
  */
-@SuppressWarnings("deprecation")
 public class SerializeAnnotationsTestCase {
 
     private static final String PATH = "src/tests/serialization/";
