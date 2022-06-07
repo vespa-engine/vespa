@@ -99,7 +99,6 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         read(null, document);
     }
 
-    @SuppressWarnings("deprecation")
     public void read(FieldBase field, Document doc) {
         // Verify that we have correct version
         version = getShort(null);

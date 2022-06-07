@@ -261,19 +261,6 @@ public class DocumentType extends StructuredDataType {
     }
 
     /**
-     * Adds a new header field to this document type and returns the new field object
-     *
-     * @param name The name of the field to add
-     * @param type The datatype of the field to add
-     * @return The field created
-     *         TODO Fix searchdefinition so that exception can be thrown if filed is already registerd
-     */
-    @Deprecated
-    public Field addHeaderField(String name, DataType type) {
-        return addField(name, type);
-    }
-
-    /**
      * Adds a document to the inherited document types of this.
      * If this type is already directly inherited, nothing is done
      *
