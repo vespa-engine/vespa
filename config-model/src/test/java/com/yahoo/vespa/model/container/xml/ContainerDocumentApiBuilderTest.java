@@ -2,15 +2,20 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -35,6 +40,29 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
+    public void custom_bindings_are_allowed() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api>",
+                "    <binding>http://*/document-api/</binding>",
+                "  </document-api>",
+                nodesXml,
+                "</container>");
+        createModel(root, elem);
+
+        verifyCustomBindings("com.yahoo.vespa.http.server.FeedHandler");
+    }
+
+    private void verifyCustomBindings(String id) {
+        Handler<?> handler = getHandlers("cluster1").get(id);
+
+        assertTrue(handler.getServerBindings().contains(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi")));
+        assertTrue(handler.getServerBindings().contains(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi/")));
+
+        assertEquals(2, handler.getServerBindings().size());
+    }
+
+    @Test
     public void requireThatHandlersAreSetup() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
@@ -48,7 +76,57 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertNotNull(handlerMap.get("com.yahoo.container.handler.VipStatusHandler"));
         assertNotNull(handlerMap.get("com.yahoo.container.handler.observability.ApplicationStatusHandler"));
         assertNotNull(handlerMap.get("com.yahoo.container.jdisc.state.StateHandler"));
-        assertNotNull(handlerMap.get("com.yahoo.document.restapi.resource.DocumentV1ApiHandler"));
+
+        assertNotNull(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler"));
+        assertTrue(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
+                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")));
+        assertTrue(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
+                .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")));
+        assertEquals(2, handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size());
+    }
+
+    @Test
+    public void feeding_api_have_separate_threadpools() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api />",
+                nodesXml,
+                "</container>");
+        root = new MockRoot("root", new MockApplicationPackage.Builder().build());
+        createModel(root, elem);
+        Map<String, Handler<?>> handlers = getHandlers("cluster1");
+        Handler<?> feedApiHandler = handlers.get("com.yahoo.vespa.http.server.FeedHandler");
+        Set<String> injectedComponentIds = feedApiHandler.getInjectedComponentIds();
+        assertTrue(injectedComponentIds.contains("threadpool@feedapi-handler"));
+
+        ContainerThreadpoolConfig config = root.getConfig(
+                ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
+        assertEquals(-4, config.maxThreads());
+        assertEquals(-4, config.minThreads());
+    }
+
+    @Test
+    public void threadpools_configuration_can_be_overridden() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api>",
+                "    <http-client-api>",
+                "      <threadpool>",
+                "        <max-threads>50</max-threads>",
+                "        <min-threads>25</min-threads>",
+                "        <queue-size>1000</queue-size>",
+                "      </threadpool>",
+                "    </http-client-api>",
+                "  </document-api>",
+                nodesXml,
+                "</container>");
+        createModel(root, elem);
+
+        ContainerThreadpoolConfig feedThreadpoolConfig = root.getConfig(
+                ContainerThreadpoolConfig.class, "cluster1/component/com.yahoo.vespa.http.server.FeedHandler/threadpool@feedapi-handler");
+        assertEquals(50, feedThreadpoolConfig.maxThreads());
+        assertEquals(25, feedThreadpoolConfig.minThreads());
+        assertEquals(1000, feedThreadpoolConfig.queueSize());
     }
 
 }
