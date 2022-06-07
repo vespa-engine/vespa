@@ -232,7 +232,6 @@ public abstract class RoutableFactories60 {
     public static class CreateVisitorReplyFactory extends DocumentReplyFactory {
 
         @Override
-        @SuppressWarnings("removal")// TODO: Vespa 8: remove
         protected DocumentReply doDecode(DocumentDeserializer buf) {
             CreateVisitorReply reply = new CreateVisitorReply(DocumentProtocol.REPLY_CREATEVISITOR);
             reply.setLastBucket(new BucketId(buf.getLong(null)));
@@ -243,14 +242,13 @@ public abstract class RoutableFactories60 {
             vs.setBytesVisited(buf.getLong(null));
             vs.setDocumentsReturned(buf.getLong(null));
             vs.setBytesReturned(buf.getLong(null));
-            vs.setSecondPassDocumentsReturned(buf.getLong(null)); // TODO: on Vespa 8 remove setter (_not_ getLong())
-            vs.setSecondPassBytesReturned(buf.getLong(null)); // TODO: on Vespa 8 remove setter (_not_ getLong())
+            buf.getLong(null); // unused
+            buf.getLong(null); // unused
             reply.setVisitorStatistics(vs);
             return reply;
         }
 
         @Override
-        @SuppressWarnings("removal")// TODO: Vespa 8: remove
         protected boolean doEncode(DocumentReply obj, DocumentSerializer buf) {
             CreateVisitorReply reply = (CreateVisitorReply)obj;
             buf.putLong(null, reply.getLastBucket().getRawId());
@@ -259,8 +257,8 @@ public abstract class RoutableFactories60 {
             buf.putLong(null, reply.getVisitorStatistics().getBytesVisited());
             buf.putLong(null, reply.getVisitorStatistics().getDocumentsReturned());
             buf.putLong(null, reply.getVisitorStatistics().getBytesReturned());
-            buf.putLong(null, reply.getVisitorStatistics().getSecondPassDocumentsReturned()); // TODO: on Vespa 8 remove getter (_not_ putLong())
-            buf.putLong(null, reply.getVisitorStatistics().getSecondPassBytesReturned()); // TODO: on Vespa 8 remove getter (_not_ putLong())
+            buf.putLong(null, 0); // was SecondPassDocumentsReturned
+            buf.putLong(null, 0); // was SecondPassBytesReturned
             return true;
         }
     }

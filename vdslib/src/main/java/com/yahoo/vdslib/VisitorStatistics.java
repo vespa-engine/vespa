@@ -7,8 +7,6 @@ public class VisitorStatistics {
     long bytesVisited = 0;
     long documentsReturned = 0;
     long bytesReturned = 0;
-    long secondPassDocumentsReturned = 0;
-    long secondPassBytesReturned = 0;
 
     public void add(VisitorStatistics other) {
         bucketsVisited += other.bucketsVisited;
@@ -16,8 +14,6 @@ public class VisitorStatistics {
         bytesVisited += other.bytesVisited;
         documentsReturned += other.documentsReturned;
         bytesReturned += other.bytesReturned;
-        secondPassDocumentsReturned += other.secondPassDocumentsReturned;
-        secondPassBytesReturned += other.secondPassBytesReturned;
     }
 
     public int getBucketsVisited() { return bucketsVisited; }
@@ -44,37 +40,13 @@ public class VisitorStatistics {
     public long getBytesReturned() { return bytesReturned; }
     public void setBytesReturned(long bytesReturned) { this.bytesReturned = bytesReturned; }
 
-    /**
-     * @deprecated Use getDocumentsReturned() instead
-     */
-    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
-    public long getSecondPassDocumentsReturned() { return secondPassDocumentsReturned; }
-    /**
-     * @deprecated only applies for deprecated "orderdoc" ID scheme
-     */
-    @Deprecated(since = "7", forRemoval = true)// TODO: Vespa 8: remove
-    public void setSecondPassDocumentsReturned(long secondPassDocumentsReturned) { this.secondPassDocumentsReturned = secondPassDocumentsReturned; }
-
-    /**
-     * @deprecated Use getBytesReturned() instead
-     */
-    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
-    public long getSecondPassBytesReturned() { return secondPassBytesReturned; }
-    /**
-     * @deprecated only applies for deprecated "orderdoc" ID scheme
-     */
-    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
-    public void setSecondPassBytesReturned(long secondPassBytesReturned) { this.secondPassBytesReturned = secondPassBytesReturned; }
-
     public String toString() {
         String out =
             "Buckets visited: " + bucketsVisited + "\n" +
             "Documents visited: " + documentsVisited + "\n" +
             "Bytes visited: " + bytesVisited + "\n" +
             "Documents returned: " + documentsReturned + "\n" +
-            "Bytes returned: " + bytesReturned + "\n" +
-            "Documents returned (2nd pass): " + secondPassDocumentsReturned + "\n" +
-            "Bytes returned (2nd pass): " + secondPassBytesReturned + "\n";
+            "Bytes returned: " + bytesReturned + "\n";
 
         return out;
     }

@@ -271,7 +271,6 @@ public class Messages60TestCase extends MessagesTestBase {
     public class testCreateVisitorReply implements RunnableTest {
 
         @Override
-        @SuppressWarnings("removal")
         public void run() {
             CreateVisitorReply reply = new CreateVisitorReply(DocumentProtocol.REPLY_CREATEVISITOR);
             reply.setLastBucket(new BucketId(16, 123));
@@ -280,8 +279,6 @@ public class Messages60TestCase extends MessagesTestBase {
             reply.getVisitorStatistics().setBytesVisited(1024000);
             reply.getVisitorStatistics().setDocumentsReturned(123);
             reply.getVisitorStatistics().setBytesReturned(512000);
-            reply.getVisitorStatistics().setSecondPassDocumentsReturned(456);
-            reply.getVisitorStatistics().setSecondPassBytesReturned(789100);
 
             assertEquals(65, serialize("CreateVisitorReply", reply));
 
@@ -294,8 +291,6 @@ public class Messages60TestCase extends MessagesTestBase {
                 assertEquals(1024000, reply.getVisitorStatistics().getBytesVisited());
                 assertEquals(123, reply.getVisitorStatistics().getDocumentsReturned());
                 assertEquals(512000, reply.getVisitorStatistics().getBytesReturned());
-                assertEquals(456, reply.getVisitorStatistics().getSecondPassDocumentsReturned()); // TODO remove on Vespa 8
-                assertEquals(789100, reply.getVisitorStatistics().getSecondPassBytesReturned());
             }
         }
     }
