@@ -67,10 +67,6 @@
       <version>${project.version}</version>
       <scope>compile</scope>
       <exclusions>
-        <exclusion>
-          <groupId>org.apache.aries.spifly</groupId>
-          <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

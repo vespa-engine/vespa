@@ -64,6 +64,7 @@
         <module>container-search-and-docproc</module>
         <module>container-search</module>
         <module>container-search-gui</module>
+        <module>container-spifly</module>
         <module>container-test</module>
         <module>controller-api</module>
         <module>controller-server</module>
