@@ -8,10 +8,10 @@
     <parent>
         <groupId>com.yahoo.vespa.jdisc_core</groupId>
         <artifactId>test_bundles</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
     </parent>
     <artifactId>app-dj</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>${project.artifactId}</name>
     <dependencies>

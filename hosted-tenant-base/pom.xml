@@ -7,7 +7,7 @@
 
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>hosted-tenant-base</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <name>Base pom for all tenant base poms</name>
     <description>Parent POM for all Vespa base poms.</description>
     <url>https://github.com/vespa-engine</url>
