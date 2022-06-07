@@ -33,7 +33,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -459,7 +458,7 @@ public class DocumentGenMojo extends AbstractMojo {
         exportEquals(className, allUniqueFields, out, 1);
         Set<DataType> exportedStructs = exportStructTypes(docType.getTypes(), out, 1, null);
         if (hasAnyPositionField(allUniqueFields)) {
-            exportedStructs = exportStructTypes(Arrays.asList(PositionDataType.INSTANCE), out, 1, exportedStructs);
+            exportedStructs = exportStructTypes(List.of(PositionDataType.INSTANCE), out, 1, exportedStructs);
         }
         docTypes.put(docType.getName(), packageName+"."+className);
         for (DataType exportedStruct : exportedStructs) {
@@ -572,16 +571,6 @@ public class DocumentGenMojo extends AbstractMojo {
                 ind(ind)+"}\n\n");
     }
 
-    private static void exportStructTypeGetter(String name, Collection<Field> fields, Writer out, int ind, String methodName, String retType) throws IOException {
-        out.write(ind(ind)+"private static "+retType+" "+methodName+"() {\n" +
-                ind(ind+1)+retType+" ret = new "+retType+"(\""+name+"\");\n");
-        for (Field f : fields) {
-            out.write(ind(ind+1)+"ret.addField(new com.yahoo.document.Field(\""+f.getName()+"\", "+toJavaReference(f.getDataType())+"));\n");
-
-        }
-        out.write(ind(ind+1)+"return ret;\n");
-        out.write(ind(ind)+"}\n\n");
-    }
     private static void addExtendedField(String className, Field f, Writer out, int ind) throws IOException {
         out.write(ind(ind)+ "ret.addField(new com.yahoo.document.ExtendedField(\""+f.getName()+"\", " + toJavaReference(f.getDataType()) + ",\n");
         out.write(ind(ind+1) + "new com.yahoo.document.ExtendedField.Extract() {\n");
@@ -643,17 +632,6 @@ public class DocumentGenMojo extends AbstractMojo {
             exportFieldSetDefinition(fieldSets, out, ind+1);
         }
 
-        out.write(ind(ind+1)+"return ret;\n");
-        out.write(ind(ind)+"}\n\n");
-    }
-
-    private static void exportOverriddenStructGetter(Collection<Field> fields, Writer out, int ind, String methodName, String structType) throws IOException {
-        out.write(ind(ind)+"@Override @Deprecated public com.yahoo.document.datatypes.Struct "+methodName+"() {\n" +
-                ind(ind+1)+"com.yahoo.document.datatypes.Struct ret = new com.yahoo.document.datatypes.Struct("+structType+");\n");
-        for (Field f : fields) {
-            out.write(ind(ind+1)+"ret.setFieldValue(\""+f.getName()+"\", getFieldValue(getField(\""+f.getName()+"\")));\n");
-
-        }
         out.write(ind(ind+1)+"return ret;\n");
         out.write(ind(ind)+"}\n\n");
     }
