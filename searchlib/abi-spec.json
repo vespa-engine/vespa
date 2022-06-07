@@ -1325,10 +1325,8 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.searchlib.rankingexpression.evaluation.Value)",
-      "public void <init>(com.yahoo.searchlib.rankingexpression.evaluation.Value, java.lang.String)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value getValue()",
       "public java.lang.StringBuilder toString(java.lang.StringBuilder, com.yahoo.searchlib.rankingexpression.rule.SerializationContext, java.util.Deque, com.yahoo.searchlib.rankingexpression.rule.CompositeNode)",
-      "public java.lang.String sourceString()",
       "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
       "public int hashCode()"
