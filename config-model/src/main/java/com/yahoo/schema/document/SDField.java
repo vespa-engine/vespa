@@ -33,9 +33,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -111,7 +109,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
     private final Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
 
     /** The document that this field was declared in, or null */
-    private SDDocumentType repoDocType = null;
+    private final SDDocumentType repoDocType;
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
     private final Map<String, String> aliasToName = new HashMap<>();
@@ -263,7 +261,6 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
 
     private boolean doneStructFields = false;
 
-    @SuppressWarnings("deprecation")
     private void actuallyMakeStructFields() {
         if (doneStructFields) return;
         if (getFirstStructOrMapRecursive() == null) {
@@ -343,8 +340,6 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
         }
         doneStructFields = true;
     }
-
-    private Matching matchingForStructFields = null;
 
     public void setId(int fieldId, DocumentType owner) {
         super.setId(fieldId, owner);
