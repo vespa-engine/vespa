@@ -2,7 +2,6 @@
 package com.yahoo.searchlib.rankingexpression.rule;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.evaluation.BooleanValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Context;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.TensorType;
@@ -20,20 +19,14 @@ public final class ConstantNode extends ExpressionNode {
 
     private final Value value;
 
-    public ConstantNode(Value value) {
-        value.freeze();
-        this.value = value;
-    }
-
     /**
      * Creates a constant value
      *
      * @param value the value. Ownership of this value is transferred to this.
-     * @param sourceImage the source string image producing this value
      */
-    @Deprecated
-    public ConstantNode(Value value, String sourceImage) {
-        this(value);
+    public ConstantNode(Value value) {
+        value.freeze();
+        this.value = value;
     }
 
     public Value getValue() { return value; }
@@ -41,12 +34,6 @@ public final class ConstantNode extends ExpressionNode {
     @Override
     public StringBuilder toString(StringBuilder string, SerializationContext context, Deque<String> path, CompositeNode parent) {
         return string.append(value.toString());
-    }
-
-    /** Returns the string which created this, or the value.toString() if not known */
-    @Deprecated
-    public String sourceString() {
-        return value.toString();
     }
 
     @Override
