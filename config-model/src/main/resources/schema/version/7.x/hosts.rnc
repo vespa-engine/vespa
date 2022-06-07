@@ -1,0 +1,10 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# RELAX NG Compact Syntax
+# Vespa Hosts file
+
+element hosts {
+   element host {
+      attribute name { text },
+      element alias { text }*
+   }+
+}

@@ -1,0 +1,115 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+Admin = AdminV2 | AdminV3 | AdminV4
+
+AdminV2 =
+ element admin {
+   attribute version { "2.0" } &
+   element adminserver { service.attlist } &
+   GenericConfig* &
+   LogServer? &
+   (ConfigServer | ConfigServers)? &
+   AdminSlobroks? &
+   AdminMonitoring? &
+   Metrics? &
+   ClusterControllers? &
+   LogForwarding?
+ }
+
+AdminV3 =
+  element admin {
+    attribute version { "3.0"  } &
+    GenericConfig* &
+    Nodes
+  }
+
+AdminV4 =
+  element admin {
+    attribute version { "4.0"  } &
+    AdminV4Slobroks? &
+    AdminV4LogServers? &
+    GenericConfig* &
+    AdminMonitoring? &
+    Metrics? &
+    LogForwarding?
+  }
+
+AdminV4Slobroks =
+  element slobroks {
+    OptionalDedicatedNodes
+  }
+
+AdminV4LogServers =
+  element logservers {
+    OptionalDedicatedNodes
+  }
+
+AdminSlobroks =
+   element slobroks {
+      element slobrok {
+         service.attlist &
+         attribute index { xsd:nonNegativeInteger }?
+      }+
+   }
+
+AdminMonitoring =
+   element monitoring {
+      attribute interval { xsd:int }?,
+      attribute systemname { xsd:string }?
+   }
+
+ConfigServer = element configserver {
+   service.attlist
+}
+
+ConfigServers = element configservers {
+   ConfigServer+
+}
+
+LogServer = element logserver {
+   service.attlist
+}
+
+Metrics = element metrics {
+    element consumer {
+        attribute id { xsd:Name } &
+        element metric-set { attribute id { xsd:Name } }* &
+        element metric {
+            attribute id { xsd:Name } &
+            attribute display-name { xsd:Name }?
+        }* &
+        Cloudwatch?
+    }+
+}
+
+Cloudwatch = element cloudwatch {
+    attribute region { xsd:Name } &
+    attribute namespace { xsd:string { pattern = "[\w_\-/#:\.]+" } } &
+    (
+      element credentials {
+            attribute access-key-name { xsd:Name } &
+            attribute secret-key-name { xsd:Name }
+      }
+      |
+      element shared-credentials {
+          attribute file { string } &
+          attribute profile { xsd:Name }?
+      }
+    )?
+}
+
+ClusterControllers = element cluster-controllers {
+    attribute standalone-zookeeper { xsd:string  }? &
+    element cluster-controller {
+       service.attlist
+    }+
+}
+
+LogForwarding = element logforwarding {
+    attribute include-admin { xsd:boolean }? &
+    element splunk {
+        attribute splunk-home { xsd:string }? &
+        attribute deployment-server { xsd:string } &
+        attribute client-name { xsd:string } &
+        attribute phone-home-interval { xsd:positiveInteger }?
+    }
+}
