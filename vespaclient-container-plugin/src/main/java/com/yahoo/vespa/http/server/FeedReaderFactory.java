@@ -4,7 +4,6 @@ package com.yahoo.vespa.http.server;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.json.JsonFeedReader;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.http.client.config.FeedParams;
 import com.yahoo.vespaxmlparser.FeedReader;
 import com.yahoo.vespaxmlparser.VespaXMLFeedReader;
 
