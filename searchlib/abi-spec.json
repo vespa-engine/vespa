@@ -334,7 +334,6 @@
       "public boolean equals(java.lang.Object)",
       "public java.lang.String toString()",
       "public java.util.Map getRankProperties(com.yahoo.searchlib.rankingexpression.rule.SerializationContext)",
-      "public java.util.Map getRankProperties(java.util.List)",
       "public static java.lang.String propertyName(java.lang.String)",
       "public static java.lang.String propertyExpressionName(java.lang.String)",
       "public static java.lang.String extractScriptName(java.lang.String)",
