@@ -168,7 +168,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
             var config = configMap.remove(id);
             if (config == null) {
-                return manager.getDataType(id);
+                return manager.getDataTypeByCode(id);
             }
             assert(id == config.id());
             for (var o : config.arraytype()) {
@@ -212,7 +212,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                         }
                         DataType fieldType = typesById.get(field.datatype());
                         if (fieldType == null) {
-                            fieldType = manager.getDataType(field.datatype(), field.detailedtype());
+                            fieldType = manager.getDataTypeByCode(field.datatype(), field.detailedtype());
                         }
                         if (field.id().size() == 1) {
                             type.addField(new Field(field.name(), field.id().get(0).id(), fieldType));
@@ -300,7 +300,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         private void addAnnotationTypePayloads(DocumentmanagerConfig config) {
             for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
                 AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annType.id());
-                DataType payload = manager.getDataType(annType.datatype(), "");
+                DataType payload = manager.getDataTypeByCode(annType.datatype(), "");
                 if (! payload.equals(DataType.NONE)) {
                     annotationType.setDataType(payload);
                 }
@@ -615,7 +615,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         if (this.managerToConfigure.getDataTypes().size() != defaultTypeCount) {
             log.log(Level.FINE, "Live document config overwritten with new config.");
         }
-        managerToConfigure.assign(manager);
+        managerToConfigure.internalAssign(manager);
     }
 
 }

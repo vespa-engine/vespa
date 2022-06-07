@@ -4,10 +4,10 @@ package com.yahoo.docproc.jdisc;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.docproc.Call;
 import com.yahoo.docproc.CallStack;
-import com.yahoo.docproc.DocprocExecutor;
-import com.yahoo.docproc.DocprocService;
+import com.yahoo.docproc.impl.DocprocExecutor;
+import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.docproc.DocumentProcessor;
-import com.yahoo.docproc.HandledProcessingException;
+import com.yahoo.docproc.impl.HandledProcessingException;
 import com.yahoo.docproc.Processing;
 import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
@@ -19,7 +19,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -34,11 +33,9 @@ public class DocumentProcessingTask implements Runnable {
     private final DocumentProcessingHandler docprocHandler;
     private final RequestContext requestContext;
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final DocprocService service;
     private final ThreadPoolExecutor executor;
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public DocumentProcessingTask(RequestContext requestContext, DocumentProcessingHandler docprocHandler,
                                   DocprocService service, ThreadPoolExecutor executor) {
         this.requestContext = requestContext;
@@ -67,7 +64,6 @@ public class DocumentProcessingTask implements Runnable {
                 return;
             }
 
-            @SuppressWarnings("removal") // TODO Vespa 8: remove
             DocprocExecutor executor = service.getExecutor();
             DocumentProcessor.Progress progress = process(executor);
 
@@ -91,7 +87,6 @@ public class DocumentProcessingTask implements Runnable {
      *
      * @param executor the DocprocService to use for processing
      */
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private DocumentProcessor.Progress process(DocprocExecutor executor) {
         Iterator<Processing> iterator = processings.iterator();
         List<Tuple2<DocumentProcessor.Progress, Processing>> later = new ArrayList<>();
@@ -188,7 +183,6 @@ public class DocumentProcessingTask implements Runnable {
                '}';
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private static void logProcessingFailure(Processing processing, Exception exception) {
         //LOGGING ONLY:
         String errorMsg = processing + " failed at " + processing.callStack().getLastPopped();

@@ -1,18 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
 import org.junit.Ignore;
-
+import org.junit.Test;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for DefParser.
@@ -81,6 +80,26 @@ public class DefParserTest {
         String def = "a string\n";
         CNode root = new DefParser("testMd5Sum2", new StringReader(def)).getTree();
         assertEquals("a5e5fdbb2b27e56ba7d5e60e335c598b", root.defMd5);
+    }
+
+    // TODO: Version is not used anymore, remove test in Vespa 9
+    @Test
+    public void testValidVersions() {
+        try {
+            parse("version=8");
+            parse("version=8-1");
+            parse("version =8");
+            parse("version = 8");
+            parse("version = 8 ");
+            parse("version =\t8");
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    private void parse(String versionLine) {
+        InnerCNode ignored = createParser(versionLine).getTree();
     }
 
     @Test

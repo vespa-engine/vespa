@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
+import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
@@ -20,7 +20,6 @@ import static org.junit.Assert.assertTrue;
  *
  * @author Einar M. R. Rosenvinge
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class FailingPermanentlyDocumentProcessingTestCase {
 
     /**

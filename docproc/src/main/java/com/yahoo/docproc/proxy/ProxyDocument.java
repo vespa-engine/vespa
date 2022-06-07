@@ -2,7 +2,7 @@
 package com.yahoo.docproc.proxy;
 
 import com.yahoo.docproc.Accesses;
-import com.yahoo.docproc.DocumentOperationWrapper;
+import com.yahoo.docproc.impl.DocumentOperationWrapper;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
@@ -15,7 +15,6 @@ import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler.ModificationStatus;
 import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.serialization.DocumentReader;
 import com.yahoo.document.serialization.DocumentWriter;
 import com.yahoo.document.serialization.FieldReader;
@@ -42,7 +41,6 @@ import java.util.Set;
  *
  * @author Vegard Havdal
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class ProxyDocument extends Document implements DocumentOperationWrapper {
 
     private final Map<String, String> fieldMap;

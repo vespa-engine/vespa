@@ -103,19 +103,19 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         docMan = new DocumentTypeManager();
 
         DocumentType docInDocType = new DocumentType("docindoc");
-        docInDocType.addField(new Field("tull", 2, docMan.getDataType(2)));
+        docInDocType.addField(new Field("tull", 2, DataType.STRING));
 
         docMan.registerDocumentType(docInDocType);
 
         DocumentType sertestDocType = new DocumentType("sertest");
-        sertestDocType.addField(new Field("mailid", 2, docMan.getDataType(2)));
-        sertestDocType.addField(new Field("date", 3, docMan.getDataType(0)));
-        sertestDocType.addField(new Field("from", 4, docMan.getDataType(2)));
-        sertestDocType.addField(new Field("to", 6, docMan.getDataType(2)));
-        sertestDocType.addField(new Field("subject", 9, docMan.getDataType(2)));
-        sertestDocType.addField(new Field("body", 10, docMan.getDataType(2)));
-        sertestDocType.addField(new Field("attachmentcount", 11, docMan.getDataType(0)));
-        sertestDocType.addField(new Field("attachments", 1081629685, DataType.getArray(docMan.getDataType(2))));
+        sertestDocType.addField(new Field("mailid", 2, DataType.STRING));
+        sertestDocType.addField(new Field("date", 3, DataType.INT));
+        sertestDocType.addField(new Field("from", 4, DataType.STRING));
+        sertestDocType.addField(new Field("to", 6, DataType.STRING));
+        sertestDocType.addField(new Field("subject", 9, DataType.STRING));
+        sertestDocType.addField(new Field("body", 10, DataType.STRING));
+        sertestDocType.addField(new Field("attachmentcount", 11, DataType.INT));
+        sertestDocType.addField(new Field("attachments", 1081629685, DataType.getArray(DataType.STRING)));
         sertestDocType.addField(new Field("rawfield", 879, DataType.RAW));
         sertestDocType.addField(new Field("weightedfield", 880, DataType.getWeightedSet(DataType.STRING)));
         sertestDocType.addField(new Field("weightedfieldCreate", 881, DataType.getWeightedSet(DataType.STRING, true, false)));
@@ -865,35 +865,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    public void testCompressionConfiguredIsIgnored() {
-
-        int size_uncompressed;
-        {
-            DocumentTypeManager docMan = DocumentTypeManager.fromFile("src/tests/data/cppdocument.cfg");
-            Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
-
-            doc.setFieldValue("stringfield",
-                              "compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me ");
-
-            GrowableByteBuffer data = new GrowableByteBuffer();
-            doc.serialize(data);
-            size_uncompressed = data.position();
-        }
-
-        DocumentTypeManager docMan = DocumentTypeManager.fromFile("src/tests/data/compressed.cfg");
-        Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
-
-        doc.setFieldValue("stringfield",
-                          "compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me ");
-
-        GrowableByteBuffer data = new GrowableByteBuffer();
-        doc.serialize(data);
-        int size_compressed = data.position();
-
-        assertEquals(size_compressed, size_uncompressed);
-    }
-
-    @Test
     public void testDocumentDataType() {
         //use documenttypemanagerconfigurer to read config
         docMan = new DocumentTypeManager();
@@ -1098,7 +1069,7 @@ public class DocumentTestCase extends DocumentTestCaseBase {
             docWithDinner.serialize(buf);
             buf.flip();
 
-            docTypeManasjer.clear();
+            docTypeManasjer.internalClear();
         }
 
         {

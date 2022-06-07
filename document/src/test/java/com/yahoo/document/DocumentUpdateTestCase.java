@@ -502,7 +502,6 @@ public class DocumentUpdateTestCase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testFieldUpdatesInDocUp() {
         DocumentType t1 = new DocumentType("doo");
         Field f1 = new Field("field1", DataType.STRING);
