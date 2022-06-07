@@ -20,7 +20,6 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class CallbackTestCase {
 
     private DocumentPut put1;
