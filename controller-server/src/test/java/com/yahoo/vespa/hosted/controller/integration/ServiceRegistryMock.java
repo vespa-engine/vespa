@@ -38,6 +38,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportCons
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopGcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopTenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
@@ -297,5 +298,5 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
         return roleMaintainer;
     }
 
-    public GcpSecretStore gcpSecretStore() { return null; } // TODO andreer: return something non-null
+    public GcpSecretStore gcpSecretStore() { return new NoopGcpSecretStore(); }
 }
