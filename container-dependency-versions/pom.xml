@@ -29,8 +29,6 @@
     </scm>
 
     <dependencyManagement>
-        <!-- TODO Vespa 8: remove all artifacts that are no longer installed in jdisc.
-                           Those used in configserver/controller must be moved to parent/pom.xml  -->
         <dependencies>
             <dependency>
                 <groupId>aopalliance</groupId>
