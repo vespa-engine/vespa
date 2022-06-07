@@ -20,10 +20,10 @@ public interface TestRuntime {
     static TestRuntime get() {
         TestRuntime provided = TestRuntimeProvider.getTestRuntime();
         if (provided != null) {
-            logger.info("Using test runtime from TestRuntimeProvider");
+            logger.fine("Using test runtime from TestRuntimeProvider");
             return provided;
         }
-        logger.info("Using test runtime from ServiceLoader");
+        logger.fine("Using test runtime from ServiceLoader");
         return ServiceLoader.load(TestRuntime.class, TestRuntime.class.getClassLoader())
                             .findFirst()
                             .orElseThrow(() -> new IllegalStateException("No TestRuntime initialized"));
