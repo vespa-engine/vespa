@@ -18,12 +18,6 @@ public final class ResourcePool<T> implements Iterable<T> {
     private final Deque<T> pool = new ArrayDeque<>();
     private final Supplier<T> factory;
 
-    /** @deprecated Use {@link ResourcePool( Supplier )} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    @SuppressWarnings("removal")
-    public ResourcePool(ResourceFactory<T> factory) {
-        this(factory.asSupplier());
-    }
 
     public ResourcePool(Supplier<T> factory) {
         this.factory = factory;
