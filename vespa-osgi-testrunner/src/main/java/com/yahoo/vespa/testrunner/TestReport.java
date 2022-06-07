@@ -48,10 +48,11 @@ public class TestReport {
         this(clock, suite, new ContainerNode(null, toString(suite), clock.instant()));
     }
 
-    static TestReport createFailed(Clock clock, Suite suite, Exception exception) {
+    static TestReport createFailed(Clock clock, Suite suite, Throwable thrown) {
+        if (thrown instanceof OutOfMemoryError) throw (Error) thrown;
         TestReport failed = new TestReport(clock, suite);
         failed.complete();
-        failed.root().children.add(new FailureNode(failed.root(), exception, suite));
+        failed.root().children.add(new FailureNode(failed.root(), thrown, suite));
         return failed;
     }
 

@@ -90,8 +90,8 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         try {
             logRecords.clear();
             execution = CompletableFuture.supplyAsync(() -> launchJunit(suite, testConfig));
-        } catch (Exception e) {
-            execution = CompletableFuture.completedFuture(TestReport.createFailed(clock, suite, e));
+        } catch (Throwable t) {
+            execution = CompletableFuture.completedFuture(TestReport.createFailed(clock, suite, t));
         }
         return execution;
     }
@@ -158,11 +158,11 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
         if (execution.isDone()) {
             try {
                 return execution.get();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Error getting test report", e);
+            } catch (Throwable t) {
+                logger.log(Level.WARNING, "Error getting test report", t);
                 // Likely this is something wrong with the provided test bundle. Create a test report
                 // and present in the console to enable tenants to act on it.
-                return TestReport.createFailed(clock, null, e);
+                return TestReport.createFailed(clock, null, t);
             }
         } else {
             return null;
