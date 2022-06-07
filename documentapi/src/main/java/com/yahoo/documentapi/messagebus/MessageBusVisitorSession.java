@@ -1006,9 +1006,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             return true;
         }
         if (params.getMaxTotalHits() != -1
-                && ((statistics.getDocumentsReturned()
-                     + statistics.getSecondPassDocumentsReturned()) // TODO: Vespa 8: remove
-                    >= params.getMaxTotalHits()))
+            && (statistics.getDocumentsReturned() >= params.getMaxTotalHits()))
         {
             return true;
         }

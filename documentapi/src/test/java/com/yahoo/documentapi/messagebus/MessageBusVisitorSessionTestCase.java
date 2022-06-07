@@ -968,7 +968,7 @@ public class MessageBusVisitorSessionTestCase {
             builder.append("onVisitorStatistics : ");
             // Only bother with a couple of fields.
             builder.append(vs.getBucketsVisited()).append(" buckets visited, ");
-            builder.append(vs.getDocumentsReturned() + vs.getSecondPassDocumentsReturned()).append(" docs returned\n");
+            builder.append(vs.getDocumentsReturned()).append(" docs returned\n");
         }
 
         @Override
@@ -1448,29 +1448,6 @@ public class MessageBusVisitorSessionTestCase {
             VisitorStatistics stats = new VisitorStatistics();
             stats.setBucketsVisited(1);
             stats.setDocumentsReturned(1);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-        };
-        doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
-    }
-
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove test
-    @Test
-    public void testVisitingCompletedFromSecondPassHits() {
-        VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
-        visitorParameters.setMaxTotalHits(10);
-        ReplyModifier replyModifier1 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setDocumentsReturned(5);
-            stats.setSecondPassDocumentsReturned(4);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-        };
-        ReplyModifier replyModifier2 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setSecondPassDocumentsReturned(1);
             reply.setVisitorStatistics(stats);
             reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
