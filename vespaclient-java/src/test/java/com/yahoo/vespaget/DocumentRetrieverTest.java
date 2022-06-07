@@ -130,7 +130,7 @@ public class DocumentRetrieverTest {
     }
 
     @Test
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 9
     public void testSendSingleMessage() throws DocumentRetrieverException {
         ClientParameters params = createParameters()
                 .setDocumentIds(asIterator(DOC_ID_1))
@@ -147,7 +147,7 @@ public class DocumentRetrieverTest {
         documentRetriever.retrieveDocuments();
 
         verify(mockedSession, times(1)).syncSend(argThat((ArgumentMatcher<GetDocumentMessage>) o ->
-                o.getPriority().equals(DocumentProtocol.Priority.HIGH_1) &&
+                o.getPriority().equals(DocumentProtocol.Priority.HIGH_1) && // TODO remove on Vespa 9
                 !o.getRetryEnabled()));
         assertContainsDocument(DOC_ID_1);
     }
