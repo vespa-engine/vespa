@@ -3,8 +3,10 @@ package com.yahoo.vespa.model.clients;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
+import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
@@ -22,7 +24,18 @@ public class ContainerDocumentApi {
 
     public ContainerDocumentApi(ContainerCluster<?> cluster, Options options) {
         addRestApiHandler(cluster, options);
+        addFeedHandler(cluster, options);
     }
+
+    private static void addFeedHandler(ContainerCluster<?> cluster, Options options) {
+        String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
+        var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
+        cluster.addComponent(handler);
+        var executor = new Threadpool("feedapi-handler", cluster, options.feedApiThreadpoolOptions);
+        handler.inject(executor);
+        handler.addComponent(executor);
+    }
+
 
     private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
         var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", DOCUMENT_V1_PREFIX + "/*", options);
@@ -34,9 +47,10 @@ public class ContainerDocumentApi {
         cluster.addComponent(oldHandlerDummy);
     }
 
-    private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(String componentId,
-                                                                            String bindingSuffix,
-                                                                            Options options) {
+    private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(
+            String componentId,
+            String bindingSuffix,
+            Options options) {
         Handler<AbstractConfigProducer<?>> handler = handlerComponentSpecification(componentId);
         if (options.bindings.isEmpty()) {
             handler.addServerBindings(
@@ -59,11 +73,33 @@ public class ContainerDocumentApi {
     }
 
     public static final class Options {
-
         private final Collection<String> bindings;
+        private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
 
-        public Options(Collection<String> bindings) {
+        public Options(Collection<String> bindings, ContainerThreadpool.UserOptions feedApiThreadpoolOptions) {
             this.bindings = Collections.unmodifiableCollection(bindings);
+            this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
+        }
+    }
+
+    private static class Threadpool extends ContainerThreadpool {
+
+        private final ContainerCluster<?> cluster;
+
+        Threadpool(String name,
+                   ContainerCluster<?> cluster,
+                   ContainerThreadpool.UserOptions threadpoolOptions) {
+            super(name, threadpoolOptions);
+            this.cluster = cluster;
+        }
+
+        @Override
+        public void getConfig(ContainerThreadpoolConfig.Builder builder) {
+            super.getConfig(builder);
+
+            // User options overrides below configuration
+            if (hasUserOptions()) return;
+            builder.maxThreads(-4).minThreads(-4).queueSize(500);
         }
     }
 
