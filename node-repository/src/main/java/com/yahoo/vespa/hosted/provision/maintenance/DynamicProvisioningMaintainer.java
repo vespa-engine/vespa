@@ -6,9 +6,9 @@ import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
@@ -131,6 +131,10 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
         excessHosts.forEach(host -> {
             try {
+                // First mark the host as wantToDeprovision so that if hostProvisioner fails, this host
+                // * wont get new nodes allocated to it
+                // * will be selected as excess on next iteration of this maintainer
+                nodeRepository().nodes().deprovision(host.hostname(), Agent.DynamicProvisioningMaintainer, nodeRepository().clock().instant());
                 hostProvisioner.deprovision(host);
                 nodeRepository().nodes().removeRecursively(host, true);
             } catch (RuntimeException e) {
