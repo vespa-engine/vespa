@@ -56,7 +56,7 @@ public class VespaFeederTestCase {
         assertTrue(arguments.isVerbose());
         assertFalse(config.createifnonexistent());
 
-        assertEquals("LOW_1", arguments.getPriority());
+        assertEquals("LOW_1", arguments.getPriority()); // TODO remove on Vespa 9
         assertEquals("benchmark", arguments.getMode());
         assertEquals("foo.xml", arguments.getFiles().get(0));
         assertEquals("bar.xml", arguments.getFiles().get(1));
@@ -152,14 +152,14 @@ public class VespaFeederTestCase {
     }
 
     @Test
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 9
     public void feedFile() throws Exception {
         FeedFixture f = new FeedFixture();
         Arguments arguments = new Arguments("--file src/test/files/myfeed.xml --priority LOW_1".split(" "), f.sessionFactory);
         new VespaFeeder(arguments, f.typeManager).parseFiles(System.in, f.printStream);
 
         assertEquals(3, f.sessionFactory.messages.size());
-        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)f.sessionFactory.messages.get(0)).getPriority()); // TODO: Remove on Vespa 8
+        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)f.sessionFactory.messages.get(0)).getPriority()); // TODO: Remove on Vespa 9
         assertEquals("id:test:news::foo", ((PutDocumentMessage) f.sessionFactory.messages.get(0)).getDocumentPut().getDocument().getId().toString());
         DocumentUpdate update = ((UpdateDocumentMessage) f.sessionFactory.messages.get(1)).getDocumentUpdate();
         assertEquals("id:test:news::foo", update.getId().toString());
@@ -176,10 +176,10 @@ public class VespaFeederTestCase {
         assertJsonFeedState(feedFixture);
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 9
     protected void assertJsonFeedState(FeedFixture feedFixture) {
         assertEquals(3, feedFixture.sessionFactory.messages.size());
-        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)feedFixture.sessionFactory.messages.get(0)).getPriority()); // TODO: Remove on Vespa 8
+        assertEquals(DocumentProtocol.Priority.LOW_1, ((PutDocumentMessage)feedFixture.sessionFactory.messages.get(0)).getPriority()); // TODO: Remove on Vespa 9
         assertEquals("id:test:news::foo", ((PutDocumentMessage) feedFixture.sessionFactory.messages.get(0)).getDocumentPut().getDocument().getId().toString());
         DocumentUpdate update = ((UpdateDocumentMessage) feedFixture.sessionFactory.messages.get(1)).getDocumentUpdate();
         assertEquals("id:test:news::foo", update.getId().toString());
