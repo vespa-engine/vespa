@@ -60,7 +60,6 @@ public class RoutingGenerator extends AbstractComponent {
     private volatile RoutingTable routingTable = null;
 
     @Inject
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public RoutingGenerator(ZoneConfig zoneConfig, RoutingStatus routingStatus, Metric metric) {
         this(new ConfigSourceSet(zoneConfig.configserver()), new Nginx(FileSystems.getDefault(),
                                                                        new ProcessExecuter(),
@@ -71,7 +70,6 @@ public class RoutingGenerator extends AbstractComponent {
              Clock.systemUTC());
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     RoutingGenerator(ConfigSource configSource, Router router, Clock clock) {
         this.router = Objects.requireNonNull(router);
         this.clock = Objects.requireNonNull(clock);
@@ -107,7 +105,6 @@ public class RoutingGenerator extends AbstractComponent {
         load(RoutingTable.from(lbServicesConfig, generation));
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private <T extends ConfigInstance> void subscribeOn(Class<T> clazz, BiConsumer<T, Long> action, ConfigSource configSource,
                                                         ExecutorService executor) {
         ConfigHandle<T> configHandle = null;
@@ -141,7 +138,6 @@ public class RoutingGenerator extends AbstractComponent {
     }
 
     @Override
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void deconstruct() {
         configSubscriber.close();
         // shutdownNow because ConfigSubscriber#nextGeneration blocks until next config, and we don't want to wait for

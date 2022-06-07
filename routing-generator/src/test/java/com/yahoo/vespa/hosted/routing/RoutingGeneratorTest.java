@@ -55,7 +55,6 @@ public class RoutingGeneratorTest {
 
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private static class ConfigSetMock extends ConfigSet {
 
         private int attempt = 0;
