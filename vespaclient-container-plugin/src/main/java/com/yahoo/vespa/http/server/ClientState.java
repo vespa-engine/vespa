@@ -4,14 +4,13 @@ package com.yahoo.vespa.http.server;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.messagebus.shared.SharedSourceSession;
-import com.yahoo.vespa.http.client.core.OperationStatus;
 
 import java.util.concurrent.BlockingQueue;
 
 /**
  * The state of a client session, used to save replies when client disconnects.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class ClientState {
 

@@ -11,16 +11,10 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.messagebus.Reply;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.Trace;
-import com.yahoo.vespa.http.client.core.ErrorCode;
-import com.yahoo.vespa.http.client.core.OperationStatus;
 
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.util.function.Predicate.not;
 
 /**
  * Catch message bus replies and make the available to a given session.

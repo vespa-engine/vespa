@@ -3,7 +3,6 @@ package com.yahoo.vespa.http.server;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.vespa.http.client.core.Encoder;
 import com.yahoo.vespa.http.server.util.ByteLimitedInputStream;
 import com.yahoo.vespaxmlparser.FeedOperation;
 import com.yahoo.vespaxmlparser.FeedReader;
