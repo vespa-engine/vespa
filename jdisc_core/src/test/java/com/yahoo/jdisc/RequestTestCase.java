@@ -33,7 +33,6 @@ import static org.junit.Assert.fail;
 public class RequestTestCase {
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatAccessorsWork() throws BindingSetNotFoundException {
         MyTimer timer = new MyTimer();
         timer.currentTime = 69;
@@ -43,11 +42,7 @@ public class RequestTestCase {
         Request request = new Request(driver, URI.create("http://foo/bar"));
         assertNotNull(request);
         assertEquals(URI.create("http://foo/bar"), request.getUri());
-        request.setUri(URI.create("http://baz/cox"));
-        assertEquals(URI.create("http://baz/cox"), request.getUri());
         assertTrue(request.isServerRequest());
-        request.setServerRequest(false);
-        assertFalse(request.isServerRequest());
         assertEquals(69, request.creationTime(TimeUnit.MILLISECONDS));
         assertNull(request.getTimeout(TimeUnit.MILLISECONDS));
         request.setTimeout(10, TimeUnit.MILLISECONDS);
@@ -249,12 +244,8 @@ public class RequestTestCase {
         assertTrue(driver.close());
     }
 
-    @SuppressWarnings("deprecation")
     private static void assertUri(CurrentContainer container, String requestUri, String expectedUri) {
         Request serverReq = new Request(container, URI.create(requestUri));
-        assertEquals(expectedUri, serverReq.getUri().toString());
-
-        serverReq.setUri(URI.create(requestUri));
         assertEquals(expectedUri, serverReq.getUri().toString());
 
         Request clientReq = new Request(serverReq, URI.create(requestUri));
