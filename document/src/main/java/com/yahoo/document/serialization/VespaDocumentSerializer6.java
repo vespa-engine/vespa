@@ -483,7 +483,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
             write(tree.getRoot());
             {
                 //add all annotations to temporary list and sort it, to get predictable serialization
-                List<Annotation> tmpAnnotationList = new ArrayList<Annotation>(tree.numAnnotations());
+                List<Annotation> tmpAnnotationList = new ArrayList<>(tree.numAnnotations());
                 for (Annotation annotation : tree) {
                     tmpAnnotationList.add(annotation);
                 }
