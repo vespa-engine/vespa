@@ -36,11 +36,7 @@ ResourceUsageMetrics::DetailedResourceMetrics::~DetailedResourceMetrics() = defa
 ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet *parent)
     : MetricSet("resource_usage", {}, "Usage metrics for various resources in this content node", parent),
       disk("disk", {}, "The relative amount of disk used by this content node (transient usage not included, value in the range [0, 1]). Same value as reported to the cluster controller", this),
-      diskUtilization("disk_utilization", {}, "The relative amount of disk used compared to the disk resource limit", this),
       memory("memory", {}, "The relative amount of memory used by this content node (transient usage not included, value in the range [0, 1]). Same value as reported to the cluster controller", this),
-      memoryUtilization("memory_utilization", {}, "The relative amount of memory used compared to the memory resource limit", this),
-      transient_memory("transient_memory", {}, "The relative amount of transient memory needed for loading attributes. Max value among all attributes (value in the range [0, 1])", this),
-      transient_disk("transient_disk", {}, "The relative amount of transient disk needed for running disk index fusion. Max value among all disk indexes (value in the range [0, 1])", this),
       disk_usage("disk", this),
       memory_usage("memory", this),
       memoryMappings("memory_mappings", {}, "The number of mapped memory areas", this),
