@@ -31,7 +31,6 @@ public class CertificateK {
     private final com.yahoo.jdisc.application.AbstractApplication application = null;
     private final com.yahoo.jdisc.handler.AbstractRequestHandler handler = null;
     private final com.yahoo.jdisc.service.AbstractClientProvider client = null;
-    private final com.yahoo.yolean.chain.Chain<?> chain = null;
     private final com.yahoo.yolean.concurrent.ThreadRobustList<?> robustList = null;
     private final com.yahoo.yolean.trace.TraceNode traceNode = null;
     private final com.sun.security.auth.LdapPrincipal principal = null;

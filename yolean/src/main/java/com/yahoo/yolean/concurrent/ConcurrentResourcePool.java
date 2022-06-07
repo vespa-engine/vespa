@@ -18,12 +18,6 @@ public class ConcurrentResourcePool<T> implements Iterable<T> {
     private final Queue<T> pool = new ConcurrentLinkedQueue<>();
     private final Supplier<T> factory;
 
-    /** @deprecated Use {@link ConcurrentResourcePool(Supplier)} instead */
-    @Deprecated(forRemoval = true, since = "7")
-    @SuppressWarnings("removal")
-    public ConcurrentResourcePool(ResourceFactory<T> factory) {
-        this.factory = factory.asSupplier();
-    }
 
     public ConcurrentResourcePool(Supplier<T> factory) {
         this.factory = factory;
