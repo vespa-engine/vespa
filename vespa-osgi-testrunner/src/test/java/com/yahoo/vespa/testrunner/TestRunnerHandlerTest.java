@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mortent
+ * @author jonmv
  */
 class TestRunnerHandlerTest {
 

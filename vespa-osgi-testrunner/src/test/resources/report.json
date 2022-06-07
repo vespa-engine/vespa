@@ -343,7 +343,7 @@
                   {
                     "type": "failure",
                     "status": "error",
-                    "trace": "java.lang.NullPointerException\n\tat java.base/java.util.Objects.requireNonNull(Objects.java:208)\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
+                    "trace": "java.lang.NullPointerException\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
                   }
                 ]
               }
@@ -403,7 +403,7 @@
       {
         "testName": "test()",
         "testError": null,
-        "exception": "java.lang.NullPointerException\n\tat java.base/java.util.Objects.requireNonNull(Objects.java:208)\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
+        "exception": "java.lang.NullPointerException\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
       },
       {
         "testName": "Production test",

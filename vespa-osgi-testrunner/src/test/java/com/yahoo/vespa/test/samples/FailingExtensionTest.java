@@ -16,7 +16,7 @@ public class FailingExtensionTest {
 
     static class FailingExtension implements Extension {
 
-        { requireNonNull(null); }
+        { if (true) throw new NullPointerException(); }
 
     }
 
