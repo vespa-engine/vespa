@@ -32,7 +32,6 @@ public class VisitorParametersTestCase {
         params.setResumeToken(new ProgressToken());
         params.setRemoteDataHandler("mars_rover");
         params.setControlHandler(new VisitorControlHandler());
-        params.setMaxFirstPassHits(555);
         params.setMaxTotalHits(777);
         params.setDynamicallyIncreaseMaxBucketsPerVisitor(true);
         params.setDynamicMaxBucketsIncreaseFactor(2.5f);
@@ -67,7 +66,6 @@ public class VisitorParametersTestCase {
         assertEquals(params.getResumeToken(), copy.getResumeToken()); // instance compare
         assertEquals("mars_rover", copy.getRemoteDataHandler());
         assertEquals(params.getControlHandler(), copy.getControlHandler());
-        assertEquals(555, copy.getMaxFirstPassHits());
         assertEquals(777, copy.getMaxTotalHits());
         assertEquals(true, copy.getDynamicallyIncreaseMaxBucketsPerVisitor());
         assertEquals(2.5f, copy.getDynamicMaxBucketsIncreaseFactor(), 0.0001);
@@ -100,7 +98,6 @@ public class VisitorParametersTestCase {
                 "  Field set:          [all]\n" +
                 "  Route:              extraterrestrial/highway\n" +
                 "  Weight:             1.0\n" +
-                "  Max firstpass hits: 555\n" +
                 "  Max total hits:     777\n" +
                 "  Max buckets:        55\n" +
                 "  Priority:           HIGHEST\n" +

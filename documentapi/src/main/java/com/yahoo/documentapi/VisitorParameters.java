@@ -38,7 +38,6 @@ public class VisitorParameters extends Parameters {
     private Map<String, byte []> libraryParameters = new TreeMap<>();
     private Route visitRoute = null;
     private final float weight = 1;
-    private long maxFirstPassHits = -1;
     private long maxTotalHits = -1;
     private int maxBucketsPerVisitor = 1;
     private boolean dynamicallyIncreaseMaxBucketsPerVisitor = false;
@@ -88,7 +87,6 @@ public class VisitorParameters extends Parameters {
             setLocalDataHandler(params.getLocalDataHandler());
         }
         setControlHandler(params.getControlHandler());
-        setMaxFirstPassHits(params.getMaxFirstPassHits());
         setMaxTotalHits(params.getMaxTotalHits());
         setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
         setPriority(params.getPriority());
@@ -272,20 +270,6 @@ public class VisitorParameters extends Parameters {
     // TODO: Document: Where is the default - does this ever return null, or does it return "storage" if input is null?
     public Route getRoute() { return visitRoute; }
 
-    /** Set the maximum number of documents to visit (max documents returned by the visitor)
-     *
-     * @deprecated use setMaxTotalHits instead
-     */
-    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
-    public void setMaxFirstPassHits(long max) { maxFirstPassHits = max; }
-
-    /** @return Returns the maximum number of documents to visit (max documents returned by the visitor)
-     *
-     * @deprecated Use getMaxTotalHits() instead
-     */
-    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
-    public long getMaxFirstPassHits() { return maxFirstPassHits; }
-
     /** Set the maximum number of documents to visit (max documents returned by the visitor) */
     public void setMaxTotalHits(long max) { maxTotalHits = max; }
 
@@ -368,7 +352,6 @@ public class VisitorParameters extends Parameters {
         sb.append("  Field set:          ").append(fieldSet).append('\n');
         sb.append("  Route:              ").append(visitRoute).append('\n');
         sb.append("  Weight:             ").append(weight).append('\n');
-        sb.append("  Max firstpass hits: ").append(maxFirstPassHits).append('\n');
         sb.append("  Max total hits:     ").append(maxTotalHits).append('\n');
         sb.append("  Max buckets:        ").append(maxBucketsPerVisitor).append('\n');
         sb.append("  Priority:           ").append(getPriority().toString()).append('\n');
