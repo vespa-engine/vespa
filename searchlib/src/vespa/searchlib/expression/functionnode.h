@@ -13,7 +13,7 @@ public:
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor & visitor) const override;
     DECLARE_ABSTRACT_EXPRESSIONNODE(FunctionNode);
-    const ResultNode & getResult() const override { return *_tmpResult; }
+    const ResultNode * getResult() const override { return _tmpResult.get(); }
     ResultNode & updateResult() const { return *_tmpResult; }
     virtual void reset() { _tmpResult.reset(NULL); }
 

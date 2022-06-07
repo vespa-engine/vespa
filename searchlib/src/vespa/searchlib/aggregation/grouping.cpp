@@ -185,12 +185,12 @@ void Grouping::postProcess()
     bool hasEnums(false);
     for (size_t i(0), m(_levels.size()); !hasEnums && (i < m); i++) {
         const GroupingLevel & l = _levels[i];
-        const ResultNode & id(l.getExpression().getResult());
+        const ResultNode & id(*l.getExpression().getResult());
         hasEnums = id.inherits(EnumResultNode::classId) ||
                    id.inherits(EnumResultNodeVector::classId);
         const Group & g(l.getGroupPrototype());
         for (size_t j(0), n(g.getAggrSize()); !hasEnums && (j < n); j++) {
-            const ResultNode & r(g.getAggregationResult(j).getResult());
+            const ResultNode & r(*g.getAggregationResult(j).getResult());
             hasEnums = r.inherits(EnumResultNode::classId) ||
                        r.inherits(EnumResultNodeVector::classId);
         }

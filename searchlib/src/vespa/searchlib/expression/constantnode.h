@@ -15,7 +15,7 @@ public:
     ConstantNode() : ExpressionNode(), _result() { }
     ConstantNode(ResultNode::UP r) : ExpressionNode(), _result(r.release()) { }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const ResultNode & getResult() const override { return *_result; }
+    const ResultNode * getResult() const override { return _result.get(); }
 private:
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
     bool onExecute() const override { return true; }

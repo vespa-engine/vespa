@@ -208,19 +208,12 @@ void MultiArgFunctionNode::onPrepare(bool preserveAccurateTypes)
 void MultiArgFunctionNode::onPrepareResult()
 {
     if (_args.size() == 1) {
-        setResultType(ArithmeticTypeConversion::getType(_args[0]->getResult()));
+        setResultType(ArithmeticTypeConversion::getType(*_args[0]->getResult()));
     } else if (_args.size() > 1) {
-        setResultType(std::unique_ptr<ResultNode>(static_cast<ResultNode *>(_args[0]->getResult().clone())));
+        setResultType(std::unique_ptr<ResultNode>(static_cast<ResultNode *>(_args[0]->getResult()->clone())));
         for(size_t i(1), m(_args.size()); i < m; i++) {
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wtautological-undefined-compare"
-#endif
-            if (&_args[i]->getResult() != NULL) {
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-                setResultType(_ArithmeticTypeConversion.getType(getResult(), _args[i]->getResult()));
+            if (_args[i]->getResult() != nullptr) {
+                setResultType(_ArithmeticTypeConversion.getType(*getResult(), *_args[i]->getResult()));
             }
         }
     }
@@ -236,9 +229,9 @@ bool MultiArgFunctionNode::onExecute() const
 
 bool MultiArgFunctionNode::onCalculate(const ExpressionNodeVector & args, ResultNode & result) const
 {
-    result.set(args[0]->getResult());
+    result.set(*args[0]->getResult());
     for (size_t i(1), m(args.size()); i < m; i++) {
-        executeIterative(args[i]->getResult(), result);
+        executeIterative(*args[i]->getResult(), result);
     }
     return true;
 }
@@ -282,7 +275,7 @@ void XorFunctionNode::onArgument(const ResultNode & arg, Int64ResultNode & resul
 ResultNode::CP MaxFunctionNode::getInitialValue() const
 {
     ResultNode::CP initial;
-    const ResultNode & arg(getArg(0).getResult());
+    const ResultNode & arg(*getArg(0).getResult());
     if (arg.inherits(FloatResultNodeVector::classId)) {
         initial.reset(new FloatResultNode(std::numeric_limits<double>::min()));
     } else if (arg.inherits(IntegerResultNodeVector::classId)) {
@@ -296,7 +289,7 @@ ResultNode::CP MaxFunctionNode::getInitialValue() const
 ResultNode::CP MinFunctionNode::getInitialValue() const
 {
     ResultNode::CP initial;
-    const ResultNode & arg(getArg(0).getResult());
+    const ResultNode & arg(*getArg(0).getResult());
     if (arg.inherits(FloatResultNodeVector::classId)) {
         initial.reset(new FloatResultNode(std::numeric_limits<double>::max()));
     } else if (arg.inherits(IntegerResultNodeVector::classId)) {
@@ -340,7 +333,7 @@ void UnaryBitFunctionNode::onPrepare(bool preserveAccurateTypes)
 
 void UnaryFunctionNode::onPrepareResult()
 {
-    setResultType(std::unique_ptr<ResultNode>(getArg().getResult().clone()));
+    setResultType(std::unique_ptr<ResultNode>(getArg().getResult()->clone()));
 }
 
 void ToStringFunctionNode::onPrepareResult()
@@ -351,7 +344,7 @@ void ToStringFunctionNode::onPrepareResult()
 bool ToStringFunctionNode::onExecute() const
 {
     getArg().execute();
-    updateResult().set(getArg().getResult());
+    updateResult().set(*getArg().getResult());
     return true;
 }
 
@@ -363,7 +356,7 @@ void ToRawFunctionNode::onPrepareResult()
 bool ToRawFunctionNode::onExecute() const
 {
     getArg().execute();
-    updateResult().set(getArg().getResult());
+    updateResult().set(*getArg().getResult());
     return true;
 }
 
@@ -375,7 +368,7 @@ void ToIntFunctionNode::onPrepareResult()
 bool ToIntFunctionNode::onExecute() const
 {
     getArg().execute();
-    updateResult().set(getArg().getResult());
+    updateResult().set(*getArg().getResult());
     return true;
 }
 
@@ -387,7 +380,7 @@ void ToFloatFunctionNode::onPrepareResult()
 bool ToFloatFunctionNode::onExecute() const
 {
     getArg().execute();
-    updateResult().set(getArg().getResult());
+    updateResult().set(*getArg().getResult());
     return true;
 }
 
@@ -400,7 +393,7 @@ bool StrLenFunctionNode::onExecute() const
 {
     getArg().execute();
     char buf[32];
-    static_cast<Int64ResultNode &> (updateResult()).set(getArg().getResult().getString(BufferRef(buf, sizeof(buf))).size());
+    static_cast<Int64ResultNode &> (updateResult()).set(getArg().getResult()->getString(BufferRef(buf, sizeof(buf))).size());
     return true;
 }
 
@@ -413,7 +406,7 @@ bool NormalizeSubjectFunctionNode::onExecute() const
 {
     getArg().execute();
     char buf[32];
-    ConstBufferRef tmp(getArg().getResult().getString(BufferRef(buf, sizeof(buf))));
+    ConstBufferRef tmp(getArg().getResult()->getString(BufferRef(buf, sizeof(buf))));
 
     int pos = 0;
     if (tmp.size() >= 4) {
@@ -439,8 +432,8 @@ void NumElemFunctionNode::onPrepareResult()
 bool NumElemFunctionNode::onExecute() const
 {
     getArg().execute();
-    if (getArg().getResult().inherits(ResultNodeVector::classId)) {
-        static_cast<Int64ResultNode &> (updateResult()).set(static_cast<const ResultNodeVector &>(getArg().getResult()).size());
+    if (getArg().getResult()->inherits(ResultNodeVector::classId)) {
+        static_cast<Int64ResultNode &> (updateResult()).set(static_cast<const ResultNodeVector &>(*getArg().getResult()).size());
     }
     return true;
 }
@@ -448,7 +441,7 @@ bool NumElemFunctionNode::onExecute() const
 bool NegateFunctionNode::onExecute() const
 {
     getArg().execute();
-    updateResult().assign(getArg().getResult());
+    updateResult().assign(*getArg().getResult());
     updateResult().negate();
     return true;
 }
@@ -456,7 +449,7 @@ bool NegateFunctionNode::onExecute() const
 bool SortFunctionNode::onExecute() const
 {
     getArg().execute();
-    updateResult().assign(getArg().getResult());
+    updateResult().assign(*getArg().getResult());
     updateResult().sort();
     return true;
 }
@@ -464,7 +457,7 @@ bool SortFunctionNode::onExecute() const
 bool ReverseFunctionNode::onExecute() const
 {
     getArg().execute();
-    updateResult().assign(getArg().getResult());
+    updateResult().assign(*getArg().getResult());
     updateResult().reverse();
     return true;
 }
@@ -475,7 +468,7 @@ bool StrCatFunctionNode::onExecute() const
     StrCatSerializer nos(os);
     for(size_t i(0), m(getNumArgs()); i < m; i++) {
         getArg(i).execute();
-        getArg(i).getResult().serialize(nos);
+        getArg(i).getResult()->serialize(nos);
     }
     static_cast<StringResultNode &>(updateResult()).set(os.str());
     return true;
@@ -487,7 +480,7 @@ bool CatFunctionNode::onExecute() const
     CatSerializer nos(os);
     for(size_t i(0), m(getNumArgs()); i < m; i++) {
         getArg(i).execute();
-        getArg(i).getResult().serialize(nos);
+        getArg(i).getResult()->serialize(nos);
     }
     static_cast<RawResultNode &>(updateResult()).setBuffer(os.data(), os.size());
     return true;
@@ -506,7 +499,7 @@ bool UnaryBitFunctionNode::onExecute() const
     _tmpOs.clear();
     getArg().execute();
     CatSerializer os(_tmpOs);
-    getArg().getResult().serialize(os);
+    getArg().getResult()->serialize(os);
     return internalExecute(_tmpOs);
 }
 

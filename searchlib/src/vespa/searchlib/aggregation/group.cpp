@@ -89,7 +89,7 @@ Group::groupNext(const GroupingLevel & level, const Doc & doc, HitRank rank)
     if (!selector.execute(doc, rank)) {
         throw std::runtime_error("Does not know how to handle failed select statements");
     }
-    const ResultNode &selectResult = selector.getResult();
+    const ResultNode &selectResult = *selector.getResult();
     level.group(*this, selectResult, doc, rank);
 }
 
@@ -220,7 +220,7 @@ Group::Value::cmp(const Value & rhs) const {
     int diff(0);
     for (size_t i(0), m(getOrderBySize()); (diff == 0) && (i < m); i++) {
         uint32_t index = std::abs(getOrderBy(i)) - 1;
-        diff = expr(index).getResult().cmp(rhs.expr(index).getResult()) * getOrderBy(i);
+        diff = expr(index).getResult()->cmp(*rhs.expr(index).getResult()) * getOrderBy(i);
     }
     return diff;
 }
