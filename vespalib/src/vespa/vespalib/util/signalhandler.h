@@ -131,7 +131,8 @@ public:
     /**
      * Get the stack trace of the current point of execution of the thread referenced
      * by `thread_id`. This may be the same ID as the calling thread, in which case
-     * the current call stack is returned.
+     * the current call stack is returned. The pthread_t ID must be valid; invoking
+     * this function without a valid ID is undefined behavior.
      *
      * Returned format is the same as that of vespalib::getStackTrace().
      *
