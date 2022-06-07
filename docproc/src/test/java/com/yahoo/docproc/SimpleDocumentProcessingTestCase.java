@@ -3,6 +3,7 @@ package com.yahoo.docproc;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.docproc.Accesses.Field.Tree;
+import com.yahoo.docproc.impl.DocprocService;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;

@@ -3,6 +3,7 @@ package com.yahoo.docproc;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.component.chain.ChainedComponent;
+import com.yahoo.docproc.impl.DocprocService;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +43,6 @@ import java.util.logging.Logger;
  */
 public abstract class DocumentProcessor extends ChainedComponent {
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     static Logger log = Logger.getLogger(DocprocService.class.getName());
 
     /** Schema map for doctype-fieldnames */
