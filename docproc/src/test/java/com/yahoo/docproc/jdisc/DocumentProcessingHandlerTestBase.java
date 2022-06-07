@@ -49,7 +49,6 @@ public abstract class DocumentProcessingHandlerTestBase {
     private final List<MbusServerProvider> serviceProviders = new ArrayList<>();
 
     @Before
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void createHandler() {
         documentTypeManager.register(getType());
 
@@ -66,7 +65,6 @@ public abstract class DocumentProcessingHandlerTestBase {
                                         protocol);
 
         ContainerBuilder builder = driver.parent().newContainerBuilder();
-        @SuppressWarnings("removal") // TODO Vespa 8: remove
         ComponentRegistry<DocprocService> registry = new ComponentRegistry<>();
 
         handler = new DocumentProcessingHandler(registry,
