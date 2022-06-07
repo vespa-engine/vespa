@@ -2,6 +2,7 @@
 package com.yahoo.docproc;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.docproc.impl.DocumentOperationWrapper;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.docproc.proxy.ProxyDocument;
 import com.yahoo.docproc.proxy.ProxyDocumentUpdate;
@@ -122,7 +123,6 @@ public class Call implements Cloneable {
     }
 
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void unwrapSchemaMapping(Processing processing) {
         final List<DocumentOperation> documentOperations = processing.getDocumentOperations();
 

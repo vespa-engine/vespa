@@ -1,9 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.docproc;
+package com.yahoo.docproc.impl;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.ComponentId;
 import com.yahoo.concurrent.DaemonThreadFactory;
+import com.yahoo.docproc.CallStack;
+import com.yahoo.docproc.DocumentProcessor;
+import com.yahoo.docproc.Processing;
 import com.yahoo.docproc.proxy.SchemaMap;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentTypeManager;
@@ -29,10 +32,7 @@ import java.util.logging.Logger;
  * <p>This class is thread safe.</p>
  *
  * @author bratseth
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
-@Deprecated(forRemoval = true, since = "7")
 public class DocprocService extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(DocprocService.class.getName());
@@ -75,11 +75,6 @@ public class DocprocService extends AbstractComponent {
         setCallStack(stack);
         setDocumentTypeManager(mgr);
         setInService(true);
-    }
-
-    @Deprecated
-    public DocprocService(ComponentId id, CallStack stack, DocumentTypeManager mgr) {
-        this(id, stack, mgr, Runtime.getRuntime().availableProcessors());
     }
 
     /**
@@ -194,8 +189,8 @@ public class DocprocService extends AbstractComponent {
      */
     public void process(Processing processing, ProcessingEndpoint endp) {
         processing.setServiceName(getName());
-        processing.setCallStack(new CallStack(getCallStack()));
-        processing.setEndpoint(endp);
+        ((ProcessingAccess)processing).setCallStack(new CallStack(getCallStack()));
+        ((ProcessingAccess)processing).setEndpoint(endp);
         addProcessing(processing);
     }
 
@@ -218,7 +213,9 @@ public class DocprocService extends AbstractComponent {
      * @throws IllegalStateException if this DocprocService is not accepting new incoming processings
      */
     public void process(DocumentOperation documentOperation, ProcessingEndpoint endp) {
-        addProcessing(new Processing(getName(), documentOperation, new CallStack(getCallStack()), endp));
+        Processing processing = new Processing(getName(), documentOperation, new CallStack(getCallStack()));
+        ((ProcessingAccess)processing).setEndpoint(endp);
+        addProcessing(processing);
     }
 
     /**
@@ -241,7 +238,10 @@ public class DocprocService extends AbstractComponent {
      * @throws IllegalStateException if this DocprocService is not accepting new incoming processings
      */
     public void processDocumentOperations(List<DocumentOperation> documentOperations, ProcessingEndpoint endp) {
-        addProcessing(Processing.createProcessingFromDocumentOperations(getName(), documentOperations, new CallStack(getCallStack()), endp));
+        Processing processing = Processing.createProcessingFromDocumentOperations(getName(), documentOperations, new CallStack(getCallStack()));
+        ((ProcessingAccess)processing).setEndpoint(endp);
+        addProcessing(processing);
+
     }
 
     /**
@@ -359,7 +359,7 @@ public class DocprocService extends AbstractComponent {
 
         if (DocumentProcessor.Progress.DONE.equals(progress)) {
             //notify endpoint
-            ProcessingEndpoint recv = processing.getEndpoint();
+            ProcessingEndpoint recv = ((ProcessingAccess)processing).getEndpoint();
             if (recv != null) {
                 recv.processingDone(processing);
             }
@@ -392,7 +392,7 @@ public class DocprocService extends AbstractComponent {
         }
 
         //notify endpoint
-        ProcessingEndpoint recv = processing.getEndpoint();
+        ProcessingEndpoint recv = ((ProcessingAccess)processing).getEndpoint();
         if (recv != null) {
             recv.processingFailed(processing, e);
         }

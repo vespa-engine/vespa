@@ -1,6 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.docproc;
+package com.yahoo.docproc.impl;
 
+import com.yahoo.docproc.Call;
+import com.yahoo.docproc.CallStack;
+import com.yahoo.docproc.DocumentProcessor;
+import com.yahoo.docproc.Processing;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.json.JsonWriter;
@@ -22,9 +26,7 @@ import static java.util.stream.Collectors.groupingBy;
  * An executor executed incoming processings on its CallStack
  *
  * @author Einar M R Rosenvinge
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class DocprocExecutor {
 
     private final static String METRIC_NAME_DOCUMENTS_PROCESSED = "documents_processed";
@@ -77,7 +79,7 @@ public class DocprocExecutor {
     }
 
     private void incrementNumDocsProcessed(Processing processing) {
-        List<DocumentOperation> operations = processing.getOnceOperationsToBeProcessed();
+        List<DocumentOperation> operations = ((ProcessingAccess)processing).getOnceOperationsToBeProcessed();
         if ( ! operations.isEmpty()) {
             metric.add(docCounterName, operations.size(), null);
             operations.stream()
@@ -97,7 +99,7 @@ public class DocprocExecutor {
     public DocumentProcessor.Progress process(Processing processing) {
         processing.setServiceName(getName());
         if (processing.callStack() == null) {
-            processing.setCallStack(new CallStack(getCallStack()));
+            ((ProcessingAccess)processing).setCallStack(new CallStack(getCallStack()));
         }
 
         DocumentProcessor.Progress progress = DocumentProcessor.Progress.DONE;
