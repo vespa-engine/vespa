@@ -71,13 +71,6 @@ public class RankProfilesConfigImporter {
         }
     }
 
-    @Deprecated
-    public Map<String, Model> importFrom(RankProfilesConfig config,
-                                         RankingConstantsConfig constantsConfig,
-                                         OnnxModelsConfig onnxModelsConfig) {
-        return importFrom(config, constantsConfig, new RankingExpressionsConfig.Builder().build(), onnxModelsConfig);
-    }
-
     private Model importProfile(RankProfilesConfig.Rankprofile profile,
                                 RankingConstantsConfig constantsConfig,
                                 RankingExpressionsConfig expressionsConfig,
