@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.compress.CompressionType;
 import com.yahoo.document.annotation.AbstractTypesTest;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -13,7 +12,10 @@ import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
-import com.yahoo.document.serialization.*;
+import com.yahoo.document.serialization.DocumentDeserializer;
+import com.yahoo.document.serialization.DocumentDeserializerFactory;
+import com.yahoo.document.serialization.DocumentSerializer;
+import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import org.junit.Test;
 
@@ -27,9 +29,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests serialization of all versions.
@@ -58,7 +61,6 @@ import static org.junit.Assert.assertTrue;
 public class DocumentSerializationTestCase extends AbstractTypesTest {
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testSerializationAllVersions() throws IOException {
 
         DocumentType docInDocType = new DocumentType("docindoc");
@@ -93,7 +95,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             doc.setFieldValue("intfield", 5);
             doc.setFieldValue("floatfield", -9.23);
             doc.setFieldValue("stringfield", "This is a string.");
-            doc.setFieldValue("longfield", new LongFieldValue(398420092938472983l));
+            doc.setFieldValue("longfield", new LongFieldValue(398420092938472983L));
             doc.setFieldValue("doublefield", new DoubleFieldValue(98374532.398820));
             doc.setFieldValue("bytefield", new ByteFieldValue(254));
             doc.setFieldValue("boolfield", new BoolFieldValue(true));
@@ -121,8 +123,8 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
 
         class TestDoc {
 
-            String testFile;
-            int version;
+            final String testFile;
+            final int version;
 
             TestDoc(String testFile, int version) {
                 this.testFile = testFile;
@@ -134,10 +136,8 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
 
         List<TestDoc> tests = new ArrayList<>();
         tests.add(new TestDoc(path + "document-java-currentversion-uncompressed.dat", Document.SERIALIZED_VERSION));
-        tests.add(new TestDoc(path + "document-java-currentversion-lz4-9.dat", Document.SERIALIZED_VERSION));
         tests.add(new TestDoc(path + "document-java-v8-uncompressed.dat", 8));
         tests.add(new TestDoc(cpppath + "document-cpp-currentversion-uncompressed.dat", 7));
-        tests.add(new TestDoc(cpppath + "document-cpp-currentversion-lz4-9.dat", 7));
         tests.add(new TestDoc(cpppath + "document-cpp-v8-uncompressed.dat", 7));
         for (TestDoc test : tests) {
             File f = new File(test.testFile);
@@ -147,7 +147,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             int remaining = buffer.length;
             while (remaining > 0) {
                 int read = fin.read(buffer, pos, remaining);
-                assertFalse(read == -1);
+                assertNotEquals(-1, read);
                 pos += read;
                 remaining -= read;
             }
@@ -160,7 +160,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             assertEquals(new IntegerFieldValue(5), doc.getFieldValue("intfield"));
             assertEquals(-9.23, ((FloatFieldValue)doc.getFieldValue("floatfield")).getFloat(), 1E-6);
             assertEquals(new StringFieldValue("This is a string."), doc.getFieldValue("stringfield"));
-            assertEquals(new LongFieldValue(398420092938472983l), doc.getFieldValue("longfield"));
+            assertEquals(new LongFieldValue(398420092938472983L), doc.getFieldValue("longfield"));
             assertEquals(98374532.398820, ((DoubleFieldValue)doc.getFieldValue("doublefield")).getDouble(), 1E-6);
             assertEquals(new ByteFieldValue((byte)254), doc.getFieldValue("bytefield"));
             // Todo add cpp serialization
@@ -168,20 +168,20 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             ByteBuffer bbuffer = ((Raw)doc.getFieldValue("rawfield")).getByteBuffer();
             if (!Arrays.equals("RAW DATA".getBytes(), bbuffer.array())) {
                 System.err.println("Expected 'RAW DATA' but got '" + new String(bbuffer.array()) + "'.");
-                assertTrue(false);
+                fail();
             }
             if (test.version > 6) {
                 Document docInDoc = (Document)doc.getFieldValue("docfield");
-                assertTrue(docInDoc != null);
+                assertNotNull(docInDoc);
                 assertEquals(new StringFieldValue("Elvis is dead"),
                              docInDoc.getFieldValue("stringindocfield"));
             }
             Array array = (Array)doc.getFieldValue("arrayoffloatfield");
-            assertTrue(array != null);
+            assertNotNull(array);
             assertEquals(1.0f, ((FloatFieldValue)array.get(0)).getFloat(), 1E-6);
             assertEquals(2.0f, ((FloatFieldValue)array.get(1)).getFloat(), 1E-6);
             WeightedSet wset = (WeightedSet)doc.getFieldValue("wsfield");
-            assertTrue(wset != null);
+            assertNotNull(wset);
             assertEquals(Integer.valueOf(50), wset.get(new StringFieldValue("Weighted 0")));
             assertEquals(Integer.valueOf(199), wset.get(new StringFieldValue("Weighted 1")));
         }

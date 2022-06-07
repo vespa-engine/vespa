@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.compress.CompressionType;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
@@ -163,7 +162,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             return type;
         }
 
-        @SuppressWarnings("deprecation")
         private DataType getOrCreateType(int id) {
             if (typesById.containsKey(id)) {
                 return typesById.get(id);
@@ -196,7 +194,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void fillStructs(DocumentmanagerConfig config) {
             for (var thisDataType : config.datatype()) {
                 for (var struct : thisDataType.structtype()) {
@@ -263,7 +260,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void apply(DocumentmanagerConfig config) {
             splitConfig(config);
             setupAnnotationTypesWithoutPayloads(config);
@@ -301,7 +297,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void addAnnotationTypePayloads(DocumentmanagerConfig config) {
             for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
                 AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annType.id());
@@ -438,7 +433,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
 
             void createEmptyStructs() {
-                String docName = docTypeConfig.name();
                 for (var typeconf : docTypeConfig.structtype()) {
                     if (isPositionStruct(typeconf)) {
                         int geoVersion = usev8geopositions ? 8 : 7;

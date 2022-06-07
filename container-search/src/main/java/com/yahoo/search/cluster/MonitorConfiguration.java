@@ -9,13 +9,13 @@ package com.yahoo.search.cluster;
 public class MonitorConfiguration  {
 
     /** The interval in ms between consecutive checks of the monitored nodes */
-    private long checkInterval = 1000;
+    private final long checkInterval = 1000;
 
     /** The number of milliseconds to attempt to complete a request before giving up */
     private final long requestTimeout = 980;
 
     /** The number of milliseconds a node is allowed to fail before we mark it as not working */
-    private long failLimit = 5000;
+    private final long failLimit = 5000;
 
     /** Returns the interval between each ping of idle or failing nodes. Default is 1000 ms. */
     public long getCheckInterval() { return checkInterval; }
