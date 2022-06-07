@@ -24,14 +24,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class VespaStorageTest {
 
     @Test
+    public void requireThatPremadeXmlOperationsFeedSucceeds() throws Exception {
+        Configuration conf = new HdfsConfiguration();
+        conf.set(VespaConfiguration.DATA_FORMAT, "xml");
+        assertAllDocumentsOk("src/test/pig/feed_operations_xml.pig", conf);
+    }
+
+
+    @Test
     public void requireThatPremadeOperationsFeedSucceeds() throws Exception {
         assertAllDocumentsOk("src/test/pig/feed_operations.pig");
     }
+
 
     @Test
     public void requireThatPremadeMultilineOperationsFeedSucceeds() throws Exception {
         assertAllDocumentsOk("src/test/pig/feed_multiline_operations.pig");
     }
+
 
     @Test
     public void requireThatPremadeOperationsWithJsonLoaderFeedSucceeds() throws Exception {
@@ -39,9 +49,10 @@ public class VespaStorageTest {
     }
 
     @Test
-    public void requireThatPremadeOperationsWithJsonLoaderFeedWithSllSucceeds() throws Exception {
+    public void requireThatPremadeOperationsWithJsonLoaderFeedAndNonLegacyClientSucceeds() throws Exception {
         Configuration conf = new HdfsConfiguration();
         conf.set(VespaConfiguration.USE_SSL, Boolean.TRUE.toString());
+        conf.set(VespaConfiguration.USE_LEGACY_CLIENT, Boolean.FALSE.toString());
         assertAllDocumentsOk("src/test/pig/feed_operations_with_json_loader.pig", conf);
     }
 
@@ -50,15 +61,18 @@ public class VespaStorageTest {
         assertAllDocumentsOk("src/test/pig/feed_create_operations.pig");
     }
 
+
     @Test
     public void requireThatCreateOperationsShortFormFeedSucceeds() throws Exception {
         assertAllDocumentsOk("src/test/pig/feed_create_operations_short_form.pig");
     }
 
+
     @Test
     public void requireThatFeedVisitDataSucceeds() throws Exception {
         assertAllDocumentsOk("src/test/pig/feed_visit_data.pig");
     }
+
 
     private PigServer setup(String script, Configuration conf) throws Exception {
         if (conf == null) {
@@ -78,9 +92,11 @@ public class VespaStorageTest {
         return ps;
     }
 
+
     private void assertAllDocumentsOk(String script) throws Exception {
         assertAllDocumentsOk(script, null);
     }
+
 
     private void assertAllDocumentsOk(String script, Configuration conf) throws Exception {
         PigServer ps = setup(script, conf);
