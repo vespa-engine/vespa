@@ -262,13 +262,106 @@
             ]
           }
         ]
+      },
+      {
+        "type": "container",
+        "name": "JUnit Jupiter",
+        "status": "error",
+        "start": 0,
+        "end": 0,
+        "children": [
+          {
+            "type": "container",
+            "name": "FailingTestAndBothAftersTest",
+            "status": "error",
+            "start": 0,
+            "end": 0,
+            "children": [
+              {
+                "type": "test",
+                "name": "test()",
+                "status": "failed",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "failure",
+                    "status": "failed",
+                    "trace": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:35)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:19)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:16)\n"
+                  }
+                ]
+              },
+              {
+                "type": "failure",
+                "status": "error",
+                "trace": "java.lang.RuntimeException\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.fail(FailingTestAndBothAftersTest.java:13)\n"
+              }
+            ]
+          },
+          {
+            "type": "container",
+            "name": "WrongBeforeAllTest",
+            "status": "error",
+            "start": 0,
+            "end": 0,
+            "children": [
+              {
+                "type": "failure",
+                "status": "error",
+                "trace": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).\n"
+              },
+              {
+                "type": "test",
+                "name": "fest()",
+                "status": "skipped",
+                "start": 0,
+                "end": 0
+              },
+              {
+                "type": "test",
+                "name": "test()",
+                "status": "skipped",
+                "start": 0,
+                "end": 0
+              }
+            ]
+          },
+          {
+            "type": "container",
+            "name": "FailingExtensionTest",
+            "status": "error",
+            "start": 0,
+            "end": 0,
+            "children": [
+              {
+                "type": "test",
+                "name": "test()",
+                "status": "error",
+                "start": 0,
+                "end": 0,
+                "children": [
+                  {
+                    "type": "failure",
+                    "status": "error",
+                    "trace": "java.lang.NullPointerException\n\tat java.base/java.util.Objects.requireNonNull(Objects.java:208)\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "type": "failure",
+        "status": "error",
+        "trace": "java.lang.ClassNotFoundException: School's out all summer!\n"
       }
     ]
   },
   "summary": {
     "success": 3,
-    "failed": 3,
-    "ignored": 2,
+    "failed": 5,
+    "ignored": 4,
     "aborted": 1,
     "inconclusive": 1,
     "failures": [
@@ -291,6 +384,31 @@
         "testName": "third",
         "testError": "no charm",
         "exception": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n"
+      },
+      {
+        "testName": "test()",
+        "testError": "",
+        "exception": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:35)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:19)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:16)\n"
+      },
+      {
+        "testName": "FailingTestAndBothAftersTest",
+        "testError": null,
+        "exception": "java.lang.RuntimeException\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.fail(FailingTestAndBothAftersTest.java:13)\n"
+      },
+      {
+        "testName": "WrongBeforeAllTest",
+        "testError": "@BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).",
+        "exception": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).\n"
+      },
+      {
+        "testName": "test()",
+        "testError": null,
+        "exception": "java.lang.NullPointerException\n\tat java.base/java.util.Objects.requireNonNull(Objects.java:208)\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
+      },
+      {
+        "testName": "Production test",
+        "testError": "School's out all summer!",
+        "exception": "java.lang.ClassNotFoundException: School's out all summer!\n"
       }
     ]
   },

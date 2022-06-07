@@ -5,9 +5,11 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.test.samples.FailingExtensionTest;
+import com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest;
+import com.yahoo.vespa.test.samples.WrongBeforeAllTest;
 import com.yahoo.vespa.testrunner.TestReport.Node;
 import com.yahoo.vespa.testrunner.TestReport.OutputNode;
 import com.yahoo.vespa.testrunner.TestRunner.Status;
@@ -18,18 +20,16 @@ import org.junit.jupiter.api.Test;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.slime.SlimeUtils.jsonToSlimeOrThrow;
@@ -49,11 +49,18 @@ class TestRunnerHandlerTest {
 
     @BeforeEach
     void setup() {
-        List<LogRecord> logRecords = List.of(logRecord("Tests started"));
-        Throwable exception = new RuntimeException("org.junit.ComparisonFailure: expected:<foo> but was:<bar>");
-        exception.setStackTrace(new StackTraceElement[]{new StackTraceElement("Foo", "bar", "Foo.java", 1123)});
-
-        aggregateRunner = AggregateTestRunner.of(List.of(new MockRunner(TestRunner.Status.SUCCESS, AggregateTestRunnerTest.report)));
+        TestReport moreTestsReport = JunitRunnerTest.test(Suite.PRODUCTION_TEST,
+                                                          new byte[0],
+                                                          FailingTestAndBothAftersTest.class,
+                                                          WrongBeforeAllTest.class,
+                                                          FailingExtensionTest.class)
+                                                    .getReport();
+        TestReport failedReport = TestReport.createFailed(Clock.fixed(testInstant, ZoneId.of("UTC")),
+                                                          Suite.PRODUCTION_TEST,
+                                                          new ClassNotFoundException("School's out all summer!"));
+        aggregateRunner = AggregateTestRunner.of(List.of(new MockRunner(TestRunner.Status.SUCCESS,
+                                                                        AggregateTestRunnerTest.report.mergedWith(moreTestsReport)
+                                                                                                      .mergedWith(failedReport))));
         testRunnerHandler = new TestRunnerHandler(Executors.newSingleThreadExecutor(), aggregateRunner);
     }
 
@@ -91,7 +98,6 @@ class TestRunnerHandlerTest {
                          new String(toJsonBytes(actualRoot, false), UTF_8));
 
         // Should not get old log
-
         long last = SlimeUtils.entriesStream(jsonToSlimeOrThrow (readTestResource("/output.json")).get().field("logRecords"))
                               .mapToLong(recordObject -> recordObject.field("id").asLong())
                               .max()
