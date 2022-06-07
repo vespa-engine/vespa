@@ -3,7 +3,7 @@ package com.yahoo.log.event;
 
 import java.util.logging.Logger;
 
-import com.yahoo.log.VespaFormatter;
+import com.yahoo.log.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -132,15 +132,14 @@ public class EventTestCase {
         SingleHandler sh = new SingleHandler();
         assertNull(sh.lastRecord());
 
-        VespaFormatter formatter = new VespaFormatter();
         Logger log = Logger.getLogger(EventTestCase.class.getName());
         synchronized(log) {
             log.setUseParentHandlers(false);
             log.addHandler(sh);
             Event.starting("mintest");
 
-            assertTrue(formatter.format(sh.lastRecord()).
-                       indexOf("\t.com.yahoo.log.event.EventTestCase\tevent\tstarting/1 name=mintest") > -1);
+            assertTrue(TestUtil.formatWithVespaFormatter(sh.lastRecord())
+                               .contains("\t.com.yahoo.log.event.EventTestCase\tevent\tstarting/1 name=mintest"));
 
             Event.starting("startingName");
             Event.started("startedName");
