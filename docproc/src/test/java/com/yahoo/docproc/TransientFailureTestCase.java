@@ -17,7 +17,6 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class TransientFailureTestCase {
 
     DocumentType type;

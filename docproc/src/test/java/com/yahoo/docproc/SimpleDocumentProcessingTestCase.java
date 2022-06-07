@@ -21,7 +21,6 @@ public class SimpleDocumentProcessingTestCase extends DocumentProcessingAbstract
      * on some documents
      */
     @Test
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void testSimpleProcessing() {
         // Set up service programmatically
         DocprocService service = new DocprocService("simple");
