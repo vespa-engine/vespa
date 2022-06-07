@@ -24,12 +24,7 @@ public class LogSetup {
 
     private static final Timer taskRunner = new Timer(true);
 
-    /**
-     * A global task thread
-     * @deprecated Just construct a java.util.Timer instead
-     **/
-    @Deprecated(since = "7", forRemoval = true)
-    public static Timer getTaskRunner() { return taskRunner; }
+    static Timer getTaskRunner() { return taskRunner; }
 
     /** The log handler used by this */
     private static VespaLogHandler logHandler;
@@ -167,12 +162,7 @@ public class LogSetup {
         Logger.getLogger("").addHandler(logHandler);
     }
 
-    /**
-     * Returns the log handler set up by this class
-     * @deprecated Should only be used internally in the log library
-     */
-    @Deprecated(since = "7", forRemoval = true)
-    public static VespaLogHandler getLogHandler() {
+    static VespaLogHandler getLogHandler() {
         return logHandler;
     }
 
