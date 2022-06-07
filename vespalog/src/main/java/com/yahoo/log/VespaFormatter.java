@@ -19,10 +19,8 @@ import java.util.regex.Pattern;
  * @author  Bjorn Borud
  * @author arnej27959
  *
- * @deprecated Should only be used internally in the log library
  */
-@Deprecated(since = "7", forRemoval = true)
-public class VespaFormatter extends SimpleFormatter {
+class VespaFormatter extends SimpleFormatter {
 
     private static final Pattern backSlash = Pattern.compile("\\\\");
 
@@ -92,6 +90,7 @@ public class VespaFormatter extends SimpleFormatter {
         return s;
     }
 
+    @SuppressWarnings("deprecation")
     public String format(LogRecord r) {
         StringBuilder sbuf = new StringBuilder(300); // initial guess
 

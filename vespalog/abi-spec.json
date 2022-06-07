@@ -122,24 +122,5 @@
       "public static void cleanup()"
     ],
     "fields": []
-  },
-  "com.yahoo.log.VespaFormatter": {
-    "superClass": "java.util.logging.SimpleFormatter",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public void <init>(java.lang.String, java.lang.String)",
-      "public static java.lang.String unEscape(java.lang.String)",
-      "public java.lang.String format(java.util.logging.LogRecord)",
-      "public void setServiceName(java.lang.String)",
-      "public java.lang.String getServiceName()",
-      "public static java.lang.String toMessageString(java.lang.Throwable)"
-    ],
-    "fields": [
-      "public static final java.lang.String serviceNameUnsetValue"
-    ]
   }
 }
