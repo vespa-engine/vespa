@@ -170,10 +170,10 @@ public class ConvertParsedTypes {
             for (var fieldset : schema.getFieldSets()) {
                 fieldSets.put(fieldset.name(), fieldset.getFieldNames());
             }
-            docToFill.addFieldSets(fieldSets);
             for (String inherit : doc.getInherited()) {
                 docToFill.inherit(findDocFromSchemas(inherit));
             }
+            docToFill.addFieldSets(fieldSets);
         }
     }
 
