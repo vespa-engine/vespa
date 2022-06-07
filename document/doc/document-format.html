@@ -19,7 +19,6 @@ look-ups.</p>
 <li><b>Robustness</b>. The format shall detect errors gracefully.</li>
 <li><b>Speed</b>. Deserialization shall be fast, especially for basic fields like <b>DocumentId</b>.</li> 
 <li><b>Size</b>. The serialized format shall be compact and allow for efficient storage and transfer.
-That is partly achieved by allowing different kinds of compression. As of now <b>lz4</b> are supported.</li> 
 </ul>
 </p>
 
@@ -137,26 +136,9 @@ Inventory bits describing the FieldMap element with data:<br>
 <td>2, 4 or 8</td>
 <td>Length of data block (see below). NOTE THAT THIS LENGTH INCLUDE ITSELF.</td>
 </tr>
-<tr><td>Compression</td>
-<td>Byte</td>
-<td>1</td>
-<td>Compression method
-<br>
-&nbsp;0: No compression<br>
-&nbsp;5: Uncompressable<br>
-&nbsp;6: lz4 <br>
-<p>Note that the uncompressable flag is not a configurable option. Rather it
-will be used in document instances who are configured for compression, but
-where compression yields negative results, to avoid later serializations to
-retry compression.</p>
-</td>
 <tr><td>Number of fields<td>Integer_1_4</td>
 <td>1 or 4</td>
 <td>Number of fields in data array</td>
-<tr><td colspan = "4"><b>Below item is present if compression method is not uncompressed or uncompressable</b></td></tr>
-<tr><td>Uncompressed data length<td>Integer_2_4_8</td>
-<td>2, 4 or 8</td>
-<td>Length of data block after decompression</td>
 <tr><td colspan = "4"><b>Below block is repeated "Number of fields" times</b></td></tr>
 <tr><td>Field ID<td>Integer_1_4</td>
 <td>1 or 4</td>
