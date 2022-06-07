@@ -195,7 +195,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void fillStructs(DocumentmanagerConfig config) {
             for (var thisDataType : config.datatype()) {
                 for (var struct : thisDataType.structtype()) {
@@ -262,7 +261,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void apply(DocumentmanagerConfig config) {
             splitConfig(config);
             setupAnnotationTypesWithoutPayloads(config);

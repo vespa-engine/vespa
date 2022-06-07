@@ -75,11 +75,6 @@ public class FieldUpdate {
         addValueUpdates(valueUpdates);
     }
 
-    @Deprecated
-    public FieldUpdate(DocumentUpdateReader reader, DocumentType type, int serializationVersion) {
-        this(reader, type);
-    }
-
     public FieldUpdate(DocumentUpdateReader reader, DocumentType type) {
         documentType = type;
         reader.read(this);

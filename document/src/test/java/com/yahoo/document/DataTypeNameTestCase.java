@@ -12,7 +12,6 @@ import static org.junit.Assert.assertFalse;
 public class DataTypeNameTestCase {
 
     @Test
-    @SuppressWarnings("deprecation")
     public void requireThatAccessorsWork() {
         DataTypeName name = new DataTypeName("foo");
         assertEquals("foo", name.getName());

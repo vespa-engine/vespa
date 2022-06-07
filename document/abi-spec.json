@@ -436,7 +436,6 @@
       "public void addField(com.yahoo.document.Field)",
       "public void addFieldSets(java.util.Map)",
       "public com.yahoo.document.Field addField(java.lang.String, com.yahoo.document.DataType)",
-      "public com.yahoo.document.Field addHeaderField(java.lang.String, com.yahoo.document.DataType)",
       "public void inherit(com.yahoo.document.DocumentType)",
       "public java.util.Collection getInheritedTypes()",
       "public java.util.ListIterator inheritedIterator()",
@@ -3350,7 +3349,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader, com.yahoo.document.DocumentType, int)",
       "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader, com.yahoo.document.DocumentType)",
       "public com.yahoo.document.DocumentType getDocumentType()",
       "public com.yahoo.document.Field getField()",

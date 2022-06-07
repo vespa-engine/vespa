@@ -100,7 +100,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         return dcMan;
     }
 
-    @SuppressWarnings("deprecation")
     public void setUpSertestDocType() {
         docMan = new DocumentTypeManager();
 
@@ -748,7 +747,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
     }
 
     @Test
-    @SuppressWarnings("deprecation")
     public void testSerializeDeserialize() {
         setUpSertestDocType();
         Document doc = getSertestDocument();
@@ -876,36 +874,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         Document doc = new Document(docMan.getDocumentType("impl"), new DocumentId("id:ns:impl::fooooobardoc"));
         Array<StringFieldValue> testlist = new Array<>(doc.getField("something").getDataType());
         doc.setFieldValue("something", testlist);
-    }
-
-    @SuppressWarnings("deprecation")
-    @Test
-    public void testCompressionConfiguredIsIgnored() {
-
-        int size_uncompressed;
-        {
-            DocumentTypeManager docMan = DocumentTypeManager.fromFile("src/tests/data/cppdocument.cfg");
-            Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
-
-            doc.setFieldValue("stringfield",
-                              "compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me ");
-
-            GrowableByteBuffer data = new GrowableByteBuffer();
-            doc.serialize(data);
-            size_uncompressed = data.position();
-        }
-
-        DocumentTypeManager docMan = DocumentTypeManager.fromFile("src/tests/data/compressed.cfg");
-        Document doc = new Document(docMan.getDocumentType("serializetest"), new DocumentId("id:ns:serializetest::test"));
-
-        doc.setFieldValue("stringfield",
-                          "compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me compress me ");
-
-        GrowableByteBuffer data = new GrowableByteBuffer();
-        doc.serialize(data);
-        int size_compressed = data.position();
-
-        assertEquals(size_compressed, size_uncompressed);
     }
 
     @Test
@@ -1092,7 +1060,6 @@ public class DocumentTestCase extends DocumentTestCaseBase {
         assertEquals(doc, doc2);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testUnknownFieldsDeserialization() {
         DocumentTypeManager docTypeManasjer = new DocumentTypeManager();
