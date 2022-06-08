@@ -638,7 +638,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             return sb.toString();
         }
 
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 9
         private CreateVisitorMessage createMessage(VisitorIterator.BucketProgress bucket) {
             CreateVisitorMessage msg = new CreateVisitorMessage(
                     params.getVisitorLibrary(),
@@ -997,15 +997,8 @@ public class MessageBusVisitorSession implements VisitorSession {
         progress.getIterator().update(bucket, ProgressToken.FINISHED_BUCKET);
     }
 
-    @SuppressWarnings("removal") // TODO: Vespa 8: remove
     private boolean enoughHitsReceived() {
-        // TODO: Vespa 8: remove "Nth pass" concept entirely from API and internals
-        if (params.getMaxTotalHits() != -1
-            && (statistics.getDocumentsReturned() >= params.getMaxTotalHits()))
-        {
-            return true;
-        }
-        return false;
+        return params.getMaxTotalHits() != -1 && (statistics.getDocumentsReturned() >= params.getMaxTotalHits());
     }
 
     /**
@@ -1080,7 +1073,6 @@ public class MessageBusVisitorSession implements VisitorSession {
         return scheduleSendCreateVisitorsIfApplicable(0, TimeUnit.MILLISECONDS);
     }
 
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove
     private void handleCreateVisitorReply(CreateVisitorReply reply) {
         CreateVisitorMessage msg = (CreateVisitorMessage)reply.getMessage();
 
@@ -1100,16 +1092,6 @@ public class MessageBusVisitorSession implements VisitorSession {
             trace.getRoot().addChild(reply.getTrace().getRoot());
         }
 
-        // TODO: Vespa 8 remove this unused functionality (?)
-        if (params.getDynamicallyIncreaseMaxBucketsPerVisitor()) {
-            // Attempt to increase parallelism to reduce latency of visiting
-            // Ensure new count is within [1, 128]
-            int newMaxBuckets = Math.max(Math.min((int)(params.getMaxBucketsPerVisitor()
-                    * params.getDynamicMaxBucketsIncreaseFactor()), 128), 1);
-            params.setMaxBucketsPerVisitor(newMaxBuckets);
-            log.log(Level.FINE, () -> sessionName + ": increasing max buckets per visitor to "
-                    + params.getMaxBucketsPerVisitor());
-        }
     }
 
     private void handleWrongDistributionReply(WrongDistributionReply reply) {
@@ -1237,4 +1219,5 @@ public class MessageBusVisitorSession implements VisitorSession {
             log.log(Level.FINE, () -> sessionName + ": synchronous destroy() done");
         }
     }
+
 }
