@@ -144,11 +144,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
     <!-- end WARNING -->
 
     <!-- ensure that transitive Jackson dependencies are not included in compile scope -->
@@ -210,8 +205,7 @@
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
 
-                <!-- TODO Vespa 8: embed these in container-core/disc, saving a lot of dep management. -->
-                <!--               Check if those listed in container-dep-versions are not used by hosted apps! -->
+                <!-- TODO Vespa 9 Stop providing servlet-api 3.x -->
                 javax.servlet-api-3.1.0.jar,
 
                 <!-- Aries SPIFly repackaged -->
