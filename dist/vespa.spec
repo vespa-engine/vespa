@@ -226,9 +226,9 @@ BuildRequires: zlib-devel
 BuildRequires: libicu-devel
 %endif
 %if 0%{?el7} && 0%{?amzn2}
-BuildRequires: java-11-amazon-corretto
+BuildRequires: java-17-amazon-corretto
 %else
-BuildRequires: java-11-openjdk-devel
+BuildRequires: java-17-openjdk-devel
 %endif
 BuildRequires: rpm-build
 BuildRequires: make
@@ -365,9 +365,9 @@ Vespa - The open big data serving engine
 Summary: Vespa - The open big data serving engine - base
 
 %if 0%{?el7} && 0%{?amzn2}
-Requires: java-11-amazon-corretto
+Requires: java-17-amazon-corretto
 %else
-Requires: java-11-openjdk-devel
+Requires: java-17-openjdk-devel
 %endif
 Requires: perl
 Requires: perl-Getopt-Long
@@ -597,7 +597,7 @@ source %{_rhgit227_enable} || true
 %if 0%{?_java_home:1}
 export JAVA_HOME=%{?_java_home}
 %else
-export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
@@ -648,7 +648,7 @@ cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system
 %endif
 
-ln -s /usr/lib/jvm/jre-11-openjdk %{buildroot}/%{_prefix}/jdk
+ln -s /usr/lib/jvm/jre-17-openjdk %{buildroot}/%{_prefix}/jdk
 
 %clean
 rm -rf $RPM_BUILD_ROOT
