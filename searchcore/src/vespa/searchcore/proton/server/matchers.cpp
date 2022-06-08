@@ -59,8 +59,7 @@ Matchers::lookup(const vespalib::string &name) const
     Map::const_iterator found(_rpmap.find(name));
     if (found == _rpmap.end()) {
         if (_default) {
-            // TODO Report as issue on Vespa 8
-            // vespalib::Issue::report(fmt("Failed to find rank-profile '%s'. Falling back to 'default'", name.c_str()));
+            vespalib::Issue::report(fmt("Failed to find rank-profile '%s'. Falling back to 'default'", name.c_str()));
             return _default;
         } else {
             vespalib::Issue::report(fmt("Failed to find rank-profile '%s'. Most likely a configuration issue.", name.c_str()));
