@@ -252,17 +252,15 @@
                         <extensions>true</extensions>
                         <configuration>
                             <!-- override default test bundle scope translation which translates 'test' to 'compile' -->
-                            <!-- note: ordering affects how overrides are evaluated! -->
+                            <!-- note: ordering affects how overrides are evaluated; put the most specific overrides first! -->
                             <testBundleScopeOverrides>
                                 ${extraTestBundleScopeOverrides},
-                                org.junit.jupiter:junit-jupiter-api:provided,
-                                org.junit.jupiter:junit-jupiter-engine:test,
-                                org.junit.vintage:junit-vintage-engine:test,
-                                com.yahoo.vespa:application:test,
-                                com.yahoo.vespa:container-test:test,
-                                com.yahoo.vespa:vespa-feed-client:test, <!-- prevent effective compile scope of vespa-feed-client in test bundle -->
-                                com.yahoo.vespa:vespa-feed-client-api:provided,
-                                com.yahoo.vespa:tenant-cd-api:provided
+                                org.junit.jupiter:junit-jupiter-api:provided,   <!-- ensure the api bundle provided by the tester container is used -->
+                                com.yahoo.vespa:application:test,               <!-- its transitive dependencies should be provided by the regular container -->
+                                com.yahoo.vespa:container-test:test,            <!-- its transitive dependencies should be provided by the regular container -->
+                                com.yahoo.vespa:vespa-feed-client:test,         <!-- ensure the implementation provided by the tester container is used -->
+                                com.yahoo.vespa:vespa-feed-client-api:provided, <!-- ensure the api bundle provided by the tester container is used -->
+                                com.yahoo.vespa:tenant-cd-api:provided          <!-- ensure the api bundle provided by the tester container is used -->
                             </testBundleScopeOverrides>
                         </configuration>
                         <executions>
