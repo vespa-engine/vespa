@@ -26,6 +26,12 @@
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-core</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
             <artifactId>zkfacade</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
@@ -67,13 +73,6 @@
         </dependency>
 
         <!-- test -->
-        <dependency>
-            <!-- TODO Remove when Jetty is embedded inside container-core -->
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-http</artifactId>
-            <scope>test</scope>
-            <version>${jetty.version}</version>
-        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>defaults</artifactId>

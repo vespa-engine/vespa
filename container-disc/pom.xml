@@ -144,17 +144,6 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_jetty</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
     <!-- end WARNING -->
 
     <!-- ensure that transitive Jackson dependencies are not included in compile scope -->
@@ -207,44 +196,20 @@
                 linguistics-components-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 vespa-athenz-jar-with-dependencies.jar,
-                container-apache-http-client-bundle-jar-with-dependencies.jar, <!-- Apache http client repackaged as bundle -->
+
+                <!-- Apache http client repackaged as bundle -->
+                container-apache-http-client-bundle-jar-with-dependencies.jar,
 
                 <!-- Vespa security utils with necessary 3rd party bundles -->
                 security-utils.jar,
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
 
-               <!-- Jetty -->
-                <!-- TODO Vespa 8: embed these in container-core/disc, saving a lot of dep management. -->
-                <!--               Check if those listed in container-dep-versions are not used by hosted apps! -->
-                alpn-api-${jetty-alpn.version}.jar,
-                http2-server-${jetty.version}.jar,
-                http2-common-${jetty.version}.jar,
-                http2-hpack-${jetty.version}.jar,
-                jetty-alpn-java-server-${jetty.version}.jar,
-                jetty-alpn-server-${jetty.version}.jar,
-                jetty-client-${jetty.version}.jar,
-                jetty-continuation-${jetty.version}.jar,
-                jetty-http-${jetty.version}.jar,
-                jetty-io-${jetty.version}.jar,
-                jetty-jmx-${jetty.version}.jar,
-                jetty-security-${jetty.version}.jar,
-                jetty-server-${jetty.version}.jar,
-                jetty-servlet-${jetty.version}.jar,
-                jetty-servlets-${jetty.version}.jar,
-                jetty-util-${jetty.version}.jar,
-                jetty-util-ajax-${jetty.version}.jar,
+                <!-- TODO Vespa 9 Stop providing servlet-api 3.x -->
                 javax.servlet-api-3.1.0.jar,
 
-                <!-- Spifly (required for OSGi service loader used by Jetty)  -->
-                <!-- TODO: embed these in container-core/disc, not used across bundles -->
-                org.apache.aries.spifly.dynamic.bundle-${spifly.version}.jar,
-                asm-${asm.version}.jar,
-                asm-analysis-${asm.version}.jar,
-                asm-commons-${asm.version}.jar,
-                asm-tree-${asm.version}.jar,
-                asm-util-${asm.version}.jar,
-                <!-- Spifly end -->
+                <!-- Aries SPIFly repackaged -->
+                container-spifly.jar,
 
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,
@@ -255,6 +220,10 @@
                 <!-- Only one instance of javax.ws.rs.client.ClientBuilder can be loaded by the JVM -->
                 javax.ws.rs-api-${javax.ws.rs-api.version}.jar
             </discPreInstallBundle>
+
+            <!-- Enable Spifly ServiceLoader weaving. Required for Jetty ALPN/HTTP2 -->
+            <SPI-Provider>*</SPI-Provider>
+            <SPI-Consumer>*</SPI-Consumer>
         </configuration>
       </plugin>
       <plugin>

@@ -155,7 +155,6 @@
                                         <include>com.yahoo.vespa:container-test:*:jar:test</include>
                                         <include>com.yahoo.vespa:hosted-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:indexinglanguage:*:jar:test</include>
-                                        <include>com.yahoo.vespa:jdisc_jetty:*:jar:test</include>
                                         <include>com.yahoo.vespa:logd:*:jar:test</include>
                                         <include>com.yahoo.vespa:metrics-proxy:*:jar:test</include>
                                         <include>com.yahoo.vespa:metrics:*:jar:test</include>

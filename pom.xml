@@ -64,6 +64,7 @@
         <module>container-search-and-docproc</module>
         <module>container-search</module>
         <module>container-search-gui</module>
+        <module>container-spifly</module>
         <module>container-test</module>
         <module>controller-api</module>
         <module>controller-server</module>
@@ -91,7 +92,6 @@
         <module>jdisc-security-filters</module>
         <module>jdisc_core</module>
         <module>jdisc_core_test</module>
-        <module>jdisc_jetty</module>
         <module>jrt</module>
         <module>linguistics</module>
         <module>linguistics-components</module>
