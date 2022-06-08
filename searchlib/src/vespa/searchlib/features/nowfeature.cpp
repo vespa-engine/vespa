@@ -20,9 +20,8 @@ NowExecutor::execute(uint32_t) {
 }
 
 void
-NowBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &visitor) const
+NowBlueprint::visitDumpFeatures(const fef::IIndexEnvironment &, fef::IDumpFeatureVisitor &) const
 {
-    visitor.visitDumpFeature(getBaseName());
 }
 
 bool

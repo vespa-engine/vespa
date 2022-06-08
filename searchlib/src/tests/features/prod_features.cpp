@@ -1473,7 +1473,7 @@ Test::testNow()
         FT_SETUP_OK  (pt, params, in, out.add("out"));
         FT_SETUP_FAIL(pt, params.add("foo"));
 
-        FT_DUMP(_factory, "now", StringList().add("now"));
+        FT_DUMP_EMPTY(_factory, "now");
     }
 
     {
@@ -1703,7 +1703,7 @@ Test::testMatches()
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.clear().add("bar"), in, out);
         FT_SETUP_OK(pt, ft.getIndexEnv(), params.add("1"), in, out);
 
-        FT_DUMP_EMPTY(_factory, "matches");
+        FT_DUMP(_factory, "matches", ft.getIndexEnv(), StringList().add("matches(foo)").add("matches(bar)"));
     }
     { // Test executor for index fields
         EXPECT_TRUE(assertMatches(0, "x", "a", "matches(foo)"));
