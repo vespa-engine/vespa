@@ -3,6 +3,7 @@
 #include "matchesfeature.h"
 #include "utils.h"
 #include "valuefeature.h"
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -75,9 +76,17 @@ MatchesBlueprint::MatchesBlueprint() :
 }
 
 void
-MatchesBlueprint::visitDumpFeatures(const IIndexEnvironment &,
-                                    IDumpFeatureVisitor &) const
+MatchesBlueprint::visitDumpFeatures(const IIndexEnvironment& env,
+                                    IDumpFeatureVisitor& visitor) const
 {
+    for (uint32_t i = 0; i < env.getNumFields(); ++i) {
+        const auto* field = env.getField(i);
+        if (field->type() == FieldType::INDEX || field->type() == FieldType::ATTRIBUTE) {
+            FeatureNameBuilder fnb;
+            fnb.baseName(getBaseName()).parameter(field->name());
+            visitor.visitDumpFeature(fnb.buildName());
+        }
+    }
 }
 
 bool

@@ -94,6 +94,12 @@ TEST_F(Bm25BlueprintTest, blueprint_can_prepare_shared_state_with_average_field_
     EXPECT_DOUBLE_EQ(10, as_value<double>(*store.get("bm25.afl.is")));
 }
 
+TEST_F(Bm25BlueprintTest, dump_features_for_all_index_fields)
+{
+    FtTestApp::FT_DUMP(factory, "bm25", index_env,
+                       StringList().add("bm25(is)").add("bm25(ia)").add("bm25(iws)"));
+}
+
 struct Scorer {
 
     double avg_field_length;
