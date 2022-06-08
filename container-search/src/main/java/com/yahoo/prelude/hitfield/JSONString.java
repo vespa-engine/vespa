@@ -178,8 +178,7 @@ public class JSONString implements Inspectable {
         public abstract void closeTag(StringBuilder renderTarget, int nestingLevel, String closing);
 
         /** Returns a value from an object, or null if not found */
-        @Deprecated // TODO: Remove on Vespa 8
-        protected static Object get(String field, JSONObject source) {
+        static Object get(String field, JSONObject source) {
             try {
                 return source.get(field);
             }
