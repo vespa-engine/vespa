@@ -342,7 +342,7 @@ public class ApplicationPackageBuilder {
             out.setLevel(Deflater.NO_COMPRESSION); // This is for testing purposes so we skip compression for performance
             writeZipEntry(out, "deployment.xml", deploymentSpec());
             writeZipEntry(out, "validation-overrides.xml", validationOverrides());
-            writeZipEntry(out, "search-definitions/test.sd", searchDefinition());
+            writeZipEntry(out, "schemas/test.sd", searchDefinition());
             writeZipEntry(out, "build-meta.json", buildMeta(compileVersion));
             if (!trustedCertificates.isEmpty()) {
                 writeZipEntry(out, "security/clients.pem", X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));

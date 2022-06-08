@@ -305,7 +305,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser/job/dev-us-east-1/diff/1", GET).userIdentity(HOSTED_VESPA_OPERATOR),
                 (response) -> assertTrue(response.getBodyAsString(),
-                        response.getBodyAsString().contains("--- search-definitions/test.sd\n" +
+                        response.getBodyAsString().contains("--- schemas/test.sd\n" +
                                 "@@ -1,0 +1,1 @@\n" +
                                 "+ search test { }\n")),
                 200);
