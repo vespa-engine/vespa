@@ -83,8 +83,8 @@ public class VespaDomBuilderTest {
 
     @Test
     public void testGetElement() {
-        Element e = Xml.getElement(new StringReader("<searchchain><foo>sdf</foo></searchchain>"));
-        assertEquals(e.getTagName(), "searchchain");
+        Element e = Xml.getElement(new StringReader("<chain><foo>sdf</foo></chain>"));
+        assertEquals(e.getTagName(), "chain");
         assertEquals(XML.getChild(e, "foo").getTagName(), "foo");
         assertEquals(XML.getValue(XML.getChild(e, "foo")), "sdf");
     }

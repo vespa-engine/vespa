@@ -18,36 +18,20 @@ public class InheritanceBuilder {
 
     public InheritanceBuilder(Element spec) {
         inheritance = new ChainSpecification.Inheritance(
-                // XXX: for this to work, the tagname in the spec must match the tagname inside the 'inherits' elem, e.g. 'searchchain->inherits->searchchain'
-                read(spec, "inherits", spec.getTagName()),
-                read(spec, "excludes", "exclude"));
+                read(spec, "inherits"),
+                read(spec, "excludes"));
     }
 
     public ChainSpecification.Inheritance build() {
         return inheritance;
     }
 
-    private Set<ComponentSpecification> read(Element spec, String attributeName, String elementName) {
+    private Set<ComponentSpecification> read(Element spec, String attributeName) {
         Set<ComponentSpecification> componentSpecifications = new LinkedHashSet<>();
 
         componentSpecifications.addAll(spaceSeparatedComponentSpecificationsFromAttribute(spec, attributeName));
 
-        // TODO: the 'inherits' element is undocumented, and can be removed in an upcoming version of Vespa
-        componentSpecifications.addAll(idRefFromElements(XML.getChild(spec, "inherits"), elementName));
-
-
         return componentSpecifications;
-    }
-
-    private Collection<ComponentSpecification> idRefFromElements(Element spec, String elementName) {
-        Collection<ComponentSpecification> result = new ArrayList<>();
-        if (spec == null)
-            return result;
-
-        for (Element element : XML.getChildren(spec, elementName)) {
-            result.add(XmlHelper.getIdRef(element));
-        }
-        return result;
     }
 
     private Collection<ComponentSpecification> spaceSeparatedComponentSpecificationsFromAttribute(Element spec, String attributeName) {

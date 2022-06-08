@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.builder.xml.dom.chains.search;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
 import com.yahoo.vespa.model.builder.xml.dom.chains.DomChainsBuilder;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChain;
@@ -22,14 +21,8 @@ import java.util.Map;
  */
 public class DomSearchChainsBuilder extends DomChainsBuilder<Searcher<?>, SearchChain, SearchChains> {
 
-    public DomSearchChainsBuilder(Element outerChainsElem, boolean supportSearchChainsDir) {
-        super(outerChainsElem, Arrays.asList(ComponentType.searcher, ComponentType.federation),
-              supportSearchChainsDir ? ApplicationPackage.SEARCHCHAINS_DIR: null);
-    }
-
-    // For unit testing without outer chains
     public DomSearchChainsBuilder() {
-        this(null, false);
+        super(Arrays.asList(ComponentType.searcher, ComponentType.federation));
     }
 
     @Override
