@@ -716,7 +716,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         synchronized void writeSingleDocument(Document document) throws IOException {
             boolean tensorShortForm = false;
             if (request != null && request.parameters().containsKey("format.tensors")) {
-                tensorShortForm = request.parameters().get("format.tensors").contains("short");
+                tensorShortForm = !(request.parameters().get("format.tensors").contains("long"));
             }
             new JsonWriter(json, tensorShortForm).writeFields(document);
         }
