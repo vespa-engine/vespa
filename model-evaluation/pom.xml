@@ -79,12 +79,6 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_jetty</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.lz4</groupId>
       <artifactId>lz4-java</artifactId>
     </dependency>

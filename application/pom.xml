@@ -60,15 +60,6 @@
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
-    <!-- Because these are provided in container-core and just preinstalled: -->
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_jetty</artifactId>
-      <version>${project.version}</version>
-      <scope>compile</scope>
-      <exclusions>
-      </exclusions>
-    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
