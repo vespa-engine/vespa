@@ -6,10 +6,8 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-@SuppressWarnings("removal") // TODO: Vespa 9: Remove
 public class VisitorParametersTestCase {
 
-    @SuppressWarnings("removal")// TODO: Vespa 9: Remove
     private VisitorParameters createVisitorParameters() {
         VisitorParameters params = new VisitorParameters("");
         params.setDocumentSelection("id.user==5678");
@@ -33,8 +31,6 @@ public class VisitorParametersTestCase {
         params.setRemoteDataHandler("mars_rover");
         params.setControlHandler(new VisitorControlHandler());
         params.setMaxTotalHits(777);
-        params.setDynamicallyIncreaseMaxBucketsPerVisitor(true);
-        params.setDynamicMaxBucketsIncreaseFactor(2.5f);
         params.skipBucketsOnFatalErrors(true);
 
         return params;
@@ -67,8 +63,6 @@ public class VisitorParametersTestCase {
         assertEquals("mars_rover", copy.getRemoteDataHandler());
         assertEquals(params.getControlHandler(), copy.getControlHandler());
         assertEquals(777, copy.getMaxTotalHits());
-        assertEquals(true, copy.getDynamicallyIncreaseMaxBucketsPerVisitor());
-        assertEquals(2.5f, copy.getDynamicMaxBucketsIncreaseFactor(), 0.0001);
         assertEquals(true, copy.skipBucketsOnFatalErrors());
 
         // Test local data handler copy
@@ -101,9 +95,8 @@ public class VisitorParametersTestCase {
                 "  Max total hits:     777\n" +
                 "  Max buckets:        55\n" +
                 "  Priority:           HIGHEST\n" +
-                "  Dynamically increasing max buckets per visitor\n" +
-                "  Increase factor:    2.5\n" +
                 ")",
                 params.toString());
     }
+
 }

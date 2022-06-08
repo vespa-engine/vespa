@@ -867,8 +867,6 @@
       "public java.lang.String getRemoteDataHandler()",
       "public com.yahoo.documentapi.VisitorDataHandler getLocalDataHandler()",
       "public com.yahoo.documentapi.VisitorControlHandler getControlHandler()",
-      "public boolean getDynamicallyIncreaseMaxBucketsPerVisitor()",
-      "public float getDynamicMaxBucketsIncreaseFactor()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentProtocol$Priority getPriority()",
       "public void setDocumentSelection(java.lang.String)",
       "public void setBucketSpace(java.lang.String)",
@@ -909,8 +907,6 @@
       "public void slice(int, int)",
       "public int getSlices()",
       "public int getSliceId()",
-      "public void setDynamicallyIncreaseMaxBucketsPerVisitor(boolean)",
-      "public void setDynamicMaxBucketsIncreaseFactor(float)",
       "public java.lang.String toString()"
     ],
     "fields": []

@@ -2290,49 +2290,6 @@ public class MessageBusVisitorSessionTestCase {
                 mc.controlHandler.toString());
     }
 
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove test
-    @Test
-    public void testDynamicallyIncreaseMaxBucketsPerVisitorOption() {
-        VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
-        visitorParameters.setDynamicallyIncreaseMaxBucketsPerVisitor(true);
-        visitorParameters.setMaxBucketsPerVisitor(2);
-        visitorParameters.setDynamicMaxBucketsIncreaseFactor(10);
-        MockComponents mc = createDefaultMock(visitorParameters);
-
-        mc.visitorSession.start();
-        mc.executor.expectAndProcessTasks(1);
-
-        assertEquals("CreateVisitorMessage(buckets=[\n" +
-                "BucketId(0x80000000000004d2)\n" +
-                "BucketId(0x0000000000000000)\n" +
-                "]\n" +
-                "selection='id.user==1234'\n" +
-                "max buckets per visitor=2\n)",
-                replyToCreateVisitor(mc.sender, new BucketId(33, 1234 | (1L << 32))));
-        mc.executor.expectAndProcessTasks(1); // reply
-        mc.executor.expectAndProcessTasks(1); // send create visitors
-
-        assertEquals("CreateVisitorMessage(buckets=[\n" +
-                "BucketId(0x80000000000004d2)\n" +
-                "BucketId(0x84000001000004d2)\n" +
-                "]\n" +
-                "selection='id.user==1234'\n" +
-                "max buckets per visitor=20\n)",
-                replyToCreateVisitor(mc.sender, new BucketId(34, 1234 | (1L << 33))));
-
-        mc.executor.expectAndProcessTasks(1); // reply
-        mc.executor.expectAndProcessTasks(1); // send create visitors
-
-        // Saturate at 128
-        assertEquals("CreateVisitorMessage(buckets=[\n" +
-                "BucketId(0x80000000000004d2)\n" +
-                "BucketId(0x88000002000004d2)\n" +
-                "]\n" +
-                "selection='id.user==1234'\n" +
-                "max buckets per visitor=128\n)",
-                replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET));
-    }
-
     @Test
     public void testVisitorTimeoutsNotConsideredFatal() {
         VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
