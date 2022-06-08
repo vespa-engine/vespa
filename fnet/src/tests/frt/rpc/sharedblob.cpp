@@ -29,20 +29,28 @@ struct Data
     uint32_t len;
 
     Data(const char *pt, uint32_t l) : buf(new char[l]), len(l) {
-        memcpy(buf, pt, len);
+        if (len > 0) {
+            memcpy(buf, pt, len);
+        }
     }
     Data(uint32_t l, char c) : buf(new char[l]), len(l) {
-        memset(buf, c, len);
+        if (len > 0) {
+            memset(buf, c, len);
+        }
     }
     Data(const Data &rhs) : buf(new char[rhs.len]), len(rhs.len) {
-        memcpy(buf, rhs.buf, len);
+        if (len > 0) {
+            memcpy(buf, rhs.buf, len);
+        }
     }
     Data &operator=(const Data &rhs) {
         if (this != &rhs) {
             delete [] buf;
             buf = new char[rhs.len];
             len = rhs.len;
-            memcpy(buf, rhs.buf, len);
+            if (len > 0) {
+                memcpy(buf, rhs.buf, len);
+            }
         }
         return *this;
     }
