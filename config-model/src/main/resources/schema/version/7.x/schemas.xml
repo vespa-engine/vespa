@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
+<locatingRules xmlns="http://thaiopensource.com/ns/locating-rules/1.0">
+  <documentElement localName="hosts" uri="hosts.rnc"/>
+  <documentElement localName="services" uri="services.rnc"/>
+  <documentElement localName="deployment" uri="deployment.rnc"/>
+</locatingRules>

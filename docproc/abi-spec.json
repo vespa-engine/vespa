@@ -80,8 +80,6 @@
     "methods": [
       "public void <init>(com.yahoo.docproc.DocumentProcessor)",
       "public void <init>(com.yahoo.docproc.DocumentProcessor, com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.docproc.DocumentProcessor, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.docproc.DocumentProcessor, java.lang.String, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.docproc.DocumentProcessor, java.lang.String, com.yahoo.jdisc.Metric)",
       "public java.lang.Object clone()",
       "public com.yahoo.docproc.DocumentProcessor getDocumentProcessor()",
@@ -102,12 +100,9 @@
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public void <init>(com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
-      "public void <init>(java.lang.String, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public void <init>(java.lang.String, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.docproc.CallStack)",
       "public void <init>(java.lang.String, java.util.Collection, com.yahoo.jdisc.Metric)",
-      "public void <init>(java.lang.String, java.util.Collection, com.yahoo.statistics.Statistics, com.yahoo.jdisc.Metric)",
       "public java.lang.String getName()",
       "public void setName(java.lang.String)",
       "public com.yahoo.docproc.CallStack addNext(com.yahoo.docproc.Call)",
@@ -133,74 +128,7 @@
       "public java.util.ListIterator iterator()",
       "public int size()",
       "public java.lang.String toString()",
-      "public com.yahoo.statistics.Statistics getStatistics()",
       "public com.yahoo.jdisc.Metric getMetric()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.docproc.DocprocExecutor": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String, com.yahoo.docproc.CallStack)",
-      "public void <init>(com.yahoo.docproc.DocprocExecutor, com.yahoo.docproc.CallStack)",
-      "public com.yahoo.docproc.CallStack getCallStack()",
-      "public java.lang.String getName()",
-      "public com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)",
-      "public com.yahoo.docproc.DocumentProcessor$Progress processUntilDone(com.yahoo.docproc.Processing)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.docproc.DocprocService": {
-    "superClass": "com.yahoo.component.AbstractComponent",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.component.ComponentId)",
-      "public void <init>(com.yahoo.component.ComponentId, com.yahoo.docproc.CallStack, com.yahoo.document.DocumentTypeManager, int)",
-      "public void <init>(com.yahoo.component.ComponentId, com.yahoo.docproc.CallStack, com.yahoo.document.DocumentTypeManager)",
-      "public void <init>(java.lang.String)",
-      "public void deconstruct()",
-      "public com.yahoo.document.DocumentTypeManager getDocumentTypeManager()",
-      "public void setDocumentTypeManager(com.yahoo.document.DocumentTypeManager)",
-      "public int getQueueSize()",
-      "public com.yahoo.docproc.DocprocExecutor getExecutor()",
-      "public java.util.concurrent.ThreadPoolExecutor getThreadPoolExecutor()",
-      "public void setInService(boolean)",
-      "public boolean isInService()",
-      "public boolean isAcceptingNewProcessings()",
-      "public void setAcceptingNewProcessings(boolean)",
-      "public java.lang.String getName()",
-      "public com.yahoo.docproc.CallStack getCallStack()",
-      "public void setCallStack(com.yahoo.docproc.CallStack)",
-      "public void process(com.yahoo.docproc.Processing, com.yahoo.docproc.ProcessingEndpoint)",
-      "public void process(com.yahoo.docproc.Processing)",
-      "public void process(com.yahoo.document.DocumentOperation, com.yahoo.docproc.ProcessingEndpoint)",
-      "public void process(com.yahoo.document.DocumentOperation)",
-      "public void processDocumentOperations(java.util.List, com.yahoo.docproc.ProcessingEndpoint)",
-      "public void processDocumentOperations(java.util.List)",
-      "public boolean doWork()",
-      "public boolean doWorkBlocking()"
-    ],
-    "fields": [
-      "public static com.yahoo.docproc.proxy.SchemaMap schemaMap"
-    ]
-  },
-  "com.yahoo.docproc.DocumentOperationWrapper": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract com.yahoo.document.DocumentOperation getWrappedDocumentOperation()"
     ],
     "fields": []
   },
@@ -258,33 +186,20 @@
     ],
     "fields": []
   },
-  "com.yahoo.docproc.HandledProcessingException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)"
-    ],
-    "fields": []
-  },
   "com.yahoo.docproc.Processing": {
-    "superClass": "java.lang.Object",
+    "superClass": "com.yahoo.docproc.impl.ProcessingAccess",
     "interfaces": [],
     "attributes": [
-      "public"
+      "public",
+      "final"
     ],
     "methods": [
       "public void <init>()",
       "public static com.yahoo.docproc.Processing of(com.yahoo.document.DocumentOperation)",
       "public void <init>(java.lang.String, com.yahoo.document.DocumentOperation, com.yahoo.docproc.CallStack)",
       "public static com.yahoo.docproc.Processing createProcessingFromDocumentOperations(java.lang.String, java.util.List, com.yahoo.docproc.CallStack)",
-      "public com.yahoo.component.provider.ComponentRegistry getDocprocServiceRegistry()",
-      "public void setDocprocServiceRegistry(com.yahoo.component.provider.ComponentRegistry)",
       "public java.lang.String getServiceName()",
       "public void setServiceName(java.lang.String)",
-      "public com.yahoo.docproc.DocprocService getService()",
       "public java.lang.Object getVariable(java.lang.String)",
       "public java.util.Iterator getVariableAndNameIterator()",
       "public void clearVariables()",
@@ -295,20 +210,6 @@
       "public java.util.List getDocumentOperations()",
       "public com.yahoo.docproc.CallStack callStack()",
       "public java.lang.String toString()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.docproc.ProcessingEndpoint": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract void processingDone(com.yahoo.docproc.Processing)",
-      "public abstract void processingFailed(com.yahoo.docproc.Processing, java.lang.Exception)"
     ],
     "fields": []
   },
@@ -324,41 +225,6 @@
       "public void process(com.yahoo.document.DocumentUpdate)",
       "public void process(com.yahoo.document.DocumentRemove)",
       "public final com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.docproc.TransientFailureException": {
-    "superClass": "java.lang.RuntimeException",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(java.lang.String)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.docproc.util.JoinerDocumentProcessor": {
-    "superClass": "com.yahoo.docproc.DocumentProcessor",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.config.docproc.SplitterJoinerDocumentProcessorConfig, com.yahoo.document.config.DocumentmanagerConfig)",
-      "public com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.docproc.util.SplitterDocumentProcessor": {
-    "superClass": "com.yahoo.docproc.DocumentProcessor",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.config.docproc.SplitterJoinerDocumentProcessorConfig, com.yahoo.document.config.DocumentmanagerConfig)",
-      "public com.yahoo.docproc.DocumentProcessor$Progress process(com.yahoo.docproc.Processing)"
     ],
     "fields": []
   }

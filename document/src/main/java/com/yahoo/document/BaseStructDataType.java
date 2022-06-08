@@ -1,9 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.compress.CompressionType;
-import com.yahoo.compress.Compressor;
-
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -98,26 +95,5 @@ public abstract class BaseStructDataType extends StructuredDataType {
     public int getFieldCount() {
         return fields.size();
     }
-
-    /** Returns the compressor to use to compress data of this type
-     * @deprecated Will go away on Vespa 8
-     */
-    @Deprecated
-    public Compressor getCompressor() { return new Compressor(CompressionType.NONE); }
-
-    /** Returns a view of the configuration of the compressor used to compress this type
-     * @deprecated Will go away on Vespa 8
-     */
-    @Deprecated
-    public CompressionConfig getCompressionConfig() {
-        return new CompressionConfig();
-    }
-
-    /**
-     *  Set the config to the compressor used to compress data of this type
-     * @deprecated Ignored and will go away on Vespa 8
-     */
-    @Deprecated
-    public void setCompressionConfig(CompressionConfig config) { }
 
 }

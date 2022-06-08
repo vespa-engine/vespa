@@ -169,12 +169,6 @@ public final class Q {
         return new WeakAnd(query);
     }
 
-    /** @deprecated use weakand(query) */
-    @Deprecated // Remove on Vespa 8
-    public static WeakAnd weakand(String ignored, Query query) {
-        return new WeakAnd(query);
-    }
-
     /**
      * GeoLocation geo location
      * https://docs.vespa.ai/en/reference/query-language-reference.html#geolocation

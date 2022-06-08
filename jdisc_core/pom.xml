@@ -8,11 +8,11 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>jdisc_core</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>${project.artifactId}</name>
     <dependencies>
@@ -40,11 +40,6 @@
             <groupId>xml-apis</groupId>
             <artifactId>xml-apis</artifactId>
             <version>1.4.01</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.2</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
@@ -77,30 +72,6 @@
             <artifactId>guice</artifactId>
             <scope>compile</scope>
             <classifier>no_aop</classifier> <!-- Non-AOP version required for Java 8 compatibility -->
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-assistedinject</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <!-- Depends on AOP version of Guice 3.0, which is not Java 8 compatible -->
-                <exclusion>
-                    <groupId>com.google.inject</groupId>
-                    <artifactId>guice</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject.extensions</groupId>
-            <artifactId>guice-multibindings</artifactId>
-            <scope>compile</scope>
-            <exclusions>
-                <!-- Depends on AOP version of Guice 3.0, which is not Java 8 compatible -->
-                <exclusion>
-                    <groupId>com.google.inject</groupId>
-                    <artifactId>guice</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
@@ -244,10 +215,6 @@
                                 <argument>${exportPackagesFile}</argument>
                                 <argument>__REPLACE_VERSION__${project.build.directory}/dependency/guava.jar</argument>
                                 <argument>${project.build.directory}/dependency/guice-no_aop.jar</argument>
-                                <argument>${project.build.directory}/dependency/guice-assistedinject.jar</argument>
-                                <argument>${project.build.directory}/dependency/guice-multibindings.jar</argument>
-                                <argument>${project.build.directory}/dependency/javax.annotation-api.jar</argument>
-                                <argument>${project.build.directory}/dependency/org.apache.felix.log.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/slf4j-jdk14.jar</argument>
                                 <argument>${project.build.directory}/dependency/jcl-over-slf4j.jar</argument>

@@ -1240,8 +1240,6 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::CreateVisitorReply&
         proto_stats->set_bytes_visited(stats.getBytesVisited());
         proto_stats->set_documents_returned(stats.getDocumentsReturned());
         proto_stats->set_bytes_returned(stats.getBytesReturned());
-        proto_stats->set_second_pass_documents_returned(stats.getSecondPassDocumentsReturned()); // TODO remove on Vespa 8
-        proto_stats->set_second_pass_bytes_returned(stats.getSecondPassBytesReturned()); // TODO remove on Vespa 8
     });
 }
 
@@ -1287,8 +1285,6 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeCreateVisitorReply(const S
         vs.setBytesVisited(proto_stats.bytes_visited());
         vs.setDocumentsReturned(proto_stats.documents_returned());
         vs.setBytesReturned(proto_stats.bytes_returned());
-        vs.setSecondPassDocumentsReturned(proto_stats.second_pass_documents_returned()); // TODO remove on Vespa 8
-        vs.setSecondPassBytesReturned(proto_stats.second_pass_bytes_returned()); // TODO remove on Vespa 8
         reply->setVisitorStatistics(vs);
         return reply;
     });

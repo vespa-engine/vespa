@@ -126,7 +126,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void ssl_element_generates_connector_config_and_injects_provider_component() {
         Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0' jetty='true'>",
+                "<container id='default' version='1.0'>",
                 "    <http>",
                 "        <server port='9000' id='minimal'>",
                 "            <ssl>",
@@ -198,7 +198,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_tht_ssl_provider_configuration_configures_correct_config() {
         Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0' jetty='true'>",
+                "<container id='default' version='1.0'>",
                 "    <http>",
                 "        <server port='9000' id='ssl'>",
                 "            <ssl-provider class='com.yahoo.CustomSslProvider' bundle='mybundle'/>",
@@ -222,7 +222,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_container_factory_sees_same_config(){
         Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0' jetty='true'>",
+                "<container id='default' version='1.0'>",
                 "    <http>",
                 "        <server port='9000' id='ssl'>",
                 "            <ssl>",
@@ -243,7 +243,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     @Test
     public void verify_that_container_setup_additional_tls4443(){
         Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0' jetty='true'>",
+                "<container id='default' version='1.0'>",
                 "    <http>",
                 "        <server port='8080' id='ssl'>",
                 "            <ssl>",

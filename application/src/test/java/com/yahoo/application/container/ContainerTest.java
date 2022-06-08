@@ -64,11 +64,10 @@ public class ContainerTest {
         try (JDisc container = fromServicesXml("<services>" + //
                 "<container version=\"1.0\" id=\"id1\" />" + //
                 "<container version=\"1.0\" />" + //
-                "<jdisc version=\"1.0\"/>" + //
                 "</services>", Networking.disable)) {
             fail("expected exception");
         } catch (Exception e) {
-            assertTrue(e.getMessage().contains("container id='id1', container id='', jdisc id=''"));
+            assertTrue(e.getMessage().contains("container id='id1', container id=''"));
         }
     }
 

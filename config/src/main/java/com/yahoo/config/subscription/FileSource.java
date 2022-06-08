@@ -7,9 +7,7 @@ import java.io.File;
  * Source specifying config from one local file
  *
  * @author Vegard Havdal
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class FileSource implements ConfigSource {
 
     private final File file;

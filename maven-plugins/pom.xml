@@ -5,13 +5,13 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>maven-plugins</artifactId>
     <packaging>pom</packaging>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <description>Parent artifact for Vespa maven plugins.</description>
     <url>http://yahoo.github.io/vespa</url>
 

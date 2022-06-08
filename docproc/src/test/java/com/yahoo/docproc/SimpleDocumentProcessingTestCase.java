@@ -3,6 +3,7 @@ package com.yahoo.docproc;
 
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.docproc.Accesses.Field.Tree;
+import com.yahoo.docproc.impl.DocprocService;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -20,7 +21,6 @@ public class SimpleDocumentProcessingTestCase extends DocumentProcessingAbstract
      * on some documents
      */
     @Test
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void testSimpleProcessing() {
         // Set up service programmatically
         DocprocService service = new DocprocService("simple");

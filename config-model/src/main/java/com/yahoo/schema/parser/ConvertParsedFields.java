@@ -76,7 +76,6 @@ public class ConvertParsedFields {
                 field.addAttribute(attribute);
             }
         }
-        attribute.setHuge(parsed.getHuge());
         attribute.setPaged(parsed.getPaged());
         attribute.setFastSearch(parsed.getFastSearch());
         if (parsed.getFastRank()) {

@@ -31,7 +31,7 @@ class MaintainerTester {
 
     MaintainerTester(Clock clock, TemporaryFolder temporaryFolder) throws IOException {
         this.curator = new MockCurator();
-        InMemoryProvisioner hostProvisioner = new InMemoryProvisioner(7, false);
+        InMemoryProvisioner hostProvisioner = new InMemoryProvisioner(9, false);
         Provisioner provisioner = new MockProvisioner().hostProvisioner(hostProvisioner);
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
                 .hostedVespa(true)

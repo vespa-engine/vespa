@@ -28,11 +28,6 @@ public class ConvertParsedTypes {
     private final List<ParsedSchema> orderedInput;
     private final DocumentTypeManager docMan;
 
-    ConvertParsedTypes(List<ParsedSchema> input) {
-        this.orderedInput = input;
-        this.docMan = new DocumentTypeManager();
-    }
-
     public ConvertParsedTypes(List<ParsedSchema> input, DocumentTypeManager docMan) {
         this.orderedInput = input;
         this.docMan = docMan;
@@ -46,9 +41,9 @@ public class ConvertParsedTypes {
         }
     }
 
-    private Map<String, DocumentType> documentsFromSchemas = new HashMap<>();
-    private Map<String, StructDataType> structsFromSchemas = new HashMap<>();
-    private Map<String, SDAnnotationType> annotationsFromSchemas = new HashMap<>();
+    private final Map<String, DocumentType> documentsFromSchemas = new HashMap<>();
+    private final Map<String, StructDataType> structsFromSchemas = new HashMap<>();
+    private final Map<String, SDAnnotationType> annotationsFromSchemas = new HashMap<>();
 
     private void startDataTypes() {
         for (var schema : orderedInput) {
@@ -170,10 +165,10 @@ public class ConvertParsedTypes {
             for (var fieldset : schema.getFieldSets()) {
                 fieldSets.put(fieldset.name(), fieldset.getFieldNames());
             }
-            docToFill.addFieldSets(fieldSets);
             for (String inherit : doc.getInherited()) {
                 docToFill.inherit(findDocFromSchemas(inherit));
             }
+            docToFill.addFieldSets(fieldSets);
         }
     }
 
@@ -297,7 +292,6 @@ public class ConvertParsedTypes {
         throw new IllegalArgumentException("unknown type named '" + name + "' in context "+context);
     }
 
-    @SuppressWarnings("deprecation")
     private void registerDataTypes() {
         for (DataType t : structsFromSchemas.values()) {
             docMan.register(t);

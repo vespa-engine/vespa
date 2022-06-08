@@ -192,14 +192,19 @@ public class VespaModelTester {
         VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(hosts, services, generateSchemas("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
-        provisioner = hosted ?        new ProvisionerAdapter(new InMemoryProvisioner(hostsByResources,
-                                                                                     failOnOutOfCapacity,
-                                                                                     useMaxResources,
-                                                                                     alwaysReturnOneNode,
-                                                                                     false,
-                                                                                     startIndexForClusters,
-                                                                                     retiredHostNames)) :
-                                      new SingleNodeProvisioner();
+        if (hosted) {
+            InMemoryProvisioner provisioner = new InMemoryProvisioner(hostsByResources,
+                                                                      failOnOutOfCapacity,
+                                                                      useMaxResources,
+                                                                      alwaysReturnOneNode,
+                                                                      false,
+                                                                      startIndexForClusters,
+                                                                      retiredHostNames);
+            provisioner.setEnvironment(zone.environment());
+            this.provisioner = new ProvisionerAdapter(provisioner);
+        } else {
+            provisioner = new SingleNodeProvisioner();
+        }
 
         TestProperties properties = new TestProperties()
                 .setMultitenant(hosted) // Note: system tests are multitenant but not hosted

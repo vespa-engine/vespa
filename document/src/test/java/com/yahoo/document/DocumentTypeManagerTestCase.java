@@ -25,7 +25,6 @@ public class DocumentTypeManagerTestCase {
 
     // Verify that we can register and retrieve fields.
     @Test
-    @SuppressWarnings("deprecation")
     public void testRegisterAndGet() {
         DocumentTypeManager manager = new DocumentTypeManager();
 
@@ -59,7 +58,6 @@ public class DocumentTypeManagerTestCase {
         assertSame(DataType.DOUBLE, doubleType);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testRecursiveRegister() {
         StructDataType struct = new StructDataType("mystruct");
@@ -77,18 +75,17 @@ public class DocumentTypeManagerTestCase {
         DocumentTypeManager manager = new DocumentTypeManager();
         manager.register(docType2);
 
-        assertEquals(struct, manager.getDataType(struct.getId()));
+        assertEquals(struct, manager.getDataTypeByCode(struct.getId()));
         assertEquals(struct, manager.getDataTypeInternal("mystruct"));
-        assertEquals(wset1, manager.getDataType(wset1.getId()));
-        assertEquals(wset2, manager.getDataType(wset2.getId()));
-        assertEquals(array, manager.getDataType(array.getId()));
+        assertEquals(wset1, manager.getDataTypeByCode(wset1.getId()));
+        assertEquals(wset2, manager.getDataTypeByCode(wset2.getId()));
+        assertEquals(array, manager.getDataTypeByCode(array.getId()));
         assertEquals(docType, manager.getDataTypeInternal("mydoc"));
         assertEquals(docType2, manager.getDataTypeInternal("myotherdoc"));
         assertEquals(docType, manager.getDocumentType(new DataTypeName("mydoc")));
         assertEquals(docType2, manager.getDocumentType(new DataTypeName("myotherdoc")));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testMultipleDocuments() {
         DocumentType docType1 = new DocumentType("foo0");
@@ -104,7 +101,7 @@ public class DocumentTypeManagerTestCase {
         docType4.addField("bar", DataType.RAW);
 
         DocumentTypeManager manager = new DocumentTypeManager();
-        manager.clear();
+        manager.internalClear();
         manager.register(docType1);
         manager.register(docType2);
         manager.register(docType3);
@@ -122,16 +119,14 @@ public class DocumentTypeManagerTestCase {
         assertEquals(manager.getDocumentTypes().get(new DataTypeName("foo1")), docType2);
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testReverseMapOrder() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.map.cfg");
 
-        assertNotNull(manager.getDataType(1000));
-        assertNotNull(manager.getDataType(1001));
+        assertNotNull(manager.getDataTypeByCode(1000));
+        assertNotNull(manager.getDataTypeByCode(1001));
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void testConfigure() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.cfg");
@@ -154,7 +149,6 @@ public class DocumentTypeManagerTestCase {
         assertTrue(foobarfield0.getDataType().getCode() == 2);
 
         Field foobarfield1 = type.getField("foobarfield1");
-        assertTrue(foobarfield1.isHeader());
         assertTrue(foobarfield1.getDataType().getCode() == 4);
 
 
@@ -169,7 +163,6 @@ public class DocumentTypeManagerTestCase {
         assertTrue(type.hasField("bananafield0"));
 
         Field bananafield0 = type.getField("bananafield0");
-        assertTrue(bananafield0.isHeader());
         assertTrue(bananafield0.getDataType().getCode() == 16);
 
         //inheritance:
@@ -504,10 +497,9 @@ search annotationsimplicitstruct {
         assertReferenceTypePresentInManager(manager, 12345678, "referenced_type");
     }
 
-    @SuppressWarnings("deprecation")
     private static void assertReferenceTypePresentInManager(DocumentTypeManager manager, int refTypeId,
                                                             String refTargetTypeName) {
-        DataType type = manager.getDataType(refTypeId);
+        DataType type = manager.getDataTypeByCode(refTypeId);
         assertTrue(type instanceof ReferenceDataType);
         ReferenceDataType refType = (ReferenceDataType) type;
 
@@ -530,14 +522,12 @@ search annotationsimplicitstruct {
         assertReferenceTypePresentInManager(manager, 87654321, "referenced_type2");
     }
 
-    @SuppressWarnings("deprecation")
     @Test
     public void no_temporary_targets_in_references_or_names() {
         DocumentTypeManager manager = createConfiguredManager("file:src/test/document/documentmanager.replaced_temporary.cfg");
         DocumentType docType = manager.getDocumentType("ad");
         Field f = docType.getField("campaign_ref");
         assertTrue(f.getDataType() instanceof ReferenceDataType);
-        assertFalse(((ReferenceDataType)f.getDataType()).getTargetType() instanceof TemporaryStructuredDataType);
         assertEquals("Reference<mystiqueCampaign>", f.getDataType().getName());
     }
 

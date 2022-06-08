@@ -8,11 +8,11 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>container-disc</artifactId>
-  <version>7-SNAPSHOT</version>
+  <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
   <dependencies>
     <dependency>
@@ -69,10 +69,6 @@
       <artifactId>security-utils</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.json</groupId>
-      <artifactId>json</artifactId>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -250,28 +246,14 @@
                 asm-util-${asm.version}.jar,
                 <!-- Spifly end -->
 
-                <!-- Jersey 2 + Jackson 2 -->
-                aopalliance-repackaged-${hk2.version}.jar,
-                hk2-api-${hk2.version}.jar,
-                hk2-locator-${hk2.version}.jar,
-                hk2-utils-${hk2.version}.jar,
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,
                 jackson-databind-${jackson-databind.version}.jar,
                 jackson-datatype-jdk8-${jackson2.version}.jar,
                 jackson-datatype-jsr310-${jackson2.version}.jar,
-                jackson-jaxrs-base-${jackson2.version}.jar,
-                jackson-jaxrs-json-provider-${jackson2.version}.jar,
-                jackson-module-jaxb-annotations-${jackson2.version}.jar,
-                javassist-${javassist.version}.jar,
-                javax.ws.rs-api-${javax.ws.rs-api.version}.jar,
-                jersey-client-${jersey2.version}.jar,
-                jersey-common-${jersey2.version}.jar,
-                jersey-guava-${jersey2.version}.jar,
-                jersey-server-${jersey2.version}.jar,
-                osgi-resource-locator-1.0.1.jar,
-                validation-api-1.1.0.Final.jar
-                <!-- jersey2 end -->
+
+                <!-- Only one instance of javax.ws.rs.client.ClientBuilder can be loaded by the JVM -->
+                javax.ws.rs-api-${javax.ws.rs-api.version}.jar
             </discPreInstallBundle>
         </configuration>
       </plugin>

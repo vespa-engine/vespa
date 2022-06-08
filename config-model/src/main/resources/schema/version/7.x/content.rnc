@@ -1,0 +1,395 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace a = "http://relaxng.org/ns/compatibility/annotations/1.0"
+
+include "container.rnc"
+include "searchchains.rnc"
+
+Redundancy = element redundancy {
+    attribute reply-after { xsd:nonNegativeInteger }? &
+    xsd:nonNegativeInteger
+}
+
+DistributionType = element distribution {
+    attribute type { string "strict" | string "loose" | string "legacy" }
+}
+
+BucketSplitting = element bucket-splitting {
+    attribute max-documents { xsd:nonNegativeInteger }? &
+    attribute max-size { xsd:nonNegativeInteger }? &
+    attribute minimum-bits { xsd:nonNegativeInteger }?
+}
+
+MergeTuning = element merges {
+    attribute max-per-node { xsd:nonNegativeInteger }? &
+    attribute max-queue-size { xsd:nonNegativeInteger }? &
+    attribute max-nodes-per-merge { xsd:nonNegativeInteger {
+            minInclusive = "2" maxInclusive = "16" } }?
+}
+
+VisitorMaxConcurrent = element max-concurrent {
+    attribute fixed { xsd:nonNegativeInteger }? &
+    attribute variable { xsd:nonNegativeInteger }?
+}
+
+VisitorTuning = element visitors {
+    attribute thread-count { xsd:nonNegativeInteger }? &
+    attribute max-queue-size { xsd:nonNegativeInteger }? &
+    VisitorMaxConcurrent?
+}
+
+Maintenance = element maintenance {
+    attribute start { xsd:string { pattern = "[0-9]{2}:[0-9]{2}" } },
+    attribute stop { xsd:string { pattern = "[0-9]{2}:[0-9]{2}" } },
+    attribute high { string "monday" | string "tuesday" | string "wednesday" |
+                     string "thursday" | string "friday" | string "saturday" |
+                     string "sunday" }
+}
+
+PersistenceThread = element thread {
+  ## The lowest priority this thread should handle.
+  attribute lowest-priority { string "HIGHEST" | string "VERY_HIGH" | string "HIGH_1" |
+        string "HIGH_2" | string "HIGH_3" | string "NORMAL_1" | string "NORMAL_2" |
+        string "NORMAL_3" | string "NORMAL_4" | string "NORMAL_5" | string "NORMAL_6" |
+        string "LOW_1" | string "LOW_2" | string "LOW_3" | string "VERY_LOW" }? &
+  ## The number of threads of this type to create
+  attribute count { xsd:integer }?
+}
+
+## Declare which storage threads each disk should have.
+PersistenceThreads = element persistence-threads {
+  ## The number of threads to create
+  attribute count { xsd:integer }? &
+  ## All of the below settings are deprecated.
+  ## Operations with priority worse than this can be blocked
+  attribute highest-priority-to-block { xsd:string } ? &
+  ## Operations with priority better than this can block others
+  attribute lowest-priority-to-block-others { xsd:string } ? &
+  Thread*
+}
+
+MinNodeRatioPerGroup = element min-node-ratio-per-group {
+  xsd:double { minInclusive = "0" maxInclusive = "1" }
+}
+
+ClusterControllerTuning = element cluster-controller {
+    element init-progress-time { xsd:string { pattern = "([0-9\.]+)\s*([a-z]+)?" } }? &
+    element transition-time {  xsd:string { pattern = "([0-9\.]+)\s*([a-z]+)?" }  }? &
+    element max-premature-crashes { xsd:nonNegativeInteger }? &
+    element stable-state-period {  xsd:string { pattern = "([0-9\.]+)\s*([a-z]+)?" }  }? &
+    element min-distributor-up-ratio { xsd:double }? &
+    element min-storage-up-ratio { xsd:double }?
+}
+
+DispatchTuning = element dispatch {
+    element max-hits-per-partition { xsd:nonNegativeInteger }? &
+    element dispatch-policy { string "round-robin" | string "adaptive" | string "random" }? &
+    element min-group-coverage { xsd:double }? &
+    element min-active-docs-coverage { xsd:double }? &
+    element top-k-probability { xsd:double }? &
+    element use-local-node { string "true" | string "false" }?
+}
+
+ClusterTuning = element tuning {
+   DispatchTuning? &
+   DistributionType? &
+   BucketSplitting? &
+   MergeTuning? &
+   VisitorTuning? &
+   ClusterControllerTuning? &
+   Maintenance? &
+   PersistenceThreads? &
+   MinNodeRatioPerGroup? &
+   ResourceLimits?
+}
+
+Content = element content {
+    attribute version { "1.0" } &
+    attribute id { xsd:NCName }? &
+    attribute distributor-base-port { xsd:unsignedShort }? &
+    # Mandatory
+    Redundancy &
+    ContentSearch? &
+    Dispatch? &
+    ClusterTuning? &
+    # Can be used for caches and feedbatching.
+    GenericConfig* &
+    Engine? &
+    # Here you can add document definitions that you also want to handle.
+    # Search might want to know of them in advance.
+    Documents? &
+    ContentNodes? &
+    TopGroup? &
+    Controllers?
+    # Contains experimental feature switches
+    #Experimental?
+}
+
+Controllers =
+  element controllers {
+    OptionalDedicatedNodes
+  }
+
+ContentSearch = element search {
+    element query-timeout { xsd:double { minInclusive = "0" } }? &
+    element visibility-delay { xsd:double { minInclusive = "0" } }? &
+    SearchCoverage?
+}
+
+SearchCoverage = element coverage {
+    element minimum { xsd:double { minInclusive = "0" maxInclusive = "1" } }? &
+    element min-wait-after-coverage-factor { xsd:double { minInclusive = "0" maxInclusive = "1" } }? &
+    element max-wait-after-coverage-factor { xsd:double { minInclusive = "0" maxInclusive = "1" } }?
+}
+
+Dispatch = element dispatch {
+    element num-dispatch-groups { xsd:nonNegativeInteger }? &
+    DispatchGroup*
+}
+
+DispatchGroup = element group {
+    DispatchNode+
+}
+
+DispatchNode = element node {
+    attribute distribution-key { xsd:nonNegativeInteger }
+}
+
+## Specification of what document processing should be done for indexing.
+DocumentProcessing = element document-processing {
+    attribute cluster { text }? &
+    attribute chain { text }?
+}
+
+## Config for the persistence providers.
+Engine = element engine {
+   (Proton | Dummy)
+}
+
+Proton = element proton {
+    element flush-on-shutdown { xsd:string }? &
+    element sync-transactionlog { xsd:string }? &
+    element visibility-delay { xsd:double { minInclusive = "0.0" } }? &
+    element query-timeout { xsd:double { minInclusive = "0.0" } }? &
+    element searchable-copies { xsd:integer { minInclusive = "0" } }? &
+    ResourceLimits? &
+    Tuning?
+}
+
+ResourceLimits = element resource-limits {
+    element disk { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }? &
+    element memory { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
+}
+
+Dummy = element dummy {
+    text
+}
+
+Documents = element documents {
+    attribute selection { xsd:string }? &
+    attribute garbage-collection { xsd:string }? &
+    attribute garbage-collection-interval { xsd:nonNegativeInteger }? &
+    DocumentProcessing? &
+
+    element document {
+        attribute type { xsd:string } &
+        attribute selection { xsd:string }? &
+        attribute mode { string "index" | string "streaming" | string "store-only" } &
+        attribute global { xsd:boolean }?
+    }+
+}
+
+ContentNode = element node {
+    GenericConfig* &
+    service.attlist &
+    attribute distribution-key { xsd:nonNegativeInteger } &
+    attribute capacity { xsd:double { minExclusive = "0.0" } }? &
+    attribute mmap-core-limit { xsd:nonNegativeInteger }? &
+    attribute core-on-oom { xsd:boolean }? &
+    attribute no-vespamalloc { xsd:string }? &
+    attribute vespamalloc { xsd:string }? &
+    attribute vespamalloc-debug { xsd:string }? &
+    attribute vespamalloc-debug-stacktrace { xsd:string }? &
+    attribute cpu-socket { xsd:nonNegativeInteger }?
+}
+
+ContentNodes = element nodes {
+    Resources? &
+    attribute cpu-socket-affinity { xsd:string }? &
+    attribute mmap-core-limit { xsd:nonNegativeInteger }? &
+    attribute core-on-oom { xsd:boolean }? &
+    attribute no-vespamalloc { xsd:string }? &
+    attribute vespamalloc { xsd:string }? &
+    attribute vespamalloc-debug { xsd:string }? &
+    attribute vespamalloc-debug-stacktrace { xsd:string }? &
+    (
+      (
+        attribute count { xsd:positiveInteger | xsd:string } &
+        attribute flavor { xsd:string }? &
+        attribute required { xsd:boolean }? &
+        attribute exclusive { xsd:boolean }? &
+        attribute docker-image { xsd:string }? &
+        attribute groups { xsd:positiveInteger | xsd:string }?
+      )
+      |
+      ContentNode +
+    )
+}
+
+TopGroup = element group {
+    # Neither name nor distribution key makes any sense for the top group. There has to be
+    # a top group so it never needs referring to, and it's only one group to choose from so
+    # it has no use of a distribution key. Leaving it allowed to set them for now to not
+    # break all system tests and backward compatibility.
+    attribute name { xsd:string }? &
+    attribute cpu-socket-affinity { xsd:string }? &
+    attribute mmap-core-limit { xsd:nonNegativeInteger }? &
+    attribute core-on-oom { xsd:boolean }? &
+    attribute no-vespamalloc { xsd:string }? &
+    attribute vespamalloc { xsd:string }? &
+    attribute vespamalloc-debug { xsd:string }? &
+    attribute vespamalloc-debug-stacktrace { xsd:string }? &
+    attribute distribution-key { xsd:nonNegativeInteger }? &
+    (
+        ContentNode +
+          |
+        (
+            element distribution {
+                attribute partitions { xsd:string }
+            } &
+            Group +
+        )
+    )
+}
+
+Group = element group {
+    attribute distribution-key { xsd:nonNegativeInteger } &
+    attribute name { xsd:string } &
+    (
+        ContentNode +
+        |
+        (
+            element nodes {
+                attribute count { xsd:positiveInteger | xsd:string  } &
+                attribute flavor { xsd:string }? &
+                attribute required { xsd:boolean }? &
+                attribute exclusive { xsd:boolean }? &
+                attribute docker-image { xsd:string }? &
+                attribute groups { xsd:positiveInteger | xsd:string  }?
+            }
+        )
+        |
+        (
+            element distribution {
+                attribute partitions { xsd:string }
+            } &
+            Group +
+        )
+    )
+}
+
+Tuning = element tuning {
+   element dispatch {
+      element max-hits-per-partition { xsd:nonNegativeInteger }?
+   }? &
+   element searchnode {
+      element requestthreads {
+         element search { xsd:nonNegativeInteger }? &
+         element persearch { xsd:nonNegativeInteger }? &
+         element summary { xsd:nonNegativeInteger }?
+      }? &
+      element flushstrategy {
+         element native {
+            element total {
+               element maxmemorygain { xsd:nonNegativeInteger }? &
+               element diskbloatfactor { xsd:double { minInclusive = "0.0" } }?
+            }? &
+            element component {
+               element maxmemorygain { xsd:nonNegativeInteger }? &
+               element diskbloatfactor { xsd:double { minInclusive = "0.0" } }? &
+               element maxage { xsd:nonNegativeInteger }?
+            }? &
+            element transactionlog {
+               element maxsize { xsd:nonNegativeInteger }?
+            }? &
+            element conservative {
+               element memory-limit-factor { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }? &
+               element disk-limit-factor { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
+            }?
+         }?
+      }? &
+      element resizing {
+         element initialdocumentcount { xsd:nonNegativeInteger }? &
+         element amortize-count { xsd:nonNegativeInteger }?
+      }? &
+      element index {
+         element io {
+            element write { TuningIoOptionsLight }? &
+            element read { TuningIoOptionsLight }? &
+            element search { TuningIoOptionsSearch }?
+         }? &
+         element warmup { 
+            element time { xsd:double { minInclusive = "0.0" } }? &
+            element unpack { xsd:boolean }?
+         }?
+      }? &
+      element attribute {
+         element io {
+            element write { TuningIoOptionsLight }?
+         }
+      }? &
+      element summary {
+         element io {
+            element write { TuningIoOptionsLight }? &
+            element read { TuningIoOptionsFull }?
+         }? &
+         element store {
+            element cache {
+               element maxsize { xsd:nonNegativeInteger }? &
+               element maxsize-percent { xsd:double { minInclusive = "0.0" maxInclusive = "50.0" } }? &
+               element initialentries { xsd:nonNegativeInteger }? &
+               TuningCompression?
+            }? &
+            element logstore {
+               element maxfilesize { xsd:nonNegativeInteger }? &
+               element minfilesizefactor { xsd:double { minInclusive = "0.10" maxInclusive = "1.0" } }? &
+               element chunk {
+                  element maxsize { xsd:nonNegativeInteger }? &
+                  TuningCompression?
+               }?
+            }?
+         }?
+      }? &
+      element initialize {
+         element threads { xsd:nonNegativeInteger }?
+      }? &
+      element feeding {
+         element concurrency { xsd:double { minInclusive = "0.0" maxInclusive = "1.0" } }?
+      }? &
+      element removed-db {
+         element prune {
+            element age { xsd:double { minInclusive = "0.0" } }? &
+            element interval { xsd:double { minInclusive = "60.0" } }?
+         }?
+      }?
+   }?
+}
+
+TuningIoOptionsLight = string "normal" | string "directio"
+TuningIoOptionsFull = string "normal" | string "directio" | string "mmap" | string "populate"
+TuningIoOptionsSearch = string "mmap" | string "populate"
+
+TuningCompression = element compression {
+   element type { string "none" | string "lz4" | string "zstd" }? &
+   element level { xsd:nonNegativeInteger }?
+}
+
+#Experimental = element experimental {
+# Put experimental flags here
+#}
+
+Thread = element thread {
+  ## The lowest priority this thread should handle.
+  attribute lowest-priority { xsd:string}? &
+  ## The number of threads of this type to create
+  attribute count { xsd:integer }?
+}

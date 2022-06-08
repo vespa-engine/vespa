@@ -5,7 +5,7 @@
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>vespa</artifactId>
     <packaging>pom</packaging>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <description>Aggregator pom for vespa.</description>
     <url>https://github.com/vespa-engine</url>
 
@@ -119,7 +119,6 @@
         <module>service-monitor</module>
         <module>socket_test</module>
         <module>standalone-container</module>
-        <module>statistics</module>
         <module>storage</module>
         <module>streamingvisitors</module>
         <module>tenant-base</module>
@@ -136,12 +135,11 @@
         <module>vespa-feed-client-api</module>
         <module>vespa-feed-client-cli</module>
         <module>vespa-hadoop</module>
-        <module>vespa-http-client</module>
         <module>vespa-maven-plugin</module>
         <module>vespa-osgi-testrunner</module>
         <module>vespa-testrunner-components</module>
         <module>vespa_feed_perf</module>
-        <module>vespa_jersey2</module>
+        <module>vespa-3party-bundles</module>
         <module>vespajlib</module>
         <module>vespalog</module>
         <module>yolean</module>

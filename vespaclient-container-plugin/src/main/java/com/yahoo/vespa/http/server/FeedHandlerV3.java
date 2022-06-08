@@ -13,7 +13,6 @@ import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.messagebus.ReplyHandler;
 import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.shared.SharedSourceSession;
-import com.yahoo.vespa.http.client.core.Headers;
 import com.yahoo.yolean.Exceptions;
 
 import java.util.HashMap;

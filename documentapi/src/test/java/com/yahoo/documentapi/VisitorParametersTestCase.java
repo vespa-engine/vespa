@@ -2,17 +2,14 @@
 package com.yahoo.documentapi;
 
 import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
+@SuppressWarnings("removal") // TODO: Vespa 9: Remove
 public class VisitorParametersTestCase {
-    // TODO: Remove on Vespa 8
-    private LoadType loadType = new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3);
 
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove
+    @SuppressWarnings("removal")// TODO: Vespa 9: Remove
     private VisitorParameters createVisitorParameters() {
         VisitorParameters params = new VisitorParameters("");
         params.setDocumentSelection("id.user==5678");
@@ -23,12 +20,11 @@ public class VisitorParametersTestCase {
         params.setLibraryParameter("groovy", "dudes");
         params.setLibraryParameter("ninja", "turtles");
         params.setMaxBucketsPerVisitor(55);
-        params.setPriority(DocumentProtocol.Priority.HIGHEST); // TODO: Remove on Vespa 8
+        params.setPriority(DocumentProtocol.Priority.HIGHEST);
         params.setRoute("extraterrestrial/highway");
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
         params.setFieldSet(AllFields.NAME);
-        params.setLoadType(loadType); // TODO: Remove on Vespa 8
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
         params.setTraceLevel(9);
@@ -36,7 +32,6 @@ public class VisitorParametersTestCase {
         params.setResumeToken(new ProgressToken());
         params.setRemoteDataHandler("mars_rover");
         params.setControlHandler(new VisitorControlHandler());
-        params.setMaxFirstPassHits(555);
         params.setMaxTotalHits(777);
         params.setDynamicallyIncreaseMaxBucketsPerVisitor(true);
         params.setDynamicMaxBucketsIncreaseFactor(2.5f);
@@ -45,7 +40,6 @@ public class VisitorParametersTestCase {
         return params;
     }
 
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove
     @Test
     public void testCopyConstructor() {
         VisitorParameters params = createVisitorParameters();
@@ -65,7 +59,6 @@ public class VisitorParametersTestCase {
         assertEquals(1337, copy.getTimeoutMs());
         assertEquals(111, copy.getMaxPending());
         assertEquals(AllFields.NAME, copy.getFieldSet());
-        assertEquals(loadType, copy.getLoadType());
         assertEquals(true, copy.getVisitRemoves());
         assertEquals(true, copy.getVisitInconsistentBuckets());
         assertEquals(9, copy.getTraceLevel());
@@ -73,7 +66,6 @@ public class VisitorParametersTestCase {
         assertEquals(params.getResumeToken(), copy.getResumeToken()); // instance compare
         assertEquals("mars_rover", copy.getRemoteDataHandler());
         assertEquals(params.getControlHandler(), copy.getControlHandler());
-        assertEquals(555, copy.getMaxFirstPassHits());
         assertEquals(777, copy.getMaxTotalHits());
         assertEquals(true, copy.getDynamicallyIncreaseMaxBucketsPerVisitor());
         assertEquals(2.5f, copy.getDynamicMaxBucketsIncreaseFactor(), 0.0001);
@@ -106,7 +98,6 @@ public class VisitorParametersTestCase {
                 "  Field set:          [all]\n" +
                 "  Route:              extraterrestrial/highway\n" +
                 "  Weight:             1.0\n" +
-                "  Max firstpass hits: 555\n" +
                 "  Max total hits:     777\n" +
                 "  Max buckets:        55\n" +
                 "  Priority:           HIGHEST\n" +

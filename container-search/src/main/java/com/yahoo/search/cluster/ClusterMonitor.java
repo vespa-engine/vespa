@@ -79,15 +79,6 @@ public class ClusterMonitor<T> {
         nodeMonitors.put(node, new TrafficNodeMonitor<>(node, configuration, internal));
     }
 
-    /**
-     * Returns the monitor of the given node, or null if this node has not been added
-     * @deprecated  Will be removed in Vespa 8.
-     */
-    @Deprecated(forRemoval = true, since = "7.537")
-    public BaseNodeMonitor<T> getNodeMonitor(T node) {
-        return nodeMonitors.get(node);
-    }
-
     /** Called from ClusterSearcher/NodeManager when a node failed */
     public synchronized void failed(T node, ErrorMessage error) {
         if (closed.get()) return; // Do not touch state if close has started.

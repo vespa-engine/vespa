@@ -8,7 +8,6 @@ import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.ClustersStatus;
 import com.yahoo.container.handler.VipStatus;
-import com.yahoo.container.protect.Error;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -426,81 +425,6 @@ public class ClusterSearcherTestCase {
         assertResult(6, Arrays.asList(9.0, 10.0), getResult(4, 2, extra, ex));
         assertResult(6, Arrays.asList(10.0),      getResult(5, 2, extra, ex));
         assertResult(6, new ArrayList<>(),  getResult(6, 2, extra, ex));
-    }
-
-    @Test
-    public void testRequireThatSearchFailsForUndefinedRankProfileWithOneDocType() {
-        Execution execution = createExecution(Arrays.asList("type1"), false);
-
-        // "default" rank profile
-        Query query = new Query("?query=hello");
-        com.yahoo.search.Result result = execution.search(query);
-        assertEquals(3, result.getTotalHitCount());
-
-        // specified "default" rank profile
-        query = new Query("?query=hello&ranking.profile=default");
-        result = execution.search(query);
-        assertEquals(3, result.getTotalHitCount());
-
-        // empty rank profile, should fail
-        query = new Query("?query=hello&ranking.profile=");
-        result = execution.search(query);
-        assertEquals(0, result.getTotalHitCount());
-        assertEquals(result.hits().getError().getCode(), Error.INVALID_QUERY_PARAMETER.code);
-
-        // invalid rank profile
-        query = new Query("?query=hello&ranking.profile=undefined");
-        result = execution.search(query);
-        assertEquals(0, result.getTotalHitCount());
-        assertEquals(result.hits().getError().getCode(), Error.INVALID_QUERY_PARAMETER.code);
-
-        // valid rank profile for type1
-        query = new Query("?query=hello&ranking.profile=testprofile");
-        result = execution.search(query);
-        assertEquals(3, result.getTotalHitCount());
-    }
-
-    @Test
-    public void testRequireThatSearchFailsForUndefinedRankProfileWithMultipleDocTypes() {
-        Execution execution = createExecution(Arrays.asList("type1", "type2", "type3"), false);
-
-        // "default" rank profile
-        Query query = new Query("?query=hello");
-        com.yahoo.search.Result result = execution.search(query);
-        assertEquals(9, result.getTotalHitCount());
-
-        // specified "default" rank profile
-        query = new Query("?query=hello&ranking.profile=default");
-        result = execution.search(query);
-        assertEquals(9, result.getTotalHitCount());
-
-        // empty rank profile, should fail
-        query = new Query("?query=hello&ranking.profile=");
-        result = execution.search(query);
-        assertEquals(0, result.getTotalHitCount());
-        assertEquals(result.hits().getError().getCode(), Error.INVALID_QUERY_PARAMETER.code);
-
-        // invalid rank profile
-        query = new Query("?query=hello&ranking.profile=undefined");
-        result = execution.search(query);
-        assertEquals(0, result.getTotalHitCount());
-        assertEquals(result.hits().getError().getCode(), Error.INVALID_QUERY_PARAMETER.code);
-
-        // testprofile is only defined for type1, but should pass as it exists in at least one document type
-        query = new Query("?query=hello&ranking.profile=testprofile");
-        result = execution.search(query);
-        assertEquals(9, result.getTotalHitCount());
-
-        // testprofile is only defined for type1, but should fail when restricting doc types
-        query = new Query("?query=hello&ranking.profile=testprofile&restrict=type1,type3");
-        result = execution.search(query);
-        assertEquals(0, result.getTotalHitCount());
-        assertEquals(result.hits().getError().getCode(), Error.INVALID_QUERY_PARAMETER.code);
-
-        // testprofile is only defined for type1, ok if restricted to type1
-        query = new Query("?query=hello&ranking.profile=testprofile&restrict=type1");
-        result = execution.search(query);
-        assertEquals(3, result.getTotalHitCount());
     }
 
     private static ClusterSearcher createSearcher(String clusterName, Double maxQueryTimeout, Double maxQueryCacheTimeout,

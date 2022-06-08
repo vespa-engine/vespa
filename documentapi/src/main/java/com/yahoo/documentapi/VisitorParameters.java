@@ -3,10 +3,8 @@ package com.yahoo.documentapi;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.FixedBucketSpaces;
-import com.yahoo.document.fieldset.AllFields;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
-import com.yahoo.messagebus.ThrottlePolicy;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.text.Utf8;
 
@@ -19,7 +17,6 @@ import java.util.TreeMap;
  *
  * @author Håkon Humberset
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class VisitorParameters extends Parameters {
 
     private String documentSelection;
@@ -31,8 +28,7 @@ public class VisitorParameters extends Parameters {
     private long fromTimestamp = 0;
     private long toTimestamp = 0;
     boolean visitRemoves = false;
-    // TODO Vespa 8: change to DocumentOnly.NAME;
-    private String fieldSet = AllFields.NAME;
+    private String fieldSet = DocumentOnly.NAME;
     boolean visitInconsistentBuckets = false;
     private ProgressToken resumeToken = null;
     private String resumeFileName = "";
@@ -42,12 +38,10 @@ public class VisitorParameters extends Parameters {
     private Map<String, byte []> libraryParameters = new TreeMap<>();
     private Route visitRoute = null;
     private final float weight = 1;
-    private long maxFirstPassHits = -1;
     private long maxTotalHits = -1;
     private int maxBucketsPerVisitor = 1;
     private boolean dynamicallyIncreaseMaxBucketsPerVisitor = false;
     private float dynamicMaxBucketsIncreaseFactor = 2;
-    private LoadType loadType = LoadType.DEFAULT; // TODO: Remove on Vespa 8
     private DocumentProtocol.Priority priority = null;
     private int traceLevel = 0;
     private boolean skipBucketsOnFatalErrors = false;
@@ -93,10 +87,8 @@ public class VisitorParameters extends Parameters {
             setLocalDataHandler(params.getLocalDataHandler());
         }
         setControlHandler(params.getControlHandler());
-        setMaxFirstPassHits(params.getMaxFirstPassHits());
         setMaxTotalHits(params.getMaxTotalHits());
         setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
-        setLoadType(params.getLoadType());
         setPriority(params.getPriority());
         setDynamicallyIncreaseMaxBucketsPerVisitor(
                 params.getDynamicallyIncreaseMaxBucketsPerVisitor());
@@ -143,9 +135,6 @@ public class VisitorParameters extends Parameters {
 
     public boolean getVisitRemoves() { return visitRemoves; }
 
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean getVisitHeadersOnly() { return false; }
-
     /** @return The field set to use. */
     public String fieldSet() { return fieldSet; }
 
@@ -190,8 +179,6 @@ public class VisitorParameters extends Parameters {
     public DocumentProtocol.Priority getPriority() {
         if (priority != null) {
             return priority;
-        } else if (loadType != null) {
-            return loadType.getPriority();
         } else {
             return DocumentProtocol.Priority.NORMAL_3;
         }
@@ -234,10 +221,6 @@ public class VisitorParameters extends Parameters {
     public void visitRemoves(boolean visitRemoves) { this.visitRemoves = visitRemoves; }
 
     public void setVisitRemoves(boolean visitRemoves) { this.visitRemoves = visitRemoves; }
-
-    /** @deprecated this option is ignored */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void setVisitHeadersOnly(boolean headersOnly) { }
 
     /** Set field set to use. */
     public void fieldSet(String fieldSet) { this.fieldSet = fieldSet; }
@@ -287,20 +270,6 @@ public class VisitorParameters extends Parameters {
     // TODO: Document: Where is the default - does this ever return null, or does it return "storage" if input is null?
     public Route getRoute() { return visitRoute; }
 
-    /** Set the maximum number of documents to visit (max documents returned by the visitor)
-     *
-     * @deprecated use setMaxTotalHits instead
-     */
-    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
-    public void setMaxFirstPassHits(long max) { maxFirstPassHits = max; }
-
-    /** @return Returns the maximum number of documents to visit (max documents returned by the visitor)
-     *
-     * @deprecated Use getMaxTotalHits() instead
-     */
-    @Deprecated(since = "7", forRemoval = true) // TODO: Vespa 8: remove
-    public long getMaxFirstPassHits() { return maxFirstPassHits; }
-
     /** Set the maximum number of documents to visit (max documents returned by the visitor) */
     public void setMaxTotalHits(long max) { maxTotalHits = max; }
 
@@ -321,22 +290,6 @@ public class VisitorParameters extends Parameters {
 
     public void setPriority(DocumentProtocol.Priority priority) {
         this.priority = priority;
-    }
-
-    /**
-     * @deprecated load types are deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public void setLoadType(LoadType loadType) {
-        this.loadType = loadType;
-    }
-
-    /**
-     * @deprecated load types are deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public LoadType getLoadType() {
-        return loadType;
     }
 
     public boolean skipBucketsOnFatalErrors() { return skipBucketsOnFatalErrors; }
@@ -399,7 +352,6 @@ public class VisitorParameters extends Parameters {
         sb.append("  Field set:          ").append(fieldSet).append('\n');
         sb.append("  Route:              ").append(visitRoute).append('\n');
         sb.append("  Weight:             ").append(weight).append('\n');
-        sb.append("  Max firstpass hits: ").append(maxFirstPassHits).append('\n');
         sb.append("  Max total hits:     ").append(maxTotalHits).append('\n');
         sb.append("  Max buckets:        ").append(maxBucketsPerVisitor).append('\n');
         sb.append("  Priority:           ").append(getPriority().toString()).append('\n');

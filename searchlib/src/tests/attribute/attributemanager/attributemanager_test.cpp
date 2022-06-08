@@ -218,12 +218,6 @@ TEST("require that config can be converted")
         a.fastsearch = true;
         EXPECT_TRUE(CC::convert(a).fastSearch());
     }
-    { // huge
-        CACA a;
-        EXPECT_TRUE(!CC::convert(a).huge());
-        a.huge = true;
-        EXPECT_TRUE(CC::convert(a).huge());
-    }
     { // fastAccess
         CACA a;
         EXPECT_TRUE(!CC::convert(a).fastAccess());

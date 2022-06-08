@@ -189,19 +189,9 @@ public class ConnectorFactory {
 
     @SuppressWarnings("removal")
     private SslContextFactory createSslContextFactory() {
-        try {
-            DefaultConnectorSsl ssl = new DefaultConnectorSsl();
-            sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
-            return ssl.createSslContextFactory();
-        } catch (UnsupportedOperationException e) {
-            // TODO(bjorncs) Vespa 8 Remove this compatibility workaround
-            if (sslProvider instanceof SslContextFactoryProvider) {
-                return ((SslContextFactoryProvider) sslProvider)
-                        .getInstance(connectorConfig.name(), connectorConfig.listenPort());
-            } else {
-                throw e;
-            }
-        }
+        DefaultConnectorSsl ssl = new DefaultConnectorSsl();
+        sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
+        return ssl.createSslContextFactory();
     }
 
     private ALPNServerConnectionFactory newAlpnConnectionFactory() {

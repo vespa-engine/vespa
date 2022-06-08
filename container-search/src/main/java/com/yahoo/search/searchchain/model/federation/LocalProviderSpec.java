@@ -12,14 +12,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
-import net.jcip.annotations.Immutable;
-
 /**
  * Specifies how a local provider is to be set up.
  *
  * @author Tony Vaagenes
  */
-@Immutable
 public class LocalProviderSpec {
 
     public static final Collection<ChainedComponentModel> searcherModels =

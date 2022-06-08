@@ -40,8 +40,6 @@ public class DocumentTypeManager {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManager.class.getName());
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
-    private ConfigSubscriber subscriber;
 
     // *Configured data types* (not built-in/primitive) indexed by their id
     //
@@ -67,20 +65,10 @@ public class DocumentTypeManager {
         DocumentTypeManagerConfigurer.configureNewManager(config, this);
     }
 
-    public void assign(DocumentTypeManager other) {
+    void internalAssign(DocumentTypeManager other) {
         dataTypes = other.dataTypes;
         documentTypes = other.documentTypes;
         annotationTypeRegistry = other.annotationTypeRegistry;
-    }
-
-    /**
-     * For testing, use fromFile factory method instead
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @Deprecated
-    public DocumentTypeManager configure(String configId) {
-        subscriber = DocumentTypeManagerConfigurer.configure(this, configId);
-        return this;
     }
 
     /** Only for unit tests */
@@ -115,7 +103,7 @@ public class DocumentTypeManager {
         }
     }
 
-    public boolean hasDataType(String name) {
+    boolean hasDataTypeInternal(String name) {
         if (name.startsWith("tensor(")) return true; // built-in dynamic: Always present
         for (DataType type : dataTypes.values()) {
             if (type.getName().equalsIgnoreCase(name)) {
@@ -123,30 +111,6 @@ public class DocumentTypeManager {
             }
         }
         return false;
-    }
-
-    /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @Deprecated
-    public boolean hasDataType(int code) {
-        if (code == DataType.tensorDataTypeCode) return true; // built-in dynamic: Always present
-        return dataTypes.containsKey(code);
-    }
-
-    /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     * Use constants and factories in DataType instead.
-     * For structs, use getStructType() in DocumentType.
-     * For annotation payloads, use getDataType() in AnnotationType.
-     **/
-    @Deprecated
-    public DataType getDataType(String name) {
-        var type = getDataTypeInternal(name);
-        if (type == null) {
-            throw new IllegalArgumentException("No datatype named " + name);
-        }
-        return type;
     }
 
     /**
@@ -187,10 +151,11 @@ public class DocumentTypeManager {
     }
 
     /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
+     * Return a data type instance
+     *
+     * @param code the code of the data type to return, which must be either built in or present in this manager
      */
-    @Deprecated
-    public DataType getDataType(int code) { return getDataType(code, ""); }
+    DataType getDataTypeByCode(int code) { return getDataTypeByCode(code, ""); }
 
     /**
      * Return a data type instance
@@ -198,11 +163,8 @@ public class DocumentTypeManager {
      * @param code the code of the data type to return, which must be either built in or present in this manager
      * @param detailedType detailed type information, or the empty string if none
      * @return the appropriate DataType instance
-     *
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
      */
-    @Deprecated
-    public DataType getDataType(int code, String detailedType) {
+    DataType getDataTypeByCode(int code, String detailedType) {
         if (code == DataType.tensorDataTypeCode) // built-in dynamic
             return new TensorDataType(TensorType.fromSpec(detailedType));
 
@@ -219,18 +181,6 @@ public class DocumentTypeManager {
     }
 
     /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @SuppressWarnings("deprecation")
-    @Deprecated
-    DataType getDataTypeAndReturnTemporary(int code, String detailedType) {
-        if (hasDataType(code)) {
-            return getDataType(code, detailedType);
-        }
-        return new TemporaryDataType(code, detailedType);
-    }
-
-    /**
      * Register a data type of any sort, including document types.
      * @param type The datatype to register
      * TODO Give unique ids to document types
@@ -244,15 +194,8 @@ public class DocumentTypeManager {
      *
      * @param type The datatype to register
      */
-    @SuppressWarnings("deprecation")
     void registerSingleType(DataType type) {
         if (type instanceof TensorDataType) return; // built-in dynamic: Created on the fly
-        if (type instanceof TemporaryDataType) {
-            throw new IllegalArgumentException("TemporaryDataType no longer supported: " + type);
-        }
-        if (type instanceof TemporaryStructuredDataType) {
-            throw new IllegalArgumentException("TemporaryStructuredDataType no longer supported: " + type);
-        }
         if (dataTypes.containsKey(type.getId())) {
             DataType existingType = dataTypes.get(type.getId());
             if ((existingType == type) || existingType.equals(type)) {
@@ -307,6 +250,15 @@ public class DocumentTypeManager {
         return documentTypes.get(new DataTypeName(name));
     }
 
+    /**
+     * Convenience method
+     * @param name the name of a document type
+     * @return returns true if a document type having this name is registered in this manager
+     */
+    public boolean hasDocumentType(String name) {
+        return (getDocumentType(name) != null);
+    }
+
     final public Document createDocument(GrowableByteBuffer buf) {
         DocumentDeserializer data = DocumentDeserializerFactory.create6(this, buf);
         return new Document(data);
@@ -340,11 +292,8 @@ public class DocumentTypeManager {
     /**
      * Clears the DocumentTypeManager. After this operation,
      * only the default document type and data types are available.
-     *
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
      */
-    @Deprecated
-    public void clear() {
+    void internalClear() {
         documentTypes.clear();
         dataTypes.clear();
         registerDefaultDataTypes();
@@ -354,11 +303,4 @@ public class DocumentTypeManager {
         return annotationTypeRegistry;
     }
 
-    /**
-     * @deprecated //TODO Will be package-private or removed on Vespa 8
-     */
-    @Deprecated
-    public void shutdown() {
-        if (subscriber!=null) subscriber.close();
-    }
 }

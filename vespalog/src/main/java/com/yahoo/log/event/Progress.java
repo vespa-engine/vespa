@@ -5,8 +5,7 @@ package com.yahoo.log.event;
  *
  * @author  Bjorn Borud
  */
-@Deprecated(forRemoval = true, since = "7")
-public class Progress extends Event {
+class Progress extends Event {
     public Progress () {
     }
 

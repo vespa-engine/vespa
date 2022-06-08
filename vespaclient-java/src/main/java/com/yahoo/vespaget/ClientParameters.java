@@ -17,7 +17,7 @@ public class ClientParameters {
     public final Iterator<String> documentIds;
     // Print only the id for retrieved documents
     public final boolean printIdsOnly;
-    // Determines which document fields to retrieve. Default is '[all]'.
+    // Determines which document fields to retrieve. Default is '[document]'.
     public final String fieldSet;
     // The Vespa route
     public final String route;
@@ -35,8 +35,6 @@ public class ClientParameters {
     public final int traceLevel;
     // Document request priority
     public final DocumentProtocol.Priority priority;
-    // Determines the Vespa load type
-    public final String loadTypeName;
     // If full documents are printed, they will be printed as JSON (instead of XML)
     public final boolean jsonOutput;
 
@@ -45,7 +43,7 @@ public class ClientParameters {
             boolean help, Iterator<String> documentIds, boolean printIdsOnly,
             String fieldSet, String route, String cluster, String configId,
             boolean showDocSize, double timeout, boolean noRetry, int traceLevel,
-            DocumentProtocol.Priority priority, String loadTypeName, boolean jsonOutput) {
+            DocumentProtocol.Priority priority, boolean jsonOutput) {
 
         this.help = help;
         this.documentIds = documentIds;
@@ -59,7 +57,6 @@ public class ClientParameters {
         this.noRetry = noRetry;
         this.traceLevel = traceLevel;
         this.priority = priority;
-        this.loadTypeName = loadTypeName;
         this.jsonOutput = jsonOutput;
     }
 
@@ -76,7 +73,6 @@ public class ClientParameters {
         private boolean noRetry;
         private int traceLevel;
         private DocumentProtocol.Priority priority;
-        private String loadTypeName;
         private boolean jsonOutput;
 
         public Builder setHelp(boolean help) {
@@ -139,11 +135,6 @@ public class ClientParameters {
             return this;
         }
 
-        public Builder setLoadTypeName(String loadTypeName) {
-            this.loadTypeName = loadTypeName;
-            return this;
-        }
-
         public Builder setJsonOutput(boolean jsonOutput) {
             this.jsonOutput = jsonOutput;
             return this;
@@ -152,7 +143,7 @@ public class ClientParameters {
         public ClientParameters build() {
             return new ClientParameters(
                     help, documentIds, printIdsOnly, fieldSet, route, cluster, configId,
-                    showDocSize, timeout, noRetry, traceLevel, priority, loadTypeName, jsonOutput);
+                    showDocSize, timeout, noRetry, traceLevel, priority, jsonOutput);
         }
     }
 

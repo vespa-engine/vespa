@@ -114,7 +114,7 @@ public class Curator extends AbstractComponent implements VespaCurator, AutoClos
                      .connectionTimeoutMs((int) ZK_CONNECTION_TIMEOUT.toMillis())
                      .connectString(connectionSpec.local())
                      .zookeeperFactory(new VespaZooKeeperFactory(createClientConfig(clientConfigFile)))
-                     .dontUseContainerParents() // TODO: Remove when we know ZooKeeper 3.5 works fine, consider waiting until Vespa 8
+                     .dontUseContainerParents() // TODO: Consider changing this in Vespa 9
                      .build(),
              juteMaxBuffer);
     }

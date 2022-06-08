@@ -42,12 +42,12 @@ public class Request extends AbstractResource {
     private final Request parent;
     private final ResourceReference parentReference;
     private final long creationTime;
+    private final boolean serverRequest;
+    private final URI uri;
     private volatile boolean cancel = false;
     private BindingMatch<RequestHandler> bindingMatch;
     private TimeoutManager timeoutManager;
-    private boolean serverRequest; // TODO could be final, only used in tests
     private Long timeout;
-    private URI uri; // TODO Could be made final,
 
     public enum RequestType {
         READ, WRITE, MONITORING
@@ -86,7 +86,7 @@ public class Request extends AbstractResource {
         parent = null;
         parentReference = null;
         serverRequest = isServerRequest;
-        setUri(uri);
+        this.uri = uri.normalize();
         container = current.newReference(uri, this);
         creationTime = container.currentTimeMillis();
     }
@@ -120,7 +120,7 @@ public class Request extends AbstractResource {
         container = null;
         creationTime = parent.container().currentTimeMillis();
         serverRequest = false;
-        setUri(uri);
+        this.uri = uri.normalize();
         parentReference = this.parent.refer(this);
     }
 
@@ -132,25 +132,8 @@ public class Request extends AbstractResource {
     /**
      * Returns the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
      * RequestHandler} for this Request.
-     *
-     * @see #setUri(URI)
      */
     public URI getUri() { return uri; }
-
-    /**
-     * Sets the Uniform Resource Identifier used by the {@link Container} to resolve the appropriate {@link
-     * RequestHandler} for this Request. Because access to the URI is not guarded by any lock, any changes made after
-     * calling {@link #connect(ResponseHandler)} might never become visible to other threads.
-     *
-     * @param uri the URI to set
-     * @return this, to allow chaining
-     * @see #getUri()
-     */
-    @Deprecated
-    public Request setUri(URI uri) {
-        this.uri = uri.normalize();
-        return this;
-    }
 
     /**
      * Returns whether or not this Request was created by a {@link ServerProvider}. The value of this is used by
@@ -162,20 +145,6 @@ public class Request extends AbstractResource {
         return serverRequest;
     }
 
-    /**
-     * Sets whether or not this Request was created by a {@link ServerProvider}. The constructor that accepts a
-     * {@link CurrentContainer} sets this to <em>true</em>, whereas the constructor that accepts a parent Request sets
-     * this to <em>false</em>.
-     *
-     * @param serverRequest whether or not this is a server request
-     * @return this, to allow chaining
-     * @see #isServerRequest()
-     */
-    @Deprecated
-    public Request setServerRequest(boolean serverRequest) {
-        this.serverRequest = serverRequest;
-        return this;
-    }
 
     /**
      * Returns the last resolved {@link BindingMatch}, or null if none has been resolved yet. This is set

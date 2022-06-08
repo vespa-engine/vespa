@@ -8,11 +8,11 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>configserver-flags</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <packaging>container-plugin</packaging>
     <description>Config Server Flags.</description>
 
@@ -67,6 +67,13 @@
         </dependency>
 
         <!-- test -->
+        <dependency>
+            <!-- TODO Remove when Jetty is embedded inside container-core -->
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-http</artifactId>
+            <scope>test</scope>
+            <version>${jetty.version}</version>
+        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>defaults</artifactId>

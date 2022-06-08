@@ -5,12 +5,10 @@ import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.admin.AdminModel;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
-import com.yahoo.vespa.model.builder.xml.dom.DomClientsBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomRoutingBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder;
 import com.yahoo.vespa.model.container.xml.ContainerModelBuilder.Networking;
 import com.yahoo.vespa.model.content.Content;
-import com.yahoo.vespa.model.generic.GenericServicesBuilder;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -33,10 +31,8 @@ public class VespaConfigModelRegistry extends ConfigModelRegistry {
         builderList.add(new AdminModel.BuilderV2());
         builderList.add(new AdminModel.BuilderV4());
         builderList.add(new DomRoutingBuilder());
-        builderList.add(new DomClientsBuilder());
         builderList.add(new Content.Builder());
         builderList.add(new ContainerModelBuilder(false, Networking.enable));
-        builderList.add(new GenericServicesBuilder());
     }
 
     @Override

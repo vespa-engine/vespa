@@ -88,10 +88,9 @@ public abstract class InnerNode extends Node {
         return res;
      }
 
-    // TODO Make final before Vespa 8 as correct order is required
-    protected Map<String, Object> getChildren() {
+    protected final Map<String, Object> getChildren() {
         HashMap<String, Object> ret = new LinkedHashMap<>();
-        Field fields[] = getClass().getDeclaredFields();
+        Field[] fields = getClass().getDeclaredFields();
         for (Field field : fields) {
             field.setAccessible(true);
             Object fieldValue;
@@ -111,11 +110,10 @@ public abstract class InnerNode extends Node {
     /**
      * Returns a flat map of this node's direct children, including all NodeVectors' elements.
      * Keys are the node name, including index for vector elements, e.g. 'arr[0]'.
-     * TODO Make final before Vespa 8 as correct order is required
      */
     @SuppressWarnings("unchecked")
-    protected Map<String, Node> getChildrenWithVectorsFlattened() {
-        HashMap<String, Node> ret = new LinkedHashMap<>();
+    protected final Map<String, Node> getChildrenWithVectorsFlattened() {
+        Map<String, Node> ret = new LinkedHashMap<>();
 
         Map<String, Object> children = getChildren();
         for (Map.Entry<String, Object> childEntry : children.entrySet()) {
@@ -132,13 +130,13 @@ public abstract class InnerNode extends Node {
         return ret;
     }
 
-    private static void addMapEntries(HashMap<String, Node> ret, String name, Map<String, Node> map) {
+    private static void addMapEntries(Map<String, Node> ret, String name, Map<String, Node> map) {
         for (Map.Entry<String, Node> entry : map.entrySet())
             ret.put(name + "{" + entry.getKey() + "}", entry.getValue());
     }
 
 
-    private static void addNodeVectorEntries(HashMap<String, Node> ret, String name, NodeVector<?> vector) {
+    private static void addNodeVectorEntries(Map<String, Node> ret, String name, NodeVector<?> vector) {
         for (int j = 0; j < vector.length(); j++)
             ret.put(name + "[" + j + "]", (Node) vector.get(j));
     }
@@ -161,7 +159,7 @@ public abstract class InnerNode extends Node {
          for (Map.Entry<String, Node> childEntry : children.entrySet()) {
              String name = childEntry.getKey();
              String prefixedName = prefix + name;
-             name=name.replaceAll("\\[.*", "");
+             name.replaceAll("\\[.*", "");
              Node child = childEntry.getValue();
              if (child instanceof LeafNode) {
                  ret.put(prefixedName, (LeafNode<?>) child);

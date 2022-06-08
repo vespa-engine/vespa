@@ -16,6 +16,7 @@ import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.grouping.GroupingRequest;
@@ -41,6 +42,7 @@ import java.util.logging.Logger;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 
@@ -51,9 +53,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class FastSearcherTestCase {
 
-    private final static DocumentdbInfoConfig documentdbInfoConfig = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder());
-
-
     @Test
     public void testNullQuery() {
         Logger.getLogger(FastSearcher.class.getName()).setLevel(Level.ALL);
@@ -61,11 +60,11 @@ public class FastSearcherTestCase {
                                                      MockDispatcher.create(Collections.emptyList()),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     documentdbInfoConfig,
-                                                     SchemaInfo.empty());
+                                                     documentdbInfoConfig("test"),
+                                                     schemaInfo("test"));
 
         String query = "?junkparam=ignored";
-        Result result = doSearch(fastSearcher,new Query(query), 0, 10);
+        Result result = doSearch(fastSearcher, new Query(query), 0, 10);
         ErrorMessage message = result.hits().getError();
 
         assertNotNull("Got error", message);
@@ -93,11 +92,11 @@ public class FastSearcherTestCase {
     @Test
     public void testSinglePassGroupingIsForcedWithSingleNodeGroups() {
         FastSearcher fastSearcher = new FastSearcher("container.0",
-                                                     MockDispatcher.create(Collections.singletonList(new Node(0, "host0", 0))),
+                                                     MockDispatcher.create(List.of(new Node(0, "host0", 0))),
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     documentdbInfoConfig,
-                                                     SchemaInfo.empty());
+                                                     documentdbInfoConfig("test"),
+                                                     schemaInfo("test"));
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -111,6 +110,19 @@ public class FastSearcherTestCase {
         assertForceSinglePassIs(false, q);
         fastSearcher.search(q, new Execution(Execution.Context.createContextStub()));
         assertForceSinglePassIs(true, q);
+    }
+
+    @Test
+    public void testRankProfileValidation() {
+        FastSearcher fastSearcher = new FastSearcher("container.0",
+                                                     MockDispatcher.create(List.of(new Node(0, "host0", 0))),
+                                                     new SummaryParameters(null),
+                                                     new ClusterParams("testhittype"),
+                                                     documentdbInfoConfig("test"),
+                                                     schemaInfo("test"));
+        assertFalse(searchError("?query=q", fastSearcher).contains("does not contain requested rank profile"));
+        assertFalse(searchError("?query=q&ranking.profile=default", fastSearcher).contains("does not contain requested rank profile"));
+        assertTrue(searchError("?query=q&ranking.profile=nosuch", fastSearcher).contains("does not contain requested rank profile"));
     }
 
     @Test
@@ -145,8 +157,8 @@ public class FastSearcherTestCase {
                                                      dispatcher,
                                                      new SummaryParameters(null),
                                                      new ClusterParams("testhittype"),
-                                                     documentdbInfoConfig,
-                                                     SchemaInfo.empty());
+                                                     documentdbInfoConfig("test"),
+                                                     schemaInfo("test"));
         Query q = new Query("?query=foo");
         GroupingRequest request1 = GroupingRequest.newInstance(q);
         request1.setRootOperation(new AllOperation());
@@ -190,6 +202,26 @@ public class FastSearcherTestCase {
         assertTrue(vipStatus.isInRotation());
         dispatch_1.deconstruct();
         assertTrue(vipStatus.isInRotation()); //Verify that deconstruct does not touch vipstatus
+    }
+
+    private String searchError(String query, Searcher searcher) {
+        return search(query, searcher).hits().getError().getDetailedMessage();
+    }
+
+    private Result search(String query, Searcher searcher) {
+        return searcher.search(new Query(query), new Execution(Execution.Context.createContextStub()));
+    }
+
+    private DocumentdbInfoConfig documentdbInfoConfig(String schemaName) {
+        var db = new DocumentdbInfoConfig.Documentdb.Builder().name(schemaName);
+        db.rankprofile(new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder().name("default"));
+        return new DocumentdbInfoConfig.Builder().documentdb(db).build();
+    }
+
+    private SchemaInfo schemaInfo(String schemaName) {
+        var schema = new Schema.Builder(schemaName);
+        schema.add(new RankProfile.Builder("default").build());
+        return new SchemaInfo(List.of(schema.build()),  Map.of());
     }
 
 }

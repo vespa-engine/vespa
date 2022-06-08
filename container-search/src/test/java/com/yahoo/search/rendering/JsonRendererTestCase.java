@@ -3,7 +3,6 @@ package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.container.QrSearchersConfig;
@@ -409,7 +408,7 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
         String expected =  "{"
@@ -1310,6 +1309,11 @@ public class JsonRendererTestCase {
         r.setTotalHitCount(1L);
         String summary = render(r);
         assertEqualJson(expected.toString(), summary);
+        r = new Result(new Query("/?"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        summary = render(r);
+        assertEqualJson(expected.toString(), summary);
 
         r = new Result(new Query("/?renderer.json.jsonMaps=false"));
         expected = dataFromSimplified(
@@ -1438,7 +1442,6 @@ public class JsonRendererTestCase {
         return render(execution, r);
     }
 
-    @SuppressWarnings("removal")
     private String render(Execution execution, Result r) throws InterruptedException, ExecutionException {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);

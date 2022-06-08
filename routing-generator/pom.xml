@@ -6,14 +6,14 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>routing-generator</artifactId>
     <packaging>container-plugin</packaging>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
 
     <dependencies>
         <!-- test -->
@@ -33,6 +33,13 @@
             <artifactId>testutil</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <!-- TODO Remove when Jetty is embedded inside container-core -->
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-http</artifactId>
+            <scope>test</scope>
+            <version>${jetty.version}</version>
         </dependency>
 
         <!-- provided -->

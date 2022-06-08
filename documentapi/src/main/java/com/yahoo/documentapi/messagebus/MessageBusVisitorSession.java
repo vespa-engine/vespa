@@ -660,8 +660,7 @@ public class MessageBusVisitorSession implements VisitorSession {
             msg.setParameters(params.getLibraryParameters());
             msg.setRoute(params.getRoute());
             msg.setMaxBucketsPerVisitor(params.getMaxBucketsPerVisitor());
-            msg.setLoadType(params.getLoadType());
-            msg.setPriority(params.getPriority()); // TODO: remove on Vespa 8
+            msg.setPriority(params.getPriority()); // TODO: remove on Vespa 9
 
             msg.setRetryEnabled(false);
 
@@ -1001,15 +1000,8 @@ public class MessageBusVisitorSession implements VisitorSession {
     @SuppressWarnings("removal") // TODO: Vespa 8: remove
     private boolean enoughHitsReceived() {
         // TODO: Vespa 8: remove "Nth pass" concept entirely from API and internals
-        if (params.getMaxFirstPassHits() != -1
-                && statistics.getDocumentsReturned() >= params.getMaxFirstPassHits())
-        {
-            return true;
-        }
         if (params.getMaxTotalHits() != -1
-                && ((statistics.getDocumentsReturned()
-                     + statistics.getSecondPassDocumentsReturned()) // TODO: Vespa 8: remove
-                    >= params.getMaxTotalHits()))
+            && (statistics.getDocumentsReturned() >= params.getMaxTotalHits()))
         {
             return true;
         }
@@ -1108,11 +1100,8 @@ public class MessageBusVisitorSession implements VisitorSession {
             trace.getRoot().addChild(reply.getTrace().getRoot());
         }
 
-        // TODO: Vespa 8 remove this unused functionality
-        if (params.getDynamicallyIncreaseMaxBucketsPerVisitor()
-                && (reply.getVisitorStatistics().getDocumentsReturned()
-                    < params.getMaxFirstPassHits() / 2.0))
-        {
+        // TODO: Vespa 8 remove this unused functionality (?)
+        if (params.getDynamicallyIncreaseMaxBucketsPerVisitor()) {
             // Attempt to increase parallelism to reduce latency of visiting
             // Ensure new count is within [1, 128]
             int newMaxBuckets = Math.max(Math.min((int)(params.getMaxBucketsPerVisitor()

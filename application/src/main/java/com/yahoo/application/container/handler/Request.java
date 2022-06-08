@@ -2,7 +2,6 @@
 package com.yahoo.application.container.handler;
 
 import com.yahoo.api.annotations.Beta;
-import net.jcip.annotations.Immutable;
 
 import java.nio.charset.StandardCharsets;
 import java.security.Principal;
@@ -16,7 +15,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Einar M R Rosenvinge
  * @see Response
  */
-@Immutable
 @Beta
 public class Request {
 

@@ -34,7 +34,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class QueryProfilesTestCase {
 
-    private final static String root="src/test/java/com/yahoo/vespa/model/container/search/test/";
+    private final static String root = "src/test/java/com/yahoo/vespa/model/container/search/test/";
 
     @Test
     public void testVariantReference() {
@@ -212,10 +212,6 @@ public class QueryProfilesTestCase {
     protected void assertConfig(String correctFileName, QueryProfileRegistry check) throws IOException {
         assertSerializedConfigFileEquals(root + "/" + correctFileName,
                 com.yahoo.text.StringUtilities.implodeMultiline(com.yahoo.config.ConfigInstance.serialize(new QueryProfiles(check, new SilentDeployLogger()).getConfig())));
-
-        // Also assert that the correct config config can actually be read as a config source
-        QueryProfileConfigurer configurer = new QueryProfileConfigurer("file:" + root + "empty.cfg");
-        configurer.shutdown();
     }
 
     private static class SilentDeployLogger implements DeployLogger {

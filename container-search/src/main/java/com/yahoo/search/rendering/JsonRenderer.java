@@ -57,7 +57,6 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
@@ -127,18 +126,18 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private Deque<Integer> renderedChildren;
     static class FieldConsumerSettings {
         boolean debugRendering = false;
-        boolean jsonDeepMaps = false;
-        boolean jsonWsets = false;
-        boolean jsonMapsAll = false;
+        boolean jsonDeepMaps = true;
+        boolean jsonWsets = true;
+        boolean jsonMapsAll = true;
         boolean jsonWsetsAll = false;
         boolean tensorShortForm = false;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
-            this.jsonDeepMaps = false;
-            this.jsonWsets = false;
-            this.jsonMapsAll = false;
-            this.jsonWsetsAll = false;
+            this.jsonDeepMaps = true;
+            this.jsonWsets = true;
+            this.jsonMapsAll = true;
+            this.jsonWsetsAll = true;
             this.tensorShortForm = false;
         }
         void getSettings(Query q) {
@@ -148,11 +147,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             }
             var props = q.properties();
             this.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
-            this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, false);
-            this.jsonWsets = props.getBoolean(WRAP_WSETS, false);
+            this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, true);
+            this.jsonWsets = props.getBoolean(WRAP_WSETS, true);
             // we may need more fine tuning, but for now use the same query parameters here:
-            this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, false);
-            this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, false);
+            this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
+            this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
             this.tensorShortForm = q.getPresentation().getTensorShortForm();
         }
     }
@@ -174,18 +173,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         generatorFactory.setCodec(createJsonCodec());
     }
 
-    /**
-     * Create the codec used for rendering instances of {@link TreeNode}. This
-     * method will be invoked when creating the first renderer instance, but not
-     * for each fresh clone used by individual results.
-     *
-     * @deprecated Will be removed in Vespa 8. Override the individual render methods of {@link JsonRenderer} to alter
-     *             rendering behaviour. Override {@link #createFieldConsumer(boolean)} and sub-class {@link FieldConsumer}
-     *             to alter rendering of hit fields.
-     * @return an object mapper for the internal JsonFactory
-     */
-    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 make private
-    protected static ObjectMapper createJsonCodec() {
+    private static ObjectMapper createJsonCodec() {
         return new ObjectMapper().disable(FLUSH_AFTER_WRITE_VALUE);
     }
 
@@ -545,13 +533,6 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         return createFieldConsumer(generator, fieldConsumerSettings);
     }
 
-    /** @deprecated Will be removed in Vespa 8. Use {@link #createFieldConsumer(boolean)} instead. */
-    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove method
-    protected FieldConsumer createFieldConsumer(JsonGenerator generator, boolean debugRendering) {
-        fieldConsumerSettings.debugRendering = debugRendering;
-        return createFieldConsumer(generator, fieldConsumerSettings);
-    }
-
     private FieldConsumer createFieldConsumer(JsonGenerator generator, FieldConsumerSettings settings) {
         return new FieldConsumer(generator, settings);
     }
@@ -574,26 +555,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private final FieldConsumerSettings settings;
         private MutableBoolean hasFieldsField;
 
-        /** @deprecated Will be removed in Vespa 8. Use {@link #FieldConsumer(boolean, boolean, boolean)} instead. */
-        @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 Remove
-        public FieldConsumer(JsonGenerator generator, boolean debugRendering) {
-            this(generator, debugRendering, false);
-        }
-
-        /** @deprecated Will be removed in Vespa 8. Use {@link #FieldConsumer(boolean, boolean, boolean)} instead. */
-        @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 Remove
-        public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm) {
-            this(generator, debugRendering, tensorShortForm, false);
-        }
-
         /** Invoke this from your constructor when sub-classing {@link FieldConsumer} */
         protected FieldConsumer(boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
             this(null, debugRendering, tensorShortForm, jsonMaps);
         }
 
-        /** @deprecated Will be removed in Vespa 8. Use {@link #FieldConsumer(boolean, boolean, boolean)} instead. */
-        @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove
-        public FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
+        private FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
             this.generator = generator;
             this.settings = new FieldConsumerSettings();
             this.settings.debugRendering = debugRendering;

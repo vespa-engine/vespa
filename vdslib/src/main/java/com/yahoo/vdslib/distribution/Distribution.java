@@ -39,7 +39,6 @@ public class Distribution {
         private final boolean distributorAutoOwnershipTransferOnWholeGroupDown;
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private ConfigSubscriber configSub;
     private final AtomicReference<Config> config = new AtomicReference<>(new Config(null, 1, false));
 
@@ -61,7 +60,6 @@ public class Distribution {
         return p;
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     // NOTE: keep in sync with the below
     private ConfigSubscriber.SingleSubscriber<StorDistributionConfig> configSubscriber = config -> {
         try {
@@ -148,7 +146,6 @@ public class Distribution {
         }
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public Distribution(String configId) {
         try {
             configSub = new ConfigSubscriber();

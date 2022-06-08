@@ -811,14 +811,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployApplicationPackageWithApplicationDir() {
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .region("us-west-1")
-                .build(true);
-        tester.newDeploymentContext().submit(applicationPackage);
-    }
-
-    @Test
     public void testDeployApplicationWithWarnings() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()

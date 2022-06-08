@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.response;
 
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.collections.Tuple2;
 import com.yahoo.concurrent.CompletableFutures;
 
@@ -48,13 +47,6 @@ public class DefaultIncomingData<DATATYPE extends Data> implements IncomingData<
     @Override
     public DataList<DATATYPE> getOwner() {
         return owner;
-    }
-
-    @Override
-    @Deprecated(forRemoval = true, since = "7")
-    @SuppressWarnings("removal")
-    public ListenableFuture<DataList<DATATYPE>> completed() {
-        return CompletableFutures.toGuavaListenableFuture(completionFuture);
     }
 
     @Override public CompletableFuture<DataList<DATATYPE>> completedFuture() { return completionFuture; }

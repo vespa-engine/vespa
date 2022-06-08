@@ -60,13 +60,17 @@ public class NodesSpecification {
     /** The cloud account to use for nodes in this spec, if any */
     private final Optional<CloudAccount> cloudAccount;
 
+    /* Whether the count attribute was present on the nodes element. */
+    private final boolean hasCountAttribute;
+
     private NodesSpecification(ClusterResources min,
                                ClusterResources max,
                                boolean dedicated, Version version,
                                boolean required, boolean canFail, boolean exclusive,
                                Optional<DockerImage> dockerImageRepo,
                                Optional<String> combinedId,
-                               Optional<CloudAccount> cloudAccount) {
+                               Optional<CloudAccount> cloudAccount,
+                               boolean hasCountAttribute) {
         if (max.smallerThan(min))
             throw new IllegalArgumentException("Min resources must be larger or equal to max resources, but " +
                                                max + " is smaller than " + min);
@@ -89,6 +93,7 @@ public class NodesSpecification {
         this.dockerImageRepo = dockerImageRepo;
         this.combinedId = combinedId;
         this.cloudAccount = cloudAccount;
+        this.hasCountAttribute = hasCountAttribute;
     }
 
     private static NodesSpecification create(boolean dedicated, boolean canFail, Version version,
@@ -97,6 +102,7 @@ public class NodesSpecification {
         var resolvedElement = resolveElement(nodesElement);
         var combinedId = findCombinedId(nodesElement, resolvedElement);
         var resources = toResources(resolvedElement);
+        boolean hasCountAttribute = resolvedElement.stringAttribute("count") != null;
         return new NodesSpecification(resources.getFirst(),
                                       resources.getSecond(),
                                       dedicated,
@@ -106,7 +112,8 @@ public class NodesSpecification {
                                       resolvedElement.booleanAttribute("exclusive", false),
                                       dockerImageToUse(resolvedElement, dockerImageRepo),
                                       combinedId,
-                                      cloudAccount);
+                                      cloudAccount,
+                                      hasCountAttribute);
     }
 
     private static Pair<ClusterResources, ClusterResources> toResources(ModelElement nodesElement) {
@@ -180,7 +187,8 @@ public class NodesSpecification {
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty(),
-                                      context.getDeployState().getProperties().cloudAccount());
+                                      context.getDeployState().getProperties().cloudAccount(),
+                                      false);
     }
 
     /** Returns a requirement from <code>count</code> dedicated nodes in one group */
@@ -194,7 +202,8 @@ public class NodesSpecification {
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty(),
-                                      context.getDeployState().getProperties().cloudAccount());
+                                      context.getDeployState().getProperties().cloudAccount(),
+                                      false);
     }
 
     /**
@@ -219,7 +228,8 @@ public class NodesSpecification {
                                       false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty(),
-                                      context.getDeployState().getProperties().cloudAccount());
+                                      context.getDeployState().getProperties().cloudAccount(),
+                                      false);
     }
 
     public ClusterResources minResources() { return min; }
@@ -237,6 +247,11 @@ public class NodesSpecification {
      * and increases cost.
      */
     public boolean isExclusive() { return exclusive; }
+
+    /** Returns whether the count attribute was present on the {@code <nodes>} element. */
+    public boolean hasCountAttribute() {
+        return hasCountAttribute;
+    }
 
     public Map<HostResource, ClusterMembership> provision(HostSystem hostSystem,
                                                           ClusterSpec.Type clusterType,
@@ -376,12 +391,8 @@ public class NodesSpecification {
     /** Returns the ID of the parent container element of nodesElement, if any  */
     private static Optional<String> containerIdOf(ModelElement nodesElement) {
         var element = nodesElement.getXml();
-        for (var containerTag : List.of("container", "jdisc")) {
-            var container = findParentByTag(containerTag, element);
-            if (container.isEmpty()) continue;
-            return container.map(el -> el.getAttribute("id"));
-        }
-        return Optional.empty();
+        var container = findParentByTag("container", element);
+        return container.map(el -> el.getAttribute("id"));
     }
 
     /** Returns the ID of the container element referencing nodesElement, if any */
@@ -451,5 +462,4 @@ public class NodesSpecification {
         return "specification of " + (dedicated ? "dedicated " : "") +
                (min.equals(max) ? min : "min " + min + " max " + max);
     }
-
 }

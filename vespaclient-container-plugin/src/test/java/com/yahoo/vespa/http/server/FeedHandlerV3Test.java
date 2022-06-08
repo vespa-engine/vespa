@@ -17,10 +17,6 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.shared.SharedSourceSession;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.http.client.config.FeedParams;
-import com.yahoo.vespa.http.client.core.ErrorCode;
-import com.yahoo.vespa.http.client.core.Headers;
-import com.yahoo.vespa.http.client.core.OperationStatus;
 import org.junit.Test;
 import org.mockito.stubbing.Answer;
 

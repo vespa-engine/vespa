@@ -5,29 +5,21 @@ include "processing.rnc"
 
 Handler = element handler {
    ComponentDefinition &
-   ServerBindings &
-   element clientBinding {text}*
+   ServerBindings
 }
 
 Binding = element binding {text}
 ServerBindings = Binding*
-
-Client = element client {
-   ComponentDefinition &
-   element binding {text}* &
-   element serverBinding {text}*
-}
 
 Server = element server {
    ComponentDefinition
 }
 
 AccessControl = element access-control {
-    attribute domain { xsd:NCName }? &  # TODO Vespa 8 Remove
-    attribute read { string "true" | string "false" }? & # TODO Vespa 8 Remove
-    attribute write { string "true" | string "false" }? & # TODO Vespa 8 Remove
+    attribute domain { xsd:NCName }? & # TODO(tokle,bjorncs) Vespa > 8: Remove
+    attribute read { string "true" | string "false" }? &  # TODO(tokle,bjorncs) Vespa > 8: Remove
+    attribute write { string "true" | string "false" }? &  # TODO(tokle,bjorncs) Vespa > 8: Remove
     attribute tls-handshake-client-auth {string "want" | string "need"}? &
-    element vespa-domain { xsd:NCName }? & # TODO Remove after end of March 2020
     element exclude {
         Binding+
     }?

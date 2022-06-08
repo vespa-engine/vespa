@@ -171,10 +171,6 @@
     "methods": [
       "public void <init>()",
       "public void setClusters(java.util.Set)",
-      "public void setReceiveTrafficByDefault(boolean)",
-      "public void setUp(java.lang.Object)",
-      "public void setDown(java.lang.Object)",
-      "public boolean containerShouldReceiveTraffic()",
       "public boolean containerShouldReceiveTraffic(com.yahoo.container.handler.ClustersStatus$Require)"
     ],
     "fields": []
@@ -359,7 +355,6 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.container.handler.ThreadpoolConfig$Builder)",
       "public int maxthreads()",
       "public int corePoolSize()",
@@ -372,7 +367,6 @@
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
@@ -402,14 +396,9 @@
       "public void <init>(com.yahoo.container.handler.ClustersStatus)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor, com.yahoo.jdisc.Metric)",
-      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
-      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.handler.ClustersStatus, com.yahoo.container.jdisc.state.StateMonitor)",
-      "public void <init>(com.yahoo.container.QrSearchersConfig, com.yahoo.container.core.VipStatusConfig, com.yahoo.container.handler.ClustersStatus)",
       "public void setInRotation(java.lang.Boolean)",
       "public void addToRotation(java.lang.String)",
       "public void removeFromRotation(java.lang.String)",
-      "public void addToRotation(java.lang.Object)",
-      "public void removeFromRotation(java.lang.Object)",
       "public boolean isInRotation()"
     ],
     "fields": []
@@ -732,11 +721,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context)",
       "public java.util.concurrent.Executor getExecutor()",
-      "public com.yahoo.container.logging.AccessLog getAccessLog()",
       "public com.yahoo.jdisc.Metric getMetric()"
     ],
     "fields": []
@@ -751,12 +738,9 @@
     "methods": [
       "public static com.yahoo.container.jdisc.LoggingRequestHandler$Context testOnlyContext()",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context)",
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog)",
       "public void <init>(java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.jdisc.LoggingRequestHandler$Context, boolean)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric, boolean)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric, boolean)",
       "protected com.yahoo.container.jdisc.LoggingCompletionHandler createLoggingCompletionHandler(long, long, com.yahoo.container.jdisc.HttpResponse, com.yahoo.container.jdisc.HttpRequest, com.yahoo.container.jdisc.ContentChannelOutputStream)"
     ],
@@ -1057,7 +1041,6 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder acceptQueueSize(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder reuseAddress(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder idleTimeout(double)",
-      "public com.yahoo.jdisc.http.ConnectorConfig$Builder stopTimeout(double)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder tcpKeepAliveEnabled(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder tcpNoDelay(boolean)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder throttling(com.yahoo.jdisc.http.ConnectorConfig$Throttling$Builder)",
@@ -1409,7 +1392,6 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Builder)",
       "public int listenPort()",
       "public java.lang.String name()",
@@ -1420,7 +1402,6 @@
       "public int acceptQueueSize()",
       "public boolean reuseAddress()",
       "public double idleTimeout()",
-      "public double stopTimeout()",
       "public boolean tcpKeepAliveEnabled()",
       "public boolean tcpNoDelay()",
       "public com.yahoo.jdisc.http.ConnectorConfig$Throttling throttling()",
@@ -1439,7 +1420,6 @@
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
@@ -1493,7 +1473,6 @@
       "public static java.lang.String toCookieHeader(java.lang.Iterable)",
       "public static java.util.List fromCookieHeader(java.lang.String)",
       "public static java.util.List toSetCookieHeaders(java.lang.Iterable)",
-      "public static java.util.List toSetCookieHeaderAll(java.lang.Iterable)",
       "public static com.yahoo.jdisc.http.Cookie fromSetCookieHeader(java.lang.String)"
     ],
     "fields": []
@@ -1768,20 +1747,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.jdisc.http.SecretStore": {
-    "superClass": "java.lang.Object",
-    "interfaces": [],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract java.lang.String getSecret(java.lang.String)",
-      "public java.lang.String getSecret(java.lang.String, int)"
-    ],
-    "fields": []
-  },
   "com.yahoo.jdisc.http.ServerConfig$AccessLog$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -1833,8 +1798,6 @@
       "public void <init>(com.yahoo.jdisc.http.ServerConfig)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder developerMode(boolean)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder responseCompressionLevel(int)",
-      "public com.yahoo.jdisc.http.ServerConfig$Builder httpKeepAliveEnabled(boolean)",
-      "public com.yahoo.jdisc.http.ServerConfig$Builder maxKeepAliveRequests(int)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder removeRawPostBodyForWwwUrlEncodedPost(boolean)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder filter(com.yahoo.jdisc.http.ServerConfig$Filter$Builder)",
       "public com.yahoo.jdisc.http.ServerConfig$Builder filter(java.util.function.Consumer)",
@@ -2062,12 +2025,9 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.jdisc.http.ServerConfig$Builder)",
       "public boolean developerMode()",
       "public int responseCompressionLevel()",
-      "public boolean httpKeepAliveEnabled()",
-      "public int maxKeepAliveRequests()",
       "public boolean removeRawPostBodyForWwwUrlEncodedPost()",
       "public java.util.List filter()",
       "public com.yahoo.jdisc.http.ServerConfig$Filter filter(int)",
@@ -2086,7 +2046,6 @@
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },
@@ -2168,8 +2127,6 @@
       "public java.lang.String getMethod()",
       "public com.yahoo.jdisc.http.HttpRequest$Version getVersion()",
       "public java.net.URI getUri()",
-      "public void setUri(java.net.URI)",
-      "public com.yahoo.jdisc.http.HttpRequest getParentRequest()",
       "public java.lang.String getRemoteAddr()",
       "public void setRemoteAddr(java.lang.String)",
       "public java.lang.String getLocalAddr()",
@@ -2211,7 +2168,6 @@
       "public java.lang.String getRequestURI()",
       "public java.lang.String getRequestedSessionId()",
       "public java.lang.String getScheme()",
-      "public void setScheme(java.lang.String, boolean)",
       "public java.lang.String getServerName()",
       "public int getServerPort()",
       "public java.security.Principal getUserPrincipal()",
@@ -2263,7 +2219,6 @@
       "public void setCookies(java.util.List)",
       "public int getStatus()",
       "public void setStatus(int)",
-      "public com.yahoo.jdisc.http.HttpResponse getParentResponse()",
       "public void addCookie(com.yahoo.jdisc.http.filter.JDiscCookieWrapper)",
       "public void sendError(int)",
       "public void setCookie(java.lang.String, java.lang.String)"
@@ -2308,17 +2263,6 @@
       "public void setSecure(boolean)",
       "public void setValue(java.lang.String)",
       "public com.yahoo.jdisc.http.Cookie getCookie()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.filter.JdiscFilterRequest": {
-    "superClass": "com.yahoo.jdisc.http.filter.DiscFilterRequest",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.jdisc.http.HttpRequest)"
     ],
     "fields": []
   },
@@ -2850,8 +2794,7 @@
       "public void <init>(com.yahoo.processing.Request, com.yahoo.processing.request.ErrorMessage)",
       "public void mergeWith(com.yahoo.processing.Response)",
       "public com.yahoo.processing.response.DataList data()",
-      "public static java.util.concurrent.CompletableFuture recursiveFuture(com.yahoo.processing.response.DataList)",
-      "public static com.google.common.util.concurrent.ListenableFuture recursiveComplete(com.yahoo.processing.response.DataList)"
+      "public static java.util.concurrent.CompletableFuture recursiveFuture(com.yahoo.processing.response.DataList)"
     ],
     "fields": []
   },
@@ -3152,7 +3095,6 @@
       "public final java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public void deconstruct()",
       "public final java.util.concurrent.CompletableFuture renderResponseBeforeHandover(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
-      "public final com.google.common.util.concurrent.ListenableFuture renderBeforeHandover(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public com.yahoo.processing.execution.Execution getExecution()",
       "public com.yahoo.processing.Response getResponse()",
       "protected boolean clientClosed()",
@@ -3197,8 +3139,7 @@
       "public void <init>()",
       "public com.yahoo.processing.rendering.Renderer clone()",
       "public void init()",
-      "public com.google.common.util.concurrent.ListenableFuture render(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
-      "public java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
+      "public abstract java.util.concurrent.CompletableFuture renderResponse(java.io.OutputStream, com.yahoo.processing.Response, com.yahoo.processing.execution.Execution, com.yahoo.processing.Request)",
       "public abstract java.lang.String getEncoding()",
       "public abstract java.lang.String getMimeType()",
       "public bridge synthetic com.yahoo.component.AbstractComponent clone()",
@@ -3437,7 +3378,6 @@
       "protected void <init>(com.yahoo.processing.Request, com.yahoo.processing.response.IncomingData, boolean, boolean)",
       "public com.yahoo.processing.Request request()",
       "public com.yahoo.processing.response.IncomingData incoming()",
-      "public com.google.common.util.concurrent.ListenableFuture complete()",
       "public java.util.concurrent.CompletableFuture completeFuture()",
       "public boolean isOrdered()",
       "public boolean isStreamed()",
@@ -3498,7 +3438,6 @@
       "public abstract java.util.List asList()",
       "public abstract com.yahoo.processing.response.IncomingData incoming()",
       "public abstract java.util.concurrent.CompletableFuture completeFuture()",
-      "public abstract com.google.common.util.concurrent.ListenableFuture complete()",
       "public abstract void addDataListener(java.lang.Runnable)",
       "public void close()"
     ],
@@ -3517,7 +3456,6 @@
       "public void <init>(com.yahoo.processing.response.DataList)",
       "public final void assignOwner(com.yahoo.processing.response.DataList)",
       "public com.yahoo.processing.response.DataList getOwner()",
-      "public com.google.common.util.concurrent.ListenableFuture completed()",
       "public java.util.concurrent.CompletableFuture completedFuture()",
       "public synchronized boolean isComplete()",
       "public synchronized void addLast(com.yahoo.processing.response.Data)",
@@ -3582,7 +3520,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.processing.response.DataList)",
-      "public com.google.common.util.concurrent.ListenableFuture completed()",
       "public java.util.concurrent.CompletableFuture completedFuture()",
       "public com.yahoo.processing.response.DataList getOwner()",
       "public boolean isComplete()",
@@ -3608,7 +3545,6 @@
     "methods": [
       "public abstract com.yahoo.processing.response.DataList getOwner()",
       "public abstract java.util.concurrent.CompletableFuture completedFuture()",
-      "public abstract com.google.common.util.concurrent.ListenableFuture completed()",
       "public abstract boolean isComplete()",
       "public abstract void addLast(com.yahoo.processing.response.Data)",
       "public abstract void add(com.yahoo.processing.response.Data)",

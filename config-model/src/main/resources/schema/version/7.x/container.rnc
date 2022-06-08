@@ -1,0 +1,52 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Schema for common container options
+
+include "processing.rnc"
+
+Handler = element handler {
+   ComponentDefinition &
+   ServerBindings &
+   element clientBinding {text}*
+}
+
+Binding = element binding {text}
+ServerBindings = Binding*
+
+Client = element client {
+   ComponentDefinition &
+   element binding {text}* &
+   element serverBinding {text}*
+}
+
+Server = element server {
+   ComponentDefinition
+}
+
+AccessControl = element access-control {
+    attribute domain { xsd:NCName }? &
+    attribute read { string "true" | string "false" }? &
+    attribute write { string "true" | string "false" }? &
+    attribute tls-handshake-client-auth {string "want" | string "need"}? &
+    element vespa-domain { xsd:NCName }? &
+    element exclude {
+        Binding+
+    }?
+}
+
+HttpFilterChain =
+    HttpFilter* &
+    ChainBaseContent &
+    ServerBindings
+
+HttpFilter = element filter {
+   ComponentDefinition &
+   FilterConfig?
+}
+
+FilterConfig = element filter-config {
+   anyElement*
+}
+
+Renderer = element renderer {
+   ComponentDefinition
+}

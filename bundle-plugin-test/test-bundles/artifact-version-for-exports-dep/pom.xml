@@ -8,7 +8,7 @@
   <parent>
     <groupId>com.yahoo.vespa.bundle-plugin</groupId>
     <artifactId>test-bundles</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <artifactId>artifact-version-for-exports-dep</artifactId>
@@ -16,7 +16,7 @@
              But version is set to the release version by build scripts before building.
              Then, the dependent bundle will not find the artifact. Skipping this step for a sub-module seems
              impossible with the maven-versions-plugin, and cumbersome with factorylib. -->
-  <version>7-SNAPSHOT</version>
+  <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
   <dependencies>
   </dependencies>

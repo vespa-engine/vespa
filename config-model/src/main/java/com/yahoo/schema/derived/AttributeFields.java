@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.derived;
 
-import com.yahoo.config.subscription.ConfigInstanceUtil;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.Case;
@@ -16,8 +15,6 @@ import com.yahoo.vespa.indexinglanguage.expressions.ToPositionExpression;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -183,15 +180,6 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         return "attributes";
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
-    private Map<String, AttributesConfig.Attribute.Builder> toMap(List<AttributesConfig.Attribute.Builder> ls) {
-        Map<String, AttributesConfig.Attribute.Builder> ret = new LinkedHashMap<>();
-        for (AttributesConfig.Attribute.Builder builder : ls) {
-            ret.put((String) ConfigInstanceUtil.getField(builder, "name"), builder);
-        }
-        return ret;
-    }
-
     @Override
     public void getConfig(AttributesConfig.Builder builder) {
         //TODO This is just to get some exporting tests to work, Should be undone and removed
@@ -224,9 +212,6 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         if (attribute.isMutable()) {
             aaB.ismutable(true);
-        }
-        if (attribute.isHuge()) {
-            aaB.huge(true);
         }
         if (attribute.isPaged()) {
             aaB.paged(true);

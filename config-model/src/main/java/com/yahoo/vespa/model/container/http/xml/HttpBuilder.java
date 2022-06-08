@@ -68,16 +68,22 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return http;
     }
 
-    private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer ancestor, Element accessControlElem) {
+    private AccessControl buildAccessControl(DeployState deployState, AbstractConfigProducer<?> ancestor, Element accessControlElem) {
         AthenzDomain domain = getAccessControlDomain(deployState, accessControlElem);
         AccessControl.Builder builder = new AccessControl.Builder(domain.value());
 
         getContainerCluster(ancestor).ifPresent(builder::setHandlers);
 
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
-                readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
+                readAttr -> deployState.getDeployLogger()
+                        .logApplicationPackage(Level.WARNING,
+                                "The 'read' attribute of the 'access-control' element has no effect and is deprecated. " +
+                                        "Please remove the attribute from services.xml"));
         XmlHelper.getOptionalAttribute(accessControlElem, "write").ifPresent(
-                writeAttr -> builder.writeEnabled(Boolean.valueOf(writeAttr)));
+                writeAttr -> deployState.getDeployLogger()
+                        .logApplicationPackage(Level.WARNING,
+                                "The 'write' attribute of the 'access-control' element has no effect and is deprecated. " +
+                                        "Please remove the attribute from services.xml"));
 
         AccessControl.ClientAuthentication clientAuth =
                 XmlHelper.getOptionalAttribute(accessControlElem, "tls-handshake-client-auth")
@@ -98,7 +104,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return builder.build();
     }
 
-    // TODO Fail if domain is not provided through deploy properties
+    // TODO(tokle,bjorncs) Vespa > 8: Fail if domain is not provided through deploy properties
     private static AthenzDomain getAccessControlDomain(DeployState deployState, Element accessControlElem) {
         AthenzDomain tenantDomain = deployState.getProperties().athenzDomain().orElse(null);
         AthenzDomain explicitDomain = XmlHelper.getOptionalAttribute(accessControlElem, "domain")

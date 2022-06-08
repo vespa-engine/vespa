@@ -3,7 +3,6 @@ package com.yahoo.vespa.http.server;
 
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.text.Utf8;
-import com.yahoo.vespa.http.client.config.FeedParams;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;

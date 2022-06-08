@@ -56,8 +56,7 @@ public class CommandLineOptionsTest {
         assertFalse(params.help);
         assertFalse(params.documentIds.hasNext());
         assertFalse(params.printIdsOnly);
-        // TODO Vespa 8: change to DocumentOnly.NAME
-        assertEquals(AllFields.NAME, params.fieldSet);
+        assertEquals(DocumentOnly.NAME, params.fieldSet);
         assertEquals("default-get", params.route);
         assertTrue(params.cluster.isEmpty());
         assertEquals("client", params.configId);
@@ -66,7 +65,6 @@ public class CommandLineOptionsTest {
         assertFalse(params.noRetry);
         assertEquals(0, params.traceLevel);
         assertEquals(DocumentProtocol.Priority.NORMAL_2, params.priority);
-        assertTrue(params.loadTypeName.isEmpty());
     }
 
     @Test
@@ -80,7 +78,6 @@ public class CommandLineOptionsTest {
                 "--noretry",
                 "--trace", "1",
                 "--priority", Integer.toString(DocumentProtocol.Priority.HIGH_3.getValue()),
-                "--loadtype", "dummyloadtype",
                 "id:1", "id:2"
         );
 
@@ -92,7 +89,6 @@ public class CommandLineOptionsTest {
         assertTrue(params.noRetry);
         assertEquals(1, params.traceLevel);
         assertEquals(DocumentProtocol.Priority.HIGH_3, params.priority);
-        assertEquals("dummyloadtype", params.loadTypeName);
 
         Iterator<String> documentsIds = params.documentIds;
         assertEquals("id:1", documentsIds.next());

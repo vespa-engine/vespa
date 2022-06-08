@@ -7,7 +7,7 @@
 
     <artifactId>cloud-tenant-base</artifactId>
     <name>Vespa Cloud tenant base</name>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <description>Parent POM for all Vespa Cloud applications.</description>
     <url>https://github.com/vespa-engine</url>
     <packaging>pom</packaging>
@@ -15,7 +15,7 @@
     <parent>
         <artifactId>hosted-tenant-base</artifactId>
         <groupId>com.yahoo.vespa</groupId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../hosted-tenant-base/pom.xml</relativePath>
     </parent>
 

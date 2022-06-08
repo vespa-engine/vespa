@@ -237,7 +237,6 @@ public class Container {
         }
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void invalidateGeneration(long generation, Throwable cause) {
         leastGeneration = Math.max(retriever.getComponentsGeneration(), retriever.getBootstrapGeneration()) + 1;
         if (!(cause instanceof InterruptedException) && !(cause instanceof ConfigInterruptedException) && !(cause instanceof SubscriberClosedException)) {

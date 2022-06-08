@@ -25,12 +25,6 @@ public class ZoneInfo {
         this.zone = Objects.requireNonNull(zone, "Zone cannot be null!");
     }
 
-    /** @deprecated pass an application id */
-    @Deprecated // Remove on Vespa 8
-    public ZoneInfo(Zone zone) {
-        this(new ApplicationId("default", "default", "default"), zone);
-    }
-
     /** Returns the application this is running as part of */
     public ApplicationId application() { return application; }
 

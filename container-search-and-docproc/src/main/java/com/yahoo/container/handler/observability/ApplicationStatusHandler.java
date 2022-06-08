@@ -16,7 +16,7 @@ import com.yahoo.container.Container;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.docproc.Call;
-import com.yahoo.docproc.DocprocService;
+import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.docproc.jdisc.DocumentProcessingHandler;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
@@ -274,7 +274,6 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
             return jsonMapper.createObjectNode();
         }
 
-        @SuppressWarnings("removal") // TODO Vespa 8: remove
         private static JsonNode renderDocprocChains(Container container) {
             ObjectNode ret = jsonMapper.createObjectNode();
             for (RequestHandler h : container.getRequestHandlerRegistry().allComponents()) {

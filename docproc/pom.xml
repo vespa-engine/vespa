@@ -8,12 +8,12 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>docproc</artifactId>
   <packaging>jar</packaging>
-  <version>7-SNAPSHOT</version>
+  <version>8-SNAPSHOT</version>
   <dependencies>
     <!-- PROVIDED scope -->
     <dependency>
@@ -73,12 +73,6 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>messagebus</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>statistics</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

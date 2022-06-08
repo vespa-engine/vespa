@@ -860,7 +860,6 @@ fi
 %{_prefix}/bin/vespa
 %{_prefix}/bin/vespa-feed-client
 %{_prefix}/conf/vespa-feed-client/logging.properties
-%{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-feed-client-cli-jar-with-dependencies.jar
 %docdir /usr/share/man
 /usr/share/man
@@ -898,7 +897,6 @@ fi
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/asm-*.jar
-%{_prefix}/lib/jars/aopalliance-repackaged-*.jar
 %{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/bcpkix-jdk15on-*.jar
 %{_prefix}/lib/jars/bcprov-jdk15on-*.jar
@@ -913,15 +911,12 @@ fi
 %{_prefix}/lib/jars/container-search-gui-jar-with-dependencies.jar
 %{_prefix}/lib/jars/docprocs-jar-with-dependencies.jar
 %{_prefix}/lib/jars/flags-jar-with-dependencies.jar
-%{_prefix}/lib/jars/hk2-*.jar
 %{_prefix}/lib/jars/hosted-zone-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jackson-*.jar
-%{_prefix}/lib/jars/javassist-*.jar
 %{_prefix}/lib/jars/javax.*.jar
 %{_prefix}/lib/jars/jdisc-cloud-aws-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
-%{_prefix}/lib/jars/jersey-*.jar
 %{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/alpn-*.jar
 %{_prefix}/lib/jars/http2-*.jar
@@ -929,10 +924,8 @@ fi
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
 %{_prefix}/lib/jars/org.apache.aries.spifly.dynamic.bundle-*.jar
-%{_prefix}/lib/jars/osgi-resource-locator-*.jar
 %{_prefix}/lib/jars/security-utils.jar
 %{_prefix}/lib/jars/standalone-container-jar-with-dependencies.jar
-%{_prefix}/lib/jars/validation-api-*.jar
 %{_prefix}/lib/jars/vespa-athenz-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespaclient-container-plugin-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespajlib.jar

@@ -20,9 +20,8 @@ struct Fixture
 
     Fixture(BasicType bt,
             CollectionType ct = CollectionType::SINGLE,
-            bool fastSearch_ = false,
-            bool huge_ = false)
-        : _config(bt, ct, fastSearch_, huge_)
+            bool fastSearch_ = false)
+        : _config(bt, ct, fastSearch_)
     { }
 };
 
@@ -32,7 +31,6 @@ TEST_F("test default attribute config", Fixture)
     EXPECT_EQUAL(CollectionType::Type::SINGLE,
                  f._config.collectionType().type());
     EXPECT_TRUE(!f._config.fastSearch());
-    EXPECT_TRUE(!f._config.huge());
     EXPECT_TRUE(!f._config.getEnableBitVectors());
     EXPECT_TRUE(!f._config.getEnableOnlyBitVector());
     EXPECT_TRUE(!f._config.getIsFilter());
@@ -48,7 +46,6 @@ TEST_F("test integer weightedset attribute config",
     EXPECT_EQUAL(CollectionType::Type::WSET,
                  f._config.collectionType().type());
     EXPECT_TRUE(!f._config.fastSearch());
-    EXPECT_TRUE(!f._config.huge());
     EXPECT_TRUE(!f._config.getEnableBitVectors());
     EXPECT_TRUE(!f._config.getEnableOnlyBitVector());
     EXPECT_TRUE(!f._config.getIsFilter());

@@ -3,8 +3,8 @@ package com.yahoo.documentapi.messagebus;
 
 import com.yahoo.document.BucketId;
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocIdOnly;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.ProgressToken;
@@ -14,7 +14,6 @@ import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.VisitorDataQueue;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorResponse;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorMessage;
 import com.yahoo.documentapi.messagebus.protocol.CreateVisitorReply;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
@@ -477,7 +476,7 @@ public class MessageBusVisitorSessionTestCase {
         return params;
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 9
     private String createVisitorToString(CreateVisitorMessage msg) {
         StringBuilder sb = new StringBuilder();
         sb.append("CreateVisitorMessage(buckets=[\n");
@@ -500,7 +499,7 @@ public class MessageBusVisitorSessionTestCase {
         if (msg.getMaxPendingReplyCount() != 32) {
             sb.append("max pending=").append(msg.getMaxPendingReplyCount()).append("\n");
         }
-        if (!AllFields.NAME.equals(msg.getFieldSet())) {
+        if (!DocumentOnly.NAME.equals(msg.getFieldSet())) {
             sb.append("fieldset=").append(msg.getFieldSet()).append("\n");
         }
         if (msg.getVisitInconsistentBuckets()) {
@@ -524,10 +523,7 @@ public class MessageBusVisitorSessionTestCase {
         if (msg.getMaxBucketsPerVisitor() != 1) {
             sb.append("max buckets per visitor=").append(msg.getMaxBucketsPerVisitor()).append("\n");
         }
-        if (msg.getLoadType() != LoadType.DEFAULT) {
-            sb.append("load type=").append(msg.getLoadType().getName()).append("\n");
-        }
-        if (msg.getPriority() != DocumentProtocol.Priority.NORMAL_3) { // TODO: remove on Vespa 8
+        if (msg.getPriority() != DocumentProtocol.Priority.NORMAL_3) { // TODO: remove on Vespa 9
             sb.append("priority=").append(msg.getPriority()).append("\n");
         }
         if (!"DumpVisitor".equals(msg.getLibraryName())) {
@@ -722,7 +718,6 @@ public class MessageBusVisitorSessionTestCase {
     }
 
     @Test
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public void testMessageParameters() {
         MockSender sender = new MockSender();
         MockReceiver receiver = new MockReceiver();
@@ -742,7 +737,6 @@ public class MessageBusVisitorSessionTestCase {
         params.setTimeoutMs(1337);
         params.setMaxPending(111);
         params.setFieldSet(DocIdOnly.NAME);
-        params.setLoadType(new LoadType(3, "samnmax", DocumentProtocol.Priority.HIGH_3)); // TODO: Remove on Vespa 8
         params.setVisitRemoves(true);
         params.setVisitInconsistentBuckets(true);
         params.setTraceLevel(9);
@@ -772,7 +766,6 @@ public class MessageBusVisitorSessionTestCase {
                 "]\n" +
                 "route=extraterrestrial/highway\n" +
                 "max buckets per visitor=55\n" +
-                "load type=samnmax\n" +
                 "priority=HIGHEST\n" +
                 "visitor library=CoolVisitor\n" +
                 "trace level=9\n" +
@@ -975,7 +968,7 @@ public class MessageBusVisitorSessionTestCase {
             builder.append("onVisitorStatistics : ");
             // Only bother with a couple of fields.
             builder.append(vs.getBucketsVisited()).append(" buckets visited, ");
-            builder.append(vs.getDocumentsReturned() + vs.getSecondPassDocumentsReturned()).append(" docs returned\n");
+            builder.append(vs.getDocumentsReturned()).append(" docs returned\n");
         }
 
         @Override
@@ -1433,51 +1426,6 @@ public class MessageBusVisitorSessionTestCase {
             VisitorStatistics stats = new VisitorStatistics();
             stats.setBucketsVisited(1);
             stats.setDocumentsReturned(1);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-        };
-        doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
-    }
-
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove
-    @Test
-    public void testVisitingCompletedFromSufficientFirstPassHits() {
-        VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
-        visitorParameters.setMaxFirstPassHits(10);
-        ReplyModifier replyModifier1 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setDocumentsReturned(9);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-        };
-        ReplyModifier replyModifier2 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setDocumentsReturned(1);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
-        };
-        doTestEarlyCompletion(visitorParameters, replyModifier1, replyModifier2);
-    }
-
-    @SuppressWarnings("removal")// TODO: Vespa 8: remove test
-    @Test
-    public void testVisitingCompletedFromSecondPassHits() {
-        VisitorParameters visitorParameters = createVisitorParameters("id.user==1234");
-        visitorParameters.setMaxTotalHits(10);
-        ReplyModifier replyModifier1 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setDocumentsReturned(5);
-            stats.setSecondPassDocumentsReturned(4);
-            reply.setVisitorStatistics(stats);
-            reply.setLastBucket(new BucketId(33, 1234 | (1L << 32)));
-        };
-        ReplyModifier replyModifier2 = (reply) -> {
-            VisitorStatistics stats = new VisitorStatistics();
-            stats.setBucketsVisited(1);
-            stats.setSecondPassDocumentsReturned(1);
             reply.setVisitorStatistics(stats);
             reply.setLastBucket(new BucketId(34, 1234 | (1L << 33)));
         };
@@ -2349,7 +2297,6 @@ public class MessageBusVisitorSessionTestCase {
         visitorParameters.setDynamicallyIncreaseMaxBucketsPerVisitor(true);
         visitorParameters.setMaxBucketsPerVisitor(2);
         visitorParameters.setDynamicMaxBucketsIncreaseFactor(10);
-        visitorParameters.setMaxFirstPassHits(10);
         MockComponents mc = createDefaultMock(visitorParameters);
 
         mc.visitorSession.start();

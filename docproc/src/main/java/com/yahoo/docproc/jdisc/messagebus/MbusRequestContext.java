@@ -5,10 +5,10 @@ import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.docproc.AbstractConcreteDocumentFactory;
-import com.yahoo.docproc.DocprocService;
-import com.yahoo.docproc.HandledProcessingException;
+import com.yahoo.docproc.impl.DocprocService;
+import com.yahoo.docproc.impl.HandledProcessingException;
 import com.yahoo.docproc.Processing;
-import com.yahoo.docproc.TransientFailureException;
+import com.yahoo.docproc.impl.TransientFailureException;
 import com.yahoo.docproc.jdisc.RequestContext;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.documentapi.messagebus.protocol.DocumentMessage;
@@ -53,7 +53,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     public final static String internalNoThrottledSource = "internalNoThrottledSource";
     private final static String internalNoThrottledSourcePath = "/" + internalNoThrottledSource;
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public MbusRequestContext(MbusRequest request, ResponseHandler responseHandler,
                               ComponentRegistry<DocprocService> docprocServiceComponentRegistry,
                               ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
@@ -61,7 +60,7 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
         this.request = request;
         this.requestMsg = (DocumentMessage)request.getMessage();
         this.responseHandler = responseHandler;
-        this.processingFactory = new ProcessingFactory(docprocServiceComponentRegistry, docFactoryRegistry,
+        this.processingFactory = new ProcessingFactory(docFactoryRegistry,
                                                        containerDocConfig, getServiceName());
         this.messageFactory = newMessageFactory(requestMsg);
     }
@@ -112,7 +111,6 @@ public class MbusRequestContext implements RequestContext, ResponseHandler {
     }
 
     @Override
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public void processingFailed(Exception exception) {
         ErrorCode errorCode;
         if (exception instanceof TransientFailureException) {

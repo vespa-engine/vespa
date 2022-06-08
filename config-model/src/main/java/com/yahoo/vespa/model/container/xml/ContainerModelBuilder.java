@@ -26,23 +26,21 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.derived.RankProfileList;
+import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
-import com.yahoo.vespa.model.builder.xml.dom.DomClientProviderBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomComponentBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.DomHandlerBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
@@ -90,7 +88,6 @@ import com.yahoo.vespa.model.container.xml.embedder.EmbedderConfig;
 import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -122,7 +119,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final String HOSTED_VESPA_STATUS_FILE_SETTING = "VESPA_LB_STATUS_FILE";
 
     private static final String CONTAINER_TAG = "container";
-    private static final String DEPRECATED_CONTAINER_TAG = "jdisc";
     private static final String ENVIRONMENT_VARIABLES_ELEMENT = "environment-variables";
 
     // The node count to enforce in a cluster running ZooKeeper
@@ -138,8 +134,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final boolean httpServerEnabled;
     protected DeployLogger log;
 
-    public static final List<ConfigModelId> configModelIds =  
-            ImmutableList.of(ConfigModelId.fromName(CONTAINER_TAG), ConfigModelId.fromName(DEPRECATED_CONTAINER_TAG));
+    public static final List<ConfigModelId> configModelIds = ImmutableList.of(ConfigModelId.fromName(CONTAINER_TAG));
 
     private static final String xmlRendererId = RendererRegistry.xmlRendererId.getName();
     private static final String jsonRendererId = RendererRegistry.jsonRendererId.getName();
@@ -164,8 +159,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         app = modelContext.getApplicationPackage();
 
         checkVersion(spec);
-        checkTagName(spec, log);
-        checkDeprecatedAttributes(spec, log);
 
         ApplicationContainerCluster cluster = createContainerCluster(spec, modelContext);
         addClusterContent(cluster, spec, modelContext);
@@ -173,16 +166,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.setRpcServerEnabled(rpcServerEnabled);
         cluster.setHttpServerEnabled(httpServerEnabled);
         model.setCluster(cluster);
-    }
-
-    private void checkDeprecatedAttributes(Element spec, DeployLogger log) {
-        String version = spec.getAttribute("jetty");
-        if (!version.isEmpty()) {
-            log.logApplicationPackage(WARNING,
-                    "The 'jetty' attribute is deprecated and will be removed in Vespa 8. " +
-                            "It has no effect - Jetty is always enabled." +
-                            "Please remove the attribute from the 'container'/'jdisc' element in services.xml.");
-        }
     }
 
     private ApplicationContainerCluster createContainerCluster(Element spec, ConfigModelContext modelContext) {
@@ -218,10 +201,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addHttp(deployState, spec, cluster, context);
 
         addAccessLogs(deployState, cluster, spec);
-        addRoutingAliases(cluster, spec, deployState.zone().environment());
         addNodes(cluster, spec, context);
 
-        addClientProviders(deployState, spec, cluster);
         addServerProviders(deployState, spec, cluster);
 
         // Must be added after nodes:
@@ -370,21 +351,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         container.setProp("rotations", String.join(",", rotationsProperty));
     }
 
-    private void addRoutingAliases(ApplicationContainerCluster cluster, Element spec, Environment environment) {
-        if (environment != Environment.prod) return;
-
-        Element aliases = XML.getChild(spec, "aliases");
-        if (aliases != null) {
-            log.logApplicationPackage(WARNING, "The 'aliases' element and its children has no effect. They have been deprecated for removal in Vespa 8");
-        }
-        for (Element alias : XML.getChildren(aliases, "service-alias")) {
-            cluster.serviceAliases().add(XML.getValue(alias));
-        }
-        for (Element alias : XML.getChildren(aliases, "endpoint-alias")) {
-            cluster.endpointAliases().add(XML.getValue(alias));
-        }
-    }
-
     private static void addEmbedderComponents(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
         for (Element node : XML.getChildren(spec, "embedder")) {
             Element transformed = EmbedderConfig.transform(deployState, node);
@@ -414,17 +380,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
     }
 
-    private void addClientProviders(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
-        List<Element> clientElements = XML.getChildren(spec, "client");
-        if (! clientElements.isEmpty()) {
-            log.logApplicationPackage(
-                    Level.WARNING, "The 'client' element is deprecated for removal in Vespa 8, with no replacement");
-        }
-        for (Element clientSpec : clientElements) {
-            cluster.addComponent(new DomClientProviderBuilder(cluster).build(deployState, cluster, clientSpec));
-        }
-    }
-
     private void addServerProviders(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
         addConfiguredComponents(deployState, cluster, spec, "server");
     }
@@ -447,7 +402,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
-            // TODO: clean up after Vespa 8
+            // TODO: Vespa > 8: Clean up
             if (cluster.isHostedVespa() || deployState.getVespaVersion().getMajor() == 8) {
                 cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "access"));
             } else {
@@ -554,8 +509,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (tenantDomain == null) return; // tenant domain not present, cannot add access control. this should eventually be a failure.
         new AccessControl.Builder(tenantDomain.value())
                 .setHandlers(cluster)
-                .readEnabled(false)
-                .writeEnabled(false)
                 .clientAuthentication(AccessControl.ClientAuthentication.need)
                 .build()
                 .configureHttpFilterChains(http);
@@ -680,13 +633,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             throw new IllegalArgumentException("Expected container version to be 1.0, but got " + version);
     }
 
-    private void checkTagName(Element spec, DeployLogger logger) {
-        if (spec.getTagName().equals(DEPRECATED_CONTAINER_TAG)) {
-            logger.logApplicationPackage(WARNING, "'" + DEPRECATED_CONTAINER_TAG +
-                                                  "' is deprecated as tag name. Use '" + CONTAINER_TAG + "' instead.");
-        }
-    }
-
     private void addNodes(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         if (standaloneBuilder)
             addStandaloneNode(cluster, context.getDeployState());
@@ -697,12 +643,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addStandaloneNode(ApplicationContainerCluster cluster, DeployState deployState) {
         ApplicationContainer container = new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), deployState);
         cluster.addContainers(Collections.singleton(container));
-    }
-
-    static boolean incompatibleGCOptions(String jvmargs) {
-        Pattern gcAlgorithm = Pattern.compile("-XX:[-+]Use.+GC");
-        Pattern cmsArgs = Pattern.compile("-XX:[-+]*CMS");
-        return (gcAlgorithm.matcher(jvmargs).find() || cmsArgs.matcher(jvmargs).find());
     }
 
     private static String buildJvmGCOptions(ConfigModelContext context, String jvmGCOptions) {
@@ -767,7 +707,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             List<ApplicationContainer> nodes = createNodes(cluster, containerElement, nodesElement, context);
 
             extractJvmOptions(nodes, cluster, nodesElement, context);
-            applyRoutingAliasProperties(nodes, cluster);
             applyDefaultPreload(nodes, nodesElement);
             String environmentVars = getEnvironmentVariables(XML.getChild(nodesElement, ENVIRONMENT_VARIABLES_ELEMENT));
             if (!environmentVars.isEmpty()) {
@@ -801,19 +740,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
         else // the non-hosted option
             return createNodesFromNodeList(context.getDeployState(), cluster, nodesElement);
-    }
-
-    private static void applyRoutingAliasProperties(List<ApplicationContainer> result, ApplicationContainerCluster cluster) {
-        if (!cluster.serviceAliases().isEmpty()) {
-            result.forEach(container -> {
-                container.setProp("servicealiases", cluster.serviceAliases().stream().collect(Collectors.joining(",")));
-            });
-        }
-        if (!cluster.endpointAliases().isEmpty()) {
-            result.forEach(container -> {
-                container.setProp("endpointaliases", cluster.endpointAliases().stream().collect(Collectors.joining(",")));
-            });
-        }
     }
     
     private static void applyMemoryPercentage(ApplicationContainerCluster cluster, String memoryPercentage) {
@@ -1109,7 +1035,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     public static boolean isContainerTag(Element element) {
-        return CONTAINER_TAG.equals(element.getTagName()) || DEPRECATED_CONTAINER_TAG.equals(element.getTagName());
+        return CONTAINER_TAG.equals(element.getTagName());
     }
 
     /**
@@ -1149,32 +1075,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         String buildLegacyOptions() {
-            String jvmOptions;
+            String jvmOptions = null;
             if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
                 jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVM_OPTIONS);
-                if (nodesElement.hasAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME)) {
-                    String jvmArgs = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-                    throw new IllegalArgumentException("You have specified both deprecated jvm-options='" + jvmOptions + "'" +
-                                                               " and deprecated jvmargs='" + jvmArgs +
-                                                               "'. 'jvm-options' and 'jvmargs' are deprecated and will be removed in Vespa 8." +
-                                                               " Please merge 'jvmargs' into 'options' or 'gc-options' in 'jvm' element." +
-                                                               " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
-                }
                 if (! jvmOptions.isEmpty())
                     logger.logApplicationPackage(WARNING, "'jvm-options' is deprecated and will be removed in Vespa 8." +
                             " Please merge 'jvm-options' into 'options' or 'gc-options' in 'jvm' element." +
-                            " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
-            } else {
-                jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
-                if (incompatibleGCOptions(jvmOptions)) {
-                    logger.logApplicationPackage(WARNING, "You need to move your GC-related options from deprecated 'jvmargs'" +
-                            "  to 'gc-options' in 'jvm' element. 'jvmargs' is deprecated and will be removed in Vespa 8." +
-                            " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
-                    cluster.setJvmGCOptions(ContainerCluster.G1GC);
-                }
-                if (! jvmOptions.isEmpty())
-                    logger.logApplicationPackage(WARNING, "'jvmargs' is deprecated and will be removed in Vespa 8." +
-                            " Please merge 'jvmargs' into 'options' or 'gc-options' in 'jvm' element." +
                             " See https://docs.vespa.ai/en/reference/services-container.html#jvm");
             }
 

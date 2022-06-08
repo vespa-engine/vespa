@@ -6,7 +6,6 @@ import com.yahoo.config.model.application.provider.BaseDeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.ConfigDefinitionStore;
 import com.yahoo.config.model.producer.UserConfigRepo;
-import com.yahoo.test.ArraytypesConfig;
 import com.yahoo.test.SimpletypesConfig;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import org.junit.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.Optional;
@@ -53,32 +51,21 @@ public class UserConfigBuilderTest {
     }
 
     @Test
-    public void require_that_arrays_config_is_resolved() {
-        Element configRoot = getDocument("<config name=\"test.arraytypes\">" +
-                "    <intarr operation=\"append\">13</intarr>" +
-                "    <intarr operation=\"append\">10</intarr>" +
-                "    <intarr operation=\"append\">1337</intarr>" +
-                "</config>");
-        UserConfigRepo map = UserConfigBuilder.build(configRoot, configDefinitionStore, new BaseDeployLogger());
-        assertFalse(map.isEmpty());
-        ConfigDefinitionKey key = new ConfigDefinitionKey("arraytypes", "test");
-        assertNotNull(map.get(key));
-        ArraytypesConfig config = createConfig(ArraytypesConfig.class, map.get(key));
-        assertEquals(3, config.intarr().size());
-        assertEquals(13, config.intarr(0));
-        assertEquals(10, config.intarr(1));
-        assertEquals(1337, config.intarr(2));
-    }
-
-    @Test
     public void require_that_arrays_of_structs_are_resolved() {
         Element configRoot = getDocument(
                 "  <config name='vespa.configdefinition.specialtokens'>" +
-                        "    <tokenlist operation='append'>" +
-                        "      <name>default</name>" +
-                        "      <tokens operation='append'>" +
-                        "        <token>dvd+-r</token>" +
-                        "      </tokens>" +
+                        "    <tokenlist>" +
+                        "      <item>" +
+                        "        <name>default</name>" +
+                        "        <tokens>" +
+                        "          <item>" +
+                        "            <token>dvd+-r</token>" +
+                        "          </item>" +
+                        "          <item>" +
+                        "            <token>c++</token>" +
+                        "          </item>" +
+                        "        </tokens>" +
+                        "      </item>" +
                         "    </tokenlist>" +
                         "  </config>"
         );
@@ -92,9 +79,10 @@ public class UserConfigBuilderTest {
         assertNotNull(map.get(key));
         SpecialtokensConfig config = createConfig(SpecialtokensConfig.class, map.get(key));
         assertEquals(1, config.tokenlist().size());
-        assertEquals("default", config.tokenlist().get(0).name());
-        assertEquals(1, config.tokenlist().get(0).tokens().size());
-        assertEquals("dvd+-r", config.tokenlist().get(0).tokens().get(0).token());
+        SpecialtokensConfig.Tokenlist tokenlist = config.tokenlist().get(0);
+        assertEquals("default", tokenlist.name());
+        assertEquals(2, tokenlist.tokens().size());
+        assertEquals("dvd+-r", tokenlist.tokens().get(0).token());
     }
 
     @Test
