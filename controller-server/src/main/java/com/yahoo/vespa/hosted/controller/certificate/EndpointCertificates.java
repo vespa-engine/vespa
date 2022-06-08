@@ -67,12 +67,12 @@ public class EndpointCertificates {
             if(metadata.isPresent()) {
                 var m = metadata.get();
                 GcpSecretStore gcpSecretStore = controller.serviceRegistry().gcpSecretStore();
-                String mangledCertName = "endpointCert_" + m.certName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
-                String mangledKeyName = "endpointCert_" + m.keyName().replace('.', '_'); // Google cloud does not accept dots in secrets, but they accept underscores
+                String mangledCertName = "endpointCert_" + m.certName().replace('.', '_') + "-v" + m.version(); // Google cloud does not accept dots in secrets, but they accept underscores
+                String mangledKeyName = "endpointCert_" + m.keyName().replace('.', '_') + "-v" + m.version(); // Google cloud does not accept dots in secrets, but they accept underscores
                 if (gcpSecretStore.getSecret(mangledCertName, m.version()) == null)
-                    gcpSecretStore.createSecret(mangledCertName + "-v" + m.version(), controller.secretStore().getSecret(m.certName(), m.version()));
+                    gcpSecretStore.createSecret(mangledCertName, controller.secretStore().getSecret(m.certName(), m.version()));
                 if (gcpSecretStore.getSecret(mangledKeyName, m.version()) == null)
-                    gcpSecretStore.createSecret(mangledKeyName + "-v" + m.version(), controller.secretStore().getSecret(m.keyName(), m.version()));
+                    gcpSecretStore.createSecret(mangledKeyName, controller.secretStore().getSecret(m.keyName(), m.version()));
 
                 return Optional.of(m.withVersion(1).withKeyName(mangledKeyName).withCertName(mangledCertName));
             }
