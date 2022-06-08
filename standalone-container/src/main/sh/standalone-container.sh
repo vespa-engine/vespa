@@ -173,7 +173,7 @@ StartCommand() {
     heap_min=128
     heap_max=2048
     java \
-        -Xms$(heap_min)m -Xmx$(heap_max)m \
+        -Xms${heap_min}m -Xmx${heap_max}m \
         -XX:+PreserveFramePointer \
         $(get_jvm_hugepage_settings $heap_max) \
         -XX:+HeapDumpOnOutOfMemoryError \

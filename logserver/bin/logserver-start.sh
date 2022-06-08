@@ -80,7 +80,7 @@ cd $ROOT || { echo "Cannot cd to $ROOT" 1>&2; exit 1; }
 
 heap_min=32
 heap_max=256
-addopts="-server -Xms$(heap_min)m -Xmx$(heap_max)m -XX:+PreserveFramePointer $(get_jvm_hugepage_settings $heap_max) -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=448 -XX:MaxJavaStackTraceDepth=1000 -XX:ActiveProcessorCount=2 -XX:-OmitStackTraceInFastThrow -Djava.io.tmpdir=${VESPA_HOME}/tmp"
+addopts="-server -Xms${heap_min}m -Xmx${heap_max}m -XX:+PreserveFramePointer $(get_jvm_hugepage_settings $heap_max) -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=448 -XX:MaxJavaStackTraceDepth=1000 -XX:ActiveProcessorCount=2 -XX:-OmitStackTraceInFastThrow -Djava.io.tmpdir=${VESPA_HOME}/tmp"
 
 oomopt="-XX:+ExitOnOutOfMemoryError"
 

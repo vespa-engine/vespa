@@ -114,7 +114,7 @@ case $1 in
         # TODO Better way of extracting heap size arguments.
         heap_min=32
         heap_max=128
-        jvmopts="-Xms$(heap_min)M -Xmx$(heap_max)M -XX:+PreserveFramePointer $(get_jvm_hugepage_settings $heap_max) -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=448 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
+        jvmopts="-Xms${heap_min}M -Xmx${heap_max}M -XX:+PreserveFramePointer $(get_jvm_hugepage_settings $heap_max) -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=448 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
 
         VESPA_SERVICE_NAME=configproxy
         export VESPA_SERVICE_NAME
