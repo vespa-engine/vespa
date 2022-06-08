@@ -225,7 +225,6 @@ public class VdsVisitorTestCase {
         } else {
             assertEquals(VdsVisitor.MAX_BUCKETS_PER_VISITOR, params.getMaxBucketsPerVisitor());
         }
-        assertEquals(false, params.getDynamicallyIncreaseMaxBucketsPerVisitor());
 
         // Verify parameters based only on query
         assertEquals(qa.timeout*1000, params.getTimeoutMs(),0.0000001);
