@@ -8181,9 +8181,7 @@
       "public com.yahoo.search.searchchain.Execution$Context context()",
       "public com.yahoo.search.statistics.TimeTracker timer()"
     ],
-    "fields": [
-      "public static final java.lang.String ATTRIBUTEPREFETCH"
-    ]
+    "fields": []
   },
   "com.yahoo.search.searchchain.ExecutionFactory": {
     "superClass": "com.yahoo.component.AbstractComponent",

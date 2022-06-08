@@ -41,10 +41,6 @@ import java.util.concurrent.Executors;
  */
 public class Execution extends com.yahoo.processing.execution.Execution {
 
-    /** @deprecated - applications should define their own summary class instead */
-    @Deprecated(since = "7", forRemoval = true)
-    public static final String ATTRIBUTEPREFETCH = "attributeprefetch";
-
     /**
      * The execution context is the search chain's current view of the indexes,
      * search chain registrys, etc. Searcher instances may set values here to
