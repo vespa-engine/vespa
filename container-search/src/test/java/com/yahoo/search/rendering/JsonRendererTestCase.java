@@ -56,7 +56,9 @@ import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -81,6 +83,9 @@ import static org.junit.Assert.fail;
 public class JsonRendererTestCase {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(300);
 
     private final JsonRenderer originalRenderer;
     private JsonRenderer renderer;
