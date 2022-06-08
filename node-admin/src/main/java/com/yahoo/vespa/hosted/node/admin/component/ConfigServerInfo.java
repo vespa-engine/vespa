@@ -19,18 +19,14 @@ public class ConfigServerInfo {
     private final Function<String, URI> configServerHostnameToUriMapper;
     private final List<URI> configServerURIs;
 
-    public ConfigServerInfo(String loadBalancerHostName, List<String> configServerHostNames,
-                            String scheme, int port, AthenzIdentity configServerAthenzIdentity) {
-        this.loadBalancerEndpoint = createLoadBalancerEndpoint(loadBalancerHostName, scheme, port);
+    public ConfigServerInfo(URI loadBalancerEndpoint, List<String> configServerHostNames,
+                            AthenzIdentity configServerAthenzIdentity) {
+        this.loadBalancerEndpoint = loadBalancerEndpoint;
         this.configServerIdentity = configServerAthenzIdentity;
-        this.configServerHostnameToUriMapper = hostname -> URI.create(scheme + "://" + hostname + ":" + port);
+        this.configServerHostnameToUriMapper = hostname -> URI.create("https://" + hostname + ":4443");
         this.configServerURIs = configServerHostNames.stream()
                 .map(configServerHostnameToUriMapper)
                 .collect(Collectors.toUnmodifiableList());
-    }
-
-    private static URI createLoadBalancerEndpoint(String loadBalancerHost, String scheme, int port) {
-        return URI.create(scheme + "://" + loadBalancerHost + ":" + port);
     }
 
     public List<URI> getConfigServerUris() {
