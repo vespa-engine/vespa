@@ -713,12 +713,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
         }
 
-        synchronized void writeSingleDocument(Document document) throws IOException {
-            boolean tensorShortForm = false;
-            if (request != null && request.parameters().containsKey("format.tensors")) {
-                tensorShortForm = request.parameters().get("format.tensors").contains("short");
+        private boolean tensorShortForm() {
+            if (request != null &&
+                request.parameters().containsKey("format.tensors") &&
+                request.parameters().get("format.tensors").contains("long")) {
+                return false;
             }
-            new JsonWriter(json, tensorShortForm).writeFields(document);
+            return true;  // default
+        }
+
+        synchronized void writeSingleDocument(Document document) throws IOException {
+            new JsonWriter(json, tensorShortForm()).writeFields(document);
         }
 
         synchronized void writeDocumentsArrayStart() throws IOException {
@@ -737,7 +742,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
             myOut.write(','); // Prepend rather than append, to avoid double memory copying.
             try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                new JsonWriter(myJson).write(document);
+                new JsonWriter(myJson, tensorShortForm()).write(document);
             }
             docs.add(myOut);
 
