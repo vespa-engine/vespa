@@ -57,12 +57,12 @@ public class VersionTagger {
             // Use default values
             map.put("V_TAG", "NOTAG");
             map.put("V_TAG_DATE", "NOTAG");
-            map.put("V_TAG_PKG", "6.9999.0");
+            map.put("V_TAG_PKG", "8.9999.0");
             map.put("V_TAG_ARCH", "NOTAG");
             map.put("V_TAG_SYSTEM", "NOTAG");
             map.put("V_TAG_SYSTEM_REV", "NOTAG");
             map.put("V_TAG_BUILDER", "NOTAG");
-            map.put("V_TAG_COMPONENT", "6.9999.0");
+            map.put("V_TAG_COMPONENT", "8.9999.0");
             map.put("V_TAG_COMMIT_SHA", "badc0ffe");
             map.put("V_TAG_COMMIT_DATE", "0");
         } catch (IOException e) {
