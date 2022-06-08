@@ -161,10 +161,15 @@ rm -f $cfpfile
 vespa-run-as-vespa-user sh -c "printenv > $cfpfile"
 fixddir $bundlecachedir
 
+# Note that the hardcoded memory Xmx=2048 migh be overridden by jvmargs,
+# hence rendering get_jvm_hugepage_settings incorrect, but it is better than not.
+# TODO Better way of extracting heap size arguments.
+heap_min=128
+heap_max=2048
 vespa-run-as-vespa-user vespa-runserver -s ${VESPA_SERVICE_NAME} -r 30 -p $pidfile -- \
 	java \
-	-Xms128m -Xmx2048m \
-        -XX:+UseTransparentHugePages \
+	-Xms$(heap_min)m -Xmx$(heap_max)m \
+        $(get_jvm_hugepage_settings $heap_max) \
 	-XX:+PreserveFramePointer \
 	-XX:+HeapDumpOnOutOfMemoryError \
 	-XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
