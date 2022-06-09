@@ -35,7 +35,7 @@ public class QueryFromProfileTestCase {
 
         Query query = new Query(HttpRequest.createTestRequest("?model=querybest", Method.GET), cRegistry.getComponent("topLevel"));
         assertEquals("best", query.properties().get("model.queryString"));
-        assertEquals("WEAKAND(100) best", query.getModel().getQueryTree().toString());
+        assertEquals("best", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -58,7 +58,7 @@ public class QueryFromProfileTestCase {
 
         Query query = new Query(HttpRequest.createTestRequest("?query=overrides&model=querybest", Method.GET), cRegistry.getComponent("root"));
         assertEquals("overrides", query.properties().get("model.queryString"));
-        assertEquals("WEAKAND(100) overrides", query.getModel().getQueryTree().toString());
+        assertEquals("overrides", query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -81,7 +81,7 @@ public class QueryFromProfileTestCase {
 
         Query query = new Query(HttpRequest.createTestRequest("?query=overrides&model=querybest", Method.GET), cRegistry.getComponent("root"));
         assertEquals("overrides", query.properties().get("model.queryString"));
-        assertEquals("WEAKAND(100) overrides", query.getModel().getQueryTree().toString());
+        assertEquals("overrides", query.getModel().getQueryTree().toString());
     }
 
 }

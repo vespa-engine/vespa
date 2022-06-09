@@ -128,7 +128,7 @@ public class MinimalQueryInserterTestCase {
     public void testSearch() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(Language.ENGLISH, query.getModel().getParsingLanguage());
     }
 
@@ -156,7 +156,7 @@ public class MinimalQueryInserterTestCase {
         Query query = new Query("search/?userString=" + encode(japaneseWord) + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userInput(@userString)");
         execution.search(query);
         assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
-        assertEquals("AND title:madonna (WEAKAND(100) default:" + japaneseWord + ")", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna default:" + japaneseWord, query.getModel().getQueryTree().toString());
     }
 
     @Test
@@ -165,21 +165,21 @@ public class MinimalQueryInserterTestCase {
         Query query = new Query("search/?query=" + encode(japaneseWord) + "&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
         assertEquals(Language.JAPANESE, query.getModel().getParsingLanguage());
-        assertEquals("AND title:madonna (WEAKAND(100) " + japaneseWord + ")", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna " + japaneseWord, query.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testUserQueryFailsWithoutArgument() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20ignoredsource%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testSearchFromAllSourcesWithUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(0, query.getModel().getSources().size());
     }
 
@@ -187,7 +187,7 @@ public class MinimalQueryInserterTestCase {
     public void testSearchFromAllSourcesWithoutUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20*%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(0, query.getModel().getSources().size());
     }
 
@@ -195,7 +195,7 @@ public class MinimalQueryInserterTestCase {
     public void testSearchFromSomeSourcesWithoutUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(2, query.getModel().getSources().size());
         assertTrue(query.getModel().getSources().contains("sourceA"));
         assertTrue(query.getModel().getSources().contains("sourceB"));
@@ -205,7 +205,7 @@ public class MinimalQueryInserterTestCase {
     public void testSearchFromSomeSourcesWithUserSource() {
         Query query = new Query("search/?query=easilyRecognizedString&sources=abc&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(3, query.getModel().getSources().size());
         assertTrue(query.getModel().getSources().contains("sourceA"));
         assertTrue(query.getModel().getSources().contains("sourceB"));
@@ -216,7 +216,7 @@ public class MinimalQueryInserterTestCase {
     public final void testSearchFromSomeSourcesWithOverlappingUserSource() {
         final Query query = new Query("search/?query=easilyRecognizedString&sources=abc,sourceA&yql=select%20ignoredfield%20from%20sources%20sourceA,%20sourceB%20where%20title%20contains%20%22madonna%22%20and%20userQuery()");
         execution.search(query);
-        assertEquals("AND title:madonna (WEAKAND(100) easilyRecognizedString)", query.getModel().getQueryTree().toString());
+        assertEquals("AND title:madonna easilyRecognizedString", query.getModel().getQueryTree().toString());
         assertEquals(3, query.getModel().getSources().size());
         assertTrue(query.getModel().getSources().contains("sourceA"));
         assertTrue(query.getModel().getSources().contains("sourceB"));
