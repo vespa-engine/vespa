@@ -4,14 +4,12 @@ package com.yahoo.document;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
 
-import java.io.Serializable;
-
 /**
  * A full document type name. The name is case sensitive. This is a <i>value object</i>.
  *
  * @author bratseth
  */
-public final class DataTypeName implements Serializable {
+public final class DataTypeName {
 
     private final Utf8String name;
 
