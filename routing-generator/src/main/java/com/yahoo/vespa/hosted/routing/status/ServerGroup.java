@@ -1,14 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.routing.status;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A group servers behind a router/reverse proxy.
+ * A group of servers behind a router/reverse proxy.
  *
  * @author mpolden
  */
@@ -29,11 +28,7 @@ public class ServerGroup {
 
     /** Returns whether given upstream is healthy */
     public boolean isHealthy(String upstreamName) {
-        // TODO(mpolden): Look up key directly here once layer 4 config (and thus "-feed" upstreams) are gone
-        List<Server> upstreamServers = servers.values().stream()
-                                              .flatMap(Collection::stream)
-                                              .filter(server -> upstreamName.startsWith(server.upstreamName()))
-                                              .collect(Collectors.toList());
+        List<Server> upstreamServers = servers.getOrDefault(upstreamName, List.of());
         long upCount = upstreamServers.stream()
                                       .filter(Server::up)
                                       .count();

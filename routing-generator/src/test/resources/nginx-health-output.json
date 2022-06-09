@@ -5,8 +5,6 @@
   "http": [],
   "stream": [
     {"index": 0, "upstream": "gateway.prod.music.vespa.us-east-2.prod", "name": "10.78.114.166:4080", "status": "down", "rise": 0, "fall": 1, "type": "http", "port": 0},
-    {"index": 1, "upstream": "gateway.prod.music.vespa.us-east-2.prod", "name": "10.78.115.68:4080", "status": "up", "rise": 2, "fall": 0, "type": "http", "port": 0},
-    {"index": 2, "upstream": "gateway.prod.music.vespa.us-east-2.prod-feed", "name": "10.78.114.166:4080", "status": "down", "rise": 0, "fall": 1, "type": "http", "port": 0},
-    {"index": 3, "upstream": "gateway.prod.music.vespa.us-east-2.prod-feed", "name": "10.78.115.68:4080", "status": "down", "rise": 1, "fall": 0, "type": "http", "port": 0}
+    {"index": 1, "upstream": "gateway.prod.music.vespa.us-east-2.prod", "name": "10.78.115.68:4080", "status": "up", "rise": 2, "fall": 0, "type": "http", "port": 0}
   ]
 }}
