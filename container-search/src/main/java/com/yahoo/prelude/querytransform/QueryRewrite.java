@@ -171,7 +171,7 @@ public class QueryRewrite {
                         removeOtherNonrankedChildren(item, i);
                         recall = Recall.RECALLS_EVERYTHING;
                     } else if ((item instanceof AndItem) || (item instanceof NearItem) || (item instanceof WeakAndItem)) {
-                        if ( ! isRanked(item.getItem(i))) {
+                        if ( ! isRanked(item.getItem(i)) && item.items().size() > 1) {
                             item.removeItem(i);
                         }
                     } else if (item instanceof RankItem) {
@@ -181,7 +181,7 @@ public class QueryRewrite {
                     }
                     break;
                 case RECALLS_NOTHING:
-                    if ((item instanceof OrItem) || (item instanceof EquivItem)) {
+                    if ((item instanceof OrItem) || (item instanceof EquivItem) && item.items().size() > 1) {
                         item.removeItem(i);
                     } else if ((item instanceof AndItem) || (item instanceof NearItem) || (item instanceof WeakAndItem)) {
                         return Recall.RECALLS_NOTHING;

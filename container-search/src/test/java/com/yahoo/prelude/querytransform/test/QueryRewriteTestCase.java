@@ -29,6 +29,7 @@ public class QueryRewriteTestCase {
         Query query = new Query("?query=sddocname:music");
         query.getModel().setRestrict("music");
         QueryRewrite.optimizeByRestrict(query);
+        assertEquals("WEAKAND(100) sddocname:music", query.getModel().getQueryTree().toString());
     }
 
     @Test
