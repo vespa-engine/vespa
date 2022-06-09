@@ -866,11 +866,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context)",
       "public java.util.concurrent.Executor getExecutor()",
-      "public com.yahoo.container.logging.AccessLog getAccessLog()",
       "public com.yahoo.jdisc.Metric getMetric()"
     ],
     "fields": []
