@@ -2,7 +2,7 @@
 # Schema for federation configuration inside the searchchains section.
 
 GenericSource =
-    GenericSearchChainInQrservers &
+    SearchChainInFederation &
     FederationOptions?
 
 Source =

@@ -3,40 +3,17 @@
 
 include "federation.rnc"
 
-SearchChains =
-    element searchchains {
-        Searcher* &
-        SearchChainInQrservers* &
-        GenericConfig*
-   }
-
-OuterSearchChains =
-    element searchchains {
-        Searcher* &
-        SearchChainInQrservers*
-   }
-
-SearchChainInQrservers =
-    element searchchain {
-        GenericSearchChainInQrservers
-    } |
-    Provider
-
-GenericSearchChainInQrservers =
+SearchChainInFederation =
     ComponentId &
-    SearchChainInheritanceInQrservers &
+    SearchChainInheritanceInFederation &
     attribute searchers { text }? &
     Searcher* &
     Phase* &
     GenericConfig*
 
-SearchChainInheritanceInQrservers =
+SearchChainInheritanceInFederation =
     attribute inherits { text }? &
-    attribute excludes { text }? &
-    element inherits {
-        element searchchain { ComponentSpec }* &
-        element exclude { ComponentSpec }*
-    }?
+    attribute excludes { text }?
 
 Searcher =
     RegularSearcher |

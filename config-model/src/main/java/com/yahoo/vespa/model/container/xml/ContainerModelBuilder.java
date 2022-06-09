@@ -602,7 +602,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ContainerSearch buildSearch(DeployState deployState, ApplicationContainerCluster containerCluster, Element producerSpec) {
-        SearchChains searchChains = new DomSearchChainsBuilder(null, false)
+        SearchChains searchChains = new DomSearchChainsBuilder()
                                             .build(deployState, containerCluster, producerSpec);
 
         ContainerSearch containerSearch = new ContainerSearch(containerCluster, searchChains, new ContainerSearch.Options());
