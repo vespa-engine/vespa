@@ -20,7 +20,6 @@ import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.Ids;
 import com.yahoo.vespa.objects.ObjectVisitor;
 
-import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
@@ -32,7 +31,7 @@ import java.util.List;
  *
  * @author bratseth
  */
-public abstract class DataType extends Identifiable implements Serializable, Comparable<DataType> {
+public abstract class DataType extends Identifiable implements Comparable<DataType> {
 
     // The global class identifier shared with C++.
     public static int classId = registerClass(Ids.document + 50, DataType.class);
@@ -280,7 +279,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
      */
     public FieldPath buildFieldPath(String fieldPathString) {
         if (fieldPathString.length() > 0) {
-            throw new IllegalArgumentException("Datatype " + toString() +
+            throw new IllegalArgumentException("Datatype " + this +
                                                " does not support further recursive structure: " + fieldPathString);
         }
         return new FieldPath();
@@ -318,7 +317,7 @@ public abstract class DataType extends Identifiable implements Serializable, Com
 
     @Override
     public int compareTo(DataType dataType) {
-        return Integer.valueOf(dataTypeId).compareTo(dataType.dataTypeId);
+        return Integer.compare(dataTypeId, dataType.dataTypeId);
     }
 
     /** Returns whether this is a multivalue type, i.e either a CollectionDataType or a MapDataType */
