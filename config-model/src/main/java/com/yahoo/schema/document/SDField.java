@@ -280,8 +280,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
             structFields.put(fieldName, subField);
         };
 
-        if (dataType instanceof MapDataType) {
-            MapDataType mdt = (MapDataType) dataType;
+        if (dataType instanceof MapDataType mdt) {
             supplyStructField.accept("key", mdt.getKeyType());
             supplyStructField.accept("value", mdt.getValueType());
         } else {
@@ -308,8 +307,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
                 for (Field field : subType.fieldSet()) {
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
-            } else if (dataType instanceof StructDataType) {
-                var sdt = (StructDataType) dataType;
+            } else if (dataType instanceof StructDataType sdt) {
                 for (Field field : sdt.getFields()) {
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
@@ -322,13 +320,12 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
             // populate struct fields with matching
             if (subType != null) {
                 for (Field f : subType.fieldSet()) {
-                    if (f instanceof SDField) {
-                        SDField field = (SDField) f;
-                        SDField subField = structFields.get(field.getName());
+                    if (f instanceof SDField sdField) {
+                        SDField subField = structFields.get(sdField.getName());
                         if (subField != null) {
                             // we just made this with a copy of our matching (see above)
                             Matching subFieldMatching = subField.getMatching();
-                            subFieldMatching.merge(field.getMatching());
+                            subFieldMatching.merge(sdField.getMatching());
                             subField.setMatching(subFieldMatching);
                         }
                     } else {

@@ -22,7 +22,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
      */
     public static class Source implements Serializable {
 
-        private String name;
+        private final String name;
         private boolean override = false;
         public Source(String name) {
             this.name = name;
@@ -54,7 +54,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
     }
 
     /** The transform to perform on the stored source */
-    private SummaryTransform transform=SummaryTransform.NONE;
+    private SummaryTransform transform;
 
     /** The command used per field in vsmsummary */
     private VsmCommand vsmCommand = VsmCommand.NONE;
@@ -156,7 +156,7 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         return destinations;
     }
 
-    private String toString(Collection<?> collection) {
+    public String toString(Collection<?> collection) {
         StringBuilder buffer=new StringBuilder();
         for (Iterator<?> i=collection.iterator(); i.hasNext(); ) {
             buffer.append(i.next().toString());
@@ -283,8 +283,8 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         FLATTENSPACE("FLATTENSPACE"),
         FLATTENJUNIPER("FLATTENJUNIPER");
 
-        private String cmd="";
-        private VsmCommand(String cmd) {
+        private final String cmd;
+        VsmCommand(String cmd) {
             this.cmd=cmd;
         }
         @Override
