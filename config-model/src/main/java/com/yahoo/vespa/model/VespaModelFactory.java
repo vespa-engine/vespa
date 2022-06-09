@@ -75,18 +75,12 @@ public class VespaModelFactory implements ModelFactory {
     }
 
     // For testing only
-    public VespaModelFactory(ConfigModelRegistry configModelRegistry) {
-        this(configModelRegistry, Clock.systemUTC());
-    }
-
-    // For testing only
-    public VespaModelFactory(ConfigModelRegistry configModelRegistry, Clock clock) {
+    protected VespaModelFactory(ConfigModelRegistry configModelRegistry) {
         this(new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry,
-             clock, Zone.defaultZone());
+                Clock.systemUTC(), Zone.defaultZone());
     }
 
-    // For testing only
-    public VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
+    private VespaModelFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
         this.version = version;
         if (configModelRegistry == null) {
             this.configModelRegistry = new NullConfigModelRegistry();
@@ -98,6 +92,18 @@ public class VespaModelFactory implements ModelFactory {
         this.additionalValidators = List.of();
         this.zone = zone;
         this.clock = clock;
+    }
+
+    public static VespaModelFactory createTestFactory() {
+        return createTestFactory(new NullConfigModelRegistry(), Clock.systemUTC());
+    }
+    public static VespaModelFactory createTestFactory(ConfigModelRegistry configModelRegistry, Clock clock) {
+        return createTestFactory(new Version(VespaVersion.major, VespaVersion.minor, VespaVersion.micro), configModelRegistry,
+                clock, Zone.defaultZone());
+    }
+
+    public static VespaModelFactory createTestFactory(Version version, ConfigModelRegistry configModelRegistry, Clock clock, Zone zone) {
+        return new VespaModelFactory(version, configModelRegistry, clock, zone);
     }
 
     /** Returns the version this model is build for */

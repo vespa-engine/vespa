@@ -18,8 +18,7 @@ public class TestModelFactory extends VespaModelFactory {
     private ModelContext modelContext;
 
     public TestModelFactory(Version vespaVersion) {
-        super(new NullConfigModelRegistry());
-        this.vespaVersion = vespaVersion;
+        this(new NullConfigModelRegistry(), vespaVersion);
     }
 
     public TestModelFactory(ConfigModelRegistry registry, Version vespaVersion) {

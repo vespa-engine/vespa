@@ -27,7 +27,7 @@ public class StatusHandlerTest {
 
     @Test
     public void require_that_handler_works() throws IOException {
-        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
+        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory()));
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
         StatusHandler handler = new StatusHandler(StatusHandler.testContext(), modelFactoryRegistry, configserverConfig);
 
