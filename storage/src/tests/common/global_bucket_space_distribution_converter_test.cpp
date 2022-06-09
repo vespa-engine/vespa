@@ -13,9 +13,9 @@ using DistributionConfig = vespa::config::content::StorDistributionConfig;
 
 namespace {
 
-vespalib::string default_to_global_config(const vespalib::string& default_config, bool legacy_mode = false) {
+vespalib::string default_to_global_config(const vespalib::string& default_config) {
     auto default_cfg = GlobalBucketSpaceDistributionConverter::string_to_config(default_config);
-    auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg, legacy_mode);
+    auto as_global = GlobalBucketSpaceDistributionConverter::convert_to_global(*default_cfg);
     return GlobalBucketSpaceDistributionConverter::config_to_string(*as_global);
 }
 
@@ -353,66 +353,6 @@ group[2].nodes[1].index 2
         const auto global_index = global_distr.getIdealDistributorNode(state, bucket, "ui");
         ASSERT_EQ(default_index, global_index);
     }
-}
-
-// By "legacy" read "broken", but we need to be able to generate it to support rolling upgrades properly.
-// TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-TEST(GlobalBucketSpaceDistributionConverterTest, can_generate_config_with_legacy_partition_spec) {
-    vespalib::string default_config(
-R"(redundancy 2
-group[3]
-group[0].name "invalid"
-group[0].index "invalid"
-group[0].partitions 1|*
-group[0].nodes[0]
-group[1].name rack0
-group[1].index 0
-group[1].nodes[3]
-group[1].nodes[0].index 0
-group[1].nodes[1].index 1
-group[1].nodes[2].index 2
-group[2].name rack1
-group[2].index 1
-group[2].nodes[3]
-group[2].nodes[0].index 3
-group[2].nodes[1].index 4
-group[2].nodes[2].index 5
-)");
-
-    vespalib::string expected_global_config(
-R"(redundancy 6
-initial_redundancy 0
-ensure_primary_persisted true
-ready_copies 6
-active_per_leaf_group true
-distributor_auto_ownership_transfer_on_whole_group_down true
-group[0].index "invalid"
-group[0].name "invalid"
-group[0].capacity 1
-group[0].partitions "3|3|*"
-group[1].index "0"
-group[1].name "rack0"
-group[1].capacity 1
-group[1].partitions ""
-group[1].nodes[0].index 0
-group[1].nodes[0].retired false
-group[1].nodes[1].index 1
-group[1].nodes[1].retired false
-group[1].nodes[2].index 2
-group[1].nodes[2].retired false
-group[2].index "1"
-group[2].name "rack1"
-group[2].capacity 1
-group[2].partitions ""
-group[2].nodes[0].index 3
-group[2].nodes[0].retired false
-group[2].nodes[1].index 4
-group[2].nodes[1].retired false
-group[2].nodes[2].index 5
-group[2].nodes[2].retired false
-disk_distribution MODULO_BID
-)");
-    EXPECT_EQ(expected_global_config, default_to_global_config(default_config, true));
 }
 
 }
