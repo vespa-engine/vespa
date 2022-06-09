@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.test;
 
-import com.yahoo.component.annotation.Inject;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -20,7 +19,6 @@ public class ManualClock extends Clock {
 
     private final AtomicReference<Instant> currentTime = new AtomicReference<>(Instant.now());
 
-    @Inject
     public ManualClock() {}
 
     public ManualClock(String utcIsoTime) {
