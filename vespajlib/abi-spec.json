@@ -406,7 +406,6 @@
     "superClass": "java.lang.Object",
     "interfaces": [
       "java.lang.Cloneable",
-      "java.io.Serializable",
       "java.lang.Comparable"
     ],
     "attributes": [

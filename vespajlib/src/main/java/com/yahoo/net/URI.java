@@ -15,9 +15,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  *
  * @author bratseth
  */
-public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
-
-    private static final long serialVersionUID = 2271558213498856909L;
+public class URI implements Cloneable, Comparable<URI> {
 
     /** The uri string */
     private String uri;
@@ -242,7 +240,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
                 if (!scheme.equals("file") && colonPos > -1) {
                     //we probably have an (illegal) URI of type http://under_score.com:5000/
                     try {
-                        port = Integer.parseInt(host.substring(colonPos + 1, host.length()));
+                        port = Integer.parseInt(host.substring(colonPos + 1));
                         host = host.substring(0, colonPos);
                         portAlreadyParsed = true;
                     } catch (NumberFormatException nfe) {
@@ -482,7 +480,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
         } else {
             //for www.yahoo.co.uk return uk
             //TODO: Implement list of TLDs from config?
-            mainTld = host.substring(lastDotPos + 1, host.length());
+            mainTld = host.substring(lastDotPos + 1);
         }
         this.parsedMainTld = true;
         this.mainTld = mainTld;
@@ -531,7 +529,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
             //the slash is the last character, there is no filename here
             filename = "";
         } else {
-            filename = path.substring(lastSlash + 1, path.length());
+            filename = path.substring(lastSlash + 1);
         }
         this.parsedFilename = true;
         this.filename = filename;
@@ -565,7 +563,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
             //the "." is the last character, there is no extension
             extension = null;
         } else {
-            extension = filename.substring(lastDotPos + 1, filename.length());
+            extension = filename.substring(lastDotPos + 1);
         }
         this.parsedExtension = true;
         this.extension = extension;
@@ -585,7 +583,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
         String query = null;
         if (queryPos > -1) {
             //we have a query
-            query = rest.substring(queryPos+1, rest.length());
+            query = rest.substring(queryPos+1);
         }
         this.parsedQuery = true;
         this.query = query;
@@ -603,7 +601,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
         String fragment = null;
         if (fragmentPos > -1) {
             //we have a fragment
-            fragment = path.substring(fragmentPos+1, path.length());
+            fragment = path.substring(fragmentPos+1);
         }
         this.parsedFragment = true;
         this.fragment = fragment;
@@ -626,7 +624,7 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
             //the semicolon is the last character, there are no params here
             params = null;
         } else {
-            params = path.substring(semicolonPos + 1, path.length());
+            params = path.substring(semicolonPos + 1);
         }
         this.parsedParams = true;
         this.params = params;
@@ -719,10 +717,10 @@ public class URI implements Cloneable, java.io.Serializable, Comparable<URI> {
         if (newRest == null) {
             newRest = "";
         }
-        if (newRest.indexOf("?") < 0) {
-            newRest += "?";
-        } else {
+        if ( newRest.contains("?")) {
             newRest += "&";
+        } else {
+            newRest += "?";
         }
         newRest += name + "=" + value;
         return new URI(scheme, host, port, newRest);
