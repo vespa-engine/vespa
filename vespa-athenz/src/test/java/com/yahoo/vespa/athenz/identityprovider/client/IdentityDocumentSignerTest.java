@@ -16,13 +16,13 @@ import java.util.HashSet;
 
 import static com.yahoo.vespa.athenz.identityprovider.api.IdentityType.TENANT;
 import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION;
-import static com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument.DEFAULT_KEY_VERSION;
 import static org.junit.Assert.assertTrue;
 
 /**
  * @author bjorncs
  */
 public class IdentityDocumentSignerTest {
+    public static final int KEY_VERSION = 0;
 
     @Test
     public void generates_and_validates_signature() {
@@ -40,7 +40,7 @@ public class IdentityDocumentSignerTest {
                 signer.generateSignature(id, providerService, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType, keyPair.getPrivate());
 
         SignedIdentityDocument signedIdentityDocument = new SignedIdentityDocument(
-                signature, DEFAULT_KEY_VERSION, id, providerService,
+                signature, KEY_VERSION, id, providerService,
                 DEFAULT_DOCUMENT_VERSION, configserverHostname, instanceHostname, createdAt, ipAddresses, identityType);
 
         assertTrue(signer.hasValidSignature(signedIdentityDocument, keyPair.getPublic()));
