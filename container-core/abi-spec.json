@@ -2402,24 +2402,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.jdisc.http.ssl.SslContextFactoryProvider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.lang.AutoCloseable",
-      "com.yahoo.jdisc.http.SslProvider"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)",
-      "public void close()",
-      "public void configureSsl(com.yahoo.jdisc.http.SslProvider$ConnectorSsl, java.lang.String, int)"
-    ],
-    "fields": []
-  },
   "com.yahoo.metrics.simple.Bucket": {
     "superClass": "java.lang.Object",
     "interfaces": [],
