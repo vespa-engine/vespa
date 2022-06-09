@@ -25,6 +25,13 @@ import static org.junit.Assert.assertTrue;
 public class QueryRewriteTestCase {
 
     @Test
+    public void testOptimizeByRestrict() {
+        Query query = new Query("?query=sddocname:music");
+        query.getModel().setRestrict("music");
+        QueryRewrite.optimizeByRestrict(query);
+    }
+
+    @Test
     public void requireThatOptimizeByRestrictSimplifiesORItemsThatHaveFullRecallAndDontImpactRank() {
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "foo", "sddocname:foo");
         assertRewritten("sddocname:foo OR sddocname:bar OR sddocname:baz", "bar", "sddocname:bar");
