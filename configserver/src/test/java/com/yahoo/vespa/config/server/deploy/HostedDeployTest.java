@@ -52,6 +52,7 @@ import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedMode
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -268,6 +269,39 @@ public class HostedDeployTest {
 
         // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
         assertTrue("Newest model for latest major version is always included", factory720.creationCount() > 0);
+    }
+
+    /**
+     * Tests that we create the minimal set of models and that version 7.x is created
+     * if creating version 8.x fails (to support upgrades to new major version for applications
+     * that are still using features that do not work on version 8.x)
+     */
+    @Test
+    public void testWantedVersionIsRequiredAlsoWhenThereIsAnOlderMajorThatDoesNotFailModelBuilding() {
+        int oldMajor = 7;
+        int newMajor = 8;
+        Version wantedVersion = new Version(newMajor, 1, 2);
+        Version oldVersion = new Version(oldMajor, 2, 3);
+        List<Host> hosts = createHosts(9, oldVersion.toFullString(), wantedVersion.toFullString());
+
+        CountingModelFactory oldFactory = createHostedModelFactory(oldVersion);
+        ModelFactory newFactory = createFailingModelFactory(wantedVersion);
+        List<ModelFactory> modelFactories = List.of(oldFactory, newFactory);
+
+        DeployTester tester = createTester(hosts, modelFactories, prodZone);
+
+        // Not OK when failing version is requested.
+        assertEquals("Invalid application package",
+                     assertThrows(IllegalArgumentException.class,
+                                  () -> tester.deployApp("src/test/apps/hosted/", wantedVersion.toFullString()))
+                             .getMessage());
+
+        // OK when older version is requested.
+        tester.deployApp("src/test/apps/hosted/", oldVersion.toFullString());
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+
+        // Check >0 not ==0 as the session watcher thread is running and will redeploy models in the background
+        assertTrue(oldFactory.creationCount() > 0);
     }
 
     /**

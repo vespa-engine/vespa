@@ -128,6 +128,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 // caused by the state of the system, not the model version/application combination
                 throw e;
             }
+            catch (RequireModelVersionFailureException e) {
+                throw e.getCause();
+            }
             catch (RuntimeException e) {
                 if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion)) {
                     log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersion, e);
@@ -177,7 +180,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         if (buildLatestModelForThisMajor) {
             latest = Optional.of(findLatest(versions));
             // load latest application version
-            MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest.get()),
+            MODELRESULT latestModelVersion = tryBuildModelVersion(modelFactoryRegistry.getFactory(latest.get()),
                                                                applicationPackage,
                                                                applicationId,
                                                                wantedDockerImageRepository,
@@ -192,7 +195,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             if (latest.isPresent() && version.equals(latest.get())) continue; // already loaded
 
             try {
-                MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
+                MODELRESULT modelVersion = tryBuildModelVersion(modelFactoryRegistry.getFactory(version),
                                                              applicationPackage,
                                                              applicationId,
                                                              wantedDockerImageRepository,
@@ -250,6 +253,25 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     private boolean isUsedOn(AllocatedHosts hosts, Version version) {
         return hosts.getHosts().stream()
                                .anyMatch(host -> host.version().isPresent() && host.version().get().equals(version));
+    }
+
+    private MODELRESULT tryBuildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
+                                             ApplicationId applicationId, Optional<DockerImage> dockerImageRepository,
+                                             Version wantedNodeVespaVersion) {
+        try {
+            return buildModelVersion(modelFactory, applicationPackage, applicationId, dockerImageRepository, wantedNodeVespaVersion);
+        }
+        catch (RuntimeException e) {
+            if (modelFactory.version().equals(wantedNodeVespaVersion))
+                throw new RequireModelVersionFailureException(e);
+
+            throw e;
+        }
+    }
+
+    private static class RequireModelVersionFailureException extends RuntimeException {
+        RequireModelVersionFailureException(RuntimeException cause) { super(cause); }
+        @Override public RuntimeException getCause() { return (RuntimeException) super.getCause(); }
     }
 
     protected abstract MODELRESULT buildModelVersion(ModelFactory modelFactory, ApplicationPackage applicationPackage,
