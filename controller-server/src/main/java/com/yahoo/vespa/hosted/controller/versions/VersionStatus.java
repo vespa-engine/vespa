@@ -27,16 +27,12 @@ import java.util.stream.Collectors;
  * The versions in use are the set of all versions running in current applications, versions
  * of config servers in all zones, and the version of this controller itself.
  * 
- * This is immutable.
- * 
  * @author bratseth
  * @author mpolden
  */
-public class VersionStatus {
+public record VersionStatus(List<VespaVersion> versions) {
 
     private static final Logger log = Logger.getLogger(VersionStatus.class.getName());
-
-    private final List<VespaVersion> versions;
     
     /** Create a version status. DO NOT USE: Public for testing and serialization only */
     public VersionStatus(List<VespaVersion> versions) {
@@ -172,7 +168,7 @@ public class VersionStatus {
                 var nodes = controller.serviceRegistry().configServer().nodeRepository()
                                       .list(zone.getId(), NodeFilter.all().applications(application.id())).stream()
                                       .filter(SystemUpgrader::eligibleForUpgrade)
-                                      .collect(Collectors.toList());
+                                      .toList();
                 if (nodes.isEmpty()) continue;
                 boolean configConverged = application.configConvergedIn(zone.getId(), controller, Optional.empty());
                 if (!configConverged) {

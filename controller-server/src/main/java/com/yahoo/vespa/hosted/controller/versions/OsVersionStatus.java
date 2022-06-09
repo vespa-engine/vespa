@@ -26,20 +26,13 @@ import java.util.stream.Collectors;
  *
  * @author mpolden
  */
-public class OsVersionStatus {
+public record OsVersionStatus(Map<OsVersion, List<NodeVersion>> versions) {
 
     public static final OsVersionStatus empty = new OsVersionStatus(ImmutableMap.of());
-
-    private final Map<OsVersion, List<NodeVersion>> versions;
 
     /** Public for serialization purpose only. Use {@link OsVersionStatus#compute(Controller)} for an up-to-date status */
     public OsVersionStatus(Map<OsVersion, List<NodeVersion>> versions) {
         this.versions = ImmutableMap.copyOf(Objects.requireNonNull(versions, "versions must be non-null"));
-    }
-
-    /** All known OS versions and their nodes */
-    public Map<OsVersion, List<NodeVersion>> versions() {
-        return versions;
     }
 
     /** Returns nodes eligible for OS upgrades that exist in given cloud */
@@ -91,7 +84,7 @@ public class OsVersionStatus {
         return controller.zoneRegistry().osUpgradePolicies().stream()
                          .flatMap(upgradePolicy -> upgradePolicy.steps().stream())
                          .flatMap(Collection::stream)
-                         .collect(Collectors.toUnmodifiableList());
+                         .toList();
     }
 
 }

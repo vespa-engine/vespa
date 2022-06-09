@@ -13,45 +13,20 @@ import java.util.Optional;
 /**
  * Version information for a node allocated to a {@link com.yahoo.vespa.hosted.controller.application.SystemApplication}.
  *
- * This is immutable.
- *
  * @author mpolden
  */
-public class NodeVersion {
+public record NodeVersion(HostName hostname,
+                          ZoneId zone,
+                          Version currentVersion,
+                          Version wantedVersion,
+                          Optional<Instant> suspendedAt) {
 
-    private final HostName hostname;
-    private final ZoneId zone;
-    private final Version currentVersion;
-    private final Version wantedVersion;
-    private final Optional<Instant> suspendedAt;
-
-    public NodeVersion(HostName hostname, ZoneId zone, Version currentVersion, Version wantedVersion,
-                       Optional<Instant> suspendedAt) {
-        this.hostname = Objects.requireNonNull(hostname, "hostname must be non-null");
-        this.zone = Objects.requireNonNull(zone, "zone must be non-null");
-        this.currentVersion = Objects.requireNonNull(currentVersion, "version must be non-null");
-        this.wantedVersion = Objects.requireNonNull(wantedVersion, "wantedVersion must be non-null");
-        this.suspendedAt = Objects.requireNonNull(suspendedAt, "suspendedAt must be non-null");
-    }
-
-    /** Hostname of this */
-    public HostName hostname() {
-        return hostname;
-    }
-
-    /** Zone of this */
-    public ZoneId zone() {
-        return zone;
-    }
-
-    /** Current version of this */
-    public Version currentVersion() {
-        return currentVersion;
-    }
-
-    /** Wanted version of this */
-    public Version wantedVersion() {
-        return wantedVersion;
+    public NodeVersion {
+        Objects.requireNonNull(hostname, "hostname must be non-null");
+        Objects.requireNonNull(zone, "zone must be non-null");
+        Objects.requireNonNull(currentVersion, "version must be non-null");
+        Objects.requireNonNull(wantedVersion, "wantedVersion must be non-null");
+        Objects.requireNonNull(suspendedAt, "suspendedAt must be non-null");
     }
 
     /** Returns the duration of the change in this, measured relative to instant */
@@ -61,31 +36,9 @@ public class NodeVersion {
         return Duration.between(suspendedAt.get(), instant).abs();
     }
 
-    /** The most recent time the node referenced in this suspended. This is empty if the node is not suspended. */
-    public Optional<Instant> suspendedAt() {
-        return suspendedAt;
-    }
-
     @Override
     public String toString() {
         return hostname + ": " + currentVersion + " -> " + wantedVersion + " [zone=" + zone + ", suspendedAt=" + suspendedAt.map(Instant::toString).orElse("<not suspended>") + "]";
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        NodeVersion that = (NodeVersion) o;
-        return hostname.equals(that.hostname) &&
-               zone.equals(that.zone) &&
-               currentVersion.equals(that.currentVersion) &&
-               wantedVersion.equals(that.wantedVersion) &&
-               suspendedAt.equals(that.suspendedAt);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(hostname, zone, currentVersion, wantedVersion, suspendedAt);
     }
 
     /** Returns whether this is upgrading */
