@@ -627,7 +627,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         /** Creates a new JsonResponse with path field written. */
         static JsonResponse create(HttpRequest request, ResponseHandler handler) throws IOException {
-            JsonResponse response = new JsonResponse(handler);
+            JsonResponse response = new JsonResponse(handler, request);
             response.writePathId(request.getUri().getRawPath());
             return response;
         }
