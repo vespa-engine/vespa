@@ -7,6 +7,8 @@ import com.yahoo.document.fieldset.FieldSet;
 import com.yahoo.document.fieldset.NoFields;
 import com.yahoo.vespa.objects.FieldBase;
 
+import java.io.Serializable;
+
 /**
  * A name and type. Fields are contained in document types to describe their fields,
  * but is also used to represent name/type pairs which are not part of document types.
@@ -14,7 +16,7 @@ import com.yahoo.vespa.objects.FieldBase;
  * @author Thomas Gundersen
  * @author bratseth
  */
-public class Field extends FieldBase implements FieldSet, Comparable<Field> {
+public class Field extends FieldBase implements FieldSet, Comparable, Serializable {
 
     protected DataType dataType;
     protected int fieldId;
@@ -72,8 +74,8 @@ public class Field extends FieldBase implements FieldSet, Comparable<Field> {
         this(name, field.dataType, null);
     }
 
-    public int compareTo(Field o) {
-        return fieldId - o.fieldId;
+    public int compareTo(Object o) {
+        return fieldId - ((Field) o).fieldId;
     }
 
     /**

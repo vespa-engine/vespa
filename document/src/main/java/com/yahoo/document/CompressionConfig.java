@@ -3,8 +3,9 @@ package com.yahoo.document;
 
 import com.yahoo.compress.CompressionType;
 
+import java.io.Serializable;
 
-public class CompressionConfig {
+public class CompressionConfig implements Serializable {
 
     public CompressionConfig(CompressionType type,
                              int level,
