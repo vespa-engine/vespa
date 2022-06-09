@@ -103,7 +103,7 @@ public class Endpoint {
 
     /** Returns the deployments(s) to which this routes traffic */
     public List<DeploymentId> deployments() {
-        return targets.stream().map(Target::deployment).collect(Collectors.toUnmodifiableList());
+        return targets.stream().map(Target::deployment).toList();
     }
 
     /** Returns the scope of this */
@@ -202,20 +202,19 @@ public class Endpoint {
 
     private static String scopeSymbol(Scope scope, SystemName system) {
         if (system.isPublic()) {
-            switch (scope) {
-                case zone: return "z";
-                case weighted: return "w";
-                case global: return "g";
-                case application: return "r";
-            }
+            return switch (scope) {
+                case zone -> "z";
+                case weighted -> "w";
+                case global -> "g";
+                case application -> "r";
+            };
         }
-        switch (scope) {
-            case zone: return "";
-            case weighted: return "w";
-            case global: return "global";
-            case application: return "r";
-        }
-        throw new IllegalArgumentException("No scope symbol defined for " + scope + " in " + system);
+        return switch (scope) {
+            case zone -> "";
+            case weighted -> "w";
+            case global -> "global";
+            case application -> "r";
+        };
     }
 
     private static String instancePart(Optional<InstanceName> instance, String separator) {
@@ -233,17 +232,19 @@ public class Endpoint {
     /** Returns the DNS suffix used for endpoints in given system */
     private static String dnsSuffix(SystemName system, boolean legacy) {
         switch (system) {
-            case cd:
-            case main:
+            case cd, main -> {
                 if (legacy) return YAHOO_DNS_SUFFIX;
                 return OATH_DNS_SUFFIX;
-            case Public:
+            }
+            case Public -> {
                 if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_DNS_SUFFIX;
-            case PublicCd:
+            }
+            case PublicCd -> {
                 if (legacy) throw new IllegalArgumentException("No legacy DNS suffix declared for system " + system);
                 return PUBLIC_CD_DNS_SUFFIX;
-            default: throw new IllegalArgumentException("No DNS suffix declared for system " + system);
+            }
+            default -> throw new IllegalArgumentException("No DNS suffix declared for system " + system);
         }
     }
 
@@ -422,20 +423,6 @@ public class Endpoint {
         return new EndpointBuilder(application, Optional.empty());
     }
 
-    /** Create an endpoint for given system application */
-    public static Endpoint of(SystemApplication systemApplication, ZoneId zone, URI url) {
-        if (!systemApplication.hasEndpoint()) throw new IllegalArgumentException(systemApplication + " has no endpoint");
-        RoutingMethod routingMethod = RoutingMethod.exclusive;
-        Port port = url.getPort() == -1 ? Port.tls() : Port.tls(url.getPort()); // System application endpoints are always TLS
-        return new Endpoint(TenantAndApplicationId.from(systemApplication.id()),
-                            Optional.of(systemApplication.id().instance()),
-                            null,
-                            ClusterSpec.Id.from("admin"),
-                            url,
-                            List.of(new Target(new DeploymentId(systemApplication.id(), zone))),
-                            Scope.zone, port, false, routingMethod, false);
-    }
-
     /** A target of an endpoint */
     public static class Target {
 
@@ -502,7 +489,7 @@ public class Endpoint {
         public EndpointBuilder target(EndpointId endpointId, ClusterSpec.Id cluster, List<DeploymentId> deployments) {
             this.endpointId = endpointId;
             this.cluster = cluster;
-            this.targets = deployments.stream().map(Target::new).collect(Collectors.toUnmodifiableList());
+            this.targets = deployments.stream().map(Target::new).toList();
             this.scope = requireUnset(Scope.global);
             return this;
         }
@@ -538,7 +525,7 @@ public class Endpoint {
             this.cluster = cluster;
             this.targets = deployments.entrySet().stream()
                                       .map(kv -> new Target(kv.getKey(), kv.getValue()))
-                                      .collect(Collectors.toUnmodifiableList());
+                                      .toList();
             this.scope = Scope.application;
             return this;
         }
