@@ -236,7 +236,7 @@ public class SessionRepositoryTest {
     @Test
     public void require_that_an_application_package_can_limit_to_one_major_version() throws Exception {
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = new Version(3, 0, 0);
+        failingFactory.vespaVersion = new Version(8, 0, 0);
         failingFactory.throwErrorOnLoad = true;
 
         MockModelFactory okFactory = new MockModelFactory();
@@ -245,28 +245,28 @@ public class SessionRepositoryTest {
 
         setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
-        File testApp = new File("src/test/apps/app-major-version-2");
+        File testApp = new File("src/test/apps/app-major-version-7");
         deploy(applicationId, testApp);
 
-        // Does not cause an error because model version 3 is skipped
+        // Does not cause an error because model version 8 is skipped
     }
 
     @Test
     public void require_that_an_application_package_can_limit_to_one_higher_major_version() throws Exception {
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = new Version(3, 0, 0);
+        failingFactory.vespaVersion = new Version(8, 0, 0);
         failingFactory.throwErrorOnLoad = true;
 
         MockModelFactory okFactory = new MockModelFactory();
-        okFactory.vespaVersion = new Version(1, 0, 0);
+        okFactory.vespaVersion = new Version(6, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
         setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
-        File testApp = new File("src/test/apps/app-major-version-2");
+        File testApp = new File("src/test/apps/app-major-version-7");
         deploy(applicationId, testApp);
 
-        // Does not cause an error because model version 3 is skipped
+        // Does not cause an error because model version 8 is skipped
     }
 
     @Test
