@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.component.Vtag;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
@@ -21,6 +22,7 @@ import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodesAndHosts;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -130,13 +132,20 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         }
 
         excessHosts.forEach(host -> {
-            try {
+            Optional<NodeMutex> optionalMutex = nodeRepository().nodes().lockAndGet(host, Optional.of(Duration.ofSeconds(10)));
+            if (optionalMutex.isEmpty()) return;
+            try (NodeMutex mutex = optionalMutex.get()) {
+                if (host.state() != mutex.node().state()) return;
+                host = mutex.node();
                 // First mark the host as wantToDeprovision so that if hostProvisioner fails, this host
                 // * wont get new nodes allocated to it
                 // * will be selected as excess on next iteration of this maintainer
                 nodeRepository().nodes().deprovision(host.hostname(), Agent.DynamicProvisioningMaintainer, nodeRepository().clock().instant());
                 hostProvisioner.deprovision(host);
                 nodeRepository().nodes().removeRecursively(host, true);
+            } catch (UncheckedTimeoutException e) {
+                log.log(Level.WARNING, "Failed to deprovision " + host.hostname() +
+                                       ": Failed to get lock on node, will retry later");
             } catch (RuntimeException e) {
                 log.log(Level.WARNING, "Failed to deprovision " + host.hostname() + ", will retry in " + interval(), e);
             }
@@ -152,11 +161,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
      *         without wantToDeprovision (which means an operator is looking at the node).
      */
     private List<Node> provision(NodeList nodeList) {
-        final List<Node> nodes = new ArrayList<>(provisionUntilNoDeficit(nodeList));
-
-
-        Map<String, Node> sharedHosts = new HashMap<>(findSharedHosts(nodeList));
-
+        var nodes = new ArrayList<>(provisionUntilNoDeficit(nodeList));
+        var sharedHosts = new HashMap<>(findSharedHosts(nodeList));
         int minCount = sharedHostFlag.value().getMinCount();
         int deficit = minCount - sharedHosts.size();
         if (deficit > 0) {
