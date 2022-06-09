@@ -866,11 +866,9 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.concurrent.Executor, com.yahoo.container.logging.AccessLog, com.yahoo.jdisc.Metric)",
       "public void <init>(java.util.concurrent.Executor, com.yahoo.jdisc.Metric)",
       "public void <init>(com.yahoo.container.jdisc.ThreadedHttpRequestHandler$Context)",
       "public java.util.concurrent.Executor getExecutor()",
-      "public com.yahoo.container.logging.AccessLog getAccessLog()",
       "public com.yahoo.jdisc.Metric getMetric()"
     ],
     "fields": []
@@ -2399,24 +2397,6 @@
       "public static varargs com.yahoo.jdisc.http.filter.ResponseFilter newInstance(com.yahoo.jdisc.http.filter.SecurityResponseFilter[])",
       "public static com.yahoo.jdisc.http.filter.ResponseFilter newInstance(java.util.List)",
       "public java.util.List getFilters()"
-    ],
-    "fields": []
-  },
-  "com.yahoo.jdisc.http.ssl.SslContextFactoryProvider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.lang.AutoCloseable",
-      "com.yahoo.jdisc.http.SslProvider"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)",
-      "public void close()",
-      "public void configureSsl(com.yahoo.jdisc.http.SslProvider$ConnectorSsl, java.lang.String, int)"
     ],
     "fields": []
   },

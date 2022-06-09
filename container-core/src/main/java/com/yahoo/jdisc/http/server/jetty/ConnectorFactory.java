@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.SslProvider;
-import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
@@ -187,7 +186,6 @@ public class ConnectorFactory {
         return connectionFactory;
     }
 
-    @SuppressWarnings("removal")
     private SslContextFactory createSslContextFactory() {
         DefaultConnectorSsl ssl = new DefaultConnectorSsl();
         sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());

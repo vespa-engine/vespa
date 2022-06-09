@@ -2,26 +2,24 @@
 package com.yahoo.container.jdisc;
 
 import com.google.inject.Inject;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.BufferedContentChannel;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
-import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.handler.ResponseHandler;
+import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.http.server.jetty.AccessLoggingRequestHandler;
 import com.yahoo.yolean.Exceptions;
-
-import java.util.Optional;
-import java.util.logging.Level;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -268,12 +266,6 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         final Executor executor;
         final Metric metric;
 
-        /** @deprecated Use {@link #Context(Executor, Metric)} instead */
-        @Deprecated(forRemoval = true, since = "7")
-        public Context(Executor executor, AccessLog ignored, Metric metric) {
-            this(executor, metric);
-        }
-
         @Inject
         public Context(Executor executor, Metric metric) {
             this.executor = executor;
@@ -286,7 +278,6 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         }
 
         public Executor getExecutor() { return executor; }
-        @Deprecated(forRemoval = true, since = "7") public AccessLog getAccessLog() { return null; }
         public Metric getMetric() { return metric; }
 
     }
