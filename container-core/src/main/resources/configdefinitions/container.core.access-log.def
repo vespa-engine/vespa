@@ -17,7 +17,7 @@ fileHandler.symlink string default=""
 fileHandler.compressOnRotation bool default=true
 
 # Compression format
-fileHandler.compressionFormat enum {GZIP, ZSTD} default=GZIP
+fileHandler.compressionFormat enum {GZIP, ZSTD} default=ZSTD
 
 # Max queue length of file handler
 fileHandler.queueSize int default=10000
