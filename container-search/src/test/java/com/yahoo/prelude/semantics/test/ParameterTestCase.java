@@ -55,12 +55,12 @@ public class ParameterTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testMultipleAlternativeParameterValuesInCondition() {
-        assertInputRankParameterSemantics("one", "foo", "cat");
-        assertInputRankParameterSemantics("one", "foo", "cat0");
-        assertInputRankParameterSemantics("one", "bar", "cat");
-        assertInputRankParameterSemantics("one", "bar", "cat0");
-        assertInputRankParameterSemantics("AND one one", "foo+bar", "cat0");
-        assertInputRankParameterSemantics("AND fuki sushi", "fuki+sushi", "cat0");
+        assertInputRankParameterSemantics("WEAKAND(100) one", "foo", "cat");
+        assertInputRankParameterSemantics("WEAKAND(100) one", "foo", "cat0");
+        assertInputRankParameterSemantics("WEAKAND(100) one", "bar", "cat");
+        assertInputRankParameterSemantics("WEAKAND(100) one", "bar", "cat0");
+        assertInputRankParameterSemantics("WEAKAND(100) one one", "foo+bar", "cat0");
+        assertInputRankParameterSemantics("WEAKAND(100) fuki sushi", "fuki+sushi", "cat0");
     }
 
     private void assertInputRankParameterSemantics(String producedQuery,String inputQuery, String rankParameterValue) {
