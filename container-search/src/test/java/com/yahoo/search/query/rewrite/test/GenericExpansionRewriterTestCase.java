@@ -97,7 +97,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testFullPhraseNoMaxRewriteSingleWordFilter() {
-        utils.assertRewrittenQuery("?query=ca&type=all&" +
+        utils.assertRewrittenQuery("?query=ca&" +
                                    "filter=citystate:santa clara ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
                                    "query 'RANK (OR california ca) |citystate:santa |clara |ca'");
@@ -108,7 +108,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testPartialPhraseNoMaxRewriteSingleWordFilter() {
-        utils.assertRewrittenQuery("?query=ca&type=all&" +
+        utils.assertRewrittenQuery("?query=ca&" +
                                    "filter=citystate:santa clara ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
                                    "query 'RANK (OR california ca) |citystate:santa |clara |ca'");
@@ -119,7 +119,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testFullPhraseNoMaxRewriteMultiWordFilter() {
-        utils.assertRewrittenQuery("?query=travel agency&type=all&" +
+        utils.assertRewrittenQuery("?query=travel agency&" +
                                    "filter=citystate:santa clara ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
                                    "query 'RANK (OR ta (AND travel agency)) |citystate:santa |clara |ca'");
@@ -131,7 +131,7 @@ public class GenericExpansionRewriterTestCase {
     @Test
     public void testPartialPhraseNoMaxRewriteMultiWordFilter() {
         utils.assertRewrittenQuery("?query=modern new york city travel phone number&" +
-                                   "filter=citystate:santa clara ca&type=all&" +
+                                   "filter=citystate:santa clara ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
                                    "query 'RANK (AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 " +
                                    "rewrite4 rewrite5 (AND new york city travel)) (OR pn (AND phone number))) " +
@@ -143,7 +143,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testFullPhraseNoMaxRewriteSingleWord() {
-        utils.assertRewrittenQuery("?query=ca&type=all&" +
+        utils.assertRewrittenQuery("?query=ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
                                    "query 'OR california ca'");
     }
@@ -153,7 +153,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testPartialPhraseNoMaxRewriteSingleWord() {
-        utils.assertRewrittenQuery("?query=ca&type=all&" +
+        utils.assertRewrittenQuery("?query=ca&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
                                    "query 'OR california ca'");
     }
@@ -163,7 +163,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testFullPhraseNoMaxRewriteMultiWord() {
-        utils.assertRewrittenQuery("?query=travel agency&type=all&" +
+        utils.assertRewrittenQuery("?query=travel agency&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
                                    "query 'OR ta (AND travel agency)'");
     }
@@ -173,7 +173,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testFullPhraseNoMaxRewriteMultiWordNoMatch() {
-        utils.assertRewrittenQuery("?query=nyc travel agency&type=all&" +
+        utils.assertRewrittenQuery("?query=nyc travel agency&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=false",
                                    "query 'AND nyc travel agency'");
     }
@@ -183,7 +183,7 @@ public class GenericExpansionRewriterTestCase {
      */
     @Test
     public void testPartialPhraseNoMaxRewriteMultiWord() {
-        utils.assertRewrittenQuery("?query=modern new york city travel phone number&type=all&" +
+        utils.assertRewrittenQuery("?query=modern new york city travel phone number&" +
                                    REWRITER_NAME + "." + RewriterConstants.PARTIAL_PHRASE_MATCH + "=true",
                                    "query 'AND modern (OR (AND rewrite11 rewrite12) rewrite2 rewrite3 rewrite4 rewrite5 "+
                                    "(AND new york city travel)) (OR pn (AND phone number))'");

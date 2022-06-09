@@ -428,7 +428,7 @@ public class YqlParserTestCase {
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem)root).getWord());
 
-        root = parse("select foo from bar where {grammar:\"all\"}userInput(\"yoni jo dima\")").getRoot();
+        root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
         assertTrue(root instanceof AndItem);
         AndItem andItem = (AndItem) root;
         assertEquals(3, andItem.getItemCount());
@@ -1064,7 +1064,7 @@ public class YqlParserTestCase {
     @Test
     public void testUrlHostSearchingDefaultAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com&type=all"), false, true, true);
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com"), false, true, true);
 
         // YQL query
         Query yql = new Query();
@@ -1075,7 +1075,7 @@ public class YqlParserTestCase {
     @Test
     public void testUrlHostSearchingNoAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com*&type=all"), false, false, true);
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com*"), false, false, true);
 
         // YQL query
         Query yql = new Query();
@@ -1086,7 +1086,7 @@ public class YqlParserTestCase {
     @Test
     public void testUrlHostSearchingBothAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:%5Egoogle.com&type=all"), true, true, true); // %5E = ^
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:%5Egoogle.com"), true, true, true); // %5E = ^
 
         // YQL query
         Query yql = new Query();
@@ -1097,7 +1097,7 @@ public class YqlParserTestCase {
     @Test
     public void testUriNonHostDoesNotCreateAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield", new Query("?query=urlfield:google.com&type=all"), false, false, false);
+        assertUrlQuery("urlfield", new Query("?query=urlfield:google.com"), false, false, false);
 
         // YQL query
         Query yql = new Query();

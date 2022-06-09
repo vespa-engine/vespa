@@ -31,14 +31,14 @@ public class AutomataTestCase extends RuleBaseAbstractTestCase {
 
         Query query=new Query("?query=sony+digital+camera");
         ruleBase.analyze(query,0);
-        assertEquals("RANK (WEAKAND(100) sony digital camera) dsp1:sony dsp5:digicamera", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("RANK (AND sony digital camera) dsp1:sony dsp5:digicamera", query.getModel().getQueryTree().getRoot().toString());
 
         query=new Query("?query=sony+digital+camera&rules.reload");
         ruleBase=searcher.getDefaultRuleBase();
         assertTrue(ruleBase.getSource().endsWith(root + "automatarules.sr"));
         assertEquals(root + "semantics.fsa",ruleBase.getAutomataFile());
         ruleBase.analyze(query,0);
-        assertEquals("RANK (WEAKAND(100) sony digital camera) dsp1:sony dsp5:digicamera", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("RANK (AND sony digital camera) dsp1:sony dsp5:digicamera", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test

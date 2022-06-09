@@ -38,8 +38,8 @@ public class QueryTestCase {
 
     @Test
     public void testSimpleQueryParsing () {
-        Query q = newQuery("/search?query=foobar&offset=10&hits=20&type=all");
-        assertEquals("foobar", ((WordItem) q.getModel().getQueryTree().getRoot()).getWord());
+        Query q = newQuery("/search?query=foobar&offset=10&hits=20");
+        assertEquals("foobar",((WordItem) q.getModel().getQueryTree().getRoot()).getWord());
         assertEquals(10, q.getOffset());
         assertEquals(20, q.getHits());
     }
@@ -99,7 +99,7 @@ public class QueryTestCase {
 
     @Test
     public void testUtf8Decoding() {
-        Query q = new Query("/?query=beyonc%C3%A9&type=all");
+        Query q = new Query("/?query=beyonc%C3%A9");
         assertEquals("beyonc\u00e9", ((WordItem) q.getModel().getQueryTree().getRoot()).getWord());
     }
 
@@ -200,7 +200,7 @@ public class QueryTestCase {
     public void testDefaultIndex() {
         Query q = newQuery("?query=hi hello keyword:kanoo " +
                             "default:munkz \"phrases too\"&default-index=def");
-        assertEquals("WEAKAND(100) def:hi def:hello keyword:kanoo " +
+        assertEquals("AND def:hi def:hello keyword:kanoo " +
                      "default:munkz def:\"phrases too\"",
                      q.getModel().getQueryTree().getRoot().toString());
     }
@@ -275,11 +275,11 @@ public class QueryTestCase {
     @Test
     public void testUnicodeNormalization() {
         Linguistics linguistics = new SimpleLinguistics();
-        Query query = newQueryFromEncoded("?query=content:%EF%BC%B3%EF%BC%AF%EF%BC%AE%EF%BC%B9&type=all", Language.ENGLISH,
+        Query query = newQueryFromEncoded("?query=content:%EF%BC%B3%EF%BC%AF%EF%BC%AE%EF%BC%B9", Language.ENGLISH,
                                           linguistics);
-        assertEquals("SONY", ((WordItem) query.getModel().getQueryTree().getRoot()).getWord());
+        assertEquals("SONY",((WordItem) query.getModel().getQueryTree().getRoot()).getWord());
 
-        query = newQueryFromEncoded("?query=foo&filter=+%EF%BC%B3%EF%BC%AF%EF%BC%AE%EF%BC%B9&type=all", Language.ENGLISH,
+        query = newQueryFromEncoded("?query=foo&filter=+%EF%BC%B3%EF%BC%AF%EF%BC%AE%EF%BC%B9", Language.ENGLISH,
                                     linguistics);
         assertEquals("RANK foo |SONY", query.getModel().getQueryTree().getRoot().toString());
 
@@ -332,10 +332,10 @@ public class QueryTestCase {
     @Test
     public void testCopy() {
         Query qs = newQuery("?query=test&rankfeature.something=2");
-        assertEquals("WEAKAND(100) test", qs.getModel().getQueryTree().toString());
+        assertEquals("test", qs.getModel().getQueryTree().toString());
         assertEquals((int)qs.properties().getInteger("rankfeature.something"),2);
         Query qp = new Query(qs);
-        assertEquals("WEAKAND(100) test", qp.getModel().getQueryTree().getRoot().toString());
+        assertEquals("test", qp.getModel().getQueryTree().getRoot().toString());
         assertFalse(qp.getRanking().getFeatures().isEmpty());
         assertEquals(2.0, qp.getRanking().getFeatures().getDouble("something").getAsDouble(), 0.000001);
     }

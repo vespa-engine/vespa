@@ -272,7 +272,7 @@ public class FieldCollapsingSearcherTestCase {
         chained.put(messUp, docsource);
 
         // Caveat: Collapse is set to false, because that's what the collapser asks for
-        Query q = new Query("?query=%22test%20collapse%22+b&collapsefield=amid&type=all");
+        Query q = new Query("?query=%22test%20collapse%22+b&collapsefield=amid");
 
         // The searcher turns off collapsing further on in the chain
         q.properties().set("collapse", "0");
@@ -289,7 +289,7 @@ public class FieldCollapsingSearcherTestCase {
         docsource.addResult(q, r);
 
         // Test basic collapsing on mid
-        q = new Query("?query=%22test%20collapse%22&collapsefield=amid&type=all");
+        q = new Query("?query=%22test%20collapse%22&collapsefield=amid");
         r = doSearch(collapse, q, 0, 2, chained);
 
         assertEquals(2, docsource.getQueryCount());
