@@ -236,37 +236,19 @@ public class SessionRepositoryTest {
     @Test
     public void require_that_an_application_package_can_limit_to_one_major_version() throws Exception {
         MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = new Version(3, 0, 0);
+        failingFactory.vespaVersion = new Version(8, 0, 0);
         failingFactory.throwErrorOnLoad = true;
 
         MockModelFactory okFactory = new MockModelFactory();
-        okFactory.vespaVersion = new Version(2, 0, 0);
+        okFactory.vespaVersion = new Version(7, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
         setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
-        File testApp = new File("src/test/apps/app-major-version-2");
-        deploy(applicationId, testApp);
+        File testApp = new File("src/test/apps/app-major-version-7");
+        deploy(new PrepareParams.Builder().applicationId(applicationId).vespaVersion(okFactory.vespaVersion).build(), testApp);
 
-        // Does not cause an error because model version 3 is skipped
-    }
-
-    @Test
-    public void require_that_an_application_package_can_limit_to_one_higher_major_version() throws Exception {
-        MockModelFactory failingFactory = new MockModelFactory();
-        failingFactory.vespaVersion = new Version(3, 0, 0);
-        failingFactory.throwErrorOnLoad = true;
-
-        MockModelFactory okFactory = new MockModelFactory();
-        okFactory.vespaVersion = new Version(1, 0, 0);
-        okFactory.throwErrorOnLoad = false;
-
-        setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
-
-        File testApp = new File("src/test/apps/app-major-version-2");
-        deploy(applicationId, testApp);
-
-        // Does not cause an error because model version 3 is skipped
+        // Does not cause an error because model version 8 is skipped
     }
 
     @Test
@@ -341,8 +323,12 @@ public class SessionRepositoryTest {
     }
 
     private long deploy(ApplicationId applicationId, File testApp) {
-        applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
-        return applicationRepository.getActiveSession(applicationId).get().getSessionId();
+        return deploy(new PrepareParams.Builder().applicationId(applicationId).build(), testApp);
+    }
+
+    private long deploy(PrepareParams params, File testApp) {
+        applicationRepository.deploy(testApp, params);
+        return applicationRepository.getActiveSession(params.getApplicationId()).get().getSessionId();
     }
 
     private static class MockModelFactory implements ModelFactory {
