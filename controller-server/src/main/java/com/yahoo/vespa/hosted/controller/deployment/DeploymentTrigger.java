@@ -248,7 +248,7 @@ public class DeploymentTrigger {
                                                                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0).versions(), jobId.type(), status.jobs().get(jobId).get(), clock.instant()), reason);
+            trigger(deploymentJob(application.require(job.application().instance()), versionsList.get(0).versions(), jobId.type(), status.jobs().get(jobId).get(), clock.instant()), reason);
         });
         return List.copyOf(jobs.keySet());
     }
