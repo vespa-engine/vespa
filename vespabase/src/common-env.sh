@@ -129,6 +129,35 @@ optionally_reduce_base_frequency() {
     fi
 }
 
+get_hugepage_size_mb() {
+    while read -r name size rest
+    do
+        if [[ "$name" =~ ^Hugepagesize:$ ]]
+        then
+          hugepagesize="$size"
+          unit="${rest,,}"
+          break
+        fi
+    done < /proc/meminfo
+    if [[ "$unit" == "kb" ]]; then
+        hugepage_size_mb=$(($hugepagesize / 1024))
+    else
+        echo "Failed extracting hugepage size from /proc/meminfo. Unknown unit($unit)"
+        exit 1
+    fi
+    OUT=$hugepage_size_mb
+}
+
+get_jvm_hugepage_settings() {
+    local heap_mb="$1"
+    get_hugepage_size_mb
+    sz_mb=$OUT
+    if (($sz_mb * 2 < $heap_mb)); then
+        options=" -XX:+UseTransparentHugePages"
+    fi
+    echo "$options"
+}
+
 populate_environment
 
 export LD_LIBRARY_PATH=$VESPA_HOME/lib64
