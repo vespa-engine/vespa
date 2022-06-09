@@ -112,8 +112,7 @@ class JobControllerApiHandlerHelper {
         Slime slime = new Slime();
         Cursor detailsObject = slime.setObject();
 
-        Run run = jobController.run(runId)
-                               .orElseThrow(() -> new IllegalStateException("Unknown run '" + runId + "'"));
+        Run run = jobController.run(runId);
         detailsObject.setBool("active", ! run.hasEnded());
         detailsObject.setString("status", nameOf(run.status()));
         try {

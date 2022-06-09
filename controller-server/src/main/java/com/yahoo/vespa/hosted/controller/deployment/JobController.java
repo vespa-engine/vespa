@@ -47,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -298,11 +299,12 @@ public class JobController {
         return runs.build();
     }
 
-    /** Returns the run with the given id, if it exists. */
-    public Optional<Run> run(RunId id) {
+    /** Returns the run with the given id, or throws if no such run exists. */
+    public Run run(RunId id) {
         return runs(id.application(), id.type()).values().stream()
                                                 .filter(run -> run.id().equals(id))
-                                                .findAny();
+                                                .findAny()
+                                                .orElseThrow(() -> new NoSuchElementException("no run with id '" + id + "' exists"));
     }
 
     /** Returns the last run of the given type, for the given application, if one has been run. */
@@ -412,7 +414,7 @@ public class JobController {
         Deque<Mutex> locks = new ArrayDeque<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
-            Run unlockedRun = run(id).get();
+            Run unlockedRun = run(id);
             locks.push(curator.lock(id.application(), id.type(), report));
             for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
                 locks.push(curator.lock(id.application(), id.type(), step));

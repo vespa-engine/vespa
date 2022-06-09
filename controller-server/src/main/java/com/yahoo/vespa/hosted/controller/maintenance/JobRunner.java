@@ -81,7 +81,7 @@ public class JobRunner extends ControllerMaintainer {
             &&   controller().clock().instant().isAfter(run.sleepUntil().orElse(run.start()).plus(jobTimeout)))
             executors.execute(() -> {
                 jobs.abort(run.id(), "job timeout of " + jobTimeout + " reached");
-                advance(jobs.run(run.id()).get());
+                advance(jobs.run(run.id()));
             });
         else if (run.readySteps().isEmpty())
             executors.execute(() -> finish(run.id()));
