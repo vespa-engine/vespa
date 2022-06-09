@@ -19,31 +19,31 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests the complete field match query transformer
  *
- * @author Steinar Knutsen
+ * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public class LiteralBoostSearcherTestCase {
 
     @Test
     public void testSimpleQueryWithBoost() {
-        assertEquals("RANK (WEAKAND(100) abc) default_literal:abc",
+        assertEquals("RANK abc default_literal:abc",
                      transformQuery("?query=abc&source=cluster1&restrict=type1"));
     }
 
     @Test
     public void testSimpleQueryNoBoost() {
-        assertEquals("WEAKAND(100) abc",
+        assertEquals("abc",
                 transformQuery("?query=abc&source=cluster1&restrict=type2"));
     }
 
     @Test
     public void testQueryWithExplicitIndex() {
-        assertEquals("RANK (WEAKAND(100) absolute:abc) absolute_literal:abc",
+        assertEquals("RANK absolute:abc absolute_literal:abc",
                 transformQuery("?query=absolute:abc&source=cluster1&restrict=type1"));
     }
 
     @Test
     public void testQueryWithExplicitIndexNoBoost() {
-        assertEquals("WEAKAND(100) absolute:abc",
+        assertEquals("absolute:abc",
                 transformQuery("?query=absolute:abc&source=cluster1&restrict=type2"));
     }
 
@@ -64,7 +64,7 @@ public class LiteralBoostSearcherTestCase {
 
     @Test
     public void testTermindexQuery() {
-        assertEquals("RANK (+(WEAKAND(100) a b d) -c) default_literal:a "+
+        assertEquals("RANK (+(AND a b d) -c) default_literal:a "+
                      "default_literal:b default_literal:d",
                      transformQuery("?query=a b -c d&source=cluster1&restrict=type1"));
     }
@@ -72,7 +72,7 @@ public class LiteralBoostSearcherTestCase {
     @Test
     public void testQueryWithoutBoost() {
         assertEquals("RANK (AND nonexistant a nonexistant b) default_literal:nonexistant default_literal:a default_literal:nonexistant default_literal:b",
-                     transformQuery("?query=nonexistant:a nonexistant:b&source=cluster1&restrict=type1&type=all"));
+                     transformQuery("?query=nonexistant:a nonexistant:b&source=cluster1&restrict=type1"));
     }
 
     private String transformQuery(String rawQuery) {
