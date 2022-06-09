@@ -14,7 +14,7 @@ public class GlibCTestCase {
         if (Platform.isLinux()) {
             assertNull(PosixFAdvise.init());
         } else {
-            assertEquals("Platform is unsúpported. Only supported on linux.", PosixFAdvise.init().getMessage());
+            assertEquals("Platform is unsupported. Only supported on Linux.", PosixFAdvise.init().getMessage());
         }
     }
 
@@ -27,7 +27,7 @@ public class GlibCTestCase {
             assertTrue(version.major() >= 2);
             assertTrue((version.major() >= 3) || ((version.major() == 2) && (version.minor() >= 17)));
         } else {
-            assertEquals("Platform is unsúpported. Only supported on linux.", PosixFAdvise.init().getMessage());
+            assertEquals("Platform is unsupported. Only supported on Linux.", PosixFAdvise.init().getMessage());
         }
     }
 }

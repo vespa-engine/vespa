@@ -15,7 +15,7 @@ public class MallInfoTestCase {
                 assertNull(MallInfo2.init());
             }
         } else {
-            assertEquals("Platform is unsúpported. Only supported on linux.", MallInfo2.init().getMessage());
+            assertEquals("Platform is unsupported. Only supported on Linux.", MallInfo2.init().getMessage());
         }
     }
     @Test
@@ -23,7 +23,7 @@ public class MallInfoTestCase {
         if (Platform.isLinux()) {
             assertNull(MallInfo.init());
         } else {
-            assertEquals("Platform is unsúpported. Only supported on linux.", MallInfo.init().getMessage());
+            assertEquals("Platform is unsupported. Only supported on Linux.", MallInfo.init().getMessage());
         }
     }
 }
