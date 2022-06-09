@@ -47,7 +47,7 @@ public class MisspellRewriterTestCase {
         utils.assertRewrittenQuery("?query=willl+smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                                   "query 'OR (AND willl smith) (AND will smith sugg)'",
+                                   "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg)'",
                                    intentModel);
     }
 
@@ -67,7 +67,7 @@ public class MisspellRewriterTestCase {
 
         utils.assertRewrittenQuery("?query=willl+smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true",
-                                   "query 'OR (AND willl smith) (AND will smith rw1)'",
+                                   "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith rw1)'",
                                    intentModel);
     }
 
@@ -87,7 +87,7 @@ public class MisspellRewriterTestCase {
 
         utils.assertRewrittenQuery("?query=willl+smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                                   "query 'OR (AND willl smith) (AND will smith sugg1)'",
+                                   "query 'OR (WEAKAND(100) willl smith) (WEAKAND(100) will smith sugg1)'",
                                    intentModel);
     }
 
@@ -104,7 +104,7 @@ public class MisspellRewriterTestCase {
                                                              false, true));
 
         utils.assertRewrittenQuery("?query=willl+smith",
-                                   "query 'AND willl smith'",
+                                   "query 'WEAKAND(100) willl smith'",
                                    intentModel);
     }
 
@@ -123,7 +123,7 @@ public class MisspellRewriterTestCase {
         utils.assertRewrittenQuery("?query=will+smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true",
-                                   "query 'AND will smith'",
+                                   "query 'WEAKAND(100) will smith'",
                                    intentModel);
     }
 

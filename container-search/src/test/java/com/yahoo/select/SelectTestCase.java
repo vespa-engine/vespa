@@ -719,8 +719,8 @@ public class SelectTestCase {
     @Test
     public void testOverridingOtherQueryTree() {
         Query query = new Query("?query=default:query");
-        assertEquals("default:query", query.getModel().getQueryTree().toString());
-        assertEquals(Query.Type.ALL, query.getModel().getType());
+        assertEquals("WEAKAND(100) default:query", query.getModel().getQueryTree().toString());
+        assertEquals(Query.Type.WEAKAND, query.getModel().getType());
 
         query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
         assertEquals("default:select", query.getModel().getQueryTree().toString());

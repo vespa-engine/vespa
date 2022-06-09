@@ -89,38 +89,38 @@ public class InheritanceTestCase {
 
     @Test
     public void testParent()  {
-        assertSemantics("vehiclebrand:audi", "audi cars", parent);
-        assertSemantics("vehiclebrand:alfa", "alfa bus", parent);
-        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", parent);
-        assertSemantics("AND vw car",       "vw cars", parent);
-        assertSemantics("AND skoda car",    "skoda cars", parent);
+        assertSemantics("WEAKAND(100) vehiclebrand:audi", "audi cars", parent);
+        assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", parent);
+        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", parent);
+        assertSemantics("WEAKAND(100) vw car",       "vw cars", parent);
+        assertSemantics("WEAKAND(100) skoda car",    "skoda cars", parent);
     }
 
     @Test
     public void testChild1() {
-        assertSemantics("vehiclebrand:skoda", "audi cars", child1);
-        assertSemantics("vehiclebrand:alfa", "alfa bus", child1);
-        assertSemantics("AND vehiclebrand:bmw expensivetv", "bmw motorcycle", child1);
-        assertSemantics("vehiclebrand:skoda", "vw cars", child1);
-        assertSemantics("AND skoda car",      "skoda cars", child1);
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", child1);
+        assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", child1);
+        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", child1);
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars", child1);
+        assertSemantics("WEAKAND(100) skoda car",      "skoda cars", child1);
     }
 
     @Test
     public void testChild2() {
-        assertSemantics("vehiclebrand:audi","audi cars", child2);
-        assertSemantics("vehiclebrand:alfa","alfa bus", child2);
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle", child2);
-        assertSemantics("AND vw car","vw cars", child2);
-        assertSemantics("vehiclebrand:skoda","skoda cars", child2);
+        assertSemantics("WEAKAND(100) vehiclebrand:audi","audi cars", child2);
+        assertSemantics("WEAKAND(100) vehiclebrand:alfa","alfa bus", child2);
+        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv","bmw motorcycle", child2);
+        assertSemantics("WEAKAND(100) vw car","vw cars", child2);
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","skoda cars", child2);
     }
 
     @Test
     public void testGrandchild() {
-        assertSemantics("vehiclebrand:skoda","audi cars", grandchild);
-        assertSemantics("vehiclebrand:alfa","alfa bus", grandchild);
-        assertSemantics("AND vehiclebrand:bmw expensivetv","bmw motorcycle", grandchild);
-        assertSemantics("vehiclebrand:skoda","vw cars", grandchild);
-        assertSemantics("vehiclebrand:skoda","skoda cars", grandchild);
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","audi cars", grandchild);
+        assertSemantics("WEAKAND(100) vehiclebrand:alfa","alfa bus", grandchild);
+        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv","bmw motorcycle", grandchild);
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","vw cars", grandchild);
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","skoda cars", grandchild);
     }
 
     @Test
@@ -133,28 +133,28 @@ public class InheritanceTestCase {
 
     @Test
     public void testSearcher() {
-        assertSemantics("vehiclebrand:skoda","vw cars",   "");
-        assertSemantics("vehiclebrand:skoda","vw cars",   "&rules.rulebase=grandchild");
-        assertSemantics("vehiclebrand:skoda","vw cars",   "&rules.rulebase=grandchild.sd");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","vw cars",   "");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","vw cars",   "&rules.rulebase=grandchild");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","vw cars",   "&rules.rulebase=grandchild.sd");
         try {
-            assertSemantics("AND vw cars",       "vw cars",   "&rules.rulebase=doesntexist");
+            assertSemantics("WEAKAND(100) vw cars",       "vw cars",   "&rules.rulebase=doesntexist");
             fail("No exception on missing rule base");
         }
         catch (RuleBaseException e) {
             // Success
         }
-        assertSemantics("AND vw cars",       "vw cars",   "&rules.rulebase=grandchild.sd&rules.off");
-        assertSemantics("AND vw cars",       "vw cars",   "&rules.off");
+        assertSemantics("WEAKAND(100) vw cars",       "vw cars",   "&rules.rulebase=grandchild.sd&rules.off");
+        assertSemantics("WEAKAND(100) vw cars",       "vw cars",   "&rules.off");
 
-        assertSemantics("AND vw car",        "vw cars",   "&rules.rulebase=child2");
-        assertSemantics("vehiclebrand:skoda","skoda cars","&rules.rulebase=child2");
+        assertSemantics("WEAKAND(100) vw car",        "vw cars",   "&rules.rulebase=child2");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","skoda cars","&rules.rulebase=child2");
 
-        assertSemantics("vehiclebrand:skoda","audi cars", "&rules.rulebase=child1");
-        assertSemantics("vehiclebrand:skoda","vw cars",   "&rules.rulebase=child1");
-        assertSemantics("AND skoda car",     "skoda cars","&rules.rulebase=child1");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","audi cars", "&rules.rulebase=child1");
+        assertSemantics("WEAKAND(100) vehiclebrand:skoda","vw cars",   "&rules.rulebase=child1");
+        assertSemantics("WEAKAND(100) skoda car",     "skoda cars","&rules.rulebase=child1");
 
-        assertSemantics("AND vw car",        "vw cars",   "&rules.rulebase=parent");
-        assertSemantics("AND skoda car",     "skoda cars","&rules.rulebase=parent");
+        assertSemantics("WEAKAND(100) vw car",        "vw cars",   "&rules.rulebase=parent");
+        assertSemantics("WEAKAND(100) skoda car",     "skoda cars","&rules.rulebase=parent");
     }
 
     protected void assertSemantics(String result,String input,String ruleSelection) {

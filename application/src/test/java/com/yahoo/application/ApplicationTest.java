@@ -62,7 +62,7 @@ public class ApplicationTest {
                      Application.fromApplicationPackage(new File("src/test/app-packages/withcontent"), Networking.disable)) {
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"),
                                                                                  new Query("?query=substring:foobar&timeout=20000"));
-            assertEquals("AND substring:fo substring:oo substring:ob substring:ba substring:ar",
+            assertEquals("WEAKAND(100) (AND substring:fo substring:oo substring:ob substring:ba substring:ar)",
                          result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
         }
     }

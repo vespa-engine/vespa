@@ -51,7 +51,6 @@ abstract class SimpleParser extends StructuredParser {
         Item topLevelItem = null;
         NotItem not = null;
         Item item = null;
-
         do {
             item = positiveItem();
             if (item != null) {

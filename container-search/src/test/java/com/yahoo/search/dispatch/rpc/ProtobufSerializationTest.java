@@ -68,7 +68,7 @@ public class ProtobufSerializationTest {
         hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());
         var bytes = ProtobufSerialization.serializeDocsumRequest(builder, Collections.singletonList(hit));
 
-        assertEquals(41, bytes.length);
+        assertEquals(46, bytes.length);
     }
 
     private String contentsOf(ByteString property) {
