@@ -79,7 +79,7 @@ public class QueryRewriteSearcherTestCase {
         Execution execution = QueryRewriteSearcherTestUtils.createExecutionObj(searchers);
         QueryRewriteSearcherTestUtils utilsWithFakePath = new QueryRewriteSearcherTestUtils(execution);
 
-        utilsWithFakePath.assertRewrittenQuery("?query=will smith&type=all&" +
+        utilsWithFakePath.assertRewrittenQuery("?query=will smith&" +
                                                NAME_REWRITER_NAME + "." +
                                                RewriterConstants.REWRITES_AS_UNIT_EQUIV + "=true",
                                                "query 'AND will smith'");
@@ -91,7 +91,7 @@ public class QueryRewriteSearcherTestCase {
      */
     @Test
     public void testExceptionInRewriter() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&" +
+        utils.assertRewrittenQuery("?query=will smith&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
                                    NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -117,7 +117,7 @@ public class QueryRewriteSearcherTestCase {
                                   utils.createInterpretation("will smith", 1.0,
                                                              false, true));
 
-        utils.assertRewrittenQuery("?query=willl+smith&type=all&" +
+        utils.assertRewrittenQuery("?query=willl+smith&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
                                    NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +

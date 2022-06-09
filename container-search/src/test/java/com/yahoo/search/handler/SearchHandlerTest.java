@@ -167,7 +167,7 @@ public class SearchHandlerTest {
         HttpSearchResponse s = new HttpSearchResponse(200, r, q, new XmlRenderer());
         assertEquals("text/xml", s.getContentType());
         assertNull(s.getCoverage());
-        assertEquals("query 'WEAKAND(100) dummy'", s.getParsedQuery());
+        assertEquals("query 'dummy'", s.getParsedQuery());
         assertEquals(500, s.getTiming().getTimeout());
     }
 

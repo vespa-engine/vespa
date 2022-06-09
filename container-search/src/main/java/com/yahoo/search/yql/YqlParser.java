@@ -740,7 +740,7 @@ public class YqlParser implements Parser {
         if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
 
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       Query.Type.WEAKAND.toString(), "grammar for handling user input");
+                                       Query.Type.ALL.toString(), "grammar for handling user input");
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
                                             String.class, "default", "default index for user input terms");
         Language language = decideParsingLanguage(ast, wordData);
@@ -1448,7 +1448,7 @@ public class YqlParser implements Parser {
                                             "setting for whether to use substring match of input data");
         boolean exact = exactMatch != null ? exactMatch : indexFactsSession.getIndex(indexNameExpander.expand(field)).isExact();
         String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       Query.Type.WEAKAND.toString(), "grammar for handling word input");
+                                       Query.Type.ALL.toString(), "grammar for handling word input");
         Preconditions.checkArgument((prefixMatch ? 1 : 0) +
                                     (substrMatch ? 1 : 0) + (suffixMatch ? 1 : 0) < 2,
                                     "Only one of prefix, substring and suffix can be set.");

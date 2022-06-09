@@ -77,7 +77,7 @@ public class SearchChainDispatcherSearcherTestCase {
                                   utils.createInterpretation("will smith", 1.0,
                                                              false, true));
 
-        utils.assertRewrittenQuery("?query=willl+smith&type=all&QRWChain=" + US_MARKET_SEARCH_CHAIN + "&" +
+        utils.assertRewrittenQuery("?query=willl+smith&QRWChain=" + US_MARKET_SEARCH_CHAIN + "&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
                                    NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -98,7 +98,7 @@ public class SearchChainDispatcherSearcherTestCase {
      */
     @Test
     public void testInvalidMarketChain() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&QRWChain=abc&" +
+        utils.assertRewrittenQuery("?query=will smith&QRWChain=abc&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
                                    NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -112,7 +112,7 @@ public class SearchChainDispatcherSearcherTestCase {
      */
     @Test
     public void testEmptyMarketChain() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&QRWChain=&" +
+        utils.assertRewrittenQuery("?query=will smith&QRWChain=&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
                                    NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
@@ -161,7 +161,7 @@ public class SearchChainDispatcherSearcherTestCase {
                                   utils.createInterpretation("will smith", 1.0,
                                                              false, true));
 
-        utils.assertRewrittenQuery("?query=willl+smith&type=all&QRWChain=" + US_MARKET_SEARCH_CHAIN + "&" +
+        utils.assertRewrittenQuery("?query=willl+smith&QRWChain=" + US_MARKET_SEARCH_CHAIN + "&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_RW + "=true&" +
                                    MISSPELL_REWRITER_NAME + "." + RewriterConstants.QSS_SUGG + "=true&" +
                                    NAME_REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +

@@ -57,20 +57,20 @@ public class QueryProfileIntegrationTestCase {
         // Tests a profile setting hits and offset
         request = HttpRequest.createTestRequest("search?queryProfile=hitsoffset", Method.GET);
         response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertEquals(20, response.getQuery().getHits());
-        assertEquals(80, response.getQuery().getOffset());
+        assertEquals(20,response.getQuery().getHits());
+        assertEquals(80,response.getQuery().getOffset());
 
         // Tests a non-resolved profile request
         request = HttpRequest.createTestRequest("search?queryProfile=none", Method.GET);
         response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertNotNull("Got an error", response.getResult().hits().getError());
-        assertEquals("Could not resolve query profile 'none'", response.getResult().hits().getError().getDetailedMessage());
+        assertNotNull("Got an error",response.getResult().hits().getError());
+        assertEquals("Could not resolve query profile 'none'",response.getResult().hits().getError().getDetailedMessage());
 
         // Tests that properties in objects owned by query is handled correctly
         request = HttpRequest.createTestRequest("search?query=word&queryProfile=test", Method.GET);
         response = (HttpSearchResponse)searchHandler.handle(request); // Cast to access content directly
-        assertEquals("index" ,response.getQuery().getModel().getDefaultIndex());
-        assertEquals("WEAKAND(100) index:word", response.getQuery().getModel().getQueryTree().toString());
+        assertEquals("index",response.getQuery().getModel().getDefaultIndex());
+        assertEquals("index:word",response.getQuery().getModel().getQueryTree().toString());
         configurer.shutdown();
     }
 

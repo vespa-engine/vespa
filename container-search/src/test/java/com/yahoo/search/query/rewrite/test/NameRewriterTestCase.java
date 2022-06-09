@@ -45,7 +45,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testRewritesAsEquivAndOriginalAsUnit() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&" +
+        utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT + "=true",
                                    "query 'OR \"will smith\" (AND will smith movies) " +
@@ -60,7 +60,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testRewritesAsEquiv() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&" +
+        utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&",
                                    "query 'OR (AND will smith) (AND will smith movies) " +
                                    "(AND will smith news) (AND will smith imdb) " +
@@ -85,7 +85,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testSingleWordForRewritesAsEquivAndOriginalAsUnit() {
-        utils.assertRewrittenQuery("?query=obama&type=all&" +
+        utils.assertRewrittenQuery("?query=obama&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT + "=true",
                                    "query 'OR obama (AND obama \"nobel peace prize\") " +
@@ -102,7 +102,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testRewritesAsUnitEquivAndOriginalAsUnitEquiv() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&" +
+        utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
                                    "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV +
@@ -119,7 +119,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testSingleWordForRewritesAsUnitEquivAndOriginalAsUnitEquiv() {
-        utils.assertRewrittenQuery("?query=obama&type=all&" +
+        utils.assertRewrittenQuery("?query=obama&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
                                    "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT_EQUIV +
@@ -133,7 +133,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testBoostingQueryForRewritesAsEquivAndOriginalAsUnit() {
-        utils.assertRewrittenQuery("?query=angelina jolie&type=all&" +
+        utils.assertRewrittenQuery("?query=angelina jolie&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT + "=true",
                                    "query '\"angelina jolie\"'");
@@ -145,7 +145,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testFSANoMatchForRewritesAsEquivAndOriginalAsUnit() {
-        utils.assertRewrittenQuery("?query=tom cruise&type=all&" +
+        utils.assertRewrittenQuery("?query=tom cruise&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_EQUIV + "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.ORIGINAL_AS_UNIT + "=true",
                                    "query 'AND tom cruise'");
@@ -156,7 +156,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testRewritesAsUnitEquiv() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&" +
+        utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
                                    "=true",
                                    "query 'OR (AND will smith) \"will smith movies\" " +
@@ -171,7 +171,7 @@ public class NameRewriterTestCase {
      */
     @Test
     public void testRewritesAsUnitEquivAndMaxRewrites() {
-        utils.assertRewrittenQuery("?query=will smith&type=all&" +
+        utils.assertRewrittenQuery("?query=will smith&" +
                                    REWRITER_NAME + "." + RewriterConstants.REWRITES_AS_UNIT_EQUIV +
                                    "=true&" +
                                    REWRITER_NAME + "." + RewriterConstants.MAX_REWRITES + "=2",

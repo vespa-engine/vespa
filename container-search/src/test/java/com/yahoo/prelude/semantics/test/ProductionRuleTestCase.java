@@ -52,7 +52,7 @@ public class ProductionRuleTestCase {
         RuleEvaluation e = new Evaluation(query, null).freshRuleEvaluation();
         assertTrue(rule.matches(e));
         rule.produce(e);
-        assertEquals("WEAKAND(100) brand:sony", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("AND brand:sony", query.getModel().getQueryTree().getRoot().toString());
     }
 
 }
