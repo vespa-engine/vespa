@@ -71,7 +71,7 @@ public class IdentityDocumentGenerator {
 
             return new SignedIdentityDocument(
                     signature,
-                    SignedIdentityDocument.DEFAULT_KEY_VERSION,
+                    athenzProviderServiceConfig.secretVersion(),
                     providerUniqueId,
                     providerService,
                     SignedIdentityDocument.DEFAULT_DOCUMENT_VERSION,
