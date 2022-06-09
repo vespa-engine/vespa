@@ -16,7 +16,7 @@ import java.util.Arrays;
  *
  * @author Simon Thoresen Hult
  */
-public class GlobalId implements Comparable {
+public class GlobalId implements Comparable<GlobalId> {
 
     /**
      * The number of bytes in a global id. This must match the C++ constant in "document/base/globalid.h".
@@ -119,9 +119,8 @@ public class GlobalId implements Comparable {
         return Arrays.equals(raw, rhs.raw);
     }
 
-    public int compareTo(Object o) {
-        GlobalId other = (GlobalId) o;
-
+    @Override
+    public int compareTo(GlobalId other) {
         for (int i=0 ; i<LENGTH; i++) {
             int thisByte = 0xF & (int) raw[i];
             int otherByte = 0xF & (int) other.raw[i];

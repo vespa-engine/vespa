@@ -145,9 +145,7 @@
   },
   "com.yahoo.document.CompressionConfig": {
     "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.io.Serializable"
-    ],
+    "interfaces": [],
     "attributes": [
       "public"
     ],
@@ -168,7 +166,6 @@
   "com.yahoo.document.DataType": {
     "superClass": "com.yahoo.vespa.objects.Identifiable",
     "interfaces": [
-      "java.io.Serializable",
       "java.lang.Comparable"
     ],
     "attributes": [
@@ -231,9 +228,7 @@
   },
   "com.yahoo.document.DataTypeName": {
     "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.io.Serializable"
-    ],
+    "interfaces": [],
     "attributes": [
       "public",
       "final"
@@ -334,9 +329,7 @@
   },
   "com.yahoo.document.DocumentId": {
     "superClass": "com.yahoo.vespa.objects.Identifiable",
-    "interfaces": [
-      "java.io.Serializable"
-    ],
+    "interfaces": [],
     "attributes": [
       "public"
     ],
@@ -643,8 +636,7 @@
     "superClass": "com.yahoo.vespa.objects.FieldBase",
     "interfaces": [
       "com.yahoo.document.fieldset.FieldSet",
-      "java.lang.Comparable",
-      "java.io.Serializable"
+      "java.lang.Comparable"
     ],
     "attributes": [
       "public"
@@ -655,7 +647,7 @@
       "public void <init>(java.lang.String, com.yahoo.document.DataType, com.yahoo.document.DocumentType)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String, com.yahoo.document.Field)",
-      "public int compareTo(java.lang.Object)",
+      "public int compareTo(com.yahoo.document.Field)",
       "protected int calculateIdV7(com.yahoo.document.DocumentType)",
       "public void setId(int, com.yahoo.document.DocumentType)",
       "public final com.yahoo.document.DataType getDataType()",
@@ -667,7 +659,8 @@
       "public java.lang.String toString()",
       "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
+      "public bridge synthetic java.lang.Object clone()",
+      "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": [
       "protected com.yahoo.document.DataType dataType",
