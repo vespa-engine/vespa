@@ -13,7 +13,7 @@ public:
     DECLARE_EXPRESSIONNODE(RelevanceNode);
     RelevanceNode() : ExpressionNode(), _relevance() { }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    const ResultNode & getResult() const override { return _relevance; }
+    const ResultNode * getResult() const override { return &_relevance; }
     void setRelevance(double relevance) { _relevance.set(relevance); }
 private:
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }

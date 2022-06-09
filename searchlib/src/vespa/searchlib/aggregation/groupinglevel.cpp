@@ -96,7 +96,7 @@ void GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOr
 {
     _isOrdered = isOrdered_;
     _frozen = level < grouping->getFirstLevel();
-    if (_classify.getResult().inherits(ResultNodeVector::classId)) {
+    if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
        _grouper.reset(new MultiValueGrouper(grouping, level));
     } else {
        _grouper.reset(new SingleValueGrouper(grouping, level));

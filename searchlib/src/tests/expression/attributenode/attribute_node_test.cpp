@@ -251,7 +251,7 @@ Fixture::assertInts(std::vector<IAttributeVector::largeint_t> expVals, const ves
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         if (preserveAccurateTypes) {
             ASSERT_TRUE(result.inherits(Int8ResultNode::classId));
         } else {
@@ -271,7 +271,7 @@ Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attribut
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
 
         ASSERT_TRUE(result.inherits(BoolResultNode::classId));
         const BoolResultNode & bResult = static_cast<const BoolResultNode &>(result);
@@ -290,7 +290,7 @@ Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::st
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         if (useEnumOptimization) {
             ASSERT_TRUE(result.inherits(EnumResultNode::classId));
         } else {
@@ -310,7 +310,7 @@ Fixture::assertFloats(std::vector<double> expVals, const vespalib::string &attri
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(FloatResultNode::classId));
         double docVal = result.getFloat();
         EXPECT_EQUAL(std::isnan(expDocVal), std::isnan(docVal));
@@ -329,7 +329,7 @@ Fixture::assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> 
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(ResultNodeVector::classId));
         const auto &resultVector = static_cast<const ResultNodeVector &>(result);
         if (preserveAccurateTypes) {
@@ -354,7 +354,7 @@ Fixture::assertStringArrays(std::vector<std::vector<vespalib::string>> expVals, 
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(ResultNodeVector::classId));
         const auto &resultVector = static_cast<const ResultNodeVector &>(result);
         if (useEnumOptimization) {
@@ -379,7 +379,7 @@ Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespa
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(ResultNodeVector::classId));
         const auto &resultVector = static_cast<const ResultNodeVector &>(result);
         ASSERT_TRUE(result.inherits(FloatResultNodeVector::classId));

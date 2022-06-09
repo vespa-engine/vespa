@@ -62,7 +62,7 @@ public:
     }
 
     const ResultNode & getRank() const { return onGetRank(); }
-    const ResultNode & getResult() const override { return onGetRank(); }
+    const ResultNode * getResult() const override { return &onGetRank(); }
     virtual ResultNode & getResult() { return const_cast<ResultNode &>(onGetRank()); }
     virtual AggregationResult * clone() const override = 0;
     const ExpressionNode * getExpression() const { return _expressionTree->getRoot(); }
@@ -73,7 +73,7 @@ private:
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }
     bool onExecute() const override { return true; }
 
-    void prepare() { if (getExpression() != nullptr) { prepare(&getExpression()->getResult(), false); } }
+    void prepare() { if (getExpression() != nullptr) { prepare(getExpression()->getResult(), false); } }
     void prepare(const ResultNode * result, bool useForInit) { if (result) { onPrepare(*result, useForInit); } }
     virtual void onPrepare(const ResultNode & result, bool useForInit) = 0;
     virtual void onMerge(const AggregationResult & b) = 0;

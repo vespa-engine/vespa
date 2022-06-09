@@ -57,7 +57,7 @@ public:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate &predicate, vespalib::ObjectOperation &operation) override;
     HitsAggregationResult & sort() { _hits.sort(); return *this; }
-    const ResultNode & getResult() const override { return _hits; }
+    const ResultNode * getResult() const override { return &_hits; }
     ResultNode & getResult() override { return _hits; }
 };
 

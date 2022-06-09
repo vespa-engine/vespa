@@ -32,7 +32,7 @@ DebugWaitFunctionNode::onExecute() const
     vespalib::Timer::waitAtLeast(vespalib::from_s(_waitTime), _busyWait);
 
     getArg().execute();
-    updateResult().assign(getArg().getResult());
+    updateResult().assign(*getArg().getResult());
     return true;
 }
 

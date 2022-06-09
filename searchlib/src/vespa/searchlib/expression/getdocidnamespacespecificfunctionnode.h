@@ -15,7 +15,7 @@ public:
     GetDocIdNamespaceSpecificFunctionNode() : _value(new StringResultNode("")) { }
     GetDocIdNamespaceSpecificFunctionNode(ResultNode::UP resultNode) : _value(resultNode.release()) { }
 private:
-    const ResultNode & getResult() const override { return *_value; }
+    const ResultNode * getResult() const override { return _value.get(); }
     void onDocType(const document::DocumentType & docType) override { (void) docType; }
     void onDoc(const document::Document & doc) override;
     void onPrepare(bool preserveAccurateTypes) override { (void) preserveAccurateTypes; }

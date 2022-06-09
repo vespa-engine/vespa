@@ -66,7 +66,7 @@ private:
         void onPrimitive(uint32_t fid, const Content & c) override;
     };
 
-    const ResultNode & getResult() const override { return *_value; }
+    const ResultNode * getResult() const override { return _value.get(); }
     void onPrepare(bool preserveAccurateTypes) override;
     bool onExecute() const override;
     void onDoc(const document::Document & doc) override;

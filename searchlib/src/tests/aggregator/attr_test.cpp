@@ -124,12 +124,12 @@ TEST_F("testArrayAt", AttributeFixture()) {
         ExpressionTree et(MU<ArrayAtLookup>(*f1.guard, MU<ConstantNode>(MU<Int64ResultNode>(i))));
         ExpressionTree::Configure treeConf;
         et.select(treeConf, treeConf);
-        EXPECT_TRUE(et.getResult().getClass().inherits(FloatResultNode::classId));
+        EXPECT_TRUE(et.getResult()->getClass().inherits(FloatResultNode::classId));
 
         EXPECT_TRUE(et.execute(0, HitRank(0.0)));
-        EXPECT_EQUAL(et.getResult().getFloat(), f1.doc0attr[i]);
+        EXPECT_EQUAL(et.getResult()->getFloat(), f1.doc0attr[i]);
         EXPECT_TRUE(et.execute(1, HitRank(0.0)));
-        EXPECT_EQUAL(et.getResult().getFloat(), f1.doc1attr[i]);
+        EXPECT_EQUAL(et.getResult()->getFloat(), f1.doc1attr[i]);
     }
 }
 
@@ -142,12 +142,12 @@ TEST_F("testArrayAtInt", IntAttrFixture()) {
         ExpressionTree et(std::move(x));
         ExpressionTree::Configure treeConf;
         et.select(treeConf, treeConf);
-        EXPECT_TRUE(et.getResult().getClass().inherits(IntegerResultNode::classId));
+        EXPECT_TRUE(et.getResult()->getClass().inherits(IntegerResultNode::classId));
 
         EXPECT_TRUE(et.execute(0, HitRank(0.0)));
-        EXPECT_EQUAL(et.getResult().getInteger(), f1.doc0attr[i]);
+        EXPECT_EQUAL(et.getResult()->getInteger(), f1.doc0attr[i]);
         EXPECT_TRUE(et.execute(1, HitRank(0.0)));
-        EXPECT_EQUAL(et.getResult().getInteger(), f1.doc1attr[i]);
+        EXPECT_EQUAL(et.getResult()->getInteger(), f1.doc1attr[i]);
     }
 }
 
@@ -156,16 +156,16 @@ TEST_F("testArrayAtString", StringAttrFixture()) {
     ExpressionTree et(MU<ArrayAtLookup>(*f1.guard, MU<ConstantNode>(MU<Int64ResultNode>(1))));
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
-    EXPECT_TRUE(et.getResult().getClass().inherits(StringResultNode::classId));
+    EXPECT_TRUE(et.getResult()->getClass().inherits(StringResultNode::classId));
 
     char mem[64];
     ResultNode::BufferRef buf(&mem, sizeof(mem));
 
     EXPECT_TRUE(et.execute(0, HitRank(0.0)));
-    EXPECT_EQUAL(et.getResult().getString(buf).c_str(), std::string("333"));
+    EXPECT_EQUAL(et.getResult()->getString(buf).c_str(), std::string("333"));
 
     EXPECT_TRUE(et.execute(1, HitRank(0.0)));
-    EXPECT_EQUAL(et.getResult().getString(buf).c_str(), std::string("4444"));
+    EXPECT_EQUAL(et.getResult()->getString(buf).c_str(), std::string("4444"));
 }
 
 struct ArrayAtExpressionFixture :
@@ -184,21 +184,21 @@ struct ArrayAtExpressionFixture :
 
 
 TEST_F("testArrayAtBelowRange", ArrayAtExpressionFixture(-1)) {
-    EXPECT_TRUE(f1.et.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(f1.et.getResult()->getClass().inherits(FloatResultNode::classId));
 
     EXPECT_TRUE(f1.et.execute(0, HitRank(0.0)));
-    EXPECT_EQUAL(f1.et.getResult().getFloat(), f1.doc0attr[0]);
+    EXPECT_EQUAL(f1.et.getResult()->getFloat(), f1.doc0attr[0]);
     EXPECT_TRUE(f1.et.execute(1, HitRank(0.0)));
-    EXPECT_EQUAL(f1.et.getResult().getFloat(), f1.doc1attr[0]);
+    EXPECT_EQUAL(f1.et.getResult()->getFloat(), f1.doc1attr[0]);
 }
 
 TEST_F("testArrayAtAboveRange", ArrayAtExpressionFixture(17)) {
-    EXPECT_TRUE(f1.et.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(f1.et.getResult()->getClass().inherits(FloatResultNode::classId));
 
     EXPECT_TRUE(f1.et.execute(0, HitRank(0.0)));
-    EXPECT_EQUAL(f1.et.getResult().getFloat(), f1.doc0attr[10]);
+    EXPECT_EQUAL(f1.et.getResult()->getFloat(), f1.doc0attr[10]);
     EXPECT_TRUE(f1.et.execute(1, HitRank(0.0)));
-    EXPECT_EQUAL(f1.et.getResult().getFloat(), f1.doc1attr[10]);
+    EXPECT_EQUAL(f1.et.getResult()->getFloat(), f1.doc1attr[10]);
 }
 
 TEST_F("testInterpolatedLookup", AttributeFixture()) {
@@ -206,13 +206,13 @@ TEST_F("testInterpolatedLookup", AttributeFixture()) {
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
 
-    EXPECT_TRUE(et.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(et.getResult()->getClass().inherits(FloatResultNode::classId));
 
     EXPECT_TRUE(et.execute(0, HitRank(0.0)));
-    EXPECT_EQUAL(et.getResult().getFloat(), 2.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 2.0);
 
     EXPECT_TRUE(et.execute(1, HitRank(0.0)));
-    EXPECT_EQUAL(et.getResult().getFloat(), 2.053082175617388);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 2.053082175617388);
 }
 
 TEST_F("testWithRelevance", AttributeFixture()) {
@@ -220,7 +220,7 @@ TEST_F("testWithRelevance", AttributeFixture()) {
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
 
-    EXPECT_TRUE(et.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(et.getResult()->getClass().inherits(FloatResultNode::classId));
 
     // docid 0
     double expect0[] = { 0.0, 0.0, 0.0,
@@ -240,30 +240,30 @@ TEST_F("testWithRelevance", AttributeFixture()) {
         r *= 0.1;
         TEST_STATE(vespalib::make_string("i=%d", i).c_str());
         EXPECT_TRUE(et.execute(0, HitRank(r)));
-        EXPECT_EQUAL(expect0[i], et.getResult().getFloat());
+        EXPECT_EQUAL(expect0[i], et.getResult()->getFloat());
     }
 
     EXPECT_TRUE(et.execute(0, HitRank(f1.doc0attr[2])));
-    EXPECT_EQUAL(et.getResult().getFloat(), 2.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 2.0);
 
     // docid 1
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[0] - 0.001)));
-    EXPECT_EQUAL(et.getResult().getFloat(), 0.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 0.0);
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[0])));
-    EXPECT_EQUAL(et.getResult().getFloat(), 0.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 0.0);
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[2])));
-    EXPECT_EQUAL(et.getResult().getFloat(), 2.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 2.0);
                 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[4])));
-    EXPECT_EQUAL(et.getResult().getFloat(), 4.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 4.0);
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[10])));
-    EXPECT_EQUAL(et.getResult().getFloat(), 10.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 10.0);
 
     EXPECT_TRUE(et.execute(1, HitRank(f1.doc1attr[10] + 0.01)));
-    EXPECT_EQUAL(et.getResult().getFloat(), 10.0);
+    EXPECT_EQUAL(et.getResult()->getFloat(), 10.0);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

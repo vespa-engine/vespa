@@ -21,7 +21,7 @@ Collect::ResultAccessor::ResultAccessor(const AggregationResult & aggregator, si
 void Collect::ResultAccessor::create(uint8_t * base)
 {
     _aggregator->getResult().create(base+_offset);
-    _bluePrint->getResult().encode(base+_offset);
+    _bluePrint->getResult()->encode(base+_offset);
 }
 
 Collect::Collect(const Group & gp) :
@@ -103,7 +103,7 @@ Collect::preFill(GroupRef gr, const Group & g)
         uint8_t * base(&_aggrBacking[offset]);
         for (size_t i(0), m(_aggregator.size()); i < m; i++) {
             ResultAccessor & r = _aggregator[i];
-            r.setResult(g.getAggregationResult(i).getResult(), base);
+            r.setResult(*g.getAggregationResult(i).getResult(), base);
         }
     }
 }
