@@ -962,7 +962,6 @@ public class MessageBusVisitorSessionTestCase {
         }
 
         @Override
-        @SuppressWarnings("removal") // TODO: Vespa 8: remove
         public void onVisitorStatistics(VisitorStatistics vs) {
             super.onVisitorStatistics(vs);
             builder.append("onVisitorStatistics : ");
