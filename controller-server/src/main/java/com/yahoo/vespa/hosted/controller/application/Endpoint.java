@@ -422,20 +422,6 @@ public class Endpoint {
         return new EndpointBuilder(application, Optional.empty());
     }
 
-    /** Create an endpoint for given system application */
-    public static Endpoint of(SystemApplication systemApplication, ZoneId zone, URI url) {
-        if (!systemApplication.hasEndpoint()) throw new IllegalArgumentException(systemApplication + " has no endpoint");
-        RoutingMethod routingMethod = RoutingMethod.exclusive;
-        Port port = url.getPort() == -1 ? Port.tls() : Port.tls(url.getPort()); // System application endpoints are always TLS
-        return new Endpoint(TenantAndApplicationId.from(systemApplication.id()),
-                            Optional.of(systemApplication.id().instance()),
-                            null,
-                            ClusterSpec.Id.from("admin"),
-                            url,
-                            List.of(new Target(new DeploymentId(systemApplication.id(), zone))),
-                            Scope.zone, port, false, routingMethod, false);
-    }
-
     /** A target of an endpoint */
     public static class Target {
 

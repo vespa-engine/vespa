@@ -11,7 +11,6 @@ import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceConvergence;
-import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -74,17 +73,6 @@ public enum SystemApplication {
     /** Returns whether this should receive OS upgrades */
     public boolean shouldUpgradeOs() {
         return nodeType().isHost();
-    }
-
-    /** Returns whether this has an endpoint */
-    public boolean hasEndpoint() {
-        return this == configServer;
-    }
-
-    /** Returns the endpoint of this, if any */
-    public Optional<Endpoint> endpointIn(ZoneId zone, ZoneRegistry zoneRegistry) {
-        if (!hasEndpoint()) return Optional.empty();
-        return Optional.of(Endpoint.of(this, zone, zoneRegistry.getConfigServerVipUri(zone)));
     }
 
     /** All system applications that are not the controller */
