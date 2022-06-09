@@ -73,11 +73,11 @@ public:
 class FileReaderBase
 {
 public:
-    FileReaderBase(FastOS_FileInterface & file) : _file(file) { }
+    FileReaderBase(FastOS_FileInterface * file) : _file(file) { }
     ssize_t read(void *buf, size_t sz);
 private:
     void handleError(ssize_t numRead, size_t wanted);
-    FastOS_FileInterface & _file;
+    FastOS_FileInterface * _file;
 };
 
 class FileWriterBase
@@ -95,7 +95,7 @@ template <typename T>
 class FileReader : public FileReaderBase
 {
 public:
-    FileReader(FastOS_FileInterface & file) : FileReaderBase(file) { }
+    FileReader(FastOS_FileInterface * file) : FileReaderBase(file) { }
     T readHostOrder() {
         T result;
         read(&result, sizeof(result));

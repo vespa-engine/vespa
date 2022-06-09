@@ -74,10 +74,10 @@ private:
 public:
     Reader(std::unique_ptr<FastOS_FileInterface> datFile)
         : _datFile(std::move(datFile)),
-          _lidReader(_datFile.file()),
-          _gidReader(_datFile.file()),
-          _bucketUsedBitsReader(_datFile.file()),
-          _timestampReader(_datFile.file()),
+          _lidReader(&_datFile.file()),
+          _gidReader(&_datFile.file()),
+          _bucketUsedBitsReader(&_datFile.file()),
+          _timestampReader(&_datFile.file()),
           _docIdLimit(0)
     {
         _docIdLimit = _datFile.header().getTag(DOCID_LIMIT).asInteger();

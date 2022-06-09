@@ -17,7 +17,7 @@ private:
 public:
     BlobSequenceReader(AttributeVector &attr)
         : ReaderBase(attr),
-          _sizeReader(_datFile.file())
+          _sizeReader(&_datFile.file())
     { }
     uint32_t getNextSize() { return _sizeReader.readHostOrder(); }
     void readBlob(void *buf, size_t len);

@@ -159,7 +159,9 @@ public:
         if (__builtin_expect(space() < sz, false)) {
             extend(sz);
         }
-        memcpy(&_wbuf[_wp], v, sz);
+        if (sz > 0) {
+            memcpy(&_wbuf[_wp], v, sz);
+        }
         _wp += sz;
     }
     void read(void *v, size_t sz) {

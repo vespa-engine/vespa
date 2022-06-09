@@ -685,7 +685,7 @@ HnswIndex::make_loader(FastOS_FileInterface& file)
     assert(get_entry_docid() == 0); // cannot load after index has data
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType>;
-    return std::make_unique<LoaderType>(_graph, std::make_unique<ReaderType>(file));
+    return std::make_unique<LoaderType>(_graph, std::make_unique<ReaderType>(&file));
 }
 
 struct NeighborsByDocId {

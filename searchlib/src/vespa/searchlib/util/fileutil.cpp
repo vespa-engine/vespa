@@ -109,9 +109,9 @@ FileUtil::loadFile(const vespalib::string &fileName)
 void FileReaderBase::handleError(ssize_t numRead, size_t wanted)
 {
     if (numRead == 0) {
-        throw std::runtime_error(vespalib::make_string("Trying to read past EOF of file %s", _file.GetFileName()));
+        throw std::runtime_error(vespalib::make_string("Trying to read past EOF of file %s", _file->GetFileName()));
     } else {
-        throw std::runtime_error(vespalib::make_string("Partial read(%zd of %zu) of file %s", numRead, wanted, _file.GetFileName()));
+        throw std::runtime_error(vespalib::make_string("Partial read(%zd of %zu) of file %s", numRead, wanted, _file->GetFileName()));
     }
 }
 
@@ -126,7 +126,7 @@ void FileWriterBase::handleError(ssize_t numRead, size_t wanted)
 
 ssize_t
 FileReaderBase::read(void *buf, size_t sz) {
-    ssize_t numRead = _file.Read(buf, sz);
+    ssize_t numRead = _file->Read(buf, sz);
     if (numRead != ssize_t(sz)) {
         handleError(numRead, sz);
     }
