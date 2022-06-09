@@ -83,7 +83,7 @@ public class SessionRepositoryTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     public void setup() throws Exception {
-        setup(new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))));
+        setup(new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory())));
     }
 
     private void setup(ModelFactoryRegistry modelFactoryRegistry) throws Exception {

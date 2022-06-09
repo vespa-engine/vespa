@@ -44,7 +44,7 @@ public class VespaModelFactoryTest {
 
     @Test
     public void testThatFactoryCanBuildModel() {
-        VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
+        VespaModelFactory modelFactory =  VespaModelFactory.createTestFactory();
         Model model = modelFactory.createModel(testModelContext);
         assertNotNull(model);
         assertTrue(model instanceof VespaModel);
@@ -53,20 +53,20 @@ public class VespaModelFactoryTest {
     // Uses an application package that throws IllegalArgumentException when validating
     @Test(expected = IllegalArgumentException.class)
     public void testThatFactoryModelValidationFailsWithIllegalArgumentException() {
-        VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
+        VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
         modelFactory.createAndValidateModel(new MockModelContext(createApplicationPackageThatFailsWhenValidating()), new ValidationParameters());
     }
 
     // Uses a MockApplicationPackage that throws throws UnsupportedOperationException (rethrown as RuntimeException) when validating
     @Test(expected = RuntimeException.class)
     public void testThatFactoryModelValidationFails() {
-        VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
+        VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
         modelFactory.createAndValidateModel(testModelContext, new ValidationParameters());
     }
 
     @Test
     public void testThatFactoryModelValidationCanBeIgnored() {
-        VespaModelFactory modelFactory = new VespaModelFactory(new NullConfigModelRegistry());
+        VespaModelFactory modelFactory = VespaModelFactory.createTestFactory();
         ModelCreateResult createResult = modelFactory.createAndValidateModel(
                 new MockModelContext(createApplicationPackageThatFailsWhenValidating()),
                 new ValidationParameters(ValidationParameters.IgnoreValidationErrors.TRUE));
@@ -118,7 +118,7 @@ public class VespaModelFactoryTest {
         };
 
         ModelContext modelContext = createMockModelContext(hosts, services, provisionerToOverride);
-        Model model = new VespaModelFactory(new NullConfigModelRegistry()).createModel(modelContext);
+        Model model = VespaModelFactory.createTestFactory().createModel(modelContext);
 
         List<HostInfo> allocatedHosts = new ArrayList<>(model.getHosts());
         assertEquals(1, allocatedHosts.size());
