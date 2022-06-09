@@ -7283,9 +7283,7 @@
       "final"
     ],
     "methods": [
-      "public void <init>()",
       "public void <init>(java.util.concurrent.Executor)",
-      "public void <init>(java.util.Collection)",
       "public void <init>(java.util.Collection, java.util.concurrent.Executor)",
       "public void deconstruct()",
       "public com.yahoo.processing.rendering.Renderer getDefaultRenderer()",

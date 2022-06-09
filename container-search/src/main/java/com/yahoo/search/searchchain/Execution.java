@@ -538,10 +538,9 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      *
      * @deprecated use fill(Result, String)
      * 
-     * TODO Remove on Vespa 9.
      * @param result the result to fill
      */
-    @Deprecated
+    @Deprecated  // TODO Remove on Vespa 9.
     public void fillAttributes(Result result) {
         fill(result, VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
     }
