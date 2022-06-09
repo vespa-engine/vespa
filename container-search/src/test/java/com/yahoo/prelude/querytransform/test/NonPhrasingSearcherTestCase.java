@@ -28,7 +28,7 @@ public class NonPhrasingSearcherTestCase {
         Query query=new Query("?query=void+aword+kanoo");
 
         new Execution(searcher, Execution.Context.createContextStub()).search(query);
-        assertEquals("AND void kanoo", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) void kanoo", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test

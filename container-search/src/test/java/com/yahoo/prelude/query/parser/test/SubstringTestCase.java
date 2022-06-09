@@ -14,14 +14,14 @@ import java.net.URLEncoder;
 /**
  * Check Substring in conjunction with query tokenization and parsing behaves properly.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SubstringTestCase {
 
     @Test
     public final void testTokenLengthAndLowercasing() {
         Query q = new Query("/?query=\u0130");
-        WordItem root = (WordItem) q.getModel().getQueryTree().getRoot();
+        WordItem root = (WordItem) ((CompositeItem)q.getModel().getQueryTree().getRoot()).getItem(0);
         assertEquals("\u0130", root.getRawWord());
     }
 

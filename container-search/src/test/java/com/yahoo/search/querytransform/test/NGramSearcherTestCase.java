@@ -19,6 +19,7 @@ import com.yahoo.prelude.hitfield.JSONString;
 import com.yahoo.prelude.hitfield.XMLString;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.prelude.querytransform.CJKSearcher;
 import com.yahoo.search.Query;
@@ -106,22 +107,22 @@ public class NGramSearcherTestCase {
         {
             Query q = new Query("?query=abc&restrict=song");
             createMixedSetupExecution().search(q);
-            assertEquals("abc", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) abc", q.getModel().getQueryTree().toString());
         }
         {
             Query q = new Query("?query=abc&restrict=music");
             createMixedSetupExecution().search(q);
-            assertEquals("AND a b c", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) (AND a b c)", q.getModel().getQueryTree().toString());
         }
         {
             Query q = new Query("?query=abc&search=song");
             createMixedSetupExecution().search(q);
-            assertEquals("abc", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) abc", q.getModel().getQueryTree().toString());
         }
         {
             Query q = new Query("?query=abc&search=music");
             createMixedSetupExecution().search(q);
-            assertEquals("AND a b c", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) (AND a b c)", q.getModel().getQueryTree().toString());
         }
     }
 
@@ -130,22 +131,22 @@ public class NGramSearcherTestCase {
         {
             Query q = new Query("?query=abc&search=songOnly");
             createMixedSetupExecution().search(q);
-            assertEquals("abc", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) abc", q.getModel().getQueryTree().toString());
         }
         {
             Query q = new Query("?query=abc&search=musicOnly");
             createMixedSetupExecution().search(q);
-            assertEquals("AND a b c", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) (AND a b c)", q.getModel().getQueryTree().toString());
         }
         {
             Query q = new Query("?query=abc&search=musicAndSong&restrict=music");
             createMixedSetupExecution().search(q);
-            assertEquals("AND a b c", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) (AND a b c)", q.getModel().getQueryTree().toString());
         }
         {
             Query q = new Query("?query=abc&search=musicAndSong&restrict=song");
             createMixedSetupExecution().search(q);
-            assertEquals("abc", q.getModel().getQueryTree().toString());
+            assertEquals("WEAKAND(100) abc", q.getModel().getQueryTree().toString());
         }
     }
 
@@ -153,42 +154,42 @@ public class NGramSearcherTestCase {
     public void testNGramRewritingMixedQuery() {
         Query q = new Query("?query=foo+gram3:engul+test:bar");
         createExecution().search(q);
-        assertEquals("AND foo (AND gram3:eng gram3:ngu gram3:gul) test:bar", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) foo (AND gram3:eng gram3:ngu gram3:gul) test:bar", q.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testNGramRewritingNGramOnly() {
         Query q = new Query("?query=gram3:engul");
         createExecution().search(q);
-        assertEquals("AND gram3:eng gram3:ngu gram3:gul", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND gram3:eng gram3:ngu gram3:gul)", q.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testNGramRewriting2NGramsOnly() {
         Query q = new Query("?query=gram3:engul+gram2:123");
         createExecution().search(q);
-        assertEquals("AND (AND gram3:eng gram3:ngu gram3:gul) (AND gram2:12 gram2:23)", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND gram3:eng gram3:ngu gram3:gul) (AND gram2:12 gram2:23)", q.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testNGramRewritingShortOnly() {
         Query q = new Query("?query=gram3:en");
         createExecution().search(q);
-        assertEquals("gram3:en", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) gram3:en", q.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testNGramRewritingShortInMixes() {
         Query q = new Query("?query=test:a+gram3:en");
         createExecution().search(q);
-        assertEquals("AND test:a gram3:en", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) test:a gram3:en", q.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testNGramRewritingPhrase() {
         Query q = new Query("?query=gram3:%22engul+a+holi%22");
         createExecution().search(q);
-        assertEquals("gram3:\"eng ngu gul a hol oli\"", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) gram3:\"eng ngu gul a hol oli\"", q.getModel().getQueryTree().toString());
     }
 
     /**
@@ -199,14 +200,14 @@ public class NGramSearcherTestCase {
     public void testNGramRewritingPhraseSingleTerm() {
         Query q = new Query("?query=gram3:%22engul%22");
         createExecution().search(q);
-        assertEquals("AND gram3:eng gram3:ngu gram3:gul", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND gram3:eng gram3:ngu gram3:gul)", q.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testNGramRewritingAdditionalTermInfo() {
         Query q = new Query("?query=gram3:engul!50+foo+gram2:123!150");
         createExecution().search(q);
-        AndItem root = (AndItem)q.getModel().getQueryTree().getRoot();
+        WeakAndItem root = (WeakAndItem)q.getModel().getQueryTree().getRoot();
         AndItem gram3And = (AndItem)root.getItem(0);
         AndItem gram2And = (AndItem)root.getItem(2);
 
@@ -229,14 +230,14 @@ public class NGramSearcherTestCase {
     public void testNGramRewritingExplicitDefault() {
         Query q = new Query("?query=default:engul");
         createExecution().search(q);
-        assertEquals("AND default:eng default:ngu default:gul" ,q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND default:eng default:ngu default:gul)" ,q.getModel().getQueryTree().toString());
     }
 
     @Test
     public void testNGramRewritingImplicitDefault() {
         Query q = new Query("?query=engul");
         createExecution().search(q);
-        assertEquals("AND eng ngu gul", q.getModel().getQueryTree().toString());
+        assertEquals("WEAKAND(100) (AND eng ngu gul)", q.getModel().getQueryTree().toString());
     }
 
     @Test

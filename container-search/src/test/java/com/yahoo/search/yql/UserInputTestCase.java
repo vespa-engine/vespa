@@ -50,14 +50,14 @@ public class UserInputTestCase {
             URIBuilder builder = searchUri();
             builder.setParameter("yql", "select * from sources * where userInput(\"nalle\")");
             Query query = searchAndAssertNoErrors(builder);
-            assertEquals("select * from sources * where default contains \"nalle\"", query.yqlRepresentation());
+            assertEquals("select * from sources * where weakAnd(default contains \"nalle\")", query.yqlRepresentation());
         }
         {
             URIBuilder builder = searchUri();
             builder.setParameter("nalle", "bamse");
             builder.setParameter("yql", "select * from sources * where userInput(@nalle)");
             Query query = searchAndAssertNoErrors(builder);
-            assertEquals("select * from sources * where default contains \"bamse\"", query.yqlRepresentation());
+            assertEquals("select * from sources * where weakAnd(default contains \"bamse\")", query.yqlRepresentation());
         }
         {
             URIBuilder builder = searchUri();
@@ -139,7 +139,7 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                 "select * from sources * where [{defaultIndex: \"glompf\"}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where glompf contains \"nalle\"", query.yqlRepresentation());
+        assertEquals("select * from sources * where weakAnd(glompf contains \"nalle\")", query.yqlRepresentation());
     }
 
     @Test
@@ -149,7 +149,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{stem: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{stem: false}]\"nalle\")",
+                "select * from sources * where weakAnd(default contains ([{stem: false}]\"nalle\"))",
                 query.yqlRepresentation());
     }
 
@@ -160,8 +160,8 @@ public class UserInputTestCase {
         builder.setParameter("yql",
                              "select * from ecitem where rank(([{defaultIndex:\"myfield\"}](userInput(@myinput))))");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from ecitem where rank(myfield = (-5))", query.yqlRepresentation());
-        assertEquals("RANK myfield:-5", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("select * from ecitem where rank(weakAnd(myfield = (-5)))", query.yqlRepresentation());
+        assertEquals("RANK (WEAKAND(100) myfield:-5)", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
@@ -171,7 +171,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{ranked: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{ranked: false}]\"nalle\")",
+                "select * from sources * where weakAnd(default contains ([{ranked: false}]\"nalle\"))",
                 query.yqlRepresentation());
     }
 
@@ -182,7 +182,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{filter: true}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{filter: true}]\"nalle\")",
+                "select * from sources * where weakAnd(default contains ([{filter: true}]\"nalle\"))",
                 query.yqlRepresentation());
     }
 
@@ -194,7 +194,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{normalizeCase: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{normalizeCase: false}]\"nalle\")",
+                "select * from sources * where weakAnd(default contains ([{normalizeCase: false}]\"nalle\"))",
                 query.yqlRepresentation());
     }
 
@@ -205,7 +205,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{accentDrop: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{accentDrop: false}]\"nalle\")",
+                "select * from sources * where weakAnd(default contains ([{accentDrop: false}]\"nalle\"))",
                 query.yqlRepresentation());
     }
 
@@ -216,7 +216,7 @@ public class UserInputTestCase {
                 "select * from sources * where [{usePositionData: false}]userInput(\"nalle\")");
         Query query = searchAndAssertNoErrors(builder);
         assertEquals(
-                "select * from sources * where default contains ([{usePositionData: false}]\"nalle\")",
+                "select * from sources * where weakAnd(default contains ([{usePositionData: false}]\"nalle\"))",
                 query.yqlRepresentation());
     }
 
