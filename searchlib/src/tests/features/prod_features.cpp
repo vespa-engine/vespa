@@ -483,8 +483,6 @@ Test::testCloseness()
         TEST_DO(assertCloseness(1,   "pos", 0));
         assertCloseness(0.8, "pos", 1802661);
         assertCloseness(0,   "pos", 9013306);
-        // use non-existing attribute -> default distance
-        TEST_DO(assertCloseness(0, "no", 0));
         // two-argument version
         TEST_DO(assertCloseness(0.8, "field,pos", 1802661));
 
@@ -893,7 +891,11 @@ Test::testDistance()
 
         StringList params, in, out;
         FT_SETUP_FAIL(pt, params);
-        FT_SETUP_OK(pt, params.add("pos"), in,
+        FtIndexEnvironment idx_env;
+        idx_env
+            .getBuilder()
+            .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "pos");
+        FT_SETUP_OK(pt, idx_env, params.add("pos"), in,
                     out.add("out").add("index").add("latitude").add("longitude").add("km"));
         FT_DUMP_EMPTY(_factory, "distance");
     }

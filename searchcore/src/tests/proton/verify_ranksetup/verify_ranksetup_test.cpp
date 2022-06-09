@@ -270,6 +270,7 @@ struct SimpleSetup : Setup {
         index("list", DataType::STRING, CollectionType::ARRAY);
         index("keywords", DataType::STRING, CollectionType::WEIGHTEDSET);
         attribute("date", DataType::INT32, CollectionType::SINGLE);
+        attribute("pos_zcurve", DataType::INT64, CollectionType::SINGLE);
         attribute("imported_attr", DataType::INT32, CollectionType::SINGLE, true);
         constants["my_tensor"] = "tensor(x{},y{})";
     }
@@ -489,6 +490,16 @@ TEST_F("require that query tensor default value expression does not need paramet
     f.query_feature_type("foo", "tensor(x[3])");
     f.query_feature_default_value("foo", "externalSymbol");
     f.verify_invalid({"query(foo)"});
+}
+
+//-----------------------------------------------------------------------------
+
+TEST_F("require that zcurve distance can be set up", SimpleSetup()) {
+    f.verify_valid({"distance(pos)"});
+}
+
+TEST_F("require that zcurve distance must be backed by an attribute", SimpleSetup()) {
+    f.verify_invalid({"distance(unknown)"});
 }
 
 //-----------------------------------------------------------------------------
