@@ -328,7 +328,7 @@ public class SessionRepositoryTest {
 
     private long deploy(PrepareParams params, File testApp) {
         applicationRepository.deploy(testApp, params);
-        return applicationRepository.getActiveSession(applicationId).get().getSessionId();
+        return applicationRepository.getActiveSession(params.getApplicationId()).get().getSessionId();
     }
 
     private static class MockModelFactory implements ModelFactory {
