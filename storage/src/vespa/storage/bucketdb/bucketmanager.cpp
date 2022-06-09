@@ -575,26 +575,12 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
                   << "from version " << _firstEqualClusterStateVersion
                   << " differs from this state.";
         } else if (!their_hash.empty() && their_hash != our_hash) {
-            // Empty hash indicates request from 4.2 protocol or earlier
-            // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-            bool matches_legacy_hash = false;
-            if (bucketSpace == document::FixedBucketSpaces::global_space()) {
-                const auto default_distr =_component.getBucketSpaceRepo()
-                        .get(document::FixedBucketSpaces::default_space()).getDistribution();
-                // Convert in legacy distribution mode, which will accept old 'hash' structure.
-                const auto legacy_global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(
-                        *default_distr, true/*use legacy mode*/);
-                const auto legacy_hash = legacy_global_distr->getNodeGraph().getDistributionConfigHash();
-                LOG(debug, "Falling back to comparing against legacy distribution hash: %s", legacy_hash.c_str());
-                matches_legacy_hash = (their_hash == legacy_hash);
-            }
-            if (!matches_legacy_hash) {
-                error << "Distribution config has changed since request.";
-            }
+            // Mismatching config hash indicates nodes are out of sync with their config generations
+            error << "Distributor config hash is not equal to our own; must reject request (our hash: "
+                  << our_hash.c_str() << ", their hash: " << their_hash.c_str() << ")";
         }
         if (error.str().empty()) {
-            std::pair<std::set<uint16_t>::iterator, bool> result(
-                    seenDistributors.insert((*it)->getDistributor()));
+            auto result = seenDistributors.insert((*it)->getDistributor());
             if (result.second) {
                 requests[(*it)->getDistributor()] = *it;
                 continue;
@@ -619,10 +605,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
     }
 
     std::ostringstream distrList;
-    std::unordered_map<
-        uint16_t,
-        api::RequestBucketInfoReply::EntryVector
-    > result;
+    std::unordered_map<uint16_t, api::RequestBucketInfoReply::EntryVector> result;
     for (auto& nodeAndCmd : requests) {
         result[nodeAndCmd.first];
         if (LOG_WOULD_LOG(debug)) {
@@ -641,8 +624,8 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         requests.size(), distrList.str().c_str(),
         clusterState->toString().c_str());
    framework::MilliSecTimer runStartTime(_component.getClock());
-        // Don't allow logging to lower performance of inner loop.
-        // Call other type of instance if logging
+    // Don't allow logging to lower performance of inner loop.
+    // Call other type of instance if logging
     const document::BucketIdFactory& idFac(_component.getBucketIdFactory());
     if (LOG_WOULD_LOG(spam)) {
         DistributorInfoGatherer<true> builder(
@@ -655,8 +638,7 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         _component.getBucketDatabase(bucketSpace).for_each_chunked(std::ref(builder),
                         "BucketManager::processRequestBucketInfoCommands-2");
     }
-    _metrics->fullBucketInfoLatency.addValue(
-            runStartTime.getElapsedTimeAsDouble());
+    _metrics->fullBucketInfoLatency.addValue(runStartTime.getElapsedTimeAsDouble());
     for (auto& nodeAndCmd : requests) {
         auto reply(std::make_shared<api::RequestBucketInfoReply>(
                 *nodeAndCmd.second));

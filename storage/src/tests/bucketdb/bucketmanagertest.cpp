@@ -693,8 +693,7 @@ public:
         _self._top->getRepliesOnce();
     }
 
-    // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-    std::unique_ptr<lib::Distribution> default_grouped_distribution() {
+    static std::unique_ptr<lib::Distribution> default_grouped_distribution() {
         return std::make_unique<lib::Distribution>(
                 GlobalBucketSpaceDistributionConverter::string_to_config(vespalib::string(
 R"(redundancy 2
@@ -718,16 +717,16 @@ group[2].nodes[2].index 5
 )")));
     }
 
-    std::shared_ptr<lib::Distribution> derived_global_grouped_distribution(bool use_legacy) {
+    static std::shared_ptr<lib::Distribution> derived_global_grouped_distribution() {
         auto default_distr = default_grouped_distribution();
-        return  GlobalBucketSpaceDistributionConverter::convert_to_global(*default_distr, use_legacy);
+        return  GlobalBucketSpaceDistributionConverter::convert_to_global(*default_distr);
     }
 
     void set_grouped_distribution_configs() {
         auto default_distr = default_grouped_distribution();
         _self._node->getComponentRegister().getBucketSpaceRepo()
                 .get(document::FixedBucketSpaces::default_space()).setDistribution(std::move(default_distr));
-        auto global_distr = derived_global_grouped_distribution(false);
+        auto global_distr = derived_global_grouped_distribution();
         _self._node->getComponentRegister().getBucketSpaceRepo()
                 .get(document::FixedBucketSpaces::global_space()).setDistribution(std::move(global_distr));
     }
@@ -1205,21 +1204,6 @@ TEST_F(BucketManagerTest, db_not_iterated_when_all_requests_rejected) {
     auto infoCmd = fixture.createFullFetchCommandWithHash("(0;0;1;2)");
     _top->sendDown(infoCmd);
     auto replies = fixture.awaitAndGetReplies(1);
-}
-
-// TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-TEST_F(BucketManagerTest, fall_back_to_legacy_global_distribution_hash_on_mismatch) {
-    ConcurrentOperationFixture f(*this);
-
-    f.set_grouped_distribution_configs();
-
-    auto legacy_hash = f.derived_global_grouped_distribution(true)->getNodeGraph().getDistributionConfigHash();
-
-    auto infoCmd = f.createFullFetchCommandWithHash(document::FixedBucketSpaces::global_space(), legacy_hash);
-    _top->sendDown(infoCmd);
-    auto replies = f.awaitAndGetReplies(1);
-    auto& reply = dynamic_cast<api::RequestBucketInfoReply&>(*replies[0]);
-    EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult()); // _not_ REJECTED
 }
 
 // It's possible for the request processing thread and onSetSystemState (which use
