@@ -801,8 +801,9 @@
       "public int hashCode()",
       "public com.yahoo.document.BucketId toBucketId()",
       "public boolean equals(java.lang.Object)",
-      "public int compareTo(java.lang.Object)",
-      "public java.lang.String toString()"
+      "public int compareTo(com.yahoo.document.GlobalId)",
+      "public java.lang.String toString()",
+      "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": [
       "public static final int LENGTH"
