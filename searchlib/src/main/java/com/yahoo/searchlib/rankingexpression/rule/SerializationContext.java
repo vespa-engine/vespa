@@ -28,33 +28,29 @@ public class SerializationContext extends FunctionReferenceContext {
 
     /** Create a context for a single serialization task */
     public SerializationContext() {
-        this(Collections.emptyList());
+        this(Collections.emptyList(), Collections.emptyMap(), Optional.empty(), new LinkedHashMap<>());
     }
 
-    /** @deprecated Use {@link #SerializationContext(Collection, Optional) instead}*/
-    @Deprecated(forRemoval = true, since = "7")
-    public SerializationContext(Collection<ExpressionFunction> functions) {
-        this(functions, Collections.emptyMap(), Optional.empty(), new LinkedHashMap<>());
-    }
-
-    public SerializationContext(Collection<ExpressionFunction> functions, Optional<TypeContext<Reference>> typeContext) {
+    /**
+     * Create a context for a single serialization task
+     *
+     * @param functions the functions of this
+     * @param typeContext the type context of this: Serialization may depend on type resolution
+     */
+    public SerializationContext(Collection<ExpressionFunction> functions,
+                                Optional<TypeContext<Reference>> typeContext) {
         this(functions, Collections.emptyMap(), typeContext, new LinkedHashMap<>());
     }
 
-    /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
-    @Deprecated(forRemoval = true, since = "7")
-    public SerializationContext(Map<String, ExpressionFunction> functions) {
-        this(functions.values());
-    }
-
-    /** @deprecated Use {@link #SerializationContext(Collection, Map, TypeContext) instead}*/
-    @Deprecated(forRemoval = true, since = "7")
-    public SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings) {
-        this(functions, bindings, Optional.empty(), new LinkedHashMap<>());
-    }
-
-    /** Create a context for a single serialization task */
-    public SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings,
+    /**
+     * Create a context for a single serialization task
+     *
+     * @param functions the functions of this
+     * @param bindings the arguments of this
+     * @param typeContext the type context of this: Serialization may depend on type resolution
+     */
+    public SerializationContext(Collection<ExpressionFunction> functions,
+                                Map<String, String> bindings,
                                 TypeContext<Reference> typeContext) {
         this(functions, bindings, Optional.of(typeContext), new LinkedHashMap<>());
     }
@@ -68,20 +64,15 @@ public class SerializationContext extends FunctionReferenceContext {
      * @param serializedFunctions a cache of serializedFunctions - the ownership of this map
      *        is <b>transferred</b> to this and will be modified in it
      */
-    private SerializationContext(Collection<ExpressionFunction> functions, Map<String, String> bindings,
+    private SerializationContext(Collection<ExpressionFunction> functions,
+                                 Map<String, String> bindings,
                                  Optional<TypeContext<Reference>> typeContext,
                                  Map<String, String> serializedFunctions) {
         this(toMap(functions), bindings, typeContext, serializedFunctions);
     }
 
-    /** @deprecated Use {@link #SerializationContext(Map, Map, Optional, Map) instead}*/
-    @Deprecated(forRemoval = true, since = "7")
-    public SerializationContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings,
-                                Map<String, String> serializedFunctions) {
-        this(functions, bindings, Optional.empty(), serializedFunctions);
-    }
-
-    public SerializationContext(Map<String, ExpressionFunction> functions, Map<String, String> bindings,
+    public SerializationContext(Map<String, ExpressionFunction> functions,
+                                Map<String, String> bindings,
                                 Optional<TypeContext<Reference>> typeContext,
                                 Map<String, String> serializedFunctions) {
         super(functions, bindings);
