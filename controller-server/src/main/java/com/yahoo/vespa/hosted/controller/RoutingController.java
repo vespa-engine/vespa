@@ -213,7 +213,7 @@ public class RoutingController {
                                                                  .map(com.yahoo.config.application.api.Endpoint.Target::region)
                                                                  .distinct()
                                                                  .map(region -> new DeploymentId(deployment.applicationId(), ZoneId.from(Environment.prod, region)))
-                                                                 .collect(Collectors.toUnmodifiableList());
+                                                                 .toList();
             TenantAndApplicationId application = TenantAndApplicationId.from(deployment.applicationId());
             for (var targetDeployment : deploymentTargets) {
                 builders.add(Endpoint.of(application).targetApplication(EndpointId.defaultId(), targetDeployment));
@@ -420,13 +420,12 @@ public class RoutingController {
     }
 
     private static String asString(Endpoint.Scope scope) {
-        switch (scope) {
-            case application: return "application";
-            case global: return "global";
-            case weighted: return "weighted";
-            case zone: return "zone";
-        }
-        throw new IllegalArgumentException("Unknown scope " + scope);
+        return switch (scope) {
+            case application -> "application";
+            case global -> "global";
+            case weighted -> "weighted";
+            case zone -> "zone";
+        };
     }
 
 }
