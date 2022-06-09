@@ -3,6 +3,7 @@ package com.yahoo.search.query.rewrite;
 
 import static org.junit.Assert.*;
 
+import com.yahoo.prelude.query.WeakAndItem;
 import org.junit.Test;
 
 import com.yahoo.prelude.query.AndItem;
@@ -37,7 +38,7 @@ public class RewriterFeaturesTestCase {
         query.getModel().setExecution(placeholder);
         Item parsed = RewriterFeatures.convertStringToQTree(query, "a b c "
                 + ASCII_ELLIPSIS);
-        assertSame(AndItem.class, parsed.getClass());
+        assertSame(WeakAndItem.class, parsed.getClass());
         assertEquals(4, ((CompositeItem) parsed).getItemCount());
         assertEquals(ASCII_ELLIPSIS, ((CompositeItem) parsed).getItem(3).toString());
     }

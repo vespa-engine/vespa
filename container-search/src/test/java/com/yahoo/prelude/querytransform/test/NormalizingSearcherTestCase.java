@@ -41,35 +41,35 @@ public class NormalizingSearcherTestCase {
     public void testNoNormalizingNecssary() {
         Query query = new Query("/search?query=bilen&search=cluster1&restrict=type1");
         createExecution().search(query);
-        assertEquals("bilen", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) bilen", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
     public void testAttributeQuery() {
         Query query = new Query("/search?query=attribute:" + enc("b\u00e9yonc\u00e8 b\u00e9yonc\u00e8") + "&search=cluster1&restrict=type1");
         createExecution().search(query);
-        assertEquals("AND attribute:b\u00e9yonc\u00e8 beyonce", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) attribute:b\u00e9yonc\u00e8 beyonce", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
     public void testOneTermNormalizing() {
         Query query = new Query("/search?query=b\u00e9yonc\u00e8&search=cluster1&restrict=type1");
         createExecution().search(query);
-        assertEquals("beyonce", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) beyonce", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
     public void testOneTermNoNormalizingDifferentSearchDef() {
         Query query = new Query("/search?query=b\u00e9yonc\u00e8&search=cluster1&restrict=type2");
         createExecution().search(query);
-        assertEquals("béyoncè", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) béyoncè", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
     public void testTwoTermQuery() throws UnsupportedEncodingException {
         Query query = new Query("/search?query=" + enc("b\u00e9yonc\u00e8 beyonc\u00e9") + "&search=cluster1&restrict=type1");
         createExecution().search(query);
-        assertEquals("AND beyonce beyonce", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) beyonce beyonce", query.getModel().getQueryTree().getRoot().toString());
     }
 
     private String enc(String s) {
@@ -86,7 +86,7 @@ public class NormalizingSearcherTestCase {
         Query query = new Query("/search?query=" + enc("\"b\u00e9yonc\u00e8 beyonc\u00e9\"") + "&search=cluster1&restrict=type1");
         query.setTraceLevel(2);
         createExecution().search(query);
-        assertEquals("\"beyonce beyonce\"", query.getModel().getQueryTree().getRoot().toString());
+        assertEquals("WEAKAND(100) \"beyonce beyonce\"", query.getModel().getQueryTree().getRoot().toString());
     }
 
     @Test
