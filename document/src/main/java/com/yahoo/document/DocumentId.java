@@ -10,12 +10,13 @@ import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.Serializer;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
  * The id of a document
  */
-public class DocumentId extends Identifiable {
+public class DocumentId extends Identifiable implements Serializable {
 
     private IdString id;
     private GlobalId globalId = null;
