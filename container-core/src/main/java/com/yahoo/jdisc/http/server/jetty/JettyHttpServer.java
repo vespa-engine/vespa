@@ -54,7 +54,7 @@ public class JettyHttpServer extends AbstractServerProvider {
     private final List<Integer> listenedPorts = new ArrayList<>();
     private final ServerMetricReporter metricsReporter;
 
-    @Inject
+    @Inject // ServerProvider implementors must use com.google.inject.Inject
     public JettyHttpServer(CurrentContainer container,
                            Metric metric,
                            ServerConfig serverConfig,

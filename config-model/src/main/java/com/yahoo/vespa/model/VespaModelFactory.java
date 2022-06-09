@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model;
 
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.application.api.ApplicationPackage;
