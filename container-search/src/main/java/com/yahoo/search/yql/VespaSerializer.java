@@ -180,10 +180,10 @@ public class VespaSerializer {
             if (includeField) {
                 destination.append(normalizeIndexName(item.getIndexName())).append(" contains ");
             }
-            destination.append("([{");
+            destination.append("({");
             serializeOrigin(destination, image, offset, length);
             destination.append(", ").append(AND_SEGMENTING).append(": true");
-            destination.append("}]");
+            destination.append("}");
             destination.append(PHRASE).append('(');
             serializeWords(destination, item);
             destination.append("))");
@@ -233,7 +233,7 @@ public class VespaSerializer {
             String annotations = leafAnnotations(item);
             destination.append(getIndexName(item.getItem(0))).append(" contains ");
             if (annotations.length() > 0) {
-                destination.append("([{").append(annotations).append("}]");
+                destination.append("({").append(annotations).append("}");
             }
             destination.append(EQUIV).append('(');
             int initLen = destination.length();
@@ -291,7 +291,7 @@ public class VespaSerializer {
 
         static String nearAnnotations(NearItem n) {
             if (n.getDistance() != NearItem.defaultDistance) {
-                return "[{" + DISTANCE + ": " + n.getDistance() + "}]";
+                return "{" + DISTANCE + ": " + n.getDistance() + "}";
             } else {
                 return "";
             }
@@ -325,7 +325,7 @@ public class VespaSerializer {
                 return "";
 
             StringBuilder b = new StringBuilder();
-            b.append("[{");
+            b.append("{");
             if (item.hasStartAnchor() != item.isStartAnchorDefault()) {
                 b.append(START_ANCHOR + ": " + item.hasStartAnchor());
             }
@@ -334,7 +334,7 @@ public class VespaSerializer {
                     b.append(", ");
                 b.append(END_ANCHOR + ": " + item.hasEndAnchor());
             }
-            b.append("}]");
+            b.append("}");
             return b.toString();
         }
 
@@ -415,7 +415,7 @@ public class VespaSerializer {
                 boundsAnnotation = BOUNDS + ": " + "\"" + BOUNDS_RIGHT_OPEN + "\"";
             }
             if (annotations.length() > 0 || boundsAnnotation.length() > 0) {
-                destination.append("([{");
+                destination.append("({");
             }
             initLen = destination.length();
             if (annotations.length() > 0) {
@@ -426,7 +426,7 @@ public class VespaSerializer {
                 destination.append(boundsAnnotation);
             }
             if (initLen != annotations.length()) {
-                destination.append("}]");
+                destination.append("}");
             }
             destination.append(RANGE).append('(')
                     .append(normalizeIndexName(intItem.getIndexName()))
@@ -442,7 +442,7 @@ public class VespaSerializer {
             String annotations = leafAnnotations(item);
 
             if (annotations.length() > 0) {
-                image.append("([{").append(annotations).append("}]");
+                image.append("({").append(annotations).append("}");
             }
             if ('-' == rawNumber.charAt(0)) {
                 image.append('(');
@@ -554,7 +554,7 @@ public class VespaSerializer {
 
             StringBuilder builder = new StringBuilder();
             if (anyAnnotationSet) {
-                builder.append("[{");
+                builder.append("{");
             }
             if (isMaxEditDistanceSet) {
                 builder.append(MAX_EDIT_DISTANCE + ":").append(fuzzyItem.getMaxEditDistance());
@@ -566,7 +566,7 @@ public class VespaSerializer {
                 builder.append(PREFIX_LENGTH + ":").append(fuzzyItem.getPrefixLength());
             }
             if (anyAnnotationSet) {
-                builder.append("}]");
+                builder.append("}");
             }
             return builder.toString();
         }
@@ -670,7 +670,7 @@ public class VespaSerializer {
                 length = origin.end - origin.start;
             }
 
-            destination.append("([{");
+            destination.append("({");
             serializeOrigin(destination, image, offset, length);
             String annotations = leafAnnotations(phrase);
             if (annotations.length() > 0) {
@@ -679,7 +679,7 @@ public class VespaSerializer {
             if (phrase.getSegmentingRule() == SegmentingRule.BOOLEAN_AND) {
                 destination.append(", ").append('"').append(AND_SEGMENTING).append("\": true");
             }
-            destination.append("}]");
+            destination.append("}");
             destination.append(PHRASE).append('(');
             serializeWords(destination, phrase);
             destination.append("))");
@@ -703,7 +703,7 @@ public class VespaSerializer {
             if (includeField)
                 destination.append(normalizeIndexName(phrase.getIndexName())).append(" contains ");
             if (annotations.length() > 0)
-                destination.append("([{").append(annotations).append("}]");
+                destination.append("({").append(annotations).append("}");
 
             destination.append(PHRASE).append('(');
             for (int i = 0; i < phrase.getItemCount(); ++i) {
@@ -773,7 +773,7 @@ public class VespaSerializer {
         boolean serialize(StringBuilder destination, GeoLocationItem item) {
             String annotations = leafAnnotations(item);
             if (annotations.length() > 0) {
-                destination.append("([{").append(annotations).append("}]");
+                destination.append("({").append(annotations).append("}");
             }
             destination.append(GEO_LOCATION).append('(');
             destination.append(item.getIndexName()).append(", ");
@@ -793,7 +793,7 @@ public class VespaSerializer {
 
         @Override
         boolean serialize(StringBuilder destination, NearestNeighborItem item) {
-            destination.append("[{");
+            destination.append("{");
             int initLen = destination.length();
             destination.append(leafAnnotations(item));
             comma(destination, initLen);
@@ -816,7 +816,7 @@ public class VespaSerializer {
                 comma(destination, initLen);
                 annotationKey(destination, "approximate").append(allow_approx);
             }
-            destination.append("}]");
+            destination.append("}");
             destination.append(NEAREST_NEIGHBOR).append('(');
             destination.append(item.getIndexName()).append(", ");
             destination.append(item.getQueryTensorName()).append(')');
@@ -889,7 +889,7 @@ public class VespaSerializer {
         boolean serialize(StringBuilder destination, RangeItem range) {
             String annotations = leafAnnotations(range);
             if (annotations.length() > 0) {
-                destination.append("[{").append(annotations).append("}]");
+                destination.append("{").append(annotations).append("}");
             }
             destination.append(RANGE).append('(')
                     .append(normalizeIndexName(range.getIndexName()))
@@ -952,7 +952,7 @@ public class VespaSerializer {
             }
 
             if (needsAnnotations) {
-                destination.append("([{");
+                destination.append("({");
                 int initLen = destination.length();
 
                 if (origin != null) {
@@ -970,7 +970,7 @@ public class VespaSerializer {
                     destination.append(annotations);
                 }
 
-                destination.append("}]");
+                destination.append("}");
             }
 
             destination.append(ALTERNATIVES).append("({");
@@ -1025,7 +1025,6 @@ public class VespaSerializer {
 
     }
 
-    @SuppressWarnings("deprecation")
     private static class WeakAndSerializer extends Serializer<WeakAndItem> {
 
         @Override
@@ -1048,13 +1047,13 @@ public class VespaSerializer {
         @Override
         boolean serialize(StringBuilder destination, WeakAndItem item) {
             if (needsAnnotationBlock(item)) {
-                destination.append("([{");
+                destination.append("({");
             }
             if (nonDefaultTargetNumHits(item)) {
                 destination.append(TARGET_NUM_HITS).append(": ").append(item.getN());
             }
             if (needsAnnotationBlock(item)) {
-                destination.append("}]");
+                destination.append("}");
             }
             destination.append(WEAK_AND).append('(');
             return true;
@@ -1373,14 +1372,14 @@ public class VespaSerializer {
     private static void serialize(GroupingRequest request, StringBuilder out) {
         Iterator<Continuation> it = request.continuations().iterator();
         if (it.hasNext()) {
-            out.append("[{ continuations:[");
+            out.append("{ continuations:[");
             while (it.hasNext()) {
                 out.append('\'').append(it.next()).append('\'');
                 if (it.hasNext()) {
                     out.append(", ");
                 }
             }
-            out.append("] }]");
+            out.append("] }");
         }
         out.append(request.getRootOperation());
     }
@@ -1438,7 +1437,7 @@ public class VespaSerializer {
         String annotations = leafAnnotations(weightedSet);
 
         if (optionalAnnotations.length() > 0 || annotations.length() > 0) {
-            destination.append("([{");
+            destination.append("({");
         }
         preAnnotationValueLen = destination.length();
         if (annotations.length() > 0) {
@@ -1449,7 +1448,7 @@ public class VespaSerializer {
             destination.append(optionalAnnotations);
         }
         if (destination.length() > incomingLen) {
-            destination.append("}]");
+            destination.append("}");
             return true;
         }
         else {
@@ -1547,7 +1546,7 @@ public class VespaSerializer {
 
     private static void annotatedTerm(StringBuilder destination, IndexedItem w, String annotations) {
         if (annotations.length() > 0) {
-            destination.append("([{").append(annotations).append("}]");
+            destination.append("({").append(annotations).append("}");
         }
         destination.append('"');
         escape(w.getIndexedString(), destination).append('"');
