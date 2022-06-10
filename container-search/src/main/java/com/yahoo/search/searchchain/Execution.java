@@ -130,14 +130,6 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.executor = Objects.requireNonNull(executor, "The executor cannot be null");
         }
 
-        /** @deprecated pass schemaInfo */
-        @Deprecated
-        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
-                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics,
-                       Executor executor) {
-            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, executor);
-        }
-
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
         public static Context createContextStub() {
             return createContextStub(null, null, SchemaInfo.empty(), null);

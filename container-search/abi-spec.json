@@ -2107,7 +2107,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.cluster.NodeManager)",
       "public void <init>(com.yahoo.search.cluster.NodeManager, boolean)",
       "public void start()",
       "public com.yahoo.search.cluster.MonitorConfiguration getConfiguration()",
@@ -8122,7 +8121,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.search.schema.SchemaInfo, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
-      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics, java.util.concurrent.Executor)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts)",
