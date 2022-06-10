@@ -241,9 +241,15 @@ public class EndpointTest {
         var cluster = ClusterSpec.Id.from("default");
         var prodZone = ZoneId.from("prod", "us-north-2");
         Map<String, Endpoint> tests = Map.of(
-                "https://a1.t1.us-north-1.w.vespa-app.cloud/",
+                "https://a1.t1.aws-us-north-1.w.vespa-app.cloud/",
                 Endpoint.of(instance1)
-                        .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
+                        .targetRegion(cluster, ZoneId.from("prod", "aws-us-north-1a"))
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .in(SystemName.Public),
+                "https://a1.t1.gcp-us-south1.w.vespa-app.cloud/",
+                Endpoint.of(instance1)
+                        .targetRegion(cluster, ZoneId.from("prod", "gcp-us-south1-c"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
@@ -261,14 +267,13 @@ public class EndpointTest {
                         .in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
-        Endpoint endpoint = Endpoint.of(instance1)
-                                    .targetRegion(cluster, ZoneId.from("prod", "us-north-1a"))
-                                    .routingMethod(RoutingMethod.exclusive)
-                                    .on(Port.tls())
-                                    .in(SystemName.main);
+
         assertEquals("Availability zone is removed from region",
-                     "us-north-1",
-                     endpoint.targets().get(0).deployment().zoneId().region().value());
+                     "aws-us-north-1",
+                     tests.get("https://a1.t1.aws-us-north-1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value());
+        assertEquals("Availability zone is removed from region",
+                "gcp-us-south1",
+                tests.get("https://a1.t1.gcp-us-south1.w.vespa-app.cloud/").targets().get(0).deployment().zoneId().region().value());
     }
 
     @Test

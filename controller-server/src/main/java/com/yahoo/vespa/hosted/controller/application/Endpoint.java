@@ -285,11 +285,12 @@ public class Endpoint {
 
     /** Returns the given region without availability zone */
     private static RegionName effectiveRegion(RegionName region) {
-        if (region.value().isEmpty()) return region;
+        if (region.value().length() < 2) return region;
         String value = region.value();
         char lastChar = value.charAt(value.length() - 1);
         if (lastChar >= 'a' && lastChar <= 'z') { // Remove availability zone
-            value = value.substring(0, value.length() - 1);
+            int skip = value.charAt(value.length() - 2) == '-' ? 2 : 1;
+            value = value.substring(0, value.length() - skip);
         }
         return RegionName.from(value);
     }
