@@ -56,6 +56,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <version>3.0.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-enforcer-extensions</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <!-- To allow running 'mvn enforcer:enforce' from the command line -->
@@ -65,12 +72,8 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <!-- Only allow explicitly listed dependencies -->
-                                        <exclude>*:*:*:*:*:*</exclude>
-                                    </excludes>
-                                    <includes>
+                                <dependencyEnforcer implementation="com.yahoo.vespa.maven.plugin.enforcer.DependencyEnforcer">
+                                    <allowed>
                                         <!-- MUST BE KEPT IN SYNC WITH container-dependencies-enforcer pom -->
                                         <include>aopalliance:aopalliance:[${aopalliance.version}]:jar:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-annotations:[${jackson2.version}]:jar:provided</include>
@@ -216,7 +219,8 @@
                                         <include>org.apache.opennlp:opennlp-tools:1.9.3:jar:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
                                         <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:test</include>
-                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:test</include>                                        <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
+                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:test</include>
+                                        <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
                                         <include>org.eclipse.jetty.alpn:alpn-api:[${jetty-alpn.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-hpack:[${jetty.version}]:jar:test</include>
@@ -247,8 +251,8 @@
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
                                         <include>software.amazon.ion:ion-java:1.0.2:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.1:jar:test</include>
-                                    </includes>
-                                </bannedDependencies>
+                                    </allowed>
+                                </dependencyEnforcer>
                             </rules>
                             <fail>true</fail>
                         </configuration>
