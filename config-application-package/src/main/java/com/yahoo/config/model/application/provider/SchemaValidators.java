@@ -132,8 +132,10 @@ public class SchemaValidators {
                     String pathPrefix = getDefaults().underVespaHome("share/vespa/schema/");
                     File schemaPath = new File(pathPrefix + "version/" + vespaVersion.getMajor() + ".x/schema/");
                     // Fallback to path without version if path with version does not exist
-                    if (! schemaPath.exists())
+                    if (! schemaPath.exists()) {
+                        log.log(Level.INFO, "Found no schemas in " + schemaPath + ", fallback to schemas in " + pathPrefix);
                         schemaPath = new File(pathPrefix);
+                    }
                     log.log(Level.FINE, "Using schemas found in " + schemaPath);
                     copySchemas(schemaPath, tmpDir);
                 } else {
