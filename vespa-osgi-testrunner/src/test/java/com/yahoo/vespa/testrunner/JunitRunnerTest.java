@@ -1,8 +1,10 @@
 package com.yahoo.vespa.testrunner;
 
+import ai.vespa.cloud.ApplicationId;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.Zone;
 import ai.vespa.hosted.cd.Deployment;
+import ai.vespa.hosted.cd.Endpoint;
 import ai.vespa.hosted.cd.TestRuntime;
 import com.yahoo.vespa.testrunner.TestReport.Status;
 import com.yahoo.vespa.testrunner.TestRunner.Suite;
@@ -169,12 +171,22 @@ class JunitRunnerTest {
 
         @Override
         public Deployment deploymentToTest() {
-            return __ -> null;
+            return new Deployment() {
+                @Override public Endpoint endpoint(String id) { return null; }
+                @Override public String platformVersion() { return "1.2.3"; }
+                @Override public long applicationVersion() { return 321; }
+                @Override public Instant deployedAt() { return Instant.ofEpochMilli(1000); }
+            };
         }
 
         @Override
         public Zone zone() {
             return new Zone(Environment.test, "name");
+        }
+
+        @Override
+        public ApplicationId application() {
+            return null;
         }
 
     }

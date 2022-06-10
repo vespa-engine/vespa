@@ -608,6 +608,9 @@ public class InternalStepRunner implements StepRunner {
         byte[] config = testConfigSerializer.configJson(id.application(),
                                                         id.type(),
                                                         true,
+                                                        deployment.get().version(),
+                                                        deployment.get().revision(),
+                                                        deployment.get().at(),
                                                         endpoints,
                                                         controller.applications().reachableContentClustersByZone(deployments));
         controller.jobController().cloud().startTests(getTesterDeploymentId(id), suite, config);

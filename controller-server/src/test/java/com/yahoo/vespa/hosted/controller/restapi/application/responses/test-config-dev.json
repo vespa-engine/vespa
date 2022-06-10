@@ -3,6 +3,9 @@
   "zone": "dev.us-east-1",
   "system": "main",
   "isCI": false,
+  "platform": "6.1.0",
+  "revision": 1,
+  "deployedAt": 1600000000000,
   "endpoints": {
     "dev.us-east-1": [
       "https://my-user.application1.tenant1.us-east-1.dev.vespa.oath.cloud/"
