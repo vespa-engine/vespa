@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextSupplier.ContextSupplierInterruptedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -82,7 +83,7 @@ public class NodeAgentContextManagerTest {
         manager.interrupt();
 
         async.awaitResult();
-        assertEquals(Optional.of(InterruptedException.class), async.exception.map(Exception::getClass));
+        assertEquals(Optional.of(ContextSupplierInterruptedException.class), async.exception.map(Exception::getClass));
         assertFalse(async.response.isPresent());
     }
 

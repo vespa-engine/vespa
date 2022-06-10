@@ -40,6 +40,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextSupplier.ContextSupplierInterruptedException;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.ABSENT;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.STARTING;
 import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentImpl.ContainerState.UNKNOWN;
@@ -141,7 +142,7 @@ public class NodeAgentImpl implements NodeAgent {
             while (!terminated.get()) {
                 try {
                     converge(contextSupplier.nextContext());
-                } catch (InterruptedException ignored) { }
+                } catch (ContextSupplierInterruptedException ignored) { }
             }
         });
         loopThread.setName("tick-" + initialContext.hostname());
