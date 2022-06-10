@@ -2,12 +2,6 @@
 package ai.vespa.metricsproxy.service;
 
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
-
-import java.io.InputStream;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.logging.Level;
-
 import com.yahoo.yolean.Exceptions;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
@@ -21,7 +15,11 @@ import org.apache.hc.core5.http.nio.support.classic.AbstractClassicEntityConsume
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -100,6 +98,7 @@ public abstract class HttpMetricFetcher {
         CloseableHttpAsyncClient client =  VespaAsyncHttpClientBuilder.create()
                 .setUserAgent("metrics-proxy-http-client")
                 .setDefaultRequestConfig(RequestConfig.custom()
+                                                 .setConnectionRequestTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
                                                  .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
                                                  .setResponseTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
                                                  .build())

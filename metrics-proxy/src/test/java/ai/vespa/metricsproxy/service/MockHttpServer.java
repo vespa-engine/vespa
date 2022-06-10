@@ -15,7 +15,7 @@ import java.net.InetSocketAddress;
 public class MockHttpServer {
 
     private String response;
-    private HttpServer server;
+    private final HttpServer server;
 
     /**
      * Mock http server that will return response as body
@@ -46,10 +46,12 @@ public class MockHttpServer {
 
     private class MyHandler implements HttpHandler {
         public void handle(HttpExchange t) throws IOException {
-            t.sendResponseHeaders(200, response.length());
-            OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
-            os.close();
+            synchronized (MockHttpServer.this) {
+                t.sendResponseHeaders(200, response != null ? response.length() : 0);
+                try (OutputStream os = t.getResponseBody()) {
+                    if (response != null) os.write(response.getBytes());
+                }
+            }
         }
     }
 
