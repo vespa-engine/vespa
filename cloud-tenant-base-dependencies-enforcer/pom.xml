@@ -105,7 +105,6 @@
 
                                         <!-- Vespa provided dependencies -->
                                         <include>com.yahoo.vespa:annotations:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:chain:*:jar:provided</include>
                                         <include>com.yahoo.vespa:component:*:jar:provided</include>
                                         <include>com.yahoo.vespa:config-bundle:*:jar:provided</include>
                                         <include>com.yahoo.vespa:config-lib:*:jar:provided</include>
@@ -134,7 +133,6 @@
                                         <include>com.yahoo.vespa:messagebus:*:jar:provided</include>
                                         <include>com.yahoo.vespa:model-evaluation:*:jar:provided</include>
                                         <include>com.yahoo.vespa:predicate-search-core:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:processing:*:jar:provided</include>
                                         <include>com.yahoo.vespa:provided-dependencies:*:jar:provided</include>
                                         <include>com.yahoo.vespa:searchcore:*:jar:provided</include>
                                         <include>com.yahoo.vespa:searchlib:*:jar:provided</include>
@@ -167,43 +165,25 @@
                                         <include>com.yahoo.vespa:storage:*:jar:test</include>
                                         <include>com.yahoo.vespa:tenant-cd-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:tenant-cd-commons:*:jar:test</include>
-                                        <include>com.yahoo.vespa:vespa-athenz:*:jar:test</include>
                                         <include>com.yahoo.vespa:vespa-feed-client:*:jar:test</include>
                                         <include>com.yahoo.vespa:vespa-feed-client-api:*:jar:test</include>
-                                        <include>com.yahoo.vespa:vespa-3party-bundles:*:pom:test</include>
                                         <include>com.yahoo.vespa:vespaclient-core:*:jar:test</include>
                                         <include>com.yahoo.vespa:vsm:*:jar:test</include>
 
                                         <!-- 3rd party test dependencies -->
-                                        <include>com.amazonaws:aws-java-sdk-core:1.11.974:jar:test</include>
-                                        <include>com.auth0:java-jwt:3.10.0:jar:test</include>
-                                        <include>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.6.7:jar:test</include>
                                         <include>com.fasterxml.jackson.dataformat:jackson-dataformat-xml:[${jackson2.version}]:jar:test</include>
                                         <include>com.fasterxml.woodstox:woodstox-core:5.0.3:jar:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.7.0:jar:test</include>
                                         <include>com.ibm.icu:icu4j:57.1:jar:test</include>
-                                        <include>com.intellij:annotations:12.0:jar:test</include>
                                         <include>com.microsoft.onnxruntime:onnxruntime:[${onnxruntime.version}]:jar:test</include>
                                         <include>com.thaiopensource:jing:20091111:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-auth-core:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-client-common:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-zms-core:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-zpe-java-client:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-zts-core:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.rdl:rdl-java:1.5.2:jar:test</include>
-                                        <include>commons-beanutils:commons-beanutils-core:1.8.0:jar:test</include>
-                                        <include>commons-beanutils:commons-beanutils:1.7.0:jar:test</include>
                                         <include>commons-codec:commons-codec:1.11:jar:test</include>
-                                        <include>commons-digester:commons-digester:1.8:jar:test</include>
                                         <include>io.airlift:aircompressor:0.17:jar:test</include>
                                         <include>io.airlift:airline:0.7:jar:test</include>
                                         <include>io.prometheus:simpleclient:0.6.0:jar:test</include>
                                         <include>io.prometheus:simpleclient_common:0.6.0:jar:test</include>
-                                        <include>joda-time:joda-time:2.8.1:jar:test</include>
                                         <include>junit:junit:4.13.2:jar:test</include>
-                                        <include>net.arnx:jsonic:1.2.11:jar:test</include>
                                         <include>net.java.dev.jna:jna:5.11.0:jar:test</include>
-                                        <include>org.abego.treelayout:org.abego.treelayout.core:1.0.1:jar:test</include>
                                         <include>org.antlr:antlr-runtime:3.5.2:jar:test</include>
                                         <include>org.antlr:antlr4-runtime:4.9.3:jar:test</include>
                                         <include>org.apache.commons:commons-exec:1.3:jar:test</include>
@@ -246,10 +226,8 @@
                                         <include>org.junit.platform:junit-platform-commons:[${junit5.platform.version}]:jar:test</include>
                                         <include>org.junit.platform:junit-platform-engine:[${junit5.platform.version}]:jar:test</include>
                                         <include>org.junit.vintage:junit-vintage-engine:[${junit5.version}]:jar:test</include>
-                                        <include>org.kohsuke:libpam4j:1.11:jar:test</include>
                                         <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
-                                        <include>software.amazon.ion:ion-java:1.0.2:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.1:jar:test</include>
                                     </allowed>
                                 </dependencyEnforcer>
