@@ -43,12 +43,12 @@ public class HttpDeployment implements Deployment {
     }
 
     @Override
-    public String platformVersion() {
+    public String platform() {
         return platform;
     }
 
     @Override
-    public long applicationVersion() {
+    public long revision() {
         return revision;
     }
 

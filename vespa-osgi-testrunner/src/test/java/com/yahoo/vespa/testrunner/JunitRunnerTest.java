@@ -173,8 +173,8 @@ class JunitRunnerTest {
         public Deployment deploymentToTest() {
             return new Deployment() {
                 @Override public Endpoint endpoint(String id) { return null; }
-                @Override public String platformVersion() { return "1.2.3"; }
-                @Override public long applicationVersion() { return 321; }
+                @Override public String platform() { return "1.2.3"; }
+                @Override public long revision() { return 321; }
                 @Override public Instant deployedAt() { return Instant.ofEpochMilli(1000); }
             };
         }

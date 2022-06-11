@@ -14,10 +14,10 @@ public interface Deployment {
     Endpoint endpoint(String id);
 
     /** The Vespa runtime version of the deployment, e.g., 8.16.32. */
-    String platformVersion();
+    String platform();
 
     /** The build number assigned to the application revision of the deployment, e.g., 496. */
-    long applicationVersion();
+    long revision();
 
     /** The time at which the deployment was last updated with a new platform or application version. */
     Instant deployedAt();
