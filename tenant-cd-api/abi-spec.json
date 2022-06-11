@@ -9,8 +9,8 @@
     ],
     "methods": [
       "public abstract ai.vespa.hosted.cd.Endpoint endpoint(java.lang.String)",
-      "public abstract java.lang.String platformVersion()",
-      "public abstract long applicationVersion()",
+      "public abstract java.lang.String platform()",
+      "public abstract long revision()",
       "public abstract java.time.Instant deployedAt()"
     ],
     "fields": []
