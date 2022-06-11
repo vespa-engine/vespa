@@ -157,7 +157,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployInitialReal(RunId id, DualLogger logger) {
-        Versions versions = controller.jobController().run(id).get().versions();
+        Versions versions = controller.jobController().run(id).versions();
         logger.log("Deploying platform version " +
                    versions.sourcePlatform().orElse(versions.targetPlatform()) +
                    " and application " +
@@ -166,16 +166,16 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployReal(RunId id, DualLogger logger) {
-        Versions versions = controller.jobController().run(id).get().versions();
+        Versions versions = controller.jobController().run(id).versions();
         logger.log("Deploying platform version " + versions.targetPlatform() +
                    " and application " + versions.targetRevision() + " ...");
         return deployReal(id, false, logger);
     }
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
-        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
+        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).testerCertificate();
         return deploy(() -> controller.applications().deploy(id.job(), setTheStage),
-                      controller.jobController().run(id).get()
+                      controller.jobController().run(id)
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),
                       logger)
@@ -184,8 +184,8 @@ public class InternalStepRunner implements StepRunner {
                     if ( ! useTesterCertificate(id) || result != running)
                         return true;
                     // If tester cert, ensure real is deployed with the tester cert whose key was successfully deployed.
-                    return    controller.jobController().run(id).get().stepStatus(deployTester).get() == succeeded
-                           && testerCertificate.equals(controller.jobController().run(id).get().testerCertificate());
+                    return    controller.jobController().run(id).stepStatus(deployTester).get() == succeeded
+                           && testerCertificate.equals(controller.jobController().run(id).testerCertificate());
                 });
     }
 
@@ -196,7 +196,7 @@ public class InternalStepRunner implements StepRunner {
                                                                    testerPackage(id),
                                                                    id.type().zone(),
                                                                    platform),
-                      controller.jobController().run(id).get()
+                      controller.jobController().run(id)
                                 .stepInfo(deployTester).get()
                                 .startTime().get(),
                       logger);
@@ -287,10 +287,10 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(installationFailed);
         }
 
-        Versions versions = controller.jobController().run(id).get().versions();
+        Versions versions = controller.jobController().run(id).versions();
         Version platform = setTheStage ? versions.sourcePlatform().orElse(versions.targetPlatform()) : versions.targetPlatform();
 
-        Run run = controller.jobController().run(id).get();
+        Run run = controller.jobController().run(id);
         Optional<ServiceConvergence> services = controller.serviceRegistry().configServer().serviceConvergence(new DeploymentId(id.application(), id.type().zone()),
                                                                                                                Optional.of(platform));
         if (services.isEmpty()) {
@@ -409,14 +409,14 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Version testerPlatformVersion(RunId id) {
-        Version targetPlatform = controller.jobController().run(id).get().versions().targetPlatform();
+        Version targetPlatform = controller.jobController().run(id).versions().targetPlatform();
         Version systemVersion = controller.readSystemVersion();
         boolean incompatible = controller.applications().versionCompatibility(id.application()).refuse(targetPlatform, systemVersion);
         return incompatible || application(id.application()).change().isPinned() ? targetPlatform : systemVersion;
     }
 
     private Optional<RunStatus> installTester(RunId id, DualLogger logger) {
-        Run run = controller.jobController().run(id).get();
+        Run run = controller.jobController().run(id);
         Version platform = testerPlatformVersion(id);
         ZoneId zone = id.type().zone();
         ApplicationId testerId = id.tester().id();
@@ -608,6 +608,9 @@ public class InternalStepRunner implements StepRunner {
         byte[] config = testConfigSerializer.configJson(id.application(),
                                                         id.type(),
                                                         true,
+                                                        deployment.get().version(),
+                                                        deployment.get().revision(),
+                                                        deployment.get().at(),
                                                         endpoints,
                                                         controller.applications().reachableContentClustersByZone(deployments));
         controller.jobController().cloud().startTests(getTesterDeploymentId(id), suite, config);
@@ -622,7 +625,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(error);
         }
 
-        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).get().testerCertificate();
+        Optional<X509Certificate> testerCertificate = controller.jobController().run(id).testerCertificate();
         if (testerCertificate.isPresent()) {
             try {
                 testerCertificate.get().checkValidity(Date.from(controller.clock().instant()));
@@ -684,7 +687,7 @@ public class InternalStepRunner implements StepRunner {
             }
             // Hitting a config server which doesn't have this particular app loaded causes a 404.
             catch (ConfigServerException e) {
-                Instant doom = controller.jobController().run(id).get().stepInfo(copyVespaLogs).get().startTime().get()
+                Instant doom = controller.jobController().run(id).stepInfo(copyVespaLogs).get().startTime().get()
                                          .plus(Duration.ofMinutes(3));
                 if (e.code() == ConfigServerException.ErrorCode.NOT_FOUND && controller.clock().instant().isBefore(doom)) {
                     logger.log(INFO, "Found no logs, but will retry");
@@ -710,7 +713,7 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting application " + id.application(), e);
-            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateReal).get().startTime().get();
+            Instant startTime = controller.jobController().run(id).stepInfo(deactivateReal).get().startTime().get();
             return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
                    ? Optional.of(error)
                    : Optional.empty();
@@ -725,7 +728,7 @@ public class InternalStepRunner implements StepRunner {
         }
         catch (RuntimeException e) {
             logger.log(WARNING, "Failed deleting tester of " + id.application(), e);
-            Instant startTime = controller.jobController().run(id).get().stepInfo(deactivateTester).get().startTime().get();
+            Instant startTime = controller.jobController().run(id).stepInfo(deactivateTester).get().startTime().get();
             return startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
                    ? Optional.of(error)
                    : Optional.empty();
@@ -749,7 +752,7 @@ public class InternalStepRunner implements StepRunner {
             return Optional.of(error);
         }
         catch (RuntimeException e) {
-            Instant start = controller.jobController().run(id).get().stepInfo(report).get().startTime().get();
+            Instant start = controller.jobController().run(id).stepInfo(report).get().startTime().get();
             return (controller.clock().instant().isAfter(start.plusSeconds(180)))
                    ? Optional.empty()
                    : Optional.of(error);
@@ -871,7 +874,7 @@ public class InternalStepRunner implements StepRunner {
     private boolean timedOut(RunId id, Deployment deployment, Duration defaultTimeout) {
         // TODO jonmv: This is a workaround for new deployment writes not yet being visible in spite of Curator locking.
         // TODO Investigate what's going on here, and remove this workaround.
-        Run run = controller.jobController().run(id).get();
+        Run run = controller.jobController().run(id);
         if ( ! controller.system().isCd() && run.start().isAfter(deployment.at()))
             return false;
 
@@ -887,7 +890,7 @@ public class InternalStepRunner implements StepRunner {
 
     /** Returns the application package for the tester application, assembled from a generated config, fat-jar and services.xml. */
     private ApplicationPackage testerPackage(RunId id) {
-        RevisionId revision = controller.jobController().run(id).get().versions().targetRevision();
+        RevisionId revision = controller.jobController().run(id).versions().targetRevision();
         DeploymentSpec spec = controller.applications().requireApplication(TenantAndApplicationId.from(id.application())).deploymentSpec();
         byte[] testZip = controller.applications().applicationStore().getTester(id.application().tenant(),
                                                                                 id.application().application(), revision);

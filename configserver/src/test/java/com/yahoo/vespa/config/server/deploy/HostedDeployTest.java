@@ -277,6 +277,32 @@ public class HostedDeployTest {
      * that are still using features that do not work on version 8.x)
      */
     @Test
+    public void testFailingOnOldMajorButNotNewInUpgradeScenario() {
+        int oldMajor = 7;
+        int newMajor = 8;
+        Version wantedVersion = new Version(newMajor, 1, 2);
+        Version oldVersion = new Version(oldMajor, 2, 3);
+        List<Host> hosts = createHosts(9, oldVersion.toFullString(), wantedVersion.toFullString());
+
+        ModelFactory oldFactory = createFailingModelFactory(oldVersion);
+        ModelFactory newFactory = createHostedModelFactory(wantedVersion);
+        List<ModelFactory> modelFactories = List.of(oldFactory, newFactory);
+
+        DeployTester tester = createTester(hosts, modelFactories, prodZone);
+
+        tester.deployApp("src/test/apps/hosted/", wantedVersion.toFullString());
+
+        tester.deployApp("src/test/apps/hosted/", oldVersion.toFullString());
+
+        assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+    }
+
+    /**
+     * Tests that we create the minimal set of models and that version 7.x is created
+     * if creating version 8.x fails (to support upgrades to new major version for applications
+     * that are still using features that do not work on version 8.x)
+     */
+    @Test
     public void testWantedVersionIsRequiredAlsoWhenThereIsAnOlderMajorThatDoesNotFailModelBuilding() {
         int oldMajor = 7;
         int newMajor = 8;

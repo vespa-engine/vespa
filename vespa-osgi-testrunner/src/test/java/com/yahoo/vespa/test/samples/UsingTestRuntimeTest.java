@@ -17,6 +17,9 @@ public class UsingTestRuntimeTest {
         assertEquals(Environment.test, runtime.zone().environment());
         assertEquals("name", runtime.zone().region());
         assertNull(runtime.deploymentToTest().endpoint("dummy"));
+        assertEquals("1.2.3", runtime.deploymentToTest().platformVersion());
+        assertEquals(321, runtime.deploymentToTest().applicationVersion());
+        assertEquals(1000, runtime.deploymentToTest().deployedAt().toEpochMilli());
     }
 
 }
