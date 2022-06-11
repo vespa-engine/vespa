@@ -64,7 +64,7 @@ public class ArchiverHandlerTestCase {
         File tmpDir = temporaryFolder.newFolder();
 
         ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-                                                1024);
+                                                1024, "gzip");
         long now = 1095159244095L;
         long midnight = 1095206400000L;
         assertEquals(2004091410, a.dateHash(now));
@@ -82,7 +82,7 @@ public class ArchiverHandlerTestCase {
         File tmpDir = temporaryFolder.newFolder();
         try {
             ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-                                                    1024);
+                                                    1024, "gzip");
             LogMessage msg1 = LogMessage.parseNativeFormat("1139322725\thost\t1/1\tservice\tcomponent\tinfo\tpayload");
             LogMessage msg2 = LogMessage.parseNativeFormat("1161172200\thost\t1/1\tservice\tcomponent\tinfo\tpayload");
             assertEquals(tmpDir.getAbsolutePath() + "/2006/02/07/14", a.getPrefix(msg1));
@@ -103,7 +103,7 @@ public class ArchiverHandlerTestCase {
         File tmpDir = temporaryFolder.newFolder();
 
         ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-                                                1024);
+                                                1024, "gzip");
 
         for (int i = 0; i < msg.length; i++) {
             a.handle(msg[i]);
@@ -168,7 +168,8 @@ public class ArchiverHandlerTestCase {
         File tmpDir = temporaryFolder.newFolder();
 
         ArchiverHandler a = new ArchiverHandler(tmpDir.getAbsolutePath(),
-                                                msg[1].toString().length() + 1);
+                                                msg[1].toString().length() + 1,
+                                                "gzip");
         // log the same message 4 times
         for (int i = 0; i < 4; i++) {
             a.handle(msg[1]);
@@ -205,7 +206,7 @@ public class ArchiverHandlerTestCase {
     public void testCacheEldestEntry() throws IOException {
         LogWriterLRUCache cache = new LogWriterLRUCache(5, (float) 0.75);
         String d = "target/tmp/logarchive";
-        FilesArchived archive = new FilesArchived(new File(d));
+        FilesArchived archive = new FilesArchived(new File(d), "gzip");
         for (int i = 0; i < cache.maxEntries + 10; i++) {
             cache.put(i, new LogWriter(d+"/2018/12/31/17", 5, archive));
         }
