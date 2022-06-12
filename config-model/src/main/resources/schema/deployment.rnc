@@ -49,6 +49,12 @@ SerialSteps = element steps {
 }
 
 ParallelInstances = element parallel {
+    SerialInstances* &
+    Instance*
+}
+
+SerialInstances = element steps {
+    ParallelInstances* &
     Instance*
 }
 
