@@ -45,6 +45,7 @@ public class MockHttpServer {
     }
 
     private class MyHandler implements HttpHandler {
+        @Override
         public void handle(HttpExchange t) throws IOException {
             synchronized (MockHttpServer.this) {
                 t.sendResponseHeaders(200, response != null ? response.length() : 0);
