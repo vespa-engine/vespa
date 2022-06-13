@@ -121,16 +121,16 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final JsonFactory generatorFactory = createGeneratorFactory();
 
-    private JsonGenerator generator;
-    private FieldConsumer fieldConsumer;
-    private Deque<Integer> renderedChildren;
+    private volatile JsonGenerator generator;
+    private volatile FieldConsumer fieldConsumer;
+    private volatile Deque<Integer> renderedChildren;
     static class FieldConsumerSettings {
-        boolean debugRendering = false;
-        boolean jsonDeepMaps = true;
-        boolean jsonWsets = true;
-        boolean jsonMapsAll = true;
-        boolean jsonWsetsAll = false;
-        boolean tensorShortForm = false;
+        volatile boolean debugRendering = false;
+        volatile boolean jsonDeepMaps = true;
+        volatile boolean jsonWsets = true;
+        volatile boolean jsonMapsAll = true;
+        volatile boolean jsonWsetsAll = false;
+        volatile boolean tensorShortForm = false;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
@@ -155,9 +155,9 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.tensorShortForm = q.getPresentation().getTensorShortForm();
         }
     }
-    private final FieldConsumerSettings fieldConsumerSettings = new FieldConsumerSettings();
-    private LongSupplier timeSource;
-    private OutputStream stream;
+    private volatile FieldConsumerSettings fieldConsumerSettings;
+    private volatile LongSupplier timeSource;
+    private volatile OutputStream stream;
 
     public JsonRenderer() {
         this(null);
@@ -180,6 +180,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     @Override
     public void init() {
         super.init();
+        fieldConsumerSettings = new FieldConsumerSettings();
         fieldConsumerSettings.init();
         setGenerator(null, fieldConsumerSettings);
         renderedChildren = null;
