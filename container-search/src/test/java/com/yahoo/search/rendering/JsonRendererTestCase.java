@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
@@ -55,7 +56,10 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
@@ -69,6 +73,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -87,18 +95,40 @@ public class JsonRendererTestCase {
     @Rule
     public Timeout globalTimeout = Timeout.seconds(300);
 
-    private final JsonRenderer originalRenderer;
+    private static ThreadPoolExecutor executor;
+    private static JsonRenderer blueprint;
     private JsonRenderer renderer;
 
-    public JsonRendererTestCase() {
-        originalRenderer = new JsonRenderer();
+    @BeforeClass
+    public static void createExecutorAndBlueprint() {
+        ThreadFactory threadFactory = ThreadFactoryFactory.getThreadFactory("test-rendering");
+        executor = new ThreadPoolExecutor(4, 4, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), threadFactory);
+        executor.prestartAllCoreThreads();
+        blueprint = new JsonRenderer(executor);
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void createClone() {
         // Use the shared renderer as a prototype object, as specified in the API contract
-        renderer = (JsonRenderer) originalRenderer.clone();
+        renderer = (JsonRenderer) blueprint.clone();
         renderer.init();
+    }
+
+    @After
+    public void deconstructClone() {
+        renderer.deconstruct();
+        renderer = null;
+    }
+
+    @AfterClass
+    public static void deconstructBlueprintAndExecutor() throws InterruptedException {
+        blueprint.deconstruct();
+        blueprint = null;
+        executor.shutdown();
+        if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+            throw new RuntimeException("Failed to shutdown executor");
+        }
+        executor = null;
     }
 
     @Test
