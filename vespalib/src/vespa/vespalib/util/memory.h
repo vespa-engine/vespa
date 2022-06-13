@@ -12,25 +12,24 @@
 namespace vespalib {
 
 inline void *memcpy_safe(void *dest, const void *src, size_t n) noexcept {
-    if (n > 0) [[likely]] {
-        memcpy(dest, src, n);
+    if (n == 0) [[unlikely]] {
+        return dest;
     }
-    return dest;
+    return memcpy(dest, src, n);
 }
 
 inline void *memmove_safe(void *dest, const void *src, size_t n) noexcept {
-    if (n > 0) [[likely]] {
-        memmove(dest, src, n);
+    if (n == 0) [[unlikely]] {
+        return dest;
     }
-    return dest;
+    return memmove(dest, src, n);
 }
 
 inline int memcmp_safe(const void *s1, const void *s2, size_t n) noexcept {
     if (n == 0) [[unlikely]] {
         return 0;
-    } else [[likely]] {
-        return memcmp(s1, s2, n);
     }
+    return memcmp(s1, s2, n);
 }
 
 /**
