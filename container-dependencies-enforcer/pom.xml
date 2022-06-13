@@ -41,6 +41,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-enforcer-extensions</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <!-- To allow running 'mvn enforcer:enforce' from the command line -->
@@ -50,13 +57,9 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <!-- Only allow explicitly listed deps in provided and compile scope -->
-                                        <exclude>*:*:*:jar:provided:*</exclude>
-                                        <exclude>*:*:*:jar:compile:*</exclude>
-                                    </excludes>
-                                    <includes>
+                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependencies">
+                                    <allowed>
+                                        <include>*:*:*:jar:test</include>
                                         <include>com.yahoo.vespa</include>
                                         <include>aopalliance:aopalliance:[${aopalliance.version}]:jar:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-annotations:[${jackson2.version}]:jar:provided</include>
@@ -85,8 +88,8 @@
                                         <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:slf4j-jdk14:[${slf4j.version}]:jar:provided</include>
                                         <include>xml-apis:xml-apis:[${xml-apis.version}]:jar:provided</include>
-                                    </includes>
-                                </bannedDependencies>
+                                    </allowed>
+                                </enforceDependencies>
                             </rules>
                             <fail>true</fail>
                         </configuration>
