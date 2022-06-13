@@ -30,11 +30,11 @@ import java.util.regex.Pattern;
 /**
  * Enforces that all expected dependencies are present.
  * Fails by default for rules that do not match any dependencies.
- * Similar to the built-in banned-dependency rule in maven-enforcer-plugin.
+ * Similar to the built-in 'bannedDependencies' rule in maven-enforcer-plugin.
  *
  * @author bjorncs
  */
-public class DependencyEnforcer implements EnforcerRule {
+public class EnforceDependencies implements EnforcerRule {
 
     private List<String> allowedDependencies = List.of();
     private boolean failOnUnmatched = true;
@@ -42,6 +42,7 @@ public class DependencyEnforcer implements EnforcerRule {
     @Override
     public void execute(EnforcerRuleHelper helper) throws EnforcerRuleException {
         validateDependencies(getAllDependencies(helper), Set.copyOf(allowedDependencies), failOnUnmatched);
+        helper.getLog().info("The 'enforceDependencies' validation completed successfully");
     }
 
     static void validateDependencies(Set<Artifact> dependencies, Set<String> allowedRules, boolean failOnUnmatched)

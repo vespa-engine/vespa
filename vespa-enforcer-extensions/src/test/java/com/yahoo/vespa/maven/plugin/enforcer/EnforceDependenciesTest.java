@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 /**
  * @author bjorncs
  */
-class DependencyEnforcerTest {
+class EnforceDependenciesTest {
 
     @Test
     void succeeds_when_all_dependencies_and_rules_match() {
@@ -25,7 +25,7 @@ class DependencyEnforcerTest {
         Set<String> rules = Set.of(
                 "com.yahoo.vespa:container-core:*:jar:provided",
                 "com.yahoo.vespa:*:*:jar:test");
-        assertDoesNotThrow(() -> DependencyEnforcer.validateDependencies(dependencies, rules, true));
+        assertDoesNotThrow(() -> EnforceDependencies.validateDependencies(dependencies, rules, true));
     }
 
     @Test
@@ -36,7 +36,7 @@ class DependencyEnforcerTest {
         Set<String> rules = Set.of("com.yahoo.vespa:*:*:jar:test");
         EnforcerRuleException exception = assertThrows(
                 EnforcerRuleException.class,
-                () -> DependencyEnforcer.validateDependencies(dependencies, rules, true));
+                () -> EnforceDependencies.validateDependencies(dependencies, rules, true));
         String expectedErrorMessage =
                 """
                 Vespa dependency enforcer failed:
@@ -55,12 +55,52 @@ class DependencyEnforcerTest {
                 "com.yahoo.vespa:*:*:jar:test");
         EnforcerRuleException exception = assertThrows(
                 EnforcerRuleException.class,
-                () -> DependencyEnforcer.validateDependencies(dependencies, rules, true));
+                () -> EnforceDependencies.validateDependencies(dependencies, rules, true));
         String expectedErrorMessage =
                 """
                 Vespa dependency enforcer failed:
                 Rules not matching any dependency:
                  - com.yahoo.vespa:container-core:*:jar:provided
+                """;
+        assertEquals(expectedErrorMessage, exception.getMessage());
+    }
+
+    @Test
+    void fails_on_version_mismatch() {
+        Set<Artifact> dependencies = Set.of(
+                artifact("com.yahoo.vespa", "testutils", "8.0.0", "test"));
+        Set<String> rules = Set.of(
+                "com.yahoo.vespa:testutils:[7.0.0]:jar:test");
+        EnforcerRuleException exception = assertThrows(
+                EnforcerRuleException.class,
+                () -> EnforceDependencies.validateDependencies(dependencies, rules, true));
+        String expectedErrorMessage =
+                """
+                Vespa dependency enforcer failed:
+                Dependencies not matching any rule:
+                 - com.yahoo.vespa:testutils:jar:8.0.0:test
+                Rules not matching any dependency:
+                 - com.yahoo.vespa:testutils:[7.0.0]:jar:test
+                """;
+        assertEquals(expectedErrorMessage, exception.getMessage());
+    }
+
+    @Test
+    void fails_on_scope_mismatch() {
+        Set<Artifact> dependencies = Set.of(
+                artifact("com.yahoo.vespa", "testutils", "8.0.0", "test"));
+        Set<String> rules = Set.of(
+                "com.yahoo.vespa:testutils:8.0.0:jar:provided");
+        EnforcerRuleException exception = assertThrows(
+                EnforcerRuleException.class,
+                () -> EnforceDependencies.validateDependencies(dependencies, rules, true));
+        String expectedErrorMessage =
+                """
+                Vespa dependency enforcer failed:
+                Dependencies not matching any rule:
+                 - com.yahoo.vespa:testutils:jar:8.0.0:test
+                Rules not matching any dependency:
+                 - com.yahoo.vespa:testutils:8.0.0:jar:provided
                 """;
         assertEquals(expectedErrorMessage, exception.getMessage());
     }

@@ -72,7 +72,7 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <dependencyEnforcer implementation="com.yahoo.vespa.maven.plugin.enforcer.DependencyEnforcer">
+                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependencies">
                                     <allowed>
                                         <!-- MUST BE KEPT IN SYNC WITH container-dependencies-enforcer pom -->
                                         <include>aopalliance:aopalliance:[${aopalliance.version}]:jar:provided</include>
@@ -230,7 +230,7 @@
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.1:jar:test</include>
                                     </allowed>
-                                </dependencyEnforcer>
+                                </enforceDependencies>
                             </rules>
                             <fail>true</fail>
                         </configuration>
