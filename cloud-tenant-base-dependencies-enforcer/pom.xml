@@ -23,7 +23,7 @@
         <athenz.version>1.10.54</athenz.version>
         <bouncycastle.version>1.68</bouncycastle.version>
         <felix.version>7.0.1</felix.version>
-        <httpclient5.version>5.1.2</httpclient5.version>
+        <httpclient5.version>5.1.3</httpclient5.version>
         <httpclient.version>4.5.13</httpclient.version>
         <httpcore.version>4.4.13</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
