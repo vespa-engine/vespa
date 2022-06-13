@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -88,11 +89,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 /**
  * @author Oyvind Bakksjo
@@ -468,10 +470,11 @@ public class HttpServerTest {
                         .caCertificateFile(certificateFile.toString()));
         ServerConfig.Builder serverConfig = new ServerConfig.Builder()
                 .connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true));
-        InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        Module overrideModule = binder -> binder.bind(ConnectionLog.class).toInstance(connectionLog);
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
-                new EchoRequestHandler(), serverConfig, connectorConfig, overrideModule);
+                new EchoRequestHandler(),
+                serverConfig,
+                connectorConfig,
+                binder -> {});
 
         // HTTP/1.1
         for (int i = 0; i < MAX_REQUESTS - 1; i++) {
@@ -486,16 +489,19 @@ public class HttpServerTest {
         // HTTP/2
         try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
             String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
-            for (int i = 0; i <= MAX_REQUESTS; i++) {
+            for (int i = 0; i < MAX_REQUESTS - 1; i++) {
                 SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
                 assertEquals(OK, response.getCode());
             }
+            try {
+                client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
+                fail();
+            } catch (ExecutionException e) {
+                // Note: this is a weakness with Apache Http Client 5; the failed stream/request will not be retried on a new connection
+                assertEquals(e.getMessage(), "org.apache.hc.core5.http2.H2StreamResetException: Stream refused");
+            }
         }
         assertTrue(driver.close());
-        long http2Connections = connectionLog.logEntries().stream()
-                .filter(e -> e.httpProtocol().orElseThrow().equals("HTTP/2.0"))
-                .count();
-        assertEquals(2, http2Connections);
     }
 
     @Test
