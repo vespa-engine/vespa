@@ -39,6 +39,8 @@ public class Logserver extends AbstractService {
      */
     private String getMyJVMArgs() {
         StringBuilder sb = new StringBuilder();
+        sb.append("--add-opens=java.base/java.io=ALL-UNNAMED");
+        sb.append(" ");
         sb.append("-Dlogserver.rpcListenPort=").append(getRelativePort(0));
         sb.append(" ");
         sb.append("-Dlogserver.logarchive.dir=" + logArchiveDir);
