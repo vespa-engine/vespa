@@ -488,7 +488,7 @@ public class HttpServerTest {
         // HTTP/2
         try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
             String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
-            for (int i = 0; i <= MAX_REQUESTS; i++) {
+            for (int i = 0; i < 2*MAX_REQUESTS; i++) {
                 try {
                     client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
                 } catch (ExecutionException e) {
