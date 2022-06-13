@@ -119,7 +119,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private static final String GROUPING_VALUE = "value";
     private static final String VESPA_HIDDEN_FIELD_PREFIX = "$";
 
-    private final JsonFactory generatorFactory;
+    private static final JsonFactory generatorFactory = createGeneratorFactory();
 
     private JsonGenerator generator;
     private FieldConsumer fieldConsumer;
@@ -169,12 +169,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      */
     public JsonRenderer(Executor executor) {
         super(executor);
-        generatorFactory = new JsonFactory();
-        generatorFactory.setCodec(createJsonCodec());
     }
 
-    private static ObjectMapper createJsonCodec() {
-        return new ObjectMapper().disable(FLUSH_AFTER_WRITE_VALUE);
+    private static JsonFactory createGeneratorFactory() {
+        JsonFactory factory = new JsonFactory();
+        factory.setCodec(new ObjectMapper().disable(FLUSH_AFTER_WRITE_VALUE));
+        return factory;
     }
 
     @Override
