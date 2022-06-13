@@ -42,11 +42,11 @@ public:
     };
 
 private:
-    static constexpr uint32_t PART_BITS = 6;
+    static constexpr uint32_t PART_BITS = 8;
     static constexpr uint32_t NUM_PARTS = 1 << PART_BITS;
     static constexpr uint32_t PART_MASK = NUM_PARTS - 1;
-    static constexpr uint32_t FAST_DIGITS = 5;
-    static constexpr uint32_t FAST_ID_MAX = 99999;
+    static constexpr uint32_t FAST_DIGITS = 7;
+    static constexpr uint32_t FAST_ID_MAX = 9999999;
     static constexpr uint32_t ID_BIAS = (FAST_ID_MAX + 2);
     static constexpr size_t PART_LIMIT = (std::numeric_limits<uint32_t>::max() - ID_BIAS) / NUM_PARTS;
 
@@ -132,9 +132,9 @@ private:
 
     public:
         Partition()
-            : _lock(), _entries(), _free(Entry::npos), _hash(128, Hash(), Equal(_entries))
+            : _lock(), _entries(), _free(Entry::npos), _hash(32, Hash(), Equal(_entries))
         {
-            make_entries(64);
+            make_entries(16);
         }
         ~Partition();
         void find_leaked_entries(size_t my_idx) const;
