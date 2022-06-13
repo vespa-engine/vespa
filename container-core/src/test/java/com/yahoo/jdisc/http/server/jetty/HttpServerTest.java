@@ -34,7 +34,6 @@ import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.core5.http.ConnectionClosedException;
 import org.apache.hc.core5.http.ContentType;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
@@ -59,7 +58,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
@@ -489,13 +487,8 @@ public class HttpServerTest {
         try (CloseableHttpAsyncClient client = createHttp2Client(driver)) {
             String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
             for (int i = 0; i <= MAX_REQUESTS; i++) {
-                try {
-                    client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
-                } catch (ExecutionException e) {
-                    // Client sometimes throws ExecutionException with ConnectionClosedException as cause
-                    // on the last request.
-                    if (!(e.getCause() instanceof ConnectionClosedException)) throw e;
-                }
+                SimpleHttpResponse response = client.execute(SimpleRequestBuilder.get(uri).build(), null).get();
+                assertEquals(OK, response.getCode());
             }
         }
         assertTrue(driver.close());
