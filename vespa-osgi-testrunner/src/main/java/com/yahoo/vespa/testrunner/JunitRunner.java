@@ -103,7 +103,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
 
     private TestReport launchJunit(Suite suite, byte[] testConfig) {
         List<Class<?>> testClasses = classLoader.apply(suite);
-        if (testClasses == null)
+        if (testClasses == null || testClasses.isEmpty())
             return  null;
 
         testRuntimeProvider.initialize(testConfig);
@@ -117,7 +117,14 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                                                                                                          .map(DiscoverySelectors::selectClass)
                                                                                                          .collect(toList()))
                                                                                    .build();
-        testExecutor.accept(discoveryRequest, new TestExecutionListener[] { testReportListener });
+        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(testClasses.get(0).getClassLoader());
+            testExecutor.accept(discoveryRequest, new TestExecutionListener[] { testReportListener });
+        }
+        finally {
+            Thread.currentThread().setContextClassLoader(old);
+        }
 
         return testReportListener.report();
     }
