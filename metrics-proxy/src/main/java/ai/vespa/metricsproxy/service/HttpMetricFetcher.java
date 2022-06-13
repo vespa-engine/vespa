@@ -12,6 +12,7 @@ import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.nio.support.BasicRequestProducer;
 import org.apache.hc.core5.http.nio.support.BasicResponseConsumer;
 import org.apache.hc.core5.http.nio.support.classic.AbstractClassicEntityConsumer;
+import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public abstract class HttpMetricFetcher {
     private final static Logger log = Logger.getLogger(HttpMetricFetcher.class.getName());
     public final static String STATE_PATH = "/state/v1/";
     // The call to apache will do 3 retries. As long as we check the services in series, we can't have this too high.
-    public static int CONNECTION_TIMEOUT = 5000;
+    public static volatile int CONNECTION_TIMEOUT = 5000;
     private final static int SOCKET_TIMEOUT = 60000;
     private final static int BUFFER_SIZE = 0x40000; // 256k
     private final URI url;
@@ -97,6 +98,9 @@ public abstract class HttpMetricFetcher {
     private static CloseableHttpAsyncClient createHttpClient() {
         CloseableHttpAsyncClient client =  VespaAsyncHttpClientBuilder.create()
                 .setUserAgent("metrics-proxy-http-client")
+                .setIOReactorConfig(IOReactorConfig.custom()
+                        .setSoTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
+                        .build())
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectionRequestTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
                                                  .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
