@@ -10,7 +10,9 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import java.util.List;
 
@@ -34,6 +36,10 @@ public class RpcHealthMetricsTest {
     private static final String WANTED_RPC_RESPONSE =
             getFileContents("rpc-json-output-check.json").trim();
     private static final double RPC_INVOKE_TIMEOUT = 60.0;
+
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(300);
 
     @Test
     public void expected_response_is_returned() {

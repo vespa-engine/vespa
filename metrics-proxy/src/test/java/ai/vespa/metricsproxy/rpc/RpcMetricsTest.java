@@ -14,7 +14,9 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import java.io.IOException;
 import java.util.List;
@@ -60,6 +62,9 @@ public class RpcMetricsTest {
             supervisor.transport().shutdown().join();
         }
     }
+
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(300);
 
     @Test
     public void extra_metrics_are_added_to_output() throws Exception {
