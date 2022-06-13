@@ -436,7 +436,7 @@ HnswIndex::prepare_add_document(uint32_t docid,
     if (max_nodes < _cfg.min_size_before_two_phase()) {
         // the first documents added will do all work in write thread
         // to ensure they are linked together:
-        return std::make_unique<PreparedFirstAddDoc>();
+        return std::unique_ptr<PrepareResult>();
     }
     PreparedAddDoc op = internal_prepare_add(docid, vector, std::move(read_guard));
     return std::make_unique<PreparedAddDoc>(std::move(op));

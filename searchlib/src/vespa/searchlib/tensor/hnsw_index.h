@@ -152,8 +152,6 @@ protected:
                                          const BitVector *filter, uint32_t explore_k,
                                          double distance_threshold) const;
 
-    struct PreparedFirstAddDoc : public PrepareResult {};
-
     struct PreparedAddDoc : public PrepareResult {
         using ReadGuard = vespalib::GenerationHandler::Guard;
         uint32_t docid;

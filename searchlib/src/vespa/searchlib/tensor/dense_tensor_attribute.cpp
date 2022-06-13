@@ -8,9 +8,9 @@
 #include "tensor_attribute.hpp"
 #include <vespa/eval/eval/value.h>
 #include <vespa/fastlib/io/bufferedfile.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/cpu_usage.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -102,16 +102,10 @@ BlobSequenceReader::is_present() {
 
 }
 
-bool
-DenseTensorAttribute::tensor_is_unchanged(DocId docid, const vespalib::eval::Value& new_tensor) const
-{
-    auto old_tensor = extract_cells_ref(docid);
-    return _comp.equals(old_tensor, new_tensor.cells());
-}
-
 void
 DenseTensorAttribute::internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor)
 {
+    checkTensorType(tensor);
     consider_remove_from_index(docid);
     EntryRef ref = _denseTensorStore.setTensor(tensor);
     setTensorRef(docid, ref);
@@ -158,8 +152,7 @@ DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, con
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
       _denseTensorStore(cfg.tensorType(), get_memory_allocator()),
-      _index(),
-      _comp(cfg.tensorType())
+      _index()
 {
     if (cfg.hnsw_index_params().has_value()) {
         auto tensor_type = cfg.tensorType();
@@ -187,7 +180,6 @@ DenseTensorAttribute::clearDoc(DocId docId)
 void
 DenseTensorAttribute::setTensor(DocId docId, const vespalib::eval::Value &tensor)
 {
-    checkTensorType(tensor);
     internal_set_tensor(docId, tensor);
     if (_index) {
         _index->add_document(docId);
@@ -197,26 +189,16 @@ DenseTensorAttribute::setTensor(DocId docId, const vespalib::eval::Value &tensor
 std::unique_ptr<PrepareResult>
 DenseTensorAttribute::prepare_set_tensor(DocId docid, const vespalib::eval::Value& tensor) const
 {
-    checkTensorType(tensor);
     if (_index) {
-        if (tensor_is_unchanged(docid, tensor)) {
-            // Don't make changes to the nearest neighbor index when the inserted tensor is unchanged.
-            // With this optimization we avoid doing unnecessary costly work, first removing the vector point, then inserting the same point.
-            return {};
-        }
         return _index->prepare_add_document(docid, tensor.cells(), getGenerationHandler().takeGuard());
     }
-    return {};
+    return std::unique_ptr<PrepareResult>();
 }
 
 void
 DenseTensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& tensor,
                                           std::unique_ptr<PrepareResult> prepare_result)
 {
-    if (_index && !prepare_result) {
-        // The tensor is unchanged.
-        return;
-    }
     internal_set_tensor(docid, tensor);
     if (_index) {
         _index->complete_add_document(docid, std::move(prepare_result));
