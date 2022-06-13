@@ -240,6 +240,7 @@ public class VespaMetricSet {
 
         addMetric(metrics, "jdisc.http.filter.rule.blocked_requests", List.of("rate"));
         addMetric(metrics, "jdisc.http.filter.rule.allowed_requests", List.of("rate"));
+        addMetric(metrics, "jdisc.jvm", List.of("last"));
 
         return metrics;
     }
