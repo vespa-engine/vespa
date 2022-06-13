@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -128,6 +129,15 @@ public class MetricUpdater extends AbstractComponent {
             metric.set(NATIVE_TOTAL_MEMORY_BYTES, nativeHeap.totalSize(), null);
         }
 
+        private void jvmDetails() {
+            Metric.Context ctx = metric.createContext(Map.of(
+                    "version", System.getProperty("java.runtime.version"),
+                    "home", System.getProperty("java.home"),
+                    "vendor", System.getProperty("java.vm.vendor"),
+                    "arch", System.getProperty("os.arch")));
+            metric.set("jdisc.jvm", Runtime.version().feature(), ctx);
+        }
+
         @Override
         public void run() {
             long freeMemory = runtime.freeMemory();
@@ -144,6 +154,7 @@ public class MetricUpdater extends AbstractComponent {
             containerWatchdogMetrics.emitMetrics(metric);
             garbageCollectionMetrics.emitMetrics(metric);
             jrtMetrics.emitMetrics();
+            jvmDetails();
         }
     }
 
