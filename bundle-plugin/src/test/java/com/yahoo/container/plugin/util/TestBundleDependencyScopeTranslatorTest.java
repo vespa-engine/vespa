@@ -10,7 +10,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 
@@ -23,7 +25,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void test_dependencies_are_translated_to_compile_scope_by_default() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "test", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
         Artifact ab = createArtifact(artifacts, "a-b", "test", List.of("a"));
@@ -39,7 +41,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void non_test_scope_dependencies_keep_original_scope() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "provided", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "provided", List.of("a"));
         Artifact ab = createArtifact(artifacts, "a-b", "provided", List.of("a"));
@@ -60,7 +62,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void ordering_in_config_string_determines_translation() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "test", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
         {
@@ -83,7 +85,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void transitive_non_test_dependencies_of_test_dependencies_keep_original_scope() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "test", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
         Artifact ab = createArtifact(artifacts, "a-b", "test", List.of("a"));
@@ -106,9 +108,9 @@ public class TestBundleDependencyScopeTranslatorTest {
     }
 
     private static Artifact createArtifact(
-            Map<String, Artifact> artifacts, String artifactId, String scope, List<String> transitiveDependents) {
+            Set<Artifact> artifacts, String artifactId, String scope, List<String> transitiveDependents) {
         Artifact artifact = createArtifact(artifactId, scope, transitiveDependents);
-        artifacts.put(simpleId(artifactId), artifact);
+        artifacts.add(artifact);
         return artifact;
     }
 
