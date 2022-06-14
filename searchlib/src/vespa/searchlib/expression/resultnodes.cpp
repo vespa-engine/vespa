@@ -60,7 +60,14 @@ ResultDeserializer & ResultNode::onDeserializeResult(ResultDeserializer & is)
     return is;
 }
 
-int64_t FloatResultNode::onGetInteger(size_t index) const { (void) index; return static_cast<int64_t>(std::round(_value)); }
+int64_t FloatResultNode::onGetInteger(size_t ) const {
+    if (std::isnan(_value)) {
+        return std::numeric_limits<int64_t>::min();
+    } else {
+        return static_cast<int64_t>(std::round(_value));
+    }
+}
+
 double  FloatResultNode::onGetFloat(size_t index)   const { (void) index; return _value; }
 void FloatResultNode::add(const ResultNode & b)      { _value += b.getFloat(); }
 void FloatResultNode::negate()                       { _value = - _value; }
