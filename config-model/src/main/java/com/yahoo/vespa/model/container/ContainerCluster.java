@@ -146,6 +146,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private final boolean isHostedVespa;
     private final boolean zooKeeperLocalhostAffinity;
     private final int numAvailableProcessors;
+    private final String compressionType;
 
     private final Map<String, String> concreteDocumentTypes = new LinkedHashMap<>();
 
@@ -166,7 +167,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
-        numAvailableProcessors = deployState.featureFlags().availableProcessors();
+        this.numAvailableProcessors = deployState.featureFlags().availableProcessors();
+        this.compressionType = deployState.featureFlags().logFileCompressionAlgorithm(isHostedVespa ? "zstd" : "gzip");
 
         componentGroup = new ComponentGroup<>(this, "component");
 
@@ -526,7 +528,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addDefaultSearchAccessLog() {
-        var compressionType = isHostedVespa ? AccessLogComponent.CompressionType.ZSTD : AccessLogComponent.CompressionType.GZIP;
         // In hosted Vespa with one application container per node we do not use the container name to distinguish log files
         Optional<String> clusterName = isHostedVespa ? Optional.empty() : Optional.of(getName());
         addComponent(new AccessLogComponent(this, AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, clusterName, isHostedVespa));

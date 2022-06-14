@@ -20,6 +20,8 @@ public class ArchiverPlugin implements Plugin {
      */
     private static final String DEFAULT_MAXFILESIZE = "20971520";
 
+    private static final String DEFAULT_COMPRESSION = "gzip";
+
     private final Server server = Server.getInstance();
     private static final Logger log = Logger.getLogger(ArchiverPlugin.class.getName());
     private ArchiverHandler archiver;
@@ -52,9 +54,10 @@ public class ArchiverPlugin implements Plugin {
         String rootDir = config.get("dir", DEFAULT_DIR);
         int maxFileSize = config.getInt("maxfilesize", DEFAULT_MAXFILESIZE);
         String threadName = config.get("thread", getPluginName());
+        String zip = config.get("compression", DEFAULT_COMPRESSION);
 
         // register log handler and flusher
-        archiver = new ArchiverHandler(rootDir, maxFileSize);
+        archiver = new ArchiverHandler(rootDir, maxFileSize, zip);
         server.registerLogHandler(archiver, threadName);
         server.registerFlusher(archiver);
     }

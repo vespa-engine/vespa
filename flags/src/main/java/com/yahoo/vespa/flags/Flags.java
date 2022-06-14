@@ -370,6 +370,13 @@ public class Flags {
             "Takes effect on host admin restart",
             HOSTNAME);
 
+    public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
+            "log-file-compression-algorithm", "",
+            List.of("arnej"), "2022-06-14", "2024-12-31",
+            "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
+            "Takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
