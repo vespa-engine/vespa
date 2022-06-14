@@ -55,7 +55,7 @@ public class FilesArchivedTestCase {
         makeLogfile("2018/12/31/16-0", 1);
         makeLogfile("2018/12/31/17-0", 0);
         dumpFiles("before archive maintenance");
-        FilesArchived a = new FilesArchived(tmpDir, "zstd");
+        FilesArchived a = new FilesArchived(tmpDir);
         dumpFiles("also before archive maintenance");
 
         checkExist("foo/bar");
@@ -67,14 +67,14 @@ public class FilesArchivedTestCase {
         checkExist("2018/12/31/14-0");
         checkExist("2018/12/31/16-0");
         checkExist("2018/12/31/17-0");
-        checkNoExist("2018/11/20/13-0.zst");
-        checkNoExist("2018/11/21/13-0.zst");
-        checkNoExist("2018/12/28/13-0.zst");
-        checkNoExist("2018/12/29/13-0.zst");
-        checkNoExist("2018/12/30/13-0.zst");
-        checkNoExist("2018/12/31/14-0.zst");
-        checkNoExist("2018/12/31/16-0.zst");
-        checkNoExist("2018/12/31/17-0.zst");
+        checkNoExist("2018/11/20/13-0.gz");
+        checkNoExist("2018/11/21/13-0.gz");
+        checkNoExist("2018/12/28/13-0.gz");
+        checkNoExist("2018/12/29/13-0.gz");
+        checkNoExist("2018/12/30/13-0.gz");
+        checkNoExist("2018/12/31/14-0.gz");
+        checkNoExist("2018/12/31/16-0.gz");
+        checkNoExist("2018/12/31/17-0.gz");
 
         a.maintenance();
 
@@ -82,22 +82,22 @@ public class FilesArchivedTestCase {
         checkExist("foo/bar");
         checkExist("2018/12/31/17-0");
         checkExist("2018/12/31/16-0");
-        checkExist("2018/12/31/14-0.zst");
-        checkExist("2018/12/28/13-0.zst");
-        checkExist("2018/12/29/13-0.zst");
-        checkExist("2018/12/30/13-0.zst");
+        checkExist("2018/12/31/14-0.gz");
+        checkExist("2018/12/28/13-0.gz");
+        checkExist("2018/12/29/13-0.gz");
+        checkExist("2018/12/30/13-0.gz");
 
-        checkNoExist("2018/12/31/17-0.zst");
-        checkNoExist("2018/12/31/16-0.zst");
+        checkNoExist("2018/12/31/17-0.gz");
+        checkNoExist("2018/12/31/16-0.gz");
         checkNoExist("2018/12/31/14-0");
         checkNoExist("2018/12/28/13-0");
         checkNoExist("2018/12/29/13-0");
         checkNoExist("2018/12/30/13-0");
 
         checkNoExist("2018/11/20/13-0");
-        checkNoExist("2018/11/20/13-0.zst");
+        checkNoExist("2018/11/20/13-0.gz");
         checkNoExist("2018/11/21/13-0");
-        checkNoExist("2018/11/21/13-0.zst");
+        checkNoExist("2018/11/21/13-0.gz");
 
         makeLogfile("2018/12/31/16-0", 3);
         makeLogfile("2018/12/31/17-0", 3);
@@ -110,8 +110,8 @@ public class FilesArchivedTestCase {
 
         checkExist("2018/12/31/17-2");
         checkExist("2018/12/31/17-1");
-        checkExist("2018/12/31/16-0.zst");
-        checkExist("2018/12/31/17-0.zst");
+        checkExist("2018/12/31/16-0.gz");
+        checkExist("2018/12/31/17-0.gz");
 
         checkNoExist("2018/12/31/16-0");
         checkNoExist("2018/12/31/17-0");
