@@ -70,6 +70,12 @@ public class PayloadChecksums {
 
     public boolean isEmpty() { return this.equals(empty()); }
 
+    public boolean matches(PayloadChecksums other) {
+        if (getForType(XXHASH64) != null) return getForType(XXHASH64).equals(other.getForType(XXHASH64));
+        if (getForType(MD5) != null) return getForType(MD5).equals(other.getForType(MD5));
+        return true;
+    }
+
     @Override
     public String toString() {
         return checksums.values().stream()
