@@ -282,7 +282,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         container.setOwner(this);
         container.setClusterName(name);
         container.setProp("clustername", name)
-                 .setProp("index", this.containers.size());
+                 .setProp("index", this.containers.size())
+                 .setProp("clustertype", "container");
         containers.add(container);
     }
 
