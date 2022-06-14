@@ -1999,11 +1999,11 @@
       "public static final com.yahoo.processing.request.CompoundName HITS",
       "public static final com.yahoo.processing.request.CompoundName QUERY_PROFILE",
       "public static final com.yahoo.processing.request.CompoundName SEARCH_CHAIN",
-      "public static final com.yahoo.processing.request.CompoundName EXPLAIN_LEVEL",
       "public static final com.yahoo.processing.request.CompoundName NO_CACHE",
       "public static final com.yahoo.processing.request.CompoundName GROUPING_SESSION_CACHE",
       "public static final com.yahoo.processing.request.CompoundName TIMEOUT",
       "public static final com.yahoo.processing.request.CompoundName TRACE_LEVEL",
+      "public static final com.yahoo.processing.request.CompoundName EXPLAIN_LEVEL",
       "public static final java.util.List nativeProperties"
     ]
   },
@@ -5629,6 +5629,8 @@
       "public int getLevel()",
       "public void setLevel(int)",
       "public boolean isTraceable(int)",
+      "public void setExplainLevel(int)",
+      "public int getExplainLevel()",
       "public boolean getTimestamps()",
       "public void setTimestamps(boolean)",
       "public boolean getQuery()",
@@ -5648,6 +5650,7 @@
     "fields": [
       "public static final java.lang.String TRACE",
       "public static final java.lang.String LEVEL",
+      "public static final java.lang.String EXPLAIN_LEVEL",
       "public static final java.lang.String TIMESTAMPS",
       "public static final java.lang.String QUERY"
     ]
