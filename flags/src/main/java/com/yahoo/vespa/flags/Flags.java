@@ -123,6 +123,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag SHARED_STRING_REPO_RECLAIM = defineFeatureFlag(
+            "shared-string-repo-reclaim", true,
+            List.of("baldersheim"), "2022-06-14", "2023-01-01",
+            "Controls whether we do track usage and reclaim unused enum values in shared string repo",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
             "container-dump-heap-on-shutdown-timeout", false,
             List.of("baldersheim"), "2021-09-25", "2023-01-01",

@@ -208,6 +208,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableBitVectors;
         private final Architecture adminClusterArchitecture;
         private final boolean enableProxyProtocolMixedMode;
+        private final boolean sharedStringRepoReclaim;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -252,6 +253,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableBitVectors = flagValue(source, appId, version, Flags.ENABLE_BIT_VECTORS);
             this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
+            this.sharedStringRepoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_RECLAIM);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -298,6 +300,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableBitVectors() { return this.enableBitVectors; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }
+        @Override public boolean sharedStringRepoReclaim() { return sharedStringRepoReclaim; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, Version vespaVersion, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)

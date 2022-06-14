@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.NodeResources;
@@ -60,10 +61,10 @@ public class SearchNode extends AbstractService implements
     private final boolean isHostedVespa;
     private final boolean flushOnShutdown;
     private final NodeSpec nodeSpec;
-    private int distributionKey;
+    private final int distributionKey;
     private final String clusterName;
     private TransactionLogServer tls;
-    private AbstractService serviceLayerService;
+    private final AbstractService serviceLayerService;
     private final Optional<Tuning> tuning;
     private final Optional<ResourceLimits> resourceLimits;
     private final double fractionOfMemoryReserved;
@@ -96,7 +97,7 @@ public class SearchNode extends AbstractService implements
         protected SearchNode doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
                                      flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
-                                     deployState.featureFlags().loadCodeAsHugePages(), fractionOfMemoryReserved);
+                                     fractionOfMemoryReserved, deployState.featureFlags());
         }
 
     }
@@ -104,22 +105,26 @@ public class SearchNode extends AbstractService implements
     public static SearchNode create(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                                     Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa,
-                                    boolean loadCodeAsHugePages, double fractionOfMemoryReserved) {
-        return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown,
-                              tuning, resourceLimits, isHostedVespa, loadCodeAsHugePages, fractionOfMemoryReserved);
+                                    double fractionOfMemoryReserved, ModelContext.FeatureFlags featureFlags) {
+        SearchNode node = new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown,
+                              tuning, resourceLimits, isHostedVespa, fractionOfMemoryReserved);
+        if (featureFlags.loadCodeAsHugePages()) {
+            node.addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", "true");
+        }
+        if ( ! featureFlags.sharedStringRepoReclaim()) {
+            node.addEnvironmentVariable("VESPA_SHARED_STRING_REPO_NO_RECLAIM", "true");
+        }
+        return node;
     }
 
     private SearchNode(AbstractConfigProducer parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                        Optional<Tuning> tuning, Optional<ResourceLimits> resourceLimits, boolean isHostedVespa,
-                       boolean loadCodeAsHugePages, double fractionOfMemoryReserved) {
+                       double fractionOfMemoryReserved) {
         super(parent, name);
         this.distributionKey = distributionKey;
         this.serviceLayerService = serviceLayerService;
         this.isHostedVespa = isHostedVespa;
-        if (loadCodeAsHugePages) {
-            addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", "true");
-        }
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
         this.nodeSpec = nodeSpec;
         this.clusterName = clusterName;

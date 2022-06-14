@@ -76,6 +76,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<String> environmentVariables = List.of();
     private boolean avoidRenamingSummaryFeatures = true;
     private boolean enableBitVectors = false;
+    private boolean loadCodeAsHugePages = false;
+    private boolean sharedStringRepoReclaim = true;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -132,6 +134,18 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
     @Override public boolean enableBitVectors() { return this.enableBitVectors; }
     @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
+    @Override public boolean sharedStringRepoReclaim() { return sharedStringRepoReclaim; }
+    @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
+
+    public TestProperties sharedStringRepoReclaim(boolean sharedStringRepoReclaim) {
+        this.sharedStringRepoReclaim = sharedStringRepoReclaim;
+        return this;
+    }
+
+    public TestProperties loadCodeAsHugePages(boolean loadCodeAsHugePages) {
+        this.loadCodeAsHugePages = loadCodeAsHugePages;
+        return this;
+    }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
