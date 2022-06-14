@@ -37,7 +37,7 @@
              compile version set with "-D vespaversion=...", and is instead the newest version.
              When it is "${vespaversion}", it is coupled, which should be the default. -->
         <test-framework.version>${vespaversion}</test-framework.version>
-        <target_jdk_version>11</target_jdk_version>
+        <target_jdk_version>17</target_jdk_version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <junit.version>5.8.1</junit.version> <!-- Keep in sync with hosted-tenant-base and tenant-cd until all direct use is removed -->
