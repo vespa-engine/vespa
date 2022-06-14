@@ -38,6 +38,7 @@ import org.apache.hc.core5.http.ConnectionClosedException;
 import org.apache.hc.core5.http.ContentType;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -455,6 +456,7 @@ public class HttpServerTest {
     }
 
     @Test
+    @Ignore("Temporarily ignore until stabilized")
     public void requireThatConnectionIsClosedAfterXRequests() throws Exception {
         final int MAX_REQUESTS = 10;
         Path privateKeyFile = tmpFolder.newFile().toPath();
