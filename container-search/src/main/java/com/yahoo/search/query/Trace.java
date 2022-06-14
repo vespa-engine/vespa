@@ -102,7 +102,7 @@ public class Trace implements Cloneable {
     public void trace(String message, boolean includeQuery, int traceLevel) {
         if ( ! isTraceable(traceLevel)) return;
 
-        if (includeQuery && parent.properties().getBoolean(CompoundName.fromComponents("trace", "query"), true))
+        if (includeQuery && query)
             message += ": [" + queryTreeText() + "]";
 
         log.log(Level.FINE, message);

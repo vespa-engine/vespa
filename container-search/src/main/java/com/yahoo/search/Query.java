@@ -692,32 +692,23 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      * by an IllegalStateException. In other words, intended use is create the
      * new query, and attach the context to the invoking query as soon as the new
      * query is properly initialized.
-     *
      * <p>
      * This method will always set the argument query's context level to the context
      * level of this query.
      *
-     * @param query
-     *                The query which should be traced as a part of this query.
-     * @throws IllegalStateException
-     *                 If the query given as argument already has context
-     *                 information.
+     * @param query the query which should be traced as a part of this query
+     * @throws IllegalStateException if the query given as argument already has context information
      */
     public void attachContext(Query query) throws IllegalStateException {
-        query.setTraceLevel(getTraceLevel());
+        query.getTrace().setLevel(getTrace().getLevel());
         query.setExplainLevel(getExplainLevel());
-        if (context == null) {
-            // Nothing to attach to. This is about the same as
-            // getTraceLevel() == 0,
-            // but is a direct test of what will make the function superfluous.
-            return;
-        }
+        if (context == null) return;
         if (query.getContext(false) != null) {
             // If we added the other query's context info as a subnode in this
             // query's context tree, we would have to check for loops in the
             // context graph. If we simply created a new node without checking,
             // we might silently overwrite useful information.
-            throw new IllegalStateException("Query to attach already has context information stored.");
+            throw new IllegalStateException("Query to attach already has context information stored");
         }
         query.context = context;
     }

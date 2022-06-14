@@ -48,11 +48,33 @@ public class TraceTestCase {
     public void testTracingOnIncorrectAPIUseParallel() {
         assertTracing(false,true);
     }
-    
+
+    @Test
+    public void testTraceWithQuery() {
+        testQueryInTrace(true, "trace.query=true");
+        testQueryInTrace(false, "trace.query=false");
+        testQueryInTrace(true, "");
+    }
+
+    private void testQueryInTrace(boolean expectQueryInTrace, String queryParameters) {
+        Query query = new Query("?query=foo&trace.level=1&" + queryParameters);
+        Chain<Searcher> chain = new Chain<>(new Tracer("tracer1", true));
+        Execution execution = new Execution(chain, Execution.Context.createContextStub());
+        Result result = execution.search(query);
+        Iterator<String> trace = collectTrace(query).iterator();
+        assertEquals("(level start)", trace.next());
+        assertEquals("  No query profile is used", trace.next());
+        assertEquals("  (level start)", trace.next());
+        if (expectQueryInTrace)
+            assertEquals("    During tracer1: 0: [WEAKAND(100) foo]", trace.next());
+        else
+            assertEquals("    During tracer1: 0", trace.next());
+    }
+
     @Test 
     public void testTraceInvocationsUnfillableHits() {
         final int traceLevel = 5;
-        Query query = new Query("?tracelevel=" + traceLevel);
+        Query query = new Query("?trace.level=" + traceLevel);
         Chain<Searcher> forkingChain = new Chain<>(new Tracer("tracer1"), 
                                                    new Tracer("tracer2"), 
                                                    new Backend("backend1", false));
@@ -251,17 +273,23 @@ public class TraceTestCase {
     private static class Tracer extends Searcher {
 
         private final String name;
+        private final boolean traceQuery;
 
         private int counter = 0;
 
         public Tracer(String name) {
+            this(name, false);
+        }
+
+        public Tracer(String name, boolean traceQuery) {
             super(new ComponentId(name));
             this.name = name;
+            this.traceQuery = traceQuery;
         }
 
         @Override
         public Result search(Query query, Execution execution) {
-            query.trace("During " + name + ": " + (counter++),1);
+            query.trace("During " + name + ": " + (counter++), traceQuery, 1);
             return execution.search(query);
         }
 
