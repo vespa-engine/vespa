@@ -15,7 +15,7 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent</relativePath>
     </parent>
 
@@ -61,6 +61,13 @@
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespa-feed-client-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <!-- Must be on test classpath for cloud users -->
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container-apache-http-client-bundle</artifactId>
             <version>${project.version}</version>
             <scope>compile</scope>
         </dependency>

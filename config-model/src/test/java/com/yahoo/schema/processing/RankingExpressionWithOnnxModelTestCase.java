@@ -139,7 +139,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("vespa.rank.firstphase", config.rankprofile(2).fef().property(2).name());
         assertEquals("rankingExpression(firstphase)", config.rankprofile(2).fef().property(2).value());
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(2).fef().property(3).name());
-        assertEquals("onnxModel(my_model).out{d0:1}", config.rankprofile(2).fef().property(3).value());
+        assertEquals("onnx(my_model).out{d0:1}", config.rankprofile(2).fef().property(3).value());
 
         assertEquals("test_generated_model_config", config.rankprofile(3).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(3).fef().property(0).name());
@@ -149,25 +149,25 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("vespa.rank.firstphase", config.rankprofile(3).fef().property(8).name());
         assertEquals("rankingExpression(firstphase)", config.rankprofile(3).fef().property(8).value());
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(3).fef().property(9).name());
-        assertEquals("onnxModel(files_model_onnx).path_to_output_1{d0:1}", config.rankprofile(3).fef().property(9).value());
+        assertEquals("onnx(files_model_onnx).path_to_output_1{d0:1}", config.rankprofile(3).fef().property(9).value());
 
         assertEquals("test_summary_features", config.rankprofile(4).name());
         assertEquals("rankingExpression(another_function).rankingScript", config.rankprofile(4).fef().property(0).name());
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(4).fef().property(3).name());
         assertEquals("1", config.rankprofile(4).fef().property(3).value());
         assertEquals("vespa.summary.feature", config.rankprofile(4).fef().property(4).name());
-        assertEquals("onnxModel(files_summary_model_onnx).path_to_output_2", config.rankprofile(4).fef().property(4).value());
+        assertEquals("onnx(another_model).out", config.rankprofile(4).fef().property(4).value());
         assertEquals("vespa.summary.feature", config.rankprofile(4).fef().property(5).name());
-        assertEquals("onnxModel(another_model).out", config.rankprofile(4).fef().property(5).value());
+        assertEquals("onnx(files_summary_model_onnx).path_to_output_2", config.rankprofile(4).fef().property(5).value());
 
         assertEquals("test_dynamic_model", config.rankprofile(5).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(5).fef().property(0).name());
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(5).fef().property(3).name());
-        assertEquals("onnxModel(dynamic_model).my_output{d0:0, d1:1}", config.rankprofile(5).fef().property(3).value());
+        assertEquals("onnx(dynamic_model).my_output{d0:0, d1:1}", config.rankprofile(5).fef().property(3).value());
 
         assertEquals("test_dynamic_model_2", config.rankprofile(6).name());
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(6).fef().property(5).name());
-        assertEquals("onnxModel(dynamic_model).my_output{d0:0, d1:2}", config.rankprofile(6).fef().property(5).value());
+        assertEquals("onnx(dynamic_model).my_output{d0:0, d1:2}", config.rankprofile(6).fef().property(5).value());
 
         assertEquals("test_dynamic_model_with_transformer_tokens", config.rankprofile(7).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(7).fef().property(1).name());
@@ -176,7 +176,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         assertEquals("test_unbound_model", config.rankprofile(8).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(8).fef().property(0).name());
         assertEquals("rankingExpression(firstphase).rankingScript", config.rankprofile(8).fef().property(3).name());
-        assertEquals("onnxModel(unbound_model).my_output{d0:0, d1:1}", config.rankprofile(8).fef().property(3).value());
+        assertEquals("onnx(unbound_model).my_output{d0:0, d1:1}", config.rankprofile(8).fef().property(3).value());
 
 
     }

@@ -47,7 +47,6 @@ import com.yahoo.vespa.model.container.component.DiscBindingsConfigGenerator;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
-import com.yahoo.vespa.model.container.component.StatisticsComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
@@ -143,8 +142,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     private final Set<Path> platformBundles = new LinkedHashSet<>();
 
-    private final List<String> serviceAliases = new ArrayList<>();
-    private final List<String> endpointAliases = new ArrayList<>();
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;
     private final boolean zooKeeperLocalhostAffinity;
@@ -174,12 +171,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         componentGroup = new ComponentGroup<>(this, "component");
 
         addCommonVespaBundles();
-
-        // TODO Vespa 8: remove LoggingRequestHandler.Context component if we can break binary compatibility
-        //               (ThreadedHttpRequestHandler.Context is source compatible.)
-        addSimpleComponent("com.yahoo.container.jdisc.LoggingRequestHandler$Context");
-
-        addComponent(new StatisticsComponent());
         addSimpleComponent(AccessLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
@@ -195,7 +186,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
         addSimpleComponent("com.yahoo.container.jdisc.DisabledConnectionLogProvider");
         addSimpleComponent(com.yahoo.jdisc.http.server.jetty.Janitor.class);
-        addJaxProviders();
     }
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(getName()); }
@@ -245,19 +235,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
         vipHandler.addServerBindings(VIP_HANDLER_BINDING);
         addComponent(vipHandler);
-    }
-
-    @SuppressWarnings("deprecation")
-    private void addJaxProviders() {
-        addSimpleComponent(com.yahoo.container.xml.providers.DatatypeFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.DocumentBuilderFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.SAXParserFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.SchemaFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.TransformerFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XMLEventFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XMLInputFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XMLOutputFactoryProvider.class);
-        addSimpleComponent(com.yahoo.container.xml.providers.XPathFactoryProvider.class);
     }
 
     public final void addComponent(Component<?, ?> component) {
@@ -617,12 +594,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public Map<String, String> concreteDocumentTypes() { return concreteDocumentTypes; }
-
-    /** The configured service aliases for the service in this cluster */
-    public List<String> serviceAliases() { return serviceAliases; }
-
-    /** The configured endpoint aliases (fqdn) for the service in this cluster */
-    public List<String> endpointAliases() { return endpointAliases; }
 
     public void setHostClusterId(String clusterId) { hostClusterId = clusterId; }
 

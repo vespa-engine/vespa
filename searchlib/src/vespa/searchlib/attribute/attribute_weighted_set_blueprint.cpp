@@ -156,6 +156,7 @@ queryeval::SearchIterator::UP
 AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmda, bool strict) const
 {
     assert(tfmda.size() == 1);
+    assert(getState().numFields() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0];
     if (strict) { // use generic weighted set search
         fef::MatchDataLayout layout;
@@ -167,7 +168,8 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
             // TODO: pass ownership with unique_ptr
             children[i] = _contexts[i]->createIterator(child_tfmd, true).release();
         }
-        return queryeval::SearchIterator::UP(queryeval::WeightedSetTermSearch::create(children, tfmd, _weights, std::move(match_data)));
+        bool field_is_filter = getState().fields()[0].isFilter();
+        return queryeval::SearchIterator::UP(queryeval::WeightedSetTermSearch::create(children, tfmd, field_is_filter, _weights, std::move(match_data)));
     } else { // use attribute filter optimization
         bool isSingleValue = !_attr.hasMultiValue();
         bool isString = (_attr.isStringType() && _attr.hasEnum());

@@ -1,4 +1,4 @@
-search test {
+schema test {
 
     document test {
     }

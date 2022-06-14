@@ -12,7 +12,7 @@ class AttributeResult : public ResultNode
 public:
     typedef std::unique_ptr<AttributeResult> UP;
     DECLARE_RESULTNODE(AttributeResult);
-    AttributeResult() : _attribute(NULL), _docId(0) { }
+    AttributeResult() : _attribute(nullptr), _docId(0) { }
     AttributeResult(const attribute::IAttributeVector * attribute, DocId docId) :
         _attribute(attribute),
         _docId(docId)

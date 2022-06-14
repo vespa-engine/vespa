@@ -73,7 +73,6 @@
     ],
     "methods": [
       "public void <init>(ai.vespa.cloud.ApplicationId, ai.vespa.cloud.Zone, ai.vespa.cloud.Cluster, ai.vespa.cloud.Node)",
-      "public void <init>(ai.vespa.cloud.Zone, ai.vespa.cloud.Cluster, ai.vespa.cloud.Node)",
       "public ai.vespa.cloud.ApplicationId application()",
       "public ai.vespa.cloud.Zone zone()",
       "public ai.vespa.cloud.Cluster cluster()",
@@ -106,7 +105,6 @@
     ],
     "methods": [
       "public void <init>(ai.vespa.cloud.ApplicationId, ai.vespa.cloud.Zone)",
-      "public void <init>(ai.vespa.cloud.Zone)",
       "public ai.vespa.cloud.ApplicationId application()",
       "public ai.vespa.cloud.Zone zone()",
       "public static ai.vespa.cloud.ZoneInfo defaultInfo()"

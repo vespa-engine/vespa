@@ -1,19 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.vespa.config.ConfigKey;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Config source as a programmatically built set of {@link com.yahoo.config.ConfigInstance}s
  *
  * @author Vegard Havdal
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class ConfigSet implements ConfigSource {
     private final Map<ConfigKey<?>, ConfigInstance.Builder> configs = new ConcurrentHashMap<>();
 

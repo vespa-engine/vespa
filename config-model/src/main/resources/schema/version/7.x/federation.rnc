@@ -1,0 +1,74 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Schema for federation configuration inside the searchchains section.
+
+GenericSource =
+    GenericSearchChainInQrservers &
+    FederationOptions?
+
+Source =
+    element source {
+        GenericSource
+    }
+
+Provider =
+    element provider {
+        GenericSource &
+        attribute cachesize { xsd:string { pattern = "\d+(\.\d*)?\s*[kmgKMG]?" } }? &
+        attribute type { xsd:string }? &
+        attribute cluster { xsd:string }? &
+
+	attribute yca-application-id { xsd:string }? &
+	attribute yca-cache-ttl { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
+	attribute yca-cache-retry-wait { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
+	YcaProxy? &
+        HttpProviderSearcherOptions &
+
+        Source*
+    }
+
+YcaProxy =
+    element yca-proxy {
+        GenericNode?
+    }
+
+GenericNode =
+    attribute host { xsd:string } &
+    attribute port { xsd:int }
+
+
+HttpProviderSearcherOptions =
+    attribute cacheweight { xsd:float { minInclusive = "0" } }? &
+    attribute path { xsd:string }? &
+    attribute readtimeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
+    attribute connectiontimeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
+    attribute connectionpooltimeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
+    attribute retries { xsd:int }? &
+    element nodes {
+        element node {
+            attribute host { xsd:string } &
+            attribute port { xsd:int }
+        }+
+   } ?
+
+FederationOptions =
+    element federationoptions {
+        attribute optional { xsd:boolean }? &
+        attribute timeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
+        attribute requestTimeout { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
+        attribute default { xsd:boolean }?
+    }
+
+FederationSearcher =
+    element federation {
+        GenericSearcherOrDocumentProcessor &
+        element source {
+            ComponentSpec &
+            FederationOptions?
+        }* &
+        element target-selector {
+            ComponentDefinition
+        }? &
+        element source-set {
+          attribute inherits { string "default" }
+        }?
+    }

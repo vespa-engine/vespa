@@ -7,6 +7,7 @@
 #include <vespa/eval/instruction/dense_dot_product_function.h>
 #include <vespa/eval/instruction/sparse_dot_product_function.h>
 #include <vespa/eval/instruction/sparse_112_dot_product.h>
+#include <vespa/eval/instruction/mixed_112_dot_product.h>
 #include <vespa/eval/instruction/sparse_merge_function.h>
 #include <vespa/eval/instruction/sparse_no_overlap_join_function.h>
 #include <vespa/eval/instruction/sparse_full_overlap_join_function.h>
@@ -67,6 +68,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
     run_optimize_pass(root, [&stash](const Child &child)
                       {
                           child.set(Sparse112DotProduct::optimize(child.get(), stash));
+                          child.set(Mixed112DotProduct::optimize(child.get(), stash));
                           child.set(BestSimilarityFunction::optimize(child.get(), stash));
                           child.set(L2Distance::optimize(child.get(), stash));                          
                       });

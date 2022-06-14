@@ -9,7 +9,6 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentSerializer;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.messagebus.Routable;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
@@ -61,7 +60,7 @@ public abstract class RoutableFactories60 {
          */
         protected abstract DocumentMessage doDecode(DocumentDeserializer deserializer);
 
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 9
         public boolean encode(Routable obj, DocumentSerializer out) {
             if (!(obj instanceof DocumentMessage)) {
                 throw new AssertionError(
@@ -69,19 +68,18 @@ public abstract class RoutableFactories60 {
                         "routable type " + obj.getType() + "(" + obj.getClass().getName() + ").");
             }
             DocumentMessage msg = (DocumentMessage)obj;
-            out.putByte(null, (byte)(msg.getPriority().getValue())); // TODO: encode default value on Vespa 8
-            out.putInt(null, msg.getLoadType().getId());
+            out.putByte(null, (byte)(msg.getPriority().getValue())); // TODO: encode default value on Vespa 9
+            out.putInt(null, 0); // Ignored load type. 0 is legacy "default" load type ID.
             return doEncode(msg, out);
         }
 
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-        public Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes) {
-            byte pri = in.getByte(null); // TODO: ignore on Vespa 8
-            int loadType = in.getInt(null);
+        @SuppressWarnings("removal") // TODO: Remove on Vespa 9
+        public Routable decode(DocumentDeserializer in) {
+            byte pri = in.getByte(null); // TODO: ignore on Vespa 9
+            in.getInt(null); // Ignored load type
             DocumentMessage msg = doDecode(in);
             if (msg != null) {
                 msg.setPriority(DocumentProtocol.getPriority(pri));
-                msg.setLoadType(loadTypes.getIdMap().get(loadType)); // TODO: ignore on Vespa 8
             }
             return msg;
         }
@@ -131,8 +129,7 @@ public abstract class RoutableFactories60 {
             return doEncode(reply, out);
         }
 
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-        public Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes) {
+        public Routable decode(DocumentDeserializer in) {
             byte pri = in.getByte(null);
             DocumentReply reply = doDecode(in);
             if (reply != null) {
@@ -235,7 +232,6 @@ public abstract class RoutableFactories60 {
     public static class CreateVisitorReplyFactory extends DocumentReplyFactory {
 
         @Override
-        @SuppressWarnings("removal")// TODO: Vespa 8: remove
         protected DocumentReply doDecode(DocumentDeserializer buf) {
             CreateVisitorReply reply = new CreateVisitorReply(DocumentProtocol.REPLY_CREATEVISITOR);
             reply.setLastBucket(new BucketId(buf.getLong(null)));
@@ -246,14 +242,13 @@ public abstract class RoutableFactories60 {
             vs.setBytesVisited(buf.getLong(null));
             vs.setDocumentsReturned(buf.getLong(null));
             vs.setBytesReturned(buf.getLong(null));
-            vs.setSecondPassDocumentsReturned(buf.getLong(null)); // TODO: on Vespa 8 remove setter (_not_ getLong())
-            vs.setSecondPassBytesReturned(buf.getLong(null)); // TODO: on Vespa 8 remove setter (_not_ getLong())
+            buf.getLong(null); // unused
+            buf.getLong(null); // unused
             reply.setVisitorStatistics(vs);
             return reply;
         }
 
         @Override
-        @SuppressWarnings("removal")// TODO: Vespa 8: remove
         protected boolean doEncode(DocumentReply obj, DocumentSerializer buf) {
             CreateVisitorReply reply = (CreateVisitorReply)obj;
             buf.putLong(null, reply.getLastBucket().getRawId());
@@ -262,8 +257,8 @@ public abstract class RoutableFactories60 {
             buf.putLong(null, reply.getVisitorStatistics().getBytesVisited());
             buf.putLong(null, reply.getVisitorStatistics().getDocumentsReturned());
             buf.putLong(null, reply.getVisitorStatistics().getBytesReturned());
-            buf.putLong(null, reply.getVisitorStatistics().getSecondPassDocumentsReturned()); // TODO: on Vespa 8 remove getter (_not_ putLong())
-            buf.putLong(null, reply.getVisitorStatistics().getSecondPassBytesReturned()); // TODO: on Vespa 8 remove getter (_not_ putLong())
+            buf.putLong(null, 0); // was SecondPassDocumentsReturned
+            buf.putLong(null, 0); // was SecondPassBytesReturned
             return true;
         }
     }

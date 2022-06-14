@@ -3,10 +3,8 @@ package com.yahoo.config.model.application.provider;
 
 import com.yahoo.component.Version;
 import com.yahoo.io.IOUtils;
-import java.util.logging.Level;
 import org.osgi.framework.Bundle;
 import org.xml.sax.SAXException;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +14,7 @@ import java.net.URL;
 import java.util.Enumeration;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
@@ -133,9 +132,11 @@ public class SchemaValidators {
                     String pathPrefix = getDefaults().underVespaHome("share/vespa/schema/");
                     File schemaPath = new File(pathPrefix + "version/" + vespaVersion.getMajor() + ".x/schema/");
                     // Fallback to path without version if path with version does not exist
-                    if (! schemaPath.exists())
+                    if (! schemaPath.exists()) {
+                        log.log(Level.INFO, "Found no schemas in " + schemaPath + ", fallback to schemas in " + pathPrefix);
                         schemaPath = new File(pathPrefix);
-                    log.log(Level.FINE, "Using schemas found in %s", schemaPath);
+                    }
+                    log.log(Level.FINE, "Using schemas found in " + schemaPath);
                     copySchemas(schemaPath, tmpDir);
                 } else {
                     log.log(Level.FINE, () -> String.format("Saving schemas for model bundle %s:%s", bundle.getSymbolicName(), bundle.getVersion()));

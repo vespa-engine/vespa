@@ -187,8 +187,7 @@ public class Schema implements ImmutableSchema {
      */
     public boolean isRawAsBase64() {
         if (rawAsBase64 != null) return rawAsBase64;
-        // TODO Vespa 8: flip default:
-        if (inherited.isEmpty()) return false;
+        if (inherited.isEmpty()) return true;
         return requireInherited().isRawAsBase64();
     }
 

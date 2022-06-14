@@ -8,20 +8,24 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>cloud-tenant-base</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../cloud-tenant-base/pom.xml</relativePath>
     </parent>
 
     <artifactId>cloud-tenant-base-dependencies-enforcer</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
         <junit5.platform.version>1.8.1</junit5.platform.version>
 
         <!-- MUST BE KEPT IN SYNC WITH parent/pom.xml -->
-        <athenz.version>1.10.14</athenz.version>
-        <httpclient5.version>5.1.2</httpclient5.version>
+        <athenz.version>1.10.54</athenz.version>
+        <bouncycastle.version>1.68</bouncycastle.version>
+        <felix.version>7.0.1</felix.version>
+        <httpclient5.version>5.1.3</httpclient5.version>
+        <httpclient.version>4.5.13</httpclient.version>
+        <httpcore.version>4.4.13</httpcore.version>
         <junit5.version>5.8.1</junit5.version>  <!-- TODO: in parent this is named 'junit.version' -->
         <onnxruntime.version>1.8.0</onnxruntime.version>
         <!-- END parent/pom.xml -->
@@ -30,14 +34,13 @@
         <!-- ALL BELOW MUST BE KEPT IN SYNC WITH container-dependency-versions pom
              Copied here because vz-tenant-base does not have a parent. -->
         <aopalliance.version>1.0</aopalliance.version>
-        <bouncycastle.version>1.68</bouncycastle.version>
-        <felix.version>7.0.1</felix.version>
-        <felix.log.version>1.0.1</felix.log.version>
-        <findbugs.version>1.3.9</findbugs.version>
-        <guava.version>20.0</guava.version>
-        <guice.version>3.0</guice.version>
+        <guava.version>27.1-jre</guava.version>
+        <guice.version>4.2.3</guice.version>
+        <jackson2.version>2.13.3</jackson2.version>
+        <jackson-databind.version>${jackson2.version}</jackson-databind.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
+        <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.46.v20220331</jetty.version>
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
@@ -45,16 +48,6 @@
         <org.json.version>20090211</org.json.version>
         <slf4j.version>1.7.32</slf4j.version> <!-- WARNING: when updated, also update c.y.v.tenant:base pom -->
         <xml-apis.version>1.4.01</xml-apis.version>
-
-        <hk2.version>2.5.0-b32</hk2.version>
-        <hk2.osgi-resource-locator.version>1.0.1</hk2.osgi-resource-locator.version>
-        <jackson2.version>2.12.6</jackson2.version>
-        <jackson-databind.version>${jackson2.version}</jackson-databind.version>
-        <javassist.version>3.20.0-GA</javassist.version>
-        <javax.annotation-api.version>1.2</javax.annotation-api.version>
-        <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
-        <javax.ws.rs-api.version>2.0.1</javax.ws.rs-api.version>
-        <jersey2.version>2.25</jersey2.version>
     </properties>
 
     <build>
@@ -62,7 +55,14 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
+                <version>3.0.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.yahoo.vespa</groupId>
+                        <artifactId>vespa-enforcer-extensions</artifactId>
+                        <version>${project.version}</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <!-- To allow running 'mvn enforcer:enforce' from the command line -->
@@ -72,12 +72,8 @@
                         </goals>
                         <configuration>
                             <rules>
-                                <bannedDependencies>
-                                    <excludes>
-                                        <!-- Only allow explicitly listed dependencies -->
-                                        <exclude>*:*:*:*:*:*</exclude>
-                                    </excludes>
-                                    <includes>
+                                <enforceDependencies implementation="com.yahoo.vespa.maven.plugin.enforcer.EnforceDependencies">
+                                    <allowed>
                                         <!-- MUST BE KEPT IN SYNC WITH container-dependencies-enforcer pom -->
                                         <include>aopalliance:aopalliance:[${aopalliance.version}]:jar:provided</include>
                                         <include>com.fasterxml.jackson.core:jackson-annotations:[${jackson2.version}]:jar:provided</include>
@@ -86,50 +82,21 @@
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jdk8:[${jackson2.version}]:jar:provided</include>
                                         <include>com.fasterxml.jackson.datatype:jackson-datatype-jsr310:[${jackson2.version}]:jar:provided</include>
 
-                                        <!-- Use version range for jax deps, because jersey and junit affect the versions. -->
-                                        <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-base:[2.5.4, ${jackson2.version}]:jar:provided</include>
-                                        <include>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider:[2.5.4, ${jackson2.version}]:jar:provided</include>
-                                        <include>com.fasterxml.jackson.module:jackson-module-jaxb-annotations:[2.5.4, ${jackson2.version}]:jar:provided</include>
-
-                                        <!-- guava with dependencies -->
-                                        <include>com.google.code.findbugs:jsr305:[${findbugs.version}]:jar:provided</include>
+                                        <!-- Guava with its internal dependencies -->
                                         <include>com.google.guava:guava:[${guava.version}]:jar:provided</include>
+                                        <include>com.google.errorprone:error_prone_annotations:[2.2.0]:jar:provided</include>
+                                        <include>com.google.guava:failureaccess:[1.0.1]:jar:provided</include>
+                                        <include>com.google.j2objc:j2objc-annotations:[1.1]:jar:provided</include>
 
-                                        <include>com.google.inject.extensions:guice-assistedinject:[${guice.version}]:jar:provided</include>
-                                        <include>com.google.inject.extensions:guice-multibindings:[${guice.version}]:jar:provided</include>
                                         <include>com.google.inject:guice:[${guice.version}]:jar:provided:no_aop</include>
                                         <include>com.sun.activation:javax.activation:[1.2.0]:jar:provided</include>
                                         <include>com.sun.xml.bind:jaxb-core:[${jaxb.version}]:jar:provided</include>
                                         <include>com.sun.xml.bind:jaxb-impl:[${jaxb.version}]:jar:provided</include>
                                         <include>commons-logging:commons-logging:[1.2]:jar:provided</include>
-                                        <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
                                         <include>javax.inject:javax.inject:[${javax.inject.version}]:jar:provided</include>
                                         <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>
-                                        <include>javax.validation:validation-api:[${javax.validation-api.version}]:jar:provided</include>
                                         <include>javax.ws.rs:javax.ws.rs-api:[${javax.ws.rs-api.version}]:jar:provided</include>
                                         <include>javax.xml.bind:jaxb-api:[${jaxb.version}]:jar:provided</include>
-                                        <include>net.jcip:jcip-annotations:[1.0]:jar:provided</include>
-                                        <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:provided</include>
-                                        <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:provided</include>
-                                        <include>org.apache.felix:org.apache.felix.log:[${felix.log.version}]:jar:provided</include>
-                                        <include>org.apache.felix:org.apache.felix.main:[${felix.version}]:jar:provided</include>
-                                        <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:provided</include>
-                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:provided</include>
-                                        <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:provided</include>
-                                        <include>org.eclipse.jetty:jetty-io:[${jetty.version}]:jar:provided</include>
-                                        <include>org.eclipse.jetty:jetty-util:[${jetty.version}]:jar:provided</include>
-                                        <include>org.glassfish.hk2.external:aopalliance-repackaged:[${hk2.version}]:jar:provided</include>
-                                        <include>org.glassfish.hk2.external:javax.inject:[${hk2.version}]:jar:provided</include>
-                                        <include>org.glassfish.hk2:hk2-api:[${hk2.version}]:jar:provided</include>
-                                        <include>org.glassfish.hk2:hk2-locator:[${hk2.version}]:jar:provided</include>
-                                        <include>org.glassfish.hk2:hk2-utils:[${hk2.version}]:jar:provided</include>
-                                        <include>org.glassfish.hk2:osgi-resource-locator:[${hk2.osgi-resource-locator.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.bundles.repackaged:jersey-guava:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.core:jersey-client:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.core:jersey-common:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.glassfish.jersey.core:jersey-server:[${jersey2.version}]:jar:provided</include>
-                                        <include>org.javassist:javassist:[${javassist.version}]:jar:provided</include>
-                                        <include>org.json:json:[${org.json.version}]:jar:provided</include>
                                         <include>org.slf4j:jcl-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:log4j-over-slf4j:[${slf4j.version}]:jar:provided</include>
                                         <include>org.slf4j:slf4j-api:[${slf4j.version}]:jar:provided</include>
@@ -138,7 +105,6 @@
 
                                         <!-- Vespa provided dependencies -->
                                         <include>com.yahoo.vespa:annotations:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:chain:*:jar:provided</include>
                                         <include>com.yahoo.vespa:component:*:jar:provided</include>
                                         <include>com.yahoo.vespa:config-bundle:*:jar:provided</include>
                                         <include>com.yahoo.vespa:config-lib:*:jar:provided</include>
@@ -167,15 +133,12 @@
                                         <include>com.yahoo.vespa:messagebus:*:jar:provided</include>
                                         <include>com.yahoo.vespa:model-evaluation:*:jar:provided</include>
                                         <include>com.yahoo.vespa:predicate-search-core:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:processing:*:jar:provided</include>
                                         <include>com.yahoo.vespa:provided-dependencies:*:jar:provided</include>
                                         <include>com.yahoo.vespa:searchcore:*:jar:provided</include>
                                         <include>com.yahoo.vespa:searchlib:*:jar:provided</include>
                                         <include>com.yahoo.vespa:security-utils:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:statistics:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vdslib:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:vespa-http-client:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:vespa_jersey2:*:pom:provided</include>
+                                        <include>com.yahoo.vespa:vespa-3party-bundles:*:pom:provided</include>
                                         <include>com.yahoo.vespa:vespaclient-container-plugin:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vespajlib:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vespalog:*:jar:provided</include>
@@ -188,11 +151,11 @@
                                         <include>com.yahoo.vespa:config-model-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:config-model:*:jar:test</include>
                                         <include>com.yahoo.vespa:config-provisioning:*:jar:test</include>
+                                        <include>com.yahoo.vespa:container-apache-http-client-bundle:*:jar:test</include>
                                         <include>com.yahoo.vespa:container-search-gui:*:jar:test</include>
                                         <include>com.yahoo.vespa:container-test:*:jar:test</include>
                                         <include>com.yahoo.vespa:hosted-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:indexinglanguage:*:jar:test</include>
-                                        <include>com.yahoo.vespa:jdisc_jetty:*:jar:test</include>
                                         <include>com.yahoo.vespa:logd:*:jar:test</include>
                                         <include>com.yahoo.vespa:metrics-proxy:*:jar:test</include>
                                         <include>com.yahoo.vespa:metrics:*:jar:test</include>
@@ -202,83 +165,72 @@
                                         <include>com.yahoo.vespa:storage:*:jar:test</include>
                                         <include>com.yahoo.vespa:tenant-cd-api:*:jar:test</include>
                                         <include>com.yahoo.vespa:tenant-cd-commons:*:jar:test</include>
-                                        <include>com.yahoo.vespa:vespa-athenz:*:jar:test</include>
                                         <include>com.yahoo.vespa:vespa-feed-client:*:jar:test</include>
                                         <include>com.yahoo.vespa:vespa-feed-client-api:*:jar:test</include>
-                                        <include>com.yahoo.vespa:vespa_jersey2:*:pom:test</include>
                                         <include>com.yahoo.vespa:vespaclient-core:*:jar:test</include>
                                         <include>com.yahoo.vespa:vsm:*:jar:test</include>
 
                                         <!-- 3rd party test dependencies -->
-                                        <include>com.amazonaws:aws-java-sdk-core:1.11.974:jar:test</include>
-                                        <include>com.auth0:java-jwt:3.10.0:jar:test</include>
-                                        <include>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.6.7:jar:test</include>
                                         <include>com.fasterxml.jackson.dataformat:jackson-dataformat-xml:[${jackson2.version}]:jar:test</include>
                                         <include>com.fasterxml.woodstox:woodstox-core:5.0.3:jar:test</include>
                                         <include>com.google.protobuf:protobuf-java:3.7.0:jar:test</include>
                                         <include>com.ibm.icu:icu4j:57.1:jar:test</include>
-                                        <include>com.intellij:annotations:12.0:jar:test</include>
                                         <include>com.microsoft.onnxruntime:onnxruntime:[${onnxruntime.version}]:jar:test</include>
                                         <include>com.thaiopensource:jing:20091111:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-auth-core:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-client-common:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-zms-core:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-zpe-java-client:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.athenz:athenz-zts-core:[${athenz.version}]:jar:test</include>
-                                        <include>com.yahoo.rdl:rdl-java:1.5.2:jar:test</include>
-                                        <include>commons-beanutils:commons-beanutils-core:1.8.0:jar:test</include>
-                                        <include>commons-beanutils:commons-beanutils:1.7.0:jar:test</include>
                                         <include>commons-codec:commons-codec:1.11:jar:test</include>
-                                        <include>commons-digester:commons-digester:1.8:jar:test</include>
                                         <include>io.airlift:aircompressor:0.17:jar:test</include>
                                         <include>io.airlift:airline:0.7:jar:test</include>
                                         <include>io.prometheus:simpleclient:0.6.0:jar:test</include>
                                         <include>io.prometheus:simpleclient_common:0.6.0:jar:test</include>
-                                        <include>joda-time:joda-time:2.8.1:jar:test</include>
                                         <include>junit:junit:4.13.2:jar:test</include>
-                                        <include>net.arnx:jsonic:1.2.11:jar:test</include>
                                         <include>net.java.dev.jna:jna:5.11.0:jar:test</include>
-                                        <include>org.abego.treelayout:org.abego.treelayout.core:1.0.1:jar:test</include>
                                         <include>org.antlr:antlr-runtime:3.5.2:jar:test</include>
                                         <include>org.antlr:antlr4-runtime:4.9.3:jar:test</include>
                                         <include>org.apache.commons:commons-exec:1.3:jar:test</include>
                                         <include>org.apache.commons:commons-compress:1.21:jar:test</include>
                                         <include>org.apache.commons:commons-math3:3.6.1:jar:test</include>
+                                        <include>org.apache.felix:org.apache.felix.framework:[${felix.version}]:jar:test</include>
                                         <include>org.apache.httpcomponents.client5:httpclient5:${httpclient5.version}:jar:test</include>
                                         <include>org.apache.httpcomponents.core5:httpcore5:${httpclient5.version}:jar:test</include>
                                         <include>org.apache.httpcomponents.core5:httpcore5-h2:${httpclient5.version}:jar:test</include>
-                                        <include>org.apache.httpcomponents:httpclient:4.5.13:jar:test</include>
-                                        <include>org.apache.httpcomponents:httpcore:4.4.13:jar:test</include>
+                                        <include>org.apache.httpcomponents:httpclient:${httpclient.version}:jar:test</include>
+                                        <include>org.apache.httpcomponents:httpcore:${httpcore.version}:jar:test</include>
+                                        <include>org.apache.httpcomponents:httpmime:${httpclient.version}:jar:test</include>
                                         <include>org.apache.opennlp:opennlp-tools:1.9.3:jar:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
+                                        <include>org.bouncycastle:bcpkix-jdk15on:[${bouncycastle.version}]:jar:test</include>
+                                        <include>org.bouncycastle:bcprov-jdk15on:[${bouncycastle.version}]:jar:test</include>
                                         <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
                                         <include>org.eclipse.jetty.alpn:alpn-api:[${jetty-alpn.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-hpack:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty.http2:http2-server:[${jetty.version}]:jar:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-alpn-java-server:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-client:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-continuation:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-http:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-io:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-jmx:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-security:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-servlet:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-servlets:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-util-ajax:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-util:[${jetty.version}]:jar:test</include>
                                         <include>org.hamcrest:hamcrest-core:1.3:jar:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:2.1.8:jar:test</include>
+                                        <include>org.json:json:20090211:jar:test</include>
                                         <include>org.junit.jupiter:junit-jupiter-api:[${junit5.version}]:jar:test</include>
                                         <include>org.junit.jupiter:junit-jupiter-engine:[${junit5.version}]:jar:test</include>
                                         <include>org.junit.platform:junit-platform-commons:[${junit5.platform.version}]:jar:test</include>
                                         <include>org.junit.platform:junit-platform-engine:[${junit5.platform.version}]:jar:test</include>
                                         <include>org.junit.vintage:junit-vintage-engine:[${junit5.version}]:jar:test</include>
-                                        <include>org.kohsuke:libpam4j:1.11:jar:test</include>
+                                        <include>org.lz4:lz4-java:[${org.lz4.version}]:jar:test</include>
                                         <include>org.opentest4j:opentest4j:1.2.0:jar:test</include>
-                                        <include>software.amazon.ion:ion-java:1.0.2:jar:test</include>
                                         <include>xerces:xercesImpl:2.12.1:jar:test</include>
-                                    </includes>
-                                </bannedDependencies>
+                                    </allowed>
+                                </enforceDependencies>
                             </rules>
                             <fail>true</fail>
                         </configuration>

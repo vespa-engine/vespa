@@ -17,4 +17,4 @@ RunnablePair::run()
     _second.run();
 }
 
-} // namespace vesaplib
+} // namespace vespalib

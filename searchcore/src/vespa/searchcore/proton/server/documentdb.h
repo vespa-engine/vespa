@@ -8,7 +8,6 @@
 #include "disk_mem_usage_forwarder.h"
 #include "document_db_config_owner.h"
 #include "documentdb_metrics_updater.h"
-#include "documentdbconfig.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
 #include "i_document_subdb_owner.h"
@@ -77,11 +76,10 @@ private:
     using IFlushTargetList = std::vector<std::shared_ptr<searchcorespi::IFlushTarget>>;
     using StatusReportUP = std::unique_ptr<StatusReport>;
     using ProtonConfig = const vespa::config::search::core::internal::InternalProtonType;
-    using ConfigComparisonResult = DocumentDBConfig::ComparisonResult;
     using lock_guard = std::lock_guard<std::mutex>;
     using SerialNum = search::SerialNum;
     using Schema = search::index::Schema;
-
+    using DocumentDBConfigSP = std::shared_ptr<DocumentDBConfig>;
 
     DocTypeName                   _docTypeName;
     document::BucketSpace         _bucketSpace;
@@ -93,52 +91,52 @@ private:
     InitializeThreads             _initializeThreads;
 
     // variables related to reconfig
-    DocumentDBConfig::SP                      _initConfigSnapshot;
-    SerialNum                                 _initConfigSerialNum;
-    vespalib::VarHolder<DocumentDBConfig::SP> _pendingConfigSnapshot;
-    mutable std::mutex                        _configMutex;  // protects _active* below.
-    mutable std::condition_variable           _configCV;
-    DocumentDBConfig::SP                      _activeConfigSnapshot;
-    int64_t                                   _activeConfigSnapshotGeneration;
-    const bool                                _validateAndSanitizeDocStore;
-    vespalib::Gate                            _initGate;
+    DocumentDBConfigSP                      _initConfigSnapshot;
+    SerialNum                               _initConfigSerialNum;
+    vespalib::VarHolder<DocumentDBConfigSP> _pendingConfigSnapshot;
+    mutable std::mutex                      _configMutex;  // protects _active* below.
+    mutable std::condition_variable         _configCV;
+    DocumentDBConfigSP                      _activeConfigSnapshot;
+    int64_t                                 _activeConfigSnapshotGeneration;
+    const bool                              _validateAndSanitizeDocStore;
+    vespalib::Gate                          _initGate;
 
-    ClusterStateHandler                             _clusterStateHandler;
-    BucketHandler                                   _bucketHandler;
-    index::IndexConfig                              _indexCfg;
-    std::unique_ptr<ReplayThrottlingPolicy>         _replay_throttling_policy;
-    ConfigStore::UP                                 _config_store;
-    std::shared_ptr<matching::SessionManager>       _sessionManager; // TODO: This should not have to be a shared pointer.
-    MetricsWireService                             &_metricsWireService;
-    DocumentDBTaggedMetrics                         _metrics;
-    std::unique_ptr<metrics::UpdateHook>            _metricsHook;
-    vespalib::VarHolder<IFeedView::SP>              _feedView;
-    vespalib::MonitoredRefCount                     _refCount;
-    IDocumentDBOwner                               &_owner;
-    storage::spi::BucketExecutor                   &_bucketExecutor;
-    DDBState                                        _state;
-    DiskMemUsageForwarder                           _dmUsageForwarder;
-    AttributeUsageFilter                            _writeFilter;
+    ClusterStateHandler                              _clusterStateHandler;
+    BucketHandler                                    _bucketHandler;
+    index::IndexConfig                               _indexCfg;
+    std::unique_ptr<ReplayThrottlingPolicy>          _replay_throttling_policy;
+    ConfigStore::UP                                  _config_store;
+    std::shared_ptr<matching::SessionManager>        _sessionManager; // TODO: This should not have to be a shared pointer.
+    MetricsWireService                              &_metricsWireService;
+    DocumentDBTaggedMetrics                          _metrics;
+    std::unique_ptr<metrics::UpdateHook>             _metricsHook;
+    vespalib::VarHolder<IFeedView::SP>               _feedView;
+    vespalib::MonitoredRefCount                      _refCount;
+    IDocumentDBOwner                                &_owner;
+    storage::spi::BucketExecutor                    &_bucketExecutor;
+    DDBState                                         _state;
+    DiskMemUsageForwarder                            _dmUsageForwarder;
+    AttributeUsageFilter                             _writeFilter;
     std::shared_ptr<ITransientResourceUsageProvider> _transient_usage_provider;
-    std::unique_ptr<FeedHandler>                    _feedHandler;
-    DocumentSubDBCollection                         _subDBs;
-    MaintenanceController                           _maintenanceController;
-    DocumentDBJobTrackers                           _jobTrackers;
-    std::shared_ptr<IBucketStateCalculator>         _calc;
-    DocumentDBMetricsUpdater                        _metricsUpdater;
+    std::unique_ptr<FeedHandler>                     _feedHandler;
+    DocumentSubDBCollection                          _subDBs;
+    MaintenanceController                            _maintenanceController;
+    DocumentDBJobTrackers                            _jobTrackers;
+    std::shared_ptr<IBucketStateCalculator>          _calc;
+    DocumentDBMetricsUpdater                         _metricsUpdater;
 
     void registerReference();
-    void setActiveConfig(const DocumentDBConfig::SP &config, int64_t generation);
-    DocumentDBConfig::SP getActiveConfig() const;
+    void setActiveConfig(const DocumentDBConfigSP &config, int64_t generation);
+    DocumentDBConfigSP getActiveConfig() const;
     void internalInit();
     void initManagers();
-    void initFinish(DocumentDBConfig::SP configSnapshot);
-    void performReconfig(DocumentDBConfig::SP configSnapshot);
+    void initFinish(DocumentDBConfigSP configSnapshot);
+    void performReconfig(DocumentDBConfigSP configSnapshot);
     void closeSubDBs();
 
     void applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
                           SerialNum serialNum, const ReconfigParams &params);
-    void applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum);
+    void applyConfig(DocumentDBConfigSP configSnapshot, SerialNum serialNum);
 
     /**
      * Save initial config if we don't have any saved config snapshots.
@@ -195,7 +193,7 @@ private:
     friend class InitDoneTask;
 
     DocumentDB(const vespalib::string &baseDir,
-               DocumentDBConfig::SP currentSnapshot,
+               DocumentDBConfigSP currentSnapshot,
                const vespalib::string &tlsSpec,
                matching::QueryLimiter &queryLimiter,
                const DocTypeName &docTypeName,
@@ -225,7 +223,7 @@ public:
      */
     static DocumentDB::SP
     create(const vespalib::string &baseDir,
-           DocumentDBConfig::SP currentSnapshot,
+           DocumentDBConfigSP currentSnapshot,
            const vespalib::string &tlsSpec,
            matching::QueryLimiter &queryLimiter,
            const DocTypeName &docTypeName,
@@ -371,8 +369,8 @@ public:
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
-    void newConfigSnapshot(DocumentDBConfig::SP snapshot);
-    void reconfigure(const DocumentDBConfig::SP & snapshot) override;
+    void newConfigSnapshot(DocumentDBConfigSP snapshot);
+    void reconfigure(const DocumentDBConfigSP & snapshot) override;
     int64_t getActiveGeneration() const;
     /*
      * Implements IDocumentSubDBOwner

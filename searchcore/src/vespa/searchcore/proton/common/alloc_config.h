@@ -21,7 +21,6 @@ class AllocConfig
 
 public:
     AllocConfig(const AllocStrategy& alloc_strategy, uint32_t redundancy, uint32_t searchable_copies);
-    AllocConfig();
     ~AllocConfig();
 
     bool operator==(const AllocConfig &rhs) const noexcept;
@@ -29,6 +28,7 @@ public:
         return !operator==(rhs);
     }
     AllocStrategy make_alloc_strategy(SubDbType sub_db_type) const;
+    static AllocConfig makeDefault() { return AllocConfig(AllocStrategy(), 1, 1); }
 };
 
 }

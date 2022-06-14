@@ -10,6 +10,8 @@ import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
+
 /**
  * Class that processes reference fields and removes attribute aspect of such fields from summary.
  *
@@ -51,7 +53,7 @@ public class ReferenceFieldsProcessor extends Processor {
     }
 
     private void removeFromAttributePrefetchSummaryClass(SDField field) {
-        DocumentSummary summary = schema.getSummariesInThis().get("attributeprefetch");
+        DocumentSummary summary = schema.getSummariesInThis().get(SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
         if (summary != null) {
             summary.remove(field.getName());
         }

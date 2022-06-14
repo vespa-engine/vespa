@@ -18,19 +18,19 @@ public class StopwordTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testStopwords() {
-        assertSemantics("AND mlr:ve mlr:heard mlr:beautiful mlr:world",
+        assertSemantics("WEAKAND(100) mlr:ve mlr:heard mlr:beautiful mlr:world",
                         new Query(QueryTestCase.httpEncode("?query=i don't know if you've heard, but it's a beautiful world&default-index=mlr&tracelevel.rules=0")));
     }
 
     /** If the query contains nothing but stopwords, we won't remove them */
     @Test
     public void testOnlyStopwords() {
-        assertSemantics("mlr:the", new Query(QueryTestCase.httpEncode("?query=the the&default-index=mlr&tracelevel.rules=0")));
+        assertSemantics("WEAKAND(100) mlr:the", new Query(QueryTestCase.httpEncode("?query=the the&default-index=mlr&tracelevel.rules=0")));
     }
 
     @Test
     public void testStopwordsInPhrase() {
-        assertSemantics("AND mlr:\"ve heard\" mlr:beautiful mlr:world",
+        assertSemantics("WEAKAND(100) mlr:\"ve heard\" mlr:beautiful mlr:world",
                         new Query(QueryTestCase.httpEncode("?query=\"i don't know if you've heard\", but it's a beautiful world&default-index=mlr&tracelevel.rules=0")));
     }
 

@@ -406,7 +406,6 @@
     "superClass": "java.lang.Object",
     "interfaces": [
       "java.lang.Cloneable",
-      "java.io.Serializable",
       "java.lang.Comparable"
     ],
     "attributes": [
@@ -1242,7 +1241,6 @@
       "public abstract java.lang.String toString()",
       "public abstract java.lang.String toString(boolean, boolean)",
       "public abstract java.lang.String toAbbreviatedString()",
-      "public java.lang.String toShortString()",
       "public static java.lang.String toStandardString(com.yahoo.tensor.Tensor, boolean, boolean, long)",
       "public static java.lang.String valueToString(com.yahoo.tensor.Tensor, boolean, long)",
       "public abstract boolean equals(java.lang.Object)",

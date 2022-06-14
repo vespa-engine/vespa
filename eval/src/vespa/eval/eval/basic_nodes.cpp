@@ -7,6 +7,7 @@
 #include "simple_value.h"
 #include "fast_value.h"
 #include "node_tools.h"
+#include <vespa/vespalib/util/stringfmt.h>
 
 namespace vespalib::eval::nodes {
 
@@ -22,6 +23,26 @@ struct Frame {
 
 } // namespace vespalib::eval::nodes::<unnamed>
 
+vespalib::string
+Number::dump(DumpContext &) const {
+    return make_string("%g", _value);
+}
+
+vespalib::string
+If::dump(DumpContext &ctx) const {
+    vespalib::string str;
+    str += "if(";
+    str += _cond->dump(ctx);
+    str += ",";
+    str += _true_expr->dump(ctx);
+    str += ",";
+    str += _false_expr->dump(ctx);
+    if (_p_true != 0.5) {
+        str += make_string(",%g", _p_true);
+    }
+    str += ")";
+    return str;
+}
 double
 Node::get_const_double_value() const
 {

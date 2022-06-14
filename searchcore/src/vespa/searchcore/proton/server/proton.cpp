@@ -15,6 +15,7 @@
 #include "resource_usage_explorer.h"
 #include "searchhandlerproxy.h"
 #include "simpleflush.h"
+#include "documentdbconfig.h"
 
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -46,6 +47,7 @@
 #include <vespa/vespalib/util/random.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/fastos/file.h>
 #ifdef __linux__
 #include <malloc.h>
 #endif
@@ -398,7 +400,7 @@ Proton::addDocumentDB(const DocTypeName &docTypeName,
                       document::BucketSpace bucketSpace,
                       const vespalib::string &configId,
                       const BootstrapConfig::SP &bootstrapConfig,
-                      const DocumentDBConfig::SP &documentDBConfig,
+                      const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
     try {
@@ -586,7 +588,7 @@ DocumentDB::SP
 Proton::addDocumentDB(const document::DocumentType &docType,
                       document::BucketSpace bucketSpace,
                       const BootstrapConfig::SP &bootstrapConfig,
-                      const DocumentDBConfig::SP &documentDBConfig,
+                      const std::shared_ptr<DocumentDBConfig> &documentDBConfig,
                       InitializeThreads initializeThreads)
 {
     const ProtonConfig &config(bootstrapConfig->getProtonConfig());
@@ -599,7 +601,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     }
 
     vespalib::string db_dir = config.basedir + "/documents/" + docTypeName.toString();
-    vespalib::mkdir(db_dir, false); // Assume parent is created.
+    std::filesystem::create_directory(std::filesystem::path(db_dir)); // Assume parent is created.
     auto config_store = std::make_unique<FileConfigManager>(_transport, db_dir + "/config",
                                                             documentDBConfig->getConfigId(), docTypeName.getName());
     config_store->setProtonConfig(bootstrapConfig->getProtonConfigSP());
@@ -758,15 +760,11 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
         auto dm_metrics = usageFilter.get_metrics();
         metrics.resourceUsage.disk.set(dm_metrics.non_transient_disk_usage());
-        metrics.resourceUsage.diskUtilization.set(dm_metrics.total_disk_utilization());
-        metrics.resourceUsage.transient_disk.set(dm_metrics.transient_disk_usage());
         metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
         metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
         metrics.resourceUsage.disk_usage.transient.set(dm_metrics.transient_disk_usage());
 
         metrics.resourceUsage.memory.set(dm_metrics.non_transient_memory_usage());
-        metrics.resourceUsage.memoryUtilization.set(dm_metrics.total_memory_utilization());
-        metrics.resourceUsage.transient_memory.set(dm_metrics.transient_memory_usage());
         metrics.resourceUsage.memory_usage.total.set(dm_metrics.total_memory_usage());
         metrics.resourceUsage.memory_usage.total_util.set(dm_metrics.total_memory_utilization());
         metrics.resourceUsage.memory_usage.transient.set(dm_metrics.transient_memory_usage());

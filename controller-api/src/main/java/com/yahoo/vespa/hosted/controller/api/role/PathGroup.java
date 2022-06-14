@@ -55,6 +55,9 @@ enum PathGroup {
     tenantInfo(Matcher.tenant,
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/info/",
+               "/application/v4/tenant/{tenant}/info/profile",
+               "/application/v4/tenant/{tenant}/info/billing",
+               "/application/v4/tenant/{tenant}/info/contacts",
                "/application/v4/tenant/{tenant}/notifications",
                "/routing/v1/status/tenant/{tenant}/{*}"),
 
@@ -62,7 +65,10 @@ enum PathGroup {
                "/application/v4/tenant/{tenant}/key/"),
 
     tenantArchiveAccess(Matcher.tenant,
-                       "/application/v4/tenant/{tenant}/archive-access"),
+                       "/application/v4/tenant/{tenant}/archive-access",
+                       "/application/v4/tenant/{tenant}/archive-access/aws",
+                       "/application/v4/tenant/{tenant}/archive-access/gcp"),
+
 
     billingToken(Matcher.tenant,
                  "/billing/v1/tenant/{tenant}/token"),
@@ -228,7 +234,8 @@ enum PathGroup {
 
     /** Paths used for invoice management */
     hostedAccountant("/billing/v1/invoice/{*}",
-                     "/billing/v1/billing"),
+                     "/billing/v1/billing",
+                     "/billing/v1/plans"),
 
     /** Path used for listing endpoint certificate request and re-requesting endpoint certificates */
     endpointCertificates("/endpointcertificates/"),

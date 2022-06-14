@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.VipStatusConfig;
 import com.yahoo.container.jdisc.state.StateMonitor;
@@ -54,7 +54,7 @@ public class VipStatus {
 
     /** For testing */
     public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus) {
-        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, StateMonitor.createForTesting());
+        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, StateMonitor.createForTesting(), new NullMetric());
     }
 
     @Inject
@@ -69,24 +69,6 @@ public class VipStatus {
         initiallyInRotation = vipStatusConfig.initiallyInRotation();
         clustersStatus.setClusters(dispatchers.searchcluster().stream().map(c -> c.name()).collect(Collectors.toSet()));
         updateCurrentlyInRotation();
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public VipStatus(QrSearchersConfig dispatchers,
-                     VipStatusConfig vipStatusConfig,
-                     ClustersStatus clustersStatus,
-                     StateMonitor healthState) {
-        this(dispatchers, vipStatusConfig, clustersStatus, healthState, new NullMetric());
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public VipStatus(QrSearchersConfig dispatchers, ClustersStatus clustersStatus, StateMonitor healthState) {
-        this(dispatchers, new VipStatusConfig.Builder().build(), clustersStatus, healthState);
-    }
-
-    @Deprecated // TODO: Remove on Vespa 8
-    public VipStatus(QrSearchersConfig dispatchers, VipStatusConfig ignored, ClustersStatus clustersStatus) {
-        this(dispatchers, clustersStatus);
     }
 
     /**
@@ -112,18 +94,6 @@ public class VipStatus {
     public void removeFromRotation(String clusterIdentifier) {
         clustersStatus.setDown(clusterIdentifier);
         updateCurrentlyInRotation();
-    }
-
-    /** @deprecated use addToRotation(String) instead  */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void addToRotation(Object clusterIdentifier) {
-        addToRotation((String) clusterIdentifier);
-    }
-
-    /** @deprecated use removeFromRotation(String) instead  */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void removeFromRotation(Object clusterIdentifier) {
-        removeFromRotation((String) clusterIdentifier);
     }
 
     private void updateCurrentlyInRotation() {

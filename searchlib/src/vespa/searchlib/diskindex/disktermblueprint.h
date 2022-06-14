@@ -18,7 +18,6 @@ private:
     DiskIndex::LookupResult::UP      _lookupRes;
     bool                             _useBitVector;
     bool                             _fetchPostingsDone;
-    bool                             _hasEquivParent;
     index::PostingListHandle::UP     _postingHandle;
     BitVector::UP                    _bitVector;
 

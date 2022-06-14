@@ -1,7 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.configmodel.producers;
 
-import com.yahoo.document.*;
+import com.yahoo.document.ArrayDataType;
+import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.MapDataType;
+import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.config.DocumenttypesConfig;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
@@ -12,7 +19,15 @@ import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.documentmodel.VespaDocumentType;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import java.util.*;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author baldersheim
@@ -37,8 +52,7 @@ public class DocumentTypes {
     }
 
     static private <T> List<T> sortedList(Collection<T> unsorted, Comparator<T> cmp) {
-        var list = new ArrayList<T>();
-        list.addAll(unsorted);
+        var list = new ArrayList<>(unsorted);
         list.sort(cmp);
         return list;
     }
@@ -58,8 +72,8 @@ public class DocumentTypes {
     }
 
     static private class IdxMap {
-        private Map<Integer, Boolean> doneMap = new HashMap<>();
-        private Map<Object, Integer> map = new IdentityHashMap<>();
+        private final Map<Integer, Boolean> doneMap = new HashMap<>();
+        private final Map<Object, Integer> map = new IdentityHashMap<>();
         void add(Object someType) {
             assert(someType != null);
             // the adding of "10000" here is mostly to make it more
@@ -153,7 +167,6 @@ public class DocumentTypes {
         builder.annotationtype(annBuilder);
     }
 
-    @SuppressWarnings("deprecation")
     private void docTypeBuildAnyType(DataType type, DocumenttypesConfig.Doctype.Builder documentBuilder, IdxMap indexMap) {
         if (indexMap.isDone(type)) {
             return;
@@ -167,9 +180,7 @@ public class DocumentTypes {
             return;
         }
         indexMap.setDone(type);
-        if (type instanceof TemporaryStructuredDataType) {
-            throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
-        } else if (type instanceof TemporaryUnknownType) {
+        if (type instanceof TemporaryUnknownType) {
             throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());
         } else if (type instanceof OwnedTemporaryType) {
             throw new IllegalArgumentException("Can not create config for temporary data type: " + type.getName());

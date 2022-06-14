@@ -1,0 +1,99 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+DocProc = element docproc {
+    DocProcV3
+}
+
+SchemaMapping = element map {
+  element field {
+    attribute doctype { text }?,
+    attribute in-document { text },
+    attribute in-processor { text }
+  }+
+}
+
+
+
+
+#Version 3 config:
+
+DocProcV3 = attribute version { "3.0" },
+   (ClusterV3* &
+   OuterDocprocChainsV3? &
+   GenericConfig*
+)
+
+DocprocClusterAttributes =   attribute compressdocuments { xsd:boolean }? &
+  attribute numnodesperclient { xsd:positiveInteger }? &
+  attribute preferlocalnode { xsd:boolean }? &
+  attribute maxmessagesinqueue { xsd:nonNegativeInteger }? &
+  attribute maxqueuebytesize { xsd:string { minLength = "1" } }? &
+  attribute maxqueuewait { xsd:positiveInteger }? &
+  attribute maxconcurrentfactor { xsd:double { minExclusive = "0.0" maxExclusive = "1.0" } }? &
+  attribute documentexpansionfactor { xsd:double { minExclusive = "0.0" } }? &
+  attribute containercorememory { xsd:nonNegativeInteger }?
+
+ClusterV3 = element cluster {
+  attribute name { xsd:NCName } &
+  DocprocClusterAttributes? &
+
+  element nodes {
+    Resources? &
+    attribute jvmargs { text }? &
+    attribute preload { text }? &
+    element node {
+      GenericConfig* &
+      service.attlist &
+      attribute maxmessagesinqueue { xsd:nonNegativeInteger }? &
+      attribute maxqueuebytesize { xsd:string { minLength = "1" } }? &
+      attribute maxqueuewait { xsd:positiveInteger }?
+    }+
+  } &
+  GenericConfig* &
+  SchemaMapping? &
+  Component* &
+  Handler* &
+  DocprocChainsV3?
+}
+
+DocprocChainsV3 =
+    element docprocchains {
+        DocumentProcessorV3* &
+        DocprocChainV3* &
+        GenericConfig*
+   }
+
+OuterDocprocChainsV3 =
+    element docprocchains {
+        DocumentProcessorV3* &
+        DocprocChainV3*
+   }
+
+DocprocChainV3 =
+    element docprocchain {
+        DocprocChainV3Contents
+    }
+
+DocprocChainV3Contents = attribute name { xsd:NCName }? &
+        ComponentId &
+        SchemaMapping? &
+        DocprocChainInheritance &
+        attribute documentprocessors { text }? &
+        DocumentProcessorV3* &
+        Phase* &
+        GenericConfig*
+
+
+DocprocChainInheritance =
+    attribute inherits { text }? &
+    attribute excludes { text }? &
+    element inherits {
+        element docprocchain { ComponentSpec }* &
+        element exclude { ComponentSpec }*
+    }?
+
+DocumentProcessorV3 =
+    element documentprocessor {
+        BundleSpec &
+        SchemaMapping? &
+        GenericSearcherOrDocumentProcessor
+    }

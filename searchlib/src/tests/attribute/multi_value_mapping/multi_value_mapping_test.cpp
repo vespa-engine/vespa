@@ -3,6 +3,7 @@
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.hpp>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
+#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -49,7 +50,7 @@ class MyAttribute : public search::NotImplementedAttribute
 
 public:
     MyAttribute(MvMapping &mvMapping)
-        : NotImplementedAttribute("test", AttributeVector::Config()),
+        : NotImplementedAttribute("test"),
           _mvMapping(mvMapping)
     {}
     virtual bool addDoc(DocId &doc) override {

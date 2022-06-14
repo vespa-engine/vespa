@@ -2,7 +2,6 @@
 package com.yahoo.jdisc;
 
 import com.google.inject.ConfigurationException;
-import com.google.inject.Key;
 import com.google.inject.ProvisionException;
 import com.yahoo.jdisc.application.Application;
 import com.yahoo.jdisc.application.BindingSet;
@@ -39,20 +38,6 @@ public interface Container extends SharedResource, Timer {
      * @return The matching RequestHandler, or null if there is no match.
      */
     RequestHandler resolveHandler(Request request);
-
-    /**
-     * Returns the appropriate instance for the given injection key. When feasible, avoid using this method in favor
-     * of having Guice inject your dependencies ahead of time.
-     *
-     * @param key  The key of the instance to return.
-     * @param <T>  The class of the instance to return.
-     * @return The appropriate instance of the given class.
-     * @throws ConfigurationException If this injector cannot find or create the provider.
-     * @throws ProvisionException     If there was a runtime failure while providing an instance.
-     * @deprecated Use {@link #getInstance(Class)} instead.
-     */
-    @Deprecated(forRemoval = true, since = "7") // TODO Vespa 8 remove
-    default <T> T getInstance(Key<T> key) { throw new UnsupportedOperationException(); }
 
     /**
      * Returns the appropriate instance for the given injection type. When feasible, avoid using this method in

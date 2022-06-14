@@ -16,35 +16,17 @@ import static com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 /**
  * Information about a particular Vespa version.
  * VespaVersions are identified by their version number and ordered by increasing version numbers.
- *
- * This is immutable.
  * 
  * @author bratseth
  */
-public class VespaVersion implements Comparable<VespaVersion> {
-
-    private final Version version;
-    private final String releaseCommit;
-    private final Instant committedAt;
-    private final boolean isControllerVersion;
-    private final boolean isSystemVersion;
-    private final boolean isReleased;
-    private final List<NodeVersion> nodeVersions;
-    private final Confidence confidence;
-
-    public VespaVersion(Version version, String releaseCommit, Instant committedAt,
-                        boolean isControllerVersion, boolean isSystemVersion, boolean isReleased,
-                        List<NodeVersion> nodeVersions,
-                        Confidence confidence) {
-        this.version = version;
-        this.releaseCommit = releaseCommit;
-        this.committedAt = committedAt;
-        this.isControllerVersion = isControllerVersion;
-        this.isSystemVersion = isSystemVersion;
-        this.isReleased = isReleased;
-        this.nodeVersions = nodeVersions;
-        this.confidence = confidence;
-    }
+public record VespaVersion(Version version,
+                           String releaseCommit,
+                           Instant committedAt,
+                           boolean isControllerVersion,
+                           boolean isSystemVersion,
+                           boolean isReleased,
+                           List<NodeVersion> nodeVersions,
+                           Confidence confidence) implements Comparable<VespaVersion> {
 
     public static Confidence confidenceFrom(DeploymentStatistics statistics, Controller controller) {
         InstanceList all = InstanceList.from(controller.jobController().deploymentStatuses(ApplicationList.from(controller.applications().asList())

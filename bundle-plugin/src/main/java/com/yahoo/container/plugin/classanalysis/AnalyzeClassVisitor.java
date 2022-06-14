@@ -32,7 +32,7 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     private final Optional<ArtifactVersion> defaultExportPackageVersion;
 
     AnalyzeClassVisitor(ArtifactVersion defaultExportPackageVersion) {
-        super(Opcodes.ASM7);
+        super(Opcodes.ASM9);
         this.defaultExportPackageVersion = Optional.ofNullable(defaultExportPackageVersion);
     }
 
@@ -103,7 +103,7 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
     }
 
     private AnnotationVisitor visitExportPackage() {
-        return new AnnotationVisitor(Opcodes.ASM7) {
+        return new AnnotationVisitor(Opcodes.ASM9) {
             private int major = defaultExportPackageVersion.map(ArtifactVersion::getMajorVersion)
                     .orElse(defaultVersionValue("major"));
             private int minor = defaultExportPackageVersion.map(ArtifactVersion::getMinorVersion)
@@ -160,7 +160,9 @@ class AnalyzeClassVisitor extends ClassVisitor implements ImportCollector {
         if (ExportPackage.class.getName().equals(Type.getType(desc).getClassName())) {
             return visitExportPackage();
         } else {
-            addImportWithTypeDesc(desc);
+            if (visible) {
+                addImportWithTypeDesc(desc);
+            }
             return Analyze.visitAnnotationDefault(this);
         }
     }

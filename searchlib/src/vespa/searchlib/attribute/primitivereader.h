@@ -13,7 +13,7 @@ namespace search {
     public:
         PrimitiveReader(AttributeVector &attr)
             : ReaderBase(attr),
-              _datReader(_datFile.file())
+              _datReader(&_datFile.file())
         { }
 
         virtual ~PrimitiveReader() { }

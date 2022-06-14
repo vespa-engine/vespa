@@ -33,10 +33,10 @@ void
 RangeBucketPreDefFunctionNode::onPrepareResult()
 {
     // Use the type of the predefined buckets for the null bucket
-    const ResultNode& resultNode = _predef->empty() ? getArg().getResult() : _predef->get(0);
+    const ResultNode& resultNode = _predef->empty() ? *getArg().getResult() : _predef->get(0);
     _nullResult = &resultNode.getNullBucket();
 
-    const vespalib::Identifiable::RuntimeClass & cInfo(getArg().getResult().getClass());
+    const vespalib::Identifiable::RuntimeClass & cInfo(getArg().getResult()->getClass());
     if (cInfo.inherits(ResultNodeVector::classId)) {
         setResultType(ResultNode::UP(_predef->clone()));
         static_cast<ResultNodeVector &>(updateResult()).clear();
@@ -52,7 +52,7 @@ bool
 RangeBucketPreDefFunctionNode::onExecute() const
 {
     getArg().execute();
-    const ResultNode * result = _handler->handle(getArg().getResult());
+    const ResultNode * result = _handler->handle(*getArg().getResult());
     _result = result ? result : _nullResult;
     return true;
 }

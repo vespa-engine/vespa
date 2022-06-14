@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains;
 
-import com.yahoo.config.application.Xml;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
@@ -26,16 +25,10 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
         extends VespaDomBuilder.DomConfigProducerBuilder<CHAINS> {
 
     private final Collection<ComponentType<COMPONENT>> allowedComponentTypes;
-    private final String appPkgChainsDir;
-    private final Element outerChainsElem;
 
-    protected DomChainsBuilder(Element outerChainsElem,
-                               Collection<ComponentType<COMPONENT>> allowedComponentTypes,
-                               String appPkgChainsDir) {
+    protected DomChainsBuilder(Collection<ComponentType<COMPONENT>> allowedComponentTypes) {
 
-        this.outerChainsElem = outerChainsElem;
         this.allowedComponentTypes = new ArrayList<>(allowedComponentTypes);
-        this.appPkgChainsDir = appPkgChainsDir;
     }
 
     protected abstract CHAINS newChainsInstance(AbstractConfigProducer<?> parent);
@@ -58,12 +51,7 @@ class DomChainsBuilder<COMPONENT extends ChainedComponent<?>, CHAIN extends Chai
 
     private List<Element> allChainElements(DeployState deployState, Element chainsElement) {
         List<Element> chainsElements = new ArrayList<>();
-        if (outerChainsElem != null)
-            chainsElements.add(outerChainsElem);
         chainsElements.add(chainsElement);
-
-        if (appPkgChainsDir != null)
-            chainsElements.addAll(Xml.allElemsFromPath(deployState.getApplicationPackage(), appPkgChainsDir));
 
         return chainsElements;
     }

@@ -5,6 +5,8 @@
 #include "collectiontype.h"
 #include "basictype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
+#include <vespa/vespalib/datastore/atomic_entry_ref.h>
+#include <vespa/vespalib/util/arrayref.h>
 #include <ostream>
 #include <vector>
 
@@ -73,6 +75,7 @@ public:
     using WeightedEnum = WeightedType<EnumHandle>;
     using WeightedConstChar = WeightedType<const char *>;
     using WeightedString = WeightedType<vespalib::string>;
+    using EnumRefs = vespalib::ConstArrayRef<vespalib::datastore::AtomicEntryRef>;
 
     /**
      * Returns the name of this attribute vector.
@@ -363,6 +366,11 @@ public:
         return getBasicType() == BasicType::STRING;
     }
 
+
+    virtual bool isPredicateType() const { return getBasicType() == BasicType::PREDICATE; }
+    virtual bool isTensorType() const { return getBasicType() == BasicType::TENSOR; }
+    virtual bool isReferenceType() const { return getBasicType() == BasicType::REFERENCE; }
+
     /**
      * Returns whether this is a multi value attribute.
      **/
@@ -420,7 +428,7 @@ public:
      * @param bc An optional converter to use.
      * @return The number of bytes serialized, -1 if not enough space.
      */
-    long serializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc=NULL) const {
+    long serializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc=nullptr) const {
         return onSerializeForAscendingSort(doc, serTo, available, bc);
     }
     /**
@@ -432,7 +440,7 @@ public:
      * @param bc An optional converter to use.
      * @return The number of bytes serialized, -1 if not enough space.
      */
-    long serializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc=NULL) const {
+    long serializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc=nullptr) const {
         return onSerializeForDescendingSort(doc, serTo, available, bc);
     }
 
@@ -447,6 +455,15 @@ public:
      * @return true if value is undefined.
      */
     virtual bool isUndefined(DocId doc) const { (void) doc; return false; }
+
+    /**
+     * Will return a readonly view of any single value enumeration. If not applicable an empty one will be returned.
+     *
+     * @return returns a readonly enumrefs view with entries equal to number of docs committed.
+     */
+    virtual EnumRefs make_enum_read_view() const noexcept {
+        return EnumRefs();
+    }
 
 private:
     virtual long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const = 0;

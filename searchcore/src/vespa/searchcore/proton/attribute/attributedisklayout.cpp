@@ -5,6 +5,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
+#include <filesystem>
 
 namespace proton {
 
@@ -13,7 +14,7 @@ AttributeDiskLayout::AttributeDiskLayout(const vespalib::string &baseDir, Privat
       _mutex(),
       _dirs()
 {
-    vespalib::mkdir(_baseDir, false);
+    std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::File::sync(vespalib::dirname(_baseDir));
 }
 

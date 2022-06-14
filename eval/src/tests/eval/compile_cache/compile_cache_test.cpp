@@ -270,9 +270,9 @@ struct CompileCheck : test::EvalSpec::EvalTest {
         for (const Entry &entry: list) {
             auto fun = entry.fun->get().get_function();
             if (std::isnan(entry.expect)) {
-                EXPECT_TRUE(std::isnan(fun(&entry.params[0])));
+                EXPECT_TRUE(std::isnan(fun(entry.params.data())));
             } else {
-                EXPECT_EQUAL(fun(&entry.params[0]), entry.expect);
+                EXPECT_EQUAL(fun(entry.params.data()), entry.expect);
             }
         }
     }

@@ -68,7 +68,7 @@ import static org.junit.Assert.fail;
 public class TenantApplicationsTest {
 
     private static final TenantName tenantName = TenantName.from("tenant");
-    private static final Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+    private static final Version vespaVersion = VespaModelFactory.createTestFactory().version();
 
     private Curator curator;
     private CuratorFramework curatorFramework;

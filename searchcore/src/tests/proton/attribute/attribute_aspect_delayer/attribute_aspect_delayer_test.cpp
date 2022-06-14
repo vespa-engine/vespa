@@ -24,16 +24,11 @@ using vespa::config::search::SummaryConfigBuilder;
 using vespa::config::search::SummarymapConfig;
 using vespa::config::search::SummarymapConfigBuilder;
 using search::attribute::Config;
-using search::attribute::BasicType;
-using search::attribute::CollectionType;
 
-namespace std
-{
+namespace std {
 
-ostream &operator<<(ostream &os, const SummarymapConfig::Override &override)
-{
-    os << "{field=" << override.field << ", command=" << override.command << ", arguments=" << override.arguments << "}";
-    return os;
+ostream &operator<<(ostream &os, const SummarymapConfig::Override &override) {
+    return os << "{field=" << override.field << ", command=" << override.command << ", arguments=" << override.arguments << "}";
 }
 
 }

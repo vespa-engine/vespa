@@ -134,7 +134,7 @@ public final class JobType implements Comparable<JobType> {
     }
 
     public static List<JobType> allIn(ZoneRegistry zones) {
-        return zones.zones().controllerUpgraded().zones().stream()
+        return zones.zones().reachable().zones().stream()
                     .flatMap(zone -> zone.getEnvironment().isProduction() ? Stream.of(deploymentTo(zone.getId()), productionTestOf(zone.getId()))
                                                                           : Stream.of(deploymentTo(zone.getId())))
                     .sorted(naturalOrder())

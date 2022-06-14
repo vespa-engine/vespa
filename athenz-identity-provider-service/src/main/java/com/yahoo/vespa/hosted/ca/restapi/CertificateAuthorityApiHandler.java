@@ -7,8 +7,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.jdisc.http.server.jetty.RequestUtils;
-
-import java.util.logging.Level;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
@@ -16,12 +14,12 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
-import com.yahoo.slime.SlimeUtils;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceConfirmation;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
 import com.yahoo.vespa.hosted.ca.Certificates;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
@@ -38,6 +36,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.stream.Stream;
 
 /**
@@ -68,7 +67,7 @@ public class CertificateAuthorityApiHandler extends ThreadedHttpRequestHandler {
         this.secretStore = secretStore;
         this.certificates = certificates;
         this.caPrivateKeySecretName = athenzProviderServiceConfig.secretName();
-        this.caCertificateSecretName = athenzProviderServiceConfig.domain() + ".ca.cert";
+        this.caCertificateSecretName = athenzProviderServiceConfig.caCertSecretName();
         this.instanceValidator = instanceValidator;
     }
 

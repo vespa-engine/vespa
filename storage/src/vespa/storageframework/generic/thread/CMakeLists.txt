@@ -2,7 +2,7 @@
 vespa_add_library(storageframework_thread OBJECT
     SOURCES
     thread.cpp
-    threadpool.cpp
+    thread_properties.cpp
     tickingthread.cpp
     DEPENDS
 )

@@ -25,9 +25,8 @@ public:
     using EnumVector = IEnumStore::EnumVector;
     using LoadedValueType = const char*;
     using LoadedVector = NoLoadedVector;
-    using OffsetVector = vespalib::Array<uint32_t>;
+    using OffsetVector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(StringAttribute);
     bool append(DocId doc, const vespalib::string & v, int32_t weight) {
         return AttributeVector::append(_changes, doc, StringChangeData(v), weight);
     }
@@ -73,7 +72,7 @@ protected:
 
     vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 
-    bool get_match_is_cased() const noexcept { return getConfig().get_match() == attribute::Config::Match::CASED; }
+    bool get_match_is_cased() const noexcept;
 private:
     virtual void load_posting_lists(LoadedVector& loaded);
     virtual void load_enum_store(LoadedVector& loaded);

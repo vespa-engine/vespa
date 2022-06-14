@@ -46,7 +46,7 @@ FlagAttributeT<B>::FlagAttributeT(const vespalib::string & baseFileName, const A
     _bitVectorHolder(),
     _bitVectorStore(256),
     _bitVectors(256),
-    _bitVectorSize(cfg.getGrowStrategy().getDocsInitialCapacity())
+    _bitVectorSize(cfg.getGrowStrategy().getInitialCapacity())
 {
 }
 
@@ -211,7 +211,7 @@ void
 FlagAttributeT<B>::resizeBitVectors(uint32_t neededSize)
 {
     const GrowStrategy & gs = this->getConfig().getGrowStrategy();
-    uint32_t newSize = neededSize + (neededSize * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
+    uint32_t newSize = neededSize + (neededSize * gs.getGrowFactor()) + gs.getGrowDelta();
     for (size_t i(0), m(_bitVectors.size()); i < m; i++) {
         BitVector *bv = _bitVectors[i].load_relaxed();
         if (bv != nullptr) {

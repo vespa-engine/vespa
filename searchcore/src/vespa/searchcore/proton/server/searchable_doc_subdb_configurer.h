@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "documentdbconfigmanager.h"
 #include "isummaryadapter.h"
 #include "matchers.h"
 #include "matchview.h"
@@ -23,6 +22,10 @@
 #include <vespa/vespalib/util/varholder.h>
 #include <vespa/searchcore/proton/reference/i_document_db_reference_resolver.h>
 
+namespace proton::matching {
+    class RankingExpressions;
+    class OnnxModels;
+}
 namespace proton {
 
 struct IDocumentDBReferenceResolver;
@@ -87,7 +90,7 @@ public:
     IReprocessingInitializer::UP
     reconfigure(const DocumentDBConfig &newConfig,
                 const DocumentDBConfig &oldConfig,
-                const AttributeCollectionSpec &attrSpec,
+                AttributeCollectionSpec && attrSpec,
                 const ReconfigParams &params,
                 IDocumentDBReferenceResolver &resolver);
 };

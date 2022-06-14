@@ -102,6 +102,7 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
+
     @Rule
     public TemporaryFolder applicationFolder = new TemporaryFolder();
 
@@ -111,22 +112,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         PlatformBundlesConfig config = root.getConfig(PlatformBundlesConfig.class, "default");
         assertTrue(config.bundlePaths().contains(ContainerModelEvaluation.MODEL_EVALUATION_BUNDLE_FILE.toString()));
         assertTrue(config.bundlePaths().contains(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE.toString()));
-    }
-
-    @Test
-    public void deprecated_jdisc_tag_is_allowed() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<jdisc version='1.0'>",
-                nodesXml,
-                "</jdisc>" );
-        TestLogger logger = new TestLogger();
-        createModel(root, logger, clusterElem);
-        AbstractService container = (AbstractService)root.getProducer("jdisc/container.0");
-        assertNotNull(container);
-
-        assertFalse(logger.msgs.isEmpty());
-        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
-        assertEquals("'jdisc' is deprecated as tag name. Use 'container' instead.", logger.msgs.get(0).getSecond());
     }
 
     @Test
@@ -290,10 +275,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     public void handler_bindings_are_included_in_discBindings_config() {
         createClusterWithJDiscHandler();
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString("{discHandler}"));
         assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
         assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
-        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"http://*/clientBinding\""));
     }
 
     @Test
@@ -308,7 +291,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <handler id='discHandler'>",
                 "    <binding>http://*/binding0</binding>",
                 "    <binding>http://*/binding1</binding>",
-                "    <clientBinding>http://*/clientBinding</clientBinding>",
                 "  </handler>",
                 "</container>");
 
@@ -331,35 +313,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
         assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
         assertThat(discBindingsConfig, not(containsString("/processing/*")));
-    }
-
-    @Test
-    public void clientProvider_bindings_are_included_in_discBindings_config() {
-        createModelWithClientProvider();
-        String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString("{discClient}"));
-        assertThat(discBindingsConfig, containsString(".clientBindings[0] \"http://*/binding0\""));
-        assertThat(discBindingsConfig, containsString(".clientBindings[1] \"http://*/binding1\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/serverBinding\""));
-    }
-
-    @Test
-    public void clientProviders_are_included_in_components_config() {
-        createModelWithClientProvider();
-        assertThat(componentsConfig().toString(), containsString(".id \"discClient\""));
-    }
-
-    private void createModelWithClientProvider() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>" +
-                "  <client id='discClient'>" +
-                "    <binding>http://*/binding0</binding>" +
-                "    <binding>http://*/binding1</binding>" +
-                "    <serverBinding>http://*/serverBinding</serverBinding>" +
-                "  </client>" +
-                "</container>" );
-
-        createModel(root, clusterElem);
     }
 
     @Test
@@ -448,17 +401,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  <handler id='myHandler'>",
                 "    <component id='injected' />",
                 "  </handler>",
-                "  <client id='myClient'>",  // remember, a client is also a request handler
-                "    <component id='injected' />",
-                "  </client>",
                 "</container>");
 
         createModel(root, clusterElem);
         Component<?,?> handler = getContainerComponent("default", "myHandler");
         assertThat(handler.getInjectedComponentIds(), hasItem("injected@myHandler"));
-
-        Component<?,?> client = getContainerComponent("default", "myClient");
-        assertThat(client.getInjectedComponentIds(), hasItem("injected@myClient"));
     }
 
     @Test
@@ -502,53 +449,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .build();
         VespaModel model = new VespaModel(applicationPackage);
         assertEquals(1, model.hostSystem().getHosts().size());
-    }
-
-    @Test
-    public void http_aliases_are_stored_on_cluster_and_on_service_properties() {
-        Element clusterElem = DomBuilderTest.parse(
-                        "<container id='default' version='1.0'>",
-                        "  <aliases>",
-                        "    <service-alias>service1</service-alias>",
-                        "    <service-alias>service2</service-alias>",
-                        "    <endpoint-alias>foo1.bar1.com</endpoint-alias>",
-                        "    <endpoint-alias>foo2.bar2.com</endpoint-alias>",
-                        "  </aliases>",
-                        "  <nodes>",
-                        "    <node hostalias='host1' />",
-                        "  </nodes>",
-                        "</container>");
-
-        createModel(root, clusterElem);
-        assertEquals(getContainerCluster("default").serviceAliases().get(0), "service1");
-        assertEquals(getContainerCluster("default").endpointAliases().get(0), "foo1.bar1.com");
-        assertEquals(getContainerCluster("default").serviceAliases().get(1), "service2");
-        assertEquals(getContainerCluster("default").endpointAliases().get(1), "foo2.bar2.com");
-
-        assertEquals(getContainerCluster("default").getContainers().get(0).getServicePropertyString("servicealiases"), "service1,service2");
-        assertEquals(getContainerCluster("default").getContainers().get(0).getServicePropertyString("endpointaliases"), "foo1.bar1.com,foo2.bar2.com");
-    }
-
-    @Test
-    public void http_aliases_are_only_honored_in_prod_environment() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>",
-                "  <aliases>",
-                "    <service-alias>service1</service-alias>",
-                "    <endpoint-alias>foo1.bar1.com</endpoint-alias>",
-                "  </aliases>",
-                "  <nodes>",
-                "    <node hostalias='host1' />",
-                "  </nodes>",
-                "</container>");
-
-        DeployState deployState = new DeployState.Builder().zone(new Zone(Environment.dev, RegionName.from("us-east-1"))).build();
-        createModel(root, deployState, null, clusterElem);
-        assertEquals(0, getContainerCluster("default").serviceAliases().size());
-        assertEquals(0, getContainerCluster("default").endpointAliases().size());
-
-        assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("servicealiases"));
-        assertNull(getContainerCluster("default").getContainers().get(0).getServicePropertyString("endpointaliases"));
     }
 
     @Test
@@ -1087,11 +987,12 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         createModel(root, deployState, null, DomBuilderTest.parse(containerService));
         assertFalse(logger.msgs.isEmpty());
+        System.out.println(logger.msgs);
         assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
         assertEquals(Level.WARNING, logger.msgs.get(1).getFirst());
-        assertEquals("Element 'prod' contains deprecated attribute: 'global-service-id'. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
+        assertEquals("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
                      logger.msgs.get(0).getSecond());
-        assertEquals("Element 'region' contains deprecated attribute: 'active'. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
+        assertEquals("Element 'region' contains attribute 'active' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
                      logger.msgs.get(1).getSecond());
     }
 

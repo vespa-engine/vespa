@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
+#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.queryeval.nearest_neighbor_blueprint");
@@ -171,8 +172,12 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 {
     assert(tfmda.size() == 1);
     fef::TermFieldMatchData &tfmd = *tfmda[0]; // always search in only one field
-    if (! _found_hits.empty()) {
+    switch (_algorithm) {
+    case Algorithm::INDEX_TOP_K_WITH_FILTER:
+    case Algorithm::INDEX_TOP_K:
         return NnsIndexIterator::create(tfmd, _found_hits, _dist_fun);
+    default:
+        ;
     }
     const Value &qT = *_query_tensor;
     return NearestNeighborIterator::create(strict, tfmd, qT, _attr_tensor,

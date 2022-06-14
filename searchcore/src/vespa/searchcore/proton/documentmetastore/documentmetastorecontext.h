@@ -27,13 +27,14 @@ private:
     IDocumentMetaStore::SP      _metaStore;
 public:
 
+    DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB);
     /**
      * Create a new context instantiating a document meta store
      * with the given name, grow strategy, and comparator.
      */
     DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
-                             const vespalib::string &name = DocumentMetaStore::getFixedName(),
-                             const search::GrowStrategy &grow = search::GrowStrategy());
+                             const vespalib::string &name,
+                             const search::GrowStrategy &grow);
     ~DocumentMetaStoreContext() override;
     /**
      * Create a new context with the given document meta store encapsulated

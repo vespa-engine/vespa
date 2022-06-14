@@ -19,6 +19,12 @@ MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const
 }
 
 template <typename B, typename T>
+MultiValueStringPostingAttributeT<B, T>::MultiValueStringPostingAttributeT(const vespalib::string & name)
+    : MultiValueStringPostingAttributeT<B, T>(name, AttributeVector::Config(AttributeVector::BasicType::STRING, attribute::CollectionType::ARRAY))
+{
+}
+
+template <typename B, typename T>
 MultiValueStringPostingAttributeT<B, T>::~MultiValueStringPostingAttributeT()
 {
     this->disableFreeLists();

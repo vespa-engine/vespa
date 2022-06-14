@@ -59,7 +59,9 @@ schema simple {
       indexing: attribute
     }
 
-    field access type byte { indexing: attribute }
+    field access type byte {
+      indexing: attribute
+    }
 
     field categories_src type string {
 
@@ -80,7 +82,7 @@ schema simple {
 
   field categoriesagain type string {
     indexing {
-      input categoriesagain_src | lowercase | normalize | index
+      input categoriesagain_src | lowercase | normalize | index;
     }
   }
 

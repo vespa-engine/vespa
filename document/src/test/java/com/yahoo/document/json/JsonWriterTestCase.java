@@ -2,6 +2,7 @@
 package com.yahoo.document.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.io.JsonStringEncoder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.ArrayDataType;
@@ -25,6 +26,7 @@ import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.internal.GeoPosType;
 import com.yahoo.document.json.readers.DocumentParseInfo;
 import com.yahoo.document.json.readers.VespaJsonDocumentReader;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.text.Utf8;
 import org.junit.After;
@@ -32,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -73,6 +76,7 @@ public class JsonWriterTestCase {
         registerSinglePositionDocumentType();
         registerMultiPositionDocumentType();
         registerTensorDocumentType();
+        registerIndexedTensorDocumentType();
         registerReferenceDocumentType();
     }
 
@@ -86,6 +90,13 @@ public class JsonWriterTestCase {
     private void registerTensorDocumentType() {
         DocumentType x = new DocumentType("testtensor");
         TensorType tensorType = new TensorType.Builder().mapped("x").mapped("y").build();
+        x.addField(new Field("tensorfield", new TensorDataType(tensorType)));
+        types.registerDocumentType(x);
+    }
+
+    private void registerIndexedTensorDocumentType() {
+        DocumentType x = new DocumentType("testindexedtensor");
+        TensorType tensorType = new TensorType.Builder().indexed("x", 3).build();
         x.addField(new Field("tensorfield", new TensorDataType(tensorType)));
         types.registerDocumentType(x);
     }
@@ -204,13 +215,11 @@ public class JsonWriterTestCase {
 
     @Test
     public void singlePosTest() throws IOException {
-        roundTripEquality("id:unittest:testsinglepos::bamf", "{ \"singlepos\": \"N60.222333;E10.12\" }");
         roundTripEquality("id:unittest:testsinglepos::bamf", "{ \"geopos\": { \"lat\": 60.222333, \"lng\": 10.12 } }");
     }
 
     @Test
     public void multiPosTest() throws IOException {
-        roundTripEquality("id:unittest:testmultipos::bamf", "{ \"multipos\": [ \"N0.0;E0.0\", \"S1.1;W1.1\", \"N10.2;W122.2\" ] }");
         roundTripEquality("id:unittest:testmultipos::bamf", "{ \"geopos\": [ {  \"lat\": -1.5, \"lng\": -1.5 }, {  \"lat\": 63.4, \"lng\": 10.4 }, { \"lat\": 0.0, \"lng\": 0.0 } ] }");
     }
 
@@ -336,7 +345,6 @@ public class JsonWriterTestCase {
     private Document readDocumentFromJson(String docId, String fields) throws IOException {
         InputStream rawDoc = new ByteArrayInputStream(asFeed(docId, fields));
 
-
         JsonReader r = new JsonReader(types, rawDoc, parserFactory);
         DocumentParseInfo raw = r.parseDocument().get();
         DocumentType docType = r.readDocumentType(raw.documentId);
@@ -430,6 +438,30 @@ public class JsonWriterTestCase {
         String docId = "id:unittest:testtensor::0";
         Document doc = readDocumentFromJson(docId, inputFields);
         assertEqualJson(asDocument(docId, outputFields), JsonWriter.toByteArray(doc));
+    }
+
+    @Test
+    public void testTensorShortForm() throws IOException {
+        DocumentType documentTypeWithTensor = types.getDocumentType("testindexedtensor");
+        String docId = "id:unittest:testindexedtensor::0";
+        Document doc = new Document(documentTypeWithTensor, docId);
+        Field tensorField = documentTypeWithTensor.getField("tensorfield");
+        Tensor tensor = Tensor.from("tensor(x[3]):[1,2,3]");
+        doc.setFieldValue(tensorField, new TensorFieldValue(tensor));
+
+        assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":3.0}]} }"),
+                        writeDocument(doc, false));
+        assertEqualJson(asDocument(docId, "{ \"tensorfield\": {\"type\":\"tensor(x[3])\", \"values\":[1.0, 2.0, 3.0] } }"),
+                        writeDocument(doc, true));
+    }
+
+    private byte[] writeDocument(Document doc, boolean tensorShortForm) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        JsonFactory factory = new JsonFactory();
+        JsonGenerator generator = factory.createGenerator(out);
+        JsonWriter writer = new JsonWriter(generator, tensorShortForm);
+        writer.write(doc);
+        return out.toByteArray();
     }
 
     @Test

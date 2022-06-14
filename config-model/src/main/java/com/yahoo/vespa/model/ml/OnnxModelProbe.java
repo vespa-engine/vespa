@@ -49,9 +49,7 @@ public class OnnxModelProbe {
                 }
             }
 
-        } catch (IllegalArgumentException | IOException | InterruptedException e) {
-            System.err.println(e.getMessage());
-        }
+        } catch (IllegalArgumentException | IOException | InterruptedException ignored) { }
 
         return outputType;
     }

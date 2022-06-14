@@ -2,6 +2,7 @@
 
 #include "index_manager_initializer.h"
 #include <vespa/vespalib/io/fileutil.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.index.indexmanagerinitializer");
@@ -40,7 +41,7 @@ void
 IndexManagerInitializer::run()
 {
     LOG(debug, "About to create proton::IndexManager with %u index field(s)", _schema.getNumIndexFields());
-    vespalib::mkdir(_baseDir, false);
+    std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::File::sync(vespalib::dirname(_baseDir));
     *_indexManager = std::make_shared<index::IndexManager>
                     (_baseDir, _indexConfig, _schema, _serialNum, _reconfigurer, _threadingService,

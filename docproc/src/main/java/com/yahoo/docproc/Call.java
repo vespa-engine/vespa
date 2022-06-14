@@ -2,6 +2,7 @@
 package com.yahoo.docproc;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.docproc.impl.DocumentOperationWrapper;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.docproc.proxy.ProxyDocument;
 import com.yahoo.docproc.proxy.ProxyDocumentUpdate;
@@ -11,7 +12,6 @@ import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.concurrent.SystemTimer;
-import com.yahoo.statistics.Statistics;
 
 import java.util.List;
 
@@ -40,14 +40,6 @@ public class Call implements Cloneable {
     public Call(DocumentProcessor processor, Metric metric) {
         this(processor, "", metric);
     }
-    @Deprecated
-    public Call(DocumentProcessor processor, Statistics manager, Metric metric) {
-        this(processor, "", metric);
-    }
-    @Deprecated
-    public Call(DocumentProcessor processor, String chainName, Statistics manager, Metric metric) {
-        this(processor, chainName, metric);
-    }
 
     public Call(DocumentProcessor processor, String chainName, Metric metric) {
         this.processor = processor;
@@ -64,8 +56,7 @@ public class Call implements Cloneable {
     @Override
     public Object clone() {
         try {
-            Call clone = (Call) super.clone();
-            return clone;
+            return super.clone();
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Will not happen");
         }
@@ -132,7 +123,6 @@ public class Call implements Cloneable {
     }
 
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private void unwrapSchemaMapping(Processing processing) {
         final List<DocumentOperation> documentOperations = processing.getDocumentOperations();
 

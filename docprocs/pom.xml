@@ -5,12 +5,12 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>docprocs</artifactId>
   <packaging>container-plugin</packaging>
-  <version>7-SNAPSHOT</version>
+  <version>8-SNAPSHOT</version>
   <dependencies>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
@@ -27,6 +27,12 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>docproc</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>annotations</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -89,6 +95,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>document</artifactId>
         </exclusion>
@@ -99,10 +109,6 @@
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>annotation</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.json</groupId>
-          <artifactId>json</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

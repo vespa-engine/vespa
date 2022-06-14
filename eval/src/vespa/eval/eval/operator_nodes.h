@@ -4,17 +4,13 @@
 
 #include "basic_nodes.h"
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
 #include <memory>
 #include <map>
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval { struct NodeVisitor; }
 
-struct NodeVisitor;
-
-namespace nodes {
+namespace vespalib::eval::nodes {
 
 /**
  * Common superclass for AST nodes describing infix operators. Each
@@ -171,6 +167,4 @@ struct Or           : OperatorHelper<Or>           { Or()           : Helper("||
 
 //-----------------------------------------------------------------------------
 
-} // namespace vespalib::eval::nodes
-} // namespace vespalib::eval
-} // namespace vespalib
+}

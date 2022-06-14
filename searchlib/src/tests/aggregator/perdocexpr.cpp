@@ -5,6 +5,7 @@
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/objects/objectdumper.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/testdocman.h>
@@ -44,12 +45,12 @@ void testMin(const ResultNode & a, const ResultNode & b) {
     MinFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
-    ASSERT_TRUE(func.getResult().cmp(a) == 0);
+    ASSERT_TRUE(func.getResult()->cmp(a) == 0);
 
     MinFunctionNode funcR;
     funcR.appendArg(MU<ConstantNode>(ResultNode::UP(b.clone())))
          .appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false).execute();
-    ASSERT_TRUE(funcR.getResult().cmp(a) == 0);
+    ASSERT_TRUE(funcR.getResult()->cmp(a) == 0);
 }
 
 ExpressionNode::UP
@@ -86,13 +87,13 @@ void testMax(const ResultNode & a, const ResultNode & b) {
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false)
         .execute();
-    ASSERT_TRUE(func.getResult().cmp(b) == 0);
+    ASSERT_TRUE(func.getResult()->cmp(b) == 0);
 
     MaxFunctionNode funcR;
     funcR.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
          .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false)
          .execute();
-    ASSERT_TRUE(funcR.getResult().cmp(b) == 0);
+    ASSERT_TRUE(funcR.getResult()->cmp(b) == 0);
 }
 
 TEST("testMax") {
@@ -254,9 +255,9 @@ void testAdd(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     AddFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
-    EXPECT_EQUAL(func.getResult().asString(), c.asString());
-    EXPECT_EQUAL(func.getResult().cmp(c), 0);
-    EXPECT_EQUAL(c.cmp(func.getResult()), 0);
+    EXPECT_EQUAL(func.getResult()->asString(), c.asString());
+    EXPECT_EQUAL(func.getResult()->cmp(c), 0);
+    EXPECT_EQUAL(c.cmp(*func.getResult()), 0);
 }
 
 TEST("testAdd") {
@@ -270,10 +271,10 @@ void testDivide(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     DivideFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
-    EXPECT_EQUAL(func.getResult().asString(), c.asString());
-    EXPECT_EQUAL(func.getResult().getFloat(), c.getFloat());
-    EXPECT_EQUAL(func.getResult().cmp(c), 0);
-    EXPECT_EQUAL(c.cmp(func.getResult()), 0);
+    EXPECT_EQUAL(func.getResult()->asString(), c.asString());
+    EXPECT_EQUAL(func.getResult()->getFloat(), c.getFloat());
+    EXPECT_EQUAL(func.getResult()->cmp(c), 0);
+    EXPECT_EQUAL(c.cmp(*func.getResult()), 0);
 }
 
 TEST("testDivide") {
@@ -286,10 +287,10 @@ void testModulo(const ResultNode &a, const ResultNode &b, const ResultNode &c) {
     ModuloFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone())))
         .appendArg(MU<ConstantNode>(ResultNode::UP(b.clone()))).prepare(false).execute();
-    EXPECT_EQUAL(func.getResult().asString(), c.asString());
-    EXPECT_EQUAL(func.getResult().getFloat(), c.getFloat());
-    EXPECT_EQUAL(func.getResult().cmp(c), 0);
-    EXPECT_EQUAL(c.cmp(func.getResult()), 0);
+    EXPECT_EQUAL(func.getResult()->asString(), c.asString());
+    EXPECT_EQUAL(func.getResult()->getFloat(), c.getFloat());
+    EXPECT_EQUAL(func.getResult()->cmp(c), 0);
+    EXPECT_EQUAL(c.cmp(*func.getResult()), 0);
 }
 
 TEST("testModulo") {
@@ -311,9 +312,9 @@ TEST("testModulo") {
 void testNegate(const ResultNode & a, const ResultNode & b) {
     NegateFunctionNode func;
     func.appendArg(MU<ConstantNode>(ResultNode::UP(a.clone()))).prepare(false).execute();
-    EXPECT_EQUAL(func.getResult().asString(), b.asString());
-    EXPECT_EQUAL(func.getResult().cmp(b), 0);
-    EXPECT_EQUAL(b.cmp(func.getResult()), 0);
+    EXPECT_EQUAL(func.getResult()->asString(), b.asString());
+    EXPECT_EQUAL(func.getResult()->cmp(b), 0);
+    EXPECT_EQUAL(b.cmp(*func.getResult()), 0);
 }
 
 TEST("testNegate") {
@@ -663,7 +664,7 @@ TEST("testMailChecksumExpression") {
     cfn.prepare(false);
 
     cfn.execute();
-    ConstBufferRef ref = static_cast<const RawResultNode &>(cfn.getResult()).get();
+    ConstBufferRef ref = static_cast<const RawResultNode &>(*cfn.getResult()).get();
 
     std::string cmp = getVespaChecksumV2(ymumid, folder, flags);
 
@@ -681,7 +682,7 @@ TEST("testMailChecksumExpression") {
     node.execute();
 
     ConstBufferRef ref2 =
-        static_cast<const RawResultNode &>(node.getResult()).get();
+        static_cast<const RawResultNode &>(*node.getResult()).get();
 
     for (uint32_t i = 0; i < ref2.size(); i++) {
         std::cerr << i << ": " << (int)ref2.c_str()[i] << "\n";
@@ -699,7 +700,7 @@ TEST("testDebugFunction") {
         vespalib::Timer timer;
         n.execute();
         EXPECT_TRUE(timer.elapsed() > 1s);
-        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
+        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(*n.getResult()).get(), 7);
     }
     {
         std::unique_ptr<AddFunctionNode> add = MU<AddFunctionNode>();
@@ -711,7 +712,7 @@ TEST("testDebugFunction") {
         vespalib::Timer timer;
         n.execute();
         EXPECT_TRUE(timer.elapsed() > 1s);
-        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(n.getResult()).get(), 7);
+        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(*n.getResult()).get(), 7);
     }
 }
 
@@ -731,40 +732,40 @@ TEST("testDivExpressions") {
         StrLenFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(e.getResult()).get(), 6);
+        EXPECT_EQUAL(static_cast<const Int64ResultNode &>(*e.getResult()).get(), 6);
     }
     {
         NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Re: Your mail")));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const StringResultNode &>(e.getResult()).get(), "Your mail");
+        EXPECT_EQUAL(static_cast<const StringResultNode &>(*e.getResult()).get(), "Your mail");
     }
     {
         NormalizeSubjectFunctionNode e(MU<ConstantNode>(MU<StringResultNode>("Your mail")));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const StringResultNode &>(e.getResult()).get(), "Your mail");
+        EXPECT_EQUAL(static_cast<const StringResultNode &>(*e.getResult()).get(), "Your mail");
     }
     {
         StrCatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.appendArg(MU<ConstantNode>(MU<StringResultNode>("ARG 2")));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const StringResultNode &>(e.getResult()).get(), "238686ARG 2");
+        EXPECT_EQUAL(static_cast<const StringResultNode &>(*e.getResult()).get(), "238686ARG 2");
     }
 
     {
         ToStringFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(strcmp(static_cast<const StringResultNode &>(e.getResult()).get().c_str(), "238686"), 0);
+        EXPECT_EQUAL(strcmp(static_cast<const StringResultNode &>(*e.getResult()).get().c_str(), "238686"), 0);
     }
 
     {
         ToRawFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        auto raw_result = static_cast<const RawResultNode &>(e.getResult()).get();
+        auto raw_result = static_cast<const RawResultNode &>(*e.getResult()).get();
         EXPECT_EQUAL(6u, raw_result.size());
         EXPECT_EQUAL(strncmp(raw_result.c_str(), "238686", 6u), 0);
     }
@@ -773,21 +774,21 @@ TEST("testDivExpressions") {
         CatFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 8u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 8u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(MU<Int32ResultNode>(23886)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 4u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 4u);
     }
     {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
         MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 16*8);
         e.prepare(false);
         e.execute();
-        ASSERT_TRUE(e.getResult().getClass().inherits(RawResultNode::classId));
-        const RawResultNode &r(static_cast<const RawResultNode &>(e.getResult()));
+        ASSERT_TRUE(e.getResult()->getClass().inherits(RawResultNode::classId));
+        const RawResultNode &r(static_cast<const RawResultNode &>(*e.getResult()));
         EXPECT_EQUAL(r.get().size(), 16u);
     }
     {
@@ -795,24 +796,24 @@ TEST("testDivExpressions") {
         MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
     }
     {
         const uint8_t buf[4] = { 0, 0, 0, 7 };
         XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 1*8);
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 1u);
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().c_str()[0], 0x7);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 1u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[0], 0x7);
     }
     {
         const uint8_t buf[4] = { 6, 0, 7, 7 };
         XorBitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(buf, sizeof(buf))), 2*8);
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 2u);
-        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(e.getResult()).get().c_str()[0], 0x1);
-        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(e.getResult()).get().c_str()[1], 0x7);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
+        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[0], 0x1);
+        EXPECT_EQUAL((int)static_cast<const RawResultNode &>(*e.getResult()).get().c_str()[1], 0x7);
     }
     {
         const uint8_t wantedBuf[14]  =
@@ -830,8 +831,8 @@ TEST("testDivExpressions") {
         MD5BitFunctionNode e(MU<ConstantNode>(MU<RawResultNode>(wantedBuf, sizeof(wantedBuf))), 16*8);
         e.prepare(false);
         e.execute();
-        ASSERT_TRUE(e.getResult().getClass().inherits(RawResultNode::classId));
-        const RawResultNode &r(static_cast<const RawResultNode &>(e.getResult()));
+        ASSERT_TRUE(e.getResult()->getClass().inherits(RawResultNode::classId));
+        const RawResultNode &r(static_cast<const RawResultNode &>(*e.getResult()));
         EXPECT_EQUAL(r.get().size(), 16u);
         uint8_t md5[16];
         fastc_md5sum(currentBuf, sizeof(currentBuf), md5);
@@ -848,7 +849,7 @@ TEST("testDivExpressions") {
         MD5BitFunctionNode finalCheck(std::move(cat), 32);
         finalCheck.prepare(false);
         finalCheck.execute();
-        const RawResultNode &rr(static_cast<const RawResultNode &>(finalCheck.getResult()));
+        const RawResultNode &rr(static_cast<const RawResultNode &>(*finalCheck.getResult()));
         EXPECT_EQUAL(rr.get().size(), 4u);
         fastc_md5sum(wantedBuf, sizeof(wantedBuf), md5);
         EXPECT_TRUE(memcmp(md5facit, md5, sizeof(md5)) == 0);
@@ -858,37 +859,37 @@ TEST("testDivExpressions") {
         CatFunctionNode e(MU<ConstantNode>(MU<Int16ResultNode>(23886)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 2u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(createIntRV<Int8ResultNodeVector>({86, 14})));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 1*2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 1*2u);
     }
     {
         CatFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(static_cast<const RawResultNode &>(e.getResult()).get().size(), 4*2u);
+        EXPECT_EQUAL(static_cast<const RawResultNode &>(*e.getResult()).get().size(), 4*2u);
     }
     {
         NumElemFunctionNode e(MU<ConstantNode>(MU<Int64ResultNode>(238686)));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(e.getResult().getInteger(), 1);
+        EXPECT_EQUAL(e.getResult()->getInteger(), 1);
     }
     {
         NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(e.getResult().getInteger(), 2);
+        EXPECT_EQUAL(e.getResult()->getInteger(), 2);
     }
     {
         NumElemFunctionNode e(MU<ConstantNode>(createIntRV<Int32ResultNodeVector>({238686,2133214})));
         e.prepare(false);
         e.execute();
-        EXPECT_EQUAL(e.getResult().getInteger(), 2);
+        EXPECT_EQUAL(e.getResult()->getInteger(), 2);
     }
 }
 
@@ -899,10 +900,10 @@ bool test1MultivalueExpression(const MultiArgFunctionNode &exprConst, Expression
    expr.appendArg(std::move(mv));
    expr.prepare(false);
    bool ok = EXPECT_TRUE(expr.execute()) &&
-             EXPECT_EQUAL(0, expr.getResult().cmp(expected));
+             EXPECT_EQUAL(0, expr.getResult()->cmp(expected));
    if (!ok) {
        std::cerr << "Expected:" << expected.asString() << std::endl
-                 << "Got: " << expr.getResult().asString() << std::endl;
+                 << "Got: " << expr.getResult()->asString() << std::endl;
    }
    return ok;
 }
@@ -1029,36 +1030,36 @@ TEST("testArithmeticNodes") {
     ExpressionTree::Configure treeConf;
     et.select(treeConf, treeConf);
 
-    EXPECT_TRUE(et.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(et.getResult()->getClass().inherits(IntegerResultNode::classId));
     EXPECT_TRUE(et.ExpressionNode::execute());
-    EXPECT_EQUAL(et.getResult().getInteger(), 3);
+    EXPECT_EQUAL(et.getResult()->getInteger(), 3);
     EXPECT_TRUE(et.ExpressionNode::execute());
-    EXPECT_EQUAL(et.getResult().getInteger(), 3);
+    EXPECT_EQUAL(et.getResult()->getInteger(), 3);
     AddFunctionNode add2;
     add2.appendArg(createScalarInt(I1));
     add2.appendArg(createScalarFloat(F2));
     add2.prepare(false);
-    EXPECT_TRUE(add2.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(add2.getResult()->getClass().inherits(FloatResultNode::classId));
     AddFunctionNode add3;
     add3.appendArg(createScalarInt(I1));
     add3.appendArg(createScalarString(S2));
     add3.prepare(false);
-    EXPECT_TRUE(add3.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(add3.getResult()->getClass().inherits(IntegerResultNode::classId));
     AddFunctionNode add4;
     add4.appendArg(createScalarInt(I1));
     add4.appendArg(createScalarRaw(S2));
     add4.prepare(false);
-    EXPECT_TRUE(add4.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(add4.getResult()->getClass().inherits(IntegerResultNode::classId));
     AddFunctionNode add5;
     add5.appendArg(createScalarInt(I1));
     add5.appendArg(MU<AttributeNode>(*attr1));
     add5.prepare(false);
-    EXPECT_TRUE(add5.getResult().getClass().inherits(IntegerResultNode::classId));
+    EXPECT_TRUE(add5.getResult()->getClass().inherits(IntegerResultNode::classId));
     AddFunctionNode add6;
     add6.appendArg(createScalarFloat(F1));
     add6.appendArg(MU<AttributeNode>(*attr1));
     add6.prepare(false);
-    EXPECT_TRUE(add6.getResult().getClass().inherits(FloatResultNode::classId));
+    EXPECT_TRUE(add6.getResult()->getClass().inherits(FloatResultNode::classId));
 }
 
 void testArith(MultiArgFunctionNode &op, ExpressionNode::UP arg1, ExpressionNode::UP arg2,
@@ -1068,9 +1069,9 @@ void testArith(MultiArgFunctionNode &op, ExpressionNode::UP arg1, ExpressionNode
     op.appendArg(std::move(arg2));
     op.prepare(false);
     op.execute();
-    EXPECT_EQUAL(intResult, op.getResult().getInteger());
-    ASSERT_TRUE(intResult == op.getResult().getInteger());
-    EXPECT_EQUAL(floatResult, op.getResult().getFloat());
+    EXPECT_EQUAL(intResult, op.getResult()->getInteger());
+    ASSERT_TRUE(intResult == op.getResult()->getInteger());
+    EXPECT_EQUAL(floatResult, op.getResult()->getFloat());
 }
 
 void testAdd(ExpressionNode::UP arg1, ExpressionNode::UP arg2,
@@ -1119,89 +1120,89 @@ void testArithmeticArguments(NumericFunctionNode &function,
     }
     function.appendArg(createScalarInt(arg1[0])).appendArg(createScalarInt(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(Int64ResultNode::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(Int64ResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getInteger(), static_cast<int64_t>(result[0]));
+    EXPECT_EQUAL(function.getResult()->getInteger(), static_cast<int64_t>(result[0]));
 
     function.reset();
 
     function.appendArg(createScalarInt(arg1[0])).appendArg(createScalarFloat(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getFloat(), result[0]);
+    EXPECT_EQUAL(function.getResult()->getFloat(), result[0]);
 
     function.reset();
 
     function.appendArg(createScalarFloat(arg1[0])).appendArg(createScalarInt(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getFloat(), result[0]);
+    EXPECT_EQUAL(function.getResult()->getFloat(), result[0]);
 
     function.reset();
 
     function.appendArg(createScalarFloat(arg1[0])).appendArg(createScalarFloat(arg2[0]));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getFloat(), result[0]);
+    EXPECT_EQUAL(function.getResult()->getFloat(), result[0]);
 
     function.reset();
 
     function.appendArg(createVectorInt(arg1));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(Int64ResultNode::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(Int64ResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getInteger(), static_cast<int64_t>(flattenResult));
+    EXPECT_EQUAL(function.getResult()->getInteger(), static_cast<int64_t>(flattenResult));
 
     function.reset();
 
     function.appendArg(createVectorFloat(arg1));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNode::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNode::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_EQUAL(function.getResult().getFloat(), flattenResult);
+    EXPECT_EQUAL(function.getResult()->getFloat(), flattenResult);
 
     function.reset();
 
     function.appendArg(createVectorInt(arg1)).appendArg(createVectorInt(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(IntegerResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass().equal(IntegerResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const IntegerResultNodeVector &>(function.getResult()).size(), 7u);
-    EXPECT_EQUAL(0, function.getResult().cmp(ir));
+    EXPECT_TRUE(function.getResult()->getClass().equal(IntegerResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const IntegerResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQUAL(0, function.getResult()->cmp(ir));
 
     function.reset();
 
     function.appendArg(createVectorFloat(arg1)).appendArg(createVectorFloat(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(function.getResult()).size(), 7u);
-    EXPECT_EQUAL(0, function.getResult().cmp(fr));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQUAL(0, function.getResult()->cmp(fr));
 
     function.reset();
 
     function.appendArg(createVectorInt(arg1)).appendArg(createVectorFloat(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(function.getResult()).size(), 7u);
-    EXPECT_EQUAL(0, function.getResult().cmp(fr));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQUAL(0, function.getResult()->cmp(fr));
 
     function.reset();
 
     function.appendArg(createVectorFloat(arg1)).appendArg(createVectorInt(arg2));
     function.prepare(false);
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
     EXPECT_TRUE(function.execute());
-    EXPECT_TRUE(function.getResult().getClass().equal(FloatResultNodeVector::classId));
-    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(function.getResult()).size(), 7u);
-    EXPECT_EQUAL(0, function.getResult().cmp(fr));
+    EXPECT_TRUE(function.getResult()->getClass().equal(FloatResultNodeVector::classId));
+    EXPECT_EQUAL(static_cast<const FloatResultNodeVector &>(*function.getResult()).size(), 7u);
+    EXPECT_EQUAL(0, function.getResult()->cmp(fr));
 }
 
 TEST("testArithmeticOperations") {
@@ -1627,59 +1628,59 @@ AttributeGuard createBoolAttribute() {
 
 TEST("testIntegerTypes") {
     EXPECT_EQUAL(AttributeNode(*createBoolAttribute()).prepare(false)
-                 .getResult().getClass().id(),
+                 .getResult()->getClass().id(),
                  uint32_t(BoolResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createBoolAttribute())
-                 .prepare(true).getResult().getClass().id(),
+                 .prepare(true).getResult()->getClass().id(),
                  uint32_t(BoolResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt8Attribute()).prepare(false)
-                         .getResult().getClass().id(),
+                         .getResult()->getClass().id(),
                  uint32_t(Int64ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt8Attribute())
-                         .prepare(true).getResult().getClass().id(),
+                         .prepare(true).getResult()->getClass().id(),
                  uint32_t(Int8ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt16Attribute())
-                 .prepare(false).getResult().getClass().id(),
+                 .prepare(false).getResult()->getClass().id(),
                  uint32_t(Int64ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt16Attribute())
-                 .prepare(true).getResult().getClass().id(),
+                 .prepare(true).getResult()->getClass().id(),
                  uint32_t(Int16ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt32Attribute())
-                 .prepare(false).getResult().getClass().id(),
+                 .prepare(false).getResult()->getClass().id(),
                  uint32_t(Int64ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt32Attribute())
-                 .prepare(true).getResult().getClass().id(),
+                 .prepare(true).getResult()->getClass().id(),
                  uint32_t(Int32ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt64Attribute())
-                 .prepare(false).getResult().getClass().id(),
+                 .prepare(false).getResult()->getClass().id(),
                  uint32_t(Int64ResultNode::classId));
     EXPECT_EQUAL(AttributeNode(*createInt64Attribute())
-                 .prepare(true).getResult().getClass().id(),
+                 .prepare(true).getResult()->getClass().id(),
                  uint32_t(Int64ResultNode::classId));
 
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt8ExtAttribute("test"))))
-            .prepare(false).getResult().getClass().id(),
+            .prepare(false).getResult()->getClass().id(),
             uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt8ExtAttribute("test"))))
-            .prepare(true).getResult().getClass().id(),
+            .prepare(true).getResult()->getClass().id(),
             uint32_t(Int8ResultNodeVector::classId));
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt16ExtAttribute("test"))))
-                 .prepare(false).getResult().getClass().id(),
+                 .prepare(false).getResult()->getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt16ExtAttribute("test"))))
-                 .prepare(true).getResult().getClass().id(),
+                 .prepare(true).getResult()->getClass().id(),
                  uint32_t(Int16ResultNodeVector::classId));
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt32ExtAttribute("test"))))
-                 .prepare(false).getResult().getClass().id(),
+                 .prepare(false).getResult()->getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt32ExtAttribute("test"))))
-                 .prepare(true).getResult().getClass().id(),
+                 .prepare(true).getResult()->getClass().id(),
                  uint32_t(Int32ResultNodeVector::classId));
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt64ExtAttribute("test"))))
-                 .prepare(false).getResult().getClass().id(),
+                 .prepare(false).getResult()->getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
     EXPECT_EQUAL(AttributeNode(*AttributeGuard(AttributeVector::SP(new MultiInt64ExtAttribute("test"))))
-                 .prepare(true).getResult().getClass().id(),
+                 .prepare(true).getResult()->getClass().id(),
                  uint32_t(Int64ResultNodeVector::classId));
 }
 

@@ -5,9 +5,9 @@
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -49,10 +49,7 @@ vespalib::string makeWrongTensorTypeMsg(const ValueType &fieldTensorType, const 
 
 TensorAttribute::TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore)
     : NotImplementedAttribute(name, cfg),
-      _refVector(cfg.getGrowStrategy().getDocsInitialCapacity(),
-                 cfg.getGrowStrategy().getDocsGrowPercent(),
-                 cfg.getGrowStrategy().getDocsGrowDelta(),
-                 getGenerationHolder()),
+      _refVector(cfg.getGrowStrategy(), getGenerationHolder()),
       _tensorStore(tensorStore),
       _is_dense(cfg.tensorType().is_dense()),
       _emptyTensor(createEmptyTensor(cfg.tensorType())),
@@ -315,6 +312,9 @@ TensorAttribute::complete_set_tensor(DocId docid, const vespalib::eval::Value& t
     (void) prepare_result;
 }
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(TensorAttribute, AttributeVector);
+attribute::DistanceMetric
+TensorAttribute::distance_metric() const {
+    return getConfig().distance_metric();
+}
 
 }

@@ -136,8 +136,8 @@ public class DeploymentTester {
         triggerJobs();
         for (Run run : jobs.active()) {
             jobs.abort(run.id(), "DeploymentTester.abortAll");
-            runner.advance(jobs.run(run.id()).get());
-            assertTrue(jobs.run(run.id()).get().hasEnded());
+            runner.advance(jobs.run(run.id()));
+            assertTrue(jobs.run(run.id()).hasEnded());
         }
     }
 

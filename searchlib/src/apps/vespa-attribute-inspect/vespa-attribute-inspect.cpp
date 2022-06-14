@@ -4,6 +4,7 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <fstream>
 
@@ -39,7 +40,7 @@ void
 LoadAttribute::applyUpdate(const AttributePtr & ptr)
 {
     std::cout << "applyUpdate" << std::endl;
-    if (ptr->getClass().inherits(IntegerAttribute::classId)) {
+    if (ptr->isIntegerType()) {
         IntegerAttribute * a = static_cast<IntegerAttribute *>(ptr.get());
         if (ptr->hasMultiValue()) {
             a->append(0, 123456789, 1);
@@ -47,7 +48,7 @@ LoadAttribute::applyUpdate(const AttributePtr & ptr)
             a->update(0, 123456789);
         }
         a->commit();
-    } else if (ptr->getClass().inherits(FloatingPointAttribute::classId)) {
+    } else if (ptr->isFloatingPointType()) {
         FloatingPointAttribute * a = static_cast<FloatingPointAttribute *>(ptr.get());
         if (ptr->hasMultiValue()) {
             a->append(0, 123456789.5f, 1);
@@ -55,7 +56,7 @@ LoadAttribute::applyUpdate(const AttributePtr & ptr)
             a->update(0, 123456789);
         }
         a->commit();
-    } else if (ptr->getClass().inherits(StringAttribute::classId)) {
+    } else if (ptr->isStringType()) {
         StringAttribute * a = static_cast<StringAttribute *>(ptr.get());
         if (ptr->hasMultiValue()) {
             a->append(0, "non-existing string value", 1);
@@ -111,20 +112,16 @@ LoadAttribute::main(int argc, char **argv)
     bool doApplyUpdate = false;
     bool doSave = false;
     bool doFastSearch = false;
-    bool doHuge = false;
 
     int opt;
     bool optError = false;
-    while ((opt = getopt(argc, argv, "pasf:h")) != -1) {
+    while ((opt = getopt(argc, argv, "pasf:")) != -1) {
         switch (opt) {
         case 'p':
             doPrintContent = true;
             break;
         case 'a':
             doApplyUpdate = true;
-            break;
-        case 'h':
-            doHuge = true;
             break;
         case 'f':
             if (strcmp(optarg, "search") == 0) {
@@ -161,7 +158,6 @@ LoadAttribute::main(int argc, char **argv)
     attribute::CollectionType ct(fh.getTag("collectiontype").asString());
     attribute::Config c(bt, ct);
     c.setFastSearch(doFastSearch);
-    c.setHuge(doHuge);
     AttributePtr ptr = AttributeFactory::createAttribute(fileName, c);
     vespalib::Timer timer;
     load(ptr);

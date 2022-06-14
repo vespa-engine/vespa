@@ -48,18 +48,18 @@ public class VespaSerializerTestCase {
     public void requireThatGroupingRequestsAreSerialized() {
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(new WordItem("foo"));
-        assertEquals("default contains ([{implicitTransforms: false}]\"foo\")",
+        assertEquals("default contains ({implicitTransforms: false}\"foo\")",
                      VespaSerializer.serialize(query));
 
         newGroupingRequest(query, new AllOperation().setGroupBy(new AttributeFunction("a"))
                                                     .addChild(new EachOperation().addOutput(new CountAggregator())));
-        assertEquals("default contains ([{implicitTransforms: false}]\"foo\") " +
+        assertEquals("default contains ({implicitTransforms: false}\"foo\") " +
                      "| all(group(attribute(a)) each(output(count())))",
                      VespaSerializer.serialize(query));
 
         newGroupingRequest(query, new AllOperation().setGroupBy(new AttributeFunction("b"))
                                                     .addChild(new EachOperation().addOutput(new CountAggregator())));
-        assertEquals("default contains ([{implicitTransforms: false}]\"foo\") " +
+        assertEquals("default contains ({implicitTransforms: false}\"foo\") " +
                      "| all(group(attribute(a)) each(output(count()))) " +
                      "| all(group(attribute(b)) each(output(count())))",
                      VespaSerializer.serialize(query));
@@ -69,15 +69,15 @@ public class VespaSerializerTestCase {
     public void requireThatGroupingContinuationsAreSerialized() {
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(new WordItem("foo"));
-        assertEquals("default contains ([{implicitTransforms: false}]\"foo\")",
+        assertEquals("default contains ({implicitTransforms: false}\"foo\")",
                      VespaSerializer.serialize(query));
 
         newGroupingRequest(query, new AllOperation().setGroupBy(new AttributeFunction("a"))
                                                     .addChild(new EachOperation().addOutput(new CountAggregator())),
                            Continuation.fromString("BCBCBCBEBG"),
                            Continuation.fromString("BCBKCBACBKCCK"));
-        assertEquals("default contains ([{implicitTransforms: false}]\"foo\") " +
-                     "| [{ continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]" +
+        assertEquals("default contains ({implicitTransforms: false}\"foo\") " +
+                     "| { continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }" +
                      "all(group(attribute(a)) each(output(count())))",
                      VespaSerializer.serialize(query));
 
@@ -85,10 +85,10 @@ public class VespaSerializerTestCase {
                                                     .addChild(new EachOperation().addOutput(new CountAggregator())),
                            Continuation.fromString("BCBBBBBDBF"),
                            Continuation.fromString("BCBJBPCBJCCJ"));
-        assertEquals("default contains ([{implicitTransforms: false}]\"foo\") " +
-                     "| [{ continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }]" +
+        assertEquals("default contains ({implicitTransforms: false}\"foo\") " +
+                     "| { continuations:['BCBCBCBEBG', 'BCBKCBACBKCCK'] }" +
                      "all(group(attribute(a)) each(output(count()))) " +
-                     "| [{ continuations:['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }]" +
+                     "| { continuations:['BCBBBBBDBF', 'BCBJBPCBJCCJ'] }" +
                      "all(group(attribute(b)) each(output(count())))",
                      VespaSerializer.serialize(query));
     }
@@ -129,17 +129,17 @@ public class VespaSerializerTestCase {
     @Test
     public void testNear() {
         parseAndConfirm("title contains near(\"a\", \"b\")");
-        parseAndConfirm("title contains ([{distance: 50}]near(\"a\", \"b\"))");
+        parseAndConfirm("title contains ({distance: 50}near(\"a\", \"b\"))");
     }
 
     @Test
     public void testNearestNeighbor() {
-        parseAndConfirm("[{label: \"foo\", targetNumHits: 1000}]nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("[{targetNumHits: 42}]nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("[{targetNumHits: 1, hnsw.exploreAdditionalHits: 76}]nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("[{targetNumHits: 2, approximate: false}]nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("[{targetNumHits: 3, hnsw.exploreAdditionalHits: 67, approximate: false}]nearestNeighbor(semantic_embedding, my_property)");
-        parseAndConfirm("[{targetNumHits: 4, distanceThreshold: 100100.25}]nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{label: \"foo\", targetNumHits: 1000}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 42}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 1, hnsw.exploreAdditionalHits: 76}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 2, approximate: false}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 3, hnsw.exploreAdditionalHits: 67, approximate: false}nearestNeighbor(semantic_embedding, my_property)");
+        parseAndConfirm("{targetNumHits: 4, distanceThreshold: 100100.25}nearestNeighbor(semantic_embedding, my_property)");
     }
 
     @Test
@@ -163,11 +163,11 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testAnnotatedNumbers() {
-        parseAndConfirm("title = ([{filter: true}]500)");
-        parseAndConfirm("title > ([{filter: true}]500)");
-        parseAndConfirm("title < ([{filter: true}](-500))");
-        parseAndConfirm("title <= ([{filter: true}](-500))", "([{filter: true}](-500)) >= title");
-        parseAndConfirm("title <= ([{filter: true}](-500))");
+        parseAndConfirm("title = ({filter: true}500)");
+        parseAndConfirm("title > ({filter: true}500)");
+        parseAndConfirm("title < ({filter: true}(-500))");
+        parseAndConfirm("title <= ({filter: true}(-500))", "([{filter: true}](-500)) >= title");
+        parseAndConfirm("title <= ({filter: true}(-500))");
     }
 
     @Test
@@ -177,7 +177,7 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testAnnotatedRange() {
-        parseAndConfirm("[{filter: true}]range(title, 1, 500)");
+        parseAndConfirm("{filter: true}range(title, 1, 500)");
     }
 
     @Test
@@ -215,22 +215,22 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testAnnotatedPhrase() {
-        parseAndConfirm("description contains ([{id: 1}]phrase(\"a\", \"b\"))");
+        parseAndConfirm("description contains ({id: 1}phrase(\"a\", \"b\"))");
     }
 
     @Test
     public void testAnnotatedNear() {
-        parseAndConfirm("description contains ([{distance: 37}]near(\"a\", \"b\"))");
+        parseAndConfirm("description contains ({distance: 37}near(\"a\", \"b\"))");
     }
 
     @Test
     public void testAnnotatedOnear() {
-        parseAndConfirm("description contains ([{distance: 37}]onear(\"a\", \"b\"))");
+        parseAndConfirm("description contains ({distance: 37}onear(\"a\", \"b\"))");
     }
 
     @Test
     public void testAnnotatedEquiv() {
-        parseAndConfirm("description contains ([{id: 1}]equiv(\"a\", \"b\"))");
+        parseAndConfirm("description contains ({id: 1}equiv(\"a\", \"b\"))");
     }
 
     @Test
@@ -242,7 +242,7 @@ public class VespaSerializerTestCase {
         phraseSegment.setLabel("labeled");
         phraseSegment.lock();
         String q = VespaSerializer.serialize(phraseSegment);
-        assertEquals("someIndexName contains ([{origin: {original: \"abc\", offset: 0, length: 3}, label: \"labeled\"}]phrase(\"a\", \"b\"))", q);
+        assertEquals("someIndexName contains ({origin: {original: \"abc\", offset: 0, length: 3}, label: \"labeled\"}phrase(\"a\", \"b\"))", q);
     }
 
     @Test
@@ -251,7 +251,7 @@ public class VespaSerializerTestCase {
         sameElement.addItem(new WordItem("a", "f1"));
         sameElement.addItem(new WordItem("b", "f2"));
         assertEquals("ss:{f1:a f2:b}", sameElement.toString());
-        assertEquals("ss contains sameElement(f1 contains ([{implicitTransforms: false}]\"a\"), f2 contains ([{implicitTransforms: false}]\"b\"))", VespaSerializer.serialize(sameElement));
+        assertEquals("ss contains sameElement(f1 contains ({implicitTransforms: false}\"a\"), f2 contains ({implicitTransforms: false}\"b\"))", VespaSerializer.serialize(sameElement));
 
     }
     @Test
@@ -261,22 +261,22 @@ public class VespaSerializerTestCase {
         andSegment.addItem(new WordItem("b", "indexNamePlaceholder"));
         andSegment.setLabel("labeled");
         String q = VespaSerializer.serialize(andSegment);
-        assertEquals("indexNamePlaceholder contains ([{origin: {original: \"abc\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"a\", \"b\"))", q);
+        assertEquals("indexNamePlaceholder contains ({origin: {original: \"abc\", offset: 0, length: 3}, andSegmenting: true}phrase(\"a\", \"b\"))", q);
 
         andSegment.setIndexName("someIndexName");
         andSegment.lock();
         q = VespaSerializer.serialize(andSegment);
-        assertEquals("someIndexName contains ([{origin: {original: \"abc\", offset: 0, length: 3}, andSegmenting: true}]phrase(\"a\", \"b\"))", q);
+        assertEquals("someIndexName contains ({origin: {original: \"abc\", offset: 0, length: 3}, andSegmenting: true}phrase(\"a\", \"b\"))", q);
     }
 
     @Test
     public void testPhraseWithAnnotations() {
-        parseAndConfirm("description contains phrase(([{id: 15}]\"a\"), \"b\")");
+        parseAndConfirm("description contains phrase(({id: 15}\"a\"), \"b\")");
     }
 
     @Test
     public void testPhraseSegmentInPhrase() {
-        parseAndConfirm("description contains phrase(\"a\", \"b\", ([{origin: {original: \"c d\", offset: 0, length: 3}}]phrase(\"c\", \"d\")))");
+        parseAndConfirm("description contains phrase(\"a\", \"b\", ({origin: {original: \"c d\", offset: 0, length: 3}}phrase(\"c\", \"d\")))");
     }
 
     @Test
@@ -296,10 +296,7 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testAnnotatedWeakAnd() {
-        parseAndConfirm("([{" + YqlParser.TARGET_NUM_HITS + ": 10}]weakAnd(a contains \"A\", b contains \"B\"))");
-        parseAndConfirm("([{" + YqlParser.SCORE_THRESHOLD + ": 10}]weakAnd(a contains \"A\", b contains \"B\"))");
-        parseAndConfirm("([{" + YqlParser.TARGET_NUM_HITS + ": 10, " + YqlParser.SCORE_THRESHOLD
-                + ": 20}]weakAnd(a contains \"A\", b contains \"B\"))");
+        parseAndConfirm("({" + YqlParser.TARGET_NUM_HITS + ": 10}weakAnd(a contains \"A\", b contains \"B\"))");
     }
 
     @Test
@@ -309,36 +306,36 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testAnnotatedWord() {
-        parseAndConfirm("description contains ([{andSegmenting: true}]\"a\")");
-        parseAndConfirm("description contains ([{weight: 37}]\"a\")");
-        parseAndConfirm("description contains ([{id: 37}]\"a\")");
-        parseAndConfirm("description contains ([{filter: true}]\"a\")");
-        parseAndConfirm("description contains ([{ranked: false}]\"a\")");
-        parseAndConfirm("description contains ([{significance: 37.0}]\"a\")");
-        parseAndConfirm("description contains ([{implicitTransforms: false}]\"a\")");
-        parseAndConfirm("(description contains ([{connectivity: {id: 2, weight: 0.42}, id: 1}]\"a\") AND description contains ([{id: 2}]\"b\"))");
+        parseAndConfirm("description contains ({andSegmenting: true}\"a\")");
+        parseAndConfirm("description contains ({weight: 37}\"a\")");
+        parseAndConfirm("description contains ({id: 37}\"a\")");
+        parseAndConfirm("description contains ({filter: true}\"a\")");
+        parseAndConfirm("description contains ({ranked: false}\"a\")");
+        parseAndConfirm("description contains ({significance: 37.0}\"a\")");
+        parseAndConfirm("description contains ({implicitTransforms: false}\"a\")");
+        parseAndConfirm("(description contains ({connectivity: {id: 2, weight: 0.42}, id: 1}\"a\") AND description contains ({id: 2}\"b\"))");
     }
 
     @Test
     public void testPrefix() {
-        parseAndConfirm("description contains ([{prefix: true}]\"a\")");
+        parseAndConfirm("description contains ({prefix: true}\"a\")");
     }
 
     @Test
     public void testSuffix() {
-        parseAndConfirm("description contains ([{suffix: true}]\"a\")");
+        parseAndConfirm("description contains ({suffix: true}\"a\")");
     }
 
     @Test
     public void testSubstring() {
-        parseAndConfirm("description contains ([{substring: true}]\"a\")");
+        parseAndConfirm("description contains ({substring: true}\"a\")");
     }
 
     @Test
     public void testExoticItemTypes() {
         Item item = MarkerWordItem.createEndOfHost();
         String q = VespaSerializer.serialize(item);
-        assertEquals("default contains ([{implicitTransforms: false}]\"$\")", q);
+        assertEquals("default contains ({implicitTransforms: false}\"$\")", q);
     }
 
     @Test
@@ -357,7 +354,7 @@ public class VespaSerializerTestCase {
         item.addItem(new WordItem("c"));
         item.addItem(new WordItem("d"));
         String q = VespaSerializer.serialize(item);
-        assertEquals("(default contains ([{implicitTransforms: false}]\"a\")) AND !(default contains ([{implicitTransforms: false}]\"b\") OR default contains ([{implicitTransforms: false}]\"c\") OR default contains ([{implicitTransforms: false}]\"d\"))", q);
+        assertEquals("(default contains ({implicitTransforms: false}\"a\")) AND !(default contains ({implicitTransforms: false}\"b\") OR default contains ({implicitTransforms: false}\"c\") OR default contains ({implicitTransforms: false}\"d\"))", q);
     }
 
     @Test
@@ -406,23 +403,23 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testAnnotatedLong() {
-        parseAndConfirm("title >= ([{id: 2014}](-549755813888L))");
+        parseAndConfirm("title >= ({id: 2014}(-549755813888L))");
     }
 
     @Test
     public void testHitLimit() {
-        parseAndConfirm("title <= ([{hitLimit: 89}](-500))");
-        parseAndConfirm("title <= ([{hitLimit: 89}](-500))");
-        parseAndConfirm("[{hitLimit: 89}]range(title, 1, 500)");
+        parseAndConfirm("title <= ({hitLimit: 89}(-500))");
+        parseAndConfirm("title <= ({hitLimit: 89}(-500))");
+        parseAndConfirm("{hitLimit: 89}range(title, 1, 500)");
     }
 
     @Test
     public void testOpenIntervals() {
         parseAndConfirm("range(title, 0.0, 500.0)");
-        parseAndConfirm("([{bounds: \"open\"}]range(title, 0.0, 500.0))");
-        parseAndConfirm("([{bounds: \"leftOpen\"}]range(title, 0.0, 500.0))");
-        parseAndConfirm("([{bounds: \"rightOpen\"}]range(title, 0.0, 500.0))");
-        parseAndConfirm("([{id: 500, bounds: \"rightOpen\"}]range(title, 0.0, 500.0))");
+        parseAndConfirm("({bounds: \"open\"}range(title, 0.0, 500.0))");
+        parseAndConfirm("({bounds: \"leftOpen\"}range(title, 0.0, 500.0))");
+        parseAndConfirm("({bounds: \"rightOpen\"}range(title, 0.0, 500.0))");
+        parseAndConfirm("({id: 500, bounds: \"rightOpen\"}range(title, 0.0, 500.0))");
     }
 
     @Test
@@ -432,14 +429,14 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testWordAlternatives() {
-        parseAndConfirm("foo contains" + " ([{origin: {original: \" trees \", offset: 1, length: 5}}]"
+        parseAndConfirm("foo contains" + " ({origin: {original: \" trees \", offset: 1, length: 5}}"
                 + "alternatives({\"trees\": 1.0, \"tree\": 0.7}))");
     }
 
     @Test
     public void testWordAlternativesInPhrase() {
         parseAndConfirm("foo contains phrase(\"forest\","
-                + " ([{origin: {original: \" trees \", offset: 1, length: 5}}]"
+                + " ({origin: {original: \" trees \", offset: 1, length: 5}}"
                 + "alternatives({\"trees\": 1.0, \"tree\": 0.7}))"
                 + ")");
     }
@@ -451,7 +448,7 @@ public class VespaSerializerTestCase {
 
     @Test
     public void testFuzzyAnnotations() {
-        parseAndConfirm("foo contains ([{maxEditDistance:3,prefixLength:5}]fuzzy(\"a\"))");
+        parseAndConfirm("foo contains ({maxEditDistance:3,prefixLength:5}fuzzy(\"a\"))");
     }
 
 }

@@ -34,7 +34,6 @@ import static com.yahoo.vespa.config.proxy.Mode.ModeName.DEFAULT;
  *
  * @author hmusum
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove (com.yahoo.log.event)
 public class ProxyServer implements Runnable {
 
     private static final DaemonThreadFactory threadFactory = new DaemonThreadFactory("ProxyServer");

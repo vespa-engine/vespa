@@ -1,0 +1,29 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# A collection of syntax we can visually check is parsed correctly
+schema syntax {
+    document syntax {
+        field mystring type string {
+        }
+    }
+
+    field myarray1 type array<string> {
+        indexing: input mystring | split ";" | for_each { trim } | attribute
+    }
+
+    field myarray2 type array<string> {
+        indexing: input mystring | split ";" | for_each { trim } | attribute
+        index: enable-bm25
+    }
+
+    field myarray2 type array<string> {
+        indexing {
+             input mystring | split ";" | for_each {
+                 trim
+             }
+             | attribute;
+        }
+        index: enable-bm25
+    }
+
+}

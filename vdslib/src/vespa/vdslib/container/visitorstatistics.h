@@ -27,12 +27,6 @@ public:
     uint64_t getBytesReturned() const { return _bytesReturned; }
     void setBytesReturned(uint32_t bytesReturned) { _bytesReturned = bytesReturned; }
 
-    uint64_t getSecondPassDocumentsReturned() const { return _secondPassDocumentsReturned; }
-    void setSecondPassDocumentsReturned(uint32_t documentsReturned) { _secondPassDocumentsReturned = documentsReturned; }
-
-    uint64_t getSecondPassBytesReturned() const { return _secondPassBytesReturned; }
-    void setSecondPassBytesReturned(uint32_t bytesReturned) { _secondPassBytesReturned = bytesReturned; }
-
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
     uint32_t _bucketsVisited;
@@ -40,8 +34,6 @@ private:
     uint64_t _bytesVisited;
     uint64_t _documentsReturned;
     uint64_t _bytesReturned;
-    uint64_t _secondPassDocumentsReturned; // TODO remove on Vespa 8
-    uint64_t _secondPassBytesReturned; // TODO remove on Vespa 8
 };
 
 }

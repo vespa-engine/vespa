@@ -97,13 +97,11 @@
       "abstract"
     ],
     "methods": [
-      "public abstract java.lang.String getApplicationName()",
       "public abstract com.yahoo.config.provision.ApplicationId getApplicationId()",
       "public abstract java.io.Reader getServices()",
       "public abstract java.io.Reader getHosts()",
       "public java.util.List getUserIncludeDirs()",
       "public void validateIncludeDir(java.lang.String)",
-      "public java.util.Collection searchDefinitionContents()",
       "public abstract java.util.Map getAllExistingConfigDefs()",
       "public abstract java.util.List getFiles(com.yahoo.path.Path, java.lang.String, boolean)",
       "public java.util.List getFiles(com.yahoo.path.Path, java.lang.String)",
@@ -128,7 +126,6 @@
       "public java.util.Optional getAllocatedHosts()",
       "public java.util.Map getFileRegistries()",
       "public java.util.Map legacyOverrides()",
-      "public java.util.Collection getSearchDefinitions()",
       "public abstract java.util.Collection getSchemas()",
       "public com.yahoo.config.application.api.ApplicationPackage preprocess(com.yahoo.config.provision.Zone, com.yahoo.config.application.api.DeployLogger)"
     ],
@@ -297,7 +294,8 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, java.util.List, java.lang.String)",
+      "public void <init>(int, java.lang.String, java.util.List, java.lang.String)",
+      "public int majorVersion()",
       "public java.lang.String humanReadableString()",
       "public java.lang.String toString()"
     ],

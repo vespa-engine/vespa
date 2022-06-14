@@ -1,18 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.codegen;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import org.junit.Test;
 import org.junit.Ignore;
-
+import org.junit.Test;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.StringReader;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for DefParser.
@@ -78,9 +77,29 @@ public class DefParserTest {
 
     @Test
     public void testMd5Sum2() {
-        String def = "version=1\na string\n";
+        String def = "a string\n";
         CNode root = new DefParser("testMd5Sum2", new StringReader(def)).getTree();
         assertEquals("a5e5fdbb2b27e56ba7d5e60e335c598b", root.defMd5);
+    }
+
+    // TODO: Version is not used anymore, remove test in Vespa 9
+    @Test
+    public void testValidVersions() {
+        try {
+            parse("version=8");
+            parse("version=8-1");
+            parse("version =8");
+            parse("version = 8");
+            parse("version = 8 ");
+            parse("version =\t8");
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+
+    private void parse(String versionLine) {
+        InnerCNode ignored = createParser(versionLine).getTree();
     }
 
     @Test
@@ -89,56 +108,8 @@ public class DefParserTest {
         assertLineFails(line, "Could not create sting a");
     }
 
-    // Note: Version is not used anymore, so will always be empty
-    @Test
-    public void testValidVersions() {
-        try {
-            testExpectedVersion("version=8", "");
-            testExpectedVersion("version=8-1", "");
-            testExpectedVersion("version =8", "");
-            testExpectedVersion("version = 8", "");
-            testExpectedVersion("version = 8 ", "");
-            testExpectedVersion("version =\t8", "");
-        } catch (Exception e) {
-            e.printStackTrace();
-            fail();
-        }
-    }
-
-    private void testExpectedVersion(String versionLine, String expectedVersion) {
-        InnerCNode root = createParser(versionLine).getTree();
-        assertEquals(expectedVersion, root.defVersion);
-    }
-
-    @Test
-    public void version_is_not_mandatory() {
-        try {
-            createParser("a string\n").parse();
-        } catch (Exception e) {
-            fail("Should not get an exception here");
-        }
-    }
-
     static DefParser createParser(String def) {
         return new DefParser("test", new StringReader(def));
-    }
-
-    @Test
-    public void testInvalidVersion() {
-        Class<?> exceptionClass = DefParser.DefParserException.class;
-        testInvalidVersion("version=a\n", exceptionClass,
-                "Error when parsing line 1: version=a\nversion=a");
-        testInvalidVersion("version = a\n", exceptionClass,
-                "Error when parsing line 1: version = a\n a");
-    }
-
-    private void testInvalidVersion(String versionLine, Class<?> exceptionClass, String exceptionMessage) {
-        try {
-            createParser(versionLine).parse();
-            fail("Didn't find expected exception of type " + exceptionClass);
-        } catch (Exception e) {
-            assertExceptionAndMessage(e, exceptionClass, exceptionMessage);
-        }
     }
 
     @Test
@@ -150,7 +121,7 @@ public class DefParserTest {
     @Test(expected = CodegenRuntimeException.class)
     @Ignore("Not implemented yet")
     public void testInvalidEnum() {
-        DefParser parser = createParser("version=1\nanEnum enum {A, B, A}\n");
+        DefParser parser = createParser("anEnum enum {A, B, A}\n");
         //parser.validateDef(def);
     }
 
@@ -191,7 +162,7 @@ public class DefParserTest {
     @Ignore //TODO: finish this! The numeric leaf nodes must contain their range.
     @Test
     public void testRanges() {
-        StringBuilder sb = new StringBuilder("version=1\n");
+        StringBuilder sb = new StringBuilder();
         sb.append("i int range=[0,10]");
         sb.append("l long range=[-1e20,0]");
         sb.append("d double range=[0,1]");
@@ -213,7 +184,7 @@ public class DefParserTest {
             fail("Didn't find expected exception of type " + exceptionClass);
         } catch (Exception e) {
             assertExceptionAndMessage(e, exceptionClass,
-                    "Error when parsing line 4: " + duplicateLine + "b is already defined");
+                    "Error when parsing line 3: " + duplicateLine + "b is already defined");
         }
     }
 
@@ -292,7 +263,6 @@ public class DefParserTest {
 
     static StringBuilder createDefTemplate() {
         StringBuilder sb = new StringBuilder();
-        sb.append("version=8\n");
         // Add a comment line to check that we get correct line number with comments
         sb.append("# comment\n");
 
@@ -312,7 +282,7 @@ public class DefParserTest {
             fail("Didn't find expected exception of type " + exceptionClass);
         } catch (Exception e) {
             assertExceptionAndMessage(e, exceptionClass,
-                                      "Error when parsing line 3: " + line + "\n" + message);
+                                      "Error when parsing line 2: " + line + "\n" + message);
         }
     }
 

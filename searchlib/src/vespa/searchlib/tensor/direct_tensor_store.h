@@ -3,7 +3,6 @@
 #pragma once
 
 #include "tensor_store.h"
-#include <memory>
 
 namespace vespalib::eval { struct Value; }
 
@@ -28,7 +27,7 @@ private:
         using CleanContext = typename ParentType::CleanContext;
     public:
         TensorBufferType();
-        virtual void cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx) override;
+        void cleanHold(void* buffer, size_t offset, ElemCount num_elems, CleanContext clean_ctx) override;
     };
 
     TensorStoreType _tensor_store;
@@ -40,7 +39,12 @@ public:
     ~DirectTensorStore() override;
     using RefType = TensorStoreType::RefType;
 
-    const vespalib::eval::Value * get_tensor(EntryRef ref) const;
+    const vespalib::eval::Value * get_tensor(EntryRef ref) const {
+        if (!ref.valid()) {
+            return nullptr;
+        }
+        return _tensor_store.getEntry(ref).get();
+    }
     EntryRef store_tensor(std::unique_ptr<vespalib::eval::Value> tensor);
 
     void holdTensor(EntryRef ref) override;

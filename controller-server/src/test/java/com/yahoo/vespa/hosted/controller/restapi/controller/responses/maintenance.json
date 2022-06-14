@@ -22,9 +22,6 @@
       "name": "ChangeRequestMaintainer"
     },
     {
-      "name": "CloudEventTracker"
-    },
-    {
       "name": "CloudTrialExpirer"
     },
     {
@@ -86,9 +83,6 @@
     },
     {
       "name": "RetriggerMaintainer"
-    },
-    {
-      "name": "SystemRoutingPolicyMaintainer"
     },
     {
       "name": "SystemUpgrader"

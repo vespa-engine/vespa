@@ -43,7 +43,13 @@ ImportedAttributeVector::~ImportedAttributeVector() = default;
 std::unique_ptr<AttributeReadGuard>
 ImportedAttributeVector::makeReadGuard(bool stableEnumGuard) const
 {
-    return std::make_unique<ImportedAttributeVectorReadGuard>(*this, stableEnumGuard);
+    return makeReadGuard(_target_document_meta_store->getReadGuard(), stableEnumGuard);
+}
+
+std::unique_ptr<AttributeReadGuard>
+ImportedAttributeVector::makeReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard,  bool stableEnumGuard) const
+{
+    return std::make_unique<ImportedAttributeVectorReadGuard>(std::move(targetMetaStoreReadGuard), *this, stableEnumGuard);
 }
 
 void ImportedAttributeVector::clearSearchCache() {

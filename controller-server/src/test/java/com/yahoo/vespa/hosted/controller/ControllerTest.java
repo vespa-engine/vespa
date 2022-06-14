@@ -811,14 +811,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployApplicationPackageWithApplicationDir() {
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .region("us-west-1")
-                .build(true);
-        tester.newDeploymentContext().submit(applicationPackage);
-    }
-
-    @Test
     public void testDeployApplicationWithWarnings() {
         var context = tester.newDeploymentContext();
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
@@ -1193,6 +1185,22 @@ public class ControllerTest {
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.CLOUD_ACCOUNTS.id(), List.of(cloudAccount), String.class);
         context.submit(applicationPackage).deploy();
         assertEquals(cloudAccount, tester.controllerTester().configServer().cloudAccount(context.deploymentIdIn(zone)).get().value());
+    }
+
+    @Test
+    public void testSubmitWithElementDeprecatedOnPreviousMajor() {
+        DeploymentContext context = tester.newDeploymentContext();
+        var applicationPackage = new ApplicationPackageBuilder()
+                .compileVersion(Version.fromString("8.1"))
+                .region("us-west-1")
+                .globalServiceId("qrs")
+                .build();
+        try {
+            context.submit(applicationPackage).deploy();
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Element 'prod' contains attribute 'global-service-id' deprecated since major version 7"));
+        }
     }
 
 }

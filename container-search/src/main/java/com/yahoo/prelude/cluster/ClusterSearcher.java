@@ -38,7 +38,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.stream.Collectors;
 
 import static com.yahoo.container.QrSearchersConfig.Searchcluster.Indexingmode.STREAMING;
 
@@ -141,7 +140,7 @@ public class ClusterSearcher extends Searcher {
                                                    SchemaInfo schemaInfo,
                                                    VespaDocumentAccess access) {
         if (searchClusterConfig.searchdef().size() != 1) {
-            throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single searchdefinition : " + searchClusterConfig.searchdef());
+            throw new IllegalArgumentException("Search clusters in streaming search shall only contain a single schema : " + searchClusterConfig.searchdef());
         }
         ClusterParams clusterParams = makeClusterParams(searchclusterIndex);
         VdsStreamingSearcher searcher = new VdsStreamingSearcher(access);
@@ -164,63 +163,6 @@ public class ClusterSearcher extends Searcher {
     /** Do not use, for internal testing purposes only. **/
     ClusterSearcher(Set<String> schemas) {
         this(schemas, null, null);
-    }
-
-    /**
-     * Returns an error if the document types do not have the requested rank
-     * profile. For the case of multiple document types, only returns an
-     * error if we have restricted the set of documents somehow. This is
-     * because when searching over all doc types, common ancestors might
-     * not have the requested rank profile and failing on that basis is
-     * probably not reasonable.
-     *
-     * @param  query    query
-     * @param  schemas set of requested schemas for this query
-     * @return          null if requested rank profile is ok for the requested
-     *                  schemas, a result with error message if not.
-     */
-    // TODO: This should be in a separate searcher
-    // TODO Vespa 8: This should simply fail if the specified profile isn't present in all schemas
-    private Result checkValidRankProfiles(Query query, Set<String> schemas, Execution.Context context) {
-        String rankProfile = query.getRanking().getProfile();
-        Set<String> invalidInSchemas = null;
-        Set<String> schemasHavingProfile = schemasHavingProfile(rankProfile, context);
-
-        if (schemasHavingProfile.isEmpty()) {
-            invalidInSchemas = schemas;
-        }
-        else if (schemas.size() == 1) {
-            if ( ! schemasHavingProfile.containsAll(schemas))
-                invalidInSchemas = schemas;
-        }
-        else {
-            // multiple schemas, only fail when restricting doc types
-            Set<String> restrict = query.getModel().getRestrict();
-            Set<String> sources = query.getModel().getSources();
-            boolean validate = restrict != null && !restrict.isEmpty();
-            validate = validate || sources != null && !sources.isEmpty();
-            if (validate && !schemasHavingProfile.containsAll(schemas)) {
-                invalidInSchemas = new HashSet<>(schemas);
-                invalidInSchemas.removeAll(schemasHavingProfile);
-            }
-        }
-
-        if (invalidInSchemas != null && !invalidInSchemas.isEmpty()) {
-            String plural = invalidInSchemas.size() > 1 ? "s" : "";
-            return new Result(query,
-                              ErrorMessage.createInvalidQueryParameter("Requested rank profile '" + rankProfile +
-                                                                       "' is undefined for document type" + plural + " '" +
-                                                                       String.join(", ", invalidInSchemas) + "'"));
-        }
-
-        return null;
-    }
-
-    private Set<String> schemasHavingProfile(String profile, Execution.Context context) {
-        return context.schemaInfo().schemas().values().stream()
-                                             .filter(schema -> schema.rankProfiles().containsKey(profile))
-                                             .map(schema -> schema.name())
-                                             .collect(Collectors.toSet());
     }
 
     @Override
@@ -285,12 +227,6 @@ public class ClusterSearcher extends Searcher {
             return searchMultipleDocumentTypes(searcher, query, execution);
         } else {
             String docType = schemas.iterator().next();
-
-            Result invalidRankProfile = checkValidRankProfiles(query, schemas, execution.context());
-            if (invalidRankProfile != null) {
-                return invalidRankProfile;
-            }
-
             query.getModel().setRestrict(docType);
             return searcher.search(query, execution);
         }
@@ -310,10 +246,6 @@ public class ClusterSearcher extends Searcher {
 
     private Result searchMultipleDocumentTypes(Searcher searcher, Query query, Execution execution) {
         Set<String> schemas = resolveSchemas(query, execution.context().getIndexFacts());
-
-        Result invalidRankProfile = checkValidRankProfiles(query, schemas, execution.context());
-        if (invalidRankProfile != null) return invalidRankProfile;
-
         List<Query> queries = createQueries(query, schemas);
         if (queries.size() == 1) {
             return searcher.search(queries.get(0), execution);

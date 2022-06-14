@@ -8,7 +8,6 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
-import com.yahoo.document.TemporaryStructuredDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
@@ -190,11 +189,6 @@ public class DocumentModelBuilder {
         }
     }
 
-    private static String descT(DataType type) {
-        if (type == null) { return "<null>"; }
-        return "'" + type.getName() + "' [" + type.getId() + "] {"+type.getClass() + "}";
-    }
-
     private void addDocumentTypes(List<SDDocumentType> docList) {
         LinkedList<NewDocumentType> lst = new LinkedList<>();
         for (SDDocumentType doc : docList) {
@@ -232,9 +226,6 @@ public class DocumentModelBuilder {
             return replacements.get(type);
         }
         DataType original = type;
-        if (type instanceof TemporaryStructuredDataType) {
-            throw new IllegalArgumentException("Cannot handle temporary: " + type);
-        }
         if (type instanceof TemporaryUnknownType) {
             // must be a known struct or document type
             DataType other = repo.getDataType(type.getId());
@@ -252,10 +243,9 @@ public class DocumentModelBuilder {
             if (other == null || other == type) {
                 throw new IllegalArgumentException("No replacement found for temporary type: " + type);
             }
-            if (other instanceof OwnedStructDataType) {
+            if (other instanceof OwnedStructDataType otherOwned) {
                 var owned = (OwnedTemporaryType) type;
                 String ownedBy = owned.getOwnerName();
-                var otherOwned = (OwnedStructDataType) other;
                 String otherOwnedBy = otherOwned.getOwnerName();
                 if (! ownedBy.equals(otherOwnedBy)) {
                     throw new IllegalArgumentException("Wrong document for type: " + otherOwnedBy + " but expected " + ownedBy);
@@ -270,19 +260,18 @@ public class DocumentModelBuilder {
                 type = other;
             } else if (type != DataType.DOCUMENT) {
                 throw new IllegalArgumentException
-                    ("Can not handle nested document definitions. Undefined document type: " + type.toString());
+                    ("Can not handle nested document definitions. Undefined document type: " + type);
             }
         } else if (type instanceof NewDocumentType) {
             DataType other = getDocumentType(docs, type.getName());
             if (other != null) {
                 type = other;
             }
-        } else if (type instanceof StructDataType) {
+        } else if (type instanceof StructDataType sdt) {
             // trick avoids infinite recursion:
             var old = replacements.put(original, type);
             assert(old == null);
-            StructDataType dt = (StructDataType) type;
-            for (com.yahoo.document.Field field : dt.getFields()) {
+            for (com.yahoo.document.Field field : sdt.getFields()) {
                 var ft = field.getDataType();
                 var newft = resolveTemporariesRecurse(ft, repo, docs, replacements);
                 if (ft != newft) {
@@ -293,37 +282,33 @@ public class DocumentModelBuilder {
             old = replacements.remove(original);
             assert(old == type);
         }
-        else if (type instanceof MapDataType) {
-            MapDataType t = (MapDataType) type;
-            var old_kt = t.getKeyType();
-            var old_vt = t.getValueType();
+        else if (type instanceof MapDataType mdt) {
+            var old_kt = mdt.getKeyType();
+            var old_vt = mdt.getValueType();
             var kt = resolveTemporariesRecurse(old_kt, repo, docs, replacements);
             var vt = resolveTemporariesRecurse(old_vt, repo, docs, replacements);
             if (kt != old_kt || vt != old_vt) {
-                type = new MapDataType(kt, vt, t.getId());
+                type = new MapDataType(kt, vt, mdt.getId());
             }
         }
-        else if (type instanceof ArrayDataType) {
-            ArrayDataType t = (ArrayDataType) type;
-            var old_nt = t.getNestedType();
+        else if (type instanceof ArrayDataType adt) {
+            var old_nt = adt.getNestedType();
             var nt = resolveTemporariesRecurse(old_nt, repo, docs, replacements);
             if (nt != old_nt) {
-                type = new ArrayDataType(nt, t.getId());
+                type = new ArrayDataType(nt, adt.getId());
             }
         }
-        else if (type instanceof WeightedSetDataType) {
-            WeightedSetDataType t = (WeightedSetDataType) type;
-            var old_nt = t.getNestedType();
+        else if (type instanceof WeightedSetDataType wdt) {
+            var old_nt = wdt.getNestedType();
             var nt = resolveTemporariesRecurse(old_nt, repo, docs, replacements);
             if (nt != old_nt) {
-                boolean c = t.createIfNonExistent();
-                boolean r = t.removeIfZero();
-                type = new WeightedSetDataType(nt, c, r, t.getId());
+                boolean c = wdt.createIfNonExistent();
+                boolean r = wdt.removeIfZero();
+                type = new WeightedSetDataType(nt, c, r, wdt.getId());
             }
         }
-        else if (type instanceof NewDocumentReferenceDataType) {
-            var t = (NewDocumentReferenceDataType) type;
-            var doc = getDocumentType(docs, t.getTargetTypeName());
+        else if (type instanceof NewDocumentReferenceDataType rft) {
+            var doc = getDocumentType(docs, rft.getTargetTypeName());
             type = doc.getReferenceDataType();
         }
         if (type != original) {
@@ -382,7 +367,7 @@ public class DocumentModelBuilder {
                 if (type.isStruct()) {
                     handleStruct(type);
                 } else {
-                    throw new IllegalArgumentException("Data type '" + type.getName() + "' is not a struct => tostring='" + type.toString() + "'.");
+                    throw new IllegalArgumentException("Data type '" + type.getName() + "' is not a struct => tostring='" + type + "'.");
                 }
             }
             for (SDDocumentType type : sdoc.getTypes()) {
@@ -454,19 +439,16 @@ public class DocumentModelBuilder {
                 return;
             }
             inProgress.put(type, this);
-            if (type instanceof StructDataType) {
-                StructDataType tmp = (StructDataType) type;
-                extractDataTypesFromFields(tmp.getFieldsThisTypeOnly());
-            } else if (type instanceof CollectionDataType) {
-                CollectionDataType tmp = (CollectionDataType) type;
-                extractNestedTypes(tmp.getNestedType());
-                addType(tmp.getNestedType());
-            } else if (type instanceof MapDataType) {
-                MapDataType tmp = (MapDataType) type;
-                extractNestedTypes(tmp.getKeyType());
-                extractNestedTypes(tmp.getValueType());
-                addType(tmp.getKeyType());
-                addType(tmp.getValueType());
+            if (type instanceof StructDataType sdt) {
+                extractDataTypesFromFields(sdt.getFieldsThisTypeOnly());
+            } else if (type instanceof CollectionDataType cdt) {
+                extractNestedTypes(cdt.getNestedType());
+                addType(cdt.getNestedType());
+            } else if (type instanceof MapDataType mdt) {
+                extractNestedTypes(mdt.getKeyType());
+                extractNestedTypes(mdt.getValueType());
+                addType(mdt.getKeyType());
+                addType(mdt.getValueType());
             } else if (type instanceof TemporaryAnnotationReferenceDataType) {
                 throw new IllegalArgumentException(type.toString());
             }
@@ -474,7 +456,7 @@ public class DocumentModelBuilder {
 
         private boolean testAddType(DataType type) { return internalAddType(type, true); }
 
-        private boolean addType(DataType type) { return internalAddType(type, false); }
+        private void addType(DataType type) { internalAddType(type, false); }
 
         private boolean internalAddType(DataType type, boolean dryRun) {
             DataType oldType = targetDt.getDataTypeRecursive(type.getId());
@@ -488,11 +470,9 @@ public class DocumentModelBuilder {
                 return false;
             }
             if (targetDt.getDataType(type.getId()) == null) {
-                if ((oldType instanceof OwnedStructDataType)
-                    && (type instanceof OwnedStructDataType))
+                if ((oldType instanceof OwnedStructDataType oldOwned)
+                    && (type instanceof OwnedStructDataType newOwned))
                 {
-                    var oldOwned = (OwnedStructDataType) oldType;
-                    var newOwned = (OwnedStructDataType) type;
                     if (newOwned.getOwnerName().equals(targetDt.getName()) &&
                         ! oldOwned.getOwnerName().equals(targetDt.getName()))
                     {
@@ -503,10 +483,8 @@ public class DocumentModelBuilder {
                     }
                 }
             }
-            if ((type instanceof StructDataType) && (oldType instanceof StructDataType)) {
-                StructDataType s = (StructDataType) type;
-                StructDataType os = (StructDataType) oldType;
-                if ((os.getFieldCount() == 0) && (s.getFieldCount() > os.getFieldCount())) {
+            if ((type instanceof StructDataType sdt) && (oldType instanceof StructDataType oldSdt)) {
+                if ((oldSdt.getFieldCount() == 0) && (sdt.getFieldCount() > oldSdt.getFieldCount())) {
                     if ( ! dryRun) {
                         targetDt.replace(type);
                     }
@@ -528,8 +506,7 @@ public class DocumentModelBuilder {
 
         private DataType specialHandleAnnotationReferenceRecurse(String fieldName,
                                                                  DataType dataType) {
-            if (dataType instanceof TemporaryAnnotationReferenceDataType) {
-                TemporaryAnnotationReferenceDataType refType = (TemporaryAnnotationReferenceDataType)dataType;
+            if (dataType instanceof TemporaryAnnotationReferenceDataType refType) {
                 if (refType.getId() != 0) {
                     return null;
                 }
@@ -542,42 +519,38 @@ public class DocumentModelBuilder {
                 addType(dataType);
                 return dataType;
             }
-            else if (dataType instanceof MapDataType) {
-                MapDataType t = (MapDataType)dataType;
-                DataType valueType = specialHandleAnnotationReferenceRecurse(fieldName, t.getValueType());
+            else if (dataType instanceof MapDataType mdt) {
+                DataType valueType = specialHandleAnnotationReferenceRecurse(fieldName, mdt.getValueType());
                 if (valueType == null) {
                     return null;
                 }
-                var mapType = new MapDataType(t.getKeyType(), valueType, t.getId());
+                var mapType = new MapDataType(mdt.getKeyType(), valueType, mdt.getId());
                 addType(mapType);
                 return mapType;
             }
-            else if (dataType instanceof ArrayDataType) {
-                ArrayDataType t = (ArrayDataType) dataType;
-                DataType nestedType = specialHandleAnnotationReferenceRecurse(fieldName, t.getNestedType());
+            else if (dataType instanceof ArrayDataType adt) {
+                DataType nestedType = specialHandleAnnotationReferenceRecurse(fieldName, adt.getNestedType());
                 if (nestedType == null) {
                     return null;
                 }
-                var lstType = new ArrayDataType(nestedType, t.getId());
+                var lstType = new ArrayDataType(nestedType, adt.getId());
                 addType(lstType);
                 return lstType;
             }
-            else if (dataType instanceof WeightedSetDataType) {
-                WeightedSetDataType t = (WeightedSetDataType) dataType;
-                DataType nestedType = specialHandleAnnotationReferenceRecurse(fieldName, t.getNestedType());
+            else if (dataType instanceof WeightedSetDataType wdt) {
+                DataType nestedType = specialHandleAnnotationReferenceRecurse(fieldName, wdt.getNestedType());
                 if (nestedType == null) {
                     return null;
                 }
-                boolean c = t.createIfNonExistent();
-                boolean r = t.removeIfZero();
-                var lstType = new WeightedSetDataType(nestedType, c, r, t.getId());
+                boolean c = wdt.createIfNonExistent();
+                boolean r = wdt.removeIfZero();
+                var lstType = new WeightedSetDataType(nestedType, c, r, wdt.getId());
                 addType(lstType);
                 return lstType;
             }
             return null;
         }
 
-        @SuppressWarnings("deprecation")
         private StructDataType handleStruct(SDDocumentType type) {
             if (type.isStruct()) {
                 var st = type.getStruct();
@@ -614,7 +587,7 @@ public class DocumentModelBuilder {
     }
 
     private static Set<NewDocumentType.Name> convertDocumentReferencesToNames(Optional<DocumentReferences> documentReferences) {
-        if (!documentReferences.isPresent()) {
+        if (documentReferences.isEmpty()) {
             return Set.of();
         }
         return documentReferences.get().referenceMap().values().stream()

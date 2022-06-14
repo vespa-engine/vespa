@@ -3,7 +3,6 @@
 #include "hnsw_graph.h"
 #include "hnsw_index.h"
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/vespalib/util/rcuvector.hpp>
 
 namespace search::tensor {
 

@@ -527,7 +527,7 @@ PersistenceEngine::createIterator(const Bucket &bucket, FieldSetSP fields, const
     entry->handler_sequence = HandlerSnapshot::release(std::move(snapshot));
 
     std::lock_guard<std::mutex> guard(_iterators_lock);
-    static IteratorId id_counter(0);
+    static std::atomic<IteratorId::Type> id_counter(0);
     IteratorId id(++id_counter);
     _iterators[id] = entry.release();
     return CreateIteratorResult(id);

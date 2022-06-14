@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "documentdbconfig.h"
 #include "feedconfigstore.h"
 #include <vespa/searchcommon/common/schema.h>
 
@@ -10,6 +9,8 @@ namespace vespa::config::search::core::internal {
     class InternalProtonType;
 }
 namespace proton {
+
+class DocumentDBConfig;
 
 struct ConfigStore : FeedConfigStore {
     typedef std::unique_ptr<ConfigStore> UP;
@@ -25,7 +26,7 @@ struct ConfigStore : FeedConfigStore {
      *                       resulting config snapshot.
      */
     virtual void loadConfig(const DocumentDBConfig &currentSnapshot, SerialNum serialNum,
-                            DocumentDBConfig::SP &loadedSnapshot) = 0;
+                            std::shared_ptr<DocumentDBConfig> &loadedSnapshot) = 0;
     virtual void saveConfig(const DocumentDBConfig &snapshot, SerialNum serialNum) = 0;
 
     virtual void removeInvalid() = 0;

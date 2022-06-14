@@ -75,7 +75,7 @@ void test_generic_reduce_with(const ValueBuilderFactory &factory) {
             auto input = layout.cpy().cells(ct);
             if (input.bad_scalar()) continue;
             SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.gen().type().c_str(), input.gen().cells().size()));
-            for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
+            for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX, Aggr::COUNT}) {
                 SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));
                 auto t = layout.type();
                 for (const auto & dim: t.dimensions()) {

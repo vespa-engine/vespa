@@ -14,6 +14,7 @@ import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.SimpleIndexedItem;
 import com.yahoo.prelude.query.SubstringItem;
+import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.result.Hit;
@@ -26,8 +27,6 @@ public class QueryRewrite {
 
     private enum Recall { RECALLS_EVERYTHING, RECALLS_NOTHING, UNKNOWN_RECALL }
 
-    // ------------------- Start public API
-    
     /**
      * Optimize multiple NotItems under and or by collapsing them in to one and leaving
      * the positive ones behind in its place and moving itself with the original and as its positive item
@@ -49,6 +48,7 @@ public class QueryRewrite {
             return;
         }
         Item root = query.getModel().getQueryTree().getRoot();
+
         if (optimizeByRestrict(root, query.getModel().getRestrict().iterator().next()) == Recall.RECALLS_NOTHING) {
             query.getModel().getQueryTree().setRoot(new NullItem());
         }
@@ -170,8 +170,8 @@ public class QueryRewrite {
                     if ((item instanceof OrItem) || (item instanceof EquivItem)) {
                         removeOtherNonrankedChildren(item, i);
                         recall = Recall.RECALLS_EVERYTHING;
-                    } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
-                        if ( ! isRanked(item.getItem(i))) {
+                    } else if ((item instanceof AndItem) || (item instanceof NearItem) || (item instanceof WeakAndItem)) {
+                        if ( ! isRanked(item.getItem(i)) && item.items().size() > 1) {
                             item.removeItem(i);
                         }
                     } else if (item instanceof RankItem) {
@@ -181,9 +181,9 @@ public class QueryRewrite {
                     }
                     break;
                 case RECALLS_NOTHING:
-                    if ((item instanceof OrItem) || (item instanceof EquivItem)) {
+                    if ((item instanceof OrItem) || (item instanceof EquivItem) && item.items().size() > 1) {
                         item.removeItem(i);
-                    } else if ((item instanceof AndItem) || (item instanceof NearItem)) {
+                    } else if ((item instanceof AndItem) || (item instanceof NearItem) || (item instanceof WeakAndItem)) {
                         return Recall.RECALLS_NOTHING;
                     } else if (item instanceof RankItem) {
                         if (i == 0) return Recall.RECALLS_NOTHING;

@@ -145,7 +145,7 @@ public:
     size_t capacity() const { return _wbuf.size(); }
     bool empty()  const { return size() == 0; }
     const char * data() const { return &_rbuf[0]; }
-    const char * peek() const { return &_rbuf[_rp]; }
+    const char * peek() const { return _rbuf.c_str() + _rp; }
     size_t rp() const { return _rp; }
     nbostream & rp(size_t pos) { if (pos > _wp) fail(eof); _rp = pos; return *this; }
     nbostream & wp(size_t pos) { if (pos > _wbuf.size()) fail(oob); _wp = pos; return *this; }
@@ -159,7 +159,9 @@ public:
         if (__builtin_expect(space() < sz, false)) {
             extend(sz);
         }
-        memcpy(&_wbuf[_wp], v, sz);
+        if (sz > 0) {
+            memcpy(&_wbuf[_wp], v, sz);
+        }
         _wp += sz;
     }
     void read(void *v, size_t sz) {

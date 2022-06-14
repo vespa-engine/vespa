@@ -2,9 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <memory>
 
+namespace search::attribute { class Config; }
 namespace search {
 
 class AttributeVector;

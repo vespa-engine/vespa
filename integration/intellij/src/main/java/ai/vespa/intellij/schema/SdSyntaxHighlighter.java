@@ -153,7 +153,7 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         constants.add(SdTypes.NUM_THREADS_PER_SEARCH);
         constants.add(SdTypes.TERMWISE_LIMIT);
         constants.add(SdTypes.MIN_HITS_PER_THREAD);
-        constants.add(SdTypes.NUM_SEARCH_PARTITION);
+        constants.add(SdTypes.NUM_SEARCH_PARTITIONS);
         constants.add(SdTypes.KEEP_RANK_COUNT);
         constants.add(SdTypes.RANK_SCORE_DROP_LIMIT);
         constants.add(SdTypes.RERANK_COUNT);
@@ -174,6 +174,7 @@ public class SdSyntaxHighlighter extends SyntaxHighlighterBase {
         constants.add(SdTypes.SET_LANGUAGE);
         constants.add(SdTypes.LOWERCASE);
         constants.add(SdTypes.FAST_SEARCH);
+        constants.add(SdTypes.FAST_RANK);
         constants.add(SdTypes.FAST_ACCESS);
         constants.add(SdTypes.PAGED);
         constants.add(SdTypes.MUTABLE);

@@ -43,7 +43,7 @@ UcaFunctionNode & UcaFunctionNode::operator = (const UcaFunctionNode & rhs)
 
 void UcaFunctionNode::onPrepareResult()
 {
-    if (getArg().getResult().inherits(ResultNodeVector::classId)) {
+    if (getArg().getResult()->inherits(ResultNodeVector::classId)) {
         setResultType(std::make_unique<RawResultNodeVector>());
         _handler = std::make_unique<MultiValueHandler>(*this);
     } else {
@@ -68,7 +68,7 @@ void UcaFunctionNode::Handler::handleOne(const ResultNode & arg, RawResultNode &
 bool UcaFunctionNode::onExecute() const
 {
     getArg().execute();
-    _handler->handle(getArg().getResult());
+    _handler->handle(*getArg().getResult());
     return true;
 }
 

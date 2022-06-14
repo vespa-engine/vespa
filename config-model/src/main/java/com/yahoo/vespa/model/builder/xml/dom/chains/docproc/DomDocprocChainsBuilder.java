@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom.chains.docproc;
 
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.builder.xml.dom.chains.ComponentsBuilder.ComponentType;
@@ -20,8 +19,8 @@ import java.util.Map;
  */
 public class DomDocprocChainsBuilder  extends DomChainsBuilder<DocumentProcessor, DocprocChain, DocprocChains> {
     public DomDocprocChainsBuilder(Element outerChainsElem, boolean supportDocprocChainsDir) {
-        super(outerChainsElem, List.of(ComponentType.documentprocessor),
-              supportDocprocChainsDir ? ApplicationPackage.DOCPROCCHAINS_DIR: null);
+        super(List.of(ComponentType.documentprocessor)
+        );
     }
 
     @Override

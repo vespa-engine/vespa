@@ -14,7 +14,7 @@ struct PredicateHash {
     }
 
     static uint64_t hash64(const void *data, uint32_t origLen) {
-        int64_t a, b, c;
+        uint64_t a, b, c;
         int offset;  // Current offset into the entire key.
 
         const uint8_t *aKey = static_cast<const uint8_t *>(data);
@@ -54,18 +54,18 @@ struct PredicateHash {
                   ((0xffLL & aKey[offset+23])<<56));
     
             // Mix.  This arithmetic must match the mix below.
-            a -= b; a -= c; a ^= (((uint64_t) c)>>43);
+            a -= b; a -= c; a ^= (c>>43);
             b -= c; b -= a; b ^= (a<<9);
-            c -= a; c -= b; c ^= (((uint64_t) b)>>8);
-            a -= b; a -= c; a ^= (((uint64_t) c)>>38);
+            c -= a; c -= b; c ^= (b>>8);
+            a -= b; a -= c; a ^= (c>>38);
             b -= c; b -= a; b ^= (a<<23);
-            c -= a; c -= b; c ^= (((uint64_t) b)>>5);
-            a -= b; a -= c; a ^= (((uint64_t) c)>>35);
+            c -= a; c -= b; c ^= (b>>5);
+            a -= b; a -= c; a ^= (c>>35);
             b -= c; b -= a; b ^= (a<<49);
-            c -= a; c -= b; c ^= (((uint64_t) b)>>11);
-            a -= b; a -= c; a ^= (((uint64_t) c)>>12);
+            c -= a; c -= b; c ^= (b>>11);
+            a -= b; a -= c; a ^= (c>>12);
             b -= c; b -= a; b ^= (a<<18);
-            c -= a; c -= b; c ^= (((uint64_t) b)>>22);
+            c -= a; c -= b; c ^= (b>>22);
             // End mix.
 
             offset += 24; len -= 24;
@@ -102,21 +102,21 @@ struct PredicateHash {
         }
 
         // Mix.  This arithmetic must match the mix above.
-        a -= b; a -= c; a ^= (((uint64_t) c)>>43);
+        a -= b; a -= c; a ^= (c>>43);
         b -= c; b -= a; b ^= (a<<9);
-        c -= a; c -= b; c ^= (((uint64_t) b)>>8);
-        a -= b; a -= c; a ^= (((uint64_t) c)>>38);
+        c -= a; c -= b; c ^= (b>>8);
+        a -= b; a -= c; a ^= (c>>38);
         b -= c; b -= a; b ^= (a<<23);
-        c -= a; c -= b; c ^= (((uint64_t) b)>>5);
-        a -= b; a -= c; a ^= (((uint64_t) c)>>35);
+        c -= a; c -= b; c ^= (b>>5);
+        a -= b; a -= c; a ^= (c>>35);
         b -= c; b -= a; b ^= (a<<49);
-        c -= a; c -= b; c ^= (((uint64_t) b)>>11);
-        a -= b; a -= c; a ^= (((uint64_t) c)>>12);
+        c -= a; c -= b; c ^= (b>>11);
+        a -= b; a -= c; a ^= (c>>12);
         b -= c; b -= a; b ^= (a<<18);
-        c -= a; c -= b; c ^= (((uint64_t) b)>>22);
+        c -= a; c -= b; c ^= (b>>22);
         // End mix.
 
-        return static_cast<uint64_t>(c);
+        return c;
     }
 };
 

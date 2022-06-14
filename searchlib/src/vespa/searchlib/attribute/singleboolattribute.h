@@ -8,6 +8,8 @@
 
 namespace search {
 
+class GrowStrategy;
+
 /**
  * Attributevector for boolean field values occupying a bit per document
  * and backed by a growable rcu bit vector.
@@ -15,7 +17,7 @@ namespace search {
 class SingleBoolAttribute final : public IntegerAttributeTemplate<int8_t>
 {
 public:
-    SingleBoolAttribute(const vespalib::string & baseFileName, const search::GrowStrategy & grow, bool paged);
+    SingleBoolAttribute(const vespalib::string & baseFileName, const GrowStrategy & grow, bool paged);
     ~SingleBoolAttribute() override;
 
     void onCommit() override;

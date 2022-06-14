@@ -30,8 +30,7 @@ class ParsedDocumentSummary extends ParsedBlock {
 
     ParsedSummaryField addField(ParsedSummaryField field) {
         String fieldName = field.name();
-        // TODO disallow this on Vespa 8
-        // verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
+        verifyThat(! fields.containsKey(fieldName), "already has field", fieldName);
         return fields.put(fieldName, field);
     }
 

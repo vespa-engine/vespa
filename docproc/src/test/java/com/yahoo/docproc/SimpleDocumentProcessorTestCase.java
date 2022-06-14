@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc;
 
+import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentId;
@@ -23,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class SimpleDocumentProcessorTestCase {
 
     private static DocprocService setupDocprocService(SimpleDocumentProcessor processor, Metric metric) {

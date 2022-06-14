@@ -8,11 +8,11 @@
     <parent>
         <groupId>com.yahoo.vespa.bundle-plugin</groupId>
         <artifactId>bundle-plugin-test</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <artifactId>test-bundles</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <packaging>pom</packaging>
     <build>
         <plugins>

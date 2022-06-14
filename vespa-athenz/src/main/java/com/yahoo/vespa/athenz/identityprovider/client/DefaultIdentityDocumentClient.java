@@ -16,7 +16,6 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.eclipse.jetty.http.HttpStatus;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
@@ -80,7 +79,8 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                     .build();
             try (CloseableHttpResponse response = client.execute(request)) {
                 String responseContent = EntityUtils.toString(response.getEntity());
-                if (HttpStatus.isSuccess(response.getStatusLine().getStatusCode())) {
+                int statusCode = response.getStatusLine().getStatusCode();
+                if (statusCode >= 200 && statusCode <= 299) {
                     SignedIdentityDocumentEntity entity = objectMapper.readValue(responseContent, SignedIdentityDocumentEntity.class);
                     return EntityBindingsMapper.toSignedIdentityDocument(entity);
                 } else {
@@ -88,7 +88,7 @@ public class DefaultIdentityDocumentClient implements IdentityDocumentClient {
                             String.format(
                                     "Failed to retrieve identity document for host %s: %d - %s",
                                     host,
-                                    response.getStatusLine().getStatusCode(),
+                                    statusCode,
                                     responseContent));
                 }
             }

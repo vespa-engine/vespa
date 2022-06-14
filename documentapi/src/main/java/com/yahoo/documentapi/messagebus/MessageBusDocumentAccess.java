@@ -53,13 +53,12 @@ public class MessageBusDocumentAccess extends DocumentAccess {
      *
      * @param params All parameters for construction.
      */
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     public MessageBusDocumentAccess(MessageBusParams params) {
         super(params);
         this.params = params;
         try {
             com.yahoo.messagebus.MessageBusParams mbusParams = new com.yahoo.messagebus.MessageBusParams(params.getMessageBusParams());
-            mbusParams.addProtocol(new DocumentProtocol(getDocumentTypeManager(), params.getProtocolConfigId(), params.getLoadTypes()));
+            mbusParams.addProtocol(new DocumentProtocol(getDocumentTypeManager(), params.getProtocolConfigId()));
             if (System.getProperty("vespa.local", "false").equals("true")) { // set by Application when running locally
                 LocalNetwork network = new LocalNetwork();
                 bus = new NetworkMessageBus(network, new MessageBus(network, mbusParams));

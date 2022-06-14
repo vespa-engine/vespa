@@ -7,12 +7,12 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>container-apache-http-client-bundle</artifactId>
     <packaging>container-plugin</packaging>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
 
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <properties>

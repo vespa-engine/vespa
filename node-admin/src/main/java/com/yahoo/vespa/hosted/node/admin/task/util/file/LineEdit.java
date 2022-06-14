@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.List;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit.Type.REPLACE;
@@ -10,7 +9,6 @@ import static com.yahoo.vespa.hosted.node.admin.task.util.file.LineEdit.Type.NON
 /**
  * @author hakonhall
  */
-@Immutable
 public class LineEdit {
     enum Type { NONE, REPLACE }
 

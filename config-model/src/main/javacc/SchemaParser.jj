@@ -190,12 +190,7 @@ TOKEN :
 | < MUTATE: "mutate" >
 | < QUERY: "query" >
 | < RANKPROFILE: "rank-profile" >
-| < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
-| < RANKDEGRADATION: "rank-degradation" >
 | < RAW_AS_BASE64_IN_SUMMARY: "raw-as-base64-in-summary" >
-| < RPBINSIZE: "doc-frequency" >
-| < RPBINLOW:  "min-fullrank-docs">
-| < RPPOSBINSIZE: "occurrences-per-doc" >
 | < SUMMARY: "summary" >
 | < FULL: "full" >
 | < STATIC: "static" >
@@ -229,8 +224,6 @@ TOKEN :
 | < CASED: "cased" >
 | < UNCASED: "uncased" >
 | < BOLDING: "bolding" >
-| < BODY: "body" >
-| < HEADER: "header" >
 | < NONE: "none" >
 | < ON: "on" >
 | < OFF: "off" >
@@ -246,7 +239,6 @@ TOKEN :
 | < FILTER: "filter" >
 | < NORMAL: "normal" >
 | < EXACTTERMINATOR: "exact-terminator" >
-| < INDEXINGREWRITE: "indexing-rewrite" >
 | < IGNOREDEFAULTRANKFEATURES: "ignore-default-rank-features" >
 | < ID: "id" >
 | < SOURCE: "source" >
@@ -264,15 +256,9 @@ TOKEN :
 | < PAGED: "paged" >
 | < FASTRANK: "fast-rank" >
 | < FASTSEARCH: "fast-search" >
-| < HUGE: "huge" >
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
-| < COMPRESSION: "compression" >
-| < COMPRESSIONLEVEL: "level" >
-| < COMPRESSIONTHRESHOLD: "threshold" >
-| < LZ4: "lz4" >
-| < USEDOCUMENT: "use-document" >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
 | < COLON: ":" >
@@ -418,8 +404,7 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | rawAsBase64(schema)
       | searchStemming(schema)
       | importField(schema)
-      | rankingConstant(schema) // Deprecated: TODO: Emit warning when on Vespa 8
-      | useDocument(schema)
+      | rankingConstant(schema) // Deprecated: TODO: Vespa > 8: Emit warning
       | rankProfile(schema)
       | documentSummary(schema)
       | fieldOutsideDoc(schema)
@@ -427,7 +412,7 @@ void rootSchemaItem(ParsedSchema schema) : { }
       | structOutside(schema)
       | annotationOutside(schema)
       | fieldSet(schema)
-      | onnxModelInSchema(schema) // Deprecated: TODO: Emit warning when on Vespa 8
+      | onnxModelInSchema(schema) // Deprecated: TODO: Vespa > 8: Emit warning
  )
 }
 
@@ -463,17 +448,6 @@ ParsedSchema rootDocumentItem(ParsedSchema schema) :
         schema.setDocumentWithoutSchema();
         return schema;
     } )
-}
-
-/**
- * Consumes a use-document statement. This currently does nothing.
- *
- * @param schema the schema object to modify.
- */
-void useDocument(ParsedSchema schema) : { }
-{
-    <USEDOCUMENT> <COLON> identifier()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'use-document' is deprecated and has no effect."); }
 }
 
 /**
@@ -519,10 +493,7 @@ ParsedDocument namedDocument() :
  */
 void documentBody(ParsedDocument document) : { }
 {
-    ( compression()
-      | headercfg()
-      | bodycfg()
-      | annotation(document)
+    ( annotation(document)
       | structInside(document)
       | fieldInsideDoc(document)
     )
@@ -541,44 +512,6 @@ void rawAsBase64(ParsedSchema schema) :
     {
         schema.enableRawAsBase64(enabled);
     }
-}
-
-/**
- * Consumes a document head block.
- */
-void headercfg() : { }
-{
-    <HEADER> lbrace() [compression() (<NL>)*] <RBRACE>
-}
-
-/**
- * Consumes a document body block.
- */
-void bodycfg() : { }
-{
-    <BODY> lbrace() [compression() (<NL>)*] <RBRACE>
-}
-
-/**
- * Consumes a compression block. This can be set in both document header and -body block.
- */
-void compression() :
-{
-    deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
-}
-{
-    <COMPRESSION> lbrace() ( compressionItem() (<NL>)*)* <RBRACE>
-}
-
-/**
- * Consumes the body of a compression block.
- */
-void compressionItem() : { }
-{
-    ( ( <TYPE> <COLON> <LZ4> )
-      | (<COMPRESSIONTHRESHOLD> <COLON> <INTEGER>)
-      | (<COMPRESSIONLEVEL> <COLON> <INTEGER>)
-    )
 }
 
 /**
@@ -907,16 +840,13 @@ void fieldBody(ParsedField field) : { }
 {
     ( alias(field) |
       attribute(field) |
-      body() |
       bolding(field) |
       dictionary(field) |
       fieldStemming(field) |
-      header() |
       id(field) |
       summaryInField(field) |
       indexInsideField(field) |
       indexing(field) |
-      indexingRewrite(field) |
       matchSettings(field.matchSettings()) |
       normalizing(field) |
       queryCommand(field) |
@@ -1115,8 +1045,7 @@ void attributeSetting(ParsedAttribute attribute) :
 }
 {
     (
-        <HUGE>                 { attribute.setHuge(true); }
-      | <FASTRANK>             { attribute.setFastRank(true); }
+        <FASTRANK>             { attribute.setFastRank(true); }
       | <FASTSEARCH>           { attribute.setFastSearch(true); }
       | <FASTACCESS>           { attribute.setFastAccess(true); }
       | <MUTABLE>              { attribute.setMutable(true); }
@@ -1127,26 +1056,8 @@ void attributeSetting(ParsedAttribute attribute) :
       | <ALIAS> { String alias; String aliasedName=attribute.name(); } [aliasedName = identifier()] <COLON> alias = identifierWithDash() {
           attribute.addAlias(aliasedName, alias);
       }
-      | attributeTensorType(attribute)
       | <DISTANCEMETRIC> <COLON> str = identifierWithDash() { attribute.setDistanceMetric(str); }
     )
-}
-
-/**
- * This rule consumes a tensor type statement for an attribute element.
- *
- * @param attribute The attribute to modify.
- */
-void attributeTensorType(ParsedAttribute attribute) :
-{
-    TensorType tensorType;
-}
-{
-    tensorType = tensorType("For attribute field '" + attribute.name() + "'")
-    {
-        // TODO: Remove on Vespa 8
-        deployLogger.logApplicationPackage(Level.WARNING, "In field '" + attribute.name() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
-    }
 }
 
 /**
@@ -1235,7 +1146,7 @@ void summaryItem(ParsedSummaryField field) : { }
       | summaryBolding(field)
       | summarySourceList(field)
       | summaryDestinationList(field)
-      | summaryProperties(field) )
+    )
 }
 
 /**
@@ -1291,30 +1202,6 @@ void summaryDestinationList(ParsedSummaryField field) :
 {
     <TO> <COLON> str = identifier() { field.addDestination(str); }
     (    <COMMA> str = identifier() { field.addDestination(str); } )*
-}
-
-/**
- * This rule consumes properties for a summary field element.
- *
- * @param field The summary field to modify.
- */
-void summaryProperties(ParsedSummaryField field) : { }
-{
-    <PROPERTIES> lbrace() (summaryProperty(field) <NL>)+ <RBRACE>
-}
-
-/**
- * This rule consumes a single summary property pair for a summary field element.
- *
- * @param field The summary field to modify.
- */
-void summaryProperty(ParsedSummaryField field) :
-{
-    String name, value;
-}
-{
-    name = identifierWithDash() <COLON> (value = identifierWithDash() | value = quotedString())
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying summary properties is deprecated and has no effect."); }
 }
 
 /**
@@ -1397,28 +1284,6 @@ void dictionarySetting(ParsedField field) : { }
       | <BTREE>           { field.dictionary(DictionaryOption.BTREE); }
       | <CASED>           { field.dictionary(DictionaryOption.CASED); }
       | <UNCASED>         { field.dictionary(DictionaryOption.UNCASED); } )
-}
-
-/**
- * This rule consumes a body statement of a field element.
- */
-void body() : { }
-{
-    <BODY>
-    {
-        deployLogger.logApplicationPackage(Level.WARNING, "'body' is deprecated and has no effect.");
-    }
-}
-
-/**
- * This rule consumes a header statement of a field element.
- */
-void header() : { }
-{
-    <HEADER>
-    {
-        deployLogger.logApplicationPackage(Level.WARNING, "'header' is deprecated and has no effect.");
-    }
 }
 
 void queryCommand(ParsedField field) :
@@ -1544,17 +1409,6 @@ void id(ParsedField field) :
     {
         field.setId(fieldId);
     }
-}
-
-/**
- * Consumes an indexing-rewrite statement of a field body block.
- *
- * @param field The field to modify.
- */
-void indexingRewrite(ParsedField field) : { }
-{
-    <INDEXINGREWRITE> <COLON> <NONE>
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'indexing-rewrite' is deprecated and has no effect."); }
 }
 
 /**
@@ -1774,7 +1628,7 @@ void rankingConstant(ParsedSchema schema) :
 {
     ( <CONSTANT> name = identifier() lbrace()
       (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
-       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. TODO: Remove on Vespa 8
+       | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. Remove?
        | type = tensorTypeWithPrefix(rankingConstantErrorMessage(name)) (<NL>)*
       )+
       <RBRACE>
@@ -1852,7 +1706,6 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
       | rankFeatures(profile)
       | rankProperties(profile)
       | secondPhase(profile)
-      | rankDegradation()
       | inputs(profile)
       | constants(schema, profile)
       | matchFeatures(profile)
@@ -1934,8 +1787,7 @@ void function(ParsedRankProfile profile) :
         func.setInline(inline);
         var old = profile.addOrReplaceFunction(func);
         if (old != null) {
-            /* TODO disallow this for Vespa 8 */
-            deployLogger.logApplicationPackage(Level.WARNING, "Function '" + func.name()
+            throw new IllegalArgumentException("Function '" + func.name()
                                                + "' is defined twice in rank profile '"
                                                + profile.name() + "'");
         }
@@ -2375,68 +2227,6 @@ void fieldRankFilter(ParsedRankProfile profile) :
 }
 
 /**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationBinSize() :
-{
-    double freq;
-}
-{
-    <RPBINSIZE> <COLON> freq = floatValue()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
-}
-
-
-/**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationBinLow() :
-{
-    int n;
-}
-{
-    <RPBINLOW> <COLON> n = integer()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
-}
-
-/**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationPosbinSize() :
-{
-    double avgOcc;
-}
-{
-    <RPPOSBINSIZE> <COLON> avgOcc = floatValue()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
-}
-
-
-/**
- * Consumes part of a rank-degradation statement of a rank profile.
- */
-void rankDegradationItem() : { }
-{
-    ( rankDegradationBinSize()
-      | rankDegradationBinLow()
-      | rankDegradationPosbinSize() )
-}
-
-/**
- * Consumes a rank-degradation statement of a rank profile.
- */
-void rankDegradation() :
-{
-    double freq;
-}
-{
-    ( <RANKDEGRADATIONFREQ> <COLON> freq = floatValue()
-    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
-      | <RANKDEGRADATION> lbrace() ( rankDegradationItem() (<NL>)*)+ <RBRACE>
-    )
-}
-
-/**
  * Consumes a set of constants available in ranking expressions in the enclosing profile.
  */
 void constants(ParsedSchema schema, ParsedRankProfile profile) :
@@ -2468,7 +2258,7 @@ void constant(ParsedSchema schema, ParsedRankProfile profile) :
                 profile.add(new RankProfile.Constant(name, type, valuePath));
         }
         )
-        | // Deprecated forms (TODO: Add warning on Vespa 8):
+        | // Deprecated forms (TODO: Vespa > 8: Add warning):
         ( constantValue(profile, name) | constantTensor(profile, name) )
       )
     )
@@ -2759,13 +2549,9 @@ String identifier() : { }
       | <AS>
       | <ASCENDING>
       | <ATTRIBUTE>
-      | <BODY>
       | <BOLDING>
       | <BTREE>
       | <CASED>
-      | <COMPRESSION>
-      | <COMPRESSIONLEVEL>
-      | <COMPRESSIONTHRESHOLD>
       | <CONSTANT>
       | <CONSTANTS>
       | <CONTEXT>
@@ -2796,8 +2582,6 @@ String identifier() : { }
       | <FUNCTION>
       | <GRAM>
       | <HASH>
-      | <HEADER>
-      | <HUGE>
       | <ID>
       | <IDENTICAL>
       | <IDENTIFIER>
@@ -2805,7 +2589,6 @@ String identifier() : { }
       | <IMPORT>
       | <INDEX>
       | <INDEXING>
-      | <INDEXINGREWRITE>
       | <INHERITS>
       | <INLINE>
       | <INPUTS>
@@ -2880,7 +2663,6 @@ String identifier() : { }
       | <UNCASED>
       | <URI>
       | <UPPERBOUND>
-      | <USEDOCUMENT>
       | <VARIABLE>
       | <WEIGHT>
       | <WEIGHTEDSET>

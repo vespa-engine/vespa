@@ -4,6 +4,7 @@
 #include "proton.h"
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/compressionconfig.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 

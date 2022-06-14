@@ -147,7 +147,10 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackageBuilder region(String regionName) {
-        return region(RegionName.from(regionName), true);
+        prodBody.append("      <region>")
+                .append(regionName)
+                .append("</region>\n");
+        return this;
     }
 
     public ApplicationPackageBuilder region(RegionName regionName, boolean active) {
@@ -334,23 +337,15 @@ public class ApplicationPackageBuilder {
     }
 
     public ApplicationPackage build() {
-        return build(false);
-    }
-
-    public ApplicationPackage build(boolean useApplicationDir) {
-        String dir = "";
-        if (useApplicationDir) {
-            dir = "application/";
-        }
         ByteArrayOutputStream zip = new ByteArrayOutputStream();
         try (ZipOutputStream out = new ZipOutputStream(zip)) {
             out.setLevel(Deflater.NO_COMPRESSION); // This is for testing purposes so we skip compression for performance
-            writeZipEntry(out, dir + "deployment.xml", deploymentSpec());
-            writeZipEntry(out, dir + "validation-overrides.xml", validationOverrides());
-            writeZipEntry(out, dir + "search-definitions/test.sd", searchDefinition());
-            writeZipEntry(out, dir + "build-meta.json", buildMeta(compileVersion));
+            writeZipEntry(out, "deployment.xml", deploymentSpec());
+            writeZipEntry(out, "validation-overrides.xml", validationOverrides());
+            writeZipEntry(out, "schemas/test.sd", searchDefinition());
+            writeZipEntry(out, "build-meta.json", buildMeta(compileVersion));
             if (!trustedCertificates.isEmpty()) {
-                writeZipEntry(out, dir + "security/clients.pem", X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
+                writeZipEntry(out, "security/clients.pem", X509CertificateUtils.toPem(trustedCertificates).getBytes(UTF_8));
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);

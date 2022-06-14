@@ -22,6 +22,7 @@ import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocIdOnly;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.json.DocumentOperationType;
 import com.yahoo.document.json.JsonReader;
@@ -377,8 +378,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             StorageCluster destination = resolveCluster(Optional.of(requireProperty(request, DESTINATION_CLUSTER)), clusters);
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setRemoteDataHandler("[Content:cluster=" + destination.name() + "]"); // Bypass indexing.
-            // TODO Vespa 8: change to DocumentOnly.NAME
-            parameters.setFieldSet(AllFields.NAME);
+            parameters.setFieldSet(DocumentOnly.NAME);
             return () -> {
                 visitWithRemote(request, parameters, handler);
                 return true; // VisitorSession has its own throttle handling.
@@ -426,7 +426,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                 rawParameters = rawParameters.withFieldSet(path.documentType().orElseThrow() + ":[document]");
             DocumentOperationParameters parameters = rawParameters.withResponseHandler(response -> {
                 outstanding.decrementAndGet();
-                handle(path, handler, response, (document, jsonResponse) -> {
+                handle(path, request, handler, response, (document, jsonResponse) -> {
                     if (document != null) {
                         jsonResponse.writeSingleDocument(document);
                         jsonResponse.commit(Response.Status.OK);
@@ -591,6 +591,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private final OutputStream out = new ContentChannelOutputStream(buffer);
         private final JsonGenerator json;
         private final ResponseHandler handler;
+        private final HttpRequest request;
         private final Queue<CompletionHandler> acks = new ConcurrentLinkedQueue<>();
         private final Queue<ByteArrayOutputStream> docs = new ConcurrentLinkedQueue<>();
         private final AtomicLong documentsWritten = new AtomicLong();
@@ -601,14 +602,24 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         private ContentChannel channel;
 
         private JsonResponse(ResponseHandler handler) throws IOException {
+            this(handler, null);
+        }
+
+        private JsonResponse(ResponseHandler handler, HttpRequest request) throws IOException {
             this.handler = handler;
+            this.request = request;
             json = jsonFactory.createGenerator(out);
             json.writeStartObject();
         }
 
         /** Creates a new JsonResponse with path and id fields written. */
         static JsonResponse create(DocumentPath path, ResponseHandler handler) throws IOException {
-            JsonResponse response = new JsonResponse(handler);
+            return create(path, handler, null);
+        }
+
+        /** Creates a new JsonResponse with path and id fields written. */
+        static JsonResponse create(DocumentPath path, ResponseHandler handler, HttpRequest request) throws IOException {
+            JsonResponse response = new JsonResponse(handler, request);
             response.writePathId(path.rawPath());
             response.writeDocId(path.id());
             return response;
@@ -616,7 +627,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         /** Creates a new JsonResponse with path field written. */
         static JsonResponse create(HttpRequest request, ResponseHandler handler) throws IOException {
-            JsonResponse response = new JsonResponse(handler);
+            JsonResponse response = new JsonResponse(handler, request);
             response.writePathId(request.getUri().getRawPath());
             return response;
         }
@@ -702,8 +713,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
         }
 
+        private boolean tensorShortForm() {
+            if (request != null &&
+                request.parameters().containsKey("format.tensors") &&
+                request.parameters().get("format.tensors").contains("long")) {
+                return false;
+            }
+            return true;  // default
+        }
+
         synchronized void writeSingleDocument(Document document) throws IOException {
-            new JsonWriter(json).writeFields(document);
+            new JsonWriter(json, tensorShortForm()).writeFields(document);
         }
 
         synchronized void writeDocumentsArrayStart() throws IOException {
@@ -722,7 +742,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
             myOut.write(','); // Prepend rather than append, to avoid double memory copying.
             try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                new JsonWriter(myJson).write(document);
+                new JsonWriter(myJson, tensorShortForm()).write(document);
             }
             docs.add(myOut);
 
@@ -1001,8 +1021,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         void onSuccess(Document document, JsonResponse response) throws IOException;
     }
 
-    private static void handle(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response, SuccessCallback callback) {
-        try (JsonResponse jsonResponse = JsonResponse.create(path, handler)) {
+    private static void handle(DocumentPath path, HttpRequest request, ResponseHandler handler, com.yahoo.documentapi.Response response, SuccessCallback callback) {
+        try (JsonResponse jsonResponse = JsonResponse.create(path, handler, request)) {
             jsonResponse.writeTrace(response.getTrace());
             if (response.isSuccess())
                 callback.onSuccess((response instanceof DocumentResponse) ? ((DocumentResponse) response).getDocument() : null, jsonResponse);
@@ -1037,7 +1057,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     }
 
     private static void handleFeedOperation(DocumentPath path, ResponseHandler handler, com.yahoo.documentapi.Response response) {
-        handle(path, handler, response, (document, jsonResponse) -> jsonResponse.commit(Response.Status.OK));
+        handle(path, null, handler, response, (document, jsonResponse) -> jsonResponse.commit(Response.Status.OK));
     }
 
     private void updatePutMetrics(Outcome outcome) {
@@ -1087,8 +1107,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             throw new IllegalArgumentException("Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level");
 
         VisitorParameters parameters = parseCommonParameters(request, path, cluster);
-        // TODO Vespa 8: change to DocumentOnly.NAME
-        parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
+        // TODO can the else-case be safely reduced to always be DocumentOnly.NAME?
+        parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(DocumentOnly.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.visitInconsistentBuckets(true);
         long timeoutMs = Math.max(1, request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis());

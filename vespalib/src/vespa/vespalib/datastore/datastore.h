@@ -35,7 +35,7 @@ public:
     DataStoreT(const DataStoreT &rhs) = delete;
     DataStoreT &operator=(const DataStoreT &rhs) = delete;
     DataStoreT();
-    ~DataStoreT();
+    ~DataStoreT() override;
 
     /**
      * Increase number of dead elements in buffer.
@@ -118,7 +118,10 @@ public:
     ~DataStore();
 
     EntryRef addEntry(const EntryType &e);
-    const EntryType &getEntry(EntryRef ref) const;
+
+    const EntryType &getEntry(EntryRef ref) const {
+        return *this->template getEntry<EntryType>(RefType(ref));
+    }
 };
 
 extern template class DataStoreT<EntryRefT<22> >;

@@ -2,8 +2,7 @@
 package com.yahoo.vespa.http.server;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
- * @since 5.5.0
+ * @author Einar M R Rosenvinge
  */
 public class UnknownClientException extends RuntimeException {
 

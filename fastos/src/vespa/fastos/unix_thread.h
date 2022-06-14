@@ -36,7 +36,7 @@ public:
 
     ~FastOS_UNIX_Thread();
 
-    FastOS_ThreadId GetThreadId () override;
+    FastOS_ThreadId GetThreadId () const noexcept override;
     static bool CompareThreadIds (FastOS_ThreadId a, FastOS_ThreadId b);
     static FastOS_ThreadId GetCurrentThreadId ();
 };

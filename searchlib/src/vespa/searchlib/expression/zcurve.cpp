@@ -31,7 +31,7 @@ ZCurveFunctionNode & ZCurveFunctionNode::operator = (const ZCurveFunctionNode & 
 
 void ZCurveFunctionNode::onPrepareResult()
 {
-    if (getArg().getResult().inherits(ResultNodeVector::classId)) {
+    if (getArg().getResult()->inherits(ResultNodeVector::classId)) {
         setResultType(std::make_unique<IntegerResultNodeVector>());
         _handler = std::make_unique<MultiValueHandler>(*this);
     } else {
@@ -50,7 +50,7 @@ int32_t ZCurveFunctionNode::Handler::getXorY(uint64_t z) const
 bool ZCurveFunctionNode::onExecute() const
 {
     getArg().execute();
-    _handler->handle(getArg().getResult());
+    _handler->handle(*getArg().getResult());
     return true;
 }
 

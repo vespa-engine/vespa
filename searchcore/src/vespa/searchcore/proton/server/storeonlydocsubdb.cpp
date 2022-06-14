@@ -24,8 +24,10 @@
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/searchlib/docstore/document_store_visitor_progress.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlydocsubdb");
@@ -119,7 +121,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _fileHeaderContext(ctx._fileHeaderContext, _docTypeName, _baseDir),
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
 {
-    vespalib::mkdir(_baseDir, false); // Assume parent is created.
+    std::filesystem::create_directory(std::filesystem::path(_baseDir)); // Assume parent is created.
     vespalib::File::sync(vespalib::dirname(_baseDir));
 }
 
@@ -252,7 +254,7 @@ createDocumentMetaStoreInitializer(const AllocStrategy& alloc_strategy,
 {
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
-    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
+    grow.setGrowDelta(grow.getGrowDelta() + alloc_strategy.get_amortize_count());
     vespalib::string baseDir(_baseDir + "/documentmetastore");
     vespalib::string name = DocumentMetaStore::getFixedName();
     vespalib::string attrFileName = baseDir + "/" + name; // XXX: Wrong
@@ -456,7 +458,7 @@ StoreOnlyDocSubDB::reconfigure(const search::LogDocumentStore::Config & config, 
     auto cfg = _dms->getConfig();
     GrowStrategy grow = alloc_strategy.get_grow_strategy();
     // Amortize memory spike cost over N docs
-    grow.setDocsGrowDelta(grow.getDocsGrowDelta() + alloc_strategy.get_amortize_count());
+    grow.setGrowDelta(grow.getGrowDelta() + alloc_strategy.get_amortize_count());
     cfg.setGrowStrategy(grow);
     cfg.setCompactionStrategy(computeCompactionStrategy(alloc_strategy.get_compaction_strategy()));
     _dms->update_config(cfg); // Update grow and compaction config

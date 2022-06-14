@@ -23,6 +23,7 @@ vespa_add_library(searchlib_attribute OBJECT
     attributesaver.cpp
     attributevector.cpp
     attrvector.cpp
+    basename.cpp
     bitvector_search_cache.cpp
     changevector.cpp
     configconverter.cpp
@@ -42,6 +43,7 @@ vespa_add_library(searchlib_attribute OBJECT
     enumattributesaver.cpp
     enumcomparator.cpp
     enumhintsearchcontext.cpp
+    enummodifier.cpp
     enum_store_compaction_spec.cpp
     enum_store_dictionary.cpp
     enum_store_loaders.cpp
@@ -128,5 +130,6 @@ vespa_add_library(searchlib_attribute OBJECT
     string_matcher.cpp
     string_search_context.cpp
     string_search_helper.cpp
+    valuemodifier.cpp
     DEPENDS
 )

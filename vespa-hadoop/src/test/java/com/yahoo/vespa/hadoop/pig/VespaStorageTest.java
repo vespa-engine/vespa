@@ -24,14 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 public class VespaStorageTest {
 
     @Test
-    public void requireThatPremadeXmlOperationsFeedSucceeds() throws Exception {
-        Configuration conf = new HdfsConfiguration();
-        conf.set(VespaConfiguration.DATA_FORMAT, "xml");
-        assertAllDocumentsOk("src/test/pig/feed_operations_xml.pig", conf);
-    }
-
-
-    @Test
     public void requireThatPremadeOperationsFeedSucceeds() throws Exception {
         assertAllDocumentsOk("src/test/pig/feed_operations.pig");
     }
@@ -52,7 +44,6 @@ public class VespaStorageTest {
     public void requireThatPremadeOperationsWithJsonLoaderFeedAndNonLegacyClientSucceeds() throws Exception {
         Configuration conf = new HdfsConfiguration();
         conf.set(VespaConfiguration.USE_SSL, Boolean.TRUE.toString());
-        conf.set(VespaConfiguration.USE_LEGACY_CLIENT, Boolean.FALSE.toString());
         assertAllDocumentsOk("src/test/pig/feed_operations_with_json_loader.pig", conf);
     }
 

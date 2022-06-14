@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/classname.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/approx.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".eval.eval.llvm.compiled_function");

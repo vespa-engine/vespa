@@ -72,29 +72,30 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     }
 
     private void assignLogserver(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
-        if (nodesSpecification.minResources().nodes() > 1) throw new IllegalArgumentException("You can only request a single log server");
-        if (deployState.getProperties().applicationId().instance().isTester()) return; // No logserver is needed on tester applications
-        if (nodesSpecification.isDedicated()) {
-            Collection<HostResource> hosts = allocateHosts(admin.hostSystem(), "logserver", nodesSpecification);
-            if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+        if (nodesSpecification.minResources().nodes() > 1)
+            throw new IllegalArgumentException("You can only request a single log server");
 
-            Logserver logserver = createLogserver(deployState, admin, hosts);
-            createContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
-        } else if (containerModels.iterator().hasNext()) {
-            List<HostResource> hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.minResources().nodes(), false);
-            if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
-
-            createLogserver(deployState, admin, hosts);
-        } else {
+        Collection<HostResource> hosts = List.of();
+        if (nodesSpecification.isDedicated())
+            hosts = allocateHosts(admin.hostSystem(), "logserver", nodesSpecification);
+        else if (containerModels.iterator().hasNext())
+            hosts = sortedContainerHostsFrom(containerModels.iterator().next(), nodesSpecification.minResources().nodes(), false);
+        else
             context.getDeployLogger().logApplicationPackage(Level.INFO, "No container host available to use for running logserver");
-        }
+
+        if (hosts.isEmpty()) return; // No log server can be created (and none is needed)
+
+        Logserver logserver = createLogserver(deployState, admin, hosts);
+        if (nodesSpecification.isDedicated() || deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester())
+            createContainerOnLogserverHost(deployState, admin, logserver.getHostResource());
     }
 
     private NodesSpecification createNodesSpecificationForLogserver() {
         DeployState deployState = context.getDeployState();
-        if (deployState.getProperties().useDedicatedNodeForLogserver() &&
-            context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT &&
-            deployState.isHosted())
+        if (     deployState.getProperties().useDedicatedNodeForLogserver()
+            &&   context.getApplicationType() == ConfigModelContext.ApplicationType.DEFAULT
+            &&   deployState.isHosted()
+            && ! deployState.getProperties().applicationId().instance().isTester())
             return NodesSpecification.dedicated(1, context);
         else
             return NodesSpecification.nonDedicated(1, context);

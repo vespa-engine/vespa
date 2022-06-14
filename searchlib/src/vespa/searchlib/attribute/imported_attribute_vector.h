@@ -3,6 +3,7 @@
 #pragma once
 
 #include "readable_attribute_vector.h"
+#include <vespa/searchlib/common/i_document_meta_store_context.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search { struct IDocumentMetaStoreContext; }
@@ -26,6 +27,7 @@ class ReferenceAttribute;
 class ImportedAttributeVector : public ReadableAttributeVector {
 public:
     using SP = std::shared_ptr<ImportedAttributeVector>;
+    using MetaStoreReadGuard = search::IDocumentMetaStoreContext::IReadGuard;
     ImportedAttributeVector(vespalib::stringref name,
                             std::shared_ptr<ReferenceAttribute> reference_attribute,
                             std::shared_ptr<IDocumentMetaStoreContext> document_meta_store,
@@ -61,6 +63,7 @@ public:
     }
 
     std::unique_ptr<AttributeReadGuard> makeReadGuard(bool stableEnumGuard) const override;
+    virtual std::unique_ptr<AttributeReadGuard> makeReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, bool stableEnumGuard) const;
 
 protected:
     vespalib::string                           _name;

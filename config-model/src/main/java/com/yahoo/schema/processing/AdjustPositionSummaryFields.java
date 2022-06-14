@@ -42,6 +42,16 @@ public class AdjustPositionSummaryFields extends Processor {
         }
     }
 
+    static String getPositionSummaryFieldName(String fieldName) {
+        // Only used in v7 legacy mode, remove in Vespa 9
+        return fieldName + ".position";
+    }
+
+    static String getDistanceSummaryFieldName(String fieldName) {
+        // Only used in v7 legacy mode, remove in Vespa 9
+        return fieldName + ".distance";
+    }
+
     private void scanSummary(DocumentSummary summary) {
         for (SummaryField summaryField : summary.getSummaryFields().values()) {
             if ( ! GeoPos.isAnyPos(summaryField.getDataType())) continue;
@@ -75,12 +85,12 @@ public class AdjustPositionSummaryFields extends Processor {
         summaryField.getSources().clear();
         summaryField.addSource(source);
         ensureSummaryField(summary,
-                           PositionDataType.getPositionSummaryFieldName(summaryField.getName()),
+                           getPositionSummaryFieldName(summaryField.getName()),
                            DataType.getArray(DataType.STRING),
                            source,
                            SummaryTransform.POSITIONS);
         ensureSummaryField(summary,
-                           PositionDataType.getDistanceSummaryFieldName(summaryField.getName()),
+                           getDistanceSummaryFieldName(summaryField.getName()),
                            DataType.INT,
                            source,
                            SummaryTransform.DISTANCE);

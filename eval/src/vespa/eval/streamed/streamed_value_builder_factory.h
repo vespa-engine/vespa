@@ -3,6 +3,7 @@
 #pragma once
 
 #include "streamed_value.h"
+#include <vespa/eval/eval/value_builder_factory.h>
 
 namespace vespalib::eval {
 
@@ -18,7 +19,7 @@ private:
         size_t subspace_size_in, size_t expected_subspaces) const override;
 public:
     static const StreamedValueBuilderFactory &get() { return _factory; }
-    ~StreamedValueBuilderFactory();    
+    ~StreamedValueBuilderFactory() override;
 };
 
 }

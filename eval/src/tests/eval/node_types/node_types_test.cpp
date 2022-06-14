@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value_type_spec.h>
 #include <vespa/eval/eval/node_types.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib::eval;
 

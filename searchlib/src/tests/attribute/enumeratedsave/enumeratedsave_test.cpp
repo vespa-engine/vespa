@@ -1,7 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/fieldvalue/intfieldvalue.h>
-#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributefilesavetarget.h>
@@ -17,13 +15,14 @@
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/document/fieldvalue/intfieldvalue.h>
+#include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
-#include <vespa/vespalib/util/size_literals.h>
-
+#include <vespa/vespalib/stllike/asciistream.h>
 #include <limits>
-#include <iostream>
 #include <cmath>
 
 using search::AttributeFactory;

@@ -2,6 +2,7 @@
 
 #include "attributefactory.h"
 #include "attributevector.h"
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attributefactory");

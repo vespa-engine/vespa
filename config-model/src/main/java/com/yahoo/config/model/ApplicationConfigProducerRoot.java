@@ -22,7 +22,6 @@ import com.yahoo.documentapi.messagebus.protocol.DocumentProtocolPoliciesConfig;
 import com.yahoo.messagebus.MessagebusConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.DistributionConfig;
-import com.yahoo.vespa.config.content.LoadTypeConfig;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.configmodel.producers.DocumentTypes;
 import com.yahoo.vespa.documentmodel.DocumentModel;
@@ -33,7 +32,6 @@ import com.yahoo.vespa.model.PortsMeta;
 import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
-import com.yahoo.vespa.model.clients.Clients;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 import com.yahoo.vespa.model.filedistribution.FileDistributionConfigProducer;
 import com.yahoo.vespa.model.routing.Routing;
@@ -209,15 +207,6 @@ public class ApplicationConfigProducerRoot extends AbstractConfigProducer<Abstra
     public void getConfig(ZookeepersConfig.Builder builder) {
         if (admin != null) {
             admin.getConfig(builder);
-        }
-    }
-
-    @Override
-    public void getConfig(LoadTypeConfig.Builder builder) {
-        VespaModel model = (VespaModel) getRoot();
-        Clients clients = model.getClients();
-        if (clients != null) {
-            clients.getConfig(builder);
         }
     }
 

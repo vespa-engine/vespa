@@ -18,7 +18,7 @@ public class DefParser {
     public static final String DEFAULT_PACKAGE_PREFIX = "com.yahoo.";
 
     static final Pattern commentPattern = Pattern.compile("^\\s*#+\\s*(.*?)\\s*$");
-    // TODO: Version is not used anymore, remove in Vespa 8
+    // TODO: Version is ignored, remove in Vespa 9
     public static final Pattern versionPattern = Pattern.compile("^(version\\s*=\\s*)([0-9][0-9-]*)$");
     // Namespace/package must start with a letter, since Java (Java language Spec, section  3.8) and C++ identifiers cannot start with a digit
     public static final Pattern namespacePattern = getNamespacePattern("namespace");
@@ -127,7 +127,7 @@ public class DefParser {
         }
         Matcher versionMatch = versionPattern.matcher(line);
         if (versionMatch.matches()) {
-            // Do nothing, versions are not used
+            System.err.println("Warning: In config definition '" + name + "': version is deprecated and ignored, please remove, support will be removed in Vespa 9");
             return;
         }
         Matcher namespaceMatcher = namespacePattern.matcher(line);

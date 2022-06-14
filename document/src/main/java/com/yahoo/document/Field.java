@@ -7,8 +7,6 @@ import com.yahoo.document.fieldset.FieldSet;
 import com.yahoo.document.fieldset.NoFields;
 import com.yahoo.vespa.objects.FieldBase;
 
-import java.io.Serializable;
-
 /**
  * A name and type. Fields are contained in document types to describe their fields,
  * but is also used to represent name/type pairs which are not part of document types.
@@ -16,8 +14,7 @@ import java.io.Serializable;
  * @author Thomas Gundersen
  * @author bratseth
  */
-// TODO: Remove header/body concept on Vespa 8
-public class Field extends FieldBase implements FieldSet, Comparable, Serializable {
+public class Field extends FieldBase implements FieldSet, Comparable<Field> {
 
     protected DataType dataType;
     protected int fieldId;
@@ -27,14 +24,9 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      * Creates a new field.
      *
      * @param name     The name of the field
+     * @param id       Serialized ID
      * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field
-     *                 (true = "header").
      */
-    @Deprecated
-    public Field(String name, int id, DataType dataType, boolean isHeader) {
-        this(name, id, dataType);
-    }
     public Field(String name, int id, DataType dataType) {
         super(name);
         this.fieldId = id;
@@ -53,15 +45,8 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
      *
      * @param name     The name of the field
      * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field
-     *                 (true = "header").
      * @param owner    the owning document (used to check for id collisions)
      */
-    @Deprecated
-    public Field(String name, DataType dataType, boolean isHeader, DocumentType owner) {
-        this(name, dataType, owner);
-    }
-
     public Field(String name, DataType dataType, DocumentType owner) {
         this(name, 0, dataType);
         this.fieldId = calculateIdV7(owner);
@@ -69,20 +54,7 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     }
 
     /**
-     * Creates a new field.
-     *
-     * @param name     The name of the field
-     * @param dataType The datatype of the field
-     * @param isHeader Whether this is a "header" field or a "content" field
-     *                 (true = "header").
-     */
-    @Deprecated
-    public Field(String name, DataType dataType, boolean isHeader) {
-        this(name, dataType);
-    }
-
-    /**
-     * Constructor for <b>header</b> fields
+     * Constructor for normal fields
      *
      * @param name     The name of the field
      * @param dataType The datatype of the field
@@ -100,8 +72,8 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         this(name, field.dataType, null);
     }
 
-    public int compareTo(Object o) {
-        return fieldId - ((Field) o).fieldId;
+    public int compareTo(Field o) {
+        return fieldId - o.fieldId;
     }
 
     /**
@@ -183,12 +155,6 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
         forcedId = false;
     }
 
-    /** Returns the numeric ID used to represent this field when serialized */
-    @Deprecated
-    public final int getId(int version) {
-        return getId();
-    }
-
     public final int getId() {
         return fieldId;
     }
@@ -200,16 +166,6 @@ public class Field extends FieldBase implements FieldSet, Comparable, Serializab
     public final boolean hasForcedId() {
         return forcedId;
     }
-
-    /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
-    @Deprecated // TODO: Remove on Vespa 8
-    public boolean isHeader() {
-        return true;
-    }
-
-    /** @deprecated this has no longer any semantic meaning as this is no longer an aspect with a field */
-    @Deprecated // TODO: Remove on Vespa 8
-    public void setHeader(boolean header) { }
 
     /** Two fields are equal if they have the same name and the same data type */
     @Override

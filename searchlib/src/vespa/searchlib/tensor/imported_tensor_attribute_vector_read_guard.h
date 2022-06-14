@@ -24,7 +24,8 @@ class ImportedTensorAttributeVectorReadGuard : public attribute::ImportedAttribu
     using BitVectorSearchCache = attribute::BitVectorSearchCache;
     const ITensorAttribute &_target_tensor_attribute;
 public:
-    ImportedTensorAttributeVectorReadGuard(const attribute::ImportedAttributeVector &imported_attribute,
+    ImportedTensorAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard,
+                                           const attribute::ImportedAttributeVector &imported_attribute,
                                            bool stableEnumGuard);
     ~ImportedTensorAttributeVectorReadGuard();
 

@@ -62,7 +62,7 @@ public class ApplicationTest {
                      Application.fromApplicationPackage(new File("src/test/app-packages/withcontent"), Networking.disable)) {
             Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"),
                                                                                  new Query("?query=substring:foobar&timeout=20000"));
-            assertEquals("AND substring:fo substring:oo substring:ob substring:ba substring:ar",
+            assertEquals("WEAKAND(100) (AND substring:fo substring:oo substring:ob substring:ba substring:ar)",
                          result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
         }
     }
@@ -262,36 +262,6 @@ public class ApplicationTest {
         }
     }
 
-    @Test
-    public void client() throws Exception {
-        try (ApplicationFacade app = new ApplicationFacade(Application.fromBuilder(new Application.Builder()
-                .documentType("test", new String(this.getClass().getResourceAsStream("/test.sd").readAllBytes(), StandardCharsets.UTF_8))
-                .container("default", new Application.Builder.Container()
-                    .client("mbus://*/*", MockClient.class)
-                    .documentProcessor(MockDispatchDocproc.class)
-                ))
-        )) {
-
-            Map<String, DocumentType> typeMap = app.application().getJDisc("jdisc").documentProcessing().getDocumentTypes();
-            assertNotNull(typeMap);
-
-            DocumentType docType = typeMap.get("test");
-            Document doc = new Document(docType, "id:foo:test::bar");
-            doc.setFieldValue("title", "hello");
-
-            assertEquals(DocumentProcessor.Progress.DONE, app.process(new DocumentPut(doc)));
-
-            MockClient client = (MockClient) app.getClientById(MockClient.class.getName());
-            assertNotNull(client);
-            assertEquals(1, client.getCounter());
-
-            MockDispatchDocproc docproc = (MockDispatchDocproc) app.getComponentById(MockDispatchDocproc.class.getName() + "@default");
-            assertNotNull(docproc);
-            assertEquals(1, docproc.getResponses().size());
-            assertEquals(200, docproc.getResponses().get(0).getStatus());
-        }
-    }
-    
     @Test
     public void file_distribution() {
         try (Application application = Application.fromApplicationPackage(new File("src/test/app-packages/filedistribution/"), Networking.disable)) {

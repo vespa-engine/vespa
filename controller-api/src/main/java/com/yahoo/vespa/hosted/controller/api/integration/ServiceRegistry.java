@@ -7,7 +7,6 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.ControllerVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.artifact.ArtifactRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
@@ -30,6 +29,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipI
 import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
@@ -74,8 +74,6 @@ public interface ServiceRegistry {
 
     CostReportConsumer costReportConsumer();
 
-    CloudEventFetcher eventFetcherService();
-
     ArtifactRepository artifactRepository();
 
     TesterCloud testerCloud();
@@ -113,4 +111,6 @@ public interface ServiceRegistry {
     PlanRegistry planRegistry();
 
     RoleMaintainer roleMaintainer();
+
+    GcpSecretStore gcpSecretStore();
 }

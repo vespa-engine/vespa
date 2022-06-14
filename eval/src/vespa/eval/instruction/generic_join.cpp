@@ -3,6 +3,7 @@
 #include "generic_join.h"
 #include <vespa/eval/eval/inline_operation.h>
 #include <vespa/eval/eval/wrap_param.h>
+#include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
@@ -35,7 +36,7 @@ generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param)
     SparseJoinState sparse(param.sparse_plan, lhs.index(), rhs.index());
     size_t expected_subspaces = sparse.first_index.size();
     if (param.sparse_plan.lhs_overlap.empty() && param.sparse_plan.rhs_overlap.empty()) {
-        expected_subspaces = sparse.first_index.size() * sparse.second_index.size();
+        expected_subspaces = expected_subspaces * sparse.second_index.size();
     }
     auto builder = param.factory.create_transient_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), param.dense_plan.out_size, expected_subspaces);
     auto outer = sparse.first_index.create_view({});

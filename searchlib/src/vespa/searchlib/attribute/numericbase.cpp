@@ -8,8 +8,6 @@ LOG_SETUP(".searchlib.attribute.numericbase");
 
 namespace search {
 
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericAttribute, AttributeVector);
-
 void
 NumericAttribute::load_enumerated_data(ReaderBase&,
                                        enumstore::EnumeratedPostingsLoader&,

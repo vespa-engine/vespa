@@ -24,6 +24,7 @@
     "budgetUsed": 0.0,
     "clusterSize": 5
   },
+  "archiveAccess": { },
   "applications": [
     {
       "tenant": "my-tenant",

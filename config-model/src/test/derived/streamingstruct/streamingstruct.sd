@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search streamingstruct {
+schema streamingstruct {
 
   document streamingstruct {
     field coupleof type string {
@@ -15,7 +15,9 @@ search streamingstruct {
 
     struct s1 {
       field f1 type string { }
-      field f1s type string { match: substring }
+      field f1s type string {
+        match: substring
+      }
       field f2 type int { }
       field f3 type double { }
       # Allow default matchtypes in struct. Can be overridden.

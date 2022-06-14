@@ -19,9 +19,9 @@
 #include <vespa/messagebus/config-messagebus.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/slobrok/sbmirror.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <filesystem>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -157,7 +157,7 @@ BmCluster::BmCluster(const vespalib::string& base_dir, int base_port, const BmCl
 {
     _message_bus_config->add_builders(*_config_set);
     _rpc_client_config->add_builders(*_config_set);
-    vespalib::mkdir(_base_dir, false);
+    std::filesystem::create_directory(std::filesystem::path(_base_dir));
 }
  
 BmCluster::~BmCluster()

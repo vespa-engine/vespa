@@ -66,7 +66,7 @@ public class ModelsEvaluationHandlerTest {
     @Test
     public void testXgBoostEvaluationWithoutBindings() {
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";  // only has a single function
-        String expected = "{\"cells\":[{\"address\":{},\"value\":-4.376589999999999}]}";
+        String expected = "{\"type\":\"tensor()\",\"values\":[-4.376589999999999]}";
         handler.assertResponse(url, 200, expected);
     }
 
@@ -79,7 +79,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("f109", "0.4");
         properties.put("non-existing-binding", "-1");
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";
-        String expected = "{\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
+        String expected = "{\"type\":\"tensor()\",\"values\":[-7.936679999999999]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -91,6 +91,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("f60", "0.3");
         properties.put("f109", "0.4");
         properties.put("non-existing-binding", "-1");
+        properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/xgboost_2_2/eval";
         String expected = "{\"cells\":[{\"address\":{},\"value\":-7.936679999999999}]}";
         handler.assertResponse(url, properties, 200, expected);
@@ -99,7 +100,7 @@ public class ModelsEvaluationHandlerTest {
     @Test
     public void testLightGBMEvaluationWithoutBindings() {
         String url = "http://localhost/model-evaluation/v1/lightgbm_regression/eval";
-        String expected = "{\"cells\":[{\"address\":{},\"value\":1.9130086820218188}]}";
+        String expected = "{\"type\":\"tensor()\",\"values\":[1.9130086820218188]}";
         handler.assertResponse(url, 200, expected);
     }
 
@@ -112,7 +113,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("categorical_2", "i");
         properties.put("non-existing-binding", "-1");
         String url = "http://localhost/model-evaluation/v1/lightgbm_regression/eval";
-        String expected = "{\"cells\":[{\"address\":{},\"value\":2.054697758469921}]}";
+        String expected = "{\"type\":\"tensor()\",\"values\":[2.054697758469921]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -125,7 +126,7 @@ public class ModelsEvaluationHandlerTest {
         properties.put("categorical_2", "j");
         properties.put("non-existing-binding", "-1");
         String url = "http://localhost/model-evaluation/v1/lightgbm_regression/eval";
-        String expected = "{\"cells\":[{\"address\":{},\"value\":2.0745534018208094}]}";
+        String expected = "{\"type\":\"tensor()\",\"values\":[2.0745534018208094]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -162,7 +163,7 @@ public class ModelsEvaluationHandlerTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("Placeholder", inputTensor());
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.3546536862850189},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3759574592113495},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":0.06054411828517914},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.251544713973999},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.017951013520359993},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":1.2899067401885986},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.10389615595340729},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":0.6367976665496826},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":-1.4136744737625122},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.2573896050453186}]}";
+        String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"values\":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -171,7 +172,7 @@ public class ModelsEvaluationHandlerTest {
         Map<String, String> properties = new HashMap<>();
         properties.put("Placeholder", inputTensor());
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
-        String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.3546536862850189},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3759574592113495},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":0.06054411828517914},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.251544713973999},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.017951013520359993},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":1.2899067401885986},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.10389615595340729},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":0.6367976665496826},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":-1.4136744737625122},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.2573896050453186}]}";
+        String expected = "{\"type\":\"tensor(d0[],d1[10])\",\"values\":[[-0.3546536862850189,0.3759574592113495,0.06054411828517914,-0.251544713973999,0.017951013520359993,1.2899067401885986,-0.10389615595340729,0.6367976665496826,-1.4136744737625122,-0.2573896050453186]]}";
         handler.assertResponse(url, properties, 200, expected);
     }
 
@@ -179,6 +180,7 @@ public class ModelsEvaluationHandlerTest {
     public void testMnistSoftmaxEvaluateSpecificFunctionWithBindingsShortForm() {
         Map<String, String> properties = new HashMap<>();
         properties.put("Placeholder", inputTensorShortForm());
+        properties.put("format.tensors", "long");
         String url = "http://localhost/model-evaluation/v1/mnist_softmax/default.add/eval";
         String expected = "{\"cells\":[{\"address\":{\"d0\":\"0\",\"d1\":\"0\"},\"value\":-0.3546536862850189},{\"address\":{\"d0\":\"0\",\"d1\":\"1\"},\"value\":0.3759574592113495},{\"address\":{\"d0\":\"0\",\"d1\":\"2\"},\"value\":0.06054411828517914},{\"address\":{\"d0\":\"0\",\"d1\":\"3\"},\"value\":-0.251544713973999},{\"address\":{\"d0\":\"0\",\"d1\":\"4\"},\"value\":0.017951013520359993},{\"address\":{\"d0\":\"0\",\"d1\":\"5\"},\"value\":1.2899067401885986},{\"address\":{\"d0\":\"0\",\"d1\":\"6\"},\"value\":-0.10389615595340729},{\"address\":{\"d0\":\"0\",\"d1\":\"7\"},\"value\":0.6367976665496826},{\"address\":{\"d0\":\"0\",\"d1\":\"8\"},\"value\":-1.4136744737625122},{\"address\":{\"d0\":\"0\",\"d1\":\"9\"},\"value\":-0.2573896050453186}]}";
         handler.assertResponse(url, properties, 200, expected);

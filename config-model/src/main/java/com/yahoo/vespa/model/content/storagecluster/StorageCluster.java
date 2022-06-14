@@ -80,18 +80,18 @@ public class StorageCluster extends AbstractConfigProducer<StorageNode>
                 addedmetrics("vds.datastored.bucket_space.buckets_total");
 
         ContentCluster.getMetricBuilder("log", builder).
-                addedmetrics("vds.filestor.alldisks.allthreads.put.sum").
-                addedmetrics("vds.filestor.alldisks.allthreads.get.sum").
-                addedmetrics("vds.filestor.alldisks.allthreads.remove.sum").
-                addedmetrics("vds.filestor.alldisks.allthreads.update.sum").
+                addedmetrics("vds.filestor.allthreads.put").
+                addedmetrics("vds.filestor.allthreads.get").
+                addedmetrics("vds.filestor.allthreads.remove").
+                addedmetrics("vds.filestor.allthreads.update").
                 addedmetrics("vds.datastored.alldisks.docs").
                 addedmetrics("vds.datastored.alldisks.bytes").
-                addedmetrics("vds.filestor.alldisks.queuesize").
-                addedmetrics("vds.filestor.alldisks.averagequeuewait.sum").
+                addedmetrics("vds.filestor.queuesize").
+                addedmetrics("vds.filestor.averagequeuewait").
                 addedmetrics("vds.visitor.cv_queuewaittime").
                 addedmetrics("vds.visitor.allthreads.averagequeuewait").
                 addedmetrics("vds.visitor.allthreads.averagevisitorlifetime").
-                addedmetrics("vds.visitor.allthreads.created.sum");
+                addedmetrics("vds.visitor.allthreads.created");
     }
 
     public String getClusterName() {

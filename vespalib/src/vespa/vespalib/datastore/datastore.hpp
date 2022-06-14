@@ -164,15 +164,6 @@ DataStore<EntryType, RefT>::addEntry(const EntryType &e)
     return FreeListAllocator<EntryType, RefT, NoOpReclaimer>(*this, 0).alloc(e).ref;
 }
 
-template <typename EntryType, typename RefT>
-const EntryType &
-DataStore<EntryType, RefT>::getEntry(EntryRef ref) const
-{
-    RefType intRef(ref);
-    const EntryType *be = this->template getEntry<EntryType>(intRef);
-    return *be;
-}
-
 extern template class DataStoreT<EntryRefT<22> >;
 
 }

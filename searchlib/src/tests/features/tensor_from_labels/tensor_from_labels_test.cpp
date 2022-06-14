@@ -10,8 +10,7 @@
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>

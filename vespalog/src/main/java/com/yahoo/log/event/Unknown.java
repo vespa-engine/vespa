@@ -5,8 +5,7 @@ package com.yahoo.log.event;
  *
  * @author Bjorn Borud
  */
-@Deprecated(forRemoval = true, since = "7")
-public class Unknown extends Event {
+class Unknown extends Event {
     public Unknown() {
     }
 

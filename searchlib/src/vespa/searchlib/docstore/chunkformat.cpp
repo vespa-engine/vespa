@@ -38,8 +38,8 @@ ChunkFormat::pack(uint64_t lastSerial, vespalib::DataBuffer & compressed, const 
         compressed.getData()[oldPos] = type;
     }
     if (includeSerializedSize()) {
-        const uint32_t serializedSize = compressed.getDataLen()+4;
-        *reinterpret_cast<uint32_t *>(compressed.getData() + serializedSizePos) = htonl(serializedSize);
+        const uint32_t serializedSize = htonl(compressed.getDataLen()+4);
+        memcpy(compressed.getData() + serializedSizePos, &serializedSize, sizeof(serializedSize));
     }
     uint32_t crc = computeCrc(compressed.getData(), compressed.getDataLen());
     compressed.writeInt32(crc);

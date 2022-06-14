@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/mmap_file_allocator.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <filesystem>
 
 using vespalib::alloc::MemoryAllocator;
 using vespalib::alloc::MmapFileAllocator;
@@ -43,7 +44,7 @@ TEST(MmapFileAllocatorFactoryTest, nonempty_dir_gives_allocator)
     allocator1.reset();
     EXPECT_FALSE(isDirectory(allocator1_dir));
     MmapFileAllocatorFactory::instance().setup("");
-    rmdir(basedir, true);
+    std::filesystem::remove_all(std::filesystem::path(basedir));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

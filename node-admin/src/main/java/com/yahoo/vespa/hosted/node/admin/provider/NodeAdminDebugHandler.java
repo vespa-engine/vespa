@@ -2,7 +2,6 @@
 
 package com.yahoo.vespa.hosted.node.admin.provider;
 
-import javax.annotation.concurrent.ThreadSafe;
 import java.util.Map;
 
 /**
@@ -10,7 +9,6 @@ import java.util.Map;
  *
  * @author hakonhall
  */
-@ThreadSafe
 public interface NodeAdminDebugHandler {
     /**
      * The Object in the map values must be serializable with Jackson's ObjectMapper.

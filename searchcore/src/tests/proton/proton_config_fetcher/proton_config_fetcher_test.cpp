@@ -404,6 +404,10 @@ TEST_FF("require that docstore config computes cachesize automatically if unset"
     EXPECT_EQUAL(500000ul, config->getStoreConfig().getMaxCacheBytes());
 }
 
+GrowStrategy
+growStrategy(uint32_t initial) {
+    return GrowStrategy(initial, 0.1, 1, initial, 0.15);
+}
 TEST_FF("require that allocation config is propagated",
         ConfigTestFixture("test"),
         DocumentDBConfigManager(f1.configId + "/test", "test"))
@@ -424,9 +428,9 @@ TEST_FF("require that allocation config is propagated",
     auto config = getDocumentDBConfig(f1, f2);
     {
         auto& alloc_config = config->get_alloc_config();
-        EXPECT_EQUAL(AllocStrategy(GrowStrategy(20000000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::READY));
-        EXPECT_EQUAL(AllocStrategy(GrowStrategy(100000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::REMOVED));
-        EXPECT_EQUAL(AllocStrategy(GrowStrategy(30000000, 0.1, 1, 0.15), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::NOTREADY));
+        EXPECT_EQUAL(AllocStrategy(growStrategy(20000000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::READY));
+        EXPECT_EQUAL(AllocStrategy(growStrategy(100000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::REMOVED));
+        EXPECT_EQUAL(AllocStrategy(growStrategy(30000000), CompactionStrategy(0.25, 0.3), 10000), alloc_config.make_alloc_strategy(SubDbType::NOTREADY));
     }
 }
 

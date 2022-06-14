@@ -103,10 +103,10 @@ public:
             if (to < 0) {
                 // Special case for to==-1. -X-0 means the same as -X-1,
                 // but is more efficient.
-                partitionRange(label, (to == -1 ? 0 : -to), -from, arity,
+                partitionRange(label, (to == -1 ? 0 : -to), uint64_t(0)-from, arity,
                                true, out);
             } else {
-                partitionRange(label, 0, -from, arity, true, out);
+                partitionRange(label, 0, uint64_t(0)-from, arity, true, out);
                 partitionRange(label, 0, to, arity, false, out);
             }
         } else {

@@ -734,8 +734,7 @@
       "abstract"
     ],
     "methods": [
-      "public abstract java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)",
-      "public java.lang.String getReplacementTerm(java.lang.String)"
+      "public abstract java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)"
     ],
     "fields": []
   },

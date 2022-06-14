@@ -18,7 +18,7 @@ namespace search::transactionlog {
 class TransLogServerExplorer;
 class Domain;
 
-class TransLogServer : public document::Runnable, private FRT_Invokable, public WriterFactory
+class TransLogServer : private FRT_Invokable, public document::Runnable, public WriterFactory
 {
 public:
     friend class TransLogServerExplorer;

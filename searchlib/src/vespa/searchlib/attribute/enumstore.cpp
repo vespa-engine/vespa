@@ -2,7 +2,6 @@
 
 #include "enumstore.hpp"
 #include <vespa/vespalib/datastore/sharded_hash_map.h>
-#include <vespa/vespalib/util/rcuvector.hpp>
 #include <iomanip>
 
 #include <vespa/log/log.h>
@@ -89,7 +88,3 @@ template class EnumStoreT<float>;
 template class EnumStoreT<double>;
 
 } // namespace search
-
-namespace vespalib {
-    template class RcuVectorBase<search::IEnumStore::Index>;
-}

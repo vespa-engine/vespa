@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.notification;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.flags.FetchVector;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +35,9 @@ public class Notifier {
     private final NotificationFormatter formatter;
 
     private static final Logger log = Logger.getLogger(Notifier.class.getName());
+
+    // Minimal url pattern matcher to detect hardcoded URLs in Notification messages
+    private static final Pattern urlPattern = Pattern.compile("https://[\\w\\d./]+");
 
     public Notifier(CuratorDb curatorDb, ZoneRegistry zoneRegistry, Mailer mailer, FlagSource flagSource) {
         this.curatorDb = Objects.requireNonNull(curatorDb);
@@ -103,16 +108,31 @@ public class Notifier {
         }
     }
 
-    private Mail mailOf(FormattedNotification content, Collection<String> recipients) {
+    public Mail mailOf(FormattedNotification content, Collection<String> recipients) {
         var notification = content.notification();
         var subject = Text.format("[%s] %s Vespa Notification for %s", notification.level().toString().toUpperCase(), content.prettyType(), applicationIdSource(notification.source()));
         var body = new StringBuilder();
-        body.append(content.messagePrefix()).append("\n\n")
+        body.append(content.messagePrefix()).append("\n")
                 .append(notification.messages().stream().map(m -> " * " + m).collect(Collectors.joining("\n"))).append("\n")
                 .append("\n")
                 .append("Vespa Console link:\n")
                 .append(content.uri().toString());
-        return new Mail(recipients, subject, body.toString());
+        var html = new StringBuilder();
+        html.append(content.messagePrefix()).append("<br>\n")
+                .append("<ul>\n")
+                .append(notification.messages().stream()
+                        .map(Notifier::linkify)
+                        .map(m -> "<li>" + m + "</li>")
+                        .collect(Collectors.joining("<br>\n")))
+                .append("</ul>\n")
+                .append("<br>\n")
+                .append("<a href=\"" + content.uri() + "\">Vespa Console</a>");
+        return new Mail(recipients, subject, body.toString(), html.toString());
+    }
+
+    @VisibleForTesting
+    static String linkify(String text) {
+        return urlPattern.matcher(text).replaceAll((res) -> String.format("<a href=\"%s\">%s</a>", res.group(), res.group()));
     }
 
     private String applicationIdSource(NotificationSource source) {

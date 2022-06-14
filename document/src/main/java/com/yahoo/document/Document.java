@@ -96,14 +96,6 @@ public class Document extends StructuredFieldValue {
         docId = id;
     }
 
-    /** @deprecated do not use: Use getField(), getFieldValue() or iterator() instead */
-    @Deprecated // TODO: Remove on Vespa 8
-    public Struct getHeader() { return header; }
-
-    /** @deprecated do not use: Use getField(), getFieldValue() or iterator() instead */
-    @Deprecated // TODO: Remove on Vespa 8
-    public Struct getBody() { return null; }
-
     @Override
     public void assign(Object o) {
         throw new IllegalArgumentException("Assign not implemented for " + getClass() + " objects");

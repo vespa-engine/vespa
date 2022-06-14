@@ -27,8 +27,8 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/termasstring.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-
 #include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/log/log.h>

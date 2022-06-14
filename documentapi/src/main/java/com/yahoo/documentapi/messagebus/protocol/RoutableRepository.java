@@ -9,7 +9,6 @@ import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.io.GrowableByteBuffer;
 import java.util.logging.Level;
 import com.yahoo.messagebus.Routable;
@@ -28,24 +27,13 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 final class RoutableRepository {
 
     private static final Logger log = Logger.getLogger(RoutableRepository.class.getName());
     private final CopyOnWriteHashMap<Integer, VersionMap> factoryTypes = new CopyOnWriteHashMap<>();
     private final CopyOnWriteHashMap<CacheKey, RoutableFactory> cache = new CopyOnWriteHashMap<>();
-    private LoadTypeSet loadTypes; // TODO remove on Vespa 8
 
     public RoutableRepository() {}
-
-    /**
-     * @deprecated load types are deprecated. Use default constructor instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    public RoutableRepository(LoadTypeSet set) {
-        loadTypes = set;
-    }
 
     /**
      * Decodes a {@link Routable} from the given byte array. This uses the content of the byte array to dispatch the
@@ -75,7 +63,7 @@ final class RoutableRepository {
             log.log(Level.SEVERE,"No routable factory found for routable type " + type + " (version " + version + ").");
             return null;
         }
-        Routable ret = factory.decode(in, loadTypes);
+        Routable ret = factory.decode(in);
         if (ret == null) {
             log.log(Level.SEVERE,"Routable factory " + factory.getClass().getName() + " failed to deserialize " +
                                                "routable of type " + type + " (version " + version + ").\nData = " + Arrays.toString(data));

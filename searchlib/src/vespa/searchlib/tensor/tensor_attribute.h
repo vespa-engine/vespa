@@ -41,7 +41,6 @@ protected:
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
 
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(TensorAttribute);
     using RefCopyVector = vespalib::Array<EntryRef>;
     TensorAttribute(vespalib::stringref name, const Config &cfg, TensorStore &tensorStore);
     ~TensorAttribute() override;
@@ -68,9 +67,7 @@ public:
     virtual void update_tensor(DocId docId,
                                const document::TensorUpdate &update,
                                bool create_empty_if_non_existing);
-    DistanceMetric distance_metric() const override {
-        return getConfig().distance_metric();
-    }
+    DistanceMetric distance_metric() const override;
     uint32_t get_num_docs() const override { return getNumDocs(); }
 
     /**

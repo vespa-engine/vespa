@@ -51,14 +51,6 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         for (Element binding : XML.getChildren(handlerElement, "binding"))
             addServerBinding(handler, UserBindingPattern.fromPattern(XML.getValue(binding)), deployState.getDeployLogger());
 
-        List<Element> clientBindingsElements = XML.getChildren(handlerElement, "clientBinding");
-        if (! clientBindingsElements.isEmpty()) {
-            deployState.getDeployLogger().logApplicationPackage(
-                    Level.WARNING, "The 'clientBindings' element is deprecated for removal in Vespa 8, with no replacement");
-        }
-        for (Element clientBinding : clientBindingsElements)
-            handler.addClientBindings(UserBindingPattern.fromPattern(XML.getValue(clientBinding)));
-
         DomComponentBuilder.addChildren(deployState, parent, handlerElement, handler);
 
         return handler;

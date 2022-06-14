@@ -1,10 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
+import com.yahoo.jdisc.http.SslProvider;
+import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
@@ -41,14 +42,14 @@ public class ConnectorFactory {
     private static final Logger log = Logger.getLogger(ConnectorFactory.class.getName());
 
     private final ConnectorConfig connectorConfig;
-    private final SslContextFactoryProvider sslContextFactoryProvider;
+    private final SslProvider sslProvider;
 
     @Inject
     public ConnectorFactory(ConnectorConfig connectorConfig,
-                            SslContextFactoryProvider sslContextFactoryProvider) {
+                            SslProvider sslProvider) {
         runtimeConnectorConfigValidation(connectorConfig);
         this.connectorConfig = connectorConfig;
-        this.sslContextFactoryProvider = sslContextFactoryProvider;
+        this.sslProvider = sslProvider;
     }
 
     // Perform extra connector config validation that can only be performed at runtime,
@@ -180,10 +181,15 @@ public class ConnectorFactory {
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
-        SslContextFactory ctxFactory = sslContextFactoryProvider.getInstance(connectorConfig.name(), connectorConfig.listenPort());
-        SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, wrappedFactory.getProtocol());
+        SslConnectionFactory connectionFactory = new SslConnectionFactory(createSslContextFactory(), wrappedFactory.getProtocol());
         connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
         return connectionFactory;
+    }
+
+    private SslContextFactory createSslContextFactory() {
+        DefaultConnectorSsl ssl = new DefaultConnectorSsl();
+        sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
+        return ssl.createSslContextFactory();
     }
 
     private ALPNServerConnectionFactory newAlpnConnectionFactory() {

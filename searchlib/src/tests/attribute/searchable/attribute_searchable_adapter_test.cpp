@@ -279,7 +279,7 @@ void add_docs(AttributeVector *attr, size_t n) {
     AttributeVector::DocId docid;
     for (size_t i = 0; i < n; ++i) {
         attr->addDoc(docid);
-        if (attr->inherits(PredicateAttribute::classId)) {
+        if (attr->isPredicateType()) {
             const_cast<uint8_t *>(static_cast<PredicateAttribute *>(attr)->getMinFeatureVector().first)[docid] = 0;
         }
     }

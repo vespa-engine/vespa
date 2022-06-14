@@ -1,5 +1,5 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-search second {
+schema second {
   document second {
     field second_field type tensor(second[10]) {
       indexing: summary | attribute

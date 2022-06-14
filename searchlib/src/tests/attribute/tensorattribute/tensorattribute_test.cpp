@@ -1,11 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/document/base/exceptions.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/test/value_compare.h>
-#include <vespa/fastos/file.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/queryeval/nearest_neighbor_blueprint.h>
@@ -23,13 +17,20 @@
 #include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/directory_handler.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/fileheader.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/document/base/exceptions.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/fastos/file.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("tensorattribute_test");
@@ -99,7 +100,7 @@ private:
 public:
     MockIndexLoader(int& index_value, FastOS_FileInterface& file)
         : _index_value(index_value),
-          _reader(file)
+          _reader(&file)
     {}
     bool load_next() override {
         _index_value = _reader.readHostOrder();
@@ -560,7 +561,7 @@ Fixture::save_example_tensors_with_mock_index()
     set_example_tensors();
     mock_index().save_index_with_value(123);
     save();
-    EXPECT_TRUE(vespalib::fileExists(_name + ".nnidx"));
+    EXPECT_TRUE(std::filesystem::exists(std::filesystem::path(_name + ".nnidx")));
 }
 
 void
@@ -816,7 +817,7 @@ TEST_F("Hnsw index is integrated in dense tensor attribute and can be saved and 
     expect_level_0(2, index_a.get_node(1));
     expect_level_0(1, index_a.get_node(2));
     f.save();
-    EXPECT_TRUE(vespalib::fileExists(attr_name + ".nnidx"));
+    EXPECT_TRUE(std::filesystem::exists(std::filesystem::path(attr_name + ".nnidx")));
 
     f.load();
     auto &index_b = f.hnsw_index();
@@ -947,7 +948,7 @@ TEST_F("onLoad() reconstructs nearest neighbor index if save file does not exist
 {
     f.set_example_tensors();
     f.save();
-    EXPECT_FALSE(vespalib::fileExists(attr_name + ".nnidx"));
+    EXPECT_FALSE(std::filesystem::exists(std::filesystem::path(attr_name + ".nnidx")));
 
     f.load(); // index is reconstructed by adding all loaded tensors
     auto& index = f.mock_index();
@@ -1145,10 +1146,10 @@ TEST("Dense tensor attribute with paged flag uses mmap file allocator")
     {
         Fixture f(vec_2d_spec, FixtureTraits().dense().mmap_file_allocator());
         vespalib::string allocator_dir(basedir + "/0.my_attr");
-        EXPECT_TRUE(vespalib::isDirectory(allocator_dir));
+        EXPECT_TRUE(std::filesystem::is_directory(std::filesystem::path(allocator_dir)));
     }
     vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
-    vespalib::rmdir(basedir, true);
+    std::filesystem::remove_all(std::filesystem::path(basedir));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

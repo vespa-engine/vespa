@@ -102,9 +102,7 @@
       "public static java.lang.String getDefName(java.lang.Class)",
       "public static java.lang.String getDefNamespace(java.lang.Class)",
       "public static java.util.List serialize(com.yahoo.config.InnerNode)",
-      "public static void serialize(com.yahoo.config.InnerNode, com.yahoo.config.Serializer)",
-      "public java.lang.String getConfigMd5()",
-      "public void setConfigMd5(java.lang.String)"
+      "public static void serialize(com.yahoo.config.InnerNode, com.yahoo.config.Serializer)"
     ],
     "fields": []
   },
@@ -202,8 +200,8 @@
       "public void postInitialize(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
-      "protected java.util.Map getChildren()",
-      "protected java.util.Map getChildrenWithVectorsFlattened()",
+      "protected final java.util.Map getChildren()",
+      "protected final java.util.Map getChildrenWithVectorsFlattened()",
       "protected static java.util.Map getAllDescendantLeafNodes(com.yahoo.config.InnerNode)"
     ],
     "fields": []

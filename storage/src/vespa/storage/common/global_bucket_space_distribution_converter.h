@@ -10,9 +10,9 @@ namespace storage {
 
 struct GlobalBucketSpaceDistributionConverter {
     using DistributionConfig = vespa::config::content::StorDistributionConfig;
-    // TODO remove legacy_mode flags on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-    static std::shared_ptr<DistributionConfig> convert_to_global(const DistributionConfig&, bool legacy_mode = false);
-    static std::shared_ptr<lib::Distribution>  convert_to_global(const lib::Distribution&, bool legacy_mode = false);
+
+    static std::shared_ptr<DistributionConfig> convert_to_global(const DistributionConfig&);
+    static std::shared_ptr<lib::Distribution>  convert_to_global(const lib::Distribution&);
 
     // Helper functions which may be of use outside this class
     static std::unique_ptr<DistributionConfig> string_to_config(const vespalib::string&);

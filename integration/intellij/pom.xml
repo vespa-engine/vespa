@@ -5,11 +5,11 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>vespa-intellij</artifactId> <!-- Not used - plugin is build by gradle -->
-    <version>1.1.6</version> <!-- See copy-zip below, which depends on this being the same as the v. in build.gradle -->
+    <version>1.2.0</version> <!-- See copy-zip below, which depends on this being the same as the v. in build.gradle -->
     <description>
         Maven wrapper for the gradle build of this IntelliJ plugin.
     </description>

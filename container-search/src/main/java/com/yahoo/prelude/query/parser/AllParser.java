@@ -55,7 +55,6 @@ public class AllParser extends SimpleParser {
         CompositeItem and = null;
         NotItem not = null; // Store negatives here as we go
         Item current;
-
         // Find all items
         do {
             current = negativeItem();

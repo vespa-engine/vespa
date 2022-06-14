@@ -43,7 +43,7 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     private SearchChains searchChains;
 
     private static final Element element = parse(
-            "<searchchains>",
+            "<search>",
             "  <searcher id='searcher:1'/>",
 
             "  <provider id='provider:1' inherits='parentChain1 parentChain2' excludes='ExcludedSearcher1 ExcludedSearcher2'",
@@ -59,15 +59,15 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
 
             "  </provider>",
 
-            "  <searchchain id='default'>",
+            "  <chain id='default'>",
             "    <federation id='federationSearcher'>",
             "      <source id='mysource'>",
             "        <federationoptions optional='false' />",
             "      </source>",
             "    </federation>",
-            "  </searchchain>",
+            "  </chain>",
 
-            "</searchchains>");
+            "</search>");
 
 
     @Before
@@ -78,17 +78,17 @@ public class DomSchemaChainsBuilderTest extends DomBuilderTest {
     @Test
     public void referToFederationAsSearcher() {
         final Element element = parse(
-                "<searchchains>",
+                "<search>",
                 "  <federation id='federationSearcher'>",
                 "    <source id='mysource'>",
                 "      <federationoptions optional='false' />",
                 "    </source>",
                 "  </federation>",
 
-                "  <searchchain id='default'>",
+                "  <chain id='default'>",
                 "    <searcher id='federationSearcher'/>",
-                "  </searchchain>",
-                "</searchchains>");
+                "  </chain>",
+                "</search>");
 
         try {
             MockRoot root = new MockRoot();

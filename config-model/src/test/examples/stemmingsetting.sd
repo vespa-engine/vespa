@@ -19,7 +19,6 @@ search stemmingsetting {
     }
 
     field track type string {
-      # index-to: song, default
       stemming: shortest
     }
 

@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchchain.model.federation;
 
-import net.jcip.annotations.Immutable;
-
 import java.util.Objects;
 
 /**
@@ -11,7 +9,6 @@ import java.util.Objects;
  *
  * @author Tony Vaagenes
  */
-@Immutable
 public class FederationOptions implements Cloneable {
 
     private final Boolean optional;

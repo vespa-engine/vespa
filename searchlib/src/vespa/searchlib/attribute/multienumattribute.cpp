@@ -2,6 +2,7 @@
 
 #include "multienumattribute.h"
 #include "multienumattribute.hpp"
+#include "enummodifier.h"
 #include <stdexcept>
 
 namespace search::multienumattribute {
@@ -18,7 +19,7 @@ remap_enum_store_refs(const EnumIndexRemapper& remapper, AttributeVector& v, att
     // update multi_value_mapping with new EnumIndex values after enum store has been compacted.
     v.logEnumStoreEvent("compactfixup", "drain");
     {
-        AttributeVector::EnumModifier enum_guard(v.getEnumModifier());
+        attribute::EnumModifier enum_guard(v.getEnumModifier());
         auto& filter = remapper.get_entry_ref_filter();
         v.logEnumStoreEvent("compactfixup", "start");
         for (uint32_t doc = 0; doc < v.getNumDocs(); ++doc) {

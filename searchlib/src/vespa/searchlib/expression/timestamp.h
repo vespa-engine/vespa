@@ -18,7 +18,7 @@ public:
     ~TimeStampFunctionNode();
     TimeStampFunctionNode(const TimeStampFunctionNode & rhs);
     TimeStampFunctionNode & operator = (const TimeStampFunctionNode & rhs);
-    unsigned int getTime() const { return getResult().getInteger(); } // Not valid until after node has been prepared
+    unsigned int getTime() const { return getResult()->getInteger(); } // Not valid until after node has been prepared
     TimePart getTimePart() const { return _timePart; }
     TimeStampFunctionNode & setTimePart(TimePart timePart) { _timePart = timePart; return *this; }
     bool isGmt()           const { return _isGmt; }
@@ -64,7 +64,7 @@ private:
         IntegerResultNodeVector & _result;
     };
 
-    const ResultNode & getTimeStamp() const { return getArg().getResult(); }
+    const ResultNode & getTimeStamp() const { return *getArg().getResult(); }
     void init();
     Int64ResultNode & updateIntegerResult() const { return static_cast<Int64ResultNode &>(updateResult()); }
     static unsigned getTimePart(time_t time, TimePart, bool gmt);

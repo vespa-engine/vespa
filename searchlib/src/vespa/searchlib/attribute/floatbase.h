@@ -11,7 +11,6 @@ namespace search {
 class FloatingPointAttribute : public NumericAttribute
 {
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(FloatingPointAttribute);
     ~FloatingPointAttribute() override;
     template<typename Accessor>
     bool append(DocId doc, Accessor & ac) {
@@ -60,7 +59,7 @@ public:
     using LoadedVector = SequentialReadModifyWriteInterface<LoadedNumericValueT>;
     virtual T get(DocId doc) const = 0;
     virtual T getFromEnum(EnumHandle e) const = 0;
-    T defaultValue() const { return getConfig().isMutable() ? 0.0 : attribute::getUndefined<T>(); }
+    T defaultValue() const { return isMutable() ? 0.0 : attribute::getUndefined<T>(); }
 protected:
     FloatingPointAttributeTemplate(const vespalib::string & name);
     FloatingPointAttributeTemplate(const vespalib::string & name, const Config & c);

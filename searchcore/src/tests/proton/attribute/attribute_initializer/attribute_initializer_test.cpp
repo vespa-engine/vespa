@@ -1,14 +1,16 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/attribute/attribute_directory.h>
 #include <vespa/searchcore/proton/attribute/attribute_factory.h>
 #include <vespa/searchcore/proton/attribute/attribute_initializer.h>
 #include <vespa/searchcore/proton/attribute/attributedisklayout.h>
 #include <vespa/searchcore/proton/test/attribute_utils.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/test/directory_handler.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_initializer_test");
@@ -65,7 +67,7 @@ saveAttr(const vespalib::string &name, const Config &cfg, SerialNum serialNum, S
     auto writer = dir->getWriter();
     writer->createInvalidSnapshot(serialNum);
     auto snapshotdir = writer->getSnapshotDir(serialNum);
-    vespalib::mkdir(snapshotdir);
+    std::filesystem::create_directory(std::filesystem::path(snapshotdir));
     auto av = search::AttributeFactory::createAttribute(snapshotdir + "/" + name, cfg);
     av->setCreateSerialNum(createSerialNum);
     av->addReservedDoc();
@@ -93,7 +95,7 @@ struct Fixture
     vespalib::ThreadStackExecutor _executor;
     Fixture();
     ~Fixture();
-    std::unique_ptr<AttributeInitializer> createInitializer(const AttributeSpec &spec, SerialNum serialNum);
+    std::unique_ptr<AttributeInitializer> createInitializer(AttributeSpec && spec, SerialNum serialNum);
 };
 
 Fixture::Fixture()
@@ -107,9 +109,9 @@ Fixture::Fixture()
 Fixture::~Fixture() = default;
 
 std::unique_ptr<AttributeInitializer>
-Fixture::createInitializer(const AttributeSpec &spec, SerialNum serialNum)
+Fixture::createInitializer(AttributeSpec &&spec, SerialNum serialNum)
 {
-    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", spec, serialNum, _factory, _executor);
+    return std::make_unique<AttributeInitializer>(_diskLayout->createAttributeDir(spec.getName()), "test.subdb", std::move(spec), serialNum, _factory, _executor);
 }
 
 TEST("require that integer attribute can be initialized")
@@ -243,6 +245,6 @@ TEST("require that transient memory usage is reported for attribute load without
 
 TEST_MAIN()
 {
-    vespalib::rmdir(test_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(test_dir));
     TEST_RUN_ALL();
 }

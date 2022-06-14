@@ -6,7 +6,6 @@
 #include "string_stuff.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/string_hash.h>
 #include <memory>
 #include <map>
@@ -97,9 +96,7 @@ public:
     virtual bool is_const_double() const override { return true; }
     double get_const_double_value() const override { return value(); }
     double value() const { return _value; }
-    vespalib::string dump(DumpContext &) const override {
-        return make_string("%g", _value);
-    }
+    vespalib::string dump(DumpContext &) const override;
     void accept(NodeVisitor &visitor) const override;
 };
 
@@ -256,20 +253,7 @@ public:
         handler.handle(std::move(_true_expr));
         handler.handle(std::move(_false_expr));
     }
-    vespalib::string dump(DumpContext &ctx) const override {
-        vespalib::string str;
-        str += "if(";
-        str += _cond->dump(ctx);
-        str += ",";
-        str += _true_expr->dump(ctx);
-        str += ",";
-        str += _false_expr->dump(ctx);
-        if (_p_true != 0.5) {
-            str += make_string(",%g", _p_true);
-        }
-        str += ")";
-        return str;
-    }
+    vespalib::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
 };
 

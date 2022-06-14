@@ -11,7 +11,9 @@ struct ServiceMapping {
     vespalib::string name;
     vespalib::string spec;
     ServiceMapping(const vespalib::string & name_, const vespalib::string & spec_) noexcept : name(name_), spec(spec_) { }
+    ServiceMapping(const ServiceMapping& rhs) noexcept;
     ~ServiceMapping();
+    ServiceMapping& operator=(const ServiceMapping& rhs);
 
     bool operator== (const ServiceMapping &other) const {
         return name == other.name && spec == other.spec;

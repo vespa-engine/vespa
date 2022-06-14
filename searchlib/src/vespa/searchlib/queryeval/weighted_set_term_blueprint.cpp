@@ -64,7 +64,7 @@ WeightedSetTermBlueprint::WeightedSetTermBlueprint(const FieldSpec &field)
     : ComplexLeafBlueprint(field),
       _estimate(),
       _layout(),
-      _children_field(field.getName(), field.getFieldId(), _layout.allocTermField(field.getFieldId()), false),
+      _children_field(field.getName(), field.getFieldId(), _layout.allocTermField(field.getFieldId()), field.isFilter()),
       _weights(),
       _terms()
 {
@@ -107,7 +107,7 @@ WeightedSetTermBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &t
         // TODO: pass ownership with unique_ptr
         children[i] = _terms[i]->createSearch(*md, true).release();
     }
-    return SearchIterator::UP(WeightedSetTermSearch::create(children, *tfmda[0], _weights, std::move(md)));
+    return SearchIterator::UP(WeightedSetTermSearch::create(children, *tfmda[0], _children_field.isFilter(), _weights, std::move(md)));
 }
 
 SearchIterator::UP

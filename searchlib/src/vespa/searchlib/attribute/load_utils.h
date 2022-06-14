@@ -3,17 +3,18 @@
 #pragma once
 
 #include "atomic_utils.h"
-#include "attributevector.h"
 #include "readerbase.h"
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/searchcommon/attribute/multi_value_traits.h>
 
 namespace vespalib::datastore {
-
-class AtomicEntryRef;
-class EntryRef;
-
+    class AtomicEntryRef;
+    class EntryRef;
 }
+
+namespace vespalib { class GenerationHolder; }
+
+namespace search { class AttributeVector; }
 
 namespace search::attribute {
 

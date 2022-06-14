@@ -19,12 +19,11 @@ public class MessageBusSessionFactory implements SessionFactory {
         this(processor, null, null);
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private MessageBusSessionFactory(MessagePropertyProcessor processor,
                                     DocumentmanagerConfig documentmanagerConfig,
                                     SlobroksConfig slobroksConfig) {
         this.processor = processor;
-        MessageBusParams params = new MessageBusParams(processor.getLoadTypes());
+        MessageBusParams params = new MessageBusParams();
         params.setTraceLevel(processor.getFeederOptions().getTraceLevel());
         RPCNetworkParams rpcNetworkParams = processor.getFeederOptions().getNetworkParams();
         if (slobroksConfig != null) // not set: will subscribe

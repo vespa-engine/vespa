@@ -38,13 +38,6 @@ public class ClusterMonitor<T> {
     /** A map from Node to corresponding MonitoredNode */
     private final Map<T, TrafficNodeMonitor<T>> nodeMonitors = Collections.synchronizedMap(new java.util.LinkedHashMap<>());
 
-    /** @deprecated It is not advised to start the monitoring thread in the constructor.
-     * Use ClusterMonitor(NodeManager manager, false) and explicit start(). */
-    @Deprecated
-    public ClusterMonitor(NodeManager<T> manager) {
-        this(manager, true);
-    }
-
     public ClusterMonitor(NodeManager<T> manager, boolean startPingThread) {
         nodeManager = manager;
         monitorThread = new MonitorThread("search.clustermonitor." + manager.name());
@@ -77,15 +70,6 @@ public class ClusterMonitor<T> {
      */
     public void add(T node, boolean internal) {
         nodeMonitors.put(node, new TrafficNodeMonitor<>(node, configuration, internal));
-    }
-
-    /**
-     * Returns the monitor of the given node, or null if this node has not been added
-     * @deprecated  Will be removed in Vespa 8.
-     */
-    @Deprecated(forRemoval = true, since = "7.537")
-    public BaseNodeMonitor<T> getNodeMonitor(T node) {
-        return nodeMonitors.get(node);
     }
 
     /** Called from ClusterSearcher/NodeManager when a node failed */

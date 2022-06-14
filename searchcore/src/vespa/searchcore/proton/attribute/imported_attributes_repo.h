@@ -24,7 +24,7 @@ public:
     ImportedAttributesRepo();
     ~ImportedAttributesRepo();
     void add(const vespalib::string &name, std::shared_ptr<ImportedAttributeVector> attr);
-    std::shared_ptr<ImportedAttributeVector> get(const vespalib::string &name) const;
+    const std::shared_ptr<ImportedAttributeVector> & get(const vespalib::string &name) const;
     void getAll(std::vector<std::shared_ptr<ImportedAttributeVector>> &result) const;
     size_t size() const { return _repo.size(); }
 };

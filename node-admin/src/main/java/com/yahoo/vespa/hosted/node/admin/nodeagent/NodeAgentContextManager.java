@@ -21,7 +21,7 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     private Instant nextContextAt;
     private boolean wantFrozen = false;
     private boolean isFrozen = true;
-    private boolean pendingInterrupt = false;
+    private boolean interrupted = false;
     private boolean isWaitingForNextContext = false;
 
     public NodeAgentContextManager(Clock clock, NodeAgentContext context) {
@@ -60,19 +60,19 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     }
 
     @Override
-    public NodeAgentContext nextContext() throws InterruptedException {
+    public NodeAgentContext nextContext() throws ContextSupplierInterruptedException {
         synchronized (monitor) {
             nextContext = null; // Reset any previous context and wait for the next one
             isWaitingForNextContext = true;
-            monitor.notify();
+            monitor.notifyAll();
             Duration untilNextContext = Duration.ZERO;
-            while (setAndGetIsFrozen(wantFrozen) ||
-                    nextContext == null ||
-                    (untilNextContext = Duration.between(Instant.now(), nextContextAt)).toMillis() > 0) {
-                if (pendingInterrupt) {
-                    pendingInterrupt = false;
-                    throw new InterruptedException("interrupt() was called before next context was scheduled");
-                }
+            while (true) {
+                if (interrupted) throw new ContextSupplierInterruptedException();
+
+                if (!setAndGetIsFrozen(wantFrozen) &&
+                    nextContext != null &&
+                    (untilNextContext = Duration.between(Instant.now(), nextContextAt)).toMillis() <= 0)
+                    break;
 
                 try {
                     monitor.wait(Math.max(untilNextContext.toMillis(), 0L)); // Wait until scheduler provides a new context
@@ -95,7 +95,7 @@ public class NodeAgentContextManager implements NodeAgentContextSupplier, NodeAg
     @Override
     public void interrupt() {
         synchronized (monitor) {
-            pendingInterrupt = true;
+            interrupted = true;
             monitor.notifyAll();
         }
     }

@@ -572,7 +572,6 @@
       "public static java.lang.String getDefMd5()",
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
-      "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.messagebus.MessagebusConfig$Builder)",
       "public java.util.List routingtable()",
       "public com.yahoo.messagebus.MessagebusConfig$Routingtable routingtable(int)"
@@ -581,7 +580,6 @@
       "public static final java.lang.String CONFIG_DEF_MD5",
       "public static final java.lang.String CONFIG_DEF_NAME",
       "public static final java.lang.String CONFIG_DEF_NAMESPACE",
-      "public static final java.lang.String CONFIG_DEF_VERSION",
       "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
     ]
   },

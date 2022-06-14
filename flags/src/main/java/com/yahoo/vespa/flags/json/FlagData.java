@@ -11,7 +11,6 @@ import com.yahoo.vespa.flags.json.wire.WireFlagData;
 import com.yahoo.vespa.flags.json.wire.WireFlagDataList;
 import com.yahoo.vespa.flags.json.wire.WireRule;
 
-import javax.annotation.concurrent.Immutable;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
@@ -25,7 +24,6 @@ import java.util.stream.Stream;
  *
  * @author hakonhall
  */
-@Immutable
 public class FlagData {
     private final FlagId id;
     private final List<Rule> rules;

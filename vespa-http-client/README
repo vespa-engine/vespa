@@ -1,5 +1,0 @@
-Java API for feeding to Vespa from external sources
-
-Cross-colo etc.
-
-NOTE: This must be built with JDK 8, because it's used on the grid.

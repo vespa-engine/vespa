@@ -18,7 +18,7 @@ import java.util.NoSuchElementException;
  * <p>The <code>ThreadRobustList</code> does not permit adding <code>null</code> items.</p>
  * <p>The usage of <code>ThreadRobustList</code> has no memory consistency effects. </p>
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  * @author bratseth
  * @since 5.1.15
  */

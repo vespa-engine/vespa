@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -59,9 +59,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
         maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().resourceDatabase()));
-        maintainers.add(new CloudEventTracker(controller, intervals.cloudEventReporter));
         maintainers.add(new ResourceTagMaintainer(controller, intervals.resourceTagMaintainer, controller.serviceRegistry().resourceTagger()));
-        maintainers.add(new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer));
         maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
         maintainers.add(new ArtifactExpirer(controller, intervals.containerImageExpirer));
         maintainers.add(new HostInfoUpdater(controller, intervals.hostInfoUpdater));
@@ -118,9 +116,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration nameServiceDispatcher;
         private final Duration costReportMaintainer;
         private final Duration resourceMeterMaintainer;
-        private final Duration cloudEventReporter;
         private final Duration resourceTagMaintainer;
-        private final Duration systemRoutingPolicyMaintainer;
         private final Duration applicationMetaDataGarbageCollector;
         private final Duration containerImageExpirer;
         private final Duration hostInfoUpdater;
@@ -153,9 +149,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.nameServiceDispatcher = duration(10, SECONDS);
             this.costReportMaintainer = duration(2, HOURS);
             this.resourceMeterMaintainer = duration(3, MINUTES);
-            this.cloudEventReporter = duration(30, MINUTES);
             this.resourceTagMaintainer = duration(30, MINUTES);
-            this.systemRoutingPolicyMaintainer = duration(15, MINUTES);
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
             this.containerImageExpirer = duration(12, HOURS);
             this.hostInfoUpdater = duration(12, HOURS);

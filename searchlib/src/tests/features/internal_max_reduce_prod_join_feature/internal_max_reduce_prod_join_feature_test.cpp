@@ -6,6 +6,7 @@
 #include <vespa/searchlib/fef/test/ftlib.h>
 #include <vespa/searchlib/features/internal_max_reduce_prod_join_feature.h>
 #include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 using search::feature_t;
 using namespace search::fef;

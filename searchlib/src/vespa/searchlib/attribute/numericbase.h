@@ -24,9 +24,6 @@ protected:
     virtual void load_enumerated_data(ReaderBase& attrReader, enumstore::EnumeratedLoader& loader);
     virtual void load_posting_lists_and_update_enum_store(enumstore::EnumeratedPostingsLoader& loader);
     bool onAddDoc(DocId) override { return true; }
-
-public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(NumericAttribute);
 };
 
 } // namespace search

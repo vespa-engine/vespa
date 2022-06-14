@@ -32,6 +32,13 @@ if (VESPA_USE_SANITIZER)
 else()
     set(C_WARN_OPTS "-Winline ${C_WARN_OPTS}")
 endif()
+if (VESPA_USE_SANITIZER)
+  if (VESPA_USE_SANITIZER STREQUAL "thread" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 12.0)
+    # Turn off warning about std::atomic_thread_fence not being supported by
+    # address sanitizer.
+    set(C_WARN_OPTS "${C_WARN_OPTS} -Wno-tsan")
+  endif()
+endif()
 
 # Warnings that are specific to C++ compilation
 # Note: this is not a union of C_WARN_OPTS, since CMAKE_CXX_FLAGS already includes CMAKE_C_FLAGS, which in turn includes C_WARN_OPTS transitively
@@ -144,6 +151,12 @@ if(VESPA_USE_SANITIZER)
         set(VESPA_SANITIZER_SUPPRESSIONS_FILE "${PROJECT_SOURCE_DIR}/tsan-suppressions.txt")
         # Maximize the amount of history we can track, including mutex order inversion histories
         set(VESPA_SANITIZER_ENV "TSAN_OPTIONS=suppressions=${VESPA_SANITIZER_SUPPRESSIONS_FILE} history_size=7 detect_deadlocks=1 second_deadlock_stack=1")
+    endif()
+endif()
+# Dump stack when finding issues in unit tests using undefined sanitizer
+if(VESPA_USE_SANITIZER)
+    if(VESPA_USE_SANITIZER STREQUAL "undefined")
+        set(VESPA_SANITIZER_ENV "UBSAN_OPTIONS=print_stacktrace=1")
     endif()
 endif()
 

@@ -75,7 +75,7 @@ public class Presentation implements Cloneable {
     private boolean timing = false;
 
     /** Whether to renders tensors in short form */
-    private boolean tensorShortForm = false;
+    private boolean tensorShortForm = true;
 
     /** Set of explicitly requested summary fields, instead of summary classes */
     private Set<String> summaryFields = LazySet.newHashSet();
@@ -180,7 +180,7 @@ public class Presentation implements Cloneable {
      * Returns whether tensors should use short form in JSON and textual representations, see
      * <a href="https://docs.vespa.ai/en/reference/document-json-format.html#tensor">https://docs.vespa.ai/en/reference/document-json-format.html#tensor</a>
      * and <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form">https://docs.vespa.ai/en/reference/tensor.html#tensor-literal-form</a>.
-     * Default is false.
+     * Default is true.
      */
     public boolean getTensorShortForm() { return tensorShortForm; }
 

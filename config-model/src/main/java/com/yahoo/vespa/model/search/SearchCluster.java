@@ -5,14 +5,13 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.derived.SummaryMap;
+import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 
 import java.util.Collections;
@@ -147,35 +146,10 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
     public final int getClusterIndex() { return index; }
 
     public abstract void defaultDocumentsConfig();
-    public abstract DerivedConfiguration getSchemaConfig();
 
-    // TODO: The get methods below should be moved to StreamingSearchCluster
+    public abstract void getConfig(AttributesConfig.Builder builder);
 
-    @Override
-    public void getConfig(IndexInfoConfig.Builder builder) {
-        if (getSchemaConfig() != null) getSchemaConfig().getIndexInfo().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(SchemaInfoConfig.Builder builder) {
-        if (getSchemaConfig() != null) getSchemaConfig().getSchemaInfo().getConfig(builder);
-    }
-
-    @Override
-    public void getConfig(IlscriptsConfig.Builder builder) {
-        if (getSchemaConfig() != null) getSchemaConfig().getIndexingScript().getConfig(builder);
-    }
-
-    public void getConfig(AttributesConfig.Builder builder) {
-        if (getSchemaConfig() != null) getSchemaConfig().getConfig(builder);
-    }
-
-    public void getConfig(RankProfilesConfig.Builder builder) {
-        if (getSchemaConfig() != null) getSchemaConfig().getRankProfileList().getConfig(builder);
-    }
-
-    @Override
-    public abstract void getConfig(DocumentdbInfoConfig.Builder builder);
+    public abstract void getConfig(RankProfilesConfig.Builder builder);
 
     @Override
     public String toString() { return "search-capable cluster '" + clusterName + "'"; }

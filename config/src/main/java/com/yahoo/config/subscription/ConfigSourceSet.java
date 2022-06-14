@@ -18,9 +18,7 @@ import static java.util.logging.Level.INFO;
  * upper/lower-casing and whitespaces.
  *
  * @author gjoranv
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class ConfigSourceSet implements ConfigSource {
 
     private static final Logger log = Logger.getLogger(ConfigSourceSet.class.getName());

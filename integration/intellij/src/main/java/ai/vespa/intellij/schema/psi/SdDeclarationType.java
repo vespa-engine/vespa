@@ -20,10 +20,9 @@ public enum SdDeclarationType {
     DOCUMENT_SUMMARY("Document-Summary"),
     RANK_PROFILE("Rank Profile"),
     FUNCTION("Function"),
-    FIUNCTION_ARGUMENT("Function argument"),
-    QUERY("Query (first use in file)"),
-    ITEM_RAW_SCORE("ItemRawScore (first use in file)");
-    
+    FUNCTION_ARGUMENT("Function argument"),
+    FEATURE("Feature (first use in file)");
+
     private final String typeName;
     SdDeclarationType(String name) {
         this.typeName = name;

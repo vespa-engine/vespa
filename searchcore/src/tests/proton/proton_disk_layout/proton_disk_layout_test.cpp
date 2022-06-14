@@ -10,6 +10,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <filesystem>
 
 using search::index::DummyFileHeaderContext;
 using search::transactionlog::client::TransLogClient;
@@ -25,8 +26,8 @@ static const vespalib::string documentsDir(baseDir + "/documents");
 
 struct FixtureBase
 {
-    FixtureBase() { vespalib::rmdir(baseDir, true); }
-    ~FixtureBase() { vespalib::rmdir(baseDir, true); }
+    FixtureBase() { std::filesystem::remove_all(std::filesystem::path(baseDir)); }
+    ~FixtureBase() { std::filesystem::remove_all(std::filesystem::path(baseDir)); }
 };
 
 struct DiskLayoutFixture {
@@ -41,7 +42,7 @@ struct DiskLayoutFixture {
 
     void createDirs(const std::set<vespalib::string> &dirs) {
         for (const auto &dir : dirs) {
-            vespalib::mkdir(documentsDir + "/" + dir, false);
+            std::filesystem::create_directory(std::filesystem::path(documentsDir + "/" + dir));
         }
     }
     void createDomains(const std::set<vespalib::string> &domains) {

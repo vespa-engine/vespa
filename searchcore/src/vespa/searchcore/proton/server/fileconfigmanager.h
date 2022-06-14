@@ -2,10 +2,11 @@
 #pragma once
 
 #include "configstore.h"
-#include "documentdbconfigmanager.h"
 #include <vespa/searchlib/common/indexmetainfo.h>
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/objects/nbostream.h>
+
+class FNET_Transport;
 
 namespace proton {
 
@@ -47,7 +48,7 @@ public:
      *                       resulting config snapshot.
      */
     void loadConfig(const DocumentDBConfig &currentSnapshot, SerialNum serialNum,
-                    DocumentDBConfig::SP &loadedSnapshot) override;
+                    std::shared_ptr<DocumentDBConfig> &loadedSnapshot) override;
 
     void removeInvalid() override;
     void prune(SerialNum serialNum) override;

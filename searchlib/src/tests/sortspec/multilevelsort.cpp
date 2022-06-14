@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <type_traits>
@@ -55,7 +56,7 @@ private:
     T getRandomValue() {
         T min = std::numeric_limits<T>::min();
         T max = std::numeric_limits<T>::max();
-        return min + static_cast<T>((max - min) * (((float)rand() / (float)RAND_MAX)));
+        return static_cast<T>(double(min) + (double(max) - double(min)) * (double(rand()) / double(RAND_MAX)));
     }
     template<typename T>
     void fill(IntegerAttribute *attr, uint32_t size, uint32_t unique = 0);

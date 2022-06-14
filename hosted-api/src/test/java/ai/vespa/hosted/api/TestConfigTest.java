@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,9 @@ public class TestConfigTest {
         assertEquals(SystemName.PublicCd,
                      config.system());
         assertTrue(config.isCI());
+        assertEquals("1.2.3", config.platformVersion());
+        assertEquals(321, config.applicationVersion());
+        assertEquals(Instant.ofEpochMilli(1600000000L), config.deployedAt());
         assertEquals(Map.of(ZoneId.from("dev", "aws-us-east-1c"),
                             Map.of("default", URI.create("https://dev.endpoint:443/")),
                             ZoneId.from("prod", "aws-us-east-1a"),

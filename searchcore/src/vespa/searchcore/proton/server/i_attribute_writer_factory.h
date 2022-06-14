@@ -12,9 +12,9 @@ namespace proton {
 struct IAttributeWriterFactory
 {
     using UP = std::unique_ptr<IAttributeWriterFactory>;
-    virtual ~IAttributeWriterFactory() {}
+    virtual ~IAttributeWriterFactory() = default;
     virtual IAttributeWriter::SP create(const IAttributeWriter::SP &old,
-            const AttributeCollectionSpec &attrSpec) const = 0;
+                                        AttributeCollectionSpec && attrSpec) const = 0;
 };
 
 } // namespace proton

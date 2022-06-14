@@ -47,6 +47,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -69,8 +70,12 @@ import static com.yahoo.vespa.hosted.controller.deployment.Step.copyVespaLogs;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.deactivateTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endStagingSetup;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.endTests;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installInitialReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installReal;
+import static com.yahoo.vespa.hosted.controller.deployment.Step.installTester;
 import static com.yahoo.vespa.hosted.controller.deployment.Step.report;
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static java.util.Comparator.comparing;
 import static java.util.Comparator.naturalOrder;
 import static java.util.function.Predicate.not;
 import static java.util.logging.Level.INFO;
@@ -179,11 +184,27 @@ public class JobController {
             if (deployment.isEmpty() || deployment.get().at().isBefore(run.start()))
                 return run;
 
-            Instant from = run.lastVespaLogTimestamp().isAfter(deployment.get().at()) ? run.lastVespaLogTimestamp() : deployment.get().at();
+            Instant deployedAt = run.stepInfo(installInitialReal).or(() -> run.stepInfo(installReal)).flatMap(StepInfo::startTime).orElseThrow();
+            Instant from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
             List<LogEntry> log = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
                                                                   .getLogs(new DeploymentId(id.application(), zone),
                                                                            Map.of("from", Long.toString(from.toEpochMilli()))),
                                                         from);
+
+            if (run.hasStep(installTester) && run.versions().targetPlatform().isAfter(new Version("7.590"))) { // todo jonmv: remove
+                deployedAt = run.stepInfo(installTester).flatMap(StepInfo::startTime).orElseThrow();
+                from = run.lastVespaLogTimestamp().isAfter(run.start()) ? run.lastVespaLogTimestamp() : deployedAt.minusSeconds(10);
+                List<LogEntry> testerLog = LogEntry.parseVespaLog(controller.serviceRegistry().configServer()
+                                                                            .getLogs(new DeploymentId(id.tester().id(), zone),
+                                                                                     Map.of("from", Long.toString(from.toEpochMilli()))),
+                                                                  from);
+
+                Instant justNow = controller.clock().instant().minusSeconds(2);
+                log = Stream.concat(log.stream(), testerLog.stream())
+                            .filter(entry -> entry.at().isBefore(justNow))
+                            .sorted(comparing(LogEntry::at))
+                            .collect(toUnmodifiableList());
+            }
             if (log.isEmpty())
                 return run;
 
@@ -278,11 +299,12 @@ public class JobController {
         return runs.build();
     }
 
-    /** Returns the run with the given id, if it exists. */
-    public Optional<Run> run(RunId id) {
+    /** Returns the run with the given id, or throws if no such run exists. */
+    public Run run(RunId id) {
         return runs(id.application(), id.type()).values().stream()
                                                 .filter(run -> run.id().equals(id))
-                                                .findAny();
+                                                .findAny()
+                                                .orElseThrow(() -> new NoSuchElementException("no run with id '" + id + "' exists"));
     }
 
     /** Returns the last run of the given type, for the given application, if one has been run. */
@@ -392,7 +414,7 @@ public class JobController {
         Deque<Mutex> locks = new ArrayDeque<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
-            Run unlockedRun = run(id).get();
+            Run unlockedRun = run(id);
             locks.push(curator.lock(id.application(), id.type(), report));
             for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
                 locks.push(curator.lock(id.application(), id.type(), step));

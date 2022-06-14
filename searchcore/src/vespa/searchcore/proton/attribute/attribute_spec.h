@@ -2,7 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <memory>
+
+namespace search::attribute { class Config; }
 
 namespace proton {
 
@@ -13,17 +16,16 @@ namespace proton {
 class AttributeSpec
 {
 private:
+    using Config = search::attribute::Config;
     vespalib::string _name;
-    search::attribute::Config _cfg;
+    std::unique_ptr<Config> _cfg;
 public:
     AttributeSpec(const vespalib::string &name, const search::attribute::Config &cfg);
-    AttributeSpec(const AttributeSpec &);
-    AttributeSpec & operator=(const AttributeSpec &);
     AttributeSpec(AttributeSpec &&) noexcept;
     AttributeSpec & operator=(AttributeSpec &&) noexcept;
     ~AttributeSpec();
     const vespalib::string &getName() const { return _name; }
-    const search::attribute::Config &getConfig() const { return _cfg; }
+    const Config &getConfig() const { return *_cfg; }
     bool operator==(const AttributeSpec &rhs) const;
 };
 

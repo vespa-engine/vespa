@@ -1,30 +1,28 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
-import com.yahoo.compress.CompressionType;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.internal.GeoPosType;
-import java.util.logging.Level;
+import com.yahoo.tensor.TensorType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.function.Supplier;
-import com.yahoo.tensor.TensorType;
 
 /**
  * Configures the Vespa document manager from a config id.
  *
  * @author Einar M R Rosenvinge
  */
-@SuppressWarnings("removal") // TODO Vespa 8: remove
 public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSubscriber<DocumentmanagerConfig> {
 
     private final static Logger log = Logger.getLogger(DocumentTypeManagerConfigurer.class.getName());
@@ -35,16 +33,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         this.managerToConfigure = manager;
     }
 
-    /** Deprecated and will go away on Vespa 8 */
-    @Deprecated
-    public static CompressionType toCompressorType(DocumentmanagerConfig.Datatype.Structtype.Compresstype.Enum value) {
-        switch (value) {
-            case NONE: return CompressionType.NONE;
-            case LZ4: return CompressionType.LZ4;
-            case UNCOMPRESSABLE: return CompressionType.INCOMPRESSIBLE;
-        }
-        throw new IllegalArgumentException("Compression type " + value + " is not supported");
-    }
     /**
      * <p>Makes the DocumentTypeManager subscribe on its config.</p>
      *
@@ -174,14 +162,13 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             return type;
         }
 
-        @SuppressWarnings("deprecation")
         private DataType getOrCreateType(int id) {
             if (typesById.containsKey(id)) {
                 return typesById.get(id);
             }
             var config = configMap.remove(id);
             if (config == null) {
-                return manager.getDataType(id);
+                return manager.getDataTypeByCode(id);
             }
             assert(id == config.id());
             for (var o : config.arraytype()) {
@@ -207,7 +194,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void fillStructs(DocumentmanagerConfig config) {
             for (var thisDataType : config.datatype()) {
                 for (var struct : thisDataType.structtype()) {
@@ -226,7 +212,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
                         }
                         DataType fieldType = typesById.get(field.datatype());
                         if (fieldType == null) {
-                            fieldType = manager.getDataType(field.datatype(), field.detailedtype());
+                            fieldType = manager.getDataTypeByCode(field.datatype(), field.detailedtype());
                         }
                         if (field.id().size() == 1) {
                             type.addField(new Field(field.name(), field.id().get(0).id(), fieldType));
@@ -274,7 +260,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void apply(DocumentmanagerConfig config) {
             splitConfig(config);
             setupAnnotationTypesWithoutPayloads(config);
@@ -312,11 +297,10 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
         }
 
-        @SuppressWarnings("deprecation")
         private void addAnnotationTypePayloads(DocumentmanagerConfig config) {
             for (DocumentmanagerConfig.Annotationtype annType : config.annotationtype()) {
                 AnnotationType annotationType = manager.getAnnotationTypeRegistry().getType(annType.id());
-                DataType payload = manager.getDataType(annType.datatype(), "");
+                DataType payload = manager.getDataTypeByCode(annType.datatype(), "");
                 if (! payload.equals(DataType.NONE)) {
                     annotationType.setDataType(payload);
                 }
@@ -449,7 +433,6 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
             }
 
             void createEmptyStructs() {
-                String docName = docTypeConfig.name();
                 for (var typeconf : docTypeConfig.structtype()) {
                     if (isPositionStruct(typeconf)) {
                         int geoVersion = usev8geopositions ? 8 : 7;
@@ -632,7 +615,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         if (this.managerToConfigure.getDataTypes().size() != defaultTypeCount) {
             log.log(Level.FINE, "Live document config overwritten with new config.");
         }
-        managerToConfigure.assign(manager);
+        managerToConfigure.internalAssign(manager);
     }
 
 }

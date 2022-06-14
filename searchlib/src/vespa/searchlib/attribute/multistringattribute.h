@@ -44,9 +44,8 @@ protected:
     using generation_t = StringAttribute::generation_t;
 
 public:
-    MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
-                              AttributeVector::Config(AttributeVector::BasicType::STRING,
-                                                      attribute::CollectionType::ARRAY));
+    MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c);
+    MultiValueStringAttributeT(const vespalib::string & name);
     ~MultiValueStringAttributeT();
 
     void freezeEnumDictionary() override;

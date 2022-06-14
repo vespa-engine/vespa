@@ -146,13 +146,13 @@ public class YqlParserTestCase {
 
     @Test
     public void testComplexExpression() {
-        String queryTreeYql = "rank((((filter contains ({origin: {original: \"filter:VideoAdsCappingTestCPM\", \"offset\": 7, length: 22}, normalizeCase: false, id: 1}\"videoadscappingtestcpm\") AND hasRankRestriction contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 2}]\"0\") AND ((objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 3}]\"install_app\") AND availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 4}]\"cpiparams\")) OR (availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 5}]\"appinstallinfo\") AND availableExtendedFields contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 6}]\"appmetroplexinfo\")) OR (dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 7}]\"default\")) AND !(objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 8}]\"install_app\"))) AND advt_age = ([{\"id\": 9}]2147483647) AND advt_gender contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 10}]\"all\") AND advt_all_segments = ([{\"id\": 11}]2147483647) AND advt_keywords contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 12}]\"all\") AND advMobilePlatform = ([{\"id\": 13}]2147483647) AND advMobileDeviceType = ([{\"id\": 14}]2147483647) AND advMobileCon = ([{\"id\": 15}]2147483647) AND advMobileOSVersions = ([{\"id\": 16}]2147483647) AND advCarrier = ([{\"id\": 17}]2147483647) AND ([{\"id\": 18}]weightedSet(advt_supply, {\"all\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) AND (advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 19, \"weight\": 1}]\"adv_tuesday\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 20, \"weight\": 1}]\"adv_tuesday_17\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 21, \"weight\": 1}]\"adv_tuesday_17_forty_five\") OR advt_day_parting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 22}]\"all\")) AND isAppReengagementAd = ([{\"id\": 23}]0) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 24}]\"default\") AND serveWithPromotionOnly = ([{\"id\": 26}]0) AND budgetAdvertiserThrottleRateFilter = ([{\"id\": 27}]0) AND budgetResellerThrottleRateFilter = ([{\"id\": 28}]0) AND (isMystiqueRequired = ([{\"id\": 29}]0) OR (isMystiqueRequired = ([{\"id\": 30}]1) AND useBcFactorFilter = ([{\"id\": 31}]1))) AND (((budgetCampaignThrottleRateBits = ([{\"id\": 32}]55) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 33}]\"default\"))) AND !(useBcFactorFilter = ([{\"id\": 34}]1)) OR ((useBcFactorFilter = ([{\"id\": 35}]1) AND dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 36}]\"default\") AND (bcFactorTiers = ([{\"id\": 38}]127) OR bcFactorTiers = ([{\"id\": 39}]0)) AND ((firstPriceEnforced = ([{\"id\": 40}]0) AND (secondPriceEnforced = ([{\"id\": 41}]1) OR isPrivateDeal = ([{\"id\": 42}]0) OR (dummyField contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 43}]\"default\")) AND !(bcActiveTier = ([{\"id\": 44}]0)))) OR mystiqueCampaignThrottleRateBits = ([{\"id\": 45}]18)))) AND !(isOutOfDailyBudget = ([{\"id\": 37}]1))) AND testCreative = ([{\"id\": 46}]0) AND advt_geo = ([{\"id\": 47}]2147483647) AND ((adType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 48}]\"strm_video\") AND isPortraitVideo = ([{\"id\": 49}]0)) OR adType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 50}]\"stream_ad\")) AND ((isCPM = ([{\"id\": 51}]0) AND isOCPC = ([{\"id\": 52}]0) AND isECPC = ([{\"id\": 53}]0) AND ((priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 54}]\"cpcv\") AND bid >= ([{\"id\": 55}]0.005)) OR (priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 56}]\"cpv\") AND bid >= ([{\"id\": 57}]0.01)) OR (priceType contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 58}]\"cpc\") AND bid >= ([{\"id\": 59}]0.05)) OR (objective contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 60}]\"promote_content\") AND bid >= ([{\"id\": 61}]0.01)) OR hasFloorPriceUsd = ([{\"id\": 62}]1))) OR isECPC = ([{\"id\": 63}]1) OR (isCPM = ([{\"id\": 64}]1) AND isOCPM = ([{\"id\": 65}]0) AND (([{\"id\": 66}]range(bid, 0.25, Infinity)) OR hasFloorPriceUsd = ([{\"id\": 67}]1)))) AND start_date <= ([{\"id\": 68}]1572976776299L) AND end_date >= ([{\"id\": 69}]1572976776299L))) AND !(isHoldoutAd = ([{\"id\": 25}]1))) AND !((disclaimerExtensionsTypes contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 70}]\"pharma\") OR ([{\"id\": 71}]weightedSet(exclusion_advt_supply, {\"extsite223\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) OR isPersonalized = ([{\"id\": 72}]1) OR blocked_section_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 73}]\"223\") OR blocked_publisher_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 74}]\"223\") OR blocked_site_ids contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 75}]\"223\"))), [{\"id\": 76, \"label\": \"ad_ocpc_max_cpc\"}]dotProduct(ocpc_max_cpc, {\"0\": 1}), [{\"id\": 77, \"label\": \"ad_ocpc_min_cpc\"}]dotProduct(ocpc_min_cpc, {\"0\": 1}), [{\"id\": 78, \"label\": \"ad_ocpc_max_alpha\"}]dotProduct(ocpc_max_alpha, {\"0\": 1}), [{\"id\": 79, \"label\": \"ad_ocpc_min_alpha\"}]dotProduct(ocpc_min_alpha, {\"0\": 1}), [{\"id\": 80, \"label\": \"ad_ocpc_alpha_0\"}]dotProduct(ocpc_alpha_0, {\"0\": 1}), [{\"id\": 81, \"label\": \"ad_ocpc_alpha_1\"}]dotProduct(ocpc_alpha_1, {\"0\": 1}), (bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 82, \"weight\": 1}]\"adv_tuesday\") OR bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 83, \"weight\": 1}]\"adv_tuesday_17\") OR bidAdjustmentDayParting contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 84, \"weight\": 1}]\"adv_tuesday_17_forty_five\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 85, \"weight\": 1}]\"adv_tuesday\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 86, \"weight\": 1}]\"adv_tuesday_17\") OR bidAdjustmentDayPartingForCostCap contains ([{\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 87, \"weight\": 1}]\"adv_tuesday_17_forty_five\")), bidAdjustmentForCpi = ([{\"id\": 88, \"weight\": 1}]223), [{\"id\": 89, \"label\": \"boostingForBackfill\"}]dotProduct(boostingForBackfill, {\"priority\": 1000})) limit 0 timeout 3980 | all(group(adTypeForGrouping) each(group(advertiser_id) max(11) output(count() as(groupingCounter)) each(max(1) each(output(summary())))))";
+        String queryTreeYql = "rank((((filter contains ({origin: {original: \"filter:VideoAdsCappingTestCPM\", \"offset\": 7, length: 22}, normalizeCase: false, id: 1}\"videoadscappingtestcpm\") AND hasRankRestriction contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 2}\"0\") AND ((objective contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 3}\"install_app\") AND availableExtendedFields contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 4}\"cpiparams\")) OR (availableExtendedFields contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 5}\"appinstallinfo\") AND availableExtendedFields contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 6}\"appmetroplexinfo\")) OR (dummyField contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 7}\"default\")) AND !(objective contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 8}\"install_app\"))) AND advt_age = ({\"id\": 9}2147483647) AND advt_gender contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 10}\"all\") AND advt_all_segments = ({\"id\": 11}2147483647) AND advt_keywords contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 12}\"all\") AND advMobilePlatform = ({\"id\": 13}2147483647) AND advMobileDeviceType = ({\"id\": 14}2147483647) AND advMobileCon = ({\"id\": 15}2147483647) AND advMobileOSVersions = ({\"id\": 16}2147483647) AND advCarrier = ({\"id\": 17}2147483647) AND ({\"id\": 18}weightedSet(advt_supply, {\"all\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) AND (advt_day_parting contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 19, \"weight\": 1}\"adv_tuesday\") OR advt_day_parting contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 20, \"weight\": 1}\"adv_tuesday_17\") OR advt_day_parting contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 21, \"weight\": 1}\"adv_tuesday_17_forty_five\") OR advt_day_parting contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 22}\"all\")) AND isAppReengagementAd = ({\"id\": 23}0) AND dummyField contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 24}\"default\") AND serveWithPromotionOnly = ({\"id\": 26}0) AND budgetAdvertiserThrottleRateFilter = ({\"id\": 27}0) AND budgetResellerThrottleRateFilter = ({\"id\": 28}0) AND (isMystiqueRequired = ({\"id\": 29}0) OR (isMystiqueRequired = ({\"id\": 30}1) AND useBcFactorFilter = ({\"id\": 31}1))) AND (((budgetCampaignThrottleRateBits = ({\"id\": 32}55) AND dummyField contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 33}\"default\"))) AND !(useBcFactorFilter = ({\"id\": 34}1)) OR ((useBcFactorFilter = ({\"id\": 35}1) AND dummyField contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 36}\"default\") AND (bcFactorTiers = ({\"id\": 38}127) OR bcFactorTiers = ({\"id\": 39}0)) AND ((firstPriceEnforced = ({\"id\": 40}0) AND (secondPriceEnforced = ({\"id\": 41}1) OR isPrivateDeal = ({\"id\": 42}0) OR (dummyField contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 43}\"default\")) AND !(bcActiveTier = ({\"id\": 44}0)))) OR mystiqueCampaignThrottleRateBits = ({\"id\": 45}18)))) AND !(isOutOfDailyBudget = ({\"id\": 37}1))) AND testCreative = ({\"id\": 46}0) AND advt_geo = ({\"id\": 47}2147483647) AND ((adType contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 48}\"strm_video\") AND isPortraitVideo = ({\"id\": 49}0)) OR adType contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 50}\"stream_ad\")) AND ((isCPM = ({\"id\": 51}0) AND isOCPC = ({\"id\": 52}0) AND isECPC = ({\"id\": 53}0) AND ((priceType contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 54}\"cpcv\") AND bid >= ({\"id\": 55}0.005)) OR (priceType contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 56}\"cpv\") AND bid >= ({\"id\": 57}0.01)) OR (priceType contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 58}\"cpc\") AND bid >= ({\"id\": 59}0.05)) OR (objective contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 60}\"promote_content\") AND bid >= ({\"id\": 61}0.01)) OR hasFloorPriceUsd = ({\"id\": 62}1))) OR isECPC = ({\"id\": 63}1) OR (isCPM = ({\"id\": 64}1) AND isOCPM = ({\"id\": 65}0) AND (({\"id\": 66}range(bid, 0.25, Infinity)) OR hasFloorPriceUsd = ({\"id\": 67}1)))) AND start_date <= ({\"id\": 68}1572976776299L) AND end_date >= ({\"id\": 69}1572976776299L))) AND !(isHoldoutAd = ({\"id\": 25}1))) AND !((disclaimerExtensionsTypes contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 70}\"pharma\") OR ({\"id\": 71}weightedSet(exclusion_advt_supply, {\"extsite223\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) OR isPersonalized = ({\"id\": 72}1) OR blocked_section_ids contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 73}\"223\") OR blocked_publisher_ids contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 74}\"223\") OR blocked_site_ids contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 75}\"223\"))), {\"id\": 76, \"label\": \"ad_ocpc_max_cpc\"}dotProduct(ocpc_max_cpc, {\"0\": 1}), {\"id\": 77, \"label\": \"ad_ocpc_min_cpc\"}dotProduct(ocpc_min_cpc, {\"0\": 1}), {\"id\": 78, \"label\": \"ad_ocpc_max_alpha\"}dotProduct(ocpc_max_alpha, {\"0\": 1}), {\"id\": 79, \"label\": \"ad_ocpc_min_alpha\"}dotProduct(ocpc_min_alpha, {\"0\": 1}), {\"id\": 80, \"label\": \"ad_ocpc_alpha_0\"}dotProduct(ocpc_alpha_0, {\"0\": 1}), {\"id\": 81, \"label\": \"ad_ocpc_alpha_1\"}dotProduct(ocpc_alpha_1, {\"0\": 1}), (bidAdjustmentDayParting contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 82, \"weight\": 1}\"adv_tuesday\") OR bidAdjustmentDayParting contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 83, \"weight\": 1}\"adv_tuesday_17\") OR bidAdjustmentDayParting contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 84, \"weight\": 1}\"adv_tuesday_17_forty_five\") OR bidAdjustmentDayPartingForCostCap contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 85, \"weight\": 1}\"adv_tuesday\") OR bidAdjustmentDayPartingForCostCap contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 86, \"weight\": 1}\"adv_tuesday_17\") OR bidAdjustmentDayPartingForCostCap contains ({\"normalizeCase\": false, \"implicitTransforms\": false, \"id\": 87, \"weight\": 1}\"adv_tuesday_17_forty_five\")), bidAdjustmentForCpi = ({\"id\": 88, \"weight\": 1}223), {\"id\": 89, \"label\": \"boostingForBackfill\"}dotProduct(boostingForBackfill, {\"priority\": 1000})) limit 0 timeout 3980 | all(group(adTypeForGrouping) each(group(advertiser_id) max(11) output(count() as(groupingCounter)) each(max(1) each(output(summary())))))";
         QueryTree parsed = assertParse("select * from sources * where " + queryTreeYql + ";",
                                        "RANK (+(+(AND filter:VideoAdsCappingTestCPM hasRankRestriction:0 (OR (AND objective:install_app availableExtendedFields:cpiparams) (AND availableExtendedFields:appinstallinfo availableExtendedFields:appmetroplexinfo) (+dummyField:default -objective:install_app)) advt_age:2147483647 advt_gender:all advt_all_segments:2147483647 advt_keywords:all advMobilePlatform:2147483647 advMobileDeviceType:2147483647 advMobileCon:2147483647 advMobileOSVersions:2147483647 advCarrier:2147483647 WEIGHTEDSET advt_supply{[1]:\"site223\",[1]:\"pub223\",[1]:\"all\",[1]:\"sec223\"} (OR advt_day_parting:adv_tuesday!1 advt_day_parting:adv_tuesday_17!1 advt_day_parting:adv_tuesday_17_forty_five!1 advt_day_parting:all) isAppReengagementAd:0 dummyField:default serveWithPromotionOnly:0 budgetAdvertiserThrottleRateFilter:0 budgetResellerThrottleRateFilter:0 (OR isMystiqueRequired:0 (AND isMystiqueRequired:1 useBcFactorFilter:1)) (OR (+(AND budgetCampaignThrottleRateBits:55 dummyField:default) -useBcFactorFilter:1) (+(AND useBcFactorFilter:1 dummyField:default (OR bcFactorTiers:127 bcFactorTiers:0) (OR (AND firstPriceEnforced:0 (OR secondPriceEnforced:1 isPrivateDeal:0 (+dummyField:default -bcActiveTier:0))) mystiqueCampaignThrottleRateBits:18)) -isOutOfDailyBudget:1)) testCreative:0 advt_geo:2147483647 (OR (AND adType:strm_video isPortraitVideo:0) adType:stream_ad) (OR (AND isCPM:0 isOCPC:0 isECPC:0 (OR (AND priceType:cpcv bid:[0.005;]) (AND priceType:cpv bid:[0.01;]) (AND priceType:cpc bid:[0.05;]) (AND objective:promote_content bid:[0.01;]) hasFloorPriceUsd:1)) isECPC:1 (AND isCPM:1 isOCPM:0 (OR bid:[0.25;] hasFloorPriceUsd:1))) start_date:[;1572976776299] end_date:[1572976776299;]) -isHoldoutAd:1) -(OR disclaimerExtensionsTypes:pharma WEIGHTEDSET exclusion_advt_supply{[1]:\"extsite223\",[1]:\"site223\",[1]:\"pub223\",[1]:\"sec223\"} isPersonalized:1 blocked_section_ids:223 blocked_publisher_ids:223 blocked_site_ids:223)) DOTPRODUCT ocpc_max_cpc{[1]:\"0\"} DOTPRODUCT ocpc_min_cpc{[1]:\"0\"} DOTPRODUCT ocpc_max_alpha{[1]:\"0\"} DOTPRODUCT ocpc_min_alpha{[1]:\"0\"} DOTPRODUCT ocpc_alpha_0{[1]:\"0\"} DOTPRODUCT ocpc_alpha_1{[1]:\"0\"} (OR bidAdjustmentDayParting:adv_tuesday!1 bidAdjustmentDayParting:adv_tuesday_17!1 bidAdjustmentDayParting:adv_tuesday_17_forty_five!1 bidAdjustmentDayPartingForCostCap:adv_tuesday!1 bidAdjustmentDayPartingForCostCap:adv_tuesday_17!1 bidAdjustmentDayPartingForCostCap:adv_tuesday_17_forty_five!1) bidAdjustmentForCpi:223!1 DOTPRODUCT boostingForBackfill{[1000]:\"priority\"}");
         String serializedQueryTreeYql = VespaSerializer.serialize(parsed);
 
         // Note: All the details here are not verified
-        assertEquals("rank((((filter contains ([{normalizeCase: false, id: 1}]\"VideoAdsCappingTestCPM\") AND hasRankRestriction contains ([{normalizeCase: false, implicitTransforms: false, id: 2}]\"0\") AND ((objective contains ([{normalizeCase: false, implicitTransforms: false, id: 3}]\"install_app\") AND availableExtendedFields contains ([{normalizeCase: false, implicitTransforms: false, id: 4}]\"cpiparams\")) OR (availableExtendedFields contains ([{normalizeCase: false, implicitTransforms: false, id: 5}]\"appinstallinfo\") AND availableExtendedFields contains ([{normalizeCase: false, implicitTransforms: false, id: 6}]\"appmetroplexinfo\")) OR (dummyField contains ([{normalizeCase: false, implicitTransforms: false, id: 7}]\"default\")) AND !(objective contains ([{normalizeCase: false, implicitTransforms: false, id: 8}]\"install_app\"))) AND advt_age = ([{id: 9}]2147483647) AND advt_gender contains ([{normalizeCase: false, implicitTransforms: false, id: 10}]\"all\") AND advt_all_segments = ([{id: 11}]2147483647) AND advt_keywords contains ([{normalizeCase: false, implicitTransforms: false, id: 12}]\"all\") AND advMobilePlatform = ([{id: 13}]2147483647) AND advMobileDeviceType = ([{id: 14}]2147483647) AND advMobileCon = ([{id: 15}]2147483647) AND advMobileOSVersions = ([{id: 16}]2147483647) AND advCarrier = ([{id: 17}]2147483647) AND ([{id: 18}]weightedSet(advt_supply, {\"all\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) AND (advt_day_parting contains ([{normalizeCase: false, implicitTransforms: false, id: 19, weight: 1}]\"adv_tuesday\") OR advt_day_parting contains ([{normalizeCase: false, implicitTransforms: false, id: 20, weight: 1}]\"adv_tuesday_17\") OR advt_day_parting contains ([{normalizeCase: false, implicitTransforms: false, id: 21, weight: 1}]\"adv_tuesday_17_forty_five\") OR advt_day_parting contains ([{normalizeCase: false, implicitTransforms: false, id: 22}]\"all\")) AND isAppReengagementAd = ([{id: 23}]0) AND dummyField contains ([{normalizeCase: false, implicitTransforms: false, id: 24}]\"default\") AND serveWithPromotionOnly = ([{id: 26}]0) AND budgetAdvertiserThrottleRateFilter = ([{id: 27}]0) AND budgetResellerThrottleRateFilter = ([{id: 28}]0) AND (isMystiqueRequired = ([{id: 29}]0) OR (isMystiqueRequired = ([{id: 30}]1) AND useBcFactorFilter = ([{id: 31}]1))) AND (((budgetCampaignThrottleRateBits = ([{id: 32}]55) AND dummyField contains ([{normalizeCase: false, implicitTransforms: false, id: 33}]\"default\"))) AND !(useBcFactorFilter = ([{id: 34}]1)) OR ((useBcFactorFilter = ([{id: 35}]1) AND dummyField contains ([{normalizeCase: false, implicitTransforms: false, id: 36}]\"default\") AND (bcFactorTiers = ([{id: 38}]127) OR bcFactorTiers = ([{id: 39}]0)) AND ((firstPriceEnforced = ([{id: 40}]0) AND (secondPriceEnforced = ([{id: 41}]1) OR isPrivateDeal = ([{id: 42}]0) OR (dummyField contains ([{normalizeCase: false, implicitTransforms: false, id: 43}]\"default\")) AND !(bcActiveTier = ([{id: 44}]0)))) OR mystiqueCampaignThrottleRateBits = ([{id: 45}]18)))) AND !(isOutOfDailyBudget = ([{id: 37}]1))) AND testCreative = ([{id: 46}]0) AND advt_geo = ([{id: 47}]2147483647) AND ((adType contains ([{normalizeCase: false, implicitTransforms: false, id: 48}]\"strm_video\") AND isPortraitVideo = ([{id: 49}]0)) OR adType contains ([{normalizeCase: false, implicitTransforms: false, id: 50}]\"stream_ad\")) AND ((isCPM = ([{id: 51}]0) AND isOCPC = ([{id: 52}]0) AND isECPC = ([{id: 53}]0) AND ((priceType contains ([{normalizeCase: false, implicitTransforms: false, id: 54}]\"cpcv\") AND bid >= ([{id: 55}]0.005)) OR (priceType contains ([{normalizeCase: false, implicitTransforms: false, id: 56}]\"cpv\") AND bid >= ([{id: 57}]0.01)) OR (priceType contains ([{normalizeCase: false, implicitTransforms: false, id: 58}]\"cpc\") AND bid >= ([{id: 59}]0.05)) OR (objective contains ([{normalizeCase: false, implicitTransforms: false, id: 60}]\"promote_content\") AND bid >= ([{id: 61}]0.01)) OR hasFloorPriceUsd = ([{id: 62}]1))) OR isECPC = ([{id: 63}]1) OR (isCPM = ([{id: 64}]1) AND isOCPM = ([{id: 65}]0) AND ([{id: 66}]range(bid, 0.25, Infinity) OR hasFloorPriceUsd = ([{id: 67}]1)))) AND start_date <= ([{id: 68}]1572976776299L) AND end_date >= ([{id: 69}]1572976776299L))) AND !(isHoldoutAd = ([{id: 25}]1))) AND !((disclaimerExtensionsTypes contains ([{normalizeCase: false, implicitTransforms: false, id: 70}]\"pharma\") OR ([{id: 71}]weightedSet(exclusion_advt_supply, {\"extsite223\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) OR isPersonalized = ([{id: 72}]1) OR blocked_section_ids contains ([{normalizeCase: false, implicitTransforms: false, id: 73}]\"223\") OR blocked_publisher_ids contains ([{normalizeCase: false, implicitTransforms: false, id: 74}]\"223\") OR blocked_site_ids contains ([{normalizeCase: false, implicitTransforms: false, id: 75}]\"223\"))), ([{id: 76, label: \"ad_ocpc_max_cpc\"}]dotProduct(ocpc_max_cpc, {\"0\": 1})), ([{id: 77, label: \"ad_ocpc_min_cpc\"}]dotProduct(ocpc_min_cpc, {\"0\": 1})), ([{id: 78, label: \"ad_ocpc_max_alpha\"}]dotProduct(ocpc_max_alpha, {\"0\": 1})), ([{id: 79, label: \"ad_ocpc_min_alpha\"}]dotProduct(ocpc_min_alpha, {\"0\": 1})), ([{id: 80, label: \"ad_ocpc_alpha_0\"}]dotProduct(ocpc_alpha_0, {\"0\": 1})), ([{id: 81, label: \"ad_ocpc_alpha_1\"}]dotProduct(ocpc_alpha_1, {\"0\": 1})), (bidAdjustmentDayParting contains ([{normalizeCase: false, implicitTransforms: false, id: 82, weight: 1}]\"adv_tuesday\") OR bidAdjustmentDayParting contains ([{normalizeCase: false, implicitTransforms: false, id: 83, weight: 1}]\"adv_tuesday_17\") OR bidAdjustmentDayParting contains ([{normalizeCase: false, implicitTransforms: false, id: 84, weight: 1}]\"adv_tuesday_17_forty_five\") OR bidAdjustmentDayPartingForCostCap contains ([{normalizeCase: false, implicitTransforms: false, id: 85, weight: 1}]\"adv_tuesday\") OR bidAdjustmentDayPartingForCostCap contains ([{normalizeCase: false, implicitTransforms: false, id: 86, weight: 1}]\"adv_tuesday_17\") OR bidAdjustmentDayPartingForCostCap contains ([{normalizeCase: false, implicitTransforms: false, id: 87, weight: 1}]\"adv_tuesday_17_forty_five\")), bidAdjustmentForCpi = ([{id: 88, weight: 1}]223), ([{id: 89, label: \"boostingForBackfill\"}]dotProduct(boostingForBackfill, {\"priority\": 1000})))",
+        assertEquals("rank((((filter contains ({normalizeCase: false, id: 1}\"VideoAdsCappingTestCPM\") AND hasRankRestriction contains ({normalizeCase: false, implicitTransforms: false, id: 2}\"0\") AND ((objective contains ({normalizeCase: false, implicitTransforms: false, id: 3}\"install_app\") AND availableExtendedFields contains ({normalizeCase: false, implicitTransforms: false, id: 4}\"cpiparams\")) OR (availableExtendedFields contains ({normalizeCase: false, implicitTransforms: false, id: 5}\"appinstallinfo\") AND availableExtendedFields contains ({normalizeCase: false, implicitTransforms: false, id: 6}\"appmetroplexinfo\")) OR (dummyField contains ({normalizeCase: false, implicitTransforms: false, id: 7}\"default\")) AND !(objective contains ({normalizeCase: false, implicitTransforms: false, id: 8}\"install_app\"))) AND advt_age = ({id: 9}2147483647) AND advt_gender contains ({normalizeCase: false, implicitTransforms: false, id: 10}\"all\") AND advt_all_segments = ({id: 11}2147483647) AND advt_keywords contains ({normalizeCase: false, implicitTransforms: false, id: 12}\"all\") AND advMobilePlatform = ({id: 13}2147483647) AND advMobileDeviceType = ({id: 14}2147483647) AND advMobileCon = ({id: 15}2147483647) AND advMobileOSVersions = ({id: 16}2147483647) AND advCarrier = ({id: 17}2147483647) AND ({id: 18}weightedSet(advt_supply, {\"all\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) AND (advt_day_parting contains ({normalizeCase: false, implicitTransforms: false, id: 19, weight: 1}\"adv_tuesday\") OR advt_day_parting contains ({normalizeCase: false, implicitTransforms: false, id: 20, weight: 1}\"adv_tuesday_17\") OR advt_day_parting contains ({normalizeCase: false, implicitTransforms: false, id: 21, weight: 1}\"adv_tuesday_17_forty_five\") OR advt_day_parting contains ({normalizeCase: false, implicitTransforms: false, id: 22}\"all\")) AND isAppReengagementAd = ({id: 23}0) AND dummyField contains ({normalizeCase: false, implicitTransforms: false, id: 24}\"default\") AND serveWithPromotionOnly = ({id: 26}0) AND budgetAdvertiserThrottleRateFilter = ({id: 27}0) AND budgetResellerThrottleRateFilter = ({id: 28}0) AND (isMystiqueRequired = ({id: 29}0) OR (isMystiqueRequired = ({id: 30}1) AND useBcFactorFilter = ({id: 31}1))) AND (((budgetCampaignThrottleRateBits = ({id: 32}55) AND dummyField contains ({normalizeCase: false, implicitTransforms: false, id: 33}\"default\"))) AND !(useBcFactorFilter = ({id: 34}1)) OR ((useBcFactorFilter = ({id: 35}1) AND dummyField contains ({normalizeCase: false, implicitTransforms: false, id: 36}\"default\") AND (bcFactorTiers = ({id: 38}127) OR bcFactorTiers = ({id: 39}0)) AND ((firstPriceEnforced = ({id: 40}0) AND (secondPriceEnforced = ({id: 41}1) OR isPrivateDeal = ({id: 42}0) OR (dummyField contains ({normalizeCase: false, implicitTransforms: false, id: 43}\"default\")) AND !(bcActiveTier = ({id: 44}0)))) OR mystiqueCampaignThrottleRateBits = ({id: 45}18)))) AND !(isOutOfDailyBudget = ({id: 37}1))) AND testCreative = ({id: 46}0) AND advt_geo = ({id: 47}2147483647) AND ((adType contains ({normalizeCase: false, implicitTransforms: false, id: 48}\"strm_video\") AND isPortraitVideo = ({id: 49}0)) OR adType contains ({normalizeCase: false, implicitTransforms: false, id: 50}\"stream_ad\")) AND ((isCPM = ({id: 51}0) AND isOCPC = ({id: 52}0) AND isECPC = ({id: 53}0) AND ((priceType contains ({normalizeCase: false, implicitTransforms: false, id: 54}\"cpcv\") AND bid >= ({id: 55}0.005)) OR (priceType contains ({normalizeCase: false, implicitTransforms: false, id: 56}\"cpv\") AND bid >= ({id: 57}0.01)) OR (priceType contains ({normalizeCase: false, implicitTransforms: false, id: 58}\"cpc\") AND bid >= ({id: 59}0.05)) OR (objective contains ({normalizeCase: false, implicitTransforms: false, id: 60}\"promote_content\") AND bid >= ({id: 61}0.01)) OR hasFloorPriceUsd = ({id: 62}1))) OR isECPC = ({id: 63}1) OR (isCPM = ({id: 64}1) AND isOCPM = ({id: 65}0) AND ({id: 66}range(bid, 0.25, Infinity) OR hasFloorPriceUsd = ({id: 67}1)))) AND start_date <= ({id: 68}1572976776299L) AND end_date >= ({id: 69}1572976776299L))) AND !(isHoldoutAd = ({id: 25}1))) AND !((disclaimerExtensionsTypes contains ({normalizeCase: false, implicitTransforms: false, id: 70}\"pharma\") OR ({id: 71}weightedSet(exclusion_advt_supply, {\"extsite223\": 1, \"pub223\": 1, \"sec223\": 1, \"site223\": 1})) OR isPersonalized = ({id: 72}1) OR blocked_section_ids contains ({normalizeCase: false, implicitTransforms: false, id: 73}\"223\") OR blocked_publisher_ids contains ({normalizeCase: false, implicitTransforms: false, id: 74}\"223\") OR blocked_site_ids contains ({normalizeCase: false, implicitTransforms: false, id: 75}\"223\"))), ({id: 76, label: \"ad_ocpc_max_cpc\"}dotProduct(ocpc_max_cpc, {\"0\": 1})), ({id: 77, label: \"ad_ocpc_min_cpc\"}dotProduct(ocpc_min_cpc, {\"0\": 1})), ({id: 78, label: \"ad_ocpc_max_alpha\"}dotProduct(ocpc_max_alpha, {\"0\": 1})), ({id: 79, label: \"ad_ocpc_min_alpha\"}dotProduct(ocpc_min_alpha, {\"0\": 1})), ({id: 80, label: \"ad_ocpc_alpha_0\"}dotProduct(ocpc_alpha_0, {\"0\": 1})), ({id: 81, label: \"ad_ocpc_alpha_1\"}dotProduct(ocpc_alpha_1, {\"0\": 1})), (bidAdjustmentDayParting contains ({normalizeCase: false, implicitTransforms: false, id: 82, weight: 1}\"adv_tuesday\") OR bidAdjustmentDayParting contains ({normalizeCase: false, implicitTransforms: false, id: 83, weight: 1}\"adv_tuesday_17\") OR bidAdjustmentDayParting contains ({normalizeCase: false, implicitTransforms: false, id: 84, weight: 1}\"adv_tuesday_17_forty_five\") OR bidAdjustmentDayPartingForCostCap contains ({normalizeCase: false, implicitTransforms: false, id: 85, weight: 1}\"adv_tuesday\") OR bidAdjustmentDayPartingForCostCap contains ({normalizeCase: false, implicitTransforms: false, id: 86, weight: 1}\"adv_tuesday_17\") OR bidAdjustmentDayPartingForCostCap contains ({normalizeCase: false, implicitTransforms: false, id: 87, weight: 1}\"adv_tuesday_17_forty_five\")), bidAdjustmentForCpi = ({id: 88, weight: 1}223), ({id: 89, label: \"boostingForBackfill\"}dotProduct(boostingForBackfill, {\"priority\": 1000})))",
                      serializedQueryTreeYql);
     }
 
@@ -181,7 +181,7 @@ public class YqlParserTestCase {
         assertParse("select foo from bar where title contains \"madonna\" and title contains \"saint\"",
                     "AND title:madonna title:saint");
         assertParse("select foo from bar where title contains \"madonna\" and title contains \"saint\" and title " +
-                    "contains \"angel\";",
+                    "contains \"angel\"",
                     "AND title:madonna title:saint title:angel");
     }
 
@@ -283,13 +283,13 @@ public class YqlParserTestCase {
 
     @Test
     public void testAnnotatedGreaterThanOrEqual() {
-        assertParse("select foo from bar where price >= ([{filter: true}]500)", "|price:[500;]");
+        assertParse("select foo from bar where price >= ({filter: true}500)", "|price:[500;]");
         assertParse("select foo from bar where ({filter: true}(-500)) >= price", "|price:[;-500]");
     }
 
     @Test
     public void testAnnotatedEquality() {
-        assertParse("select foo from bar where price = ([{filter: true}](-500))", "|price:-500");
+        assertParse("select foo from bar where price = ({filter: true}(-500))", "|price:-500");
         assertParse("select foo from bar where ({filter: true}500) = price", "|price:500");
     }
 
@@ -307,7 +307,7 @@ public class YqlParserTestCase {
     public void testTermAnnotations() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "({label: \"merkelapp\"}\"colors\");").getLabel());
+                                 "({label: \"merkelapp\"}\"colors\")").getLabel());
         assertEquals("another",
                      getRootWord("select foo from bar where baz contains " +
                                  "({annotations: {cox: \"another\"}}\"colors\")").getAnnotation("cox"));
@@ -336,14 +336,14 @@ public class YqlParserTestCase {
     public void testAnnotationsCanBeInBrackets() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "([ {label: \"merkelapp\"} ]\"colors\");").getLabel());
+                                 "([ {label: \"merkelapp\"} ]\"colors\")").getLabel());
     }
 
     @Test
     public void testValuesCanBeQuoted() {
         assertEquals("merkelapp",
                      getRootWord("select foo from bar where baz contains " +
-                                 "( {label: \"merkelapp\"} \"colors\");").getLabel());
+                                 "( {label: \"merkelapp\"} \"colors\")").getLabel());
     }
 
     @Test
@@ -411,7 +411,7 @@ public class YqlParserTestCase {
         assertFalse(getRootWord("select foo from bar where baz contains " +
                                 "([ {stem: true} ]\"colors\")").isStemmed());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                                "\"colors\";").isStemmed());
+                                "\"colors\"").isStemmed());
     }
 
     @Test
@@ -428,7 +428,7 @@ public class YqlParserTestCase {
         assertFalse(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem)root).getWord());
 
-        root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
+        root = parse("select foo from bar where {grammar:\"all\"}userInput(\"yoni jo dima\")").getRoot();
         assertTrue(root instanceof AndItem);
         AndItem andItem = (AndItem) root;
         assertEquals(3, andItem.getItemCount());
@@ -614,7 +614,7 @@ public class YqlParserTestCase {
     //This test is order dependent. Fix it!
     @Test
     public void testDotProduct() {
-        assertParse("select foo from bar where dotProduct(description, {\"a\":1, \"b\":2});",
+        assertParse("select foo from bar where dotProduct(description, {\"a\":1, \"b\":2})",
                     "DOTPRODUCT description{[1]:\"a\",[2]:\"b\"}");
         assertParse("select foo from bar where dotProduct(description, {\"a\":2})",
                     "DOTPRODUCT description{[2]:\"a\"}");
@@ -705,11 +705,10 @@ public class YqlParserTestCase {
                     "b contains \"B\")",
                     "WEAKAND(37) a:A b:B");
 
-        QueryTree tree = parse("select foo from bar where {scoreThreshold: 41}weakAnd(a " +
+        QueryTree tree = parse("select foo from bar where weakAnd(a " +
                                "contains \"A\", b contains \"B\")");
         assertEquals("WEAKAND(100) a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
-        assertEquals(41, ((WeakAndItem)tree.getRoot()).getScoreThreshold());
     }
 
     @Test
@@ -847,7 +846,7 @@ public class YqlParserTestCase {
     public void testAnnotatedOrdering() {
         assertParse(
                 "select foo from bar where title contains \"madonna\""
-                        + " order by [{function: \"uca\", locale: \"en_US\", strength: \"IDENTICAL\"}]other desc"
+                        + " order by {function: \"uca\", locale: \"en_US\", strength: \"IDENTICAL\"}other desc"
                         + " limit 600" + " timeout 3", "title:madonna");
         FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
         assertEquals("other", fieldOrder.getFieldName());
@@ -863,8 +862,8 @@ public class YqlParserTestCase {
     public void testMultipleAnnotatedOrdering() {
         assertParse(
                 "select foo from bar where title contains \"madonna\""
-                        + " order by [{\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}]other desc,"
-                        + " [{\"function\": \"lowercase\"}]something asc"
+                        + " order by {\"function\": \"uca\", \"locale\": \"en_US\", \"strength\": \"IDENTICAL\"}other desc,"
+                        + " {\"function\": \"lowercase\"}something asc"
                         + " limit 600" + " timeout 3", "title:madonna");
         {
             FieldOrder fieldOrder = parser.getSorting().fieldOrders().get(0);
@@ -956,7 +955,7 @@ public class YqlParserTestCase {
     @Test
     public void testMoreInheritedAnnotations() {
         String yqlQuery = "select * from sources * where " +
-                          "([{ranked: false}](foo contains \"a\" " +
+                          "({ranked: false}(foo contains \"a\" " +
                           "and ({ranked: true}(bar contains \"b\" " +
                           "or ({ranked: false}(foo contains \"c\" " +
                           "and foo contains ({ranked: true}\"d\")))))))";
@@ -1065,7 +1064,7 @@ public class YqlParserTestCase {
     @Test
     public void testUrlHostSearchingDefaultAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com"), false, true, true);
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com&type=all"), false, true, true);
 
         // YQL query
         Query yql = new Query();
@@ -1076,29 +1075,29 @@ public class YqlParserTestCase {
     @Test
     public void testUrlHostSearchingNoAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com*"), false, false, true);
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:google.com*&type=all"), false, false, true);
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{endAnchor: false }]uri(\"google.com\"))");
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ({endAnchor: false }uri(\"google.com\"))");
         assertUrlQuery("urlfield.hostname", yql, false, false, true);
     }
 
     @Test
     public void testUrlHostSearchingBothAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:%5Egoogle.com"), true, true, true); // %5E = ^
+        assertUrlQuery("urlfield.hostname", new Query("?query=urlfield.hostname:%5Egoogle.com&type=all"), true, true, true); // %5E = ^
 
         // YQL query
         Query yql = new Query();
-        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ([{startAnchor: true }] uri(\"google.com\"))");
+        yql.properties().set("yql", "select * from sources * where urlfield.hostname contains ({startAnchor: true } uri(\"google.com\"))");
         assertUrlQuery("urlfield.hostname", yql, true, true, true);
     }
 
     @Test
     public void testUriNonHostDoesNotCreateAnchors() {
         // Simple query syntax, for reference
-        assertUrlQuery("urlfield", new Query("?query=urlfield:google.com"), false, false, false);
+        assertUrlQuery("urlfield", new Query("?query=urlfield:google.com&type=all"), false, false, false);
 
         // YQL query
         Query yql = new Query();
@@ -1149,7 +1148,7 @@ public class YqlParserTestCase {
         StringBuilder expectedYql = new StringBuilder("select * from sources * where ");
         expectedYql.append(field).append(" contains ");
         if (hasAnnotations)
-            expectedYql.append("([{");
+            expectedYql.append("({");
         if (startAnchor != startAnchorIsDefault)
             expectedYql.append("startAnchor: " + startAnchor);
         if (endAnchor != endAnchorIsDefault) {
@@ -1158,7 +1157,7 @@ public class YqlParserTestCase {
             expectedYql.append("endAnchor: " + endAnchor);
         }
         if (hasAnnotations)
-            expectedYql.append("}]");
+            expectedYql.append("}");
         expectedYql.append("uri(");
         if (query.properties().get("yql") != null)
             expectedYql.append("\"google.com\")"); // source string is preserved when parsing YQL
@@ -1166,7 +1165,6 @@ public class YqlParserTestCase {
             expectedYql.append("\"google com\")"); // but not with the simple syntax
         if (hasAnnotations)
             expectedYql.append(")");
-        expectedYql.append(";");
         assertEquals(expectedYql.toString(), query.yqlRepresentation());
 
         assertTrue(query.getModel().getQueryTree().getRoot() instanceof PhraseItem);

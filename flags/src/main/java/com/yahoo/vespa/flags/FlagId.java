@@ -1,14 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags;
 
-import javax.annotation.concurrent.Immutable;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
  * @author hakonhall
  */
-@Immutable
 public class FlagId implements Comparable<FlagId> {
     private static final Pattern ID_PATTERN = Pattern.compile("^[a-zA-Z0-9][a-zA-Z0-9._-]*$");
 

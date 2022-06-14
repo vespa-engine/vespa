@@ -1,0 +1,28 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# RELAX NG compact syntax pattern
+# for Vespa MessageBus explicit routing config
+Routing = element routing {
+   attribute version { "1.0" } &
+   element routingtable {
+      attribute protocol { string "document" } &
+      attribute verify { xsd:boolean }? &
+      element hop {
+         attribute name { text } &
+         attribute selector { text } &
+         attribute ignore-result { xsd:boolean }? &
+         element recipient {
+            attribute session { text }
+         }*
+      }* &
+      element route {
+         attribute name { text } &
+         attribute hops { text } 
+      }*
+   }* &
+   element services {
+      attribute protocol { string "document" } &
+      element service {
+         attribute name { text }
+      }*
+   }*
+}

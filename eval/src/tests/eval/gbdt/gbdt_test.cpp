@@ -188,7 +188,7 @@ struct DummyForest2 : public Forest {
     size_t num_trees;
     explicit DummyForest2(size_t num_trees_in) : num_trees(num_trees_in) {}
     static double eval(const Forest *forest, const double *) {
-        const DummyForest1 &self = *((const DummyForest1 *)forest);
+        const DummyForest2 &self = *((const DummyForest2 *)forest);
         return double(self.num_trees);
     }
     static Optimize::Result optimize(const ForestStats &stats,

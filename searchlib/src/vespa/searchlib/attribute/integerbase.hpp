@@ -3,6 +3,8 @@
 
 #include "integerbase.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 namespace search {
 

@@ -40,17 +40,6 @@ public class Result {
     /**
      * Creates a unsuccessful result
      *
-     * @deprecated Will be removed on Vespa 8 due to incorrect java.lang.Error
-     */
-    @Deprecated(forRemoval = true, since="7")
-    public Result(ResultType type, java.lang.Error error) {
-        this.type = type;
-        this.error = new Error(0, error.getMessage());
-        this.requestId = 0;
-    }
-    /**
-     * Creates a unsuccessful result
-     *
      * @param type  the type of failure
      * @param error the error to encapsulate in this Result
      * @see com.yahoo.documentapi.Result.ResultType
@@ -70,20 +59,6 @@ public class Result {
      * @return true if success
      */
     public boolean isSuccess() { return type == ResultType.SUCCESS; }
-
-    /**
-     * Returns the error causes by this. If this was not a success, this method always returns an error
-     * If this was a success, this method returns null.
-     *
-     * @return the Error, or null
-     * @deprecated Will be removed on Vespa 8
-     */
-    @Deprecated(forRemoval = true, since="7")
-    public java.lang.Error getError() {
-        return error != null
-                ? new java.lang.Error(error.getMessage())
-                : null;
-    }
 
     public Error error() { return error; }
 
@@ -110,17 +85,13 @@ public class Result {
         /** The request failed, but may be successful if retried at a later time. */
         TRANSIENT_ERROR,
         /** The request failed, and retrying is pointless. */
-        FATAL_ERROR,
-        /** Condition specified in operation not met error  */
-        @Deprecated(since = "7", forRemoval = true) // TODO: Remove on Vespa 8 — this is a Response outcome, not a Result outcome.
-        CONDITION_NOT_MET_ERROR
+        FATAL_ERROR
     }
+
     public static Error toError(ResultType result) {
         switch (result) {
             case TRANSIENT_ERROR:
                 return new Error(ErrorCode.TRANSIENT_ERROR, ResultType.TRANSIENT_ERROR.name());
-            case CONDITION_NOT_MET_ERROR:
-                return new Error(ErrorCode.FATAL_ERROR, ResultType.CONDITION_NOT_MET_ERROR.name());
             case FATAL_ERROR:
                 return new Error(ErrorCode.FATAL_ERROR, ResultType.FATAL_ERROR.name());
         }

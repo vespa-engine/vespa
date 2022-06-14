@@ -1,6 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
@@ -11,6 +10,8 @@
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/expression/attributenode.h>
 #include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -250,7 +251,7 @@ Fixture::assertInts(std::vector<IAttributeVector::largeint_t> expVals, const ves
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         if (preserveAccurateTypes) {
             ASSERT_TRUE(result.inherits(Int8ResultNode::classId));
         } else {
@@ -270,7 +271,7 @@ Fixture::assertBools(std::vector<bool> expVals, const vespalib::string &attribut
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
 
         ASSERT_TRUE(result.inherits(BoolResultNode::classId));
         const BoolResultNode & bResult = static_cast<const BoolResultNode &>(result);
@@ -289,7 +290,7 @@ Fixture::assertStrings(std::vector<vespalib::string> expVals, const vespalib::st
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         if (useEnumOptimization) {
             ASSERT_TRUE(result.inherits(EnumResultNode::classId));
         } else {
@@ -309,7 +310,7 @@ Fixture::assertFloats(std::vector<double> expVals, const vespalib::string &attri
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(FloatResultNode::classId));
         double docVal = result.getFloat();
         EXPECT_EQUAL(std::isnan(expDocVal), std::isnan(docVal));
@@ -328,7 +329,7 @@ Fixture::assertIntArrays(std::vector<std::vector<IAttributeVector::largeint_t>> 
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(ResultNodeVector::classId));
         const auto &resultVector = static_cast<const ResultNodeVector &>(result);
         if (preserveAccurateTypes) {
@@ -353,7 +354,7 @@ Fixture::assertStringArrays(std::vector<std::vector<vespalib::string>> expVals, 
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(ResultNodeVector::classId));
         const auto &resultVector = static_cast<const ResultNodeVector &>(result);
         if (useEnumOptimization) {
@@ -378,7 +379,7 @@ Fixture::assertFloatArrays(std::vector<std::vector<double>> expVals, const vespa
         ++docId;
         node->setDocId(docId);
         node->execute();
-        const auto &result = node->getResult();
+        const auto &result = *node->getResult();
         ASSERT_TRUE(result.inherits(ResultNodeVector::classId));
         const auto &resultVector = static_cast<const ResultNodeVector &>(result);
         ASSERT_TRUE(result.inherits(FloatResultNodeVector::classId));

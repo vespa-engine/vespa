@@ -9,19 +9,24 @@
 #include "singlenumericattribute.h"
 #include "singlenumericattributesaver.h"
 #include "single_numeric_search_context.h"
+#include "valuemodifier.h"
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 namespace search {
 
 template <typename B>
 SingleValueNumericAttribute<B>::
-SingleValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c) :
-    B(baseFileName, c),
-    _data(c.getGrowStrategy().getDocsInitialCapacity(),
-          c.getGrowStrategy().getDocsGrowPercent(),
-          c.getGrowStrategy().getDocsGrowDelta(),
-          getGenerationHolder(),
-          this->get_initial_alloc())
+SingleValueNumericAttribute(const vespalib::string & baseFileName)
+    : SingleValueNumericAttribute(baseFileName, attribute::Config(attribute::BasicType::fromType(T()),
+                                                                  attribute::CollectionType::SINGLE))
+{ }
+
+template <typename B>
+SingleValueNumericAttribute<B>::
+SingleValueNumericAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & c)
+    : B(baseFileName, c),
+      _data(c.getGrowStrategy(), getGenerationHolder(), this->get_initial_alloc())
 { }
 
 template <typename B>

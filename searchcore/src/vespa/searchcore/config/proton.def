@@ -383,17 +383,6 @@ lidspacecompaction.allowedlidbloat int default=1
 ## The lid bloat factor must be >= allowedlidbloatfactor before considering compaction.
 lidspacecompaction.allowedlidbloatfactor double default=0.01
 
-## DEPRECATED (no longer used): Remove on Vespa 8
-## The delay (in seconds) for when the last remove batch operation would be considered to block lid space compaction.
-##
-## When considering compaction, if the document meta store has received a remove batch operation in the last delay seconds,
-## the lid space compaction job is blocked. It is considered again at the next regular interval (see above).
-##
-## Remove batch operations are used when deleting buckets on a content node.
-## This functionality ensures that during massive deleting of buckets (e.g. as part of redistribution of data to a new node),
-## lid space compaction do not interfere, but instead is applied after deleting of buckets is complete.
-lidspacecompaction.removebatchblockdelay double default=2.0
-
 ## The rate (ops / second) of remove batch operations for when to block lid space compaction.
 ##
 ## When considering compaction, if the current observed rate of remove batch operations

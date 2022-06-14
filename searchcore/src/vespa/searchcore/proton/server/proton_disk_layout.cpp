@@ -4,6 +4,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchlib/transactionlog/translogclient.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_disk_layout");
@@ -70,7 +71,7 @@ ProtonDiskLayout::ProtonDiskLayout(FNET_Transport & transport, const vespalib::s
       _baseDir(baseDir),
       _tlsSpec(tlsSpec)
 {
-    vespalib::mkdir(getDocumentsDir(_baseDir), true);
+    std::filesystem::create_directories(std::filesystem::path(getDocumentsDir(_baseDir)));
 }
 
 ProtonDiskLayout::~ProtonDiskLayout() = default;
@@ -89,7 +90,7 @@ ProtonDiskLayout::remove(const DocTypeName &docTypeName)
         LOG(fatal, "Failed to remove tls domain %s", name.c_str());
         LOG_ABORT("Failed to remove tls domain");
     }
-    vespalib::rmdir(removedDir, true);
+    std::filesystem::remove_all(std::filesystem::path(removedDir));
     vespalib::File::sync(documentsDir);
 }
 
@@ -105,7 +106,7 @@ ProtonDiskLayout::initAndPruneUnused(const std::set<DocTypeName> &docTypeNames)
             if (dir.second.normal) {
                 vespalib::string name(dir.first.toString());
                 vespalib::string normalDir(documentsDir + "/" + name);
-                vespalib::rmdir(normalDir, true);
+                std::filesystem::remove_all(std::filesystem::path(normalDir));
             }
             remove(dir.first);
         } else if (docTypeNames.count(dir.first) == 0) {

@@ -13,7 +13,7 @@ namespace document {
 }
 
 namespace vespalib {
-class CacheStats;
+struct CacheStats;
 class nbostream;
 }
 

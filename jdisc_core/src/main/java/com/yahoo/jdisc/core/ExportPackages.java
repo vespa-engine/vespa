@@ -53,7 +53,8 @@ public class ExportPackages {
            .append("com.yahoo.jdisc.handler, ")
            .append("com.yahoo.jdisc.service, ")
            .append("com.yahoo.jdisc.statistics, ")
-           .append("javax.inject;version=1.0.0, ")  // Included in guice, but not exported. Needed by container-jersey.
+
+           .append("javax.inject;version=1.0.0, ")  // TODO Vespa 9: remove. Included in guice, but not exported. Needed by container-jersey.
            .append("org.aopalliance.intercept, ")
            .append("org.aopalliance.aop");
 

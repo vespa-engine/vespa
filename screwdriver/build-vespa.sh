@@ -6,9 +6,7 @@ set -e
 readonly SOURCE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd )"
 readonly NUM_THREADS=$(( $(nproc) + 2 ))
 
-source /etc/profile.d/enable-devtoolset-11.sh
-source /etc/profile.d/enable-rh-maven35.sh
-source /etc/profile.d/enable-rh-git227.sh
+source /etc/profile.d/enable-gcc-toolset-11.sh
 
 export MALLOC_ARENA_MAX=1
 export MAVEN_OPTS="-Xss1m -Xms128m -Xmx2g"
@@ -54,21 +52,24 @@ case $SHOULD_BUILD in
     ;;    
 esac
 
-if [[ $SHOULD_BUILD == systemtest ]]; then  
-  yum -y --setopt=skip_missing_names_on_install=False install \
-    zstd \
-    devtoolset-11-gcc-c++ \
-    devtoolset-11-libatomic-devel \
-    devtoolset-11-binutils \
-    libxml2-devel \
-    rh-ruby27-rubygems-devel \
-    rh-ruby27-ruby-devel \
-    rh-ruby27 \
-    rh-ruby27-rubygem-net-telnet
+if [[ $SHOULD_BUILD == systemtest ]]; then
+  dnf module enable -y ruby:2.7
+  dnf install -y \
+      gcc-toolset-11-annobin \
+      gcc-toolset-11-annobin-plugin-gcc \
+      gcc-toolset-11-binutils \
+      gcc-toolset-11-gcc-c++ \
+      gcc-toolset-11-libatomic-devel \
+      libxml2-devel \
+      ruby \
+      ruby-devel \
+      rubygems-devel \
+      rubygem-net-telnet \
+      zstd
 
-  source /opt/rh/rh-ruby27/enable
-  gem install libxml-ruby gnuplot distribution test-unit builder concurrent-ruby ffi
-
+  source /opt/rh/gcc-toolset-11/enable
+  gem install libxml-ruby gnuplot distribution test-unit builder concurrent-ruby bigdecimal ffi parallel
+  
   cd $HOME
   git clone https://github.com/vespa-engine/system-test
   export SYSTEM_TEST_DIR=$(pwd)/system-test

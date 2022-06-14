@@ -6,10 +6,9 @@ import java.io.OutputStream;
 /**
  * @author Ulf Lilleengen
  * @since 5.1
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@Deprecated(since = "7", forRemoval = true)
-public interface LogTarget {
+interface LogTarget {
     /**
      * Opens an output stream for the target. If already open, the stream should be reopened.
      * @return a new outputstream for the log target.

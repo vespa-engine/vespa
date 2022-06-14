@@ -76,7 +76,7 @@ public class TestTenantRepository extends TenantRepository {
         FileDistributionFactory fileDistributionFactory = null;
         FlagSource flagSource = new InMemoryFlagSource();
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
-        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry())));
+        ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory()));
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
         ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
         TenantListener tenantListener = new MockTenantListener();

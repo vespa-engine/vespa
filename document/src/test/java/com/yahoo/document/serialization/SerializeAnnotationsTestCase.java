@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.serialization;
 
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentTypeManagerConfigurer;
@@ -36,7 +37,6 @@ import static org.junit.Assert.assertEquals;
  * test to fail, so you will need to update the
  * AnnotationDeserialization component to handle the format changes.
  */
-@SuppressWarnings("deprecation")
 public class SerializeAnnotationsTestCase {
 
     private static final String PATH = "src/tests/serialization/";
@@ -89,10 +89,6 @@ public class SerializeAnnotationsTestCase {
         SpanList root = new SpanList();
         SpanTree tree = new SpanTree("html", root);
 
-        DataType positionType = docMan.getDataType("myposition");
-        StructDataType cityDataType =
-            (StructDataType) docMan.getDataType("annotation.city");
-
         AnnotationTypeRegistry registry = docMan.getAnnotationTypeRegistry();
         AnnotationType textType = registry.getType("text");
         AnnotationType beginTag = registry.getType("begintag");
@@ -101,9 +97,10 @@ public class SerializeAnnotationsTestCase {
         AnnotationType paragraphType = registry.getType("paragraph");
         AnnotationType cityType = registry.getType("city");
 
-        AnnotationReferenceDataType annRefType =
-            (AnnotationReferenceDataType)
-            docMan.getDataType("annotationreference<text>");
+        var cityDataType = (StructDataType) cityType.getDataType();
+        var positionType = (StructDataType) cityDataType.getField("position").getDataType();
+        var refArrT = (ArrayDataType) cityDataType.getField("references").getDataType();
+        var annRefType = (AnnotationReferenceDataType) refArrT.getNestedType();
 
         Struct position = new Struct(positionType);
         position.setFieldValue("latitude", new DoubleFieldValue(37.774929));

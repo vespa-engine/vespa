@@ -316,14 +316,14 @@ TEST("require that id_space_usage is sane") {
 }
 
 TEST("require that initial stats are as expected") {
-    size_t num_parts = 64;
+    size_t num_parts = 256;
     size_t part_size = 128;
     size_t hash_node_size = 12;
     size_t entry_size = 72;
-    size_t initial_entries = 113;
-    size_t initial_hash_used = 64;
-    size_t initial_hash_allocated = 128;
-    size_t part_limit = (uint32_t(-1) - 100001) / num_parts;
+    size_t initial_entries = 28;
+    size_t initial_hash_used = 16;
+    size_t initial_hash_allocated = 32;
+    size_t part_limit = (uint32_t(-1) - 10000001) / num_parts;
     auto stats = SharedStringRepo::stats();
     EXPECT_EQUAL(stats.active_entries, 0u);
     EXPECT_EQUAL(stats.total_entries, num_parts * initial_entries);
@@ -437,13 +437,16 @@ void verify_not_direct(const vespalib::string &str) {
 
 TEST("require that direct handles work as expected") {
     TEST_DO(verify_direct("", -1));
-    for (size_t i = 0; i < 100000; ++i) {
-        verify_direct(fmt("%zu", i), i);
-    }
+    TEST_DO(verify_direct("0", 0));
+    TEST_DO(verify_direct("1", 1));
+    TEST_DO(verify_direct("123", 123));
+    TEST_DO(verify_direct("456", 456));
+    TEST_DO(verify_direct("789", 789));
+    TEST_DO(verify_direct("9999999", 9999999));
     TEST_DO(verify_not_direct(" "));
     TEST_DO(verify_not_direct(" 5"));
     TEST_DO(verify_not_direct("5 "));
-    TEST_DO(verify_not_direct("100000"));
+    TEST_DO(verify_not_direct("10000000"));
     TEST_DO(verify_not_direct("00"));
     TEST_DO(verify_not_direct("01"));
     TEST_DO(verify_not_direct("001"));

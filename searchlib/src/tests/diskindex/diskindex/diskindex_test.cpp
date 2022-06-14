@@ -14,7 +14,7 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <filesystem>
 #include <iostream>
 #include <set>
 
@@ -316,7 +316,7 @@ Test::Main()
         DummyFileHeaderContext::setCreator(_argv[0]);
     }
 
-    vespalib::mkdir("index", false);
+    std::filesystem::create_directory(std::filesystem::path("index"));
     TEST_DO(openIndex("index/1fedewe", false, false, true, true, true));
     TEST_DO(requireThatLookupIsWorking(true, true, true));
     TEST_DO(openIndex("index/1fede", false, false, true, true, false));

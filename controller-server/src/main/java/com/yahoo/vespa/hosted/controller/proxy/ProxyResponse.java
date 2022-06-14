@@ -29,7 +29,9 @@ public class ProxyResponse extends HttpResponse {
         super(statusResponse);
         this.contentType = contentType;
 
-        String configServerPrefix = HttpURL.from(configServer).withPath(Path.empty()).asURI().toString();
+        // Configserver always serves from 4443, therefore all responses will have port 4443 in them,
+        // but the request URI (loadbalancer/VIP) is not always 4443
+        String configServerPrefix = HttpURL.from(configServer).withPort(4443).withPath(Path.empty()).asURI().toString();
         String controllerRequestPrefix = controllerRequest.getControllerPrefixUri().toString();
         bodyResponseRewritten = bodyResponse.replace(configServerPrefix, controllerRequestPrefix);
     }

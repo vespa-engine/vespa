@@ -7,7 +7,6 @@
 #include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
 #include "random_level_generator.h"
-#include "reusable_set_visited_tracker.h"
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/util/fileutil.h>
@@ -17,7 +16,6 @@
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/util/memory_allocator.h>
-#include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/log/log.h>
@@ -687,7 +685,7 @@ HnswIndex::make_loader(FastOS_FileInterface& file)
     assert(get_entry_docid() == 0); // cannot load after index has data
     using ReaderType = FileReader<uint32_t>;
     using LoaderType = HnswIndexLoader<ReaderType>;
-    return std::make_unique<LoaderType>(_graph, std::make_unique<ReaderType>(file));
+    return std::make_unique<LoaderType>(_graph, std::make_unique<ReaderType>(&file));
 }
 
 struct NeighborsByDocId {

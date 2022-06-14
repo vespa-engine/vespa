@@ -2,8 +2,8 @@
 
 #include "mmap_file_allocator_factory.h"
 #include "mmap_file_allocator.h"
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <filesystem>
 
 namespace vespalib::alloc {
 
@@ -23,7 +23,7 @@ MmapFileAllocatorFactory::setup(const vespalib::string& dir_name)
     _dir_name = dir_name;
     _generation = 0;
     if (!_dir_name.empty()) {
-        rmdir(_dir_name, true);
+        std::filesystem::remove_all(std::filesystem::path(_dir_name));
     }
 }
 

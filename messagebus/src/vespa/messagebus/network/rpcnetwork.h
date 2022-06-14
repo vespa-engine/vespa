@@ -33,8 +33,7 @@ class RPCServiceAddress;
  * Network implementation based on RPC. This class is responsible for
  * keeping track of services and for sending messages to services.
  **/
-class RPCNetwork : public INetwork,
-                   public FRT_Invokable {
+class RPCNetwork : public FRT_Invokable, public INetwork {
 private:
     using CompressionConfig = vespalib::compression::CompressionConfig;
     struct SendContext : public RPCTarget::IVersionHandler {

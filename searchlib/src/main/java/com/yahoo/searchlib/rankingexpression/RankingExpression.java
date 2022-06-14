@@ -264,12 +264,6 @@ public class RankingExpression implements Serializable {
         return serializedExpressions;
     }
 
-    @Deprecated
-    @SuppressWarnings("removal")
-    public Map<String, String> getRankProperties(List<ExpressionFunction> functions) {
-        return getRankProperties(new SerializationContext(functions));
-    }
-
     /**
      * Returns the rank-property name for a given expression name.
      *

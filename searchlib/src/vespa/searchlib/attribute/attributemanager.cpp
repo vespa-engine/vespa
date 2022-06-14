@@ -6,6 +6,7 @@
 #include "attributemanager.h"
 #include "attrvector.h"
 #include "interlock.h"
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <condition_variable>
@@ -205,7 +206,7 @@ AttributeManager::createBaseFileName(const string & name) const
         dir += "/";
         dir += getSnapshot().dirName;
     }
-    return AttributeVector::BaseName(dir, name);
+    return attribute::BaseName(dir, name);
 }
 
 bool

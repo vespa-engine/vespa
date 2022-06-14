@@ -26,8 +26,7 @@ public class BadgeApiTest extends ControllerContainerTest {
     public void testBadgeApi() throws IOException {
         ContainerTester tester = new ContainerTester(container, responseFiles);
         var application = new DeploymentTester(new ControllerTester(tester)).newDeploymentContext("tenant", "application", "default");
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().systemTest()
-                                                                               .parallel("us-west-1", "aws-us-east-1a")
+        ApplicationPackage applicationPackage = new ApplicationPackageBuilder().parallel("us-west-1", "aws-us-east-1a")
                                                                                .test("us-west-1")
                                                                                .region("ap-southeast-1")
                                                                                .test("ap-southeast-1")
@@ -59,6 +58,8 @@ public class BadgeApiTest extends ControllerContainerTest {
                               Files.readString(Paths.get(responseFiles + "overview.svg")), 200);
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=0"),
                               Files.readString(Paths.get(responseFiles + "single-running.svg")), 200);
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/system-test"),
+                              Files.readString(Paths.get(responseFiles + "running-test.svg")), 200);
         tester.assertResponse(authenticatedRequest("http://localhost:8080/badge/v1/tenant/application/default/production-us-west-1?historyLength=32"),
                               Files.readString(Paths.get(responseFiles + "history.svg")), 200);
 

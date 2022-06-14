@@ -8,5 +8,5 @@ accessdisk bool default=false
 ## If the path is relative vespa home is prepended
 statusfile string default="share/qrsdocs/status.html"
 
-## Not used TODO: Remove on Vespa 8
+## Whether this container should be in rotation by default on startup
 initiallyInRotation bool default=true

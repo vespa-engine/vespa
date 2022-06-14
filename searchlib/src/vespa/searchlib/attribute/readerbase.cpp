@@ -32,9 +32,9 @@ ReaderBase::ReaderBase(AttributeVector &attr)
                   attribute::LoadUtils::openWeight(attr) : std::unique_ptr<Fast_BufferedFile>()),
       _idxFile(attr.hasMultiValue() ?
                attribute::LoadUtils::openIDX(attr) : std::unique_ptr<Fast_BufferedFile>()),
-      _weightReader(_weightFile.file()),
-      _idxReader(_idxFile.file()),
-      _enumReader(_datFile.file()),
+      _weightReader(_weightFile.valid() ? &_weightFile.file() : nullptr),
+      _idxReader(_idxFile.valid() ? &_idxFile.file() : nullptr),
+      _enumReader(&_datFile.file()),
       _currIdx(0),
       _createSerialNum(0u),
       _fixedWidth(attr.getFixedWidth()),

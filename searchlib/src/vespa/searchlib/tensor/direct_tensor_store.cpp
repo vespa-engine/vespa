@@ -47,17 +47,6 @@ DirectTensorStore::DirectTensorStore()
 
 DirectTensorStore::~DirectTensorStore() = default;
 
-const vespalib::eval::Value *
-DirectTensorStore::get_tensor(EntryRef ref) const
-{
-    if (!ref.valid()) {
-        return nullptr;
-    }
-    const auto& entry = _tensor_store.getEntry(ref);
-    assert(entry);
-    return entry.get();
-}
-
 EntryRef
 DirectTensorStore::store_tensor(std::unique_ptr<vespalib::eval::Value> tensor)
 {

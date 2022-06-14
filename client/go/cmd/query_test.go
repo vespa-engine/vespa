@@ -39,8 +39,20 @@ func TestQueryNonJsonResult(t *testing.T) {
 
 func TestQueryWithMultipleParameters(t *testing.T) {
 	assertQuery(t,
-		"?hits=5&timeout=20s&yql=select+from+sources+%2A+where+title+contains+%27foo%27",
-		"select from sources * where title contains 'foo'", "hits=5", "timeout=20s")
+		"?hits=5&timeout=20s&yql=select+from+sources+%2A+where+title+contains+%27foo%27+and+year+%3D+2000",
+		"select from sources * where title contains 'foo' and year = 2000", "hits=5", "timeout=20s")
+}
+
+func TestQueryWithEquals(t *testing.T) {
+	assertQuery(t,
+		"?timeout=10s&yql=SELECT+from+sources+%2A+where+title+contains+%27foo%27+and+year+%3D+2000",
+		"SELECT from sources * where title contains 'foo' and year = 2000")
+}
+
+func TestQuerySelect(t *testing.T) {
+	assertQuery(t,
+		"?hits=5&select=%7B%22select%22%3A%7B%22where%22%3A%7B%22contains%22%3A%5B%22title%22%2C%22a%22%5D%7D%7D%7D&timeout=10s",
+		`select={"select":{"where":{"contains":["title","a"]}}}`, "hits=5")
 }
 
 func TestQueryWithExplicitYqlParameter(t *testing.T) {

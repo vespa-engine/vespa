@@ -29,18 +29,19 @@ import static com.intellij.psi.TokenType.WHITE_SPACE; // Pre-defined whitespace 
 //**--------- REGEXES ---------**//
 // If some character sequence is matched to this regex, it will be treated as an IDENTIFIER.
 ID=[a-zA-Z_][a-zA-Z0-9_]*
-ID_WITH_DASH = [a-zA-Z_][a-zA-Z0-9_-]*
 // If some character sequence is matched to this regex, it will be treated as a WHITE_SPACE.
-WHITE_SPACE=[ \t\n\x0B\f\r]+
+WHITE_SPACE=[ \t\x0B\f\r]+
+NL=[\n]+
 
 COMMENT=#.*
-SYMBOL= [!$|:{}().\[\]]
+SYMBOL= [;!$|:{}().\[\]]
 COMMA= [,]
 //BLOCK_START= \{
 //BLOCK_END= \}
 INTEGER = [0-9]+
-FLOAT = {INTEGER}[.][0-9]+[e]?
+FLOAT = {INTEGER}[.][0-9]+([eE][-]?[0-9]+)?
 STRING = \"([^\"\\]*(\\.[^\"\\]*)*)\"
+STRING_SINGLE_QUOTE = '([^'\\]*(\\.[^'\\]*)*)'
 WORD = \w+
 
 
@@ -93,6 +94,7 @@ WORD = \w+
   "gram-size"                { return GRAM_SIZE; }
 
   "fast-search"              { return FAST_SEARCH; }
+  "fast-rank"                { return FAST_RANK; }
   "fast-access"              { return FAST_ACCESS; }
   "alias"                    { return ALIAS; }
   "sorting"                  { return SORTING; }
@@ -158,7 +160,7 @@ WORD = \w+
   "termwise-limit"           { return TERMWISE_LIMIT; }
   "ignore-default-rank-features" { return IGNORE_DEFAULT_RANK_FEATURES; }
   "min-hits-per-thread"      { return MIN_HITS_PER_THREAD; }
-  "num-search-partition"     { return NUM_SEARCH_PARTITION; }
+  "num-search-partitions"    { return NUM_SEARCH_PARTITIONS; }
   "constants"                { return CONSTANTS; }
   "second-phase"             { return SECOND_PHASE; }
   "rerank-count"             { return RERANK_COUNT; }
@@ -236,10 +238,10 @@ WORD = \w+
 
   // Here we check for character sequences which matches regular expressions defined above.
   {ID}                       { return ID_REG; }
-  {ID_WITH_DASH}             { return ID_WITH_DASH_REG; }           
-                                       
+
   {WHITE_SPACE}              { return WHITE_SPACE; }
-                                    
+  {NL}                       { return NL; }
+
   {COMMENT}                  { return COMMENT; }  
   {SYMBOL}                   { return SYMBOL; }  
   {COMMA}                    { return COMMA; }
@@ -249,6 +251,7 @@ WORD = \w+
   {FLOAT}                    { return FLOAT_REG; }
   {WORD}                     { return WORD_REG; }
   {STRING}                   { return STRING_REG; }  
+  {STRING_SINGLE_QUOTE}      { return STRING_REG_SINGLE_QUOTE; }
 
 }
 

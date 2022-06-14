@@ -21,7 +21,7 @@ mmap_huge(size_t sz) {
     void * mem = mmap(nullptr, sz, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, -1, 0);
     assert(mem != MAP_FAILED);
     if (madvise(mem, sz, MADV_HUGEPAGE) != 0) {
-        perror("load_as_huge.cpp:mmap_huge => madvise( MADV_HUGEPAGE) failed");
+        fprintf(stderr, "load_as_huge.cpp:mmap_huge = > madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n", mem, sz, errno, strerror(errno));
     }
     return mem;
 }
@@ -29,8 +29,13 @@ mmap_huge(size_t sz) {
 size_t round_huge_down(size_t v) { return v & ~(HUGEPAGE_SIZE - 1); }
 size_t round_huge_up(size_t v) { return round_huge_down(v + (HUGEPAGE_SIZE - 1)); }
 
+#ifdef __clang__
+void
+non_optimized_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n) __attribute__((noinline, optnone)) ;
+#else
 void
 non_optimized_non_inlined_memcpy(void *dest_in, const void *src_in, size_t n) __attribute__((noinline, optimize(1))) ;
+#endif
 
 // Simple memcpy replacement to avoid calling code in other dso.
 void
@@ -76,7 +81,7 @@ remap_segments(size_t base_vaddr, const Elf64_Phdr * segments, size_t count) {
         last_end = dest + sz;
 
         if (madvise(dest, sz, MADV_HUGEPAGE) != 0) {
-            perror("load_as_huge.cpp:mmap_huge => madvise( MADV_HUGEPAGE) failed");
+            fprintf(stderr, "load_as_huge.cpp:remap_segments => madvise(%p, %ld, MADV_HUGEPAGE) FAILED, errno= %d = %s\n", dest, sz, errno, strerror(errno));
         }
         non_optimized_non_inlined_memcpy(dest, reinterpret_cast<void*>(vaddr), sz);
         int prot = PROT_READ;
@@ -89,7 +94,7 @@ remap_segments(size_t base_vaddr, const Elf64_Phdr * segments, size_t count) {
         void * remapped = mremap(dest, sz, sz, MREMAP_FIXED | MREMAP_MAYMOVE, vaddr);
         assert(remapped != MAP_FAILED);
         assert(remapped == reinterpret_cast<void *>(vaddr));
-        fprintf(stderr, "remapped dest=%p, size=%lu to %p\n", dest, sz, remapped);
+        fprintf(stdout, "remapped dest=%p, size=%lu to %p\n", dest, sz, remapped);
     }
     assert(new_huge_end >= last_end);
     if (new_huge_end > last_end) {
@@ -103,16 +108,16 @@ int
 remapElfHeader(struct dl_phdr_info *info, size_t info_size, void *data) {
     (void) info_size;
     (void) data;
-    fprintf(stderr, "processing elf header '%s' with %d entries, start=%lx\n",
+    fprintf(stdout, "processing elf header '%s' with %d entries, start=%lx\n",
             info->dlpi_name, info->dlpi_phnum, info->dlpi_addr);
     for (int i = 0; i < info->dlpi_phnum; i++) {
         const Elf64_Phdr &phdr = info->dlpi_phdr[i];
-        //fprintf(stderr, "p_vaddr=%lx p_paddr=%lx, p_offset=%lx p_filesz=%lx, p_memsz=%lx, allign=%lu type=%d flags=%x\n",
+        //fprintf(stdout, "p_vaddr=%lx p_paddr=%lx, p_offset=%lx p_filesz=%lx, p_memsz=%lx, allign=%lu type=%d flags=%x\n",
         //    phdr.p_vaddr, phdr.p_paddr, phdr.p_offset, phdr.p_filesz, phdr.p_memsz, phdr.p_align, phdr.p_type, phdr.p_flags);
         if ((phdr.p_type == PT_LOAD) && (phdr.p_flags == (PF_R | PF_X))) {
             //void *vaddr = reinterpret_cast<void *>(info->dlpi_addr + phdr.p_vaddr);
             //uint64_t size = phdr.p_filesz;
-            //fprintf(stderr, "LOAD_RX: vaddr=%lx p_filesz=%lu, p_memsz=%lu\n", phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
+            //fprintf(stdout, "LOAD_RX: vaddr=%lx p_filesz=%lu, p_memsz=%lu\n", phdr.p_vaddr, phdr.p_filesz, phdr.p_memsz);
             remap_segments(info->dlpi_addr, &phdr, 1);
         }
     }
@@ -126,7 +131,7 @@ extern "C" int remapTextWithHugePages();
 int
 remapTextWithHugePages() {
     int retval = dl_iterate_phdr(remapElfHeader, nullptr);
-    fprintf(stderr, "dl_iterate_phdr() = %d\n", retval);
+    fprintf(stdout, "dl_iterate_phdr() = %d\n", retval);
     return retval;
 }
 

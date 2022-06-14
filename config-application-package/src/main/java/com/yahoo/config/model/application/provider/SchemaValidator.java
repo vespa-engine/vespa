@@ -64,22 +64,6 @@ public class SchemaValidator {
         validate(reader, reader.getName());
     }
 
-    @Deprecated
-    /*  @deprecated Will not give proper context from errors, use another validate method instead */
-    public void validate(InputSource inputSource, String fileName) throws IOException {
-        errorHandler.fileName = (fileName == null ? "input" : fileName);
-        errorHandler.reader = inputSource.getCharacterStream();
-        try {
-            if ( ! driver.validate(inputSource)) {
-                // Shouldn't happen, error handler should have thrown
-                throw new RuntimeException("Aborting due to earlier XML errors.");
-            }
-        } catch (SAXException e) {
-            // Shouldn't happen, error handler should have thrown
-            throw new IllegalArgumentException("XML error in " + errorHandler.fileName + ": " + Exceptions.toMessageString(e));
-        }
-    }
-
     private void validate(Reader reader, String fileName) throws IOException {
         errorHandler.fileName = (fileName == null ? "input" : fileName);
         // We need to read from a reader in error handler, so need to read all content into a new one

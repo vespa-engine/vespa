@@ -4,12 +4,9 @@ package com.yahoo.vespa.flags;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 
-import javax.annotation.concurrent.Immutable;
-
 /**
  * @author hakonhall
  */
-@Immutable
 public class UnboundBooleanFlag extends UnboundFlagImpl<Boolean, BooleanFlag, UnboundBooleanFlag> {
     public UnboundBooleanFlag(FlagId id) {
         this(id, false);

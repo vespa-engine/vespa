@@ -5,6 +5,8 @@
 #include "stringbase.h"
 #include "integerbase.h"
 #include "floatbase.h"
+#include "enumattribute.h"
+#include "enummodifier.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.single_enum_attribute");
@@ -15,18 +17,11 @@ using attribute::Config;
 
 SingleValueEnumAttributeBase::
 SingleValueEnumAttributeBase(const Config & c, GenerationHolder &genHolder, const vespalib::alloc::Alloc& initial_alloc)
-    : _enumIndices(c.getGrowStrategy().getDocsInitialCapacity(),
-                   c.getGrowStrategy().getDocsGrowPercent(),
-                   c.getGrowStrategy().getDocsGrowDelta(),
-                   genHolder, initial_alloc)
+    : _enumIndices(c.getGrowStrategy(), genHolder, initial_alloc)
 {
 }
 
-
-SingleValueEnumAttributeBase::~SingleValueEnumAttributeBase()
-{
-}
-
+SingleValueEnumAttributeBase::~SingleValueEnumAttributeBase() = default;
 
 AttributeVector::DocId
 SingleValueEnumAttributeBase::addDoc(bool &incGeneration)
@@ -35,7 +30,6 @@ SingleValueEnumAttributeBase::addDoc(bool &incGeneration)
     _enumIndices.push_back(AtomicEntryRef());
     return _enumIndices.size() - 1;
 }
-
 
 SingleValueEnumAttributeBase::EnumIndexCopyVector
 SingleValueEnumAttributeBase::getIndicesCopy(uint32_t size) const
@@ -68,7 +62,7 @@ SingleValueEnumAttributeBase::remap_enum_store_refs(const EnumIndexRemapper& rem
     }
     v.logEnumStoreEvent("compactfixup", "drain");
     {
-        AttributeVector::EnumModifier enum_guard(v.getEnumModifier());
+        attribute::EnumModifier enum_guard(v.getEnumModifier());
         v.logEnumStoreEvent("compactfixup", "start");
         _enumIndices.replaceVector(std::move(new_indexes));
     }

@@ -8,12 +8,12 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>node-admin</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <packaging>container-plugin</packaging>
     <name>${project.artifactId}</name>
 
@@ -55,10 +55,6 @@
         </dependency>
 
         <!-- Compile -->
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-        </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>orchestrator-restapi</artifactId>

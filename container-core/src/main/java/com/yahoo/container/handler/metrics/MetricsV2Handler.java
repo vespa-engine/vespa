@@ -1,25 +1,26 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler.metrics;
 
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
-import com.google.inject.Inject;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.logging.Level;
 
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.OK;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
  * @author gjoranv
@@ -33,7 +34,7 @@ public class MetricsV2Handler extends HttpHandlerBase {
     private static final int HTTP_SOCKET_TIMEOUT = 30000;
 
     private final String metricsProxyUri;
-    private final HttpClient httpClient = createHttpClient();
+    private final CloseableHttpClient httpClient = createHttpClient();
 
     @Inject
     public MetricsV2Handler(Executor executor,
@@ -52,7 +53,7 @@ public class MetricsV2Handler extends HttpHandlerBase {
     private JsonResponse valuesResponse(String consumer) {
         try {
             String uri = metricsProxyUri + consumerQuery(consumer);
-            String metricsJson = httpClient.execute(new HttpGet(uri), new BasicResponseHandler());
+            String metricsJson = httpClient.execute(new HttpGet(uri), new BasicHttpClientResponseHandler());
             return new JsonResponse(OK, metricsJson);
         } catch (IOException e) {
             log.warning("Unable to retrieve metrics from " + metricsProxyUri + ": " + Exceptions.toMessageString(e));
@@ -64,14 +65,25 @@ public class MetricsV2Handler extends HttpHandlerBase {
         return VespaHttpClientBuilder.create()
                 .setUserAgent("application-metrics-retriever")
                 .setDefaultRequestConfig(RequestConfig.custom()
-                                                 .setConnectTimeout(HTTP_CONNECT_TIMEOUT)
-                                                 .setSocketTimeout(HTTP_SOCKET_TIMEOUT)
-                                                 .build())
+                                                      .setConnectTimeout(HTTP_CONNECT_TIMEOUT, MILLISECONDS)
+                                                      .setResponseTimeout(HTTP_SOCKET_TIMEOUT, MILLISECONDS)
+                                                      .build())
                 .build();
     }
 
     static String consumerQuery(String consumer) {
         return (consumer == null || consumer.isEmpty()) ? "" : "?consumer=" + consumer;
+    }
+
+    @Override
+    public void destroy(){
+        super.destroy();
+        try {
+            httpClient.close();
+        }
+        catch (IOException e) {
+            log.log(Level.WARNING, "Failed closing http client", e);
+        }
     }
 
 }

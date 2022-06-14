@@ -85,7 +85,7 @@ void
 FixedWidthBucketFunctionNode::onPrepareResult()
 {
     const ExpressionNode &child = getArg();
-    const ResultNode     &input = child.getResult();
+    const ResultNode     &input = *child.getResult();
     if (input.getClass().inherits(IntegerResultNode::classId)) {
         ResultNode::UP res(new IntegerBucketResultNode());
         setResultType(std::move(res));
@@ -111,7 +111,7 @@ bool
 FixedWidthBucketFunctionNode::onExecute() const
 {
     getArg().execute();
-    _bucketHandler->update(updateResult(), getArg().getResult());
+    _bucketHandler->update(updateResult(), *getArg().getResult());
     return true;
 }
 

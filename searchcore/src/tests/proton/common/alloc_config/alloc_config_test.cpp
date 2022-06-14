@@ -15,7 +15,7 @@ namespace {
 CompactionStrategy baseline_compaction_strategy(0.2, 0.25);
 
 GrowStrategy make_grow_strategy(uint32_t initial_docs) {
-    return GrowStrategy(initial_docs, 0.1, 1, 0.15);
+    return GrowStrategy(initial_docs, 0.1, 1, initial_docs, 0.15);
 }
 
 AllocStrategy make_alloc_strategy(uint32_t initial_docs) {

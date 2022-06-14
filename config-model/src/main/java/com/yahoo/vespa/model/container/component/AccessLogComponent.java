@@ -38,7 +38,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this(logType,
                 compressionType,
                 clusterName.isEmpty() ? String.format("logs/vespa/access/%s.%s", capitalize(logType.name()), "%Y%m%d%H%M%S") :
-                                        // TODO: Clean up after Vespa 8
+                                        // TODO: Vespa > 8: Clean up
                                         VespaVersion.major == 7 ? String.format("logs/vespa/qrs/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S") :
                                                                   String.format("logs/vespa/access/%s.%s.%s", capitalize(logType.name()), clusterName.get(), "%Y%m%d%H%M%S"),
                 null,

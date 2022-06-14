@@ -35,6 +35,7 @@ private:
     ref_t                  *_data_stash;
     ref_t                  *_data_end;
     IteratorPack            _children;
+    bool                    _field_is_filter;
 
     void seek_child(ref_t child, uint32_t docId) {
         _termPos[child] = _children.seek(child, docId);
@@ -42,6 +43,7 @@ private:
 
 public:
     DotProductSearchImpl(TermFieldMatchData &tmd,
+                         bool field_is_filter,
                          const std::vector<int32_t> &weights,
                          IteratorPack &&iteratorPack)
         : _tmd(tmd),
@@ -52,7 +54,8 @@ public:
           _data_begin(nullptr),
           _data_stash(nullptr),
           _data_end(nullptr),
-          _children(std::move(iteratorPack))
+          _children(std::move(iteratorPack)),
+          _field_is_filter(field_is_filter)
     {
         HEAP::require_left_heap();
         assert(_weights.size() > 0);
@@ -63,6 +66,9 @@ public:
         }
         _data_begin = &_data_space[0];
         _data_end = _data_begin + _data_space.size();
+        if (_field_is_filter || _tmd.isNotNeeded()) {
+            _tmd.setRawScore(TermFieldMatchData::invalidId(), 0.0);
+        }
     }
 
     void doSeek(uint32_t docId) override {
@@ -78,17 +84,21 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        feature_t score = 0.0;
-        while ((_data_begin < _data_stash) &&
-               _termPos[HEAP::front(_data_begin, _data_stash)] == docId)
-        {
-            HEAP::pop(_data_begin, _data_stash--, _cmpDocId);
-            const ref_t child = *_data_stash;
-            double tmp = _weights[child];
-            tmp *= _children.get_weight(child, docId);
-            score += tmp;
-        };
-        _tmd.setRawScore(docId, score);
+        if (!_field_is_filter && !_tmd.isNotNeeded()) {
+            feature_t score = 0.0;
+            while ((_data_begin < _data_stash) &&
+                   _termPos[HEAP::front(_data_begin, _data_stash)] == docId)
+            {
+                HEAP::pop(_data_begin, _data_stash--, _cmpDocId);
+                const ref_t child = *_data_stash;
+                double tmp = _weights[child];
+                tmp *= _children.get_weight(child, docId);
+                score += tmp;
+            };
+            _tmd.setRawScore(docId, score);
+        } else {
+            _tmd.resetOnlyDocId(docId);
+        }
     }
 
     void initRange(uint32_t begin, uint32_t end) override {
@@ -146,6 +156,7 @@ private:
 SearchIterator::UP
 DotProductSearch::create(const std::vector<SearchIterator*> &children,
                          TermFieldMatchData &tmd,
+                         bool field_is_filter,
                          const std::vector<TermFieldMatchData*> &childMatch,
                          const std::vector<int32_t> &weights,
                          MatchData::UP md)
@@ -158,15 +169,16 @@ DotProductSearch::create(const std::vector<SearchIterator*> &children,
                                                              *childMatch[0], weights[0], std::move(md));
     }
     if (childMatch.size() < 128) {
-        return SearchIterator::UP(new ArrayHeapImpl(tmd, weights, SearchIteratorPack(children, childMatch, std::move(md))));
+        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, SearchIteratorPack(children, childMatch, std::move(md))));
     }
-    return SearchIterator::UP(new HeapImpl(tmd, weights,  SearchIteratorPack(children, childMatch, std::move(md))));
+    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, weights,  SearchIteratorPack(children, childMatch, std::move(md))));
 }
 
 //-----------------------------------------------------------------------------
 
 SearchIterator::UP
 DotProductSearch::create(TermFieldMatchData &tmd,
+                         bool field_is_filter,
                          const std::vector<int32_t> &weights,
                          std::vector<DocumentWeightIterator> &&iterators)
 {
@@ -174,9 +186,9 @@ DotProductSearch::create(TermFieldMatchData &tmd,
     typedef DotProductSearchImpl<vespalib::LeftHeap, AttributeIteratorPack> HeapImpl;
 
     if (iterators.size() < 128) {
-        return SearchIterator::UP(new ArrayHeapImpl(tmd, weights, AttributeIteratorPack(std::move(iterators))));
+        return SearchIterator::UP(new ArrayHeapImpl(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators))));
     }
-    return SearchIterator::UP(new HeapImpl(tmd, weights, AttributeIteratorPack(std::move(iterators))));
+    return SearchIterator::UP(new HeapImpl(tmd, field_is_filter, weights, AttributeIteratorPack(std::move(iterators))));
 }
 
 //-----------------------------------------------------------------------------

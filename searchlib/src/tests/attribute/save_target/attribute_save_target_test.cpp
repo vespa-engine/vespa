@@ -60,7 +60,7 @@ public:
                               int exp_value)
     {
         vespalib::string file_name = base_file_name + "." + file_suffix;
-        EXPECT_TRUE(vespalib::fileExists(file_name));
+        EXPECT_TRUE(std::filesystem::exists(std::filesystem::path(file_name)));
         auto loaded = FileUtil::loadFile(file_name);
         EXPECT_FALSE(loaded->empty());
 

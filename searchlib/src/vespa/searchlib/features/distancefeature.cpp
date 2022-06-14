@@ -206,7 +206,6 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
 {
     // params[0] = attribute name
     vespalib::string arg = params[0].getValue();
-    bool allow_bad_field = true;
     if (params.size() == 2) {
         // params[0] = field / label
         // params[1] = attribute name / label value
@@ -217,7 +216,6 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
             return true;
         } else if (arg == "field") {
             arg = params[1].getValue();
-            allow_bad_field = false;
         } else {
             LOG(error, "first argument must be 'field' or 'label', but was '%s'", arg.c_str());
             return false;
@@ -242,11 +240,6 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
         if (dt == DataType::INT64) {
             return setup_geopos(env, arg);
         }
-    }
-    if (allow_bad_field) {
-        // TODO remove on Vespa 8
-        // backwards compatibility fallback:
-        return setup_geopos(env, arg);
     }
     if (env.getFieldByName(arg) == nullptr) {
         LOG(error, "unknown field '%s' for rank feature %s\n", arg.c_str(), getName().c_str());

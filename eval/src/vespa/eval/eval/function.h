@@ -2,17 +2,11 @@
 
 #pragma once
 
-#include <cmath>
-#include <memory>
-#include <vespa/vespalib/stllike/string.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <map>
 #include "basic_nodes.h"
 #include "delete_node.h"
 #include "value.h"
 
-namespace vespalib {
-namespace eval {
+namespace vespalib::eval {
 
 enum class PassParams : uint8_t { SEPARATE, ARRAY, LAZY };
 
@@ -85,5 +79,4 @@ public:
     };
 };
 
-} // namespace vespalib::eval
-} // namespace vespalib
+}

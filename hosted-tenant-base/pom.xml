@@ -7,7 +7,7 @@
 
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>hosted-tenant-base</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <name>Base pom for all tenant base poms</name>
     <description>Parent POM for all Vespa base poms.</description>
     <url>https://github.com/vespa-engine</url>
@@ -185,7 +185,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-enforcer-plugin</artifactId>
-                        <version>3.0.0-M2</version>
+                        <version>3.0.0</version>
                         <executions>
                             <execution>
                                 <id>enforce-java</id>
@@ -195,10 +195,10 @@
                                 <configuration>
                                     <rules>
                                         <requireJavaVersion>
-                                            <version>[11, )</version>
+                                            <version>[17, )</version>
                                         </requireJavaVersion>
                                         <requireMavenVersion>
-                                            <version>[3.5, )</version>
+                                            <version>[3.6, )</version>
                                         </requireMavenVersion>
                                     </rules>
                                 </configuration>
@@ -222,6 +222,26 @@
                                     </rules>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>enforce-just-our-jupiter</id>
+                                <goals>
+                                    <goal>enforce</goal>
+                                </goals>
+                                <configuration>
+                                    <rules>
+                                        <bannedDependencies>
+                                            <!-- Fail validation for apps with junit-jupiter-api in compile scope, or on wrong version. -->
+                                            <excludes>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:compile</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:provided</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:runtime</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${junit.version}):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${junit.version},):jar:*</exclude>
+                                            </excludes>
+                                        </bannedDependencies>
+                                    </rules>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 
@@ -232,17 +252,15 @@
                         <extensions>true</extensions>
                         <configuration>
                             <!-- override default test bundle scope translation which translates 'test' to 'compile' -->
-                            <!-- note: ordering affects how overrides are evaluated! -->
+                            <!-- note: ordering affects how overrides are evaluated; put the most specific overrides first! -->
                             <testBundleScopeOverrides>
                                 ${extraTestBundleScopeOverrides},
-                                org.junit.jupiter:junit-jupiter-api:provided,
-                                org.junit.jupiter:junit-jupiter-engine:test,
-                                org.junit.vintage:junit-vintage-engine:test,
-                                com.yahoo.vespa:application:test,
-                                com.yahoo.vespa:container-test:runtime,
-                                com.yahoo.vespa:vespa-feed-client:runtime, <!-- prevent effective compile scope of vespa-feed-client in test bundle -->
-                                com.yahoo.vespa:vespa-feed-client-api:provided,
-                                com.yahoo.vespa:tenant-cd-api:provided
+                                org.junit.jupiter:junit-jupiter-api:provided,   <!-- ensure the api bundle provided by the tester container is used -->
+                                com.yahoo.vespa:application:test,               <!-- its transitive dependencies should be provided by the regular container -->
+                                com.yahoo.vespa:container-test:test,            <!-- its transitive dependencies should be provided by the regular container -->
+                                com.yahoo.vespa:vespa-feed-client:test,         <!-- ensure the implementation provided by the tester container is used -->
+                                com.yahoo.vespa:vespa-feed-client-api:provided, <!-- ensure the api bundle provided by the tester container is used -->
+                                com.yahoo.vespa:tenant-cd-api:provided          <!-- ensure the api bundle provided by the tester container is used -->
                             </testBundleScopeOverrides>
                         </configuration>
                         <executions>

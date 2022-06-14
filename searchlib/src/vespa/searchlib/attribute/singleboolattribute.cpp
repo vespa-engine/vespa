@@ -6,10 +6,12 @@
 #include "ipostinglistsearchcontext.h"
 #include "primitivereader.h"
 #include "search_context.h"
+#include "valuemodifier.h"
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/util/file_settings.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -34,7 +36,7 @@ void
 SingleBoolAttribute::ensureRoom(DocId docIdLimit) {
     if (_bv.writer().capacity() < docIdLimit) {
         const GrowStrategy & gs = this->getConfig().getGrowStrategy();
-        uint32_t newSize = docIdLimit + (docIdLimit * gs.getDocsGrowFactor()) + gs.getDocsGrowDelta();
+        uint32_t newSize = docIdLimit + (docIdLimit * gs.getGrowFactor()) + gs.getGrowDelta();
         bool incGen = _bv.reserve(newSize);
         if (incGen) {
             incGeneration();

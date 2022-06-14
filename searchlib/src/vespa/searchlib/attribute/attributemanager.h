@@ -5,9 +5,10 @@
 #include "iattributemanager.h"
 #include "interlock.h"
 #include <vespa/searchlib/common/indexmetainfo.h>
-#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <mutex>
+
+namespace search::attribute { class Config; }
 
 namespace search {
 
@@ -18,7 +19,7 @@ namespace search {
 class AttributeManager : public IAttributeManager
 {
 private:
-    typedef attribute::Config Config;
+    using Config = attribute::Config;
 public:
     typedef std::vector<string> StringVector;
     typedef search::IndexMetaInfo::Snapshot Snapshot;

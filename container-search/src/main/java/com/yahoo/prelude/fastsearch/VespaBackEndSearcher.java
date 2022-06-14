@@ -14,7 +14,6 @@ import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.PingableSearcher;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.result.ErrorMessage;
@@ -168,6 +167,11 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             return new Result(query, ErrorMessage.createNullQuery(query.getHttpRequest().getUri().toString()));
         }
 
+        if ( ! getDocumentDatabase(query).schema().rankProfiles().containsKey(query.getRanking().getProfile()))
+            return new Result(query, ErrorMessage.createInvalidQueryParameter(getDocumentDatabase(query).schema() +
+                                                                              " does not contain requested rank profile '" +
+                                                                              query.getRanking().getProfile() + "'"));
+
         QueryRewrite.optimizeByRestrict(query);
         QueryRewrite.optimizeAndNot(query);
         QueryRewrite.collapseSingleComposites(query);
@@ -185,8 +189,6 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             return new Result(query);
 
         Result result = doSearch2(query, execution);
-        if (isLoggingFine())
-            getLogger().fine("Result NOT retrieved from cache");
 
         if (query.getTraceLevel() >= 1)
             query.trace(getName() + " dispatch response: " + result, false, 1);

@@ -41,7 +41,7 @@ TimeStampFunctionNode & TimeStampFunctionNode::operator = (const TimeStampFuncti
 
 void TimeStampFunctionNode::onPrepareResult()
 {
-    if (getArg().getResult().inherits(ResultNodeVector::classId)) {
+    if (getArg().getResult()->inherits(ResultNodeVector::classId)) {
         setResultType(std::unique_ptr<ResultNode>(new IntegerResultNodeVector));
         _handler.reset(new MultiValueHandler(*this));
     } else {
@@ -75,7 +75,7 @@ unsigned TimeStampFunctionNode::getTimePart(time_t secSince70, TimePart tp, bool
 bool TimeStampFunctionNode::onExecute() const
 {
     getArg().execute();
-    _handler->handle(getArg().getResult());
+    _handler->handle(*getArg().getResult());
     return true;
 }
 

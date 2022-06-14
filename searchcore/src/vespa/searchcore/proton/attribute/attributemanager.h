@@ -84,7 +84,7 @@ private:
     HwInfo _hwInfo;
     std::unique_ptr<ImportedAttributesRepo> _importedAttributes;
 
-    AttributeVectorSP internalAddAttribute(const AttributeSpec &spec, uint64_t serialNum, const IAttributeFactory &factory);
+    AttributeVectorSP internalAddAttribute(AttributeSpec && spec, uint64_t serialNum, const IAttributeFactory &factory);
 
     void addAttribute(const AttributeWrap &attribute, const ShrinkerSP &shrinker);
 
@@ -92,9 +92,9 @@ private:
 
     const FlushableWrap *findFlushable(const vespalib::string &name) const;
 
-    void transferExistingAttributes(const AttributeManager &currMgr, const Spec &newSpec, Spec::AttributeList &toBeAdded);
+    Spec::AttributeList transferExistingAttributes(const AttributeManager &currMgr, Spec::AttributeList && newAttributes);
 
-    void addNewAttributes(const Spec &newSpec, const Spec::AttributeList &toBeAdded,
+    void addNewAttributes(const Spec &newSpec, Spec::AttributeList && toBeAdded,
                           IAttributeInitializerRegistry &initializerRegistry);
 
     void transferExtraAttributes(const AttributeManager &currMgr);
@@ -121,11 +121,11 @@ public:
                      const IAttributeFactory::SP &factory,
                      const HwInfo &hwInfo);
 
-    AttributeManager(const AttributeManager &currMgr, const Spec &newSpec,
+    AttributeManager(const AttributeManager &currMgr, Spec && newSpec,
                      IAttributeInitializerRegistry &initializerRegistry);
     ~AttributeManager() override;
 
-    AttributeVectorSP addAttribute(const AttributeSpec &spec, uint64_t serialNum);
+    AttributeVectorSP addAttribute(AttributeSpec && spec, uint64_t serialNum);
 
     void addInitializedAttributes(const std::vector<AttributeInitializerResult> &attributes);
 
@@ -155,7 +155,7 @@ public:
 
     // Implements proton::IAttributeManager
 
-    proton::IAttributeManager::SP create(const Spec &spec) const override;
+    proton::IAttributeManager::SP create(Spec && spec) const override;
 
     std::vector<IFlushTargetSP> getFlushTargets() const override;
 

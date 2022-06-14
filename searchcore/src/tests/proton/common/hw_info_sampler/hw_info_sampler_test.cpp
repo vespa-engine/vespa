@@ -122,6 +122,6 @@ TEST_F("require that num cpu cores can be sampled", Fixture)
 
 TEST_MAIN()
 {
-    vespalib::rmdir(test_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(test_dir));
     TEST_RUN_ALL();
 }

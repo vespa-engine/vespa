@@ -77,7 +77,9 @@ DataBuffer::shrink(size_t newsize)
     if (newsize != 0) {
         newbuf = static_cast<char *>(newBuf.get());
         newdata = newbuf + padbefore(_alignment, newbuf);
-        memcpy(newdata, _datapt, getDataLen());
+        if (getDataLen() > 0) {
+            memcpy(newdata, _datapt, getDataLen());
+        }
     }
     _buffer.swap(newBuf);
     _bufstart = newbuf;
@@ -101,7 +103,9 @@ DataBuffer::pack(size_t needbytes)
         Alloc newBuf(_buffer.create(bufsize));
         char *newbuf = static_cast<char *>(newBuf.get());
         char *newdata = newbuf + padbefore(_alignment, newbuf);
-        memcpy(newdata, _datapt, dataLen);
+        if (dataLen > 0) {
+            memcpy(newdata, _datapt, dataLen);
+        }
         _bufstart = newbuf;
         _datapt   = newdata;
         _freept   = newdata + dataLen;
@@ -109,7 +113,9 @@ DataBuffer::pack(size_t needbytes)
         _buffer.swap(newBuf);
     } else {
         char *datapt = _bufstart + padbefore(_alignment, _bufstart);
-        memmove(datapt, _datapt, dataLen);
+        if (dataLen > 0) {
+            memmove(datapt, _datapt, dataLen);
+        }
         _datapt = datapt;
         _freept = _datapt + dataLen;
     }
@@ -119,8 +125,12 @@ DataBuffer::pack(size_t needbytes)
 bool
 DataBuffer::equals(DataBuffer *other)
 {
-    if (getDataLen() != other->getDataLen())
+    if (getDataLen() != other->getDataLen()) {
         return false;
+    }
+    if (getDataLen() == 0) {
+        return true;
+    }
     return memcmp(getData(), other->getData(), getDataLen()) == 0;
 }
 

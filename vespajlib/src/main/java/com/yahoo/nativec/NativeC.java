@@ -12,7 +12,7 @@ class NativeC {
                 return e;
             }
         } else {
-            return new RuntimeException("Platform is unsúpported. Only supported on linux.");
+            return new RuntimeException("Platform is unsupported. Only supported on Linux.");
         }
         return null;
     }

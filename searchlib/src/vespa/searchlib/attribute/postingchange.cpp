@@ -308,7 +308,7 @@ compute(const MultivalueMapping & mvm, const DocIndices & docIndices,
     for (const auto & docIndex : docIndices) {
         vespalib::ConstArrayRef<WeightedIndex> oldIndices(mvm.get(docIndex.first));
         added.clear(), changed.clear(), removed.clear();
-        actualChange.compute(&docIndex.second[0], docIndex.second.size(), &oldIndices[0], oldIndices.size(),
+        actualChange.compute(docIndex.second.data(), docIndex.second.size(), oldIndices.data(), oldIndices.size(),
                              added, changed, removed);
         for (const auto & wi : added) {
             changePost[EnumPostingPair(wi.value_ref().load_relaxed(), &compare)].add(docIndex.first, wi.weight());

@@ -5,8 +5,7 @@
 #include "address_space_usage.h"
 #include "changevector.h"
 #include "readable_attribute_vector.h"
-#include <vespa/fastlib/text/normwordfolder.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include "basename.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
@@ -14,13 +13,9 @@
 #include <vespa/searchcommon/common/range.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
-#include <vespa/searchlib/common/identifiable.h>
 #include <vespa/searchlib/common/commit_param.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
-#include <vespa/vespalib/objects/identifiable.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/address_space.h>
-#include <vespa/vespalib/util/rcuvector.h>
+#include <vespa/vespalib/util/generationholder.h>
 #include <vespa/vespalib/util/time.h>
 #include <cmath>
 #include <mutex>
@@ -36,6 +31,11 @@ namespace document {
 namespace vespalib {
     class GenericHeader;
     class Executor;
+}
+
+namespace vespalib::alloc {
+    class MemoryAllocator;
+    class Alloc;
 }
 
 namespace search {
@@ -61,6 +61,9 @@ namespace search {
         class InterlockGuard;
         class SearchContext;
         class MultiValueMappingBase;
+        class Config;
+        class ValueModifier;
+        class EnumModifier;
     }
 
     namespace fileutil {
@@ -76,28 +79,6 @@ using document::ArithmeticValueUpdate;
 using document::MapValueUpdate;
 using document::FieldValue;
 
-template <typename T>
-class UnWeightedType
-{
-public:
-    UnWeightedType() : _value(T()) { }
-    UnWeightedType(T v) : _value(v) { }
-    const T & getValue() const { return _value; }
-    void setValue(const T & v) { _value = v; }
-    int32_t getWeight()  const { return 1; }
-    void setWeight(int32_t w)  { (void) w; }
-
-    bool operator==(const UnWeightedType<T> & rhs) const {
-        return _value == rhs._value;
-    }
-
-private:
-    T       _value;
-};
-
-template <typename T>
-vespalib::asciistream & operator << (vespalib::asciistream & os, const UnWeightedType<T> & v);
-
 class IExtendAttribute
 {
 public:
@@ -105,11 +86,10 @@ public:
     virtual bool add(double, int32_t = 1) { return false; }
     virtual bool add(const char *, int32_t = 1) { return false; }
     
-    virtual ~IExtendAttribute() {}
+    virtual ~IExtendAttribute() = default;
 };
 
-class AttributeVector : public vespalib::Identifiable,
-                        public attribute::IAttributeVector,
+class AttributeVector : public attribute::IAttributeVector,
                         public common::ICompactableLidSpace,
                         public attribute::ReadableAttributeVector
 {
@@ -120,31 +100,10 @@ protected:
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     using QueryPacketT = vespalib::stringref;
     using stringref = vespalib::stringref;
+    using ValueModifier = attribute::ValueModifier;
+    using EnumModifier = attribute::EnumModifier;
 public:
-    typedef std::shared_ptr<AttributeVector> SP;
-    class BaseName : public vespalib::string
-    {
-    public:
-        typedef vespalib::string string;
-        BaseName(vespalib::stringref s)
-            : string(s),
-              _name(createAttributeName(s))
-        { }
-        BaseName & operator = (vespalib::stringref s) {
-            BaseName n(s);
-            std::swap(*this, n);
-            return *this;
-        }
-
-        BaseName(vespalib::stringref base, vespalib::stringref name);
-        ~BaseName();
-
-        const string & getAttributeName() const { return _name; }
-        string getDirName() const;
-    private:
-        static string createAttributeName(vespalib::stringref s);
-        string _name;
-    };
+    using SP = std::shared_ptr<AttributeVector>;
 
     using GenerationHandler = vespalib::GenerationHandler;
     using GenerationHolder = vespalib::GenerationHolder;
@@ -180,46 +139,11 @@ protected:
     void setNumDocs(uint32_t n)          { _status.setNumDocs(n); }
     void incNumDocs()                    { _status.incNumDocs(); }
 
-    class ValueModifier
-    {
-    public:
-        ValueModifier(AttributeVector &attr);
-        ValueModifier(const ValueModifier &rhs);
-        ~ValueModifier();
-    private:
-        AttributeVector * stealAttr() const {
-            AttributeVector * ret(_attr);
-            _attr = nullptr;
-            return ret;
-        }
-
-        mutable AttributeVector * _attr;
-    };
-
 public:
-    class EnumModifier
-    {
-        std::unique_lock<std::shared_mutex> _enumLock;
-    public:
-        EnumModifier(std::shared_mutex &lock, attribute::InterlockGuard &interlockGuard)
-            : _enumLock(lock)
-        {
-            (void) interlockGuard;
-        }
-        EnumModifier(EnumModifier &&rhs)
-            : _enumLock(std::move(rhs._enumLock))
-        { }
-        EnumModifier &operator=(EnumModifier &&rhs)
-        {
-            _enumLock = std::move(rhs._enumLock);
-            return *this;
-        }
-        virtual ~EnumModifier() { }
-    };
 
     EnumModifier getEnumModifier();
 protected:
-    ValueModifier getValueModifier() { return ValueModifier(*this); }
+    ValueModifier getValueModifier();
 
     void updateCommittedDocIdLimit() {
         if (_uncommittedDocIdLimit != 0) {
@@ -349,23 +273,27 @@ protected:
     const std::shared_ptr<vespalib::alloc::MemoryAllocator>& get_memory_allocator() const noexcept { return _memory_allocator; }
     vespalib::alloc::Alloc get_initial_alloc();
 public:
-    DECLARE_IDENTIFIABLE_ABSTRACT(AttributeVector);
     bool isLoaded() const { return _loaded; }
     void logEnumStoreEvent(const char *reason, const char *stage);
 
     /** Return the fixed length of the attribute. If 0 then you must inquire each document. */
-    size_t getFixedWidth() const override { return _config.basicType().fixedSize(); }
-    const Config &getConfig() const noexcept { return _config; }
+    size_t getFixedWidth() const override;
+    BasicType getInternalBasicType() const;
+    CollectionType getInternalCollectionType() const;
+    bool hasArrayType() const;
+    bool getIsFilter() const override final;
+    bool getIsFastSearch() const override final;
+    bool isMutable() const;
+    bool getEnableOnlyBitVector() const;
+
+    const Config &getConfig() const noexcept { return *_config; }
     void update_config(const Config& cfg);
-    BasicType getInternalBasicType() const { return _config.basicType(); }
-    CollectionType getInternalCollectionType() const { return _config.collectionType(); }
-    const BaseName & getBaseFileName() const { return _baseFileName; }
+    const attribute::BaseName & getBaseFileName() const { return _baseFileName; }
     void setBaseFileName(vespalib::stringref name) { _baseFileName = name; }
     bool isUpdateableInMemoryOnly() const { return _isUpdateableInMemoryOnly; }
 
     const vespalib::string & getName() const override final { return _baseFileName.getAttributeName(); }
 
-    bool hasArrayType() const { return _config.collectionType().isArray(); }
     bool hasEnum() const override final;
     uint32_t getMaxValueCount() const override;
     uint32_t getEnumMax() const { return _enumMax; }
@@ -390,8 +318,6 @@ public:
 
     BasicType::Type getBasicType() const override final { return getInternalBasicType().type(); }
     CollectionType::Type getCollectionType() const override final { return getInternalCollectionType().type(); }
-    bool getIsFilter() const override final { return _config.getIsFilter(); }
-    bool getIsFastSearch() const override final { return _config.fastSearch(); }
     uint32_t getCommittedDocIdLimit() const override final { return _committedDocIdLimit.load(std::memory_order_acquire); }
     bool isImported() const override;
 
@@ -491,8 +417,8 @@ private:
     virtual bool onLoad(vespalib::Executor * executor);
 
 
-    BaseName                              _baseFileName;
-    Config                                _config;
+    attribute::BaseName                   _baseFileName;
+    std::unique_ptr<Config>               _config;
     std::shared_ptr<attribute::Interlock> _interlock;
     mutable std::shared_mutex             _enumLock;
     GenerationHandler                     _genHandler;
@@ -535,8 +461,8 @@ private:
     friend class AttributeManagerTest;
 public:
     bool headerTypeOK(const vespalib::GenericHeader &header) const;
-    bool hasMultiValue() const override final { return _config.collectionType().isMultiValue(); }
-    bool hasWeightedSetType() const override final { return _config.collectionType().isWeightedSet(); }
+    bool hasMultiValue() const override final;
+    bool hasWeightedSetType() const override final;
     /**
      * Should be called by the writer thread.
      */

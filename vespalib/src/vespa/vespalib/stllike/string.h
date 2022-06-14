@@ -594,7 +594,9 @@ private:
     void init(const void *s) noexcept {
         if (__builtin_expect(_sz < StackSize, true)) {
             _bufferSize = StackSize;
-            memcpy(_stack, s, _sz);
+            if (s) {
+                memcpy(_stack, s, _sz);
+            }
             _stack[_sz] = '\0';
         } else {
             init_slower(s);

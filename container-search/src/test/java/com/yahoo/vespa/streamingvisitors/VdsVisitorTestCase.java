@@ -1,10 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.*;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
@@ -31,14 +30,7 @@ import static org.junit.Assert.*;
 /**
  * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
 public class VdsVisitorTestCase {
-    private LoadTypeSet loadTypeSet = new LoadTypeSet(); // TODO remove on Vespa 8
-
-    public VdsVisitorTestCase() {
-        loadTypeSet.addLoadType(1, "low", DocumentProtocol.Priority.LOW_1);
-        loadTypeSet.addLoadType(2, "normal", DocumentProtocol.Priority.NORMAL_1);
-    }
 
     private SearchResult createSR(String docId, double rank) {
         BufferSerializer serializer = new BufferSerializer();
@@ -116,7 +108,6 @@ public class VdsVisitorTestCase {
         String selection = null;
         long from = 0;
         long to = 0;
-        String loadTypeName = null;
         DocumentProtocol.Priority priority = null;
         int maxBucketsPerVisitor = 0;
 
@@ -140,7 +131,6 @@ public class VdsVisitorTestCase {
             selection = null;
             from = 123;
             to = 456;
-            loadTypeName = "low";
             priority = DocumentProtocol.Priority.HIGH_2;
             maxBucketsPerVisitor = 2;
 
@@ -194,9 +184,6 @@ public class VdsVisitorTestCase {
         if (qa.to != 0) {
             queryString.append("&streaming.totimestamp=").append(qa.to);
         }
-        if (qa.loadTypeName != null) {
-            queryString.append("&streaming.loadtype=").append(qa.loadTypeName);
-        }
         if (qa.priority != null) {
             queryString.append("&streaming.priority=").append(qa.priority);
         }
@@ -228,28 +215,16 @@ public class VdsVisitorTestCase {
         }
         assertEquals(qa.from, params.getFromTimestamp());
         assertEquals(qa.to, params.getToTimestamp());
-        if (qa.loadTypeName != null && loadTypeSet.getNameMap().get(qa.loadTypeName) != null) {
-            LoadType expectedLoadType = loadTypeSet.getNameMap().get(qa.loadTypeName);
-            assertEquals(expectedLoadType, params.getLoadType());
-            if (qa.priority != null) {
-                assertEquals(qa.priority, params.getPriority());
-            } else {
-                assertEquals(expectedLoadType.getPriority(), params.getPriority());
-            }
+        if (qa.priority != null) {
+            assertEquals(qa.priority, params.getPriority());
         } else {
-            assertEquals(LoadType.DEFAULT, params.getLoadType());
-            if (qa.priority != null) {
-                assertEquals(qa.priority, params.getPriority());
-            } else {
-                assertEquals(DocumentProtocol.Priority.VERY_HIGH, params.getPriority());
-            }
+            assertEquals(DocumentProtocol.Priority.VERY_HIGH, params.getPriority());
         }
         if (qa.maxBucketsPerVisitor != 0) {
             assertEquals(qa.maxBucketsPerVisitor, params.getMaxBucketsPerVisitor());
         } else {
             assertEquals(VdsVisitor.MAX_BUCKETS_PER_VISITOR, params.getMaxBucketsPerVisitor());
         }
-        assertEquals(false, params.getDynamicallyIncreaseMaxBucketsPerVisitor());
 
         // Verify parameters based only on query
         assertEquals(qa.timeout*1000, params.getTimeoutMs(),0.0000001);
@@ -257,6 +232,7 @@ public class VdsVisitorTestCase {
         assertEquals("searchvisitor", params.getVisitorLibrary());
         assertEquals(Integer.MAX_VALUE, params.getMaxPending());
         assertEquals(qa.traceLevel, params.getTraceLevel());
+        assertEquals(AllFields.NAME, params.getFieldSet());
 
         // Verify library parameters
         //System.err.println("query="+new String(params.getLibraryParameters().get("query")));
@@ -322,7 +298,7 @@ public class VdsVisitorTestCase {
     public void testBasics() throws Exception {
         Route route = Route.parse("storageClusterRouteSpec");
         String searchCluster = "searchClusterConfigId";
-        MockVisitorSessionFactory factory = new MockVisitorSessionFactory(loadTypeSet);
+        MockVisitorSessionFactory factory = new MockVisitorSessionFactory();
 
         // Default values and no selection
         QueryArguments qa = new QueryArguments();
@@ -331,10 +307,6 @@ public class VdsVisitorTestCase {
         // Groupdoc
         qa.groupName = "group";
         qa.maxBucketsPerVisitor = 2; // non-default maxBucketsPerVisitor
-        qa.loadTypeName = "normal"; // non-default loadTypeName, default priority
-        verifyVisitorOk(factory, qa, route, searchCluster);
-
-        qa.loadTypeName = "unknown"; // unknown loadTypeName, default priority
         verifyVisitorOk(factory, qa, route, searchCluster);
 
         qa.priority = DocumentProtocol.Priority.NORMAL_2; // unknown loadTypeName, non-default priority
@@ -349,7 +321,7 @@ public class VdsVisitorTestCase {
     public void testFailures() throws Exception {
         Route route = Route.parse("storageClusterRouteSpec");
         String searchCluster = "searchClusterConfigId";
-        MockVisitorSessionFactory factory = new MockVisitorSessionFactory(loadTypeSet);
+        MockVisitorSessionFactory factory = new MockVisitorSessionFactory();
 
         // Default values and no selection
         QueryArguments qa = new QueryArguments();
@@ -490,24 +462,15 @@ public class VdsVisitorTestCase {
 
     private static class MockVisitorSessionFactory implements VdsVisitor.VisitorSessionFactory {
         private VisitorParameters params;
-        private LoadTypeSet loadTypeSet; // TODO remove on Vespa 8
         private boolean timeoutQuery = false;
         private boolean failQuery = false;
 
-        private MockVisitorSessionFactory(LoadTypeSet loadTypeSet) {
-            this.loadTypeSet = loadTypeSet;
-        }
+        private MockVisitorSessionFactory() {}
 
         @Override
         public VisitorSession createVisitorSession(VisitorParameters params) throws ParseException {
             this.params = params;
             return new MockVisitorSession(params, timeoutQuery, failQuery);
-        }
-
-        @Override
-        // TODO: Remove on Vespa 8
-        public LoadTypeSet getLoadTypeSet() {
-            return loadTypeSet;
         }
 
         public VisitorParameters getParams() {

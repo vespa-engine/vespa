@@ -14,6 +14,7 @@ namespace nodes { struct Node; }
 struct TensorFunction;
 class TensorSpec;
 struct CTFMetaData;
+class ValueBuilderFactory;
 
 /**
  * A Function that has been prepared for execution. This will

@@ -6,6 +6,7 @@
 #include "raw_multi_value_read_view.h"
 #include "copy_multi_value_read_view.h"
 #include <vespa/searchlib/attribute/multivalueattribute.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
@@ -31,7 +32,7 @@ MultiValueAttribute(const vespalib::string &baseFileName,
                                                                8 * 1024,
                                                                cfg.getGrowStrategy().getMultiValueAllocGrowFactor(),
                                                                multivalueattribute::enable_free_lists),
-                 cfg.getGrowStrategy().to_generic_strategy(), this->get_memory_allocator())
+                 cfg.getGrowStrategy(), this->get_memory_allocator())
 {
 }
 

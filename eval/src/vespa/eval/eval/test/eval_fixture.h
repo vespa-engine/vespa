@@ -154,9 +154,9 @@ public:
             EvalFixture fixture(prod_factory(), expr, param_repo, true, true);
             EvalFixture slow_fixture(prod_factory(), expr, param_repo, false, false);
             EvalFixture test_fixture(test_factory(), expr, param_repo, true, true);
-            REQUIRE_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
-            REQUIRE_EQ(fixture.result(), slow_fixture.result());
             REQUIRE_EQ(fixture.result(), test_fixture.result());
+            REQUIRE_EQ(fixture.result(), slow_fixture.result());
+            REQUIRE_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
             auto info = fixture.find_all<typename FunInfo::LookFor>();
             REQUIRE_EQ(info.size(), fun_info.size());
             for (size_t i = 0; i < fun_info.size(); ++i) {

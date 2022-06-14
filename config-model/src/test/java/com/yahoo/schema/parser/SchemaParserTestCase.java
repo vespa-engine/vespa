@@ -175,7 +175,6 @@ public class SchemaParserTestCase {
         checkFileParses("src/test/derived/map_attribute/test.sd");
         checkFileParses("src/test/derived/map_of_struct_attribute/test.sd");
         checkFileParses("src/test/derived/mlr/mlr.sd");
-        checkFileParses("src/test/derived/multiplesummaries/multiplesummaries.sd");
         checkFileParses("src/test/derived/music3/music3.sd");
         checkFileParses("src/test/derived/music/music.sd");
         checkFileParses("src/test/derived/namecollision/collision.sd");

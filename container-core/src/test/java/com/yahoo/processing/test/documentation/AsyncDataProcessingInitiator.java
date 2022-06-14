@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.test.documentation;
 
-import com.google.common.util.concurrent.MoreExecutors;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
@@ -22,13 +21,11 @@ public class AsyncDataProcessingInitiator extends Processor {
         this.asyncChain=asyncChain;
     }
 
-    @SuppressWarnings({"removal"})
     @Override
     public Response process(Request request, Execution execution) {
         Response response=execution.process(request);
-        response.data().complete().addListener(new RunnableExecution(request,
-                new ExecutionWithResponse(asyncChain, response, execution)),
-                MoreExecutors.directExecutor());
+        response.data().completeFuture().whenComplete((__, ___) -> new RunnableExecution(request,
+                new ExecutionWithResponse(asyncChain, response, execution)).run());
         return response;
     }
 

@@ -11,10 +11,10 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("document_store_visitor_test");
@@ -277,13 +277,13 @@ Fixture::resetDocStore()
 void
 Fixture::rmdir()
 {
-    vespalib::rmdir(_baseDir, true);
+    std::filesystem::remove_all(std::filesystem::path(_baseDir));
 }
 
 void
 Fixture::mkdir()
 {
-    vespalib::mkdir(_baseDir, false);
+    std::filesystem::create_directory(std::filesystem::path(_baseDir));
 }
 
 

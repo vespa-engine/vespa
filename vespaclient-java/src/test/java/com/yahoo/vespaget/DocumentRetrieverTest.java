@@ -5,11 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentId;
-import com.yahoo.document.fieldset.AllFields;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
@@ -97,11 +95,10 @@ public class DocumentRetrieverTest {
                 .setCluster("")
                 .setRoute("default")
                 .setConfigId("client")
-                .setFieldSet(AllFields.NAME)
+                .setFieldSet(DocumentOnly.NAME)
                 .setPrintIdsOnly(false)
                 .setHelp(false)
                 .setShowDocSize(false)
-                .setLoadTypeName("")
                 .setNoRetry(false)
                 .setTraceLevel(0)
                 .setTimeout(0)
@@ -133,30 +130,25 @@ public class DocumentRetrieverTest {
     }
 
     @Test
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
+    @SuppressWarnings("removal") // TODO: Remove on Vespa 9
     public void testSendSingleMessage() throws DocumentRetrieverException {
         ClientParameters params = createParameters()
                 .setDocumentIds(asIterator(DOC_ID_1))
                 .setPriority(DocumentProtocol.Priority.HIGH_1)
                 .setNoRetry(true)
-                .setLoadTypeName("loadtype")
                 .build();
 
         when(mockedSession.syncSend(any())).thenReturn(createDocumentReply(DOC_ID_1));
 
-        LoadTypeSet loadTypeSet = new LoadTypeSet(); // TODO remove on Vespa 8
-        loadTypeSet.addLoadType(1, "loadtype", DocumentProtocol.Priority.HIGH_1);
         DocumentRetriever documentRetriever = new DocumentRetriever(
                 new ClusterList(),
                 mockedFactory,
-                loadTypeSet,
                 params);
         documentRetriever.retrieveDocuments();
 
         verify(mockedSession, times(1)).syncSend(argThat((ArgumentMatcher<GetDocumentMessage>) o ->
-                o.getPriority().equals(DocumentProtocol.Priority.HIGH_1) &&
-                !o.getRetryEnabled() &&
-                o.getLoadType().equals(new LoadType(1, "loadtype", DocumentProtocol.Priority.HIGH_1)))); // TODO: Remove on Vespa 8
+                o.getPriority().equals(DocumentProtocol.Priority.HIGH_1) && // TODO remove on Vespa 9
+                !o.getRetryEnabled()));
         assertContainsDocument(DOC_ID_1);
     }
 
@@ -218,19 +210,6 @@ public class DocumentRetrieverTest {
 
         verify(mockedSession, times(1)).destroy();
         verify(mockedDocumentAccess, times(1)).shutdown();
-    }
-
-    @Test
-    public void testInvalidLoadType() throws DocumentRetrieverException {
-        exception.expect(DocumentRetrieverException.class);
-        exception.expectMessage("Loadtype with name 'undefinedloadtype' does not exist.\n");
-
-        ClientParameters params = createParameters()
-                .setLoadTypeName("undefinedloadtype")
-                .build();
-
-        DocumentRetriever documentRetriever = createDocumentRetriever(params);
-        documentRetriever.retrieveDocuments();
     }
 
     @Test

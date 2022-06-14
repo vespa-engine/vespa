@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "configconverter.h"
+#include <vespa/searchcommon/attribute/config.h>
 
 using namespace vespa::config::search;
 
@@ -102,7 +103,6 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     Config retval(bType, cType);
     PredicateParams predicateParams;
     retval.setFastSearch(cfg.fastsearch);
-    retval.setHuge(cfg.huge);
     retval.setEnableBitVectors(cfg.enablebitvectors);
     retval.setEnableOnlyBitVector(cfg.enableonlybitvector);
     retval.setIsFilter(cfg.enableonlybitvector);

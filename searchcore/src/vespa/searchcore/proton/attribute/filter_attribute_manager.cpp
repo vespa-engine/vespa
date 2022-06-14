@@ -78,7 +78,7 @@ FilterAttributeManager::createContext() const {
 }
 
 IAttributeManager::SP
-FilterAttributeManager::create(const AttributeCollectionSpec &) const {
+FilterAttributeManager::create(AttributeCollectionSpec &&) const {
     throw vespalib::IllegalArgumentException("Not implemented");
 }
 

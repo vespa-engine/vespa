@@ -14,6 +14,7 @@
 #include <vespa/searchlib/tensor/distance_function_factory.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/searchlib/queryeval/nns_index_iterator.h>
+#include <vespa/searchcommon/attribute/config.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("nearest_neighbor_test");

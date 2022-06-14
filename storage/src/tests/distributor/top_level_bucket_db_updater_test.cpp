@@ -2298,53 +2298,6 @@ TEST_F(TopLevelBucketDBUpdaterTest, batch_update_from_distributor_change_does_no
                       "0:5/1/2/3|1:5/7/8/9", true));
 }
 
-// TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-TEST_F(TopLevelBucketDBUpdaterTest, global_distribution_hash_falls_back_to_legacy_format_upon_request_rejection) {
-    set_distribution(dist_config_6_nodes_across_2_groups());
-
-    const vespalib::string current_hash = "(0d*|*(0;0;1;2)(1;3;4;5))";
-    const vespalib::string legacy_hash = "(0d3|3|*(0;0;1;2)(1;3;4;5))";
-
-    set_cluster_state("distributor:6 storage:6");
-    ASSERT_EQ(message_count(6), _sender.commands().size());
-
-    api::RequestBucketInfoCommand* global_req = nullptr;
-    for (auto& cmd : _sender.commands()) {
-        auto& req_cmd = dynamic_cast<api::RequestBucketInfoCommand&>(*cmd);
-        if (req_cmd.getBucketSpace() == document::FixedBucketSpaces::global_space()) {
-            global_req = &req_cmd;
-            break;
-        }
-    }
-    ASSERT_TRUE(global_req != nullptr);
-    ASSERT_EQ(current_hash, global_req->getDistributionHash());
-
-    auto reply = std::make_shared<api::RequestBucketInfoReply>(*global_req);
-    reply->setResult(api::ReturnCode::REJECTED);
-    bucket_db_updater().onRequestBucketInfoReply(reply);
-
-    fake_clock().addSecondsToTime(10);
-    bucket_db_updater().resend_delayed_messages();
-
-    // Should now be a resent request with legacy distribution hash
-    ASSERT_EQ(message_count(6) + 1, _sender.commands().size());
-    auto& legacy_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands().back());
-    ASSERT_EQ(legacy_hash, legacy_req.getDistributionHash());
-
-    // Now if we reject it _again_ we should cycle back to the current hash
-    // in case it wasn't a hash-based rejection after all. And the circle of life continues.
-    reply = std::make_shared<api::RequestBucketInfoReply>(legacy_req);
-    reply->setResult(api::ReturnCode::REJECTED);
-    bucket_db_updater().onRequestBucketInfoReply(reply);
-
-    fake_clock().addSecondsToTime(10);
-    bucket_db_updater().resend_delayed_messages();
-
-    ASSERT_EQ(message_count(6) + 2, _sender.commands().size());
-    auto& new_current_req = dynamic_cast<api::RequestBucketInfoCommand&>(*_sender.commands().back());
-    ASSERT_EQ(current_hash, new_current_req.getDistributionHash());
-}
-
 namespace {
 
 template <typename Func>

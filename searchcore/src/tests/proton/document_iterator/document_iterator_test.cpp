@@ -1,5 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcore/proton/common/attribute_updater.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
+#include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
+#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/test/mock_attribute_manager.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/document/datatype/documenttype.h>
@@ -8,13 +16,6 @@
 #include <vespa/persistence/spi/docentry.h>
 #include <vespa/persistence/spi/result.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/searchcore/proton/common/attribute_updater.h>
-#include <vespa/searchcore/proton/common/pendinglidtracker.h>
-#include <vespa/searchcore/proton/persistenceengine/document_iterator.h>
-#include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <unordered_set>

@@ -43,16 +43,6 @@ public class WeightedSetDataType extends CollectionDataType {
         }
     }
 
-    /*
-     * @deprecated // TODO remove on Vespa 8
-     * Do not use - use one of the constructors above.
-     * Note: ignores typeName argument.
-     */
-    @Deprecated
-    public WeightedSetDataType(String typeName, int code, DataType nestedType, boolean createIfNonExistent, boolean removeIfZero) {
-        this(nestedType, createIfNonExistent, removeIfZero, code);
-    }
-
     @Override
     public WeightedSetDataType clone() {
         return (WeightedSetDataType) super.clone();

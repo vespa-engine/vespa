@@ -1,9 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <filesystem>
 #include <iostream>
 #include <vector>
 #include <regex>
+#include <system_error>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -51,7 +53,7 @@ TEST("require that vespalib::File::open works")
     }
         // Opening file in non-existing subdir should fail.
     try{
-        rmdir("mydir", true); // Just in case
+        std::filesystem::remove_all(std::filesystem::path("mydir")); // Just in case
         File f("mydir/myfile");
         f.open(File::CREATE);
         TEST_FATAL("Opening non-existing file for reading should fail.");
@@ -154,10 +156,10 @@ TEST("require that vespalib::File::isOpen works")
 TEST("require that vespalib::File::stat works")
 {
     unlink("myfile");
-    rmdir("mydir", true);
+    std::filesystem::remove_all(std::filesystem::path("mydir"));
     EXPECT_EQUAL(false, fileExists("myfile"));
     EXPECT_EQUAL(false, fileExists("mydir"));
-    mkdir("mydir");
+    std::filesystem::create_directory(std::filesystem::path("mydir"));
     FileInfo::UP info = stat("myfile");
     ASSERT_TRUE(info.get() == 0);
     File f("myfile");
@@ -204,96 +206,11 @@ TEST("require that vespalib::File::resize works")
     EXPECT_EQUAL(std::string("foo"), std::string(&vec[0], 3));
 }
 
-TEST("require that vespalib::mkdir and vespalib::rmdir works")
-{
-    rmdir("mydir", true);
-    ASSERT_TRUE(!fileExists("mydir"));
-        // Cannot create recursive without recursive option
-    try{
-        mkdir("mydir/otherdir", false);
-        TEST_FATAL("Should not work without recursive option set");
-    } catch (IoException& e) {
-        //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::NOT_FOUND, e.getType());
-    }
-        // Works with recursive option
-    {
-        ASSERT_TRUE(mkdir("mydir/otherdir"));
-        ASSERT_TRUE(!mkdir("mydir/otherdir"));
-            // Test chdir / getCurrentDirectory
-        chdir("mydir");
-        std::string currDir = getCurrentDirectory();
-        std::string::size_type pos = currDir.rfind('/');
-        ASSERT_TRUE(pos != std::string::npos);
-        EXPECT_EQUAL("mydir", currDir.substr(pos + 1));
-        EXPECT_EQUAL('/', currDir[0]);
-        chdir("..");
-        currDir = getCurrentDirectory();
-        pos = currDir.rfind('/');
-        EXPECT_EQUAL("fileutil", currDir.substr(pos + 1));
-    }
-        // rmdir fails with content
-    try{
-        ASSERT_TRUE(mkdir("mydir/otherdir/evenmorestuff"));
-        rmdir("mydir");
-        TEST_FATAL("Should not work without recursive option set");
-    } catch (IoException& e) {
-        //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::DIRECTORY_HAVE_CONTENT, e.getType());
-    }
-        // Works with recursive option
-    {
-        ASSERT_TRUE(rmdir("mydir", true));
-        ASSERT_TRUE(!fileExists("mydir"));
-        ASSERT_TRUE(!rmdir("mydir", true));
-    }
-        // Doesn't work on file
-    try{
-        {
-            File f("myfile");
-            f.open(File::CREATE);
-            f.write("foo", 3, 0);
-        }
-        rmdir("myfile");
-        TEST_FATAL("Should have failed to run rmdir on file.");
-    } catch (IoException& e) {
-        //std::cerr << e.what() << "\n";
-        EXPECT_EQUAL(IoException::ILLEGAL_PATH, e.getType());
-    }
-
-    // mkdir works when a path component is a symlink which points to
-    // another directory and the final path component does not exist.
-    {
-        rmdir("mydir", true);
-        rmdir("otherdir", true);
-        unlink("linkeddir"); // symlink if exists
-        mkdir("otherdir/stuff");
-        symlink("otherdir", "linkeddir");
-        // Should now be able to resolve through symlink and create dir
-        // at the appropriate (linked) location.
-        ASSERT_TRUE(mkdir("linkeddir/stuff/fluff"));
-    }
-
-    // mkdir works when the final path component is a symlink which points
-    // to another directory (causing OS mkdir to fail since something already
-    // exists at the location).
-    {
-        rmdir("mydir", true);
-        rmdir("otherdir", true);
-        unlink("linkeddir"); // symlink if exists
-        mkdir("otherdir/stuff");
-        symlink("otherdir", "linkeddir");
-        // Should now be able to resolve through symlink and create dir
-        // at the appropriate (linked) location.
-        ASSERT_FALSE(mkdir("linkeddir"));
-    }
-}
-
 TEST("require that vespalib::unlink works")
 {
         // Fails on directory
     try{
-        mkdir("mydir");
+        std::filesystem::create_directory(std::filesystem::path("mydir"));
         unlink("mydir");
         TEST_FATAL("Should work on directories.");
     } catch (IoException& e) {
@@ -320,7 +237,7 @@ TEST("require that vespalib::unlink works")
 
 TEST("require that vespalib::rename works")
 {
-    rmdir("mydir", true);
+    std::filesystem::remove_all(std::filesystem::path("mydir"));
     File f("myfile");
     f.open(File::CREATE | File::TRUNC);
     f.write("Hello World!\n", 13, 0);
@@ -364,7 +281,7 @@ TEST("require that vespalib::rename works")
     }
         // Overwriting directory fails (does not put inside dir)
     try{
-        mkdir("mydir");
+        std::filesystem::create_directory(std::filesystem::path("mydir"));
         f.open(File::CREATE | File::TRUNC);
         f.write("Bah\n", 4, 0);
         f.close();
@@ -376,7 +293,7 @@ TEST("require that vespalib::rename works")
         // Moving directory works
     {
         ASSERT_TRUE(isDirectory("mydir"));
-        rmdir("myotherdir", true);
+        std::filesystem::remove_all(std::filesystem::path("myotherdir"));
         ASSERT_TRUE(rename("mydir", "myotherdir"));
         ASSERT_TRUE(isDirectory("myotherdir"));
         ASSERT_TRUE(!isDirectory("mydir"));
@@ -400,7 +317,7 @@ TEST("require that vespalib::rename works")
 
 TEST("require that vespalib::copy works")
 {
-    rmdir("mydir", true);
+    std::filesystem::remove_all(std::filesystem::path("mydir"));
     File f("myfile");
     f.open(File::CREATE | File::TRUNC);
 
@@ -427,7 +344,7 @@ TEST("require that vespalib::copy works")
     }
         // Fails if target is directory
     try{
-        mkdir("mydir");
+        std::filesystem::create_directory(std::filesystem::path("mydir"));
         copy("myfile", "mydir");
         TEST_FATAL("Should fail trying to overwrite directory");
     } catch (IoException& e) {
@@ -436,7 +353,7 @@ TEST("require that vespalib::copy works")
     }
         // Fails if source is directory
     try{
-        mkdir("mydir");
+        std::filesystem::create_directory(std::filesystem::path("mydir"));
         copy("mydir", "myfile");
         TEST_FATAL("Should fail trying to copy directory");
     } catch (IoException& e) {
@@ -490,8 +407,8 @@ TEST("require that vespalib::symlink works")
 {
     // Target exists
     {
-        rmdir("mydir", true);
-        mkdir("mydir");
+        std::filesystem::remove_all(std::filesystem::path("mydir"));
+        std::filesystem::create_directory(std::filesystem::path("mydir"));
 
         File f("mydir/myfile");
         f.open(File::CREATE | File::TRUNC);
@@ -511,9 +428,9 @@ TEST("require that vespalib::symlink works")
 
     // POSIX symlink() fails
     {
-        rmdir("mydir", true);
-        mkdir("mydir/a", true);
-        mkdir("mydir/b");
+        std::filesystem::remove_all(std::filesystem::path("mydir"));
+        std::filesystem::create_directories(std::filesystem::path("mydir/a"));
+        std::filesystem::create_directory(std::filesystem::path("mydir/b"));
         try {
             // Link already exists
             symlink("a", "mydir/b");
@@ -524,8 +441,8 @@ TEST("require that vespalib::symlink works")
     }
 
     {
-        rmdir("mydir", true);
-        mkdir("mydir");
+        std::filesystem::remove_all(std::filesystem::path("mydir"));
+        std::filesystem::create_directory(std::filesystem::path("mydir"));
 
         File f("mydir/myfile");
         f.open(File::CREATE | File::TRUNC);
@@ -597,8 +514,8 @@ TEST("require that vespalib::dirname works")
 TEST("require that vespalib::getOpenErrorString works")
 {
     stringref dirName = "mydir";
-    rmdir(dirName, true);
-    mkdir(dirName, false);
+    std::filesystem::remove_all(std::filesystem::path(dirName));
+    std::filesystem::create_directory(std::filesystem::path(dirName));
     {
         File foo("mydir/foo");
         foo.open(File::CREATE);
@@ -616,7 +533,7 @@ TEST("require that vespalib::getOpenErrorString works")
     std::cerr << "getOpenErrorString(1, \"notFound\") is " << err2 <<
         ", normalized to " << normErr2 << std::endl;
     EXPECT_EQUAL(expErr2, normErr2);
-    rmdir(dirName, true);
+    std::filesystem::remove_all(std::filesystem::path(dirName));
 }
 
 } // vespalib

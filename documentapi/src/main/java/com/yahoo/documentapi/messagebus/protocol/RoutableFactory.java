@@ -3,7 +3,6 @@ package com.yahoo.documentapi.messagebus.protocol;
 
 import com.yahoo.document.serialization.DocumentDeserializer;
 import com.yahoo.document.serialization.DocumentSerializer;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.messagebus.Routable;
 
 /**
@@ -12,7 +11,7 @@ import com.yahoo.messagebus.Routable;
  * com.yahoo.component.VersionSpecification)} method. </p>
  *
  * <p>Notice that no routable type is passed to the
- * {@link #decode(DocumentDeserializer, com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet)} method, so
+ * {@link #decode(DocumentDeserializer)} method, so
  * you may NOT share a factory across multiple routable types. To share serialization logic between factory use a common
  * superclass or composition with a common serialization utility.</p>
  *
@@ -32,21 +31,12 @@ public interface RoutableFactory {
     boolean encode(Routable obj, DocumentSerializer out);
 
     /**
-     * <p>This method decodes the given byte bufer to a routable.</p> <p>Return false to signal failure.</p> <p>This
+     * <p>This method decodes the given byte buffer to a routable.</p> <p>Return false to signal failure.</p> <p>This
      * method is NOT exception safe.</p>
      *
      * @param in        The buffer to read from.
-     * @param loadTypes The LoadTypeSet to inject into the Routable.
      * @return The decoded routable.
-     * @deprecated load types are deprecated. Use method without LoadTypeSet instead
      */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    Routable decode(DocumentDeserializer in, LoadTypeSet loadTypes);
-
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    default Routable decode(DocumentDeserializer in) {
-        return decode(in, LoadTypeSet.EMPTY);
-    }
+    Routable decode(DocumentDeserializer in);
 
 }

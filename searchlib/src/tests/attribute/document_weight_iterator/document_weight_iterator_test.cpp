@@ -6,13 +6,11 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
-#include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/query/tree/location.h>
-#include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/document_weight_search_iterator.h>
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 

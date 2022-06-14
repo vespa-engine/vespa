@@ -10,11 +10,11 @@
 
 namespace search::attribute {
 
-ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(
-        const ImportedAttributeVector &imported_attribute,
-        bool stableEnumGuard)
+ImportedAttributeVectorReadGuard::ImportedAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard,
+                                                                   const ImportedAttributeVector &imported_attribute,
+                                                                   bool stableEnumGuard)
     : AttributeReadGuard(this),
-      _target_document_meta_store_read_guard(imported_attribute.getTargetDocumentMetaStore()->getReadGuard()),
+      _target_document_meta_store_read_guard(std::move(targetMetaStoreReadGuard)),
       _imported_attribute(imported_attribute),
       _targetLids(),
       _reference_attribute_guard(imported_attribute.getReferenceAttribute()),

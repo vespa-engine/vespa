@@ -127,7 +127,6 @@ private:
     Avg                    _doomOvertime;
     using SoftDoomFactor = vespalib::datastore::AtomicValueWrapper<double>;
     SoftDoomFactor         _softDoomFactor;
-    Avg                    _queryCollateralTime; // TODO: Remove in Vespa 8
     Avg                    _querySetupTime;
     Avg                    _queryLatency;
     Avg                    _matchTime;
@@ -170,13 +169,6 @@ public:
     MatchingStats &softDoomFactor(double value) { _softDoomFactor.store_relaxed(value); return *this; }
     double softDoomFactor() const { return _softDoomFactor.load_relaxed(); }
     MatchingStats &updatesoftDoomFactor(vespalib::duration hardLimit, vespalib::duration softLimit, vespalib::duration duration);
-
-    // TODO: Remove in Vespa 8
-    MatchingStats &queryCollateralTime(double time_s) { _queryCollateralTime.set(time_s); return *this; }
-    double queryCollateralTimeAvg() const { return _queryCollateralTime.avg(); }
-    size_t queryCollateralTimeCount() const { return _queryCollateralTime.count(); }
-    double queryCollateralTimeMin() const { return _queryCollateralTime.min(); }
-    double queryCollateralTimeMax() const { return _queryCollateralTime.max(); }
 
     MatchingStats &querySetupTime(double time_s) { _querySetupTime.set(time_s); return *this; }
     double querySetupTimeAvg() const { return _querySetupTime.avg(); }

@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/searchlib/attribute/attributevector.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_populator");

@@ -65,17 +65,6 @@ public class DiscFilterRequest {
         return parent.getUri();
     }
 
-    @Deprecated
-    public void setUri(URI uri) { parent.setUri(uri); }
-
-    /**
-     * @deprecated Use methods on {@link DiscFilterRequest} instead to inspect request
-     */
-    @Deprecated(forRemoval = true, since = "7.511")
-    public HttpRequest getParentRequest() {
-        return parent;
-    }
-
     /**
      * Returns the Internet Protocol (IP) address of the client
      * or last proxy that sent the request.
@@ -339,14 +328,6 @@ public class DiscFilterRequest {
 
     public String getScheme() {
         return getUri().getScheme();
-    }
-
-    @Deprecated
-    public void setScheme(String scheme, boolean isSecure) {
-        String uri = getUri().toString();
-        String arr [] = uri.split("://");
-        URI newUri = URI.create(scheme + "://" + arr[1]);
-        setUri(newUri);
     }
 
     public String getServerName() {

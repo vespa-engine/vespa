@@ -8,6 +8,7 @@
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/util/fileutil.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -64,10 +65,14 @@ adjustUpperBound(int32_t arity, int64_t upper_bound) {
 
 SimpleIndexConfig createSimpleIndexConfig(const search::attribute::Config &config) {
     return SimpleIndexConfig(config.predicateParams().dense_posting_list_threshold(),
-                             config.getGrowStrategy().to_generic_strategy());
+                             config.getGrowStrategy());
 }
 
 }  // namespace
+
+PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name)
+    : PredicateAttribute(base_file_name, Config(BasicType::PREDICATE))
+{}
 
 PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name, const Config &config)
     : NotImplementedAttribute(base_file_name, config),
@@ -76,8 +81,8 @@ PredicateAttribute::PredicateAttribute(const vespalib::string &base_file_name, c
                                               createSimpleIndexConfig(config), config.predicateParams().arity())),
       _lower_bound(adjustLowerBound(config.predicateParams().arity(), config.predicateParams().lower_bound())),
       _upper_bound(adjustUpperBound(config.predicateParams().arity(), config.predicateParams().upper_bound())),
-      _min_feature(config.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
-      _interval_range_vector(config.getGrowStrategy().to_generic_strategy(), getGenerationHolder()),
+      _min_feature(config.getGrowStrategy(), getGenerationHolder()),
+      _interval_range_vector(config.getGrowStrategy(), getGenerationHolder()),
       _max_interval_range(1)
 {
 }
@@ -282,7 +287,5 @@ PredicateAttribute::updateValue(uint32_t doc_id, const PredicateFieldValue &valu
     _max_interval_range = std::max(result.interval_range, _max_interval_range);
     assert(result.interval_range > 0);
 }
-
-IMPLEMENT_IDENTIFIABLE_ABSTRACT(PredicateAttribute, AttributeVector);
 
 }  // namespace search

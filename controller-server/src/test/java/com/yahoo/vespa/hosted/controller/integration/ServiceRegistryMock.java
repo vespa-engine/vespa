@@ -1,10 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.athenz.MockAccessControlService;
-import com.yahoo.vespa.hosted.controller.api.integration.aws.MockCloudEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockRoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
@@ -38,6 +37,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueH
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumerMock;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopGcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.NoopTenantSecretService;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
@@ -74,7 +75,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MemoryEntityService memoryEntityService = new MemoryEntityService();
     private final DummySystemMonitor systemMonitor = new DummySystemMonitor();
     private final CostReportConsumerMock costReportConsumerMock = new CostReportConsumerMock();
-    private final MockCloudEventFetcher mockAwsEventFetcher = new MockCloudEventFetcher();
     private final ArtifactRepositoryMock artifactRepositoryMock = new ArtifactRepositoryMock();
     private final MockTesterCloud mockTesterCloud;
     private final ApplicationStoreMock applicationStoreMock = new ApplicationStoreMock();
@@ -173,11 +173,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public CostReportConsumerMock costReportConsumer() {
         return costReportConsumerMock;
-    }
-
-    @Override
-    public MockCloudEventFetcher eventFetcherService() {
-        return mockAwsEventFetcher;
     }
 
     @Override
@@ -295,4 +290,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     public RoleMaintainerMock roleMaintainerMock() {
         return roleMaintainer;
     }
+
+    public GcpSecretStore gcpSecretStore() { return new NoopGcpSecretStore(); }
 }

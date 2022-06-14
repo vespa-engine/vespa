@@ -26,10 +26,10 @@
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <filesystem>
 
 using namespace config;
 using namespace document;
@@ -173,8 +173,8 @@ Fixture::Fixture()
       _resolver(),
       _configurer()
 {
-    vespalib::rmdir(BASE_DIR, true);
-    vespalib::mkdir(BASE_DIR);
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+    std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
     initViewSet(_views);
     _configurer = std::make_unique<Configurer>(_views._summaryMgr, _views.searchView, _views.feedView, _queryLimiter,
                                                _constantValueRepo, _clock.clock(), "test", 0);
@@ -284,8 +284,8 @@ struct FastAccessFixture
           _view(_service.write()),
           _configurer(_view._feedView, std::make_unique<AttributeWriterFactory>(), "test")
     {
-        vespalib::rmdir(BASE_DIR, true);
-        vespalib::mkdir(BASE_DIR);
+        std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
+        std::filesystem::create_directory(std::filesystem::path(BASE_DIR));
     }
     ~FastAccessFixture() {
         _service.shutdown();
@@ -455,11 +455,11 @@ asAttributeManager(const proton::IAttributeManager::SP &attrMgr)
 TEST_F("require that we can reconfigure attribute manager", Fixture)
 {
     ViewPtrs o = f._views.getViewPtrs();
-    AttributeCollectionSpec::AttributeList specList;
-    AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
+    f._configurer->reconfigure(*createConfig(), *createConfig(),
+                               AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
+                               params, f._resolver);
 
     ViewPtrs n = f._views.getViewPtrs();
     { // verify search view
@@ -494,11 +494,11 @@ void
 checkAttributeWriterChangeOnRepoChange(Fixture &f, bool docTypeRepoChanged)
 {
     auto oldAttributeWriter = getAttributeWriter(f);
-    AttributeCollectionSpec::AttributeList specList;
-    AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(CCR().setDocumentTypeRepoChanged(docTypeRepoChanged));
     // Use new config snapshot == old config snapshot (only relevant for reprocessing)
-    f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
+    f._configurer->reconfigure(*createConfig(), *createConfig(),
+                               AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
+                               params, f._resolver);
     auto newAttributeWriter = getAttributeWriter(f);
     if (docTypeRepoChanged) {
         EXPECT_NOT_EQUAL(oldAttributeWriter, newAttributeWriter);
@@ -515,11 +515,11 @@ TEST_F("require that we get new attribute writer if document type repo changes",
 
 TEST_F("require that reconfigure returns reprocessing initializer when changing attributes", Fixture)
 {
-    AttributeCollectionSpec::AttributeList specList;
-    AttributeCollectionSpec spec(specList, 1, 0);
     ReconfigParams params(CCR().setAttributesChanged(true).setSchemaChanged(true));
     IReprocessingInitializer::UP init =
-            f._configurer->reconfigure(*createConfig(), *createConfig(), spec, params, f._resolver);
+            f._configurer->reconfigure(*createConfig(), *createConfig(),
+                                       AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0),
+                                       params, f._resolver);
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -528,10 +528,9 @@ TEST_F("require that reconfigure returns reprocessing initializer when changing 
 
 TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 {
-    AttributeCollectionSpec::AttributeList specList;
-    AttributeCollectionSpec spec(specList, 1, 0);
     FastAccessFeedView::SP o = f._view._feedView.get();
-    f._configurer.reconfigure(*createConfig(), *createConfig(), spec);
+    f._configurer.reconfigure(*createConfig(), *createConfig(),
+                              AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0));
     FastAccessFeedView::SP n = f._view._feedView.get();
 
     FastAccessFeedViewComparer cmp(o, n);
@@ -543,10 +542,8 @@ TEST_F("require that we can reconfigure attribute writer", FastAccessFixture)
 
 TEST_F("require that reconfigure returns reprocessing initializer", FastAccessFixture)
 {
-    AttributeCollectionSpec::AttributeList specList;
-    AttributeCollectionSpec spec(specList, 1, 0);
-    IReprocessingInitializer::UP init =
-            f._configurer.reconfigure(*createConfig(), *createConfig(), spec);
+    IReprocessingInitializer::UP init = f._configurer.reconfigure(*createConfig(), *createConfig(),
+                                                                  AttributeCollectionSpec(AttributeCollectionSpec::AttributeList(), 1, 0));
 
     EXPECT_TRUE(init.get() != nullptr);
     EXPECT_TRUE((dynamic_cast<AttributeReprocessingInitializer *>(init.get())) != nullptr);
@@ -695,5 +692,5 @@ TEST("require that subdbs should change if relevant config changed")
 TEST_MAIN()
 {
     TEST_RUN_ALL();
-    vespalib::rmdir(BASE_DIR, true);
+    std::filesystem::remove_all(std::filesystem::path(BASE_DIR));
 }
