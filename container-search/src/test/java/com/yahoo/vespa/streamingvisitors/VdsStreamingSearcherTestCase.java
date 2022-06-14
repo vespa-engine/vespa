@@ -170,10 +170,10 @@ public class VdsStreamingSearcherTestCase {
             } else if (i == 1) {
                 query.getPresentation().setSummary("summary");
             } else if (i == 2) {
-                query.setTraceLevel(100);
+                query.getTrace().setLevel(100);
             } else if (i == 3) {
                 query.getPresentation().setSummary("summary");
-                query.setTraceLevel(100);
+                query.getTrace().setLevel(100);
             }
             queries[i] = query;
         }

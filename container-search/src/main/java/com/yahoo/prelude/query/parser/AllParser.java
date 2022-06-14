@@ -21,7 +21,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.MINUS;
 import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
 
 /**
- * Parser for queries of type all.
+ * Parser for queries of type all and weakAnd.
  *
  * @author Steinar Knutsen
  * @author bratseth
@@ -31,9 +31,9 @@ public class AllParser extends SimpleParser {
     private final boolean weakAnd;
 
     /**
-     * Creates an And parser
+     * Creates an all/weakAnd parser
      *
-     * @param weakAnd false to parse into AndItem (by default), true to parse to WeakAnd
+     * @param weakAnd false to parse into AndItem (by default), true to parse to WeakAndItem
      */
     public AllParser(ParserEnvironment environment, boolean weakAnd) {
         super(environment);

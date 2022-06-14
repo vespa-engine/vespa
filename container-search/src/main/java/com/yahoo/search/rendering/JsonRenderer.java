@@ -223,7 +223,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     protected void renderTrace(Trace trace) throws IOException {
         if (!trace.traceNode().children().iterator().hasNext()) return;
-        if (getResult().getQuery().getTraceLevel() == 0) return;
+        if (getResult().getQuery().getTrace().getLevel() == 0) return;
 
         try {
             long basetime = trace.traceNode().timestamp();

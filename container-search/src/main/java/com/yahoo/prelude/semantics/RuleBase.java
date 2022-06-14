@@ -312,14 +312,14 @@ public class RuleBase {
      *         If there is an error, this query is destroyed (unusable)
      */
     public String analyze(Query query, int traceLevel) {
-        int queryTraceLevel = query.getTraceLevel();
+        int queryTraceLevel = query.getTrace().getLevel();
         if (traceLevel > 0 && queryTraceLevel == 0)
-            query.setTraceLevel(1);
+            query.getTrace().setLevel(1);
 
         matchAutomata(query, traceLevel);
         String error = analyzer.evaluate(query, traceLevel);
 
-        query.setTraceLevel(queryTraceLevel);
+        query.getTrace().setLevel(queryTraceLevel);
         return error;
     }
 

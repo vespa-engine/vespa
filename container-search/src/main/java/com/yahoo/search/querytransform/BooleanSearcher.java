@@ -39,7 +39,7 @@ public class BooleanSearcher extends Searcher {
         if (fieldName != null) {
             return search(query, execution, fieldName);
         } else {
-            if (query.isTraceable(5)) {
+            if (query.getTrace().isTraceable(5)) {
                 query.trace("BooleanSearcher: Nothing added to query", false, 5);
             }
         }
@@ -49,7 +49,7 @@ public class BooleanSearcher extends Searcher {
     private Result search(Query query, Execution execution, String fieldName) {
         String attributes = query.properties().getString(ATTRIBUTES);
         String rangeAttributes = query.properties().getString(RANGE_ATTRIBUTES);
-        if (query.isTraceable(5)) {
+        if (query.getTrace().isTraceable(5)) {
             query.trace("BooleanSearcher: fieldName(" + fieldName + "), attributes(" + attributes +
                         "), rangeAttributes(" + rangeAttributes + ")", false, 5);
         }
@@ -57,7 +57,7 @@ public class BooleanSearcher extends Searcher {
         if (attributes != null || rangeAttributes != null) {
             try {
                 addPredicateTerm(query, fieldName, attributes, rangeAttributes);
-                if (query.isTraceable(4)) {
+                if (query.getTrace().isTraceable(4)) {
                     query.trace("BooleanSearcher: Added boolean operator", true, 4);
                 }
             } catch (TokenMgrException e) {
@@ -68,7 +68,7 @@ public class BooleanSearcher extends Searcher {
             }
         }
         else {
-            if (query.isTraceable(5)) {
+            if (query.getTrace().isTraceable(5)) {
                 query.trace("BooleanSearcher: Nothing added to query", false, 5);
             }
         }

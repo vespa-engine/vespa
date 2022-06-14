@@ -84,7 +84,7 @@ public class NormalizingSearcherTestCase {
     @Test
     public void testPhraseQuery() {
         Query query = new Query("/search?query=" + enc("\"b\u00e9yonc\u00e8 beyonc\u00e9\"") + "&search=cluster1&restrict=type1");
-        query.setTraceLevel(2);
+        query.getTrace().setLevel(2);
         createExecution().search(query);
         assertEquals("WEAKAND(100) \"beyonce beyonce\"", query.getModel().getQueryTree().getRoot().toString());
     }

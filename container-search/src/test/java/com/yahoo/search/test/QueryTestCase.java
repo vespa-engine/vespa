@@ -552,7 +552,7 @@ public class QueryTestCase {
     @Test
     public void testTracing() {
         Query q = new Query("?query=foo&type=all&traceLevel=2");
-        assertEquals(2, q.getTraceLevel());
+        assertEquals(2, q.getTrace().getLevel());
         q.trace(true, 1, "trace1");
         q.trace(false,2, "trace2");
         q.trace(true, 3, "Ignored");
@@ -571,7 +571,7 @@ public class QueryTestCase {
     @Test
     public void testNullTracing() {
         Query q = new Query("?query=foo&traceLevel=2");
-        assertEquals(2, q.getTraceLevel());
+        assertEquals(2, q.getTrace().getLevel());
         q.trace(false,2, "trace2 ", null);
         Set<String> traces = new HashSet<>();
         for (String trace : q.getContext(true).getTrace().traceNode().descendants(String.class))
@@ -583,7 +583,7 @@ public class QueryTestCase {
     public void testExplain() {
         Query q = new Query("?query=foo&explainLevel=2");
         assertEquals(2, q.getExplainLevel());
-        assertEquals(0, q.getTraceLevel());
+        assertEquals(0, q.getTrace().getLevel());
     }
 
     @Test
