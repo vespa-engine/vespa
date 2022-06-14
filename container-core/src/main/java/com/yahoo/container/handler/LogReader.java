@@ -43,6 +43,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author jonmv
  */
 class LogReader {
+    
     static final Pattern logArchivePathPattern = Pattern.compile("(\\d{4})/(\\d{2})/(\\d{2})/(\\d{2})-\\d+(.gz)?");
     static final Pattern vespaLogPathPattern = Pattern.compile("vespa\\.log(?:-(\\d{4})-(\\d{2})-(\\d{2})\\.(\\d{2})-(\\d{2})-(\\d{2})(?:.gz)?)?");
 

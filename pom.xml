@@ -121,7 +121,6 @@
         <module>standalone-container</module>
         <module>storage</module>
         <module>streamingvisitors</module>
-        <module>tenant-base</module>
         <module>tenant-cd-api</module>
         <module>tenant-cd-commons</module>
         <module>testutil</module>

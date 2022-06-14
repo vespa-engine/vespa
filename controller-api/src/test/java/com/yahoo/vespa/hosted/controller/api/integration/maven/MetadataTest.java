@@ -12,7 +12,7 @@ public class MetadataTest {
     public void testParsing() {
         Metadata metadata = Metadata.fromXml(metadataXml);
         assertEquals("com.yahoo.vespa", metadata.id().groupId());
-        assertEquals("tenant-base", metadata.id().artifactId());
+        assertEquals("cloud-tenant-base", metadata.id().artifactId());
         assertEquals(Version.fromString("6.297.80"), metadata.versions().get(0));
         assertEquals(Version.fromString("7.61.10"), metadata.versions().get(metadata.versions().size() - 1));
     }
@@ -20,7 +20,7 @@ public class MetadataTest {
     private static final String metadataXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                                               "<metadata>\n" +
                                               "  <groupId>com.yahoo.vespa</groupId>\n" +
-                                              "  <artifactId>tenant-base</artifactId>\n" +
+                                              "  <artifactId>cloud-tenant-base</artifactId>\n" +
                                               "  <versioning>\n" +
                                               "    <latest>7.61.10</latest>\n" +
                                               "    <release>7.61.10</release>\n" +
