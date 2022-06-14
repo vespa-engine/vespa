@@ -582,7 +582,7 @@ public class QueryTestCase {
     @Test
     public void testExplain() {
         Query q = new Query("?query=foo&explainLevel=2");
-        assertEquals(2, q.getExplainLevel());
+        assertEquals(2, q.getTrace().getExplainLevel());
         assertEquals(0, q.getTrace().getLevel());
     }
 

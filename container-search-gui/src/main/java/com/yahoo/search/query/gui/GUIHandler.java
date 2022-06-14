@@ -194,8 +194,10 @@ public class GUIHandler extends ThreadedHttpRequestHandler {
 
             ArrayNode levelZeroParameters = jsonMapper.createArrayNode().add(MinimalQueryInserter.YQL.toString()).add(Query.HITS.toString()).add(Query.OFFSET.toString())
                                                       .add("queryProfile").add(Query.NO_CACHE.toString()).add(Query.GROUPING_SESSION_CACHE.toString())
-                                                      .add(Query.SEARCH_CHAIN.toString()).add(Query.TIMEOUT.toString()).add("trace").add("tracelevel")
-                                                      .add(Trace.LEVEL).add(Query.EXPLAIN_LEVEL.toString()).add("explainlevel").add(Model.MODEL).add(Ranking.RANKING).add("collapse").add("collapsesize").add("collapsefield")
+                                                      .add(Query.SEARCH_CHAIN.toString()).add(Query.TIMEOUT.toString()).add("trace")
+                                                      .add("tracelevel").add("traceLevel") // TODO: Remove on Vespa 9
+                                                      .add("explainLevel").add("explainlevel") // TODO: Remove on Vespa 9
+                                                      .add(Model.MODEL).add(Ranking.RANKING).add("collapse").add("collapsesize").add("collapsefield")
                                                       .add(Presentation.PRESENTATION).add("pos").add("streaming").add("rules").add(RecallSearcher.recallName.toString()).add("user")
                                                       .add("metrics").add("");
             json.set("levelZeroParameters", levelZeroParameters);

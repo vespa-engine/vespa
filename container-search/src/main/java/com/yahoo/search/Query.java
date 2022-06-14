@@ -138,9 +138,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** The number of hits to return */
     private int hits = 10;
 
-    /** The query explain level, 0 means no explaining */
-    private int explainLevel = 0;
-
     // The timeout to be used when dumping rank features
     private static final long dumpTimeout = (6 * 60 * 1000); // 6 minutes
     private static final long defaultTimeout = 500;
@@ -189,7 +186,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     public static final CompoundName QUERY_PROFILE = new CompoundName("queryProfile");
     public static final CompoundName SEARCH_CHAIN = new CompoundName("searchChain");
 
-    public static final CompoundName EXPLAIN_LEVEL = new CompoundName("explainLevel");
     public static final CompoundName NO_CACHE = new CompoundName("noCache");
     public static final CompoundName GROUPING_SESSION_CACHE = new CompoundName("groupingSessionCache");
     public static final CompoundName TIMEOUT = new CompoundName("timeout");
@@ -197,6 +193,10 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
     /** @deprecated use Trace.LEVEL */
     @Deprecated // TODO: Remove on Vespa 9
     public static final CompoundName TRACE_LEVEL = new CompoundName("traceLevel");
+
+    /** @deprecated use Trace.EXPLAIN_LEVEL */
+    @Deprecated // TODO: Remove on Vespa 9
+    public static final CompoundName EXPLAIN_LEVEL = new CompoundName("explainLevel");
 
     private static final QueryProfileType argumentType;
     static {
@@ -209,7 +209,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         argumentType.addField(new FieldDescription(HITS.toString(), "integer", "hits count"));
         argumentType.addField(new FieldDescription(QUERY_PROFILE.toString(), "string"));
         argumentType.addField(new FieldDescription(SEARCH_CHAIN.toString(), "string"));
-        argumentType.addField(new FieldDescription(EXPLAIN_LEVEL.toString(), "integer", "explainlevel"));
         argumentType.addField(new FieldDescription(NO_CACHE.toString(), "boolean", "nocache"));
         argumentType.addField(new FieldDescription(GROUPING_SESSION_CACHE.toString(), "boolean", "groupingSessionCache"));
         argumentType.addField(new FieldDescription(TIMEOUT.toString(), "string", "timeout"));
@@ -543,35 +542,21 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
     public void resetTimeout() { this.startTime = System.currentTimeMillis(); }
 
-    /**
-     * Sets the context level of this query, 0 means no tracing
-     * Higher numbers means increasingly more tracing
-     *
-     * @deprecated use getTrace().setLevel(level)
-     */
+    /** @deprecated use getTrace().setLevel(level) */
     @Deprecated // TODO: Remove on Vespa 9
     public void setTraceLevel(int traceLevel) { trace.setLevel(traceLevel); }
 
-    /**
-     * Sets the explain level of this query, 0 means no tracing
-     * Higher numbers means increasingly more explaining
-     */
-    public void setExplainLevel(int explainLevel) { this.explainLevel = explainLevel; }
+    /** @deprecated use getTrace().setExplainLevel(level) */
+    @Deprecated // TODO: Remove on Vespa 9
+    public void setExplainLevel(int explainLevel) { trace.setExplainLevel(explainLevel); }
 
-    /**
-     * Returns the context level of this query, 0 means no tracing
-     * Higher numbers means increasingly more tracing
-     *
-     * @deprecated use getTrace().setLevel(level)
-     */
+    /** @deprecated use getTrace().setLevel(level) */
     @Deprecated // TODO: Remove on Vespa 9
     public int getTraceLevel() { return trace.getLevel(); }
 
-    /**
-     * Returns the explain level of this query, 0 means no tracing
-     * Higher numbers means increasingly more explaining
-     */
-    public int getExplainLevel() { return explainLevel; }
+    /** @deprecated use getTrace().getExplainLevel(level) */
+    @Deprecated // TODO: Remove on Vespa 9
+    public int getExplainLevel() { return getTrace().getExplainLevel(); }
 
     /**
      * Returns the context level of this query, 0 means no tracing
@@ -701,7 +686,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
      */
     public void attachContext(Query query) throws IllegalStateException {
         query.getTrace().setLevel(getTrace().getLevel());
-        query.setExplainLevel(getExplainLevel());
+        query.getTrace().setExplainLevel(getTrace().getExplainLevel());
         if (context == null) return;
         if (query.getContext(false) != null) {
             // If we added the other query's context info as a subnode in this
@@ -901,8 +886,6 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         assert (clone.properties().getParentQuery() == clone);
 
         clone.setTimeout(getTimeout());
-        clone.setTraceLevel(getTraceLevel());
-        clone.setExplainLevel(getExplainLevel());
         clone.setHits(getHits());
         clone.setOffset(getOffset());
         clone.setNoCache(getNoCache());

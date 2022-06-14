@@ -136,13 +136,13 @@ public class QueryProperties extends Properties {
         }
         else if (key.size() == 2 && key.first().equals(Trace.TRACE)) {
             if (key.last().equals(Trace.LEVEL)) return query.getTrace().getLevel();
+            if (key.last().equals(Trace.EXPLAIN_LEVEL)) return query.getTrace().getExplainLevel();
             if (key.last().equals(Trace.TIMESTAMPS)) return query.getTrace().getTimestamps();
             if (key.last().equals(Trace.QUERY)) return query.getTrace().getQuery();
         }
         else if (key.size() == 1) {
             if (key.equals(Query.HITS)) return query.getHits();
             if (key.equals(Query.OFFSET)) return query.getOffset();
-            if (key.equals(Query.EXPLAIN_LEVEL)) return query.getExplainLevel();
             if (key.equals(Query.TIMEOUT)) return query.getTimeout();
             if (key.equals(Query.NO_CACHE)) return query.getNoCache();
             if (key.equals(Query.GROUPING_SESSION_CACHE)) return query.getGroupingSessionCache();
@@ -310,6 +310,8 @@ public class QueryProperties extends Properties {
             else if (key.size() == 2 && key.first().equals(Trace.TRACE)) {
                 if (key.last().equals(Trace.LEVEL))
                     query.getTrace().setLevel(asInteger(value, 0));
+                if (key.last().equals(Trace.EXPLAIN_LEVEL))
+                    query.getTrace().setExplainLevel(asInteger(value, 0));
                 if (key.last().equals(Trace.TIMESTAMPS))
                     query.getTrace().setTimestamps(asBoolean(value, false));
                 if (key.last().equals(Trace.QUERY))
@@ -336,8 +338,6 @@ public class QueryProperties extends Properties {
                     query.setHits(asInteger(value,10));
                 else if (key.equals(Query.OFFSET))
                     query.setOffset(asInteger(value,0));
-                else if (key.equals(Query.EXPLAIN_LEVEL))
-                    query.setExplainLevel(asInteger(value,0));
                 else if (key.equals(Query.TIMEOUT))
                     query.setTimeout(value.toString());
                 else if (key.equals(Query.NO_CACHE))

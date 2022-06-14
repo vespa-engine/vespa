@@ -33,6 +33,7 @@ public class Trace implements Cloneable {
 
     public static final String TRACE = "trace";
     public static final String LEVEL = "level";
+    public static final String EXPLAIN_LEVEL = "explainLevel";
     public static final String TIMESTAMPS = "timestamps";
     public static final String QUERY = "query";
 
@@ -41,6 +42,7 @@ public class Trace implements Cloneable {
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(LEVEL, "integer", "tracelevel traceLevel"));
+        argumentType.addField(new FieldDescription(EXPLAIN_LEVEL, "integer", "explainlevel explainLevel"));
         argumentType.addField(new FieldDescription(TIMESTAMPS, "boolean"));
         argumentType.addField(new FieldDescription(QUERY, "boolean"));
         argumentType.freeze();
@@ -51,6 +53,7 @@ public class Trace implements Cloneable {
     private Query parent;
 
     private int level = 0;
+    private int explainLevel = 0;
     private boolean timestamps = false;
     private boolean query = true;
 
@@ -62,6 +65,10 @@ public class Trace implements Cloneable {
     public int getLevel() { return level; }
     public void setLevel(int level) { this.level = level; }
     public boolean isTraceable(int level) { return level <= this.level; }
+
+    /** Sets the explain level of this query, 0 means no tracing. Higher numbers means increasingly more explaining. */
+    public void setExplainLevel(int explainLevel) { this.explainLevel = explainLevel; }
+    public int getExplainLevel() { return explainLevel; }
 
     /** Returns whether trace entries should have a timestamp. Default is false. */
     public boolean getTimestamps() { return timestamps; }
@@ -208,13 +215,14 @@ public class Trace implements Cloneable {
         if ( ! (o instanceof Trace)) return false;
         Trace other = (Trace)o;
         if (other.level != this.level) return false;
+        if (other.explainLevel != this.explainLevel) return false;
         if (other.timestamps != this.timestamps) return false;
         if (other.query != this.query) return false;
         return true;
     }
 
     @Override
-    public int hashCode() { return Objects.hash(level, timestamps, query); }
+    public int hashCode() { return Objects.hash(level, explainLevel, timestamps, query); }
 
     @Override
     public Trace clone() {
@@ -228,7 +236,7 @@ public class Trace implements Cloneable {
 
     @Override
     public String toString() {
-        return "trace [level: " + level + ", timestamps: " + timestamps + ", query: " + query + "]";
+        return "trace [level: " + level + ", explainLevel: " + explainLevel + ", timestamps: " + timestamps + ", query: " + query + "]";
     }
 
 }

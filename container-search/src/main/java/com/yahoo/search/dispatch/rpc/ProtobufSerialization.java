@@ -93,8 +93,8 @@ public class ProtobufSerialization {
         if (query.getModel().getExecution().trace().getForceTimestamps()) {
             traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
         }
-        if (query.getExplainLevel() > 0) {
-            traceLevel = Math.max(traceLevel, query.getExplainLevel() + 5);
+        if (query.getTrace().getExplainLevel() > 0) {
+            traceLevel = Math.max(traceLevel, query.getTrace().getExplainLevel() + 5);
         }
         return traceLevel;
     }
