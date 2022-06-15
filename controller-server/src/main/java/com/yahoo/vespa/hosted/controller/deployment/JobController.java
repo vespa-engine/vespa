@@ -584,8 +584,8 @@ public class JobController {
         if (revision.compileVersion()
                     .map(version -> controller.applications().versionCompatibility(id).refuse(versions.targetPlatform(), version))
                     .orElse(false))
-            throw new IllegalArgumentException("Will not start a job with incompatible platform version (" + versions.targetPlatform() + ") " +
-                                               "and compile versions (" + revision.compileVersion().get() + ")");
+            throw new IllegalArgumentException("Will not start " + type + " for " + id + " with incompatible platform version (" +
+                                               versions.targetPlatform() + ") " + "and compile versions (" + revision.compileVersion().get() + ")");
 
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
