@@ -1407,11 +1407,13 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         @Override
         public ContentChannel handleResponse(Response response) {
-            switch (response.getStatus() / 100) {
-                case 2: metrics.reportSuccessful(type, start); break;
-                case 4: metrics.reportFailure(type, DocumentOperationStatus.REQUEST_ERROR); break;
-                case 5: metrics.reportFailure(type, DocumentOperationStatus.SERVER_ERROR); break;
-            }
+            var statusCodeGroup = response.getStatus() / 100;
+            if (statusCodeGroup == 2 || response.getStatus() == 412)
+                metrics.reportSuccessful(type, start);
+            else if (statusCodeGroup == 4)
+                metrics.reportFailure(type, DocumentOperationStatus.REQUEST_ERROR);
+            else if (statusCodeGroup == 5)
+                metrics.reportFailure(type, DocumentOperationStatus.SERVER_ERROR);
             return delegate.handleResponse(response);
         }
 
