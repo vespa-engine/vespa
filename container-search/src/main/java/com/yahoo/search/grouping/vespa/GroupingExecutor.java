@@ -219,7 +219,7 @@ public class GroupingExecutor extends Searcher {
         if (lastPass > 0) {
             baseRoot = origRoot.clone();
         }
-        if (query.isTraceable(3) && query.getGroupingSessionCache()) {
+        if (query.getTrace().isTraceable(3) && query.getGroupingSessionCache()) {
             query.trace("Grouping in " + (lastPass + 1) + " passes. SessionId='" + query.getSessionId() + "'.", 3);
         }
         for (int pass = 0; pass <= lastPass; ++pass) {
@@ -242,7 +242,7 @@ public class GroupingExecutor extends Searcher {
                 // noinspection ConstantConditions
                 passRoot = baseRoot.clone();
             }
-            if (query.isTraceable(4) && query.getGroupingSessionCache()) {
+            if (query.getTrace().isTraceable(4) && query.getGroupingSessionCache()) {
                 query.trace("Grouping with session cache '" + query.getGroupingSessionCache() + "' enabled for pass #" + pass + ".", 4);
             }
             if (origRoot != passRoot) {

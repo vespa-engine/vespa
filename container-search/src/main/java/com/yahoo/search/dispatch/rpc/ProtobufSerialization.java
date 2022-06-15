@@ -89,12 +89,12 @@ public class ProtobufSerialization {
     }
 
     public static int getTraceLevelForBackend(Query query) {
-        int traceLevel = query.getTraceLevel();
+        int traceLevel = query.getTrace().getLevel();
         if (query.getModel().getExecution().trace().getForceTimestamps()) {
             traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
         }
-        if (query.getExplainLevel() > 0) {
-            traceLevel = Math.max(traceLevel, query.getExplainLevel() + 5);
+        if (query.getTrace().getExplainLevel() > 0) {
+            traceLevel = Math.max(traceLevel, query.getTrace().getExplainLevel() + 5);
         }
         return traceLevel;
     }
@@ -157,7 +157,7 @@ public class ProtobufSerialization {
         if (includeQueryData) {
             mergeQueryDataToDocsumRequest(query, builder);
         }
-        if (query.getTraceLevel() >= 3) {
+        if (query.getTrace().getLevel() >= 3) {
             query.trace((includeQueryData ? "ProtoBuf: Resending " : "Not resending ") + "query during document summary fetching", 3);
         }
 
@@ -250,7 +250,7 @@ public class ProtobufSerialization {
         if ( ! slimeTrace.isEmpty()) {
             var traces = new Value.ArrayValue();
             traces.add(new SlimeAdapter(BinaryFormat.decode(slimeTrace.toByteArray()).get()));
-            query.trace(traces, query.getTraceLevel());
+            query.trace(traces, query.getTrace().getLevel());
         }
         return result;
     }

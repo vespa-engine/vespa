@@ -94,7 +94,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         } else if (log.isLoggable(Level.FINE)) {
             implicitLevel = 7;
         }
-        return Math.max(query.getTraceLevel(), implicitLevel);
+        return Math.max(query.getTrace().getLevel(), implicitLevel);
     }
 
     private static String createSelectionString(String documentType, String selection) {

@@ -49,80 +49,82 @@ public class XmlReadingTestCase {
 
     @Test
     public void testValid() {
-        QueryProfileRegistry registry=
+        QueryProfileRegistry registry =
                 new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/validxml");
-        CompiledQueryProfileRegistry cRegistry= registry.compile();
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
 
         QueryProfileType rootType = registry.getType("rootType");
-        assertEquals(1,rootType.inherited().size());
-        assertEquals("native",rootType.inherited().get(0).getId().getName());
+        assertEquals(1, rootType.inherited().size());
+        assertEquals("native", rootType.inherited().get(0).getId().getName());
         assertTrue(rootType.isStrict());
         assertTrue(rootType.getMatchAsPath());
-        FieldDescription timeField=rootType.getField("time");
+        FieldDescription timeField = rootType.getField("time");
         assertTrue(timeField.isMandatory());
-        assertEquals("long",timeField.getType().toInstanceDescription());
-        FieldDescription userField=rootType.getField("user");
+        assertEquals("long", timeField.getType().toInstanceDescription());
+        FieldDescription userField = rootType.getField("user");
         assertFalse(userField.isMandatory());
-        assertEquals("reference to a query profile of type 'user'",userField.getType().toInstanceDescription());
+        assertEquals("reference to a query profile of type 'user'", userField.getType().toInstanceDescription());
 
-        QueryProfileType user=registry.getType("user");
-        assertEquals(0,user.inherited().size());
+        QueryProfileType user = registry.getType("user");
+        assertEquals(0, user.inherited().size());
         assertFalse(user.isStrict());
         assertFalse(user.getMatchAsPath());
         assertTrue(userField.isOverridable());
-        FieldDescription ageField=user.getField("age");
+        FieldDescription ageField = user.getField("age");
         assertTrue(ageField.isMandatory());
-        assertEquals("integer",ageField.getType().toInstanceDescription());
-        FieldDescription robotField=user.getField("robot");
+        assertEquals("integer", ageField.getType().toInstanceDescription());
+        FieldDescription robotField = user.getField("robot");
         assertFalse(robotField.isMandatory());
         assertFalse(robotField.isOverridable());
-        assertEquals("boolean",robotField.getType().toInstanceDescription());
+        assertEquals("boolean", robotField.getType().toInstanceDescription());
 
-        CompiledQueryProfile defaultProfile=cRegistry.getComponent("default");
+        CompiledQueryProfile defaultProfile = cRegistry.getComponent("default");
         assertNull(defaultProfile.getType());
-        assertEquals("20",defaultProfile.get("hits"));
+        assertEquals("20", defaultProfile.get("hits"));
         assertFalse(defaultProfile.isOverridable(new CompoundName("hits"), null));
         assertFalse(defaultProfile.isOverridable(new CompoundName("user.trusted"), null));
-        assertEquals("false",defaultProfile.get("user.trusted"));
+        assertEquals("false", defaultProfile.get("user.trusted"));
 
-        CompiledQueryProfile referencingProfile=cRegistry.getComponent("referencingModelSettings");
+        CompiledQueryProfile referencingProfile = cRegistry.getComponent("referencingModelSettings");
         assertNull(referencingProfile.getType());
-        assertEquals("some query",referencingProfile.get("model.queryString"));
-        assertEquals("aDefaultIndex",referencingProfile.get("model.defaultIndex"));
+        assertEquals("some query", referencingProfile.get("model.queryString"));
+        assertEquals("aDefaultIndex", referencingProfile.get("model.defaultIndex"));
 
         // Request parameters here should be ignored
-        HttpRequest request=HttpRequest.createTestRequest("?query=foo&user.trusted=true&default-index=title", Method.GET);
-        Query query=new Query(request, defaultProfile);
-        assertEquals("false",query.properties().get("user.trusted"));
-        assertEquals("default",query.getModel().getDefaultIndex());
-        assertEquals("default",query.properties().get("default-index"));
+        HttpRequest request = HttpRequest.createTestRequest("?query=foo&user.trusted=true&default-index=title", Method.GET);
+        Query query = new Query(request, defaultProfile);
+        assertEquals("false", query.properties().get("user.trusted"));
+        assertEquals("default", query.getModel().getDefaultIndex());
+        assertEquals("default", query.properties().get("default-index"));
 
-        CompiledQueryProfile rootProfile=cRegistry.getComponent("root");
-        assertEquals("rootType",rootProfile.getType().getId().getName());
-        assertEquals(30,rootProfile.get("hits"));
-        assertEquals(3,rootProfile.get("traceLevel"));
+        CompiledQueryProfile rootProfile = cRegistry.getComponent("root");
+        assertEquals("rootType", rootProfile.getType().getId().getName());
+        assertEquals(30, rootProfile.get("hits"));
+        //assertEquals(3, rootProfile.get("traceLevel"));
         assertTrue(rootProfile.isOverridable(new CompoundName("hits"), null));
+        query = new Query(request, rootProfile);
+        assertEquals(3, query.getTrace().getLevel());
 
-        QueryProfile someUser=registry.getComponent("someUser");
+        QueryProfile someUser = registry.getComponent("someUser");
         assertEquals("5",someUser.get("sub.test"));
         assertEquals(18,someUser.get("age"));
 
         // aliases
-        assertEquals(18,someUser.get("alder"));
-        assertEquals(18,someUser.get("anno"));
-        assertEquals(18,someUser.get("aLdER"));
-        assertEquals(18,someUser.get("ANNO"));
+        assertEquals(18, someUser.get("alder"));
+        assertEquals(18, someUser.get("anno"));
+        assertEquals(18, someUser.get("aLdER"));
+        assertEquals(18, someUser.get("ANNO"));
         assertNull(someUser.get("Age")); // Only aliases are case insensitive
 
         Map<String, String> context = new HashMap<>();
         context.put("x", "x1");
         assertEquals(37, someUser.get("alder", context, null));
-        assertEquals(37,someUser.get("anno", context, null));
-        assertEquals(37,someUser.get("aLdER", context, null));
-        assertEquals(37,someUser.get("ANNO", context, null));
-        assertEquals("male",someUser.get("gender", context, null));
-        assertEquals("male",someUser.get("sex", context, null));
-        assertEquals("male",someUser.get("Sex", context, null));
+        assertEquals(37, someUser.get("anno", context, null));
+        assertEquals(37, someUser.get("aLdER", context, null));
+        assertEquals(37, someUser.get("ANNO", context, null));
+        assertEquals("male", someUser.get("gender", context, null));
+        assertEquals("male", someUser.get("sex", context, null));
+        assertEquals("male", someUser.get("Sex", context, null));
         assertNull(someUser.get("Gender", context, null)); // Only aliases are case insensitive
     }
 

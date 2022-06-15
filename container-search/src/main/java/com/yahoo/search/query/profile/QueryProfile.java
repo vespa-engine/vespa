@@ -344,7 +344,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * a primitive value, a substitutable string, a query profile, or null if not found.
      */
     public final Object lookup(String name, Map<String, String> context) {
-        return lookup(new CompoundName(name),true,DimensionBinding.createFrom(getDimensions(),context));
+        return lookup(new CompoundName(name), true, DimensionBinding.createFrom(getDimensions(),context));
     }
 
     /** Sets a value in this or any nested profile using null as context */
@@ -733,7 +733,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
 
     // ----------------- Private  ----------------------------------------------------------------------------------
 
-    private Boolean isDeclaredOverridable(CompoundName name,DimensionBinding dimensionBinding) {
+    private Boolean isDeclaredOverridable(CompoundName name, DimensionBinding dimensionBinding) {
         QueryProfile parent = lookupParentExact(name, true, dimensionBinding);
         if (parent.overridable == null) return null;
         return parent.overridable.get(name.last());
@@ -743,15 +743,15 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
      * Sets the overridability of a field in this profile,
      * this overrides the corresponding setting in the type (if any)
      */
-    private void setOverridable(CompoundName fieldName, boolean overridable, DimensionBinding dimensionBinding) {
-        QueryProfile parent = lookupParentExact(fieldName, true, dimensionBinding);
+    private void setOverridable(CompoundName name, boolean overridable, DimensionBinding dimensionBinding) {
+        QueryProfile parent = lookupParentExact(name, true, dimensionBinding);
         if (dimensionBinding.isNull()) {
             if (parent.overridable == null)
                 parent.overridable = new HashMap<>();
-            parent.overridable.put(fieldName.last(), overridable);
+            parent.overridable.put(name.last(), overridable);
         }
         else {
-            variants.setOverridable(fieldName.last(), overridable, dimensionBinding.getValues());
+            variants.setOverridable(name.last(), overridable, dimensionBinding.getValues());
         }
     }
 

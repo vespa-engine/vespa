@@ -4,6 +4,6 @@
 <query-profile id="root" type="rootType">
 
   <field name="hits">30</field>
-  <field name="traceLevel">3</field>
+  <field name="trace.level">3</field>
     
 </query-profile>

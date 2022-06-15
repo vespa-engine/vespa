@@ -48,11 +48,33 @@ public class TraceTestCase {
     public void testTracingOnIncorrectAPIUseParallel() {
         assertTracing(false,true);
     }
-    
+
+    @Test
+    public void testTraceWithQuery() {
+        testQueryInTrace(true, "trace.query=true");
+        testQueryInTrace(false, "trace.query=false");
+        testQueryInTrace(true, "");
+    }
+
+    private void testQueryInTrace(boolean expectQueryInTrace, String queryParameters) {
+        Query query = new Query("?query=foo&trace.level=1&" + queryParameters);
+        Chain<Searcher> chain = new Chain<>(new Tracer("tracer1", true));
+        Execution execution = new Execution(chain, Execution.Context.createContextStub());
+        Result result = execution.search(query);
+        Iterator<String> trace = collectTrace(query).iterator();
+        assertEquals("(level start)", trace.next());
+        assertEquals("  No query profile is used", trace.next());
+        assertEquals("  (level start)", trace.next());
+        if (expectQueryInTrace)
+            assertEquals("    During tracer1: 0: [WEAKAND(100) foo]", trace.next());
+        else
+            assertEquals("    During tracer1: 0", trace.next());
+    }
+
     @Test 
     public void testTraceInvocationsUnfillableHits() {
         final int traceLevel = 5;
-        Query query = new Query("?tracelevel=" + traceLevel);
+        Query query = new Query("?trace.level=" + traceLevel);
         Chain<Searcher> forkingChain = new Chain<>(new Tracer("tracer1"), 
                                                    new Tracer("tracer2"), 
                                                    new Backend("backend1", false));
@@ -118,7 +140,8 @@ public class TraceTestCase {
 
     private void assertTracing(boolean carryOverContext, boolean parallel) {
         Query query = new Query("?tracelevel=1");
-        query.trace("Before execution",1);
+        assertEquals(1, query.getTrace().getLevel());
+        query.trace("Before execution", 1);
         Chain<Searcher> forkingChain = new Chain<>(new Tracer("forker"), 
                                                    new Forker(carryOverContext, parallel, 
                                                               new Tracer("branch 1") ,
@@ -222,8 +245,8 @@ public class TraceTestCase {
 
     private static class TraceCollector extends TraceVisitor {
 
-        private List<String> trace = new ArrayList<>();
-        private StringBuilder indent = new StringBuilder();
+        private final List<String> trace = new ArrayList<>();
+        private final StringBuilder indent = new StringBuilder();
 
         @Override
         public void entering(TraceNode node) {
@@ -249,30 +272,38 @@ public class TraceTestCase {
 
     private static class Tracer extends Searcher {
 
-        private String name;
+        private final String name;
+        private final boolean traceQuery;
+
         private int counter = 0;
 
         public Tracer(String name) {
+            this(name, false);
+        }
+
+        public Tracer(String name, boolean traceQuery) {
             super(new ComponentId(name));
             this.name = name;
+            this.traceQuery = traceQuery;
         }
 
         @Override
         public Result search(Query query, Execution execution) {
-            query.trace("During " + name + ": " + (counter++),1);
+            query.trace("During " + name + ": " + (counter++), traceQuery, 1);
             return execution.search(query);
         }
+
     }
 
     private static class Forker extends Searcher {
 
-        private List<Searcher> branches;
+        private final List<Searcher> branches;
 
         /** If true, this is using the api as recommended, if false, it is not */
-        private boolean carryOverContext;
+        private final boolean carryOverContext;
 
         /** If true, simulate parallel execution by cloning the query */
-        private boolean parallel;
+        private final boolean parallel;
 
         public Forker(boolean carryOverContext, boolean parallel, Searcher ... branches) {
             this.carryOverContext = carryOverContext;
@@ -280,7 +311,6 @@ public class TraceTestCase {
             this.branches = Arrays.asList(branches);
         }
 
-        @SuppressWarnings("deprecation")
         @Override
         public Result search(Query query, Execution execution) {
             Result result = execution.search(query);
@@ -319,6 +349,7 @@ public class TraceTestCase {
             result.hits().add(hit1);
             return result;
         }
+
     }
 
 }

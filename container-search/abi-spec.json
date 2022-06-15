@@ -1983,6 +1983,7 @@
       "public com.yahoo.search.query.Select getSelect()",
       "public com.yahoo.search.query.Ranking getRanking()",
       "public com.yahoo.search.query.Model getModel()",
+      "public com.yahoo.search.query.Trace getTrace()",
       "public com.yahoo.container.jdisc.HttpRequest getHttpRequest()",
       "public com.yahoo.search.query.SessionId getSessionId()",
       "public com.yahoo.search.query.SessionId getSessionId(java.lang.String)",
@@ -1993,15 +1994,16 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
+      "public com.yahoo.search.query.Trace trace",
       "public static final com.yahoo.processing.request.CompoundName OFFSET",
       "public static final com.yahoo.processing.request.CompoundName HITS",
       "public static final com.yahoo.processing.request.CompoundName QUERY_PROFILE",
       "public static final com.yahoo.processing.request.CompoundName SEARCH_CHAIN",
-      "public static final com.yahoo.processing.request.CompoundName TRACE_LEVEL",
-      "public static final com.yahoo.processing.request.CompoundName EXPLAIN_LEVEL",
       "public static final com.yahoo.processing.request.CompoundName NO_CACHE",
       "public static final com.yahoo.processing.request.CompoundName GROUPING_SESSION_CACHE",
       "public static final com.yahoo.processing.request.CompoundName TIMEOUT",
+      "public static final com.yahoo.processing.request.CompoundName TRACE_LEVEL",
+      "public static final com.yahoo.processing.request.CompoundName EXPLAIN_LEVEL",
       "public static final java.util.List nativeProperties"
     ]
   },
@@ -5611,6 +5613,46 @@
       "public static final java.lang.String UCA",
       "public static final java.lang.String RAW",
       "public static final java.lang.String LOWERCASE"
+    ]
+  },
+  "com.yahoo.search.query.Trace": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Cloneable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void <init>(com.yahoo.search.Query)",
+      "public int getLevel()",
+      "public void setLevel(int)",
+      "public boolean isTraceable(int)",
+      "public void setExplainLevel(int)",
+      "public int getExplainLevel()",
+      "public boolean getTimestamps()",
+      "public void setTimestamps(boolean)",
+      "public boolean getQuery()",
+      "public void setQuery(boolean)",
+      "public void trace(java.lang.String, int)",
+      "public void trace(java.lang.Object, int)",
+      "public void trace(java.lang.String, boolean, int)",
+      "public varargs void trace(boolean, int, java.lang.Object[])",
+      "public void traceProperties()",
+      "public com.yahoo.search.query.Trace cloneFor(com.yahoo.search.Query)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public com.yahoo.search.query.Trace clone()",
+      "public java.lang.String toString()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": [
+      "public static final java.lang.String TRACE",
+      "public static final java.lang.String LEVEL",
+      "public static final java.lang.String EXPLAIN_LEVEL",
+      "public static final java.lang.String TIMESTAMPS",
+      "public static final java.lang.String QUERY"
     ]
   },
   "com.yahoo.search.query.UniqueRequestId": {

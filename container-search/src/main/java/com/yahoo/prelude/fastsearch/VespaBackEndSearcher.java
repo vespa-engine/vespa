@@ -190,7 +190,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
 
         Result result = doSearch2(query, execution);
 
-        if (query.getTraceLevel() >= 1)
+        if (query.getTrace().getLevel() >= 1)
             query.trace(getName() + " dispatch response: " + result, false, 1);
         result.trace(getName());
         return result;
@@ -243,7 +243,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     }
 
     void traceQuery(String sourceName, String type, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {
-        if ((query.getTraceLevel()<level) || query.properties().getBoolean(TRACE_DISABLE)) return;
+        if ((query.getTrace().getLevel()<level) || query.properties().getBoolean(TRACE_DISABLE)) return;
 
         StringBuilder s = new StringBuilder();
         s.append(sourceName).append(" ").append(type).append(" to dispatch: ")
@@ -314,12 +314,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
 
         query.trace(s.toString(), false, level);
-        if (query.isTraceable(level + 1)) {
+        if (query.getTrace().isTraceable(level + 1)) {
             query.trace("Current state of query tree: "
                             + new TextualQueryRepresentation(query.getModel().getQueryTree().getRoot()),
                     false, level+1);
         }
-        if (query.isTraceable(level + 2)) {
+        if (query.getTrace().isTraceable(level + 2)) {
             query.trace("YQL+ representation: " + query.yqlRepresentation(), level+2);
         }
     }

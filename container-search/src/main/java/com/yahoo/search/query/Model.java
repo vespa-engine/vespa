@@ -248,7 +248,7 @@ public class Model implements Cloneable {
             try {
                 Parser parser = ParserFactory.newInstance(type, ParserEnvironment.fromExecutionContext(execution.context()));
                 queryTree = parser.parse(Parsable.fromQueryModel(this));
-                if (parent.getTraceLevel() >= 2)
+                if (parent.getTrace().getLevel() >= 2)
                     parent.trace("Query parsed to: " + parent.yqlRepresentation(), 2);
             }
             catch (IllegalArgumentException e) {

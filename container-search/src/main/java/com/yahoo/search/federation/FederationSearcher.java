@@ -487,7 +487,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     private void traceTargets(Query query, Collection<Target> targets) {
         int traceFederationLevel = 2;
-        if ( ! query.isTraceable(traceFederationLevel)) return;
+        if ( ! query.getTrace().isTraceable(traceFederationLevel)) return;
         query.trace("Federating to " + targets, traceFederationLevel);
     }
 
@@ -537,7 +537,7 @@ public class FederationSearcher extends ForkingSearcher {
             }
 
         }
-        if (query.getTraceLevel()>=4)
+        if (query.getTrace().getLevel()>=4)
             query.trace("Got " + group.getConcreteSize() + " hits from " + group.getId(),false, 4);
         mergedResults.hits().add(group);
     }
