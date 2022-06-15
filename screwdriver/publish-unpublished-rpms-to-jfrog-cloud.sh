@@ -1,12 +1,9 @@
 #!/bin/bash
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-
 set -euo pipefail
 
 readonly MYDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
-yum install -y yum-utils &> /dev/null
 
 # Copr repo file
 if [[ ! -f /etc/yum.repos.d/group_vespa-vespa-epel-7.repo ]]; then
@@ -36,7 +33,7 @@ fi
 readonly COPR_PACKAGES=$(mktemp)
 trap "rm -f $COPR_PACKAGES" EXIT
 
-dnf list -q --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed "s/\.x86_64\ */-/"| awk '{print $1}' > $COPR_PACKAGES
+dnf list -q --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa --showduplicates 'vespa*' | grep "Available Packages" -A 100000 | tail -n +2 | sed '/\.src\ */d' | sed 's/\.x86_64\ */-/' | awk '{print $1}' | grep -v '.src$' > $COPR_PACKAGES
 
 echo "Packages on Copr:"
 cat $COPR_PACKAGES
