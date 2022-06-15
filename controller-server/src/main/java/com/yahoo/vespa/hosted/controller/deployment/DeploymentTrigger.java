@@ -190,11 +190,10 @@ public class DeploymentTrigger {
         }
 
         // Trigger max one test job per type
-        for (var jobs : sortedTestJobsByType.values())
-            if (jobs.size() > 0) {
-                if (trigger(jobs.get(0))) ++triggeredJobs;
+        for (Collection<Job> jobs: sortedTestJobsByType.values())
+            for (Job job : jobs)
+                if (trigger(job)) { ++triggeredJobs; break; }
                 else ++failedJobs;
-            }
 
         return new TriggerResult(triggeredJobs, failedJobs);
     }
