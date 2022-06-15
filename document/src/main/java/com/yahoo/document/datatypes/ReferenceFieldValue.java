@@ -49,6 +49,7 @@ public class ReferenceFieldValue extends FieldValue {
     /**
      * Creates a reference pointing to a particular document instance in the document
      * type referenced by <code>referenceType</code>.
+     *
      * @param referenceType reference target type
      * @param documentId document ID of the same document type as that given by <code>referenceType</code>
      * @throws IllegalArgumentException if documentId is not of the expected document type
@@ -64,7 +65,7 @@ public class ReferenceFieldValue extends FieldValue {
     }
 
     private static void requireIdOfMatchingType(ReferenceDataType referenceType, DocumentId id) {
-        final String expectedTypeName = referenceType.getTargetType().getName();
+        String expectedTypeName = referenceType.getTargetType().getName();
         if (!id.getDocType().equals(expectedTypeName)) {
             throw new IllegalArgumentException(String.format(
                     "Can't assign document ID '%s' (of type '%s') to reference of document type '%s'",
@@ -87,9 +88,7 @@ public class ReferenceFieldValue extends FieldValue {
     }
 
     @Override
-    public void printXml(XmlStream xml) {
-        // TODO do we need/want this?
-    }
+    public void printXml(XmlStream xml) { }
 
     @Override
     public void clear() {
