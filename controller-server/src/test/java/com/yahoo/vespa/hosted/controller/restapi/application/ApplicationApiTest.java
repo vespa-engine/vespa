@@ -797,13 +797,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               },
                               200);
 
-        // GET application package for previous build
+        // GET application package for specific build
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
-                                      .properties(Map.of("build", "1"))
+                                      .properties(Map.of("build", "2"))
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               (response) -> {
-                                  assertEquals("attachment; filename=\"tenant1.application1-build1.zip\"", response.getHeaders().getFirst("Content-Disposition"));
-                                  assertArrayEquals(applicationPackageInstance1.zippedContent(), response.getBody());
+                                  assertEquals("attachment; filename=\"tenant1.application1-build2.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(packageWithService.zippedContent(), response.getBody());
                               },
                               200);
 
