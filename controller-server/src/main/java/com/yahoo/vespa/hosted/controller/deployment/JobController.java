@@ -513,7 +513,7 @@ public class JobController {
 
             application = application.withProjectId(projectId == -1 ? OptionalLong.empty() : OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
-            application = withPrunedPackages(application);
+            application = withPrunedPackages(application, version.get().id());
 
             TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
             if (testSummary.problems().isEmpty())
@@ -542,16 +542,19 @@ public class JobController {
         return version.get();
     }
 
-    private LockedApplication withPrunedPackages(LockedApplication application){
+    private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
         TenantAndApplicationId id = application.get().id();
-        Optional<RevisionId> oldestDeployed = application.get().oldestDeployedRevision();
-        if (oldestDeployed.isPresent()) {
-            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
+        Application wrapped = application.get();
+        RevisionId oldestDeployed = application.get().oldestDeployedRevision()
+                                               .or(() -> wrapped.instances().values().stream()
+                                                                .flatMap(instance -> instance.change().revision().stream())
+                                                                .min(naturalOrder()))
+                                               .orElse(latest);
+        controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
 
-            for (ApplicationVersion version : application.get().revisions().withPackage())
-                if (version.id().compareTo(oldestDeployed.get()) < 0)
-                    application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
-        }
+        for (ApplicationVersion version : application.get().revisions().withPackage())
+            if (version.id().compareTo(oldestDeployed) < 0)
+                application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
         return application;
     }
 
