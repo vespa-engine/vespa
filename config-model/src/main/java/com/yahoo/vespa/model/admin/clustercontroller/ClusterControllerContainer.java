@@ -66,7 +66,7 @@ public class ClusterControllerContainer extends Container implements
                    "/cluster/v2/*",
                    CLUSTERCONTROLLER_BUNDLE);
         addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
-                                            deployState.featureFlags().logFileCompressionAlgorithm("gzip"),
+                                            deployState.featureFlags().logFileCompressionAlgorithm("zstd"),
                                             Optional.of("controller"),
                                             deployState.isHosted()));
 
