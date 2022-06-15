@@ -83,6 +83,13 @@ public class CloudTrialExpirerTest {
         assertTrue(tester.controller().tenants().get("with-apps").isEmpty());
     }
 
+    @Test
+    public void keep_tenants_without_applications_that_are_idle() {
+        registerTenant("active", "none", Duration.ofDays(364));
+        expirer.maintain();
+        assertPlan("active", "none");
+    }
+
     private void registerTenant(String tenantName, String plan, Duration timeSinceLastLogin) {
         var name = TenantName.from(tenantName);
         tester.createTenant(tenantName, Tenant.Type.cloud);

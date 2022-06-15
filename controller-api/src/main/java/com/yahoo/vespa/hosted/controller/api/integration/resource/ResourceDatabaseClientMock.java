@@ -1,9 +1,12 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -30,6 +33,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     PlanRegistry planRegistry;
     Map<TenantName, Plan> planMap = new HashMap<>();
     List<ResourceSnapshot> resourceSnapshots = new ArrayList<>();
+    Map<ClusterId, List<Cluster.ScalingEvent>> scalingEvents = new HashMap<>();
     private boolean hasRefreshedMaterializedView = false;
 
     public ResourceDatabaseClientMock(PlanRegistry planRegistry) {
@@ -119,6 +123,16 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     @Override
     public void refreshMaterializedView() {
         hasRefreshedMaterializedView = true;
+    }
+
+    @Override
+    public void writeScalingEvents(ClusterId clusterId, Collection<Cluster.ScalingEvent> scalingEvents) {
+        this.scalingEvents.put(clusterId, List.copyOf(scalingEvents));
+    }
+
+    @Override
+    public List<Cluster.ScalingEvent> scalingEvents(Instant from, Instant to, Optional<ApplicationId> application) {
+        return List.of();
     }
 
     public void setPlan(TenantName tenant, Plan plan) {
