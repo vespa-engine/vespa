@@ -208,6 +208,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableBitVectors;
         private final Architecture adminClusterArchitecture;
         private final boolean enableProxyProtocolMixedMode;
+        private final boolean sharedStringRepoNoReclaim;
         private final String logFileCompressionAlgorithm;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
@@ -253,6 +254,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableBitVectors = flagValue(source, appId, version, Flags.ENABLE_BIT_VECTORS);
             this.adminClusterArchitecture = Architecture.valueOf(flagValue(source, appId, version, PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE));
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
+            this.sharedStringRepoNoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_NO_RECLAIM);
             this.logFileCompressionAlgorithm = flagValue(source, appId, version, Flags.LOG_FILE_COMPRESSION_ALGORITHM);
         }
 
@@ -300,6 +302,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableBitVectors() { return this.enableBitVectors; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }
+        @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
         @Override public String logFileCompressionAlgorithm(String defVal) {
             var fflag = this.logFileCompressionAlgorithm;
             if (fflag != null && ! fflag.equals("")) {
