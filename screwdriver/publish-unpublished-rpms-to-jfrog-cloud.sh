@@ -45,7 +45,7 @@ echo
 for pv in $(cat $COPR_PACKAGES); do
   if ! dnf list -q --disablerepo='*' --enablerepo=vespa-release $pv &> /dev/null; then
     echo "$pv not found on JFrog Clould. Downloading..."
-    dnf download -q $pv
+    dnf download -q --disablerepo='*' --enablerepo=copr:copr.fedorainfracloud.org:group_vespa:vespa $pv
     echo "$pv downloaded."
   fi
 done
