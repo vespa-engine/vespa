@@ -58,7 +58,7 @@ public class Upgrader extends ControllerMaintainer {
         cancelBrokenUpgrades(versionStatus);
 
         OptionalInt targetMajorVersion = targetMajorVersion();
-        InstanceList instances = instances(controller().systemVersion(versionStatus));
+        InstanceList instances = instances(versionStatus);
         for (UpgradePolicy policy : UpgradePolicy.values())
             updateTargets(versionStatus, instances, policy, targetMajorVersion);
 
@@ -66,10 +66,10 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     /** Returns a list of all production application instances, except those which are pinned, which we should not manipulate here. */
-    private InstanceList instances(Version systemVersion) {
+    private InstanceList instances(VersionStatus versionStatus) {
         return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())
                                                                                                 .withProjectId(),
-                                                                                 systemVersion))
+                                                                                 versionStatus))
                            .withDeclaredJobs()
                            .shuffle(random)
                            .byIncreasingDeployedVersion()
@@ -78,7 +78,7 @@ public class Upgrader extends ControllerMaintainer {
 
     private void cancelBrokenUpgrades(VersionStatus versionStatus) {
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
-        InstanceList instances = instances(controller().systemVersion(versionStatus));
+        InstanceList instances = instances(controller().readVersionStatus());
         for (VespaVersion version : versionStatus.versions()) {
             if (version.confidence() == Confidence.broken)
                 cancelUpgradesOf(instances.upgradingTo(version.versionNumber()).not().with(UpgradePolicy.canary),

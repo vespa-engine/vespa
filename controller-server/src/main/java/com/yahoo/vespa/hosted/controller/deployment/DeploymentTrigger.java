@@ -248,7 +248,7 @@ public class DeploymentTrigger {
         Change change = instance.change();
         if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
-        Versions versions = Versions.from(change, application, status.deploymentFor(job), controller.readSystemVersion());
+        Versions versions = Versions.from(change, application, status.deploymentFor(job), status.fallbackPlatform(change, job));
         DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
         Map<JobId, List<DeploymentStatus.Job>> testJobs = status.testJobs(Map.of(job, List.of(toTrigger)));
 

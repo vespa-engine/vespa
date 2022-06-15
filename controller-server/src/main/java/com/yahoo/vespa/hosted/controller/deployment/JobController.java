@@ -34,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.security.cert.X509Certificate;
@@ -343,7 +344,7 @@ public class JobController {
     public List<Run> active() {
         return controller.applications().idList().stream()
                          .flatMap(id -> active(id).stream())
-                         .collect(toUnmodifiableList());
+                         .toList();
     }
 
     /** Returns a list of all active runs for the given application. */
@@ -353,7 +354,7 @@ public class JobController {
                                                  .map(type -> last(id.instance(name), type))
                                                  .flatMap(Optional::stream)
                                                  .filter(run -> ! run.hasEnded()))
-                         .collect(toUnmodifiableList());
+                         .toList();
     }
 
     /** Returns a list of all active runs for the given instance. */
@@ -362,7 +363,7 @@ public class JobController {
                       .map(type -> last(id, type))
                       .flatMap(Optional::stream)
                       .filter(run -> !run.hasEnded())
-                      .collect(toUnmodifiableList());
+                      .toList();
     }
 
     /** Returns the job status of the given job, possibly empty. */
@@ -372,28 +373,32 @@ public class JobController {
 
     /** Returns the deployment status of the given application. */
     public DeploymentStatus deploymentStatus(Application application) {
-        return deploymentStatus(application, controller.readSystemVersion());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        return deploymentStatus(application, versionStatus, controller.systemVersion(versionStatus));
     }
 
-    private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
+    private DeploymentStatus deploymentStatus(Application application, VersionStatus versionStatus, Version systemVersion) {
         return new DeploymentStatus(application,
                                     this::jobStatus,
                                     controller.zoneRegistry(),
+                                    versionStatus,
                                     systemVersion,
                                     instance -> controller.applications().versionCompatibility(application.id().instance(instance)),
                                     controller.clock().instant());
     }
 
     /** Adds deployment status to each of the given applications. */
-    public DeploymentStatusList deploymentStatuses(ApplicationList applications, Version systemVersion) {
+    public DeploymentStatusList deploymentStatuses(ApplicationList applications, VersionStatus versionStatus) {
+        Version systemVersion = controller.systemVersion(versionStatus);
         return DeploymentStatusList.from(applications.asList().stream()
-                                                     .map(application -> deploymentStatus(application, systemVersion))
-                                                     .collect(toUnmodifiableList()));
+                                                     .map(application -> deploymentStatus(application, versionStatus, systemVersion))
+                                                     .toList());
     }
 
     /** Adds deployment status to each of the given applications. Calling this will do an implicit read of the controller's version status */
     public DeploymentStatusList deploymentStatuses(ApplicationList applications) {
-        return deploymentStatuses(applications, controller.readSystemVersion());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        return deploymentStatuses(applications, versionStatus);
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
