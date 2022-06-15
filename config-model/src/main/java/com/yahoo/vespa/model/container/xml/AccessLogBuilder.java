@@ -54,7 +54,7 @@ public class AccessLogBuilder {
 
         @Override
         protected AccessLogComponent doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
-            String fallback = deployState.featureFlags().logFileCompressionAlgorithm(isHostedVespa ? "zstd" : "gzip");
+            String fallback = deployState.featureFlags().logFileCompressionAlgorithm("zstd");
             return new AccessLogComponent(
                     accessLogType,
                     compressionType(spec, fallback),

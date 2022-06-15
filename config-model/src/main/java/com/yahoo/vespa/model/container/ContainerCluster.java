@@ -168,7 +168,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
         this.numAvailableProcessors = deployState.featureFlags().availableProcessors();
-        this.compressionType = deployState.featureFlags().logFileCompressionAlgorithm(isHostedVespa ? "zstd" : "gzip");
+        this.compressionType = deployState.featureFlags().logFileCompressionAlgorithm("zstd");
 
         componentGroup = new ComponentGroup<>(this, "component");
 
