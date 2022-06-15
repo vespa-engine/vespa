@@ -17,6 +17,7 @@ import java.util.Random;
  * @author ollivir
  */
 public class DirConfigSource {
+
     private final TemporaryFolder tempFolder = createTemporaryFolder();
     public final ConfigSource configSource;
 
@@ -66,4 +67,5 @@ public class DirConfigSource {
         }
         return folder;
     }
+
 }

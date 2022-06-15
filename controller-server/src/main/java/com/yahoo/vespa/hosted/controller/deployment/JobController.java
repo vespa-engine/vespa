@@ -536,7 +536,8 @@ public class JobController {
             });
 
             applications.storeWithUpdatedConfig(application, submission.applicationPackage());
-            applications.deploymentTrigger().triggerNewRevision(id);
+            if (application.get().projectId().isPresent())
+                applications.deploymentTrigger().triggerNewRevision(id);
         });
         return version.get();
     }
