@@ -146,7 +146,7 @@ public class DeploymentTester {
         int triggered;
         int triggeredTotal = 0;
         do {
-            triggered = (int) deploymentTrigger().triggerReadyJobs();
+            triggered = (int) deploymentTrigger().triggerReadyJobs().triggered();
             triggeredTotal += triggered;
         } while (triggered > 0);
         return triggeredTotal;
