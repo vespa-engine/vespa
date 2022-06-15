@@ -79,8 +79,8 @@ public class Autoscaler {
             return Advice.none(Status.waiting,
                                "Collecting more data before making new scaling decisions for " + cluster + ": Need to measure for " +
                                clusterModel.scalingDuration() + " since the last resource change completed, " +
-                               clusterModel.nodeTimeseries().measurementsPerNode() + " measurements per node, " +
-                               " need " + minimumMeasurementsPerNode(clusterModel.scalingDuration()));
+                               clusterModel.nodeTimeseries().measurementsPerNode() + " measurements per node found," +
+                               " need at least " + minimumMeasurementsPerNode(clusterModel.scalingDuration()));
 
         if (clusterModel.nodeTimeseries().nodesMeasured() != clusterNodes.size())
             return Advice.none(Status.waiting,
