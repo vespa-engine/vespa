@@ -163,7 +163,7 @@ public abstract class Searcher extends Processor {
         }
         else {
             int fillRejectTraceAt = 3;
-            if (result.getQuery().getTraceLevel() >= fillRejectTraceAt)
+            if (result.getQuery().getTrace().getLevel() >= fillRejectTraceAt)
                 result.getQuery().trace("Ignoring fill(" + summaryClass + "): " +
                                         ( result.hits().getFilled() == null ? "Hits are unfillable" : "Hits already filled" ) +
                                         ": result.hits().getFilled()=" + result.hits().getFilled(), fillRejectTraceAt);

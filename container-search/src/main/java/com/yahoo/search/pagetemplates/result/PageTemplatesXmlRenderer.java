@@ -122,7 +122,7 @@ public class PageTemplatesXmlRenderer extends AsynchronousSectionedRenderer<Resu
     }
 
     private void queryContext(XMLWriter writer, Query owner) {
-        if (owner.getTraceLevel()!=0) {
+        if (owner.getTrace().getLevel()!=0) {
             XMLWriter xmlWriter=XMLWriter.from(writer);
             xmlWriter.openTag("meta").attribute("type", QueryContext.ID);
             TraceNode traceRoot = owner.getModel().getExecution().trace().traceNode().root();

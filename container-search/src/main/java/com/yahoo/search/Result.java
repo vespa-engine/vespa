@@ -245,7 +245,7 @@ public final class Result extends com.yahoo.processing.Response implements Clone
      * @param name the name of the searcher instance returning this result
      */
     public void trace(String name) {
-        if (hits().getQuery().getTraceLevel() < 5) {
+        if (hits().getQuery().getTrace().getLevel() < 5) {
             return;
         }
         StringBuilder hitBuffer = new StringBuilder(name);

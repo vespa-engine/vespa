@@ -32,7 +32,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final int queueSize;
     private final Integer bufferSize;
 
-    public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, CompressionType compressionType, Optional<String> clusterName, boolean isHostedVespa)
+    public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, String compressionType, Optional<String> clusterName, boolean isHostedVespa)
     {
         // In hosted Vespa we do not use the clusterName when setting up application ContainerCluster logging
         this(logType,
@@ -55,7 +55,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     }
 
     public AccessLogComponent(AccessLogType logType,
-                              CompressionType compressionType,
+                              String compressionType,
                               String fileNamePattern,
                               String rotationInterval,
                               Boolean compressOnRotation,
@@ -70,7 +70,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.compression = compressOnRotation;
         this.isHostedVespa = isHostedVespa;
         this.symlinkName = symlinkName;
-        this.compressionType = compressionType;
+        this.compressionType = "zstd".equals(compressionType) ? CompressionType.ZSTD :CompressionType.GZIP;
         this.queueSize = (queueSize == null) ? 256 : queueSize;
         this.bufferSize = bufferSize;
     }

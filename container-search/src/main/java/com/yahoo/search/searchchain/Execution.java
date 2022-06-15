@@ -494,7 +494,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         // Transfer state between query and execution as the execution constructors does not do that completely
         query.getModel().setExecution(this);
-        trace().setTraceLevel(query.getTraceLevel());
+        trace().setTraceLevel(query.getTrace().getLevel());
 
         return (Result)super.process(query);
     }
@@ -504,7 +504,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         super.onInvoking(request,processor);
         final int traceDependencies = 6;
         Query query = (Query) request;
-        if (query.getTraceLevel() >= traceDependencies) {
+        if (query.getTrace().getLevel() >= traceDependencies) {
             query.trace(processor.getId() + " " + processor.getDependencies(), traceDependencies);
         }
     }

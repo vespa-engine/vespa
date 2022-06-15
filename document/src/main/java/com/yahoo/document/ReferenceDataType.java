@@ -16,7 +16,7 @@ public class ReferenceDataType extends DataType {
     // Magic number for Identifiable, see document/util/identifiable.h
     public static final int classId = registerClass(Ids.document + 68, ReferenceDataType.class);
 
-    private StructuredDataType targetType;
+    private final StructuredDataType targetType;
 
     public ReferenceDataType(DocumentType targetType, int id) {
         this((StructuredDataType)targetType, id);

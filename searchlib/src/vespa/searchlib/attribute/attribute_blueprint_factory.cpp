@@ -556,10 +556,16 @@ public:
         setEstimate(HitEstimate(_dict_entry.posting_size, (_dict_entry.posting_size == 0)));
     }
 
-    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool) const override {
+    SearchIterator::UP createLeafSearch(const TermFieldMatchDataArray &tfmda, bool strict) const override {
         assert(tfmda.size() == 1);
         if (_dict_entry.posting_size == 0) {
             return std::make_unique<queryeval::EmptySearch>();
+        }
+        if (tfmda[0]->isNotNeeded()) {
+            auto bitvector_iterator = _attr.make_bitvector_iterator(_dict_entry.posting_idx, get_docid_limit(), *tfmda[0], strict);
+            if (bitvector_iterator) {
+                return bitvector_iterator;
+            }
         }
         return std::make_unique<queryeval::DocumentWeightSearchIterator>(*tfmda[0], _attr, _dict_entry);
     }

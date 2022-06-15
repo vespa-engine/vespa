@@ -106,7 +106,7 @@ public class FastSearcher extends VespaBackEndSearcher {
             return new Result(query,ErrorMessage.createTimeout(e.getMessage()));
         } catch (IOException e) {
             Result result = new Result(query);
-            if (query.getTraceLevel() >= 1)
+            if (query.getTrace().getLevel() >= 1)
                 query.trace(getName() + " error response: " + result, false, 1);
             result.hits().addError(ErrorMessage.createBackendCommunicationError(getName() + " failed: "+ e.getMessage()));
             return result;

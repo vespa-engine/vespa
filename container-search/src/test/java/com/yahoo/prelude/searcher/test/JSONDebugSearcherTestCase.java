@@ -14,36 +14,35 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Visit the trace and check JSON payload is stored there when requested.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class JSONDebugSearcherTestCase {
 
     private static final String NODUMPJSON = "?query=1&tracelevel=6";
     private static final String DUMPJSON = "?query=1&dumpjson=jsonfield&tracelevel=6";
-    private Chain<Searcher> searchChain;
 
-    private static class LookForJson extends TraceVisitor {
-        private static final String JSON_PAYLOAD = "{1: 2}";
-        public boolean gotJson = false;
-
-        @Override
-        public void visit(TraceNode node) {
-            if (node.payload() == null || node.payload().getClass() != String.class) {
-                return;
-            }
-            if (node.payload().toString().equals(JSONDebugSearcher.JSON_FIELD + JSON_PAYLOAD)) {
-                gotJson = true;
-            }
-        }
+    @Test
+    public void test() {
+        Chain<Searcher> searchChain = makeSearchChain("{1: 2}", new JSONDebugSearcher());
+        Execution e = new Execution(searchChain, Execution.Context.createContextStub());
+        e.search(new Query(NODUMPJSON));
+        Trace t = e.trace();
+        LookForJson visitor = new LookForJson();
+        t.accept(visitor);
+        assertFalse(visitor.gotJson);
+        e = new Execution(searchChain, Execution.Context.createContextStub());
+        e.search(new Query(DUMPJSON));
+        t = e.trace();
+        t.accept(visitor);
+        assertTrue(visitor.gotJson);
     }
 
     private Chain<Searcher> makeSearchChain(String content, Searcher dumper) {
@@ -63,29 +62,20 @@ public class JSONDebugSearcherTestCase {
         docsource.addResult(q, r);
     }
 
+    private static class LookForJson extends TraceVisitor {
 
-    @Before
-    public void setUp() throws Exception {
-        searchChain = makeSearchChain("{1: 2}", new JSONDebugSearcher());
-    }
+        private static final String JSON_PAYLOAD = "{1: 2}";
+        public boolean gotJson = false;
 
-    @After
-    public void tearDown() throws Exception {
-    }
-
-    @Test
-    public final void test() {
-        Execution e = new Execution(searchChain, Execution.Context.createContextStub());
-        e.search(new Query(NODUMPJSON));
-        Trace t = e.trace();
-        LookForJson visitor = new LookForJson();
-        t.accept(visitor);
-        assertEquals(false, visitor.gotJson);
-        e = new Execution(searchChain, Execution.Context.createContextStub());
-        e.search(new Query(DUMPJSON));
-        t = e.trace();
-        t.accept(visitor);
-        assertEquals(true, visitor.gotJson);
+        @Override
+        public void visit(TraceNode node) {
+            if (node.payload() == null || node.payload().getClass() != String.class) {
+                return;
+            }
+            if (node.payload().toString().equals(JSONDebugSearcher.JSON_FIELD + JSON_PAYLOAD)) {
+                gotJson = true;
+            }
+        }
     }
 
 }

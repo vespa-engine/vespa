@@ -842,7 +842,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Marked build '2' as non-deployable\"}");
 
         // GET deployment job overview, after triggering system and staging test jobs.
-        assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs());
+        assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs().triggered());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job", GET)
                                       .userIdentity(USER_ID),
                               new File("jobs.json"));

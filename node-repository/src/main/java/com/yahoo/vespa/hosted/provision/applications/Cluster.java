@@ -151,9 +151,7 @@ public class Cluster {
     }
 
     @Override
-    public String toString() {
-        return "cluster '" + id + "'";
-    }
+    public String toString() { return id.toString(); }
 
     private void prune(List<ScalingEvent> scalingEvents) {
         while (scalingEvents.size() > maxScalingEvents)
