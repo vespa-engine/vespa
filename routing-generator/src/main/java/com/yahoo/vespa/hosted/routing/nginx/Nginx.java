@@ -115,12 +115,13 @@ public class Nginx implements Router {
         Instant oneWeekAgo = clock.instant().minus(Duration.ofDays(7));
         // Rotated files have the format <basename>-yyyy-MM-dd-HH:mm:ss.SSS
         String configBasename = NginxPath.config.in(fileSystem).getFileName().toString();
-        Files.list(NginxPath.root.in(fileSystem))
-             .filter(Files::isRegularFile)
-             .filter(path -> path.getFileName().toString().startsWith(configBasename))
-             .filter(path -> rotatedAt(path).map(instant -> instant.isBefore(oneWeekAgo))
-                                            .orElse(false))
-             .forEach(path -> Exceptions.uncheck(() -> Files.deleteIfExists(path)));
+        try (var entries = Files.list(NginxPath.root.in(fileSystem))) {
+            entries.filter(Files::isRegularFile)
+                   .filter(path -> path.getFileName().toString().startsWith(configBasename))
+                   .filter(path -> rotatedAt(path).map(instant -> instant.isBefore(oneWeekAgo))
+                                                  .orElse(false))
+                   .forEach(path -> Exceptions.uncheck(() -> Files.deleteIfExists(path)));
+        }
     }
 
     /** Returns the time given path was rotated */
