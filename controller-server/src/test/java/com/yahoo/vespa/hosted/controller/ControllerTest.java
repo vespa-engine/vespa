@@ -765,7 +765,7 @@ public class ControllerTest {
             fail("Should fail when specifying a major which is incompatible with compile version");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Will not start a job with incompatible platform version (8) and compile versions (7)", e.getMessage());
+            assertEquals("Will not start dev-us-east-1 for tenant.application with incompatible platform version (8) and compile versions (7)", e.getMessage());
         }
 
         context.runJob(zone, new ApplicationPackageBuilder().compileVersion(version3).majorVersion(8).build());

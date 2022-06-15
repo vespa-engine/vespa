@@ -158,7 +158,7 @@ public class DeploymentTrigger {
      *
      * Only one job per type is triggered each run for test jobs, since their environments have limited capacity.
      */
-    public long triggerReadyJobs() {
+    public TriggerResult triggerReadyJobs() {
         List<Job> readyJobs = computeReadyJobs();
 
         var prodJobs = new ArrayList<Job>();
@@ -182,23 +182,35 @@ public class DeploymentTrigger {
                 .collect(groupingBy(Job::jobType));
 
         // Trigger all prod jobs
-        sortedProdJobs.forEach(this::trigger);
-        long triggeredJobs = sortedProdJobs.size();
+        long triggeredJobs = 0;
+        long failedJobs = 0;
+        for (Job job : sortedProdJobs) {
+            if (trigger(job)) ++triggeredJobs;
+            else ++failedJobs;
+        }
 
         // Trigger max one test job per type
-        for (var jobs : sortedTestJobsByType.values()) {
+        for (var jobs : sortedTestJobsByType.values())
             if (jobs.size() > 0) {
-                trigger(jobs.get(0));
-                triggeredJobs++;
+                if (trigger(jobs.get(0))) ++triggeredJobs;
+                else ++failedJobs;
             }
-        }
-        return triggeredJobs;
+
+        return new TriggerResult(triggeredJobs, failedJobs);
     }
 
+    public record TriggerResult(long triggered, long failed) { }
 
     /** Attempts to trigger the given job. */
-    private void trigger(Job job) {
-        trigger(job, null);
+    private boolean trigger(Job job) {
+        try {
+            trigger(job, null);
+            return true;
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING, "Failed triggering " + job.jobType() + " for " + job.instanceId, e);
+            return false;
+        }
     }
 
     /** Attempts to trigger the given job. */
