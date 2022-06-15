@@ -106,12 +106,12 @@ public class SearchNodeTest {
         verifyCodePlacement(false);
     }
 
-    private void verifySharedStringRepoReclaim(boolean sharedStringRepoReclaim) {
+    private void verifySharedStringRepoReclaim(boolean sharedStringRepoNoReclaim) {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().sharedStringRepoReclaim(sharedStringRepoReclaim));
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().sharedStringRepoNoReclaim(sharedStringRepoNoReclaim));
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
-        assertEquals(sharedStringRepoReclaim, ! node.getStartupCommand().contains("VESPA_SHARED_STRING_REPO_NO_RECLAIM="));
+        assertEquals(sharedStringRepoNoReclaim, node.getStartupCommand().contains("VESPA_SHARED_STRING_REPO_NO_RECLAIM="));
     }
 
     @Test

@@ -15,7 +15,6 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -123,8 +122,8 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag SHARED_STRING_REPO_RECLAIM = defineFeatureFlag(
-            "shared-string-repo-reclaim", true,
+    public static final UnboundBooleanFlag SHARED_STRING_REPO_NO_RECLAIM = defineFeatureFlag(
+            "shared-string-repo-no-reclaim", false,
             List.of("baldersheim"), "2022-06-14", "2023-01-01",
             "Controls whether we do track usage and reclaim unused enum values in shared string repo",
             "Takes effect at redeployment",
