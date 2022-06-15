@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.profile;
 
+import ai.vespa.cloud.ZoneInfo;
 import com.yahoo.collections.Pair;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.IllegalInputException;
@@ -32,6 +33,7 @@ public class QueryProfileProperties extends Properties {
 
     private final CompiledQueryProfile profile;
     private final Map<String, Embedder> embedders;
+    private final ZoneInfo zoneInfo;
 
     // Note: The priority order is: values has precedence over references
 
@@ -46,18 +48,26 @@ public class QueryProfileProperties extends Properties {
     private List<Pair<CompoundName, CompiledQueryProfile>> references = null;
 
     public QueryProfileProperties(CompiledQueryProfile profile) {
-        this(profile, Embedder.throwsOnUse.asMap());
+        this(profile, Embedder.throwsOnUse.asMap(), ZoneInfo.defaultInfo());
     }
 
+    @Deprecated // TODO: Remove on Vespa 9
     public QueryProfileProperties(CompiledQueryProfile profile, Embedder embedder) {
-        this(profile, Map.of(Embedder.defaultEmbedderId, embedder));
+        this(profile, Map.of(Embedder.defaultEmbedderId, embedder), ZoneInfo.defaultInfo());
     }
 
     /** Creates an instance from a profile, throws an exception if the given profile is null */
+    @Deprecated // TODO: Remove on Vespa 9
     public QueryProfileProperties(CompiledQueryProfile profile, Map<String, Embedder> embedders) {
+        this(profile, embedders, ZoneInfo.defaultInfo());
+    }
+
+    /** Creates an instance from a profile, throws an exception if the given profile is null */
+    public QueryProfileProperties(CompiledQueryProfile profile, Map<String, Embedder> embedders, ZoneInfo zoneInfo) {
         Validator.ensureNotNull("The profile wrapped by this cannot be null", profile);
         this.profile = profile;
         this.embedders = embedders;
+        this.zoneInfo = zoneInfo;
     }
 
     /** Returns the query profile backing this, or null if none */
@@ -67,6 +77,7 @@ public class QueryProfileProperties extends Properties {
     @Override
     public Object get(CompoundName name, Map<String, String> context,
                       com.yahoo.processing.request.Properties substitution) {
+        context = contextWithZoneInfo(context);
         name = unalias(name, context);
         if (values != null && values.containsKey(name))
             return values.get(name); // Returns this value, even if null
@@ -92,11 +103,13 @@ public class QueryProfileProperties extends Properties {
      */
     @Override
     public void set(CompoundName name, Object value, Map<String, String> context) {
+        context = contextWithZoneInfo(context);
         setOrCheckSettable(name, value, context, true);
     }
 
     @Override
     public void requireSettable(CompoundName name, Object value, Map<String, String> context) {
+        context = contextWithZoneInfo(context);
         setOrCheckSettable(name, value, context, false);
     }
 
@@ -210,6 +223,8 @@ public class QueryProfileProperties extends Properties {
     @Override
     public Map<String, Object> listProperties(CompoundName path, Map<String, String> context,
                                               com.yahoo.processing.request.Properties substitution) {
+        context = contextWithZoneInfo(context);
+
         path = unalias(path, context);
         if (context == null) context = Collections.emptyMap();
 
@@ -257,7 +272,7 @@ public class QueryProfileProperties extends Properties {
         return properties;
     }
 
-    public boolean isComplete(StringBuilder firstMissingName, Map<String,String> context) {
+    public boolean isComplete(StringBuilder firstMissingName, Map<String, String> context) {
         // Are all types reachable from this complete?
         if ( ! reachableTypesAreComplete(CompoundName.empty, profile, firstMissingName, context))
             return false;
@@ -270,6 +285,16 @@ public class QueryProfileProperties extends Properties {
         }
 
         return true;
+    }
+
+    private Map<String, String> contextWithZoneInfo(Map<String, String> context) {
+        if (zoneInfo == ZoneInfo.defaultInfo()) return context;
+
+        Map<String, String> contextWithZoneInfo = context == null ? new HashMap<>() : new HashMap<>(context);
+        contextWithZoneInfo.putIfAbsent("environment", zoneInfo.zone().environment().name());
+        contextWithZoneInfo.putIfAbsent("region", zoneInfo.zone().region());
+        contextWithZoneInfo.putIfAbsent("instance", zoneInfo.application().instance());
+        return Collections.unmodifiableMap(contextWithZoneInfo);
     }
 
     private boolean reachableTypesAreComplete(CompoundName prefix, CompiledQueryProfile profile, StringBuilder firstMissingName, Map<String,String> context) {

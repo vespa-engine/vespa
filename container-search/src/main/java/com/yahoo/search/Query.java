@@ -369,7 +369,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         startTime = httpRequest.getJDiscRequest().creationTime(TimeUnit.MILLISECONDS);
         if (queryProfile != null) {
             // Move all request parameters to the query profile
-            Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedders);
+            Properties queryProfileProperties = new QueryProfileProperties(queryProfile, embedders, zoneInfo);
             properties().chain(queryProfileProperties);
             setPropertiesFromRequestMap(requestMap, properties(), true);
 
@@ -377,11 +377,11 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
             properties().chain(new RankProfileInputProperties(schemaInfo, this, embedders))
                         .chain(new QueryProperties(this, queryProfile.getRegistry(), embedders))
                         .chain(new ModelObjectMap())
-                        .chain(new RequestContextProperties(requestMap, zoneInfo))
+                        .chain(new RequestContextProperties(requestMap))
                         .chain(queryProfileProperties)
                         .chain(new DefaultProperties());
 
-            // Pass the values from the query profile which maps through a field in the Query object model
+            // Pass values from the query profile which maps to a field in the Query object model
             // through the property chain to cause those values to be set in the Query object model with
             // the right types according to query profiles
             setFieldsFrom(queryProfileProperties, requestMap);
