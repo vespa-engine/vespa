@@ -194,6 +194,7 @@ public class Nodes {
                                                    .map(node -> {
                                                        if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
                                                            illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
+                                                       if (node.status().wantToDeprovision()) return node; // Do not reset status if wantToDeprovision
                                                        return node.withWantToRetire(false,
                                                                                     false,
                                                                                     false,
