@@ -138,6 +138,13 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::create(
 }
 
 template <typename B, typename M>
+std::unique_ptr<queryeval::SearchIterator>
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
+{
+    return self.getPostingList().make_bitvector_iterator(idx, doc_id_limit, match_data, strict);
+}
+
+template <typename B, typename M>
 const IDocumentWeightAttribute *
 MultiValueNumericPostingAttribute<B, M>::asDocumentWeightAttribute() const
 {

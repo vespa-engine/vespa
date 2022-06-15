@@ -12,6 +12,9 @@ namespace search {
     class GrowableBitVector;
 }
 
+namespace search::fef       { class TermFieldMatchData; }
+namespace search::queryeval { class SearchIterator; }
+
 namespace search::attribute {
 
 class Status;
@@ -184,6 +187,8 @@ public:
     BitVectorEntry *getWBitVectorEntry(RefType ref) {
         return _store.template getEntry<BitVectorEntry>(ref);
     }
+
+    std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(RefType ref, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const;
 
     static inline DataT bitVectorWeight();
     vespalib::MemoryUsage getMemoryUsage() const;
