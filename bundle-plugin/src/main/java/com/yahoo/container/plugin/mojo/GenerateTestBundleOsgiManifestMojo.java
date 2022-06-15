@@ -40,7 +40,7 @@ public class GenerateTestBundleOsgiManifestMojo extends AbstractGenerateOsgiMani
     public void execute() throws MojoExecutionException {
         try {
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(
-                    project, TestBundleDependencyScopeTranslator.from(project.getArtifactMap(), testBundleScopeOverrides));
+                    project, TestBundleDependencyScopeTranslator.from(project.getArtifacts(), testBundleScopeOverrides));
 
             List<File> providedJars = artifactSet.getJarArtifactsProvided().stream()
                     .map(Artifact::getFile)

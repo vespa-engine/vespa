@@ -10,7 +10,9 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 
@@ -23,7 +25,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void test_dependencies_are_translated_to_compile_scope_by_default() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "test", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
         Artifact ab = createArtifact(artifacts, "a-b", "test", List.of("a"));
@@ -39,7 +41,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void non_test_scope_dependencies_keep_original_scope() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "provided", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "provided", List.of("a"));
         Artifact ab = createArtifact(artifacts, "a-b", "provided", List.of("a"));
@@ -60,7 +62,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void ordering_in_config_string_determines_translation() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "test", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
         {
@@ -83,7 +85,7 @@ public class TestBundleDependencyScopeTranslatorTest {
 
     @Test
     public void transitive_non_test_dependencies_of_test_dependencies_keep_original_scope() {
-        Map<String, Artifact> artifacts = new TreeMap<>();
+        Set<Artifact> artifacts = new TreeSet<>();
         Artifact a = createArtifact(artifacts, "a", "test", List.of());
         Artifact aa = createArtifact(artifacts, "a-a", "test", List.of("a"));
         Artifact ab = createArtifact(artifacts, "a-b", "test", List.of("a"));
@@ -105,16 +107,37 @@ public class TestBundleDependencyScopeTranslatorTest {
         assertScope(translator, bb, "provided");
     }
 
-    private static Artifact createArtifact(
-            Map<String, Artifact> artifacts, String artifactId, String scope, List<String> transitiveDependents) {
-        Artifact artifact = createArtifact(artifactId, scope, transitiveDependents);
-        artifacts.put(simpleId(artifactId), artifact);
+    @Test
+    public void different_classifiers_are_handled_separately() {
+        Set<Artifact> artifacts = new TreeSet<>();
+        Artifact a = createArtifact(artifacts, "a", "test", List.of());
+        Artifact ab = createArtifact(artifacts, "a-b", "provided", List.of("a"));
+        Artifact ac = createArtifact(artifacts, "a-c", "classy", "test", List.of("a"));
+
+        TestBundleDependencyScopeTranslator withoutOverrides = TestBundleDependencyScopeTranslator.from(artifacts, "");
+        assertScope(withoutOverrides, a, "compile");
+        assertScope(withoutOverrides, ab, "provided");
+        assertScope(withoutOverrides, ac, "compile");
+
+        TestBundleDependencyScopeTranslator withOverrides = TestBundleDependencyScopeTranslator.from(artifacts, "com.test:a:test");
+        assertScope(withOverrides, a, "test");
+        assertScope(withOverrides, ab, "provided");
+        assertScope(withOverrides, ac, "test");
+    }
+
+    private static Artifact createArtifact(Set<Artifact> artifacts, String artifactId, String scope, List<String> transitiveDependents) {
+        return createArtifact(artifacts, artifactId, null, scope, transitiveDependents);
+    }
+
+    private static Artifact createArtifact(Set<Artifact> artifacts, String artifactId, String classifier, String scope, List<String> transitiveDependents) {
+        Artifact artifact = createArtifact(artifactId, classifier, scope, transitiveDependents);
+        artifacts.add(artifact);
         return artifact;
     }
 
-    private static Artifact createArtifact(String artifactId, String scope, List<String> transitiveDependents) {
+    private static Artifact createArtifact(String artifactId, String classifier, String scope, List<String> transitiveDependents) {
         Artifact artifact = new DefaultArtifact(
-                GROUP_ID, artifactId, "1.0", scope, "jar", /*classifier*/null, new DefaultArtifactHandler("jar"));
+                GROUP_ID, artifactId, "1.0", scope, "jar", classifier, new DefaultArtifactHandler("jar"));
         List<String> dependencyTrail = new ArrayList<>();
         dependencyTrail.add(GROUP_ID + "my-project:container-plugin:1-SNAPSHOT");
         transitiveDependents.forEach(dependent -> dependencyTrail.add(fullId(dependent)));
