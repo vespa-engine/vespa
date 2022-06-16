@@ -14,6 +14,5 @@ public record EndpointCertificateRequestMetadata(String requestId, String reques
                                                  String status, String createTime, long expiry, String issuer,
                                                  String publicKeyAlgo) {
 
-    public record DnsNameStatus(String dnsName, String status) {
-    }
+
 }

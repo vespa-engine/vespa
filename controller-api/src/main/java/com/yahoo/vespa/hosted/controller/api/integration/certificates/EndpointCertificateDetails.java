@@ -14,7 +14,7 @@ public record EndpointCertificateDetails(
         String status,
         String ticket_id,
         String athenz_domain,
-        List<EndpointCertificateRequestMetadata.DnsNameStatus> dnsnames,
+        List<DnsNameStatus> dnsnames,
         String duration_sec,
         String expiry,
         String private_key_kgname,

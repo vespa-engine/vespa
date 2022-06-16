@@ -86,7 +86,7 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
                 "ok",
                 "ticket_id",
                 "athenz_domain",
-                metadata.requestedDnsSans().stream().map(name -> new EndpointCertificateRequestMetadata.DnsNameStatus(name, "done")).collect(Collectors.toList()),
+                metadata.requestedDnsSans().stream().map(name -> new DnsNameStatus(name, "done")).collect(Collectors.toList()),
                 "duration_sec",
                 "expiry",
                 metadata.keyName(),
