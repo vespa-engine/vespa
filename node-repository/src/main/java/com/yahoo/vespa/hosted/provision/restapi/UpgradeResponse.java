@@ -39,6 +39,9 @@ public class UpgradeResponse extends HttpResponse {
         Cursor osVersionsObject = root.setObject("osVersions");
         osVersions.readChange().targets().forEach((nodeType, target) -> osVersionsObject.setString(nodeType.name(), target.version().toFullString()));
 
+        Cursor upgradeBudgetObject = root.setObject("upgradeBudget");
+        osVersions.readChange().targets().forEach((nodeType, target) -> upgradeBudgetObject.setString(nodeType.name(), target.upgradeBudget().toString()));
+
         root.setObject("dockerImages"); // Unused, but present to avoid breaking API
 
         new JsonFormat(true).encode(stream, slime);

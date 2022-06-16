@@ -5,6 +5,7 @@ import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.core.MetricsManager;
 import ai.vespa.metricsproxy.http.ValuesFetcher;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
+import ai.vespa.metricsproxy.opentelemetry.OpenTelemetryMetricExporter;
 import ai.vespa.metricsproxy.service.VespaServices;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
@@ -34,6 +35,7 @@ public class MetricsV1Handler extends HttpHandlerBase {
     public static final String VALUES_PATH = V1_PATH + "/values";
 
     private final ValuesFetcher valuesFetcher;
+    private final OpenTelemetryMetricExporter telemetry;
 
     @Inject
     public MetricsV1Handler(Executor executor,
@@ -42,6 +44,10 @@ public class MetricsV1Handler extends HttpHandlerBase {
                             MetricsConsumers metricsConsumers) {
         super(executor);
         valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
+
+        // TODO!
+        telemetry = new OpenTelemetryMetricExporter(metricsManager, vespaServices, metricsConsumers);
+        telemetry.start();
     }
 
     @Override
