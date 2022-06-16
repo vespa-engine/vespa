@@ -1,6 +1,9 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=prelude.fastsearch
 
+# Contains the names of the schams present in a particular content cluster,
+# where the cluster in question is determined by the config id used to subscribe to this.
+
 ## The name of the schema/document database
 documentdb[].name string
 
