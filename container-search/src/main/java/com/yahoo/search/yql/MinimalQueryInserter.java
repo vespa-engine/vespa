@@ -63,7 +63,7 @@ public class MinimalQueryInserter extends Searcher {
         Query query = new Query("search/?yql=select%20*%20from%20sources%20where%20title%20contains%20'xyz'");
         Result result = insertQuery(query, new ParserEnvironment().setLinguistics(linguistics));
         if (result != null) {
-            log.warning("Warmup code trigger an error. Error = " + result.toString());
+            log.warning("Warmup code trigger an error. Error = " + result);
             return false;
         }
         if ( ! "select * from sources where title contains \"xyz\"".equals(query.yqlRepresentation())) {

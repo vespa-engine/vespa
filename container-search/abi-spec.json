@@ -7974,6 +7974,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.DocumentSummary$Builder addField(java.lang.String, java.lang.String)",
       "public com.yahoo.search.schema.DocumentSummary$Builder add(com.yahoo.search.schema.DocumentSummary$Field)",
       "public com.yahoo.search.schema.DocumentSummary$Builder setDynamic(boolean)",
       "public com.yahoo.search.schema.DocumentSummary build()"
@@ -8040,7 +8041,7 @@
     ],
     "methods": [
       "public java.lang.String name()",
-      "public java.util.List fields()",
+      "public java.util.Map fields()",
       "public boolean isDynamic()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",

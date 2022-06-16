@@ -215,8 +215,6 @@ public class IndexedSearchCluster extends SearchCluster
         for (DocumentDatabase db : documentDbs) {
             DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
             docDb.name(db.getName());
-            convertSummaryConfig(db, db, docDb);
-            addRankProfilesConfig(db.getSchemaName(), docDb);
             builder.documentdb(docDb);
         }
     }

@@ -65,9 +65,6 @@ public class StreamingSearchCluster extends SearchCluster implements
     public void getConfig(DocumentdbInfoConfig.Builder builder) {
         DocumentdbInfoConfig.Documentdb.Builder docDb = new DocumentdbInfoConfig.Documentdb.Builder();
         docDb.name(derivedConfig.getSchema().getName());
-        SummaryConfig.Producer prod = derivedConfig.getSummaries();
-        convertSummaryConfig(prod, null, docDb);
-        addRankProfilesConfig(derivedConfig.getSchema().getName(), docDb);
         builder.documentdb(docDb);
     }
 

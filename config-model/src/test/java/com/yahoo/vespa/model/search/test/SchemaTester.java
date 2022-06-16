@@ -2,9 +2,7 @@
 package com.yahoo.vespa.model.search.test;
 
 import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.path.Path;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.VespaModel;
@@ -200,18 +198,6 @@ public class SchemaTester {
         return schemas;
     }
 
-    DocumentdbInfoConfig.Documentdb.Rankprofile assertRankProfile(DocumentdbInfoConfig.Documentdb db,
-                                                                  int index,
-                                                                  String name,
-                                                                  boolean hasSummaryFeatures,
-                                                                  boolean hasRankFeatures) {
-        DocumentdbInfoConfig.Documentdb.Rankprofile rankProfile = db.rankprofile(index);
-        assertEquals(name, rankProfile.name());
-        assertEquals(hasSummaryFeatures, rankProfile.hasSummaryFeatures());
-        assertEquals(hasRankFeatures, rankProfile.hasRankFeatures());
-        return rankProfile;
-    }
-
     SchemaInfoConfig.Schema.Rankprofile assertRankProfile(SchemaInfoConfig.Schema schema,
                                                           int index,
                                                           String name,
@@ -222,14 +208,6 @@ public class SchemaTester {
         assertEquals(hasSummaryFeatures, rankProfile.hasSummaryFeatures());
         assertEquals(hasRankFeatures, rankProfile.hasRankFeatures());
         return rankProfile;
-    }
-
-    void assertSummaryField(DocumentdbInfoConfig.Documentdb db, int summaryClassIndex, int fieldIndex,
-                            String name, String type, boolean dynamic) {
-        DocumentdbInfoConfig.Documentdb.Summaryclass.Fields field = db.summaryclass(summaryClassIndex).fields(fieldIndex);
-        assertEquals(name, field.name());
-        assertEquals(type, field.type());
-        assertEquals(dynamic, field.dynamic());
     }
 
     void assertSummaryField(SchemaInfoConfig.Schema schema, int summaryClassIndex, int fieldIndex,
