@@ -68,7 +68,7 @@ public class Query extends QueryChain {
             }
 
             boolean appendBrackets =
-                (qc instanceof Query q && q.queries.size() > 1 && !A.hasAnnotation(q.annotation))
+                (qc instanceof Query && ((Query) qc).queries.size() > 1 && !A.hasAnnotation(((Query) qc).annotation))
                 || isNotAnd;
             if (appendBrackets) {
                 sb.append("(");
