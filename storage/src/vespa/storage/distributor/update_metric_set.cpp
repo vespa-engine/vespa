@@ -7,7 +7,7 @@ namespace storage {
 using metrics::MetricSet;
 
 UpdateMetricSet::UpdateMetricSet(MetricSet* owner)
-    : PersistenceOperationMetricSet("updates.sum", owner),
+    : PersistenceOperationMetricSet("updates", owner),
       diverging_timestamp_updates("diverging_timestamp_updates", {},
                                   "Number of updates that report they were performed against "
                                   "divergent version timestamps on different replicas", this),
