@@ -1408,6 +1408,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
         @Override
         public ContentChannel handleResponse(Response response) {
             var statusCodeGroup = response.getStatus() / 100;
+            // Status code 412 - condition not met - is considered OK
             if (statusCodeGroup == 2 || response.getStatus() == 412)
                 metrics.reportSuccessful(type, start);
             else if (statusCodeGroup == 4)
