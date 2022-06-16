@@ -14,7 +14,6 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
@@ -22,10 +21,10 @@ import org.junit.rules.Timeout;
 import java.io.IOException;
 import java.util.List;
 
-import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
+import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.CUSTOM_CONSUMER_ID;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.MONITORING_SYSTEM;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;
@@ -68,7 +67,6 @@ public class RpcMetricsTest {
     public Timeout globalTimeout = Timeout.seconds(300);
 
     @Test
-    @Ignore("Temporarily ignore test until timeout issue is resolved")
     public void extra_metrics_are_added_to_output() throws Exception {
         try (IntegrationTester tester = new IntegrationTester()) {
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
@@ -84,7 +82,6 @@ public class RpcMetricsTest {
     }
 
     @Test
-    @Ignore("Temporarily ignore test until timeout issue is resolved")
     public void extra_metrics_are_purged() throws Exception {
         try (IntegrationTester tester = new IntegrationTester()) {
             try (RpcClient rpcClient = new RpcClient(tester.rpcPort())) {
@@ -102,7 +99,6 @@ public class RpcMetricsTest {
     }
 
     @Test
-    @Ignore("Temporarily ignore test until timeout issue is resolved")
     public void testGetMetrics() throws Exception {
         try (IntegrationTester tester = new IntegrationTester()) {
             tester.httpServer().setResponse(METRICS_RESPONSE);
@@ -193,7 +189,6 @@ public class RpcMetricsTest {
     }
 
     @Test
-    @Ignore("Temporarily ignore test until timeout issue is resolved")
     public void testGetAllMetricNames() {
         try (IntegrationTester tester = new IntegrationTester()) {
 
