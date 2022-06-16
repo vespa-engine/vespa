@@ -1,9 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+
+import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Fetch metrics for a given vespa service
@@ -22,21 +25,19 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
      * Connect to remote service over http and fetch metrics
      */
     public void getMetrics(MetricsParser.Consumer consumer, int fetchCount) {
-        try (InputStream stream = getJson()) {
-            createMetrics(stream, consumer, fetchCount);
-        } catch (IOException | InterruptedException | ExecutionException e) {
-        }
+        try (CloseableHttpResponse response = getResponse()) {
+            HttpEntity entity = response.getEntity();
+            try {
+                MetricsParser.parse(new BufferedInputStream(entity.getContent(), HttpMetricFetcher.BUFFER_SIZE), consumer);
+            } catch (Exception e) {
+                handleException(e, entity.getContentType(), fetchCount);
+            } finally {
+                EntityUtils.consumeQuietly(entity);
+            }
+        } catch (IOException ignored) {}
     }
 
     void createMetrics(String data, MetricsParser.Consumer consumer, int fetchCount) throws IOException {
         MetricsParser.parse(data, consumer);
-    }
-    private void createMetrics(InputStream data, MetricsParser.Consumer consumer, int fetchCount) throws IOException {
-        try {
-            MetricsParser.parse(data, consumer);
-        } catch (Exception e) {
-            handleException(e, data, fetchCount);
-            while (data.read() != -1) {}
-        }
     }
 }
