@@ -26,23 +26,30 @@ interface Client {
 
         final Optional<T> response;
         final Optional<String> error;
+        final boolean isTimeout;
 
         public static <T> ResponseOrError<T> fromResponse(T response) {
             return new ResponseOrError<>(response);
         }
 
         public static <T> ResponseOrError<T> fromError(String error) {
-            return new ResponseOrError<T>(error);
+            return new ResponseOrError<T>(error, false);
+        }
+
+        public static <T> ResponseOrError<T> fromTimeoutError(String error) {
+            return new ResponseOrError<T>(error, true);
         }
 
         ResponseOrError(T response) {
             this.response = Optional.of(response);
             this.error = Optional.empty();
+            this.isTimeout = false;
         }
 
-        ResponseOrError(String error) {
+        ResponseOrError(String error, boolean isTimeout) {
             this.response = Optional.empty();
             this.error = Optional.of(error);
+            this.isTimeout = isTimeout;
         }
 
         /** Returns the response, or empty if there is an error */
@@ -50,6 +57,9 @@ interface Client {
 
         /** Returns the error or empty if there is a response */
         public Optional<String> error() { return error; }
+
+        /** @return true if error is a timeout */
+        public boolean timeout() { return isTimeout; }
     }
 
     class GetDocsumsResponse {

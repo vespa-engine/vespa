@@ -57,6 +57,13 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         query.trace(false, 5, "Sending search request with jrt/protobuf to node with dist key ", node.key());
 
         var timeout = TimeoutHelper.calculateTimeout(query);
+        if (timeout.timedOut()) {
+            // Need to produce an error response her in case of JVM system clock being adjusted
+            // Timeout mechanism relies on System.currentTimeMillis(), not System.nanoTime() :(
+            responses.add(Client.ResponseOrError.fromTimeoutError("Timeout while waiting for " + getName()));
+            responseAvailable();
+            return incomingContext;
+        }
         RpcContext context = getContext(incomingContext, timeout.request());
         nodeConnection.request(RPC_METHOD,
                                context.compressedPayload.type(),
@@ -91,6 +98,9 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         }
         if (response == null) {
             return errorResult(query, ErrorMessage.createTimeout("Timeout while waiting for " + getName()));
+        }
+        if (response.timeout()) {
+            return errorResult(query, ErrorMessage.createTimeout(response.error().get()));
         }
         if (response.error().isPresent()) {
             return errorResult(query, ErrorMessage.createBackendCommunicationError(response.error().get()));

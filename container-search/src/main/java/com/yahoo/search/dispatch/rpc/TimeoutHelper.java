@@ -22,5 +22,7 @@ class TimeoutHelper {
         return new Timeout(requestTimeout, clientTimeout);
     }
 
-    record Timeout(double request, double client) {}
+    record Timeout(double request, double client) {
+        public boolean timedOut() { return request == 0 && client == 0; }
+    }
 }

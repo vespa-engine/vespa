@@ -25,7 +25,6 @@ import com.yahoo.slime.BinaryFormat;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -81,12 +80,19 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         responses = new LinkedBlockingQueue<>(outstandingResponses);
 
         var timeout = TimeoutHelper.calculateTimeout(result.getQuery());
+        if (timeout.timedOut()) {
+            // Need to produce an error response her in case of JVM system clock being adjusted
+            // Timeout mechanism relies on System.currentTimeMillis(), not System.nanoTime() :(
+            hitsByNode.forEach((nodeId, hits) ->
+                    receive(Client.ResponseOrError.fromTimeoutError("Timed out waiting for summary data from " + nodeId), hits));
+            return;
+        }
         var builder = ProtobufSerialization.createDocsumRequestBuilder(
                 result.getQuery(), serverId, summaryClass, summaryNeedsQuery, timeout.request());
-        for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
-            var payload = ProtobufSerialization.serializeDocsumRequest(builder, nodeHits.getValue());
-            sendDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), payload, result, timeout.client());
-        }
+        hitsByNode.forEach((nodeId, hits) -> {
+            var payload = ProtobufSerialization.serializeDocsumRequest(builder, hits);
+            sendDocsumsRequest(nodeId, hits, payload, result, timeout.client());
+        });
     }
 
     @Override
@@ -155,6 +161,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     throwTimeout();
                 }
                 var response = responseAndHits.getFirst();
+                if (response.timeout()) {
+                    throwTimeout();
+                }
                 var hitsContext = responseAndHits.getSecond();
                 skippedHits += processResponse(result, response, hitsContext, summaryClass);
                 outstandingResponses--;
