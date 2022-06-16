@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.search.test;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
-import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.path.Path;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.config.IndexInfoConfig;
@@ -262,36 +261,8 @@ public class DocumentDatabaseTestCase {
         { // documentdb-info config
             DocumentdbInfoConfig dcfg = model.getConfig(DocumentdbInfoConfig.class, searcherId);
             assertEquals(2, dcfg.documentdb().size());
-
-            { // type1
-                DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(0);
-                assertEquals("type1", db.name());
-
-                assertEquals(7, db.rankprofile().size());
-                tester.assertRankProfile(db, 0, "default", false, false);
-                tester.assertRankProfile(db, 1, "unranked", false, false);
-                tester.assertRankProfile(db, 2, "staticrank", false, false);
-                tester.assertRankProfile(db, 3, "summaryfeatures", true, false);
-                tester.assertRankProfile(db, 4, "inheritedsummaryfeatures", true, false);
-                tester.assertRankProfile(db, 5, "rankfeatures", false, true);
-                var inputs = tester.assertRankProfile(db, 6, "inputs", false, false);
-
-                assertEquals(2, inputs.input().size());
-                assertEquals("query(foo)", inputs.input(0).name());
-                assertEquals("tensor<float>(x[10])", inputs.input(0).type());
-                assertEquals("query(bar)", inputs.input(1).name());
-                assertEquals("tensor(key{},x[1000])", inputs.input(1).type());
-
-                assertEquals(2, db.summaryclass().size());
-                assertEquals("default", db.summaryclass(0).name());
-                assertEquals("attributeprefetch", db.summaryclass(1).name());
-                tester.assertSummaryField(db, 0, 0, "f1", "longstring", true);
-                tester.assertSummaryField(db, 0, 1, "f2", "integer", false);
-            }
-            { // type2
-                DocumentdbInfoConfig.Documentdb db = dcfg.documentdb(1);
-                assertEquals("type2", db.name());
-            }
+            assertEquals("type1", dcfg.documentdb(0).name());
+            assertEquals("type2", dcfg.documentdb(1).name());
         }
         { // attributes config
             AttributesConfig acfg = model.getConfig(AttributesConfig.class, searcherId);

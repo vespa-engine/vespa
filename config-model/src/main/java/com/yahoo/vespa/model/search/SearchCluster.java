@@ -4,12 +4,9 @@ package com.yahoo.vespa.model.search;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.schema.derived.SchemaInfo;
-import com.yahoo.schema.derived.SummaryMap;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
-import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.vespa.config.search.SummarymapConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -57,71 +54,6 @@ public abstract class SearchCluster extends AbstractConfigProducer<SearchCluster
      * Also stores the document names contained in the schemas.
      */
     public abstract void deriveFromSchemas(DeployState deployState);
-
-    /**
-     * Converts summary and summary map config to the appropriate information in documentdb
-     *
-     * @param summaryConfigProducer the summary config
-     * @param summarymapConfigProducer the summary map config, or null if none is available
-     * @param docDb the target document dm config
-     */
-    protected void convertSummaryConfig(SummaryConfig.Producer summaryConfigProducer,
-                                        SummarymapConfig.Producer summarymapConfigProducer,
-                                        DocumentdbInfoConfig.Documentdb.Builder docDb) {
-
-        SummaryConfig.Builder summaryConfigBuilder = new SummaryConfig.Builder();
-        summaryConfigProducer.getConfig(summaryConfigBuilder);
-        SummaryConfig summaryConfig = summaryConfigBuilder.build();
-
-        SummarymapConfig summarymapConfig = null;
-        if (summarymapConfigProducer != null) {
-            SummarymapConfig.Builder summarymapConfigBuilder = new SummarymapConfig.Builder();
-            summarymapConfigProducer.getConfig(summarymapConfigBuilder);
-            summarymapConfig = summarymapConfigBuilder.build();
-        }
-
-        for (SummaryConfig.Classes sclass : summaryConfig.classes()) {
-            DocumentdbInfoConfig.Documentdb.Summaryclass.Builder sumClassBuilder = new DocumentdbInfoConfig.Documentdb.Summaryclass.Builder();
-            sumClassBuilder.
-                id(sclass.id()).
-                name(sclass.name());
-            for (SummaryConfig.Classes.Fields field : sclass.fields()) {
-                DocumentdbInfoConfig.Documentdb.Summaryclass.Fields.Builder fieldsBuilder = new DocumentdbInfoConfig.Documentdb.Summaryclass.Fields.Builder();
-                fieldsBuilder.name(field.name())
-                             .type(field.type())
-                             .dynamic(isDynamic(field.name(), summarymapConfig));
-                sumClassBuilder.fields(fieldsBuilder);
-            }
-            docDb.summaryclass(sumClassBuilder);
-        }
-    }
-
-    /** Returns whether the given field is a dynamic summary field. */
-    private boolean isDynamic(String fieldName, SummarymapConfig summarymapConfig) {
-        if (summarymapConfig == null) return false; // not know for streaming, but also not used
-
-        for (SummarymapConfig.Override override : summarymapConfig.override()) {
-            if ( ! fieldName.equals(override.field())) continue;
-            if (SummaryMap.isDynamicCommand(override.command())) return true;
-        }
-        return false;
-    }
-
-    protected void addRankProfilesConfig(String schemaName, DocumentdbInfoConfig.Documentdb.Builder docDbBuilder) {
-        for (SchemaInfo.RankProfileInfo rankProfile : schemas().get(schemaName).rankProfiles().values()) {
-            var rankProfileConfig = new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder();
-            rankProfileConfig.name(rankProfile.name());
-            rankProfileConfig.hasSummaryFeatures(rankProfile.hasSummaryFeatures());
-            rankProfileConfig.hasRankFeatures(rankProfile.hasRankFeatures());
-            for (var input : rankProfile.inputs().entrySet()) {
-                var inputConfig = new DocumentdbInfoConfig.Documentdb.Rankprofile.Input.Builder();
-                inputConfig.name(input.getKey().toString());
-                inputConfig.type(input.getValue().type().toString());
-                rankProfileConfig.input(inputConfig);
-            }
-            docDbBuilder.rankprofile(rankProfileConfig);
-        }
-    }
 
     /** Returns a list of the document type names used in this search cluster */
     public List<String> getDocumentNames() {
