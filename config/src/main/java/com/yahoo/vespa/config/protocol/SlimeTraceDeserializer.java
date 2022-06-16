@@ -39,19 +39,13 @@ public class SlimeTraceDeserializer {
     }
 
     private static Object decodePayload(Inspector entry) {
-        switch (entry.type()) {
-            case STRING:
-                return entry.asString();
-            case LONG:
-                return entry.asLong();
-            case BOOL:
-                return entry.asBool();
-            case DOUBLE:
-                return entry.asDouble();
-            case DATA:
-                return entry.asData();
-            default:
-                return null;
-        }
+        return switch (entry.type()) {
+            case STRING -> entry.asString();
+            case LONG -> entry.asLong();
+            case BOOL -> entry.asBool();
+            case DOUBLE -> entry.asDouble();
+            case DATA -> entry.asData();
+            default -> null;
+        };
     }
 }
