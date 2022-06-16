@@ -109,11 +109,8 @@ case $1 in
         nohup nice sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
         configsources=`bin/vespa-print-default configservers_rpc`
         userargs=$VESPA_CONFIGPROXY_JVMARGS
-        # Note that the hardcoded memory Xmx=128 migh be overriden in VESPA_CONFIGPROXY_JVMARGS,
-        # hence rendering get_jvm_hugepage_settings incorrect, but it is better than not.
-        # TODO Better way of extracting heap size arguments.
-        heap_min=32
-        heap_max=128
+        heap_min=$(get_min_heap_mb "${userargs}" 32)
+        heap_max=$(get_max_heap_mb "${userargs}" 128)
         jvmopts="-Xms${heap_min}M -Xmx${heap_max}M -XX:+PreserveFramePointer $(get_jvm_hugepage_settings $heap_max) -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=448 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
 
         VESPA_SERVICE_NAME=configproxy
