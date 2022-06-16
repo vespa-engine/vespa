@@ -7,7 +7,7 @@ Reference: https://docs.vespa.ai/en/reference/query-language-reference.html
 # usage
 Please refer to the unit test:
 
-https://github.com/vespa-engine/vespa/tree/master/client/src/test/groovy/ai/vespa/client/dsl/QTest.groovy
+https://github.com/vespa-engine/vespa/blob/master/client/src/test/java/ai/vespa/client/dsl/QTest.java
 
 # todos
 - [ ] support `predicate` (https://docs.vespa.ai/en/predicate-fields.html)
