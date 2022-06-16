@@ -98,14 +98,6 @@
       <scope>compile</scope>
     </dependency>
     <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcpkix-jdk15on</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcprov-jdk15on</artifactId>
-    </dependency>
-    <dependency>
       <!-- required for container-search code using org.json -->
       <groupId>org.json</groupId>
       <artifactId>json</artifactId>
