@@ -795,8 +795,7 @@ public class CppClassBuilder implements ClassBuilder {
                 } else {
                     w.write("ConfigParser::parseStruct<" + childType + ">(\"" + child.getName() + "\", __lines");
                 }
-                if (child instanceof LeafCNode && ((LeafCNode) child).getDefaultValue() != null) {
-                    LeafCNode leaf = (LeafCNode) child;
+                if (child instanceof LeafCNode leaf && leaf.getDefaultValue() != null) {
                     if (leaf.getDefaultValue().getValue() != null) {
                         String defaultVal = getDefaultValue(leaf);
                         if (leaf instanceof LeafCNode.EnumLeaf) {
