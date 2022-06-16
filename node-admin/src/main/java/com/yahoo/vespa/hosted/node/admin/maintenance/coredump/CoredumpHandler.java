@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Dimensions;
 import com.yahoo.vespa.hosted.node.admin.container.metrics.Metrics;
+import com.yahoo.vespa.hosted.node.admin.maintenance.sync.ZstdCompressingInputStream;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
@@ -13,10 +14,11 @@ import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
-import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +28,6 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder.nameEndsWith;
@@ -42,15 +43,14 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 public class CoredumpHandler {
 
     private static final Pattern HS_ERR_PATTERN = Pattern.compile("hs_err_pid[0-9]+\\.log");
-    private static final String LZ4_PATH = "/usr/bin/lz4";
     private static final String PROCESSING_DIRECTORY_NAME = "processing";
     private static final String METADATA_FILE_NAME = "metadata.json";
+    private static final String COMPRESSED_EXTENSION = ".zstd";
     public static final String COREDUMP_FILENAME_PREFIX = "dump_";
 
     private final Logger logger = Logger.getLogger(CoredumpHandler.class.getName());
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private final Terminal terminal;
     private final CoreCollector coreCollector;
     private final CoredumpReporter coredumpReporter;
     private final String crashPatchInContainer;
@@ -65,14 +65,13 @@ public class CoredumpHandler {
      */
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
                            String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics) {
-        this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
+        this(coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
                 metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
     }
 
-    CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
+    CoredumpHandler(CoreCollector coreCollector, CoredumpReporter coredumpReporter,
                     String crashPathInContainer, Path doneCoredumpsPath, Metrics metrics,
                     Clock clock, Supplier<String> coredumpIdSupplier) {
-        this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
         this.crashPatchInContainer = crashPathInContainer;
@@ -94,7 +93,7 @@ public class CoredumpHandler {
                     .match(fileAttributes -> !isReadyForProcessing(fileAttributes))
                     .maxDepth(1).stream()
                     .map(FileFinder.FileAttributes::filename)
-                    .collect(Collectors.toUnmodifiableList());
+                    .toList();
             if (!pendingCores.isEmpty())
                 throw new ConvergenceException(String.format("Cannot process %s coredumps: Still being written",
                         pendingCores.size() < 5 ? pendingCores : pendingCores.size()));
@@ -130,7 +129,7 @@ public class CoredumpHandler {
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
                 .map(FileFinder.FileAttributes::path)
-                .collect(Collectors.toList());
+                .toList();
 
         int coredumpIndex = IntStream.range(0, toProcess.size())
                 .filter(i -> !HS_ERR_PATTERN.matcher(toProcess.get(i).getFileName().toString()).matches())
@@ -191,11 +190,14 @@ public class CoredumpHandler {
      */
     private void finishProcessing(NodeAgentContext context, ContainerPath coredumpDirectory) throws IOException {
         ContainerPath coreFile = findCoredumpFileInProcessingDirectory(coredumpDirectory);
-        ContainerPath compressedCoreFile = coreFile.resolveSibling(coreFile.getFileName() + ".lz4");
-        terminal.newCommandLine(context)
-                .add(LZ4_PATH, "-f", coreFile.pathOnHost().toString(), compressedCoreFile.pathOnHost().toString())
-                .setTimeout(Duration.ofMinutes(30))
-                .execute();
+        ContainerPath compressedCoreFile = coreFile.resolveSibling(coreFile.getFileName() + COMPRESSED_EXTENSION);
+
+        try (ZstdCompressingInputStream zcis = new ZstdCompressingInputStream(Files.newInputStream(coreFile));
+             OutputStream fos = Files.newOutputStream(compressedCoreFile)) {
+            zcis.transferTo(fos);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         Files.delete(coreFile);
 
         Path newCoredumpDirectory = doneCoredumpsPath.resolve(context.containerName().asString());
@@ -206,7 +208,7 @@ public class CoredumpHandler {
 
     ContainerPath findCoredumpFileInProcessingDirectory(ContainerPath coredumpProccessingDirectory) {
         return (ContainerPath) FileFinder.files(coredumpProccessingDirectory)
-                .match(nameStartsWith(COREDUMP_FILENAME_PREFIX).and(nameEndsWith(".lz4").negate()))
+                .match(nameStartsWith(COREDUMP_FILENAME_PREFIX).and(nameEndsWith(COMPRESSED_EXTENSION).negate()))
                 .maxDepth(1)
                 .stream()
                 .map(FileFinder.FileAttributes::path)
@@ -222,7 +224,7 @@ public class CoredumpHandler {
         int numberOfUnprocessedCoredumps = FileFinder.files(containerCrashPath)
                 .match(nameStartsWith(".").negate())
                 .match(nameMatches(HS_ERR_PATTERN).negate())
-                .match(nameEndsWith(".lz4").negate())
+                .match(nameEndsWith(COMPRESSED_EXTENSION).negate())
                 .match(nameStartsWith("metadata").negate())
                 .list().size();
 

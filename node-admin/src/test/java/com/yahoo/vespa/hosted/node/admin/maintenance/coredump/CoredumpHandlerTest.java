@@ -8,10 +8,7 @@ import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextImpl;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.fs.ContainerPath;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.TestChildProcess2;
-import com.yahoo.vespa.hosted.node.admin.task.util.process.TestTerminal;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,14 +48,13 @@ public class CoredumpHandlerTest {
     private final ContainerPath containerCrashPath = context.paths().of("/var/crash");
     private final Path doneCoredumpsPath = fileSystem.getPath("/home/docker/dumps");
 
-    private final TestTerminal terminal = new TestTerminal();
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private final CoredumpReporter coredumpReporter = mock(CoredumpReporter.class);
     private final Metrics metrics = new Metrics();
     private final ManualClock clock = new ManualClock();
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
-    private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
+    private final CoredumpHandler coredumpHandler = new CoredumpHandler(coreCollector, coredumpReporter,
             containerCrashPath.pathInContainer(), doneCoredumpsPath, metrics, clock, coredumpIdSupplier);
 
 
@@ -187,7 +183,7 @@ public class CoredumpHandlerTest {
     public void fails_to_get_core_file_if_only_compressed() throws IOException {
         ContainerPath coredumpDirectory = context.paths().of("/path/to/coredump/proccessing/id-123");
         Files.createDirectories(coredumpDirectory);
-        Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.lz4"));
+        Files.createFile(coredumpDirectory.resolve("dump_bash.core.431.zstd"));
         coredumpHandler.findCoredumpFileInProcessingDirectory(coredumpDirectory);
     }
 
@@ -199,18 +195,12 @@ public class CoredumpHandlerTest {
         Files.createFile(coredumpDirectory.resolve("dump_bash.core.431"));
         assertFolderContents(coredumpDirectory, "metadata.json", "dump_bash.core.431");
 
-        terminal.interceptCommand("/usr/bin/lz4 -f /data/vespa/storage/container-123/path/to/coredump/proccessing/id-123/dump_bash.core.431 " +
-                "/data/vespa/storage/container-123/path/to/coredump/proccessing/id-123/dump_bash.core.431.lz4 2>&1",
-                commandLine -> {
-                    uncheck(() -> Files.createFile(fileSystem.getPath(commandLine.getArguments().get(3))));
-                    return new TestChildProcess2(0, "");
-                });
         coredumpHandler.processAndReportSingleCoredump(context, coredumpDirectory, Map::of);
         verify(coreCollector, never()).collect(any(), any());
         verify(coredumpReporter, times(1)).reportCoredump(eq("id-123"), eq("metadata"));
         assertFalse(Files.exists(coredumpDirectory));
         assertFolderContents(doneCoredumpsPath.resolve("container-123"), "id-123");
-        assertFolderContents(doneCoredumpsPath.resolve("container-123").resolve("id-123"), "metadata.json", "dump_bash.core.431.lz4");
+        assertFolderContents(doneCoredumpsPath.resolve("container-123").resolve("id-123"), "metadata.json", "dump_bash.core.431.zstd");
     }
 
     @Test
@@ -238,11 +228,6 @@ public class CoredumpHandlerTest {
     @Before
     public void setup() throws IOException {
         Files.createDirectories(containerCrashPath.pathOnHost());
-    }
-
-    @After
-    public void teardown() {
-        terminal.verifyAllCommandsExecuted();
     }
 
     private static void assertFolderContents(Path pathToFolder, String... filenames) {
