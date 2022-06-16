@@ -84,7 +84,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             // Need to produce an error response her in case of JVM system clock being adjusted
             // Timeout mechanism relies on System.currentTimeMillis(), not System.nanoTime() :(
             hitsByNode.forEach((nodeId, hits) ->
-                    receive(Client.ResponseOrError.fromTimeoutError("Timed out waiting for summary data from " + nodeId), hits));
+                    receive(Client.ResponseOrError.fromTimeoutError("Timed out prior to sending docsum request to " + nodeId), hits));
             return;
         }
         var builder = ProtobufSerialization.createDocsumRequestBuilder(

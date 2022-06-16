@@ -60,7 +60,7 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         if (timeout.timedOut()) {
             // Need to produce an error response her in case of JVM system clock being adjusted
             // Timeout mechanism relies on System.currentTimeMillis(), not System.nanoTime() :(
-            responses.add(Client.ResponseOrError.fromTimeoutError("Timeout while waiting for " + getName()));
+            responses.add(Client.ResponseOrError.fromTimeoutError("Timeout before sending request to " + getName()));
             responseAvailable();
             return incomingContext;
         }
