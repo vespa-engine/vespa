@@ -56,25 +56,25 @@ public class RpcSearchInvoker extends SearchInvoker implements Client.ResponseRe
         }
         query.trace(false, 5, "Sending search request with jrt/protobuf to node with dist key ", node.key());
 
-        RpcContext context = getContext(incomingContext);
-        double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
+        var timeout = TimeoutHelper.calculateTimeout(query);
+        RpcContext context = getContext(incomingContext, timeout.request());
         nodeConnection.request(RPC_METHOD,
                                context.compressedPayload.type(),
                                context.compressedPayload.uncompressedSize(),
                                context.compressedPayload.data(),
                                this,
-                               timeoutSeconds);
+                               timeout.client());
         return context;
     }
 
-    private RpcContext getContext(Object incomingContext) {
+    private RpcContext getContext(Object incomingContext, double requestTimeout) {
         if (incomingContext instanceof RpcContext)
             return (RpcContext)incomingContext;
 
         return new RpcContext(resourcePool, query,
                               ProtobufSerialization.serializeSearchRequest(query,
                                                                            Math.min(query.getHits(), maxHits),
-                                                                           searcher.getServerId()));
+                                                                           searcher.getServerId(), requestTimeout));
     }
 
     @Override

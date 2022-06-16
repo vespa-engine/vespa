@@ -33,15 +33,14 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ProtobufSerialization {
 
     private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
 
-    static byte[] serializeSearchRequest(Query query, int hits, String serverId) {
-        return convertFromQuery(query, hits, serverId).toByteArray();
+    static byte[] serializeSearchRequest(Query query, int hits, String serverId, double requestTimeout) {
+        return convertFromQuery(query, hits, serverId, requestTimeout).toByteArray();
     }
 
     private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors) {
@@ -50,9 +49,9 @@ public class ProtobufSerialization {
         }
     }
 
-    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId) {
+    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId, double requestTimeout) {
         var builder = SearchProtocol.SearchRequest.newBuilder().setHits(hits).setOffset(query.getOffset())
-                .setTimeout((int) query.getTimeLeft());
+                .setTimeout((int) (requestTimeout * 1000));
 
         var documentDb = query.getModel().getDocumentDb();
         if (documentDb != null) {
@@ -130,9 +129,10 @@ public class ProtobufSerialization {
     static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
                                                                            String serverId,
                                                                            String summaryClass,
-                                                                           boolean includeQueryData) {
+                                                                           boolean includeQueryData,
+                                                                           double requestTimeout) {
         var builder = SearchProtocol.DocsumRequest.newBuilder()
-                .setTimeout((int) query.getTimeLeft())
+                .setTimeout((int) (requestTimeout * 1000))
                 .setDumpFeatures(query.properties().getBoolean(Ranking.RANKFEATURES, false));
 
         if (summaryClass != null) {
