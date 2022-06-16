@@ -252,12 +252,10 @@ struct SparsePlan {
     SparseState make_state(const Getter &get_child_value) const {
         SmallVector<Handle> handles;
         SmallVector<string_id> view_addr;
-        char buf[24];
         for (const auto & dim : lookup_specs) {
             if (dim.has_child()) {
                 int64_t child_value = get_child_value(dim.get_child_idx());
-                auto res = std::to_chars(buf, buf + sizeof(buf), child_value, 10);
-                handles.emplace_back(vespalib::stringref(buf, res.ptr - buf));
+                handles.push_back(Handle::handle_from_number(child_value));
                 view_addr.push_back(handles.back().id());
             } else {
                 view_addr.push_back(dim.get_label_name());
