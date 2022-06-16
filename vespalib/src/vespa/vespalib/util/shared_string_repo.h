@@ -263,6 +263,7 @@ public:
     private:
         string_id _id;
         Handle(string_id weak_id) : _id(_repo.copy(weak_id)) {}
+        static Handle handle_from_number_slow(int64_t value);
     public:
         Handle() noexcept : _id() {}
         Handle(vespalib::stringref str) : _id(_repo.resolve(str)) {}
@@ -290,6 +291,12 @@ public:
         uint32_t hash() const noexcept { return _id.hash(); }
         vespalib::string as_string() const { return _repo.as_string(_id); }
         static Handle handle_from_id(string_id weak_id) { return Handle(weak_id); }
+        static Handle handle_from_number(int64_t value) {
+            if ((value < 0) || (value > FAST_ID_MAX)) {
+                return handle_from_number_slow(value);
+            }
+            return Handle(string_id(value + 1));
+        }
         static vespalib::string string_from_id(string_id weak_id) { return _repo.as_string(weak_id); }
         ~Handle() { _repo.reclaim(_id); }
     };

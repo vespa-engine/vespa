@@ -498,6 +498,24 @@ TEST("require that basic multi-handle usage works") {
 
 //-----------------------------------------------------------------------------
 
+void verify_same_enum(int64_t num, const vespalib::string &str) {
+    Handle n = Handle::handle_from_number(num);
+    Handle s(str);
+    EXPECT_EQUAL(n.id().value(), s.id().value());
+}
+
+TEST("require that numeric label resolving works as expected") {
+    TEST_DO(verify_same_enum(-123, "-123"););
+    TEST_DO(verify_same_enum(-1, "-1"););
+    TEST_DO(verify_same_enum(0, "0"););
+    TEST_DO(verify_same_enum(123, "123"););
+    TEST_DO(verify_same_enum(9999999, "9999999"););
+    TEST_DO(verify_same_enum(10000000, "10000000"););
+    TEST_DO(verify_same_enum(999999999999, "999999999999"););
+}
+
+//-----------------------------------------------------------------------------
+
 #if 0
 // needs a lot of memory or tweaking of PART_LIMIT
 TEST("allocate handles until we run out") {

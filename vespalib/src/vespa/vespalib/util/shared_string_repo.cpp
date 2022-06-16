@@ -116,6 +116,13 @@ SharedStringRepo::stats()
     return stats;
 }
 
+SharedStringRepo::Handle
+SharedStringRepo::Handle::handle_from_number_slow(int64_t value) {
+    char buf[24];
+    auto res = std::to_chars(buf, buf + sizeof(buf), value, 10);
+    return Handle(vespalib::stringref(buf, res.ptr - buf));
+}
+
 SharedStringRepo::Handles::Handles()
     : _handles()
 {
