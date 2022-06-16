@@ -60,8 +60,6 @@ public class PlatformBundles {
             "com.yahoo.docproc.AbstractConcreteDocumentFactory",
             "com.yahoo.docproc.DocumentProcessor",
             "com.yahoo.docproc.SimpleDocumentProcessor",
-            "com.yahoo.docproc.util.JoinerDocumentProcessor",
-            "com.yahoo.docproc.util.SplitterDocumentProcessor",
             "com.yahoo.example.TimingSearcher",
             "com.yahoo.language.simple.SimpleLinguistics",
             "com.yahoo.prelude.cluster.ClusterSearcher",
@@ -125,8 +123,6 @@ public class PlatformBundles {
             "com.yahoo.search.searchchain.ForkingSearcher",
             "com.yahoo.search.searchchain.example.ExampleSearcher",
             "com.yahoo.search.searchers.CacheControlSearcher",
-            "com.yahoo.search.statistics.PeakQpsSearcher",
-            "com.yahoo.search.statistics.TimingSearcher",
             "com.yahoo.vespa.streamingvisitors.MetricsSearcher",
             "com.yahoo.vespa.streamingvisitors.VdsStreamingSearcher"
     );

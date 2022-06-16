@@ -10,6 +10,7 @@ import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.SlimeUtils;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,10 +30,14 @@ public class TestConfig {
     private final ZoneId zone;
     private final SystemName system;
     private final boolean isCI;
+    private final String platform;
+    private final long revision;
+    private final Instant deployedAt;
     private final Map<ZoneId, Map<String, URI>> deployments;
     private final Map<ZoneId, List<String>> contentClusters;
 
     public TestConfig(ApplicationId application, ZoneId zone, SystemName system, boolean isCI,
+                      String platform, long revision, Instant deployedAt,
                       Map<ZoneId, Map<String, URI>> deployments, Map<ZoneId, List<String>> contentClusters) {
         if ( ! deployments.containsKey(zone))
             throw new IllegalArgumentException("Config must contain a deployment for its zone, but only does for " + deployments.keySet());
@@ -40,6 +45,9 @@ public class TestConfig {
         this.zone = requireNonNull(zone);
         this.system = requireNonNull(system);
         this.isCI = isCI;
+        this.platform = platform;
+        this.revision = revision;
+        this.deployedAt = deployedAt;
         this.deployments = deployments.entrySet().stream()
                                       .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
                                                                             entry -> Map.copyOf(entry.getValue())));
@@ -59,10 +67,17 @@ public class TestConfig {
         if (config.field("localEndpoints").valid())
             return TestConfig.fromEndpointsOnly(toClusterMap(config.field("localEndpoints")));
 
+        if (config.field("deployments").valid()) {
+
+        }
+
         ApplicationId application = ApplicationId.fromSerializedForm(config.field("application").asString());
         ZoneId zone = ZoneId.from(config.field("zone").asString());
         SystemName system = SystemName.from(config.field("system").asString());
         boolean isCI = config.field("isCI").asBool();
+        String platform = config.field("platform").asString();
+        long revision = config.field("revision").asLong();
+        Instant deployedAt = Instant.ofEpochMilli(config.field("deployedAt").asLong());
         Map<ZoneId, Map<String, URI>> deployments = new HashMap<>();
         config.field("zoneEndpoints").traverse((ObjectTraverser) (zoneId, clustersObject) -> {
             deployments.put(ZoneId.from(zoneId), toClusterMap(clustersObject));
@@ -73,7 +88,7 @@ public class TestConfig {
             clustersArray.traverse((ArrayTraverser) (__, cluster) -> clusters.add(cluster.asString()));
             contentClusters.put(ZoneId.from(zoneId), clusters);
         }));
-        return new TestConfig(application, zone, system, isCI, deployments, contentClusters);
+        return new TestConfig(application, zone, system, isCI, platform, revision, deployedAt, deployments, contentClusters);
     }
 
     static Map<String, URI> toClusterMap(Inspector clustersObject) {
@@ -91,6 +106,9 @@ public class TestConfig {
                               ZoneId.defaultId(),
                               SystemName.defaultSystem(),
                               false,
+                              "",
+                              0,
+                              Instant.EPOCH,
                               Map.of(ZoneId.defaultId(), endpoints),
                               Map.of());
     }
@@ -112,5 +130,11 @@ public class TestConfig {
 
     /** Returns an immutable view of content clusters, per zone, of the application to test. */
     public Map<ZoneId, List<String>> contentClusters() { return contentClusters; }
+
+    public String platformVersion() { return platform; }
+
+    public long applicationVersion() { return revision; }
+
+    public Instant deployedAt() { return deployedAt; }
 
 }

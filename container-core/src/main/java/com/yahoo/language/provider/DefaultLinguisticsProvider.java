@@ -3,7 +3,7 @@ package com.yahoo.language.provider;
 
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.opennlp.OpenNlpLinguistics;

@@ -84,6 +84,7 @@ BuildRequires: python36-devel
 BuildRequires: glibc-langpack-en
 %endif
 %if 0%{?el9}
+%global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 BuildRequires: gcc-c++
 BuildRequires: libatomic
 BuildRequires: pybind11-devel
@@ -124,7 +125,7 @@ BuildRequires: libarchive
 %endif
 %define _command_cmake cmake
 %if 0%{?_centos_stream}
-BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
+BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
 %else
 BuildRequires: (llvm-devel >= 13.0.1 and llvm-devel < 14)
 %endif
@@ -149,7 +150,11 @@ BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.11.0
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 BuildRequires: protobuf-devel
+%if 0%{?_centos_stream}
+BuildRequires: (llvm-devel >= 14.0.0 and llvm-devel < 15)
+%else
 BuildRequires: (llvm-devel >= 13.0.0 and llvm-devel < 14)
+%endif
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -221,9 +226,9 @@ BuildRequires: zlib-devel
 BuildRequires: libicu-devel
 %endif
 %if 0%{?el7} && 0%{?amzn2}
-BuildRequires: java-11-amazon-corretto
+BuildRequires: java-17-amazon-corretto
 %else
-BuildRequires: java-11-openjdk-devel
+BuildRequires: java-17-openjdk-devel
 %endif
 BuildRequires: rpm-build
 BuildRequires: make
@@ -294,7 +299,7 @@ Requires: vespa-gtest = 1.11.0
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
 %if 0%{?_centos_stream}
-%define _vespa_llvm_version 13
+%define _vespa_llvm_version 14
 %else
 %define _vespa_llvm_version 13
 %endif
@@ -306,7 +311,11 @@ Requires: vespa-gtest = 1.11.0
 %define _extra_include_directory %{_vespa_deps_prefix}/include
 %endif
 %if 0%{?el9}
+%if 0%{?_centos_stream}
+%define _vespa_llvm_version 14
+%else
 %define _vespa_llvm_version 13
+%endif
 Requires: gtest
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
@@ -356,9 +365,9 @@ Vespa - The open big data serving engine
 Summary: Vespa - The open big data serving engine - base
 
 %if 0%{?el7} && 0%{?amzn2}
-Requires: java-11-amazon-corretto
+Requires: java-17-amazon-corretto
 %else
-Requires: java-11-openjdk-devel
+Requires: java-17-openjdk-devel
 %endif
 Requires: perl
 Requires: perl-Getopt-Long
@@ -425,7 +434,7 @@ Requires: openssl-libs
 %if 0%{?el8}
 %if 0%{?centos} || 0%{?rocky}
 %if 0%{?_centos_stream}
-Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
+Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
 %else
 Requires: (llvm-libs >= 13.0.1 and llvm-libs < 14)
 %endif
@@ -435,7 +444,11 @@ Requires: (llvm-libs >= 12.0.1 and llvm-libs < 13)
 Requires: vespa-protobuf = 3.19.1
 %endif
 %if 0%{?el9}
+%if 0%{?_centos_stream}
+Requires: (llvm-libs >= 14.0.0 and llvm-libs < 15)
+%else
 Requires: (llvm-libs >= 13.0.0 and llvm-libs < 14)
+%endif
 Requires: protobuf
 %endif
 %if 0%{?fedora}
@@ -584,7 +597,7 @@ source %{_rhgit227_enable} || true
 %if 0%{?_java_home:1}
 export JAVA_HOME=%{?_java_home}
 %else
-export JAVA_HOME=/usr/lib/jvm/java-11-openjdk
+export JAVA_HOME=/usr/lib/jvm/java-17-openjdk
 %endif
 export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
@@ -635,7 +648,7 @@ cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa.service %{buildroot}/usr/lib
 cp %{buildroot}/%{_prefix}/etc/systemd/system/vespa-configserver.service %{buildroot}/usr/lib/systemd/system
 %endif
 
-ln -s /usr/lib/jvm/jre-11-openjdk %{buildroot}/%{_prefix}/jdk
+ln -s /usr/lib/jvm/jre-17-openjdk %{buildroot}/%{_prefix}/jdk
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -744,7 +757,6 @@ fi
 %{_prefix}/lib/jars/document.jar
 %{_prefix}/lib/jars/filedistribution-jar-with-dependencies.jar
 %{_prefix}/lib/jars/http-client-jar-with-dependencies.jar
-%{_prefix}/lib/jars/jdisc_jetty.jar
 %{_prefix}/lib/jars/logserver-jar-with-dependencies.jar
 %{_prefix}/lib/jars/metrics-proxy-jar-with-dependencies.jar
 %{_prefix}/lib/jars/node-repository-jar-with-dependencies.jar
@@ -847,7 +859,6 @@ fi
 %{_prefix}/bin/vespa
 %{_prefix}/bin/vespa-feed-client
 %{_prefix}/conf/vespa-feed-client/logging.properties
-%{_prefix}/lib/jars/vespa-http-client-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespa-feed-client-cli-jar-with-dependencies.jar
 %docdir /usr/share/man
 /usr/share/man
@@ -884,8 +895,6 @@ fi
 %dir %{_prefix}
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
-%{_prefix}/lib/jars/asm-*.jar
-%{_prefix}/lib/jars/aopalliance-repackaged-*.jar
 %{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/bcpkix-jdk15on-*.jar
 %{_prefix}/lib/jars/bcprov-jdk15on-*.jar
@@ -898,28 +907,20 @@ fi
 %{_prefix}/lib/jars/container-disc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-and-docproc-jar-with-dependencies.jar
 %{_prefix}/lib/jars/container-search-gui-jar-with-dependencies.jar
+%{_prefix}/lib/jars/container-spifly.jar
 %{_prefix}/lib/jars/docprocs-jar-with-dependencies.jar
 %{_prefix}/lib/jars/flags-jar-with-dependencies.jar
-%{_prefix}/lib/jars/hk2-*.jar
 %{_prefix}/lib/jars/hosted-zone-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jackson-*.jar
-%{_prefix}/lib/jars/javassist-*.jar
 %{_prefix}/lib/jars/javax.*.jar
 %{_prefix}/lib/jars/jdisc-cloud-aws-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc_core-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jdisc-security-filters-jar-with-dependencies.jar
-%{_prefix}/lib/jars/jersey-*.jar
 %{_prefix}/lib/jars/linguistics-components-jar-with-dependencies.jar
-%{_prefix}/lib/jars/alpn-*.jar
-%{_prefix}/lib/jars/http2-*.jar
-%{_prefix}/lib/jars/jetty-*.jar
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
-%{_prefix}/lib/jars/org.apache.aries.spifly.dynamic.bundle-*.jar
-%{_prefix}/lib/jars/osgi-resource-locator-*.jar
 %{_prefix}/lib/jars/security-utils.jar
 %{_prefix}/lib/jars/standalone-container-jar-with-dependencies.jar
-%{_prefix}/lib/jars/validation-api-*.jar
 %{_prefix}/lib/jars/vespa-athenz-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespaclient-container-plugin-jar-with-dependencies.jar
 %{_prefix}/lib/jars/vespajlib.jar

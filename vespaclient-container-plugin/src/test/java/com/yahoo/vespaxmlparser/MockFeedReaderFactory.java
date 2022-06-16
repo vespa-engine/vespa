@@ -2,7 +2,7 @@
 package com.yahoo.vespaxmlparser;
 
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.vespa.http.client.config.FeedParams;
+import com.yahoo.vespa.http.server.FeedParams;
 import com.yahoo.vespa.http.server.FeedReaderFactory;
 
 import java.io.InputStream;

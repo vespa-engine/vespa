@@ -26,7 +26,7 @@ public class NativeIOTestCase {
             assertTrue(nativeIO.valid());
         } else {
             assertFalse(nativeIO.valid());
-            assertEquals("Platform is unsúpported. Only supported on linux.", nativeIO.getError().getMessage());
+            assertEquals("Platform is unsupported. Only supported on Linux.", nativeIO.getError().getMessage());
         }
         nativeIO.dropFileFromCache(output.getFD());
         nativeIO.dropFileFromCache(testFile);

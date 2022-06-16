@@ -529,26 +529,6 @@ public class DocumentUpdateJsonSerializerTest {
     }
 
     @Test
-    public void testSimultaneousFieldsAndFieldPathsUpdate() {
-        roundtripSerializeJsonAndMatch(inputJson(
-                "{",
-                "   'update': 'DOCUMENT_ID',",
-                "   'fields': {",
-                "       'singlepos_field': {",
-                "           'assign': 'N60.222333;E10.12'",
-                "       },",
-                "       'deep_map{my_field}': {",
-                "           'assign': {",
-                "               'my_key': 'my value',",
-                "               'new_key': 'new value'",
-                "           }",
-                "       }",
-                "   }",
-                "}"
-        ));
-    }
-
-    @Test
     public void testAssignFieldPathUpdate() {
         roundtripSerializeJsonAndMatch(inputJson(
                 "{",
@@ -632,34 +612,6 @@ public class DocumentUpdateJsonSerializerTest {
                 "           'remove': 0",
                 "       }",
                 "   }",
-                "}"
-        ));
-    }
-
-    @Test
-    public void testAssignSinglePos() {
-        roundtripSerializeJsonAndMatch(inputJson(
-                "{",
-                "    'update': 'DOCUMENT_ID',",
-                "    'fields': {",
-                "        'singlepos_field': {",
-                "            'assign': 'N60.222333;E10.12'",
-                "        }",
-                "    }",
-                "}"
-        ));
-    }
-
-    @Test
-    public void testAssignMultiPos() {
-        roundtripSerializeJsonAndMatch(inputJson(
-                "{",
-                "    'update': 'DOCUMENT_ID',",
-                "    'fields': {",
-                "        'multipos_field': {",
-                "            'assign': [ 'N0.0;E0.0', 'S1.1;W1.1', 'N10.2;W122.2' ]",
-                "        }",
-                "    }",
                 "}"
         ));
     }

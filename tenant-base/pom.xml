@@ -7,7 +7,7 @@
 
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>tenant-base</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <name>Hosted Vespa tenant base</name>
     <description>Parent POM for all hosted Vespa applications.</description>
     <url>https://github.com/vespa-engine</url>
@@ -37,7 +37,7 @@
              compile version set with "-D vespaversion=...", and is instead the newest version.
              When it is "${vespaversion}", it is coupled, which should be the default. -->
         <test-framework.version>${vespaversion}</test-framework.version>
-        <target_jdk_version>11</target_jdk_version>
+        <target_jdk_version>17</target_jdk_version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <junit.version>5.8.1</junit.version> <!-- Keep in sync with hosted-tenant-base and tenant-cd until all direct use is removed -->
@@ -155,7 +155,7 @@
                                 </goals>
                                 <configuration>
                                     <includeTypes>jar,test-jar</includeTypes>
-                                    <!-- felix is not needed in the fat jar, and felix-main:7.0.1 fails upon unpacking because of bogus timestamps -->
+                                    <!-- felix is not needed in the fat jar -->
                                     <excludeGroupIds>org.apache.felix</excludeGroupIds>
                                     <outputDirectory>target/fat-test-classes</outputDirectory>
                                     <!-- WARNING(2018-06-27): bcpkix-jdk15on-1.58.jar and
@@ -348,7 +348,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>3.0.0-M2</version>
+                <version>3.0.0</version>
                 <executions>
                     <execution>
                         <id>enforce-java</id>
@@ -358,10 +358,10 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[11, )</version>
+                                    <version>[17, )</version>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
-                                    <version>[3.5, )</version>
+                                    <version>[3.6, )</version>
                                 </requireMavenVersion>
                             </rules>
                         </configuration>

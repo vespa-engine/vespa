@@ -6,7 +6,7 @@ cache:
    component-build: [/main_job_cache]
 
 shared:
-  image: vespaengine/vespa-build-centos7:latest
+  image: vespaengine/vespa-build-centos-stream8:latest
   environment:
     USER_SHELL_BIN: bash
   annotations:
@@ -113,10 +113,9 @@ jobs:
             exit 1
           fi
       - install-dependencies: |
-          yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-          yum install -y --setopt skip_missing_names_on_install=False docker-ce docker-ce-cli containerd.io
+          dnf config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+          dnf -y install docker-ce docker-ce-cli containerd.io
           docker system info
-          ln -sf $(which yum) /usr/local/bin/dnf
       - checkout: |
           mkdir -p workdir
           cd workdir
@@ -149,6 +148,7 @@ jobs:
           time make -j ${NUM_THREADS} install DESTDIR=$WORKDIR/vespa-install
       - verify-rpm-build: |
           cd $WORKDIR
+          ulimit -c 0
           time rpmbuild --rebuild --define="_topdir $WORKDIR/vespa-rpmbuild" \
                         --define "_debugsource_template %{nil}" \
                         --define "installdir $WORKDIR/vespa-install" *.src.rpm
@@ -163,22 +163,22 @@ jobs:
           cp -a $LOCAL_MVN_REPO docker/repository
           cd docker
           docker build --file Dockerfile.systemtest \
-                       --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos7:latest \
+                       --build-arg VESPA_BASE_IMAGE=vespaengine/vespa-systemtest-base-centos-stream8:latest \
                        --build-arg SYSTEMTEST_BASE_IMAGE=vespa --build-arg SKIP_M2_POPULATE=true \
                        --target systemtest \
-                       --tag vespaengine/vespa-systemtest-centos7:$VESPA_VERSION \
-                       --tag vespaengine/vespa-systemtest-centos7:latest .
+                       --tag vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION \
+                       --tag vespaengine/vespa-systemtest-centos-stream8:latest .
       - verify-test-image: |
-          docker run --rm -ti --entrypoint bash vespaengine/vespa-systemtest-centos7:$VESPA_VERSION -lc \
-          "source /opt/rh/rh-ruby27/enable; /opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__ELASTIC"
+          docker run --rm -ti --entrypoint bash vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION -lc \
+          "/opt/vespa-systemtests/lib/node_server.rb & sleep 3 && ruby /opt/vespa-systemtests/tests/search/basicsearch/basic_search.rb --run test_basicsearch__ELASTIC"
       - publish-test-image: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then
             OPT_STATE="$(set +o)"
             set +x
             docker login --username aressem --password "$DOCKER_HUB_DEPLOY_KEY"
             eval "$OPT_STATE"
-            docker push docker.io/vespaengine/vespa-systemtest-centos7:$VESPA_VERSION
-            docker push docker.io/vespaengine/vespa-systemtest-centos7:latest
+            docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:$VESPA_VERSION
+            docker push docker.io/vespaengine/vespa-systemtest-centos-stream8:latest
           fi
       - *save-cache
 

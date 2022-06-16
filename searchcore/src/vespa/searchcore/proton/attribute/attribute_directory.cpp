@@ -6,6 +6,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.attribute.attribute_directory");
@@ -111,7 +112,7 @@ AttributeDirectory::createInvalidSnapshot(SerialNum serialNum)
     IndexMetaInfo::Snapshot newSnap(false, serialNum, getSnapshotDirComponent(serialNum));
     if (empty()) {
         vespalib::string dirName(getDirName());
-        vespalib::mkdir(dirName, false);
+        std::filesystem::create_directory(std::filesystem::path(dirName));
         vespalib::File::sync(vespalib::dirname(dirName));
     }
     {
@@ -179,7 +180,7 @@ AttributeDirectory::removeInvalidSnapshots()
     }
     for (const auto &serialNum : toRemove) {
         vespalib::string subDir(getSnapshotDir(serialNum));
-        vespalib::rmdir(subDir, true);
+        std::filesystem::remove_all(std::filesystem::path(subDir));
     }
     if (!toRemove.empty()) {
         vespalib::File::sync(getDirName());
@@ -198,7 +199,7 @@ AttributeDirectory::removeDiskDir()
 {
     if (empty()) {
         vespalib::string dirName(getDirName());
-        vespalib::rmdir(dirName, true);
+        std::filesystem::remove_all(std::filesystem::path(dirName));
         vespalib::File::sync(vespalib::dirname(dirName));
         return true;
     }

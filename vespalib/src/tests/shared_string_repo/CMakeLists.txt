@@ -5,4 +5,12 @@ vespa_add_executable(vespalib_shared_string_repo_test_app TEST
     DEPENDS
     vespalib
 )
-vespa_add_test(NAME vespalib_shared_string_repo_test_app COMMAND vespalib_shared_string_repo_test_app)
+vespa_add_test(
+  NAME vespalib_shared_string_repo_test_app
+  COMMAND vespalib_shared_string_repo_test_app
+)
+vespa_add_test(
+  NAME vespalib_shared_string_repo_test_app_no_reclaim
+  COMMAND vespalib_shared_string_repo_test_app
+  ENVIRONMENT "VESPA_SHARED_STRING_REPO_NO_RECLAIM=true"
+)

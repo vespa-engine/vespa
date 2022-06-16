@@ -2,7 +2,7 @@
 package com.yahoo.container.handler.metrics;
 
 import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.StringResponse;

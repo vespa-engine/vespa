@@ -81,23 +81,6 @@ public class ApplicationPackageTest {
     }
 
     @Test
-    public void testMetaDataWithLegacyApplicationDirectory() {
-        byte[] zip = ApplicationPackage.filesZip(Map.of("application/deployment.xml", deploymentXml.getBytes(UTF_8),
-                                                        "application/services.xml", servicesXml.getBytes(UTF_8),
-                                                        "application/jdisc.xml", jdiscXml.getBytes(UTF_8),
-                                                        "application/content/content.xml", contentXml.getBytes(UTF_8),
-                                                        "application/content/nodes.xml", nodesXml.getBytes(UTF_8),
-                                                        "application/gurba", "gurba".getBytes(UTF_8)));
-
-        assertEquals(Map.of("deployment.xml", deploymentXml,
-                            "services.xml", servicesXml,
-                            "jdisc.xml", jdiscXml,
-                            "content/content.xml", contentXml,
-                            "content/nodes.xml", nodesXml),
-                     unzip(new ApplicationPackage(zip, false).metaDataZip()));
-    }
-
-    @Test
     public void testMetaDataWithMissingFiles() {
         byte[] zip = ApplicationPackage.filesZip(Map.of("services.xml", servicesXml.getBytes(UTF_8)));
 

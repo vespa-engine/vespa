@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 
+import static com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContextSupplier.ContextSupplierInterruptedException;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
@@ -82,7 +83,7 @@ public class NodeAgentContextManagerTest {
         manager.interrupt();
 
         async.awaitResult();
-        assertEquals(Optional.of(InterruptedException.class), async.exception.map(Exception::getClass));
+        assertEquals(Optional.of(ContextSupplierInterruptedException.class), async.exception.map(Exception::getClass));
         assertFalse(async.response.isPresent());
     }
 
@@ -108,38 +109,6 @@ public class NodeAgentContextManagerTest {
         long actualDurationMillis = clock.millis() - start;
 
         assertTrue(actualDurationMillis >= wantedDurationMillis);
-    }
-
-    @Test(timeout = TIMEOUT)
-    public void setFrozen_is_successful_if_converged_in_time() throws InterruptedException {
-        AsyncExecutor<NodeAgentContext> asyncConsumer1 = new AsyncExecutor<>(() -> {
-            NodeAgentContext context = manager.nextContext();
-            Thread.sleep(200); // Simulate running NodeAgent::converge
-            return context;
-        });
-        manager.waitUntilWaitingForNextContext();
-
-        NodeAgentContext context1 = generateContext();
-        manager.scheduleTickWith(context1, clock.instant());
-        Thread.sleep(10);
-
-        // Scheduler wants to freeze
-        AsyncExecutor<Boolean> asyncScheduler = new AsyncExecutor<>(() -> manager.setFrozen(true, Duration.ofMillis(500)));
-        Thread.sleep(20);
-        assertFalse(asyncConsumer1.isCompleted()); // Still running NodeAgent::converge
-        assertSame(context1, asyncConsumer1.awaitResult().response.get());
-        assertFalse(asyncScheduler.isCompleted()); // Still waiting for consumer to converge to frozen
-
-        AsyncExecutor<NodeAgentContext> asyncConsumer2 = new AsyncExecutor<>(manager::nextContext);
-        manager.waitUntilWaitingForNextContext();
-        assertFalse(asyncConsumer2.isCompleted()); // Waiting for next context
-        asyncScheduler.awaitResult(); // We should be able to converge to frozen now
-
-        // Interrupt manager to end asyncConsumer2
-        manager.interrupt();
-        asyncConsumer2.awaitResult();
-
-        assertEquals(Optional.of(true), asyncScheduler.response);
     }
 
     private static NodeAgentContext generateContext() {

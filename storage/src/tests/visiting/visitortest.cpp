@@ -18,8 +18,8 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/storageserver/testvisitormessagesession.h>
 #include <vespa/persistence/spi/docentry.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <filesystem>
 #include <thread>
 #include <sys/stat.h>
 
@@ -153,9 +153,9 @@ VisitorTest::initializeTest(const TestParams& params)
     std::string rootFolder = getRootFolder(config);
 
     ::chmod(rootFolder.c_str(), 0755);
-    vespalib::rmdir(rootFolder, true);
-    vespalib::mkdir(vespalib::make_string("%s/disks/d0", rootFolder.c_str()), true);
-    vespalib::mkdir(vespalib::make_string("%s/disks/d1", rootFolder.c_str()), true);
+    std::filesystem::remove_all(std::filesystem::path(rootFolder));
+    std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d0", rootFolder.c_str())));
+    std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d1", rootFolder.c_str())));
 
     _messageSessionFactory.reset(
             new TestVisitorMessageSessionFactory(config.getConfigId()));

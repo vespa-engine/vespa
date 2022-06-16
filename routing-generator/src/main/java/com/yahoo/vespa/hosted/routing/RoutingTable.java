@@ -255,6 +255,7 @@ public class RoutingTable {
                                       Optional<InstanceName> instance, ClusterSpec.Id cluster, ZoneId zone) {
             if (instance.isEmpty()) { // Application-scoped endpoint
                 if (dnsName.isEmpty()) throw new IllegalArgumentException("dnsName must given for application-scoped endpoint");
+                @SuppressWarnings("deprecation")
                 String endpointHash = Hashing.sha1().hashString(dnsName, StandardCharsets.UTF_8).toString();
                 return "application-" + endpointHash + "." +application.value() + "." + tenant.value();
             } else {

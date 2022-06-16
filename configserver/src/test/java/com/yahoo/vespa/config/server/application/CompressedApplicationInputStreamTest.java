@@ -77,35 +77,6 @@ public class CompressedApplicationInputStreamTest {
     }
 
     @Test
-    public void require_that_valid_tar_application_in_subdir_can_be_unpacked() throws IOException {
-        File outFile = Files.createTempFile(temporaryFolder.getRoot().toPath(), "testapp", ".tar.gz").toFile();
-        ArchiveOutputStream archiveOutputStream = new TarArchiveOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
-
-        File app = new File("src/test/resources/deploy/validapp");
-
-        File file = new File(app, "services.xml");
-        archiveOutputStream.putArchiveEntry(archiveOutputStream.createArchiveEntry(file, "application/" + file.getName()));
-        ByteStreams.copy(new FileInputStream(file), archiveOutputStream);
-        archiveOutputStream.closeArchiveEntry();
-        file = new File(app, "hosts.xml");
-        archiveOutputStream.putArchiveEntry(archiveOutputStream.createArchiveEntry(file, "application/" + file.getName()));
-        ByteStreams.copy(new FileInputStream(file), archiveOutputStream);
-        archiveOutputStream.closeArchiveEntry();
-        file = new File(app, "deployment.xml");
-        archiveOutputStream.putArchiveEntry(archiveOutputStream.createArchiveEntry(file, "application/" + file.getName()));
-        ByteStreams.copy(new FileInputStream(file), archiveOutputStream);
-        archiveOutputStream.closeArchiveEntry();
-
-        archiveOutputStream.close();
-
-        try (CompressedApplicationInputStream unpacked = streamFromTarGz(outFile)) {
-            File outApp = unpacked.decompress();
-            assertEquals("application", outApp.getName()); // gets the name of the subdir
-            assertTestApp(outApp);
-        }
-    }
-
-    @Test
     public void require_that_valid_zip_application_can_be_unpacked() throws IOException {
         File outFile = createZipFile(temporaryFolder.getRoot().toPath());
         try (CompressedApplicationInputStream unpacked = streamFromZip(outFile)) {

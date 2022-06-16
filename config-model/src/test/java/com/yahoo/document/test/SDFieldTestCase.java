@@ -16,12 +16,12 @@ public class SDFieldTestCase extends AbstractSchemaTestCase {
     @Test
     public void testIdSettingConflict() {
         SDDocumentType doc = new SDDocumentType("testdoc");
-        doc.addField("one", DataType.STRING, false, 60);
+        doc.addField("one", DataType.STRING, 60);
 
-        doc.addField("two", DataType.STRING, false, 61);
+        doc.addField("two", DataType.STRING, 61);
 
         try {
-            doc.addField("three", DataType.STRING, false, 60);
+            doc.addField("three", DataType.STRING, 60);
             fail("Allowed to set duplicate id");
         }
         catch (IllegalArgumentException e) {
@@ -33,7 +33,7 @@ public class SDFieldTestCase extends AbstractSchemaTestCase {
     public void testSettingReservedId() {
         SDDocumentType doc = new SDDocumentType("testdoc");
         try {
-            doc.addField("one", DataType.STRING, false, 127);
+            doc.addField("one", DataType.STRING, 127);
             fail("Allowed to set reserved id");
         }
         catch (IllegalArgumentException e) {
@@ -41,7 +41,7 @@ public class SDFieldTestCase extends AbstractSchemaTestCase {
         }
 
         try {
-            doc.addField("one", DataType.STRING, false, 100);
+            doc.addField("one", DataType.STRING, 100);
             fail("Allowed to set reserved id");
         }
         catch (IllegalArgumentException e) {
@@ -49,7 +49,7 @@ public class SDFieldTestCase extends AbstractSchemaTestCase {
         }
 
         try {
-            doc.addField("one", DataType.STRING, false, -1);
+            doc.addField("one", DataType.STRING, -1);
             fail("Allowed to set reserved id");
         }
         catch (IllegalArgumentException e) {

@@ -2345,16 +2345,24 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                                       .flatMap(instance -> instance.productionDeployments().keySet().stream())
                                                       .map(zone -> new DeploymentId(prodInstanceId, zone))
                                                       .collect(Collectors.toCollection(HashSet::new));
-        ZoneId testedZone = type.zone();
+
 
         // If a production job is specified, the production deployment of the orchestrated instance is the relevant one,
         // as user instances should not exist in prod.
+        ApplicationId toTest = type.isProduction() ? prodInstanceId : id;
         if ( ! type.isProduction())
-            deployments.add(new DeploymentId(id, testedZone));
+            deployments.add(new DeploymentId(toTest, type.zone()));
+
+        Deployment deployment = application.require(toTest.instance()).deployments().get(type.zone());
+        if (deployment == null)
+            throw new NotExistsException(toTest + " is not deployed in " + type.zone());
 
         return new SlimeJsonResponse(testConfigSerializer.configSlime(id,
                                                                       type,
                                                                       false,
+                                                                      deployment.version(),
+                                                                      deployment.revision(),
+                                                                      deployment.at(),
                                                                       controller.routing().readTestRunnerEndpointsOf(deployments),
                                                                       controller.applications().reachableContentClustersByZone(deployments)));
     }

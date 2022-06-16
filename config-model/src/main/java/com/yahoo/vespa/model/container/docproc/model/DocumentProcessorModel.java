@@ -5,7 +5,6 @@ import com.yahoo.collections.Pair;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
-import net.jcip.annotations.Immutable;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -13,7 +12,6 @@ import java.util.Map;
 /**
  * @author Einar M R Rosenvinge
  */
-@Immutable
 public class DocumentProcessorModel extends ChainedComponentModel {
 
     private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();

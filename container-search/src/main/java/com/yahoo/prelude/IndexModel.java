@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -35,22 +36,11 @@ public final class IndexModel {
 
     public IndexModel(Map<String, List<String>> masterClusters, Collection<SearchDefinition> searchDefinitions) {
         this.masterClusters = masterClusters;
-        this.searchDefinitions = searchDefinitions.stream().collect(Collectors.toMap(sd -> sd.getName(), sd -> sd));
+        this.searchDefinitions = new LinkedHashMap<>();
         this.unionSearchDefinition = unionOf(searchDefinitions);
-    }
-
-    /**
-     * Use IndexModel as a pure wrapper for the parameters given.
-     *
-     * @deprecated use the constructor without the third parameter
-     */
-    @Deprecated // TODO: Remove Vespa 8
-    public IndexModel(Map<String, List<String>> masterClusters,
-                      Map<String, SearchDefinition> searchDefinitions,
-                      SearchDefinition unionSearchDefinition) {
-        this.masterClusters = masterClusters;
-        this.searchDefinitions = searchDefinitions;
-        this.unionSearchDefinition = unionSearchDefinition;
+        for (var sd : searchDefinitions) {
+            this.searchDefinitions.put(sd.getName(), sd);
+        }
     }
 
     public IndexModel(IndexInfoConfig indexInfo, QrSearchersConfig clusters) {
@@ -135,8 +125,6 @@ public final class IndexModel {
 
     public Map<String, SearchDefinition> getSearchDefinitions() { return searchDefinitions; }
 
-    /** @deprecated do not use */
-    @Deprecated // TODO: Remove on Vespa 8
-    public SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
+    SearchDefinition getUnionSearchDefinition() { return unionSearchDefinition; }
 
 }

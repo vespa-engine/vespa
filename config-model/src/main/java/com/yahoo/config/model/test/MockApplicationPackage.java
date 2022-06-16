@@ -95,14 +95,8 @@ public class MockApplicationPackage implements ApplicationPackage {
     /** Returns the root of this application package relative to the current dir */
     protected File root() { return root; }
 
-    @SuppressWarnings("deprecation") // not redundant
     @Override
-    public String getApplicationName() {
-        return "mock-application";
-    }
-
-    @Override
-    public ApplicationId getApplicationId() { return ApplicationId.from("default", getApplicationName(), "default"); }
+    public ApplicationId getApplicationId() { return ApplicationId.from("default", "mock-application", "default"); }
 
     @Override
     public Reader getServices() {

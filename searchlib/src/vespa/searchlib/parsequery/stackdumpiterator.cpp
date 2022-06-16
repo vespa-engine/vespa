@@ -48,17 +48,19 @@ SimpleQueryStackDumpIterator::read_stringref(const char *&p)
 uint64_t
 SimpleQueryStackDumpIterator::readUint64(const char *&p)
 {
-    uint64_t l = vespalib::nbo::n2h(*(const uint64_t *)(const void *)p);
-    p += sizeof(uint64_t);
-    return l;
+    uint64_t value;
+    memcpy(&value, p, sizeof(value));
+    p += sizeof(value);
+    return vespalib::nbo::n2h(value);
 }
 
 double
 SimpleQueryStackDumpIterator::read_double(const char *&p)
 {
-    double result = vespalib::nbo::n2h(*reinterpret_cast<const double *>(p));
-    p += sizeof(double);
-    return result;
+    double value;
+    memcpy(&value, p, sizeof(value));
+    p += sizeof(value);
+    return vespalib::nbo::n2h(value);
 }
 
 uint64_t

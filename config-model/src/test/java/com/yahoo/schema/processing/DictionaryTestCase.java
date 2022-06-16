@@ -62,7 +62,7 @@ public class DictionaryTestCase {
     Schema verifyDictionaryControl(Dictionary.Type expected, String type, String ... cfg) throws ParseException
     {
         String def = TestUtil.joinLines(
-                "search test {",
+                "schema test {",
                 "    document test {",
                 "        field n1 type " + type + " {",
                 "            indexing: summary | attribute",

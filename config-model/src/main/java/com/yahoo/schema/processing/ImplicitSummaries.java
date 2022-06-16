@@ -14,6 +14,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
+import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
 
 /**
@@ -91,12 +92,12 @@ public class ImplicitSummaries extends Processor {
         if (field.doesSummarying()) {
             for (Attribute attribute : field.getAttributes().values()) {
                 if ( ! attribute.isPosition()) continue;
-                var distField = field.getSummaryField(PositionDataType.getDistanceSummaryFieldName(fieldName));
+                var distField = field.getSummaryField(AdjustPositionSummaryFields.getDistanceSummaryFieldName(fieldName));
                 if (distField != null) {
                     DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
                     attributePrefetchSummary.add(distField);
                 }
-                var posField = field.getSummaryField(PositionDataType.getPositionSummaryFieldName(fieldName));
+                var posField = field.getSummaryField(AdjustPositionSummaryFields.getPositionSummaryFieldName(fieldName));
                 if (posField != null) {
                     DocumentSummary attributePrefetchSummary = getOrCreateAttributePrefetchSummary(schema);
                     attributePrefetchSummary.add(posField);
@@ -119,9 +120,9 @@ public class ImplicitSummaries extends Processor {
     }
 
     private DocumentSummary getOrCreateAttributePrefetchSummary(Schema schema) {
-        DocumentSummary summary = schema.getSummariesInThis().get("attributeprefetch");
+        DocumentSummary summary = schema.getSummariesInThis().get(SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
         if (summary == null) {
-            summary = new DocumentSummary("attributeprefetch", schema);
+            summary = new DocumentSummary(SORTABLE_ATTRIBUTES_SUMMARY_CLASS, schema);
             schema.addSummary(summary);
         }
         return summary;
@@ -142,7 +143,7 @@ public class ImplicitSummaries extends Processor {
         DocumentSummary summary = getOrCreateAttributePrefetchSummary(schema);
         SummaryField attributeSummaryField = new SummaryField(attribute.getName(), attribute.getDataType());
         attributeSummaryField.addSource(attribute.getName());
-        attributeSummaryField.addDestination("attributeprefetch");
+        attributeSummaryField.addDestination(SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
         attributeSummaryField.setTransform(SummaryTransform.ATTRIBUTE);
         summary.add(attributeSummaryField);
     }

@@ -3,9 +3,9 @@
 #include <vespa/searchcorespi/index/disk_indexes.h>
 #include <vespa/searchcorespi/index/index_disk_dir.h>
 #include <vespa/searchcorespi/index/indexdisklayout.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <filesystem>
 #include <fstream>
 
 namespace {
@@ -149,7 +149,7 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
         assert_transient_size(0, fusion1);
     }
     auto dir = base_dir + "/index.fusion.2";
-    vespalib::mkdir(dir, true);
+    std::filesystem::create_directories(std::filesystem::path(dir));
     {
         /*
          * Fusion started, but no files written yet.
@@ -188,9 +188,9 @@ TEST_F(DiskIndexesTest, get_transient_size_during_ongoing_fusion)
 int
 main(int argc, char* argv[])
 {
-    vespalib::rmdir(base_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
     ::testing::InitGoogleTest(&argc, argv);
     auto result = RUN_ALL_TESTS();
-    vespalib::rmdir(base_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
     return result;
 }

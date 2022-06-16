@@ -104,7 +104,7 @@ public class QueryCanonicalizerTestCase {
         and22.addItem(and31);
         and22.addItem(and32);
         and22.addItem(new WordItem("word"));
-        assertCanonicalized("word", null, new Query("?query=word"));
+        assertCanonicalized("word", null, new Query("?query=word&type=all"));
     }
 
     @Test

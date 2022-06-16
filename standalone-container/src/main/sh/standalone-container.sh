@@ -167,10 +167,12 @@ StartCommand() {
     FixDataDirectory "$bundlecachedir"
     FixDataDirectory "$VESPA_HOME/var/crash"
 
+    heap_min=$(get_min_heap_mb "${jvm_arguments}" 128)
+    heap_max=$(get_max_heap_mb "${jvm_arguments}" 2048)
     java \
-        -Xms128m -Xmx2048m \
+        -Xms${heap_min}m -Xmx${heap_max}m \
         -XX:+PreserveFramePointer \
-        -XX:+UseTransparentHugePages \
+        $(get_jvm_hugepage_settings $heap_max) \
         -XX:+HeapDumpOnOutOfMemoryError \
         -XX:HeapDumpPath="$VESPA_HOME/var/crash" \
         -XX:+ExitOnOutOfMemoryError \

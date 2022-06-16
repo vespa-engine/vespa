@@ -135,4 +135,8 @@ public class CompiledQueryProfileRegistry extends ComponentRegistry<CompiledQuer
         return registry;
     }
 
+    public static CompiledQueryProfileRegistry fromConfig(QueryProfilesConfig config) {
+        return QueryProfileConfigurer.createFromConfig(config).compile();
+    }
+
 }

@@ -18,7 +18,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.Iterator;
 
-import static com.google.common.collect.testing.Helpers.assertEmpty;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -68,7 +67,6 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         assertEquals(0, field.getAttributes().size());
         assertNull(field.getStemming());
         assertTrue(field.getNormalizing().doRemoveAccents());
-        assertTrue(field.isHeader());
 
         // Second field
         field = (SDField) document.getField("description");
@@ -108,13 +106,11 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         field = schema.getConcreteField("categories");
         assertEquals("{ input categories_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categories; }",
                      field.getIndexingScript().toString());
-        assertTrue(field.isHeader());
 
         // Eight field
         field= schema.getConcreteField("categoriesagain");
         assertEquals("{ input categoriesagain_src | lowercase | normalize | tokenize normalize stem:\"BEST\" | index categoriesagain; }",
                      field.getIndexingScript().toString());
-        assertTrue(field.isHeader());
 
         // Ninth field
         field= schema.getConcreteField("exactemento");
@@ -129,7 +125,6 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         assertEquals("category_arr", attribute.getName());
         assertEquals(Attribute.Type.STRING, attribute.getType());
         assertEquals(Attribute.CollectionType.ARRAY, attribute.getCollectionType());
-        assertTrue(field.isHeader());
 
         // Eleventh field
         field = schema.getConcreteField("measurement_arr");
@@ -142,7 +137,7 @@ public class SchemaImporterTestCase extends AbstractSchemaTestCase {
         // Rank Profiles
         RankProfile profile = rankProfileRegistry.get(schema, "default");
         assertNotNull(profile);
-        assertEmpty(profile.inheritedNames());
+        assertTrue(profile.inheritedNames().isEmpty());
         assertNull(profile.getDeclaredRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE));
         assertEquals(RankType.EMPTY,
                      profile.getRankSetting("measurement", RankProfile.RankSetting.Type.RANKTYPE).getValue());

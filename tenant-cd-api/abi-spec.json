@@ -8,7 +8,10 @@
       "abstract"
     ],
     "methods": [
-      "public abstract ai.vespa.hosted.cd.Endpoint endpoint(java.lang.String)"
+      "public abstract ai.vespa.hosted.cd.Endpoint endpoint(java.lang.String)",
+      "public abstract java.lang.String platform()",
+      "public abstract long revision()",
+      "public abstract java.time.Instant deployedAt()"
     ],
     "fields": []
   },
@@ -138,7 +141,8 @@
     "methods": [
       "public static ai.vespa.hosted.cd.TestRuntime get()",
       "public abstract ai.vespa.hosted.cd.Deployment deploymentToTest()",
-      "public abstract ai.vespa.cloud.Zone zone()"
+      "public abstract ai.vespa.cloud.Zone zone()",
+      "public abstract ai.vespa.cloud.ApplicationId application()"
     ],
     "fields": [
       "public static final java.util.logging.Logger logger"

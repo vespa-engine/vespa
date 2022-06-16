@@ -8,11 +8,11 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>model-evaluation</artifactId>
-  <version>7-SNAPSHOT</version>
+  <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
   <dependencies>
     <dependency>
@@ -79,10 +79,8 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_jetty</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
+      <groupId>org.lz4</groupId>
+      <artifactId>lz4-java</artifactId>
     </dependency>
   </dependencies>
   <build>

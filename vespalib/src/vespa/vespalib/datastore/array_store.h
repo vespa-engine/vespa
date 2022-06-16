@@ -101,6 +101,12 @@ public:
     vespalib::GenerationHolder &getGenerationHolder() { return _store.getGenerationHolder(); }
     void setInitializing(bool initializing) { _store.setInitializing(initializing); }
 
+    // need object location before construction
+    static vespalib::GenerationHolder &getGenerationHolderLocation(ArrayStore &self) {
+        return DataStoreBase::getGenerationHolderLocation(self._store);
+    }
+
+
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
 

@@ -28,32 +28,32 @@ void NumericFunctionNode::onPrepare(bool preserveAccurateTypes)
 {
     MultiArgFunctionNode::onPrepare(preserveAccurateTypes);
     if (getNumArgs() == 1) {
-        if (getArg(0).getResult().getClass().inherits(IntegerResultNodeVector::classId)) {
+        if (getArg(0).getResult()->getClass().inherits(IntegerResultNodeVector::classId)) {
             _handler.reset(new FlattenIntegerHandler(*this));
-        } else if (getArg(0).getResult().getClass().inherits(FloatResultNodeVector::classId)) {
+        } else if (getArg(0).getResult()->getClass().inherits(FloatResultNodeVector::classId)) {
             _handler.reset(new FlattenFloatHandler(*this));
-        } else if (getArg(0).getResult().getClass().inherits(StringResultNodeVector::classId)) {
+        } else if (getArg(0).getResult()->getClass().inherits(StringResultNodeVector::classId)) {
             _handler.reset(new FlattenStringHandler(*this));
         } else {
-            throw std::runtime_error(vespalib::string("No FlattenHandler for ") + getArg(0).getResult().getClass().name());
+            throw std::runtime_error(vespalib::string("No FlattenHandler for ") + getArg(0).getResult()->getClass().name());
         }
     } else {
-        if (getResult().getClass().inherits(IntegerResultNodeVector::classId)) {
+        if (getResult()->getClass().inherits(IntegerResultNodeVector::classId)) {
             _handler.reset(new VectorIntegerHandler(*this));
-        } else if (getResult().getClass().inherits(FloatResultNodeVector::classId)) {
+        } else if (getResult()->getClass().inherits(FloatResultNodeVector::classId)) {
             _handler.reset(new VectorFloatHandler(*this));
-        } else if (getResult().getClass().inherits(StringResultNodeVector::classId)) {
+        } else if (getResult()->getClass().inherits(StringResultNodeVector::classId)) {
             _handler.reset(new VectorStringHandler(*this));
-        } else if (getResult().getClass().inherits(IntegerResultNode::classId)) {
+        } else if (getResult()->getClass().inherits(IntegerResultNode::classId)) {
             _handler.reset(new ScalarIntegerHandler(*this));
-        } else if (getResult().getClass().inherits(FloatResultNode::classId)) {
+        } else if (getResult()->getClass().inherits(FloatResultNode::classId)) {
             _handler.reset(new ScalarFloatHandler(*this));
-        } else if (getResult().getClass().inherits(StringResultNode::classId)) {
+        } else if (getResult()->getClass().inherits(StringResultNode::classId)) {
             _handler.reset(new ScalarStringHandler(*this));
-        } else if (getResult().getClass().inherits(RawResultNode::classId)) {
+        } else if (getResult()->getClass().inherits(RawResultNode::classId)) {
             _handler.reset(new ScalarRawHandler(*this));
         } else {
-            throw std::runtime_error(vespalib::make_string("NumericFunctionNode::onPrepare does not handle results of type %s", getResult().getClass().name()));
+            throw std::runtime_error(vespalib::make_string("NumericFunctionNode::onPrepare does not handle results of type %s", getResult()->getClass().name()));
         }
     }
 }
@@ -62,9 +62,9 @@ bool NumericFunctionNode::onCalculate(const ExpressionNodeVector & args, ResultN
 {
     bool retval(true);
     (void) result;
-    _handler->handleFirst(args[0]->getResult());
+    _handler->handleFirst(*args[0]->getResult());
     for (size_t i(1), m(args.size()); i < m; i++) {
-        _handler->handle(args[i]->getResult());
+        _handler->handle(*args[i]->getResult());
     }
     return retval;
 }

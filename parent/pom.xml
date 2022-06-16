@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>parent</artifactId>
     <packaging>pom</packaging>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <name>parent</name>
     <description>Parent artifact for all Vespa maven projects.</description>
     <url>https://github.com/vespa-engine</url>
@@ -12,7 +12,7 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>container-dependency-versions</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../container-dependency-versions/pom.xml</relativePath>
     </parent>
 
@@ -75,7 +75,7 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven-compiler-plugin.version}</version>
                     <configuration>
-                        <release>11</release>
+                        <release>17</release>
                         <showWarnings>true</showWarnings>
                         <optimize>true</optimize>
                         <showDeprecation>false</showDeprecation>
@@ -474,6 +474,38 @@
                 <version>2.6.0</version>
             </dependency>
             <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${findbugs.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <!-- Annotations with retention Runtime. Remove exclusion and provide from jdisc_core if needed. -->
+                        <groupId>com.google.code.findbugs</groupId>
+                        <artifactId>jsr305</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Empty artifact for gradle projects, see the artifact's pom.xml -->
+                        <groupId>com.google.guava</groupId>
+                        <artifactId>listenablefuture</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Annotations with retention Runtime. Remove exclusion if needed. -->
+                        <groupId>org.checkerframework</groupId>
+                        <artifactId>checker-qual</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <!-- Annotation with retention class only -->
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>animal-sniffer-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava-testlib</artifactId>
                 <version>${guava.version}</version>
@@ -635,6 +667,22 @@
                 <version>1.8</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.framework</artifactId>
+                <version>${felix.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>animal-sniffer-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>org.apache.felix.log</artifactId>
+                <version>${felix.log.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
                 <version>${apache.httpcore.version}</version>
@@ -726,6 +774,16 @@
                 <version>3.11.1</version>
             </dependency>
             <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.jettison</groupId>
                 <artifactId>jettison</artifactId>
                 <version>1.3.1</version>
@@ -797,26 +855,6 @@
                 <version>2.3.2</version> <!-- 2.3.3 has a BROKEN manifest -->
             </dependency>
             <dependency>
-                <groupId>org.glassfish.jersey.ext</groupId>
-                <artifactId>jersey-entity-filtering</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.ext</groupId>
-                <artifactId>jersey-proxy-client</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-json-jackson</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.glassfish.jersey.media</groupId>
-                <artifactId>jersey-media-multipart</artifactId>
-                <version>${jersey2.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>1.3</version>
@@ -865,6 +903,11 @@
                 <version>1.9.6</version>
             </dependency>
             <dependency>
+                <groupId>org.lz4</groupId>
+                <artifactId>lz4-java</artifactId>
+                <version>${org.lz4.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
@@ -910,7 +953,6 @@
                 <artifactId>metrics-core</artifactId>
                 <version>3.2.5</version>
             </dependency>
-
             <dependency>
                 <groupId>uk.co.datumedge</groupId>
                 <artifactId>hamcrest-json</artifactId>
@@ -922,6 +964,11 @@
                 <artifactId>xercesImpl</artifactId>
                 <version>2.12.2</version>
             </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${org.json.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -932,7 +979,7 @@
         <antlr4.version>4.9.3</antlr4.version>
         <apache.httpclient.version>4.5.13</apache.httpclient.version>
         <apache.httpcore.version>4.4.13</apache.httpcore.version>
-        <apache.httpclient5.version>5.1.2</apache.httpclient5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <apache.httpclient5.version>5.1.3</apache.httpclient5.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
         <asm.version>9.2</asm.version>
 
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
@@ -947,12 +994,18 @@
                  find zkfacade/src/main/java/org/apache/curator -name package-info.java | \
                      xargs perl -pi -e 's/major = [0-9]+, minor = [0-9]+, micro = [0-9]+/major = 5, minor = 3, micro = 0/g'
         -->
+        <bouncycastle.version>1.68</bouncycastle.version>
         <curator.version>5.2.1</curator.version>
         <commons.codec.version>1.15</commons.codec.version>
         <commons.math3.version>3.6.1</commons.math3.version>
         <eclipse-collections.version>11.0.0</eclipse-collections.version>
+        <felix.version>7.0.1</felix.version>
+        <felix.log.version>1.0.1</felix.log.version>
+        <findbugs.version>3.0.2</findbugs.version> <!-- Should be kept in sync with guava -->
         <gson.version>2.8.9</gson.version>
         <hdrhistogram.version>2.1.12</hdrhistogram.version>
+        <jetty.version>9.4.46.v20220331</jetty.version>
+        <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
         <jna.version>5.11.0</jna.version>
         <junit.version>5.8.1</junit.version>
         <maven-archiver.version>3.5.2</maven-archiver.version>
@@ -975,9 +1028,10 @@
         <maven-source-plugin.version>3.2.1</maven-source-plugin.version>
         <mockito.version>4.0.0</mockito.version>
         <onnxruntime.version>1.8.0</onnxruntime.version> <!-- WARNING: sync cloud-tenant-base-dependencies-enforcer/pom.xml -->
+        <org.lz4.version>1.8.0</org.lz4.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>
         <protobuf.version>3.19.2</protobuf.version>
-        <spifly.version>1.3.3</spifly.version>
+        <spifly.version>1.3.5</spifly.version>
         <surefire.version>2.22.2</surefire.version>
         <zookeeper.client.version>3.7.0</zookeeper.client.version>
 

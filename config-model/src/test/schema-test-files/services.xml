@@ -60,11 +60,10 @@
 
     <http>
       <filtering strict-mode="true">
-        <access-control domain="my.athens-domain" read="true">
+        <access-control>
           <exclude>
             <binding>http//*/foo/*</binding>
           </exclude>
-          <vespa-domain>vespa.vespa.cd</vespa-domain>
         </access-control>
 
         <filter id="com.yahoo.YcaFilter" bundle="mybundle">
@@ -121,9 +120,9 @@
     </http>
 
     <accesslog type='json'
-           fileNamePattern='logs/vespa/qrs/access-json.%Y%m%d%H%M%S' compressOnRotation='true'  compressionType='zstd' queueSize='13' bufferSize='65536'/>
+           fileNamePattern='logs/vespa/access/access-json.%Y%m%d%H%M%S' compressOnRotation='true'  compressionType='zstd' queueSize='13' bufferSize='65536'/>
     <accesslog type='vespa'
-           fileNamePattern='logs/vespa/qrs/access-vespa.%Y%m%d%H%M%S' />
+           fileNamePattern='logs/vespa/access/access-vespa.%Y%m%d%H%M%S' />
 
     <document-api>
       <binding>http://*/document-api/</binding>
@@ -148,8 +147,7 @@
         <searcher id='inner-searcher' />
       </chain>
 
-      <provider id='yca-provider' type='vespa' yca-application-id='my-app'>
-        <yca-proxy host='myhost' port='80'/>
+      <provider id='yca-provider' type='vespa'>
         <nodes>
           <node host='sourcehost' port='12'/>
         </nodes>
@@ -195,16 +193,7 @@
     <handler id="jdisc-handler">
       <binding>http://*:*/HelloWorld</binding>
       <binding>http://*:*/Status</binding>
-      <clientBinding>http://*:*/foo</clientBinding>
-      <clientBinding>http://*:*/bar</clientBinding>
     </handler>
-
-    <client id="client-provider">
-      <binding>http://*:*/HelloWorld</binding>
-      <binding>http://*:*/Status</binding>
-      <serverBinding>http://*:*/foo</serverBinding>
-      <serverBinding>http://*:*/bar</serverBinding>
-    </client>
 
     <server id="server-provider">
 

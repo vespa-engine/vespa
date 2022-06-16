@@ -13,8 +13,6 @@ using namespace vespalib::eval::test;
 
 using vespalib::make_string_short::fmt;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
-
 //-----------------------------------------------------------------------------
 
 struct FunInfo {

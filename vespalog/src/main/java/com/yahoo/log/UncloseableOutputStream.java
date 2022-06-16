@@ -7,9 +7,8 @@ import java.io.OutputStream;
 /**
  * @author Simon Thoresen Hult
  * @since 5.1.14
- * @deprecated Should only be used internally in the log library
+ * Should only be used internally in the log library
  */
-@Deprecated(since = "7", forRemoval = true)
 class UncloseableOutputStream extends OutputStream {
 
     private final OutputStream out;

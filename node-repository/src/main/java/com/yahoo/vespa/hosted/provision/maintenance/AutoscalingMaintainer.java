@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.node.History;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
@@ -54,7 +53,12 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     private void autoscale(ApplicationId application, NodeList applicationNodes) {
-        nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes));
+        try {
+            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes));
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Illegal arguments for " + application, e);
+        }
     }
 
     private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, NodeList clusterNodes) {

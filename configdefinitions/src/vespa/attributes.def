@@ -10,7 +10,6 @@ attribute[].match               enum { CASED, UNCASED } default=UNCASED
 attribute[].removeifzero        bool default=false
 attribute[].createifnonexistent bool default=false
 attribute[].fastsearch          bool default=false
-attribute[].huge                bool default=false
 attribute[].paged               bool default=false
 # An attribute marked mutable can be updated by a query.
 attribute[].ismutable           bool default=false
@@ -46,7 +45,5 @@ attribute[].distancemetric enum { EUCLIDEAN, ANGULAR, GEODEGREES, INNERPRODUCT, 
 attribute[].index.hnsw.enabled bool default=false
 attribute[].index.hnsw.maxlinkspernode int default=16
 attribute[].index.hnsw.neighborstoexploreatinsert int default=200
-# Deprecated: Remove on Vespa 8 or before when possible.
-attribute[].index.hnsw.distancemetric enum { EUCLIDEAN, ANGULAR, GEODEGREES, HAMMING } default=EUCLIDEAN
 # Whether multi-threaded indexing is enabled for this hnsw index.
 attribute[].index.hnsw.multithreadedindexing bool default=true

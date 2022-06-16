@@ -819,13 +819,6 @@ private:
         for (const auto & importD : docT.importedfield) {
             doc_type->add_imported_field_name(importD.name);
         }
-        for (const auto & entry : docT.fieldsets) {
-            DocumentType::FieldSet::Fields fields;
-            for (const auto& f : entry.second.fields) {
-                fields.insert(f);
-            }
-            doc_type->addFieldSet(entry.first, fields);
-        }
         for (const auto & inheritD : docT.inherits) {
             const DataType *dt = _made_types[inheritD.idx];
             const DocumentType * parent = dynamic_cast<const DocumentType *>(dt);
@@ -836,6 +829,13 @@ private:
             } else {
                 doc_type->inherit(*parent);
             }
+        }
+        for (const auto & entry : docT.fieldsets) {
+            DocumentType::FieldSet::Fields fields;
+            for (const auto& f : entry.second.fields) {
+                fields.insert(f);
+            }
+            doc_type->addFieldSet(entry.first, fields);
         }
     }
 

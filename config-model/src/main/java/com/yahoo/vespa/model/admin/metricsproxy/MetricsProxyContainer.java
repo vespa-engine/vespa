@@ -59,7 +59,7 @@ public class MetricsProxyContainer extends Container implements
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
         addComponent(new AccessLogComponent(containerCluster().orElse(null), AccessLogComponent.AccessLogType.jsonAccessLog,
-                AccessLogComponent.CompressionType.ZSTD,
+                "zstd",
                 Optional.of("metrics-proxy"),
                 deployState.isHosted()));
     }

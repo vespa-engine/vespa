@@ -33,9 +33,7 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -111,7 +109,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
     private final Map<String,SDField> structFields = new java.util.LinkedHashMap<>(0);
 
     /** The document that this field was declared in, or null */
-    private SDDocumentType repoDocType = null;
+    private final SDDocumentType repoDocType;
 
     /** The aliases declared for this field. May pertain to indexes or attributes */
     private final Map<String, String> aliasToName = new HashMap<>();
@@ -263,7 +261,6 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
 
     private boolean doneStructFields = false;
 
-    @SuppressWarnings("deprecation")
     private void actuallyMakeStructFields() {
         if (doneStructFields) return;
         if (getFirstStructOrMapRecursive() == null) {
@@ -283,8 +280,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
             structFields.put(fieldName, subField);
         };
 
-        if (dataType instanceof MapDataType) {
-            MapDataType mdt = (MapDataType) dataType;
+        if (dataType instanceof MapDataType mdt) {
             supplyStructField.accept("key", mdt.getKeyType());
             supplyStructField.accept("value", mdt.getValueType());
         } else {
@@ -311,8 +307,7 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
                 for (Field field : subType.fieldSet()) {
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
-            } else if (dataType instanceof StructDataType) {
-                var sdt = (StructDataType) dataType;
+            } else if (dataType instanceof StructDataType sdt) {
                 for (Field field : sdt.getFields()) {
                     supplyStructField.accept(field.getName(), field.getDataType());
                 }
@@ -325,13 +320,12 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
             // populate struct fields with matching
             if (subType != null) {
                 for (Field f : subType.fieldSet()) {
-                    if (f instanceof SDField) {
-                        SDField field = (SDField) f;
-                        SDField subField = structFields.get(field.getName());
+                    if (f instanceof SDField sdField) {
+                        SDField subField = structFields.get(sdField.getName());
                         if (subField != null) {
                             // we just made this with a copy of our matching (see above)
                             Matching subFieldMatching = subField.getMatching();
-                            subFieldMatching.merge(field.getMatching());
+                            subFieldMatching.merge(sdField.getMatching());
                             subField.setMatching(subFieldMatching);
                         }
                     } else {
@@ -343,8 +337,6 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
         }
         doneStructFields = true;
     }
-
-    private Matching matchingForStructFields = null;
 
     public void setId(int fieldId, DocumentType owner) {
         super.setId(fieldId, owner);

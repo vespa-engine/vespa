@@ -34,6 +34,7 @@ import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.security.cert.X509Certificate;
@@ -47,6 +48,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.Set;
@@ -298,11 +300,12 @@ public class JobController {
         return runs.build();
     }
 
-    /** Returns the run with the given id, if it exists. */
-    public Optional<Run> run(RunId id) {
+    /** Returns the run with the given id, or throws if no such run exists. */
+    public Run run(RunId id) {
         return runs(id.application(), id.type()).values().stream()
                                                 .filter(run -> run.id().equals(id))
-                                                .findAny();
+                                                .findAny()
+                                                .orElseThrow(() -> new NoSuchElementException("no run with id '" + id + "' exists"));
     }
 
     /** Returns the last run of the given type, for the given application, if one has been run. */
@@ -341,7 +344,7 @@ public class JobController {
     public List<Run> active() {
         return controller.applications().idList().stream()
                          .flatMap(id -> active(id).stream())
-                         .collect(toUnmodifiableList());
+                         .toList();
     }
 
     /** Returns a list of all active runs for the given application. */
@@ -351,7 +354,7 @@ public class JobController {
                                                  .map(type -> last(id.instance(name), type))
                                                  .flatMap(Optional::stream)
                                                  .filter(run -> ! run.hasEnded()))
-                         .collect(toUnmodifiableList());
+                         .toList();
     }
 
     /** Returns a list of all active runs for the given instance. */
@@ -360,7 +363,7 @@ public class JobController {
                       .map(type -> last(id, type))
                       .flatMap(Optional::stream)
                       .filter(run -> !run.hasEnded())
-                      .collect(toUnmodifiableList());
+                      .toList();
     }
 
     /** Returns the job status of the given job, possibly empty. */
@@ -370,28 +373,32 @@ public class JobController {
 
     /** Returns the deployment status of the given application. */
     public DeploymentStatus deploymentStatus(Application application) {
-        return deploymentStatus(application, controller.readSystemVersion());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        return deploymentStatus(application, versionStatus, controller.systemVersion(versionStatus));
     }
 
-    private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
+    private DeploymentStatus deploymentStatus(Application application, VersionStatus versionStatus, Version systemVersion) {
         return new DeploymentStatus(application,
                                     this::jobStatus,
                                     controller.zoneRegistry(),
+                                    versionStatus,
                                     systemVersion,
                                     instance -> controller.applications().versionCompatibility(application.id().instance(instance)),
                                     controller.clock().instant());
     }
 
     /** Adds deployment status to each of the given applications. */
-    public DeploymentStatusList deploymentStatuses(ApplicationList applications, Version systemVersion) {
+    public DeploymentStatusList deploymentStatuses(ApplicationList applications, VersionStatus versionStatus) {
+        Version systemVersion = controller.systemVersion(versionStatus);
         return DeploymentStatusList.from(applications.asList().stream()
-                                                     .map(application -> deploymentStatus(application, systemVersion))
-                                                     .collect(toUnmodifiableList()));
+                                                     .map(application -> deploymentStatus(application, versionStatus, systemVersion))
+                                                     .toList());
     }
 
     /** Adds deployment status to each of the given applications. Calling this will do an implicit read of the controller's version status */
     public DeploymentStatusList deploymentStatuses(ApplicationList applications) {
-        return deploymentStatuses(applications, controller.readSystemVersion());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        return deploymentStatuses(applications, versionStatus);
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
@@ -412,7 +419,7 @@ public class JobController {
         Deque<Mutex> locks = new ArrayDeque<>();
         try {
             // Ensure no step is still running before we finish the run — report depends transitively on all the other steps.
-            Run unlockedRun = run(id).get();
+            Run unlockedRun = run(id);
             locks.push(curator.lock(id.application(), id.type(), report));
             for (Step step : report.allPrerequisites(unlockedRun.steps().keySet()))
                 locks.push(curator.lock(id.application(), id.type(), step));
@@ -506,7 +513,7 @@ public class JobController {
 
             application = application.withProjectId(projectId == -1 ? OptionalLong.empty() : OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
-            application = withPrunedPackages(application);
+            application = withPrunedPackages(application, version.get().id());
 
             TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
             if (testSummary.problems().isEmpty())
@@ -529,21 +536,25 @@ public class JobController {
             });
 
             applications.storeWithUpdatedConfig(application, submission.applicationPackage());
-            applications.deploymentTrigger().triggerNewRevision(id);
+            if (application.get().projectId().isPresent())
+                applications.deploymentTrigger().triggerNewRevision(id);
         });
         return version.get();
     }
 
-    private LockedApplication withPrunedPackages(LockedApplication application){
+    private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
         TenantAndApplicationId id = application.get().id();
-        Optional<RevisionId> oldestDeployed = application.get().oldestDeployedRevision();
-        if (oldestDeployed.isPresent()) {
-            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
+        Application wrapped = application.get();
+        RevisionId oldestDeployed = application.get().oldestDeployedRevision()
+                                               .or(() -> wrapped.instances().values().stream()
+                                                                .flatMap(instance -> instance.change().revision().stream())
+                                                                .min(naturalOrder()))
+                                               .orElse(latest);
+        controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
 
-            for (ApplicationVersion version : application.get().revisions().withPackage())
-                if (version.id().compareTo(oldestDeployed.get()) < 0)
-                    application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
-        }
+        for (ApplicationVersion version : application.get().revisions().withPackage())
+            if (version.id().compareTo(oldestDeployed) < 0)
+                application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
         return application;
     }
 
@@ -582,8 +593,8 @@ public class JobController {
         if (revision.compileVersion()
                     .map(version -> controller.applications().versionCompatibility(id).refuse(versions.targetPlatform(), version))
                     .orElse(false))
-            throw new IllegalArgumentException("Will not start a job with incompatible platform version (" + versions.targetPlatform() + ") " +
-                                               "and compile versions (" + revision.compileVersion().get() + ")");
+            throw new IllegalArgumentException("Will not start " + type + " for " + id + " with incompatible platform version (" +
+                                               versions.targetPlatform() + ") " + "and compile versions (" + revision.compileVersion().get() + ")");
 
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);

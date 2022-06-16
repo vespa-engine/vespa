@@ -14,9 +14,6 @@
 #include <vespa/vespalib/data/slime/inject.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.match_master");
-
 namespace proton::matching {
 
 using namespace search::fef;

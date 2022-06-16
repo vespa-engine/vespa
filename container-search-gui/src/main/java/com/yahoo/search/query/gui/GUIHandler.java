@@ -4,7 +4,7 @@ package com.yahoo.search.query.gui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -17,6 +17,7 @@ import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.Presentation;
 import com.yahoo.search.query.Ranking;
+import com.yahoo.search.query.Trace;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.search.query.ranking.MatchPhase;
 import com.yahoo.search.query.restapi.ErrorResponse;
@@ -192,11 +193,13 @@ public class GUIHandler extends ThreadedHttpRequestHandler {
             json.set("childMap", childMap);
 
             ArrayNode levelZeroParameters = jsonMapper.createArrayNode().add(MinimalQueryInserter.YQL.toString()).add(Query.HITS.toString()).add(Query.OFFSET.toString())
-                                .add("queryProfile").add(Query.NO_CACHE.toString()).add(Query.GROUPING_SESSION_CACHE.toString())
-                                .add(Query.SEARCH_CHAIN.toString()).add(Query.TIMEOUT.toString()).add("trace").add("tracelevel")
-                                .add(Query.TRACE_LEVEL.toString()).add(Query.EXPLAIN_LEVEL.toString()).add("explainlevel").add(Model.MODEL).add(Ranking.RANKING).add("collapse").add("collapsesize").add("collapsefield")
-                                .add(Presentation.PRESENTATION).add("pos").add("streaming").add("rules").add(RecallSearcher.recallName.toString()).add("user")
-                                .add("metrics").add("");
+                                                      .add("queryProfile").add(Query.NO_CACHE.toString()).add(Query.GROUPING_SESSION_CACHE.toString())
+                                                      .add(Query.SEARCH_CHAIN.toString()).add(Query.TIMEOUT.toString()).add("trace")
+                                                      .add("tracelevel").add("traceLevel") // TODO: Remove on Vespa 9
+                                                      .add("explainLevel").add("explainlevel") // TODO: Remove on Vespa 9
+                                                      .add(Model.MODEL).add(Ranking.RANKING).add("collapse").add("collapsesize").add("collapsefield")
+                                                      .add(Presentation.PRESENTATION).add("pos").add("streaming").add("rules").add(RecallSearcher.recallName.toString()).add("user")
+                                                      .add("metrics").add("");
             json.set("levelZeroParameters", levelZeroParameters);
 
             return jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(json);

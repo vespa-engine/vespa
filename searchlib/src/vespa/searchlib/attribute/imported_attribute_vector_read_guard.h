@@ -31,26 +31,9 @@ class ImportedAttributeVectorReadGuard : public IAttributeVector,
                                          public AttributeReadGuard,
                                          public IMultiValueAttribute
 {
-private:
-    using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
-    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
-    IDocumentMetaStoreContext::IReadGuard::UP _target_document_meta_store_read_guard;
-    const ImportedAttributeVector   &_imported_attribute;
-    TargetLids                       _targetLids;
-    AttributeGuard                   _reference_attribute_guard;
-    std::unique_ptr<attribute::AttributeReadGuard> _target_attribute_guard;
-    const ReferenceAttribute        &_reference_attribute;
-protected:
-    const IAttributeVector          &_target_attribute;
-
-protected:
-    uint32_t getTargetLid(uint32_t lid) const {
-        // Check range to avoid reading memory beyond end of mapping array
-        return lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
-    }
-
 public:
-    ImportedAttributeVectorReadGuard(const ImportedAttributeVector &imported_attribute, bool stableEnumGuard);
+    using MetaStoreReadGuard = search::IDocumentMetaStoreContext::IReadGuard;
+    ImportedAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard, const ImportedAttributeVector &imported_attribute, bool stableEnumGuard);
     ~ImportedAttributeVectorReadGuard() override;
 
     const vespalib::string &getName() const override;
@@ -106,8 +89,23 @@ public:
     const IWeightedSetReadView<const char*>* make_read_view(WeightedSetTag<const char*> tag, vespalib::Stash& stash) const override;
     const IArrayEnumReadView* make_read_view(ArrayEnumTag tag, vespalib::Stash& stash) const override;
     const IWeightedSetEnumReadView* make_read_view(WeightedSetEnumTag tag, vespalib::Stash& stash) const override;
-
+private:
+    using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
+    using TargetLids = vespalib::ConstArrayRef<AtomicTargetLid>;
+    std::shared_ptr<MetaStoreReadGuard>  _target_document_meta_store_read_guard;
+    const ImportedAttributeVector       &_imported_attribute;
+    TargetLids                           _targetLids;
+    AttributeGuard                       _reference_attribute_guard;
+    std::unique_ptr<attribute::AttributeReadGuard> _target_attribute_guard;
+    const ReferenceAttribute            &_reference_attribute;
 protected:
+    const IAttributeVector              &_target_attribute;
+
+    uint32_t getTargetLid(uint32_t lid) const {
+        // Check range to avoid reading memory beyond end of mapping array
+        return lid < _targetLids.size() ? _targetLids[lid].load_acquire() : 0u;
+    }
+
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available,
                                      const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available,

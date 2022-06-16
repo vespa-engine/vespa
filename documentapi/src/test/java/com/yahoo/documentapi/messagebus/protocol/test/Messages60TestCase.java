@@ -143,7 +143,6 @@ public class Messages60TestCase extends MessagesTestBase {
         private static final String BUCKET_SPACE = "beartato";
 
         @Override
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public void run() {
             GetBucketListMessage msg = new GetBucketListMessage(new BucketId(16, 123));
             msg.setBucketSpace(BUCKET_SPACE);
@@ -152,7 +151,6 @@ public class Messages60TestCase extends MessagesTestBase {
             for (Language lang : LANGUAGES) {
                 msg = (GetBucketListMessage)deserialize("GetBucketListMessage", DocumentProtocol.MESSAGE_GETBUCKETLIST, lang);
                 assertEquals(new BucketId(16, 123), msg.getBucketId());
-                assertEquals("default", msg.getLoadType().getName()); // TODO: Remove on Vespa 8
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
         }
@@ -163,10 +161,8 @@ public class Messages60TestCase extends MessagesTestBase {
         private static final String BUCKET_SPACE = "andrei";
 
         @Override
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
         public void run() {
             StatBucketMessage msg = new StatBucketMessage(new BucketId(16, 123), "id.user=123");
-            msg.setLoadType(null); // TODO: Remove on Vespa 8
             msg.setBucketSpace(BUCKET_SPACE);
             assertEquals(BASE_MESSAGE_LENGTH + 27 + serializedLength(BUCKET_SPACE), serialize("StatBucketMessage", msg));
 
@@ -174,7 +170,6 @@ public class Messages60TestCase extends MessagesTestBase {
                 msg = (StatBucketMessage)deserialize("StatBucketMessage", DocumentProtocol.MESSAGE_STATBUCKET, lang);
                 assertEquals(new BucketId(16, 123), msg.getBucketId());
                 assertEquals("id.user=123", msg.getDocumentSelection());
-                assertEquals("default", msg.getLoadType().getName()); // TODO: Remove on Vespa 8
                 assertEquals(BUCKET_SPACE, msg.getBucketSpace());
             }
         }
@@ -276,7 +271,6 @@ public class Messages60TestCase extends MessagesTestBase {
     public class testCreateVisitorReply implements RunnableTest {
 
         @Override
-        @SuppressWarnings("removal")
         public void run() {
             CreateVisitorReply reply = new CreateVisitorReply(DocumentProtocol.REPLY_CREATEVISITOR);
             reply.setLastBucket(new BucketId(16, 123));
@@ -285,8 +279,6 @@ public class Messages60TestCase extends MessagesTestBase {
             reply.getVisitorStatistics().setBytesVisited(1024000);
             reply.getVisitorStatistics().setDocumentsReturned(123);
             reply.getVisitorStatistics().setBytesReturned(512000);
-            reply.getVisitorStatistics().setSecondPassDocumentsReturned(456);
-            reply.getVisitorStatistics().setSecondPassBytesReturned(789100);
 
             assertEquals(65, serialize("CreateVisitorReply", reply));
 
@@ -299,8 +291,6 @@ public class Messages60TestCase extends MessagesTestBase {
                 assertEquals(1024000, reply.getVisitorStatistics().getBytesVisited());
                 assertEquals(123, reply.getVisitorStatistics().getDocumentsReturned());
                 assertEquals(512000, reply.getVisitorStatistics().getBytesReturned());
-                assertEquals(456, reply.getVisitorStatistics().getSecondPassDocumentsReturned()); // TODO remove on Vespa 8
-                assertEquals(789100, reply.getVisitorStatistics().getSecondPassBytesReturned());
             }
         }
     }

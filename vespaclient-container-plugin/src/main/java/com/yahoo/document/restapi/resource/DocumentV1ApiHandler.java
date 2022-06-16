@@ -22,6 +22,7 @@ import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.fieldset.DocIdOnly;
+import com.yahoo.document.fieldset.DocumentOnly;
 import com.yahoo.document.idstring.IdIdString;
 import com.yahoo.document.json.DocumentOperationType;
 import com.yahoo.document.json.JsonReader;
@@ -377,8 +378,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             StorageCluster destination = resolveCluster(Optional.of(requireProperty(request, DESTINATION_CLUSTER)), clusters);
             VisitorParameters parameters = parseParameters(request, path);
             parameters.setRemoteDataHandler("[Content:cluster=" + destination.name() + "]"); // Bypass indexing.
-            // TODO Vespa 8: change to DocumentOnly.NAME
-            parameters.setFieldSet(AllFields.NAME);
+            parameters.setFieldSet(DocumentOnly.NAME);
             return () -> {
                 visitWithRemote(request, parameters, handler);
                 return true; // VisitorSession has its own throttle handling.
@@ -627,7 +627,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         /** Creates a new JsonResponse with path field written. */
         static JsonResponse create(HttpRequest request, ResponseHandler handler) throws IOException {
-            JsonResponse response = new JsonResponse(handler);
+            JsonResponse response = new JsonResponse(handler, request);
             response.writePathId(request.getUri().getRawPath());
             return response;
         }
@@ -713,12 +713,17 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
         }
 
-        synchronized void writeSingleDocument(Document document) throws IOException {
-            boolean tensorShortForm = false;
-            if (request != null && request.parameters().containsKey("format.tensors")) {
-                tensorShortForm = request.parameters().get("format.tensors").contains("short");
+        private boolean tensorShortForm() {
+            if (request != null &&
+                request.parameters().containsKey("format.tensors") &&
+                request.parameters().get("format.tensors").contains("long")) {
+                return false;
             }
-            new JsonWriter(json, tensorShortForm).writeFields(document);
+            return true;  // default
+        }
+
+        synchronized void writeSingleDocument(Document document) throws IOException {
+            new JsonWriter(json, tensorShortForm()).writeFields(document);
         }
 
         synchronized void writeDocumentsArrayStart() throws IOException {
@@ -737,7 +742,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
             myOut.write(','); // Prepend rather than append, to avoid double memory copying.
             try (JsonGenerator myJson = jsonFactory.createGenerator(myOut)) {
-                new JsonWriter(myJson).write(document);
+                new JsonWriter(myJson, tensorShortForm()).write(document);
             }
             docs.add(myOut);
 
@@ -1102,8 +1107,8 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             throw new IllegalArgumentException("Must set 'cluster' parameter to a valid content cluster id when visiting at a root /document/v1/ level");
 
         VisitorParameters parameters = parseCommonParameters(request, path, cluster);
-        // TODO Vespa 8: change to DocumentOnly.NAME
-        parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(AllFields.NAME)));
+        // TODO can the else-case be safely reduced to always be DocumentOnly.NAME?
+        parameters.setFieldSet(getProperty(request, FIELD_SET).orElse(path.documentType().map(type -> type + ":[document]").orElse(DocumentOnly.NAME)));
         parameters.setMaxTotalHits(wantedDocumentCount);
         parameters.visitInconsistentBuckets(true);
         long timeoutMs = Math.max(1, request.getTimeout(MILLISECONDS) - handlerTimeout.toMillis());
@@ -1402,11 +1407,14 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         @Override
         public ContentChannel handleResponse(Response response) {
-            switch (response.getStatus() / 100) {
-                case 2: metrics.reportSuccessful(type, start); break;
-                case 4: metrics.reportFailure(type, DocumentOperationStatus.REQUEST_ERROR); break;
-                case 5: metrics.reportFailure(type, DocumentOperationStatus.SERVER_ERROR); break;
-            }
+            var statusCodeGroup = response.getStatus() / 100;
+            // Status code 412 - condition not met - is considered OK
+            if (statusCodeGroup == 2 || response.getStatus() == 412)
+                metrics.reportSuccessful(type, start);
+            else if (statusCodeGroup == 4)
+                metrics.reportFailure(type, DocumentOperationStatus.REQUEST_ERROR);
+            else if (statusCodeGroup == 5)
+                metrics.reportFailure(type, DocumentOperationStatus.SERVER_ERROR);
             return delegate.handleResponse(response);
         }
 

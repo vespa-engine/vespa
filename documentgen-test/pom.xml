@@ -5,12 +5,12 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>documentgen-test</artifactId>
   <packaging>jar</packaging>
-  <version>7-SNAPSHOT</version>
+  <version>8-SNAPSHOT</version>
   <name>documentgen_test</name>
   <description>Tests for vespa-documentgen-plugin</description>
   <dependencies>
@@ -104,7 +104,7 @@
         <artifactId>vespa-documentgen-plugin</artifactId>
         <version>${project.version}</version>
         <configuration>
-          <sdDirectory>etc/complex</sdDirectory>
+          <schemasDirectory>etc/complex</schemasDirectory>
           <packageName>com.yahoo.vespa.documentgen.test</packageName>
           <abztract>
             <annotation><type>emptyannotation</type></annotation>

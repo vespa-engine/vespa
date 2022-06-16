@@ -20,7 +20,6 @@ public class CertificateK {
     private final com.google.common.reflect.Reflection reflection = null;
     private final com.google.common.util.concurrent.AbstractIdleService idleService = null;
     private final com.google.inject.AbstractModule module = null;
-    private final com.google.inject.assistedinject.Assisted assisted = null;
     private final com.google.inject.binder.AnnotatedConstantBindingBuilder builder = null;
     private final com.google.inject.matcher.Matchers matchers = null;
     private final com.google.inject.multibindings.MapBinder<String, String> mapBinder = null;
@@ -32,14 +31,12 @@ public class CertificateK {
     private final com.yahoo.jdisc.application.AbstractApplication application = null;
     private final com.yahoo.jdisc.handler.AbstractRequestHandler handler = null;
     private final com.yahoo.jdisc.service.AbstractClientProvider client = null;
-    private final com.yahoo.yolean.chain.Chain<?> chain = null;
     private final com.yahoo.yolean.concurrent.ThreadRobustList<?> robustList = null;
     private final com.yahoo.yolean.trace.TraceNode traceNode = null;
     private final com.sun.security.auth.LdapPrincipal principal = null;
     private final com.sun.security.auth.module.JndiLoginModule jndiLoginModule = null;
     private final java.security.cert.Certificate certificate = null;
     private final javax.accessibility.Accessible accessible = null;
-    private final javax.annotation.PostConstruct postConstruct = null;
     private final javax.annotation.processing.FilerException filerException = null;
     private final javax.crypto.BadPaddingException badPaddingException = null;
     private final javax.crypto.interfaces.DHKey dhKey = null;
@@ -144,7 +141,6 @@ public class CertificateK {
     private final org.osgi.framework.AdminPermission permission = null;
     private final org.osgi.framework.hooks.service.FindHook hook = null;
     private final org.osgi.framework.launch.Framework framework = null;
-    private final org.osgi.service.log.LogEntry entry = null;
     private final org.osgi.service.packageadmin.ExportedPackage pkg = null;
     private final org.osgi.service.startlevel.StartLevel level = null;
     private final org.osgi.service.url.URLConstants constants = null;

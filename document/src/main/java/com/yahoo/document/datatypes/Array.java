@@ -220,12 +220,10 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         return values.addAll(index, c);
     }
 
-    @SuppressWarnings("deprecation")
     public boolean retainAll(Collection<?> c) {
         return values.retainAll(c);
     }
 
-    @SuppressWarnings("deprecation")
     public boolean removeAll(Collection<?> c) {
         return values.removeAll(c);
     }
@@ -234,12 +232,10 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         return values.get(index);
     }
 
-    @SuppressWarnings("deprecation")
     public int indexOf(Object o) {
         return values.indexOf(o);
     }
 
-    @SuppressWarnings("deprecation")
     public int lastIndexOf(Object o) {
         return values.lastIndexOf(o);
     }
@@ -256,7 +252,6 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
         return values.remove(index);
     }
 
-    @SuppressWarnings("deprecation")
     public T set(int index, T o) {
         verifyElementCompatibility(o);
         T fval = values.set(index, o);
@@ -512,7 +507,6 @@ public final class Array<T extends FieldValue> extends CollectionFieldValue<T> i
             };
         }
 
-        @SuppressWarnings("deprecation")
         public List<E> subList(int fromIndex, int toIndex) {
             return new ListWrapper<E>(myvalues.subList(fromIndex, toIndex));
         }

@@ -213,7 +213,7 @@ public class RoutingController {
                                                                  .map(com.yahoo.config.application.api.Endpoint.Target::region)
                                                                  .distinct()
                                                                  .map(region -> new DeploymentId(deployment.applicationId(), ZoneId.from(Environment.prod, region)))
-                                                                 .collect(Collectors.toUnmodifiableList());
+                                                                 .toList();
             TenantAndApplicationId application = TenantAndApplicationId.from(deployment.applicationId());
             for (var targetDeployment : deploymentTargets) {
                 builders.add(Endpoint.of(application).targetApplication(EndpointId.defaultId(), targetDeployment));
@@ -413,19 +413,19 @@ public class RoutingController {
 
     /** Create a common name based on a hash of given application. This must be less than 64 characters long. */
     private static String commonNameHashOf(ApplicationId application, SystemName system) {
+        @SuppressWarnings("deprecation") // for Hashing.sha1()
         HashCode sha1 = Hashing.sha1().hashString(application.serializedForm(), StandardCharsets.UTF_8);
         String base32 = BaseEncoding.base32().omitPadding().lowerCase().encode(sha1.asBytes());
         return 'v' + base32 + Endpoint.internalDnsSuffix(system);
     }
 
     private static String asString(Endpoint.Scope scope) {
-        switch (scope) {
-            case application: return "application";
-            case global: return "global";
-            case weighted: return "weighted";
-            case zone: return "zone";
-        }
-        throw new IllegalArgumentException("Unknown scope " + scope);
+        return switch (scope) {
+            case application -> "application";
+            case global -> "global";
+            case weighted -> "weighted";
+            case zone -> "zone";
+        };
     }
 
 }

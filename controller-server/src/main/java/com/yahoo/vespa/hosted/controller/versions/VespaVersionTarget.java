@@ -10,24 +10,10 @@ import java.util.Objects;
  *
  * @author mpolden
  */
-public class VespaVersionTarget implements VersionTarget {
+public record VespaVersionTarget(Version version, boolean downgrade) implements VersionTarget {
 
-    private final Version version;
-    private final boolean downgrade;
-
-    public VespaVersionTarget(Version version, boolean downgrade) {
-        this.version = Objects.requireNonNull(version);
-        this.downgrade = downgrade;
-    }
-
-    @Override
-    public Version version() {
-        return version;
-    }
-
-    @Override
-    public boolean downgrade() {
-        return downgrade;
+    public VespaVersionTarget {
+        Objects.requireNonNull(version);
     }
 
     @Override

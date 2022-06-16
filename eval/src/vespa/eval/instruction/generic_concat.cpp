@@ -2,7 +2,7 @@
 
 #include "generic_concat.h"
 #include "generic_join.h"
-#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/overload.h>
 #include <vespa/vespalib/util/stash.h>

@@ -222,7 +222,7 @@ public class TenantRepositoryTest {
                   new ConfigServerDB(configserverConfig),
                   Zone.defaultZone(),
                   Clock.systemUTC(),
-                  new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
+                  new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory())),
                   new TestConfigDefinitionRepo(),
                   new TenantApplicationsTest.MockReloadListener(),
                   new MockTenantListener(),

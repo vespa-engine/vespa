@@ -24,6 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -194,11 +195,9 @@ public class ContainerTest extends ContainerTestBase {
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionForMissingConfig.class);
         container.reloadConfig(2);
 
-        try {
-            getNewComponentGraph(container, currentGraph);
-            fail("expected exception");
-        } catch (Exception ignored) {
-        }
+        assertThrows(IllegalArgumentException.class,
+                     () -> getNewComponentGraph(container, currentGraph));
+
         ExecutorService exec = Executors.newFixedThreadPool(1);
         Future<ComponentGraph> newGraph = exec.submit(() -> getNewComponentGraph(container, currentGraph));
 

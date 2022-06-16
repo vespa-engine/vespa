@@ -56,7 +56,6 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
     private long pollCount = 0;
     private boolean stopped;
 
-    // Non-final for testing
     private final AtomicReference<Duration> taskTimeout;
 
     @Inject
@@ -187,12 +186,15 @@ public class ApplicationMetricsRetriever extends AbstractComponent implements Ru
 
     static CloseableHttpAsyncClient createHttpClient() {
         return VespaAsyncHttpClientBuilder.create()
-                .setIOReactorConfig(IOReactorConfig.custom().setIoThreadCount(2).build())
+                .setIOReactorConfig(IOReactorConfig.custom()
+                        .setSoTimeout(Timeout.ofMilliseconds(HTTP_SOCKET_TIMEOUT))
+                        .setIoThreadCount(2)
+                        .build())
                 .setUserAgent("application-metrics-retriever")
                 .setDefaultRequestConfig(RequestConfig.custom()
-                                                 .setConnectTimeout(Timeout.ofMilliseconds(HTTP_CONNECT_TIMEOUT))
-                                                 .setResponseTimeout(Timeout.ofMilliseconds(HTTP_SOCKET_TIMEOUT))
-                                                 .build())
+                        .setConnectTimeout(Timeout.ofMilliseconds(HTTP_CONNECT_TIMEOUT))
+                        .setResponseTimeout(Timeout.ofMilliseconds(HTTP_SOCKET_TIMEOUT))
+                        .build())
                 .build();
     }
 

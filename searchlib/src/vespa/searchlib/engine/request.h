@@ -21,7 +21,6 @@ public:
     vespalib::duration getTimeout() const { return _timeOfDoom - getStartTime(); }
     vespalib::duration getTimeUsed() const;
     vespalib::duration getTimeLeft() const;
-    const RelativeTime & getRelativeTime() const { return _relativeTime; }
     bool expired() const { return getTimeLeft() <= vespalib::duration::zero(); }
 
     const vespalib::stringref getStackRef() const {

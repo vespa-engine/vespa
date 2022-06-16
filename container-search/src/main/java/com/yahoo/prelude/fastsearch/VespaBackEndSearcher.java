@@ -14,7 +14,6 @@ import com.yahoo.protect.Validator;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.cluster.PingableSearcher;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.schema.RankProfile;
 import com.yahoo.search.grouping.vespa.GroupingExecutor;
 import com.yahoo.search.result.ErrorMessage;
@@ -168,6 +167,11 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             return new Result(query, ErrorMessage.createNullQuery(query.getHttpRequest().getUri().toString()));
         }
 
+        if ( ! getDocumentDatabase(query).schema().rankProfiles().containsKey(query.getRanking().getProfile()))
+            return new Result(query, ErrorMessage.createInvalidQueryParameter(getDocumentDatabase(query).schema() +
+                                                                              " does not contain requested rank profile '" +
+                                                                              query.getRanking().getProfile() + "'"));
+
         QueryRewrite.optimizeByRestrict(query);
         QueryRewrite.optimizeAndNot(query);
         QueryRewrite.collapseSingleComposites(query);
@@ -185,10 +189,8 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
             return new Result(query);
 
         Result result = doSearch2(query, execution);
-        if (isLoggingFine())
-            getLogger().fine("Result NOT retrieved from cache");
 
-        if (query.getTraceLevel() >= 1)
+        if (query.getTrace().getLevel() >= 1)
             query.trace(getName() + " dispatch response: " + result, false, 1);
         result.trace(getName());
         return result;
@@ -241,7 +243,7 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
     }
 
     void traceQuery(String sourceName, String type, Query query, int offset, int hits, int level, Optional<String> quotedSummaryClass) {
-        if ((query.getTraceLevel()<level) || query.properties().getBoolean(TRACE_DISABLE)) return;
+        if ((query.getTrace().getLevel()<level) || query.properties().getBoolean(TRACE_DISABLE)) return;
 
         StringBuilder s = new StringBuilder();
         s.append(sourceName).append(" ").append(type).append(" to dispatch: ")
@@ -312,12 +314,12 @@ public abstract class VespaBackEndSearcher extends PingableSearcher {
         }
 
         query.trace(s.toString(), false, level);
-        if (query.isTraceable(level + 1)) {
+        if (query.getTrace().isTraceable(level + 1)) {
             query.trace("Current state of query tree: "
                             + new TextualQueryRepresentation(query.getModel().getQueryTree().getRoot()),
                     false, level+1);
         }
-        if (query.isTraceable(level + 2)) {
+        if (query.getTrace().isTraceable(level + 2)) {
             query.trace("YQL+ representation: " + query.yqlRepresentation(), level+2);
         }
     }

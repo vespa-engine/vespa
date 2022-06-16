@@ -2,9 +2,9 @@
 
 #include "dirconfig.hpp"
 
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <filesystem>
 #include <fstream>
 #include <atomic>
 #include <cassert>
@@ -115,7 +115,7 @@ DirConfig::DirConfig()
     : _configs(),
       _dirName(_G_root.nextDir())
 {
-    vespalib::mkdir(_dirName, true);
+    std::filesystem::create_directories(std::filesystem::path(_dirName));
 }
 
 DirConfig::~DirConfig() {}

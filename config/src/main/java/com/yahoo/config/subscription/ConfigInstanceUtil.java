@@ -1,22 +1,19 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
 import com.yahoo.config.ConfigBuilder;
 import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.ConfigurationRuntimeException;
-import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.*;
+import com.yahoo.vespa.config.ConfigPayload;
+import com.yahoo.vespa.config.ConfigTransformer;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * @author gjoranv
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public class ConfigInstanceUtil {
 
     /**

@@ -36,6 +36,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <filesystem>
 #include <iostream>
 
 using namespace cloud::config::filedistribution;
@@ -62,10 +63,10 @@ namespace {
 void
 cleanup_dirs(bool file_config)
 {
-    vespalib::rmdir("typea", true);
-    vespalib::rmdir("tmp", true);
+    std::filesystem::remove_all(std::filesystem::path("typea"));
+    std::filesystem::remove_all(std::filesystem::path("tmp"));
     if (file_config) {
-        vespalib::rmdir("config", true);
+        std::filesystem::remove_all(std::filesystem::path("config"));
     }
 }
 
@@ -105,7 +106,7 @@ FixtureBase::FixtureBase(bool file_config)
     : _cleanup(true),
       _file_config(file_config)
 {
-    vespalib::mkdir("typea");
+    std::filesystem::create_directory(std::filesystem::path("typea"));
 }
 
 
@@ -352,7 +353,7 @@ TEST("require that resume after interrupted save config works")
         std::cout << "Best config serial is " << best_config_snapshot.syncToken << std::endl;
         auto old_config_subdir = config_subdir(best_config_snapshot.syncToken);
         auto new_config_subdir = config_subdir(serialNum + 1);
-        vespalib::mkdir(new_config_subdir);
+        std::filesystem::create_directories(std::filesystem::path(new_config_subdir));
         auto config_files = vespalib::listDirectory(old_config_subdir);
         for (auto &config_file : config_files) {
             vespalib::copy(old_config_subdir + "/" + config_file, new_config_subdir + "/" + config_file, false, false);

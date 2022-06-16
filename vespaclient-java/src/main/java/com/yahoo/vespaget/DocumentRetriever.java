@@ -8,8 +8,6 @@ import com.yahoo.documentapi.SyncParameters;
 import com.yahoo.documentapi.messagebus.MessageBusDocumentAccess;
 import com.yahoo.documentapi.messagebus.MessageBusParams;
 import com.yahoo.documentapi.messagebus.MessageBusSyncSession;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.GetDocumentReply;
 import com.yahoo.messagebus.Message;
@@ -20,20 +18,18 @@ import com.yahoo.vespaclient.ClusterDef;
 import com.yahoo.vespaclient.ClusterList;
 
 import java.util.Iterator;
-import java.util.Map;
 
 /**
  * The document retriever is responsible for retrieving documents using the Document API and printing the result to standard out.
  *
  * @author bjorncs
  */
-@SuppressWarnings("removal") // TODO: Remove on Vespa 8
+@SuppressWarnings("removal") // TODO: Remove on Vespa 9
 public class DocumentRetriever {
 
     private final ClusterList clusterList;
     private final DocumentAccessFactory documentAccessFactory;
     private final ClientParameters params;
-    private final LoadTypeSet loadTypeSet; // TODO remove on Vespa 8
 
     private MessageBusSyncSession session;
     private MessageBusDocumentAccess documentAccess;
@@ -43,21 +39,6 @@ public class DocumentRetriever {
                              ClientParameters params) {
         this.clusterList = clusterList;
         this.documentAccessFactory = documentAccessFactory;
-        this.loadTypeSet = new LoadTypeSet(); // TODO remove on Vespa 8
-        this.params = params;
-    }
-
-    /**
-     * @deprecated load types are deprecated. Use constructor without LoadTypeSet instead.
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public DocumentRetriever(ClusterList clusterList,
-                             DocumentAccessFactory documentAccessFactory,
-                             LoadTypeSet loadTypeSet,
-                             ClientParameters params) {
-        this.clusterList = clusterList;
-        this.documentAccessFactory = documentAccessFactory;
-        this.loadTypeSet = loadTypeSet;
         this.params = params;
     }
 
@@ -81,7 +62,6 @@ public class DocumentRetriever {
     public void retrieveDocuments() throws DocumentRetrieverException {
         boolean first = true;
         String route = params.cluster.isEmpty() ? params.route : resolveClusterRoute(params.cluster);
-        LoadType loadType = params.loadTypeName.isEmpty() ? null : resolveLoadType(params.loadTypeName);
 
         MessageBusParams messageBusParams = createMessageBusParams(params.configId, params.timeout, route);
         documentAccess = documentAccessFactory.createDocumentAccess(messageBusParams);
@@ -104,7 +84,7 @@ public class DocumentRetriever {
                 }
             }
             String docid = iter.next();
-            Message msg = createDocumentRequest(docid, loadType);
+            Message msg = createDocumentRequest(docid);
             Reply reply = session.syncSend(msg);
             printReply(reply);
         }
@@ -133,17 +113,8 @@ public class DocumentRetriever {
         return clusterDef.getRoute();
     }
 
-    private LoadType resolveLoadType(String loadTypeName) throws DocumentRetrieverException {
-        Map<String, LoadType> loadTypesNameMap = loadTypeSet.getNameMap();
-        if (!loadTypesNameMap.containsKey(loadTypeName)) {
-            throw new DocumentRetrieverException(String.format("Loadtype with name '%s' does not exist.\n", loadTypeName));
-        } else {
-            return loadTypesNameMap.get(loadTypeName);
-        }
-    }
-
     private MessageBusParams createMessageBusParams(String configId, double timeout, String route) {
-        MessageBusParams messageBusParams = new MessageBusParams(loadTypeSet);
+        MessageBusParams messageBusParams = new MessageBusParams();
         messageBusParams.setRoute(route);
         messageBusParams.setProtocolConfigId(configId);
         messageBusParams.setRoutingConfigId(configId);
@@ -155,15 +126,10 @@ public class DocumentRetriever {
         return messageBusParams;
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-    private Message createDocumentRequest(String docid, LoadType loadType) {
+    private Message createDocumentRequest(String docid) {
         GetDocumentMessage msg = new GetDocumentMessage(new DocumentId(docid), params.fieldSet);
-        msg.setPriority(params.priority); // TODO: Remove on Vespa 8
+        msg.setPriority(params.priority); // TODO: Remove on Vespa 9
         msg.setRetryEnabled(!params.noRetry);
-
-        if (loadType != null) {
-            msg.setLoadType(loadType);
-        }
         return msg;
     }
 

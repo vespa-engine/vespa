@@ -168,7 +168,9 @@ public:
         EXPECT_EQ(rv.size(), 3);
         EXPECT_LE(rv[0].distance, rv[1].distance);
         double thr = (rv[0].distance + rv[1].distance) * 0.5;
-        auto got_by_docid = index->find_top_k_with_filter(k, qv, *global_filter, k, thr);
+        auto got_by_docid = (global_filter)
+            ? index->find_top_k_with_filter(k, qv, *global_filter, k, thr)
+            : index->find_top_k(k, qv, k, thr);
         EXPECT_EQ(got_by_docid.size(), 1);
         EXPECT_EQ(got_by_docid[0].docid, rv[0].docid);
         for (const auto & hit : got_by_docid) {

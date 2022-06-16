@@ -14,9 +14,6 @@
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/issue.h>
 
-#include <vespa/log/log.h>
-LOG_SETUP(".proton.matching.match_tools");
-
 using search::attribute::IAttributeContext;
 using search::queryeval::IRequestContext;
 using search::queryeval::IDiversifier;

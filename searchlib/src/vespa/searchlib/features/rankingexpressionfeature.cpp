@@ -192,7 +192,7 @@ CompiledRankingExpressionExecutor::execute(uint32_t)
     for (; i < _params.size(); ++i) {
         _params[i] = inputs().get_number(i);
     }
-    outputs().set_number(0, _ranking_function(&_params[0]));
+    outputs().set_number(0, _ranking_function(_params.data()));
 }
 
 //-----------------------------------------------------------------------------

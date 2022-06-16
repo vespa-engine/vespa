@@ -27,7 +27,7 @@ public class AssembleTestBundleMojo extends AbstractAssembleBundleMojo {
     @Override
     public void execute() throws MojoExecutionException {
         Artifacts.ArtifactSet artifacts = Artifacts.getArtifacts(
-                project, TestBundleDependencyScopeTranslator.from(project.getArtifactMap(), testBundleScopeOverrides));
+                project, TestBundleDependencyScopeTranslator.from(project.getArtifacts(), testBundleScopeOverrides));
         JarArchiver archiver = new JarArchiver();
         addDirectory(archiver, Paths.get(project.getBuild().getOutputDirectory()));
         addDirectory(archiver, Paths.get(project.getBuild().getTestOutputDirectory()));

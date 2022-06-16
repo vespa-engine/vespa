@@ -192,29 +192,7 @@ void
 PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
 {
     const auto &distribution = _bucket_space_states.get(bucketSpaceAndNode.bucketSpace).get_distribution();
-    vespalib::string distributionHash;
-    // TODO remove on Vespa 8 - this is a workaround for https://github.com/vespa-engine/vespa/issues/8475
-    bool sendLegacyHash = false;
-    if (bucketSpaceAndNode.bucketSpace == document::FixedBucketSpaces::global_space()) {
-        auto transitionIter = _pendingTransitions.find(bucketSpaceAndNode.bucketSpace);
-        assert(transitionIter != _pendingTransitions.end());
-        // First request cannot have been rejected yet and will thus be sent with non-legacy hash.
-        // Subsequent requests will be sent 50-50. This is because a request may be rejected due to
-        // other reasons than just the hash mismatching, so if we don't cycle back to the non-legacy
-        // hash we risk never converging.
-        sendLegacyHash = ((transitionIter->second->rejectedRequests(bucketSpaceAndNode.node) % 2) == 1);
-    }
-    if (!sendLegacyHash) {
-        distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
-    } else {
-        const auto& defaultSpace = _bucket_space_states.get(document::FixedBucketSpaces::default_space());
-        // Generate legacy distribution hash explicitly.
-        auto legacyGlobalDistr = GlobalBucketSpaceDistributionConverter::convert_to_global(
-                defaultSpace.get_distribution(), true/*use legacy mode*/);
-        distributionHash = legacyGlobalDistr->getNodeGraph().getDistributionConfigHash();
-        LOG(debug, "Falling back to sending legacy hash to node %u: %s",
-            bucketSpaceAndNode.node, distributionHash.c_str());
-    }
+    vespalib::string distributionHash = distribution.getNodeGraph().getDistributionConfigHash();
 
     LOG(debug,
         "Requesting bucket info for bucket space %" PRIu64 " node %d with cluster state '%s' "

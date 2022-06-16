@@ -15,8 +15,6 @@ main(int, char **argv)
     EV_STARTING("logtest");
     LOG(info, "Starting up, called as %s", argv[0]);
     EV_STARTED("logtest");
-    EV_RELOADING("something");
-    EV_RELOADED("something");
     EV_CRASH("something", getpid(), SIGTERM);
     EV_PROGRESS("batch-index", 7, 100);
     EV_PROGRESS("unbounded-batch-index", 9);

@@ -58,7 +58,6 @@ import java.util.logging.Logger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.yahoo.collections.CollectionUtil.first;
-import static com.yahoo.search.federation.StrictContractsConfig.PropagateSourceProperties;
 
 /**
  * This searcher takes a set of sources, looks them up in config and fire off the correct searchchains.
@@ -81,34 +80,26 @@ public class FederationSearcher extends ForkingSearcher {
     private static final List<CompoundName> queryAndHits = ImmutableList.of(Query.OFFSET, Query.HITS);
 
     private final SearchChainResolver searchChainResolver;
-    private final PropagateSourceProperties.Enum propagateSourceProperties;
     private final SourceRefResolver sourceRefResolver;
     private final CopyOnWriteHashMap<CompoundKey, CompoundName> map = new CopyOnWriteHashMap<>();
 
-    private final boolean strictSearchchain;
     private final TargetSelector<?> targetSelector;
     private final Clock clock = Clock.systemUTC();
 
     @Inject
-    public FederationSearcher(FederationConfig config, StrictContractsConfig strict,
-                              ComponentRegistry<TargetSelector> targetSelectors) {
-        this(createResolver(config), strict.searchchains(), strict.propagateSourceProperties(),
-             resolveSelector(config.targetSelector(), targetSelectors));
+    public FederationSearcher(FederationConfig config, ComponentRegistry<TargetSelector> targetSelectors) {
+        this(createResolver(config), resolveSelector(config.targetSelector(), targetSelectors));
     }
 
     // for testing
     public FederationSearcher(ComponentId id, SearchChainResolver searchChainResolver) {
-        this(searchChainResolver, false, PropagateSourceProperties.EVERY, null);
+        this(searchChainResolver, null);
     }
 
     private FederationSearcher(SearchChainResolver searchChainResolver,
-                               boolean strictSearchchain,
-                               PropagateSourceProperties.Enum propagateSourceProperties,
                                TargetSelector targetSelector) {
         this.searchChainResolver = searchChainResolver;
         sourceRefResolver = new SourceRefResolver(searchChainResolver);
-        this.strictSearchchain = strictSearchchain;
-        this.propagateSourceProperties = propagateSourceProperties;
         this.targetSelector = targetSelector;
     }
 
@@ -221,13 +212,7 @@ public class FederationSearcher extends ForkingSearcher {
         if (timeout <= 0) return Optional.empty();
 
         Execution newExecution = new Execution(target.getChain(), execution.context());
-        Result result;
-        if (strictSearchchain) {
-            query.resetTimeout();
-            result = newExecution.search(createFederationQuery(query, query, Window.from(query), timeout, target));
-        } else {
-            result = newExecution.search(cloneFederationQuery(query, Window.from(query), timeout, target));
-        }
+        Result result = newExecution.search(cloneFederationQuery(query, Window.from(query), timeout, target));
         target.modifyTargetResult(result);
         return Optional.of(result);
     }
@@ -265,17 +250,7 @@ public class FederationSearcher extends ForkingSearcher {
 
         outgoing.setTimeout(timeout);
 
-        switch (propagateSourceProperties) {
-            case EVERY:
-                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName, null);
-                break;
-            case NATIVE: case ALL:
-                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName, Query.nativeProperties);
-                break;
-            case OFFSET_HITS:
-                propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName, queryAndHits);
-                break;
-        }
+        propagatePerSourceQueryProperties(query, outgoing, window, sourceName, providerName);
 
         //TODO: FederationTarget
         //TODO: only for target produced by this, not others
@@ -284,45 +259,13 @@ public class FederationSearcher extends ForkingSearcher {
     }
 
     private void propagatePerSourceQueryProperties(Query original, Query outgoing, Window window,
-                                                   String sourceName, String providerName,
-                                                   List<CompoundName> queryProperties) {
-        if (queryProperties == null) {
-            outgoing.setHits(window.hits);
-            outgoing.setOffset(window.offset);
-            original.properties().listProperties(CompoundName.fromComponents("provider", providerName)).forEach((k, v) ->
-                outgoing.properties().set(k, v));
-            original.properties().listProperties(CompoundName.fromComponents("source", sourceName)).forEach((k, v) ->
-                outgoing.properties().set(k, v));
-        }
-        else {
-            for (CompoundName key : queryProperties) {
-                Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
-                if (value != null)
-                    outgoing.properties().set(key, value);
-            }
-        }
-    }
-
-    private Object getSourceOrProviderProperty(Query query,
-                                               CompoundName propertyName,
-                                               String sourceName,
-                                               String providerName,
-                                               Object defaultValue) {
-        Object result = getProperty(query, new SourceKey(sourceName, propertyName.toString()));
-        if (result == null)
-            result = getProperty(query, new ProviderKey(providerName, propertyName.toString()));
-        if (result == null)
-            result = defaultValue;
-        return result;
-    }
-
-    private Object getProperty(Query query, CompoundKey key) {
-        CompoundName name = map.get(key);
-        if (name == null) {
-            name = new CompoundName(key.toString());
-            map.put(key, name);
-        }
-        return query.properties().get(name);
+                                                   String sourceName, String providerName) {
+        outgoing.setHits(window.hits);
+        outgoing.setOffset(window.offset);
+        original.properties().listProperties(CompoundName.fromComponents("provider", providerName))
+                .forEach((k, v) -> outgoing.properties().set(k, v));
+        original.properties().listProperties(CompoundName.fromComponents("source", sourceName))
+                .forEach((k, v) -> outgoing.properties().set(k, v));
     }
 
     private ErrorMessage missingSearchChainsErrorMessage(List<UnresolvedSearchChainException> unresolvedSearchChainExceptions) {
@@ -491,7 +434,7 @@ public class FederationSearcher extends ForkingSearcher {
     private HitOrderer dirtyCopyIfModifiedOrderer(HitGroup group, HitOrderer orderer) {
         if (orderer != null) {
             HitOrderer old = group.getOrderer();
-            if ((old == null) || ! orderer.equals(old)) {
+            if (! orderer.equals(old)) {
                 group.setOrderer(orderer);
             }
         }
@@ -544,7 +487,7 @@ public class FederationSearcher extends ForkingSearcher {
 
     private void traceTargets(Query query, Collection<Target> targets) {
         int traceFederationLevel = 2;
-        if ( ! query.isTraceable(traceFederationLevel)) return;
+        if ( ! query.getTrace().isTraceable(traceFederationLevel)) return;
         query.trace("Federating to " + targets, traceFederationLevel);
     }
 
@@ -594,7 +537,7 @@ public class FederationSearcher extends ForkingSearcher {
             }
 
         }
-        if (query.getTraceLevel()>=4)
+        if (query.getTrace().getLevel()>=4)
             query.trace("Got " + group.getConcreteSize() + " hits from " + group.getId(),false, 4);
         mergedResults.hits().add(group);
     }
@@ -792,55 +735,6 @@ public class FederationSearcher extends ForkingSearcher {
         }
     }
 
-    private static class SourceKey extends CompoundKey {
-
-        public static final String SOURCE = "source.";
-
-        SourceKey(String sourceName, String propertyName) {
-            super(sourceName, propertyName);
-        }
-
-        @Override
-        public int hashCode() {
-            return super.hashCode() ^ 7;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return (o instanceof SourceKey) && super.equals(o);
-        }
-
-        @Override
-        public String toString() {
-            return SOURCE + super.toString();
-        }
-    }
-
-    private static class ProviderKey extends CompoundKey {
-
-        public static final String PROVIDER = "provider.";
-
-        ProviderKey(String sourceName, String propertyName) {
-            super(sourceName, propertyName);
-        }
-
-        @Override
-        public int hashCode() {
-            return super.hashCode() ^ 17;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            return (o instanceof ProviderKey) && super.equals(o);
-        }
-
-        @Override
-        public String toString() {
-            return PROVIDER + super.toString();
-        }
-
-    }
-    
     private static class Window {
         
         private final int hits;

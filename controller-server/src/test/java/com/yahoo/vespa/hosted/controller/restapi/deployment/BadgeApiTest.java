@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.deployment;
 
+import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -25,7 +26,9 @@ public class BadgeApiTest extends ControllerContainerTest {
     @Test
     public void testBadgeApi() throws IOException {
         ContainerTester tester = new ContainerTester(container, responseFiles);
-        var application = new DeploymentTester(new ControllerTester(tester)).newDeploymentContext("tenant", "application", "default");
+        DeploymentTester deploymentTester = new DeploymentTester(new ControllerTester(tester));
+        deploymentTester.controllerTester().upgradeSystem(Version.fromString("6.1"));
+        var application = deploymentTester.newDeploymentContext("tenant", "application", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().parallel("us-west-1", "aws-us-east-1a")
                                                                                .test("us-west-1")
                                                                                .region("ap-southeast-1")

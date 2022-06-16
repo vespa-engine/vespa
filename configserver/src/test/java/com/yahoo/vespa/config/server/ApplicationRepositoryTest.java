@@ -627,7 +627,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testResolveForAppId() {
-        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        Version vespaVersion = VespaModelFactory.createTestFactory().version();
         applicationRepository.deploy(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)
@@ -639,7 +639,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testResolveConfigForMultipleApps() {
-        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        Version vespaVersion = VespaModelFactory.createTestFactory().version();
         applicationRepository.deploy(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)
@@ -670,7 +670,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testResolveMultipleVersions() {
-        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        Version vespaVersion = VespaModelFactory.createTestFactory().version();
         applicationRepository.deploy(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)
@@ -686,7 +686,7 @@ public class ApplicationRepositoryTest {
 
     @Test
     public void testResolveForDeletedApp() {
-        Version vespaVersion = new VespaModelFactory(new NullConfigModelRegistry()).version();
+        Version vespaVersion = VespaModelFactory.createTestFactory().version();
         applicationRepository.deploy(app1, new PrepareParams.Builder()
                 .applicationId(applicationId())
                 .vespaVersion(vespaVersion)

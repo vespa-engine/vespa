@@ -94,7 +94,6 @@ public class FixedQuery {
         return this;
     }
 
-    @Deprecated
     public FixedQuery query(String query) {
         this.param("query", query);
         return this;

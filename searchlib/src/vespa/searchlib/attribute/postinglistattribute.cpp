@@ -112,10 +112,10 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
         auto updater= [this, &change](EntryRef posting_idx) -> EntryRef
                       {
                           _postingList.apply(posting_idx,
-                                             &change._additions[0],
-                                             &change._additions[0] + change._additions.size(),
-                                             &change._removals[0],
-                                             &change._removals[0] + change._removals.size());
+                                             change._additions.data(),
+                                             change._additions.data() + change._additions.size(),
+                                             change._removals.data(),
+                                             change._removals.data() + change._removals.size());
                           return posting_idx;
                       };
         _dictionary.update_posting_list(idx, cmp, updater);

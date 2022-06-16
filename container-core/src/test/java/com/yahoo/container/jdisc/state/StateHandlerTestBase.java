@@ -9,7 +9,6 @@ import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.jdisc.config.HealthMonitorConfig;
 import com.yahoo.jdisc.Timer;
-import com.yahoo.metrics.MetricsPresentationConfig;
 import org.junit.Before;
 import org.junit.BeforeClass;
 

@@ -158,7 +158,7 @@ public class DeploymentTrigger {
      *
      * Only one job per type is triggered each run for test jobs, since their environments have limited capacity.
      */
-    public long triggerReadyJobs() {
+    public TriggerResult triggerReadyJobs() {
         List<Job> readyJobs = computeReadyJobs();
 
         var prodJobs = new ArrayList<Job>();
@@ -182,23 +182,34 @@ public class DeploymentTrigger {
                 .collect(groupingBy(Job::jobType));
 
         // Trigger all prod jobs
-        sortedProdJobs.forEach(this::trigger);
-        long triggeredJobs = sortedProdJobs.size();
+        long triggeredJobs = 0;
+        long failedJobs = 0;
+        for (Job job : sortedProdJobs) {
+            if (trigger(job)) ++triggeredJobs;
+            else ++failedJobs;
+        }
 
         // Trigger max one test job per type
-        for (var jobs : sortedTestJobsByType.values()) {
-            if (jobs.size() > 0) {
-                trigger(jobs.get(0));
-                triggeredJobs++;
-            }
-        }
-        return triggeredJobs;
+        for (Collection<Job> jobs: sortedTestJobsByType.values())
+            for (Job job : jobs)
+                if (trigger(job)) { ++triggeredJobs; break; }
+                else ++failedJobs;
+
+        return new TriggerResult(triggeredJobs, failedJobs);
     }
 
+    public record TriggerResult(long triggered, long failed) { }
 
     /** Attempts to trigger the given job. */
-    private void trigger(Job job) {
-        trigger(job, null);
+    private boolean trigger(Job job) {
+        try {
+            trigger(job, null);
+            return true;
+        }
+        catch (Exception e) {
+            log.log(Level.WARNING, "Failed triggering " + job.jobType() + " for " + job.instanceId, e);
+            return false;
+        }
     }
 
     /** Attempts to trigger the given job. */
@@ -237,7 +248,7 @@ public class DeploymentTrigger {
         Change change = instance.change();
         if ( ! upgradeRevision && change.revision().isPresent()) change = change.withoutApplication();
         if ( ! upgradePlatform && change.platform().isPresent()) change = change.withoutPlatform();
-        Versions versions = Versions.from(change, application, status.deploymentFor(job), controller.readSystemVersion());
+        Versions versions = Versions.from(change, application, status.deploymentFor(job), status.fallbackPlatform(change, job));
         DeploymentStatus.Job toTrigger = new DeploymentStatus.Job(job.type(), versions, Optional.of(controller.clock().instant()), instance.change());
         Map<JobId, List<DeploymentStatus.Job>> testJobs = status.testJobs(Map.of(job, List.of(toTrigger)));
 
@@ -248,7 +259,7 @@ public class DeploymentTrigger {
                                                                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(instance, versionsList.get(0).versions(), jobId.type(), status.jobs().get(jobId).get(), clock.instant()), reason);
+            trigger(deploymentJob(application.require(job.application().instance()), versionsList.get(0).versions(), jobId.type(), status.jobs().get(jobId).get(), clock.instant()), reason);
         });
         return List.copyOf(jobs.keySet());
     }

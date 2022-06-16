@@ -120,19 +120,19 @@ public class InternalStepRunnerTest {
         HostName host = tester.configServer().hostFor(instanceId, zone);
 
         tester.runner().run();
-        assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.deployReal));
+        assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.deployReal));
 
         tester.configServer().convergeServices(app.instanceId(), zone);
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.installReal));
 
         tester.configServer().nodeRepository().doRestart(app.deploymentIdIn(zone), Optional.of(host));
         tester.configServer().nodeRepository().requestReboot(app.deploymentIdIn(zone), Optional.of(host));
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.installReal));
 
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).noNodesDown().plus(Duration.ofSeconds(1)));
         tester.runner().run();
-        assertEquals(installationFailed, tester.jobs().run(id).get().status());
+        assertEquals(installationFailed, tester.jobs().run(id).status());
     }
 
     @Test
@@ -251,7 +251,7 @@ public class InternalStepRunnerTest {
     @Test
     public void noTestsThenErrorIsError() {
         RunId id = app.startSystemTestTests();
-        Run run = tester.jobs().run(id).get();
+        Run run = tester.jobs().run(id);
         run = run.with(noTests, new LockedStep(() -> { }, Step.endTests));
         assertFalse(run.hasFailed());
         run = run.with(RunStatus.error, new LockedStep(() -> { }, Step.deactivateReal));
@@ -264,8 +264,8 @@ public class InternalStepRunnerTest {
         RunId id = app.startSystemTestTests();
         tester.cloud().set(Status.NO_TESTS);
         tester.runner().run();
-        assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
-        Run run = tester.jobs().run(id).get();
+        assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.endTests));
+        Run run = tester.jobs().run(id);
         assertEquals(noTests, run.status());
     }
 
@@ -274,7 +274,7 @@ public class InternalStepRunnerTest {
         RunId id = app.startSystemTestTests();
         tester.cloud().set(TesterCloud.Status.NOT_STARTED);
         tester.runner().run();
-        assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(failed, tester.jobs().run(id).stepStatuses().get(Step.endTests));
     }
 
     @Test
@@ -288,7 +288,7 @@ public class InternalStepRunnerTest {
         assertTestLogEntries(id, Step.endTests,
                              new LogEntry(lastId + 1, Instant.ofEpochMilli(321), error, "Failure!"),
                              new LogEntry(lastId + 2, tester.clock().instant(), info, "Tests failed."));
-        assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(failed, tester.jobs().run(id).stepStatuses().get(Step.endTests));
     }
 
     @Test
@@ -299,7 +299,7 @@ public class InternalStepRunnerTest {
 
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
         tester.runner().run();
-        assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(failed, tester.jobs().run(id).stepStatuses().get(Step.endTests));
         assertTestLogEntries(id, Step.endTests,
                              new LogEntry(lastId + 1, Instant.ofEpochMilli(123), error, "Error!"),
                              new LogEntry(lastId + 2, tester.clock().instant(), info, "Tester failed running its tests!"));
@@ -309,7 +309,7 @@ public class InternalStepRunnerTest {
     public void testsSucceedWhenTheyDoRemotely() {
         RunId id = app.startSystemTestTests();
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.endTests));
         var testZone = DeploymentContext.systemTest.zone();
         Inspector configObject = SlimeUtils.jsonToSlime(tester.cloud().config()).get();
         assertEquals(app.instanceId().serializedForm(), configObject.field("application").asString());
@@ -338,7 +338,7 @@ public class InternalStepRunnerTest {
                              new LogEntry(lastId + 2, Instant.ofEpochMilli(1234), info, "Steady!"),
                              new LogEntry(lastId + 3, Instant.ofEpochMilli(12345), info, "Success!"),
                              new LogEntry(lastId + 4, tester.clock().instant(), info, "Tests completed successfully."));
-        assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.endTests));
     }
 
     @Test
@@ -351,16 +351,16 @@ public class InternalStepRunnerTest {
         long lastId1 = tester.jobs().details(id).get().lastId().getAsLong();
         Instant instant1 = tester.clock().instant();
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
-        assertEquals(running, tester.jobs().run(id).get().status());
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.endTests));
+        assertEquals(running, tester.jobs().run(id).status());
         tester.cloud().clearLog();
 
         // Test sleeps for a while.
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.deployTester));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
         tester.clock().advance(Duration.ofSeconds(899));
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.deployTester));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
 
         tester.clock().advance(JobRunner.jobTimeout);
         var testZone = DeploymentContext.systemTest.zone();
@@ -369,14 +369,14 @@ public class InternalStepRunnerTest {
         tester.configServer().convergeServices(app.instanceId(), testZone);
         tester.configServer().convergeServices(app.testerId().id(), testZone);
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
-        assertTrue(tester.jobs().run(id).get().steps().get(Step.endTests).startTime().isPresent());
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.endTests));
+        assertTrue(tester.jobs().run(id).steps().get(Step.endTests).startTime().isPresent());
 
         tester.cloud().set(TesterCloud.Status.SUCCESS);
         tester.cloud().testReport(TestReport.fromJson("{\"bar\":2}"));
         long lastId2 = tester.jobs().details(id).get().lastId().getAsLong();
         tester.runner().run();
-        assertEquals(success, tester.jobs().run(id).get().status());
+        assertEquals(success, tester.jobs().run(id).status());
 
         assertTestLogEntries(id, Step.endTests,
                              new LogEntry(lastId1 + 1, Instant.ofEpochMilli(123), info, "Not enough data!"),
@@ -394,7 +394,7 @@ public class InternalStepRunnerTest {
         tester.jobs().deploy(app.instanceId(), DeploymentContext.devUsEast1, Optional.empty(), applicationPackage());
         tester.runner().run();
         RunId id = tester.jobs().last(app.instanceId(), DeploymentContext.devUsEast1).get().id();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.installReal));
 
         Version version = new Version("7.8.9");
         Future<?> concurrentDeployment = Executors.newSingleThreadExecutor().submit(() -> {
@@ -409,7 +409,7 @@ public class InternalStepRunnerTest {
 
         tester.runner().run(); // Job run order determined by JobType enum order per application.
         tester.configServer().convergeServices(app.instanceId(), zone);
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.installReal));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.installReal));
         assertEquals(applicationPackage().hash(), tester.configServer().application(app.instanceId(), zone).get().applicationPackage().hash());
         assertEquals(otherPackage.hash(), tester.configServer().application(app.instanceId(), DeploymentContext.perfUsEast3.zone()).get().applicationPackage().hash());
 
@@ -450,8 +450,8 @@ public class InternalStepRunnerTest {
         tester.configServer().setLogStream(() -> { throw new ConfigServerException(ConfigServerException.ErrorCode.NOT_FOUND, "404", "context"); });
         long lastId = tester.jobs().details(id).get().lastId().getAsLong();
         tester.runner().run();
-        assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.copyVespaLogs));
+        assertEquals(failed, tester.jobs().run(id).stepStatuses().get(Step.endTests));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.copyVespaLogs));
         assertTestLogEntries(id, Step.copyVespaLogs,
                              new LogEntry(lastId + 2, tester.clock().instant(), info,
                                           "Found no logs, but will retry"));
@@ -459,7 +459,7 @@ public class InternalStepRunnerTest {
         // Config servers now provide the log, and we get it.
         tester.configServer().setLogStream(() -> vespaLog(tester.clock().instant()));
         tester.runner().run();
-        assertEquals(failed, tester.jobs().run(id).get().stepStatuses().get(Step.endTests));
+        assertEquals(failed, tester.jobs().run(id).stepStatuses().get(Step.endTests));
         assertTestLogEntries(id, Step.copyVespaLogs,
                              new LogEntry(lastId + 2, tester.clock().instant(), info,
                                           "Found no logs, but will retry"),
@@ -511,21 +511,21 @@ public class InternalStepRunnerTest {
                 throw new ConfigServerException(ConfigServerException.ErrorCode.PARENT_HOST_NOT_READY, "provisioning", "deploy tester");
         });
         tester.runner().run();
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.deployTester));
-        assertEquals(unfinished, tester.jobs().run(id).get().stepStatuses().get(Step.deployReal));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
+        assertEquals(unfinished, tester.jobs().run(id).stepStatuses().get(Step.deployReal));
 
         List<X509Certificate> oldTrusted = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());
-        X509Certificate oldCert = tester.jobs().run(id).get().testerCertificate().get();
+        X509Certificate oldCert = tester.jobs().run(id).testerCertificate().get();
         oldTrusted.add(oldCert);
         assertEquals(oldTrusted, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
 
         tester.configServer().throwOnNextPrepare(null);
         tester.runner().run();
-        assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.deployTester));
-        assertEquals(succeeded, tester.jobs().run(id).get().stepStatuses().get(Step.deployReal));
+        assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.deployTester));
+        assertEquals(succeeded, tester.jobs().run(id).stepStatuses().get(Step.deployReal));
 
         List<X509Certificate> newTrusted = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());
-        X509Certificate newCert = tester.jobs().run(id).get().testerCertificate().get();
+        X509Certificate newCert = tester.jobs().run(id).testerCertificate().get();
         newTrusted.add(newCert);
         assertEquals(newTrusted, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
         assertNotEquals(oldCert, newCert);
@@ -538,12 +538,12 @@ public class InternalStepRunnerTest {
         RunId id = app.startSystemTestTests();
 
         List<X509Certificate> trusted = new ArrayList<>(DeploymentContext.publicApplicationPackage().trustedCertificates());
-        trusted.add(tester.jobs().run(id).get().testerCertificate().get());
+        trusted.add(tester.jobs().run(id).testerCertificate().get());
         assertEquals(trusted, tester.configServer().application(app.instanceId(), id.type().zone()).get().applicationPackage().trustedCertificates());
 
         tester.clock().advance(InternalStepRunner.Timeouts.of(system()).testerCertificate().plus(Duration.ofSeconds(1)));
         tester.runner().run();
-        assertEquals(RunStatus.error, tester.jobs().run(id).get().status());
+        assertEquals(RunStatus.error, tester.jobs().run(id).status());
     }
 
     private void assertTestLogEntries(RunId id, Step step, LogEntry... entries) {

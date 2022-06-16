@@ -70,9 +70,9 @@
 #include <vespa/storageserver/app/distributorprocess.h>
 #include <vespa/storageserver/app/servicelayerprocess.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".bmcluster.bm_node");
@@ -555,8 +555,8 @@ MyBmNode::~MyBmNode()
 void
 MyBmNode::create_document_db(const BmClusterParams& params)
 {
-    vespalib::mkdir(_base_dir, false);
-    vespalib::mkdir(_base_dir + "/" + _doc_type_name.getName(), false);
+    std::filesystem::create_directory(std::filesystem::path(_base_dir));
+    std::filesystem::create_directory(std::filesystem::path(_base_dir + "/" + _doc_type_name.getName()));
     vespalib::string input_cfg = _base_dir + "/" + _doc_type_name.getName() + "/baseconfig";
     {
         proton::FileConfigManager fileCfg(_shared_service.transport(), input_cfg, "", _doc_type_name.getName());

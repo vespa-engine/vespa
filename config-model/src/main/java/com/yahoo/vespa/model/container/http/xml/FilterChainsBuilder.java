@@ -31,7 +31,7 @@ public class FilterChainsBuilder extends DomChainsBuilder<Filter, Chain<Filter>,
                     HttpBuilder.RESPONSE_CHAIN_TAG_NAME, FilterChainBuilder.class);
 
     public FilterChainsBuilder() {
-        super(null, allowedComponentTypes, null);
+        super(allowedComponentTypes);
     }
 
     @Override

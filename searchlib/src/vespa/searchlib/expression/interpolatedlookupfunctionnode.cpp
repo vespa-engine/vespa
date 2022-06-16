@@ -88,7 +88,7 @@ simpleInterpolate(size_t sz, std::vector<double> v, double lookup)
 bool InterpolatedLookup::onExecute() const
 {
     getArg().execute();
-    double lookup = getArg().getResult().getFloat();
+    double lookup = getArg().getResult()->getFloat();
     // get attribute data
     size_t numValues = _attribute->getValueCount(_docId);
     std::vector<double> valueVector;

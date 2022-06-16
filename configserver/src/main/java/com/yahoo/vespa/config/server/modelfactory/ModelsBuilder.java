@@ -92,6 +92,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         Instant start = Instant.now();
         log.log(Level.FINE, () -> "Will build models for " + applicationId);
         Set<Version> versions = modelFactoryRegistry.allVersions();
+        if (applicationPackage.getMajorVersion().isPresent() && applicationPackage.getMajorVersion().get() != wantedNodeVespaVersion.getMajor())
+            throw new IllegalArgumentException("requested node version (" + wantedNodeVespaVersion + ") has a different major version " +
+                                               "than specified in deployment.xml (" + applicationPackage.getMajorVersion().get() + ")");
 
         // If the application specifies a major, skip models on a newer major
         Optional<Integer> requestedMajorVersion = applicationPackage.getMajorVersion();
@@ -129,7 +132,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 throw e;
             }
             catch (RuntimeException e) {
-                if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion)) {
+                if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion, wantedNodeVespaVersion, allocatedHosts)) {
                     log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersion, e);
                 }
                 else {
@@ -154,9 +157,15 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         return allApplicationModels;
     }
 
-    private boolean shouldSkipCreatingMajorVersionOnError(List<Integer> majorVersions, Integer majorVersion) {
-        if (majorVersion.equals(Collections.min(majorVersions))) return false;
-        // Note: This needs to be updated when we no longer want to support successfully deploying
+    private boolean shouldSkipCreatingMajorVersionOnError(List<Integer> majorVersions, Integer majorVersion, Version wantedVersion,
+                                                          AllocatedHostsFromAllModels allHosts) {
+        if (majorVersion.equals(wantedVersion.getMajor())) return false;        // Ensure we are valid for our targeted major.
+        if (allHosts.toAllocatedHosts().getHosts().stream()
+                    .flatMap(host -> host.version().stream())
+                    .map(Version::getMajor)
+                    .anyMatch(majorVersion::equals)) return false;              // Ensure we are valid for our currently deployed major.
+        if (majorVersion.equals(Collections.min(majorVersions))) return false;  // Probably won't happen if the other two are both false ... ?
+        // Note: This needs to be bumped when we no longer want to support successfully deploying
         // applications that are not working on version 8, but are working on a lower major version (unless
         // apps have explicitly defined major version to deploy to in application package)
         return majorVersion >= 8;

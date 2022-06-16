@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "postingstore.h"
+#include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/common/growablebitvector.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
@@ -790,6 +791,21 @@ PostingStore<DataT>::consider_compact_worst_buffers(const CompactionStrategy& co
         return true;
     }
     return false;
+}
+
+template <typename DataT>
+std::unique_ptr<queryeval::SearchIterator>
+PostingStore<DataT>::make_bitvector_iterator(RefType ref, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const
+{
+    if (!ref.valid()) {
+        return {};
+    }
+    auto type_id = getTypeId(ref);
+    if (!isBitVector(type_id)) {
+        return {};
+    }
+    const auto& bv = getBitVectorEntry(ref)->_bv->reader();
+    return BitVectorIterator::create(&bv, std::min(bv.size(), doc_id_limit), match_data, strict, false);
 }
 
 template class PostingStore<BTreeNoLeafData>;

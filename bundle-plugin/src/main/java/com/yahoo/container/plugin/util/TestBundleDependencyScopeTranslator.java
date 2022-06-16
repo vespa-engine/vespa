@@ -4,13 +4,17 @@ package com.yahoo.container.plugin.util;
 import org.apache.maven.artifact.Artifact;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * Translates the scope of dependencies when constructing a test bundle.
@@ -40,11 +44,12 @@ public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTrans
         return Objects.requireNonNull(dependencyScopes.get(artifact), () -> "Could not lookup scope for " + artifact);
     }
 
-    public static TestBundleDependencyScopeTranslator from(Map<String, Artifact> dependencies, String rawConfig) {
+    public static TestBundleDependencyScopeTranslator from(Collection<Artifact> dependencies, String rawConfig) {
         List<DependencyOverride> dependencyOverrides = toDependencyOverrides(rawConfig);
         Map<Artifact, String> dependencyScopes = new HashMap<>();
-        for (Artifact dependency : dependencies.values()) {
-            dependencyScopes.put(dependency, getScopeForDependency(dependency, dependencyOverrides, dependencies));
+        Map<String, Artifact> dependenciesById = dependencies.stream().collect(toMap(Artifact::getId, Function.identity()));
+        for (Artifact dependency : dependencies) {
+            dependencyScopes.put(dependency, getScopeForDependency(dependency, dependencyOverrides, dependenciesById));
         }
         return new TestBundleDependencyScopeTranslator(dependencyScopes);
     }
@@ -64,12 +69,6 @@ public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTrans
             throw new IllegalArgumentException("Invalid dependency override: " + overrideString);
         }
         return new DependencyOverride(elements[0], elements[1], elements[2]);
-    }
-
-    private static String stripVersionAndScope(String idInDependencyTrail) {
-        int firstDelimiter = idInDependencyTrail.indexOf(':');
-        int secondDelimiter = idInDependencyTrail.indexOf(':', firstDelimiter + 1);
-        return idInDependencyTrail.substring(0, secondDelimiter);
     }
 
     private static String getScopeForDependency(
@@ -95,7 +94,7 @@ public class TestBundleDependencyScopeTranslator implements Artifacts.ScopeTrans
     private static List<Artifact> dependencyTrailOf(Artifact artifact, Map<String, Artifact> otherArtifacts) {
         return artifact.getDependencyTrail().stream()
                 .skip(1) // Maven project itself is the first entry
-                .map(parentId -> otherArtifacts.get(stripVersionAndScope(parentId)))
+                .map(otherArtifacts::get)
                 .filter(Objects::nonNull)
                 .collect(toList());
     }

@@ -190,7 +190,7 @@ public:
     MyIntAv(const string &name)
         : SvIntAttr(name, Config(BasicType::INT32,
                                  CollectionType::SINGLE,
-                                 true, false)),
+                                 true)),
           _gets(0)
     {
     }

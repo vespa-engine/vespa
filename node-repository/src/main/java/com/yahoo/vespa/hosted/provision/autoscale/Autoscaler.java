@@ -75,15 +75,17 @@ public class Autoscaler {
                                     "Won't autoscale now: Less than " + clusterModel.scalingDuration() +
                                     " since last resource change");
 
-        if  (clusterModel.nodeTimeseries().measurementsPerNode() < minimumMeasurementsPerNode(clusterModel.scalingDuration()))
+        if (clusterModel.nodeTimeseries().measurementsPerNode() < minimumMeasurementsPerNode(clusterModel.scalingDuration()))
             return Advice.none(Status.waiting,
                                "Collecting more data before making new scaling decisions: Need to measure for " +
-                               clusterModel.scalingDuration() + " since the last resource change completed");
+                               clusterModel.scalingDuration() + " since the last resource change completed, " +
+                               clusterModel.nodeTimeseries().measurementsPerNode() + " measurements per node found," +
+                               " need at least " + minimumMeasurementsPerNode(clusterModel.scalingDuration()));
 
         if (clusterModel.nodeTimeseries().nodesMeasured() != clusterNodes.size())
             return Advice.none(Status.waiting,
-                               "Collecting more data before making new scaling decisions: " +
-                               "Have measurements from " + clusterModel.nodeTimeseries().nodesMeasured() +
+                               "Collecting more data before making new scaling decisions:" +
+                               " Have measurements from " + clusterModel.nodeTimeseries().nodesMeasured() +
                                " nodes, but require from " + clusterNodes.size());
 
         var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository);

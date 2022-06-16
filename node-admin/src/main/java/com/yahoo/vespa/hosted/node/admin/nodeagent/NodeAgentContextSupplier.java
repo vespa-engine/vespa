@@ -9,10 +9,12 @@ public interface NodeAgentContextSupplier {
     /**
      * Blocks until the next context is ready
      * @return context
-     * @throws InterruptedException if {@link #interrupt()} was called before this method returned
+     * @throws ContextSupplierInterruptedException if {@link #interrupt()} was called before this method returned
      */
-    NodeAgentContext nextContext() throws InterruptedException;
+    NodeAgentContext nextContext() throws ContextSupplierInterruptedException;
 
     /** Interrupts the thread(s) currently waiting in {@link #nextContext()} */
     void interrupt();
+
+    class ContextSupplierInterruptedException extends RuntimeException { }
 }

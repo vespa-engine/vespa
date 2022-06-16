@@ -305,7 +305,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
 
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/myuser/job/dev-us-east-1/diff/1", GET).userIdentity(HOSTED_VESPA_OPERATOR),
                 (response) -> assertTrue(response.getBodyAsString(),
-                        response.getBodyAsString().contains("--- search-definitions/test.sd\n" +
+                        response.getBodyAsString().contains("--- schemas/test.sd\n" +
                                 "@@ -1,0 +1,1 @@\n" +
                                 "+ search test { }\n")),
                 200);
@@ -797,13 +797,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               },
                               200);
 
-        // GET application package for previous build
+        // GET application package for specific build
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
-                                      .properties(Map.of("build", "1"))
+                                      .properties(Map.of("build", "2"))
                                       .userIdentity(HOSTED_VESPA_OPERATOR),
                               (response) -> {
-                                  assertEquals("attachment; filename=\"tenant1.application1-build1.zip\"", response.getHeaders().getFirst("Content-Disposition"));
-                                  assertArrayEquals(applicationPackageInstance1.zippedContent(), response.getBody());
+                                  assertEquals("attachment; filename=\"tenant1.application1-build2.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(packageWithService.zippedContent(), response.getBody());
                               },
                               200);
 
@@ -842,7 +842,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Marked build '2' as non-deployable\"}");
 
         // GET deployment job overview, after triggering system and staging test jobs.
-        assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs());
+        assertEquals(2, tester.controller().applications().deploymentTrigger().triggerReadyJobs().triggered());
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1/job", GET)
                                       .userIdentity(USER_ID),
                               new File("jobs.json"));

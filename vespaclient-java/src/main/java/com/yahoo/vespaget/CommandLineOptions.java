@@ -37,7 +37,6 @@ public class CommandLineOptions {
     public static final String NORETRY_OPTION = "noretry";
     public static final String TRACE_OPTION = "trace";
     public static final String PRIORITY_OPTION = "priority";
-    public static final String LOADTYPE_OPTION = "loadtype";
     public static final String JSONOUTPUT_OPTION = "jsonoutput";
     public static final String XMLOUTPUT_OPTION = "xmloutput";
 
@@ -68,10 +67,9 @@ public class CommandLineOptions {
                 .longOpt(PRINTIDS_OPTION)
                 .build());
 
-        // TODO Vespa 8: change to DocumentOnly.NAME
         options.addOption(Option.builder("f")
                 .hasArg(true)
-                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets) (default '" + AllFields.NAME + "')")
+                .desc("Retrieve the specified fields only (see https://docs.vespa.ai/en/documents.html#fieldsets) (default '" + DocumentOnly.NAME + "')")
                 .longOpt(FIELDSET_OPTION)
                 .argName("fieldset").build());
 
@@ -123,12 +121,6 @@ public class CommandLineOptions {
                 .longOpt(PRIORITY_OPTION)
                 .argName("priority").build());
 
-        options.addOption(Option.builder("l")
-                .hasArg(true)
-                .desc("Load type (default \"\").")
-                .longOpt(LOADTYPE_OPTION)
-                .argName("loadtype").build());
-
         options.addOption(Option.builder("j")
                 .hasArg(false)
                 .desc("JSON output (default format)")
@@ -163,7 +155,6 @@ public class CommandLineOptions {
             String route = cl.getOptionValue(ROUTE_OPTION, "");
             String configId = cl.getOptionValue(CONFIGID_OPTION, "");
             boolean help = cl.hasOption(HELP_OPTION);
-            String loadtype = cl.getOptionValue(LOADTYPE_OPTION, "");
             boolean noRetry = cl.hasOption(NORETRY_OPTION);
             boolean showDocSize = cl.hasOption(SHOWDOCSIZE_OPTION);
             boolean jsonOutput = cl.hasOption(JSONOUTPUT_OPTION);
@@ -184,8 +175,7 @@ public class CommandLineOptions {
             if (printIdsOnly) {
                 fieldSet = DocIdOnly.NAME;
             } else if (fieldSet.isEmpty()) { 
-                // TODO Vespa 8: change to DocumentOnly.NAME
-               fieldSet = AllFields.NAME;
+                fieldSet = DocumentOnly.NAME;
             }
 
             if (!cluster.isEmpty() && !route.isEmpty()) {
@@ -211,7 +201,6 @@ public class CommandLineOptions {
                     .setFieldSet(fieldSet)
                     .setHelp(help)
                     .setPrintIdsOnly(printIdsOnly)
-                    .setLoadTypeName(loadtype)
                     .setNoRetry(noRetry)
                     .setCluster(cluster)
                     .setRoute(route)

@@ -47,14 +47,6 @@
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
               }
-            },
-            {
-              "application": {
-                "build": 1,
-                "compileVersion": "6.1.0",
-                "sourceUrl": "repository1/tree/commit1",
-                "commit": "commit1"
-              }
             }
           ],
           "blockers": [ ]
@@ -587,14 +579,6 @@
                 "sourceUrl": "repository1/tree/commit1",
                 "commit": "commit1"
               }
-            },
-            {
-              "application": {
-                "build": 1,
-                "compileVersion": "6.1.0",
-                "sourceUrl": "repository1/tree/commit1",
-                "commit": "commit1"
-              }
             }
           ],
           "blockers": [ ]
@@ -707,15 +691,6 @@
       "description": "my best commit yet",
       "risk": 9001,
       "deployable": false
-    },
-    {
-      "build": 1,
-      "compileVersion": "6.1.0",
-      "sourceUrl": "repository1/tree/commit1",
-      "commit": "commit1",
-      "description": "my best commit yet",
-      "risk": 9001,
-      "deployable": true
     }
   ]
 }

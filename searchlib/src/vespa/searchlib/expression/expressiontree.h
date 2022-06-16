@@ -54,7 +54,7 @@ public:
     bool execute(const document::Document & doc, HitRank rank) const;
     const ExpressionNode * getRoot() const { return _root.get(); }
     ExpressionNode * getRoot() { return _root.get(); }
-    const ResultNode & getResult() const override { return _root->getResult(); }
+    const ResultNode * getResult() const override { return _root->getResult(); }
     friend vespalib::Serializer & operator << (vespalib::Serializer & os, const ExpressionTree & et);
     friend vespalib::Deserializer & operator >> (vespalib::Deserializer & is, ExpressionTree & et);
     void swap(ExpressionTree &);

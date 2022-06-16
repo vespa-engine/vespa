@@ -150,13 +150,11 @@ vespalib::Slime slime; \
     for (size_t j=0; j<metricCount; j++) { \
         const vespalib::string name = slime.get()["metrics"]["values"][j]["name"] \
                                  .asString().make_string(); \
-        if (name.compare("vds.filestor.alldisks.allthreads." \
-                         "get.sum.count") == 0) \
+        if (name.compare("vds.filestor.allthreads.get.count") == 0) \
         { \
             getCount = slime.get()["metrics"]["values"][j]["values"]["count"] \
                        .asDouble(); \
-        } else if (name.compare("vds.filestor.alldisks.allthreads." \
-                                "put.sum.count") == 0) \
+        } else if (name.compare("vds.filestor.allthreads.put.count") == 0) \
         { \
             putCount = slime.get()["metrics"]["values"][j]["values"]["count"] \
                        .asDouble(); \
@@ -217,8 +215,7 @@ TEST_F(StateReporterTest, report_health) {
 }
 
 TEST_F(StateReporterTest, report_metrics) {
-    FileStorDiskMetrics& disk0(*_filestorMetrics->disk);
-    FileStorThreadMetrics& thread0(*disk0.threads[0]);
+    FileStorThreadMetrics& thread0(*_filestorMetrics->threads[0]);
 
     LOG(debug, "Adding to get metric");
 

@@ -21,17 +21,8 @@ public class RequestContextProperties extends Properties {
 
     private final Map<String, String> context;
 
-    public RequestContextProperties(Map<String, String> properties, ZoneInfo zoneInfo) {
-        if (zoneInfo == ZoneInfo.defaultInfo()) {
-            context = properties;
-        }
-        else {
-            Map<String, String> context = new HashMap<>(properties);
-            context.putIfAbsent("environment", zoneInfo.zone().environment().name());
-            context.putIfAbsent("region", zoneInfo.zone().region());
-            context.putIfAbsent("instance", zoneInfo.application().instance());
-            this.context = Collections.unmodifiableMap(context);
-        }
+    public RequestContextProperties(Map<String, String> properties) {
+        this.context = Collections.unmodifiableMap(properties);
     }
 
     @Override

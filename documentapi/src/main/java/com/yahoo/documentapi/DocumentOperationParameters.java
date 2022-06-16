@@ -42,14 +42,6 @@ public class DocumentOperationParameters {
         return empty;
     }
 
-    /** Sets the priority with which to perform an operation.
-     * @deprecated specifying explicit operation priority is deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public DocumentOperationParameters withPriority(DocumentProtocol.Priority priority) {
-        return new DocumentOperationParameters(requireNonNull(priority), fieldSet, route, traceLevel, deadline, responseHandler);
-    }
-
     /** Sets the field set used for retrieval. */
     public DocumentOperationParameters withFieldSet(FieldSet fieldSet) {
         return new DocumentOperationParameters(priority, new FieldSetRepo().serialize(fieldSet), route, traceLevel, deadline, responseHandler);
@@ -83,11 +75,6 @@ public class DocumentOperationParameters {
         return new DocumentOperationParameters(priority, fieldSet, route, traceLevel, deadline, requireNonNull(responseHandler));
     }
 
-    /**
-     * @deprecated explicit operation priority is deprecated
-     */
-    @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-    public Optional<DocumentProtocol.Priority> priority() { return Optional.ofNullable(priority); }
     public Optional<String> fieldSet() { return Optional.ofNullable(fieldSet); }
     public Optional<String> route() { return Optional.ofNullable(route); }
     public OptionalInt traceLevel() { return traceLevel >= 0 ? OptionalInt.of(traceLevel) : OptionalInt.empty(); }

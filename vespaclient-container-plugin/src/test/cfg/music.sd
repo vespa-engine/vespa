@@ -2,5 +2,6 @@
 search music {
     document music {
         field artist type string { }
+        field embedding type tensor(x[3]) {}
     }
 }

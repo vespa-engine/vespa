@@ -21,6 +21,14 @@ bool verbose = false;
 double budget = 0.10;
 size_t work_size = 4_Ki;
 
+size_t active_enums() {
+    return SharedStringRepo::stats().active_entries;
+}
+
+bool will_reclaim() {
+    return SharedStringRepo::will_reclaim();
+}
+
 //-----------------------------------------------------------------------------
 
 std::vector<vespalib::string> make_strings(size_t cnt) {
@@ -316,14 +324,14 @@ TEST("require that id_space_usage is sane") {
 }
 
 TEST("require that initial stats are as expected") {
-    size_t num_parts = 64;
+    size_t num_parts = 256;
     size_t part_size = 128;
     size_t hash_node_size = 12;
     size_t entry_size = 72;
-    size_t initial_entries = 113;
-    size_t initial_hash_used = 64;
-    size_t initial_hash_allocated = 128;
-    size_t part_limit = (uint32_t(-1) - 100001) / num_parts;
+    size_t initial_entries = 28;
+    size_t initial_hash_used = 16;
+    size_t initial_hash_allocated = 32;
+    size_t part_limit = (uint32_t(-1) - 10000001) / num_parts;
     auto stats = SharedStringRepo::stats();
     EXPECT_EQUAL(stats.active_entries, 0u);
     EXPECT_EQUAL(stats.total_entries, num_parts * initial_entries);
@@ -352,7 +360,7 @@ TEST("require that basic handle usage works") {
     Handle foo2("foo");
     Handle bar2("bar");
 
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 2u);
+    EXPECT_EQUAL(active_enums(), 2u);
 
     TEST_DO(verify_eq(empty, empty2));
     TEST_DO(verify_eq(foo, foo2));
@@ -375,31 +383,37 @@ TEST("require that basic handle usage works") {
 }
 
 TEST("require that handles can be copied") {
-    Handle a("foo");
+    size_t before = active_enums();
+    Handle a("copied");
+    EXPECT_EQUAL(active_enums(), before + 1);
     Handle b(a);
     Handle c;
     c = b;
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 1u);
+    EXPECT_EQUAL(active_enums(), before + 1);
     EXPECT_TRUE(a.id() == b.id());
     EXPECT_TRUE(b.id() == c.id());
-    EXPECT_EQUAL(c.as_string(), vespalib::string("foo"));
+    EXPECT_EQUAL(c.as_string(), vespalib::string("copied"));
 }
 
 TEST("require that handles can be moved") {
-    Handle a("foo");
+    size_t before = active_enums();
+    Handle a("moved");
+    EXPECT_EQUAL(active_enums(), before + 1);
     Handle b(std::move(a));
     Handle c;
     c = std::move(b);
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 1u);
+    EXPECT_EQUAL(active_enums(), before + 1);
     EXPECT_TRUE(a.id() == string_id());
     EXPECT_TRUE(b.id() == string_id());
-    EXPECT_EQUAL(c.as_string(), vespalib::string("foo"));
+    EXPECT_EQUAL(c.as_string(), vespalib::string("moved"));
 }
 
 TEST("require that handle/string can be obtained from string_id") {
+    size_t before = active_enums();
     Handle a("str");
+    EXPECT_EQUAL(active_enums(), before + 1);
     Handle b = Handle::handle_from_id(a.id());
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 1u);
+    EXPECT_EQUAL(active_enums(), before + 1);
     EXPECT_EQUAL(Handle::string_from_id(b.id()), vespalib::string("str"));
 }
 
@@ -419,31 +433,34 @@ TEST("require that handle can be self-assigned") {
 //-----------------------------------------------------------------------------
 
 void verify_direct(const vespalib::string &str, size_t value) {
-    size_t before = SharedStringRepo::stats().active_entries;
+    size_t before = active_enums();
     Handle handle(str);
     EXPECT_EQUAL(handle.id().hash(), value + 1);
     EXPECT_EQUAL(handle.id().value(), value + 1);
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, before);
+    EXPECT_EQUAL(active_enums(), before);
     EXPECT_EQUAL(handle.as_string(), str);
 }
 
 void verify_not_direct(const vespalib::string &str) {
-    size_t before = SharedStringRepo::stats().active_entries;
+    size_t before = active_enums();
     Handle handle(str);
     EXPECT_EQUAL(handle.id().hash(), handle.id().value());
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, before + 1);
+    EXPECT_EQUAL(active_enums(), before + 1);
     EXPECT_EQUAL(handle.as_string(), str);
 }
 
 TEST("require that direct handles work as expected") {
     TEST_DO(verify_direct("", -1));
-    for (size_t i = 0; i < 100000; ++i) {
-        verify_direct(fmt("%zu", i), i);
-    }
+    TEST_DO(verify_direct("0", 0));
+    TEST_DO(verify_direct("1", 1));
+    TEST_DO(verify_direct("123", 123));
+    TEST_DO(verify_direct("456", 456));
+    TEST_DO(verify_direct("789", 789));
+    TEST_DO(verify_direct("9999999", 9999999));
     TEST_DO(verify_not_direct(" "));
     TEST_DO(verify_not_direct(" 5"));
     TEST_DO(verify_not_direct("5 "));
-    TEST_DO(verify_not_direct("100000"));
+    TEST_DO(verify_not_direct("10000000"));
     TEST_DO(verify_not_direct("00"));
     TEST_DO(verify_not_direct("01"));
     TEST_DO(verify_not_direct("001"));
@@ -455,6 +472,7 @@ TEST("require that direct handles work as expected") {
 //-----------------------------------------------------------------------------
 
 TEST("require that basic multi-handle usage works") {
+    size_t before = active_enums();
     Handles a;
     a.reserve(4);
     Handle foo("foo");
@@ -464,7 +482,12 @@ TEST("require that basic multi-handle usage works") {
     a.push_back(foo.id());
     a.push_back(bar.id());
     Handles b(std::move(a));
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 2u);
+    if (will_reclaim()) {
+        EXPECT_EQUAL(before, 0u);
+        EXPECT_EQUAL(active_enums(), 2u);
+    } else {
+        EXPECT_EQUAL(active_enums(), before);
+    }
     EXPECT_EQUAL(a.view().size(), 0u);
     EXPECT_EQUAL(b.view().size(), 4u);
     EXPECT_TRUE(b.view()[0] == foo.id());
@@ -536,7 +559,15 @@ TEST("leak some handles on purpose") {
 #endif
 
 TEST("require that no handles have leaked during testing") {
-    EXPECT_EQUAL(SharedStringRepo::stats().active_entries, 0u);
+    if (will_reclaim()) {
+        EXPECT_EQUAL(active_enums(), 0u);
+    } else {
+        auto stats = SharedStringRepo::stats();
+        fprintf(stderr, "enum stats after testing (no reclaim):\n");
+        fprintf(stderr, "  active enums:   %zu\n", stats.active_entries);
+        fprintf(stderr, "  id space usage: %g\n", stats.id_space_usage());
+        fprintf(stderr, "  memory usage:   %zu\n", stats.memory_usage.usedBytes());
+    }
 }
 
 //-----------------------------------------------------------------------------

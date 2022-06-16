@@ -60,7 +60,7 @@ public class DeployMojo extends AbstractVespaDeploymentMojo {
             case success:                    return;
             case error:                      throw new MojoExecutionException("Unexpected error during deployment; see log for details");
             case aborted:                    throw new MojoFailureException("Deployment was aborted, probably by a newer deployment");
-            case nodeAllocationFailure:      throw new MojoFailureException("Specified node capacity could not be fulfilled for you tenant; contact Vespa Ckoud support");
+            case nodeAllocationFailure:      throw new MojoFailureException("Specified node capacity could not be fulfilled for your tenant; contact Vespa Cloud support");
             case deploymentFailed:           throw new MojoFailureException("Deployment failed; see log for details");
             case installationFailed:         throw new MojoFailureException("Installation failed; see Vespa log for details");
             case running:                    throw new MojoFailureException("Deployment not completed");

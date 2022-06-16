@@ -2,8 +2,9 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.document.DataType;
+import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.schema.RankProfileRegistry;
-import com.yahoo.document.*;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Matching;
 import com.yahoo.schema.document.MatchType;

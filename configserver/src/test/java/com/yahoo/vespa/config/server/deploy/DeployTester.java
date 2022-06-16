@@ -173,7 +173,7 @@ public class DeployTester {
     }
 
     private static HostProvisioner createProvisioner() {
-        return new InMemoryProvisioner(7, false);
+        return new InMemoryProvisioner(9, false);
     }
 
     private static class FailingModelFactory implements ModelFactory {
@@ -215,19 +215,19 @@ public class DeployTester {
         private int creationCount;
 
         public CountingModelFactory(Clock clock) {
-            this.wrapped = new VespaModelFactory(new NullConfigModelRegistry(), clock);
+            this.wrapped = VespaModelFactory.createTestFactory(new NullConfigModelRegistry(), clock);
         }
 
         public CountingModelFactory(Version version, Clock clock, Zone zone) {
-            this.wrapped = new VespaModelFactory(version, new NullConfigModelRegistry(), clock, zone);
+            this.wrapped = VespaModelFactory.createTestFactory(version, new NullConfigModelRegistry(), clock, zone);
         }
 
         public CountingModelFactory(ConfigModelRegistry registry, Clock clock) {
-            this.wrapped = new VespaModelFactory(registry, clock);
+            this.wrapped = VespaModelFactory.createTestFactory(registry, clock);
         }
 
         public CountingModelFactory(ConfigModelRegistry registry, Version version, Clock clock, Zone zone) {
-            this.wrapped = new VespaModelFactory(version, registry, clock, zone);
+            this.wrapped = VespaModelFactory.createTestFactory(version, registry, clock, zone);
         }
 
         /** Returns the number of models created successfully by this instance */

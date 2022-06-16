@@ -24,7 +24,7 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
     private final List<FilterBinding> bindings = new CopyOnWriteArrayList<>();
     private volatile JettyHttpServer httpServer;
     private volatile AccessControl accessControl;
-    private volatile boolean strictFiltering = false; // TODO Vespa 8: Enable strict filtering by default if filtering is enabled
+    private volatile Boolean strictFiltering;
 
     public Http(FilterChains chains) {
         super("http");
@@ -83,7 +83,12 @@ public class Http extends AbstractConfigProducer<AbstractConfigProducer<?>> impl
                     .binding(binding.binding().patternString()));
         }
         populateDefaultFiltersConfig(builder, httpServer);
-        builder.strictFiltering(strictFiltering);
+
+        // Enable strict filter by default if any filter chain/binding is configured
+        boolean strictFilter = this.strictFiltering == null
+                ? (!bindings.isEmpty() || !filterChains.allChains().allComponents().isEmpty())
+                : strictFiltering;
+        builder.strictFiltering(strictFilter);
     }
 
     @Override

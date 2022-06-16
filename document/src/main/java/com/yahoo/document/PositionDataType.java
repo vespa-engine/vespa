@@ -99,16 +99,6 @@ public final class PositionDataType {
         return fieldName + "_zcurve";
     }
 
-    public static String getPositionSummaryFieldName(String fieldName) {
-        // TODO for Vespa 8, consider renaming to _position to use a field name that is actually legal
-        return fieldName + ".position";
-    }
-
-    public static String getDistanceSummaryFieldName(String fieldName) {
-        // TODO for Vespa 8, consider renaming to _distance to use a field name that is actually legal
-        return fieldName + ".distance";
-    }
-
     private static StructDataType newInstance() {
         StructDataType ret = new StructDataType(STRUCT_NAME);
         ret.addField(new Field(FIELD_X, DataType.INT));

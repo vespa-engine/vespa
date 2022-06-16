@@ -28,7 +28,8 @@ import java.util.stream.Collectors;
 public class CloudTrialExpirer extends ControllerMaintainer {
     private static final Logger log = Logger.getLogger(CloudTrialExpirer.class.getName());
 
-    private static final Duration loginExpiry = Duration.ofDays(14);
+    private static final Duration nonePlanAfter = Duration.ofDays(14);
+    private static final Duration tombstoneAfter = Duration.ofDays(365);
     private final ListFlag<String> extendedTrialTenants;
 
     public CloudTrialExpirer(Controller controller, Duration interval) {
@@ -38,24 +39,20 @@ public class CloudTrialExpirer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        if (controller().system().equals(SystemName.PublicCd)) {
-            tombstoneNonePlanTenants();
-        }
+        tombstoneNonePlanTenants();
         moveInactiveTenantsToNonePlan();
         return 1.0;
     }
 
     private void moveInactiveTenantsToNonePlan() {
-        var predicate = tenantReadersNotLoggedIn(loginExpiry)
+        var predicate = tenantReadersNotLoggedIn(nonePlanAfter)
                 .and(this::tenantHasTrialPlan);
 
         forTenant("'none' plan", predicate, this::setPlanNone);
     }
 
     private void tombstoneNonePlanTenants() {
-        // tombstone tenants that are inactive 14 days after being set as 'none'
-        var expiry = loginExpiry.plus(loginExpiry);
-        var predicate = tenantReadersNotLoggedIn(expiry).and(this::tenantHasNonePlan);
+        var predicate = tenantReadersNotLoggedIn(tombstoneAfter).and(this::tenantHasNonePlan);
         forTenant("tombstoned", predicate, this::tombstoneTenants);
     }
 

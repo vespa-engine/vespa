@@ -62,7 +62,7 @@ public:
     RangeBucketPreDefFunctionNode(const RangeBucketPreDefFunctionNode & rhs);
     RangeBucketPreDefFunctionNode & operator = (const RangeBucketPreDefFunctionNode & rhs);
     ~RangeBucketPreDefFunctionNode();
-    const ResultNode & getResult()   const override { return *_result; }
+    const ResultNode * getResult()   const override { return _result; }
     const ResultNodeVector & getBucketList() const { return *_predef; }
     ResultNodeVector       & getBucketList()       { return *_predef; }
     RangeBucketPreDefFunctionNode & setBucketList(const ResultNodeVector & predef) {

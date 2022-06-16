@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "generic_reduce.h"
-#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_builder_factory.h>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/eval/eval/array_array_map.h>
 #include <vespa/vespalib/util/stash.h>
@@ -154,6 +154,12 @@ void my_generic_dense_reduce_op(State &state, uint64_t param_in) {
     }
 };
 
+template <typename ICT>
+void my_count_cells_op(State &state, uint64_t) {
+    auto cells = state.peek(0).cells().typify<ICT>();
+    state.pop_push(state.stash.create<DoubleValue>(cells.size()));
+};
+
 template <typename ICT, typename AGGR>
 void my_full_reduce_op(State &state, uint64_t) {
     auto cells = state.peek(0).cells().typify<ICT>();
@@ -194,7 +200,11 @@ struct SelectGenericReduceOp {
         using OCT = CellValueType<ICM::value.reduce(OIS::value).cell_type>;
         using AggrType = typename AGGR::template templ<OCT>;
         if constexpr (OIS::value) {
-            return my_full_reduce_op<ICT, AggrType>;
+            if constexpr (AggrType::enum_value() == Aggr::COUNT) {
+                return my_count_cells_op<ICT>;
+            } else {
+                return my_full_reduce_op<ICT, AggrType>;
+            }
         } else {
             if (param.sparse_plan.should_forward_index()) {
                 return my_generic_dense_reduce_op<ICT, OCT, AggrType, true>;

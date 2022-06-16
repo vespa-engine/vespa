@@ -6,6 +6,7 @@ import ai.vespa.hosted.cd.Endpoint;
 import ai.vespa.hosted.cd.EndpointAuthenticator;
 
 import java.net.URI;
+import java.time.Instant;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -18,9 +19,16 @@ import java.util.stream.Collectors;
 public class HttpDeployment implements Deployment {
 
     private final Map<String, Endpoint> endpoints;
+    private final String platform;
+    private final long revision;
+    private final Instant deployedAt;
 
     /** Creates a representation of the given deployment endpoints, using the authenticator for data plane access. */
-    public HttpDeployment(Map<String, URI> endpoints, EndpointAuthenticator authenticator) {
+    public HttpDeployment(String platform, long revision, Instant deployedAt,
+                          Map<String, URI> endpoints, EndpointAuthenticator authenticator) {
+        this.platform = platform;
+        this.revision = revision;
+        this.deployedAt = deployedAt;
         this.endpoints = endpoints.entrySet().stream()
                 .collect(Collectors.toUnmodifiableMap(entry -> entry.getKey(),
                                                       entry -> new HttpEndpoint(entry.getValue(), authenticator)));
@@ -32,6 +40,21 @@ public class HttpDeployment implements Deployment {
             throw new NoSuchElementException("No cluster with id '" + id + "'");
 
         return endpoints.get(id);
+    }
+
+    @Override
+    public String platform() {
+        return platform;
+    }
+
+    @Override
+    public long revision() {
+        return revision;
+    }
+
+    @Override
+    public Instant deployedAt() {
+        return deployedAt;
     }
 
 }

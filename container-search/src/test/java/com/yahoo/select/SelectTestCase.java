@@ -560,10 +560,9 @@ public class SelectTestCase {
         assertParse("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"targetHits\": 37} }}",
                 "WEAKAND(37) a:A b:B");
 
-        QueryTree tree = parseWhere("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"scoreThreshold\": 41}}}");
+        QueryTree tree = parseWhere("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }}");
         assertEquals("WEAKAND(100) a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
-        assertEquals(41, ((WeakAndItem)tree.getRoot()).getScoreThreshold());
     }
 
     @Test
@@ -720,8 +719,8 @@ public class SelectTestCase {
     @Test
     public void testOverridingOtherQueryTree() {
         Query query = new Query("?query=default:query");
-        assertEquals("default:query", query.getModel().getQueryTree().toString());
-        assertEquals(Query.Type.ALL, query.getModel().getType());
+        assertEquals("WEAKAND(100) default:query", query.getModel().getQueryTree().toString());
+        assertEquals(Query.Type.WEAKAND, query.getModel().getType());
 
         query.getSelect().setWhereString("{\"contains\" : [\"default\", \"select\"] }");
         assertEquals("default:select", query.getModel().getQueryTree().toString());

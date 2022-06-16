@@ -1,11 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.SslProvider;
-import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
@@ -187,21 +186,10 @@ public class ConnectorFactory {
         return connectionFactory;
     }
 
-    @SuppressWarnings("removal")
     private SslContextFactory createSslContextFactory() {
-        try {
-            DefaultConnectorSsl ssl = new DefaultConnectorSsl();
-            sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
-            return ssl.createSslContextFactory();
-        } catch (UnsupportedOperationException e) {
-            // TODO(bjorncs) Vespa 8 Remove this compatibility workaround
-            if (sslProvider instanceof SslContextFactoryProvider) {
-                return ((SslContextFactoryProvider) sslProvider)
-                        .getInstance(connectorConfig.name(), connectorConfig.listenPort());
-            } else {
-                throw e;
-            }
-        }
+        DefaultConnectorSsl ssl = new DefaultConnectorSsl();
+        sslProvider.configureSsl(ssl, connectorConfig.name(), connectorConfig.listenPort());
+        return ssl.createSslContextFactory();
     }
 
     private ALPNServerConnectionFactory newAlpnConnectionFactory() {

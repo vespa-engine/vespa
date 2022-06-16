@@ -3,9 +3,9 @@ package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.google.common.util.concurrent.ListenableFuture;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
+import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.data.access.slime.SlimeAdapter;
@@ -56,8 +56,13 @@ import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.Utf8;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
+import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -68,6 +73,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -83,18 +92,43 @@ public class JsonRendererTestCase {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private final JsonRenderer originalRenderer;
+    @Rule
+    public Timeout globalTimeout = Timeout.seconds(300);
+
+    private static ThreadPoolExecutor executor;
+    private static JsonRenderer blueprint;
     private JsonRenderer renderer;
 
-    public JsonRendererTestCase() {
-        originalRenderer = new JsonRenderer();
+    @BeforeClass
+    public static void createExecutorAndBlueprint() {
+        ThreadFactory threadFactory = ThreadFactoryFactory.getThreadFactory("test-rendering");
+        executor = new ThreadPoolExecutor(4, 4, 1L, TimeUnit.MINUTES, new LinkedBlockingQueue<>(), threadFactory);
+        executor.prestartAllCoreThreads();
+        blueprint = new JsonRenderer(executor);
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void createClone() {
         // Use the shared renderer as a prototype object, as specified in the API contract
-        renderer = (JsonRenderer) originalRenderer.clone();
+        renderer = (JsonRenderer) blueprint.clone();
         renderer.init();
+    }
+
+    @After
+    public void deconstructClone() {
+        renderer.deconstruct();
+        renderer = null;
+    }
+
+    @AfterClass
+    public static void deconstructBlueprintAndExecutor() throws InterruptedException {
+        blueprint.deconstruct();
+        blueprint = null;
+        executor.shutdown();
+        if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+            throw new RuntimeException("Failed to shutdown executor");
+        }
+        executor = null;
     }
 
     @Test
@@ -205,14 +239,14 @@ public class JsonRendererTestCase {
                 + "                    \"object\": \"thingie\","
                 + "                    \"string\": \"stuff\","
                 + "                    \"predicate\": \"a in [b]\","
-                + "                    \"tensor1\": { \"cells\": [ { \"address\": {\"x\": \"a\"}, \"value\":2.0 } ] },"
+                + "                    \"tensor1\": { \"type\": \"tensor(x{})\", \"cells\": { \"a\":2.0 } },"
                 + "                    \"tensor2\": { \"cells\": [] },"
-                + "                    \"tensor3\": { \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] },"
+                + "                    \"tensor3\": { \"type\": \"tensor(x{},y{})\", \"cells\": [ { \"address\": {\"x\": \"a\", \"y\": \"0\"}, \"value\":2.0 }, { \"address\": {\"x\": \"a\", \"y\": \"1\"}, \"value\":-1.0 } ] },"
                 + "                    \"summaryfeatures\": {"
                 + "                        \"scalar1\":1.5,"
                 + "                        \"scalar2\":2.5,"
-                + "                        \"tensor1\":{\"type\":\"tensor(x[3])\",\"cells\":[{\"address\":{\"x\":\"0\"},\"value\":1.5},{\"address\":{\"x\":\"1\"},\"value\":2.0},{\"address\":{\"x\":\"2\"},\"value\":2.5}]},"
-                + "                        \"tensor2\":{\"type\":\"tensor()\",\"cells\":[{\"address\":{},\"value\":0.5}]}"
+                + "                        \"tensor1\":{\"type\":\"tensor(x[3])\", \"values\":[1.5, 2.0, 2.5] },"
+                + "                        \"tensor2\":{\"type\":\"tensor()\", \"values\":[0.5] }"
                 + "                    },"
                 + "                    \"data\": \"Data \\\\xc3\\\\xa6 \\\\xc3\\\\xa5\""
                 + "                },"
@@ -409,7 +443,7 @@ public class JsonRendererTestCase {
         assertEqualJson(expected, summary);
     }
 
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testTracingWithEmptySubtree() throws IOException, InterruptedException, ExecutionException {
         String expected =  "{"
@@ -1310,6 +1344,11 @@ public class JsonRendererTestCase {
         r.setTotalHitCount(1L);
         String summary = render(r);
         assertEqualJson(expected.toString(), summary);
+        r = new Result(new Query("/?"));
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        summary = render(r);
+        assertEqualJson(expected.toString(), summary);
 
         r = new Result(new Query("/?renderer.json.jsonMaps=false"));
         expected = dataFromSimplified(
@@ -1438,7 +1477,6 @@ public class JsonRendererTestCase {
         return render(execution, r);
     }
 
-    @SuppressWarnings("removal")
     private String render(Execution execution, Result r) throws InterruptedException, ExecutionException {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();
         CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);

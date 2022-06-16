@@ -18,10 +18,10 @@ getTensorAttribute(const search::attribute::IAttributeVector &attr)
 
 }
 
-ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(const attribute::ImportedAttributeVector &imported_attribute,
+ImportedTensorAttributeVectorReadGuard::ImportedTensorAttributeVectorReadGuard(std::shared_ptr<MetaStoreReadGuard> targetMetaStoreReadGuard,
+                                                                               const attribute::ImportedAttributeVector &imported_attribute,
                                                                                bool stableEnumGuard)
-    : ImportedAttributeVectorReadGuard(imported_attribute,
-                                       stableEnumGuard),
+    : ImportedAttributeVectorReadGuard(std::move(targetMetaStoreReadGuard), imported_attribute, stableEnumGuard),
       _target_tensor_attribute(getTensorAttribute(_target_attribute))
 {
 }

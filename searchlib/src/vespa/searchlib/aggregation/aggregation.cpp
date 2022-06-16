@@ -60,7 +60,7 @@ void
 AggregationResult::aggregate(const document::Document & doc, HitRank rank) {
     bool ok(_expressionTree->execute(doc, rank));
     if (ok) {
-        onAggregate(_expressionTree->getResult(), doc, rank);
+        onAggregate(*_expressionTree->getResult(), doc, rank);
     } else {
         throw std::runtime_error(vespalib::make_string("aggregate(%s, %f) failed ", doc.getId().toString().c_str(), rank));
     }
@@ -69,7 +69,7 @@ void
 AggregationResult::aggregate(DocId docId, HitRank rank) {
     bool ok(_expressionTree->execute(docId, rank));
     if (ok) {
-        onAggregate(_expressionTree->getResult(), docId, rank);
+        onAggregate(*_expressionTree->getResult(), docId, rank);
     } else {
         throw std::runtime_error(vespalib::make_string("aggregate(%u, %f) failed ", docId, rank));
     }
@@ -92,7 +92,7 @@ AggregationResult &
 AggregationResult::setExpression(ExpressionNode::UP expr)
 {
     _expressionTree = std::make_shared<ExpressionTree>(std::move(expr));
-    prepare(&_expressionTree->getResult(), false);
+    prepare(_expressionTree->getResult(), false);
     return *this;
 }
 

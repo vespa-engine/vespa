@@ -20,12 +20,12 @@
 #include <vespa/searchcore/bmcluster/bucket_selector.h>
 #include <vespa/searchcore/bmcluster/spi_bm_feed_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <getopt.h>
+#include <filesystem>
 #include <iostream>
 #include <thread>
 #include <unistd.h>
@@ -391,7 +391,7 @@ App::main(int argc, char **argv)
         usage();
         return 1;
     }
-    vespalib::rmdir(base_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
     Benchmark bm(_bm_params);
     bm.run();
     return 0;
@@ -402,6 +402,6 @@ int main(int argc, char **argv) {
     DummyFileHeaderContext::setCreator("vespa-feed-bm");
     App app;
     auto exit_value = app.main(argc, argv);
-    vespalib::rmdir(base_dir, true);
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
     return exit_value;
 }

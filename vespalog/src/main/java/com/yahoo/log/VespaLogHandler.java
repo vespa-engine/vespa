@@ -10,8 +10,7 @@ import java.util.logging.StreamHandler;
  * @author Bjorn Borud
  * @author arnej27959
  */
-@SuppressWarnings("removal")
-@Deprecated(since = "7", forRemoval = true)
+@SuppressWarnings("deprecation")
 class VespaLogHandler extends StreamHandler {
 
     private final LogTarget logTarget;

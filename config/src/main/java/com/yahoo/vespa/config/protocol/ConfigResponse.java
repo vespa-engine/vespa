@@ -26,18 +26,6 @@ public interface ConfigResponse {
 
     void serialize(OutputStream os, CompressionType uncompressed) throws IOException;
 
-    default boolean hasEqualConfig(JRTServerConfigRequest request) {
-        PayloadChecksums payloadChecksums = getPayloadChecksums();
-        PayloadChecksum xxhash64 = payloadChecksums.getForType(PayloadChecksum.Type.XXHASH64);
-        PayloadChecksum md5 = payloadChecksums.getForType(PayloadChecksum.Type.MD5);
-        if (xxhash64 != null)
-            return xxhash64.equals(request.getRequestConfigChecksums().getForType(PayloadChecksum.Type.XXHASH64));
-        if (md5 != null)
-            return md5.equals(request.getRequestConfigChecksums().getForType(PayloadChecksum.Type.MD5));
-
-        return true;
-    }
-
     default boolean hasNewerGeneration(JRTServerConfigRequest request) {
         return (getGeneration() > request.getRequestGeneration());
     }

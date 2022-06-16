@@ -87,7 +87,7 @@ public class QueryContext implements Cloneable {
     }
 
     public boolean render(Writer writer) throws java.io.IOException {
-        if (owner.getTraceLevel()!=0) {
+        if (owner.getTrace().getLevel()!=0) {
             XMLWriter xmlWriter=XMLWriter.from(writer);
             xmlWriter.openTag("meta").attribute("type",ID);
             TraceNode traceRoot=owner.getModel().getExecution().trace().traceNode().root();

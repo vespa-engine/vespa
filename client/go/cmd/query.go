@@ -105,10 +105,13 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool) error {
 }
 
 func splitArg(argument string) (string, string) {
-	equalsIndex := strings.Index(argument, "=")
-	if equalsIndex < 1 {
-		return "yql", argument
-	} else {
-		return argument[0:equalsIndex], argument[equalsIndex+1:]
+	parts := strings.SplitN(argument, "=", 2)
+	if len(parts) < 2 {
+		return "yql", parts[0]
 	}
+	if strings.HasPrefix(strings.ToLower(parts[0]), "select ") {
+		// A query containing '='
+		return "yql", argument
+	}
+	return parts[0], parts[1]
 }

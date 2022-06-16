@@ -2,7 +2,7 @@
 
 #include "summarymanagerinitializer.h"
 #include <vespa/searchcore/proton/common/eventlogger.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <filesystem>
 
 namespace proton {
 
@@ -37,7 +37,7 @@ SummaryManagerInitializer::~SummaryManagerInitializer() = default;
 void
 SummaryManagerInitializer::run()
 {
-    vespalib::mkdir(_baseDir, false);
+    std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::Timer timer;
     EventLogger::loadDocumentStoreStart(_subDbName);
     *_result = std::make_shared<SummaryManager>

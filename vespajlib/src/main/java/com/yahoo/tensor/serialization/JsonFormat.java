@@ -109,11 +109,15 @@ public class JsonFormat {
 
     private static void encodeValues(IndexedTensor tensor, Cursor cursor, long[] indexes, int dimension) {
         DimensionSizes sizes = tensor.dimensionSizes();
-        for (indexes[dimension] = 0; indexes[dimension] < sizes.size(dimension); ++indexes[dimension]) {
-            if (dimension < (sizes.dimensions() - 1)) {
-                encodeValues(tensor, cursor.addArray(), indexes, dimension + 1);
-            } else {
-                cursor.addDouble(tensor.get(indexes));
+        if (indexes.length == 0) {
+            cursor.addDouble(tensor.get(0));
+        } else {
+            for (indexes[dimension] = 0; indexes[dimension] < sizes.size(dimension); ++indexes[dimension]) {
+                if (dimension < (sizes.dimensions() - 1)) {
+                    encodeValues(tensor, cursor.addArray(), indexes, dimension + 1);
+                } else {
+                    cursor.addDouble(tensor.get(indexes));
+                }
             }
         }
     }

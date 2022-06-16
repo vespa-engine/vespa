@@ -1,12 +1,10 @@
 # Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-ContainerCluster = element container | jdisc {
+ContainerCluster = element container {
     attribute version { "1.0" } &
     attribute id { xsd:NCName }? &
-    attribute jetty { xsd:boolean }? &
     Include* &
     ContainerServices &    
     DocumentBinding* &
-    Aliases? &
     NodesOfContainerCluster? &
     ClientAuthorize?
 }
@@ -21,7 +19,6 @@ ContainerServices =
     Component* &
     Embedder* &
     Handler* &
-    Client* &
     Server* &
     Http? &
     AccessLog* &
@@ -35,11 +32,6 @@ ClientAuthorize = element client-authorize { empty }
 Components = element components {
     Include* &
     Component*
-}
-
-Aliases = element aliases {
-    element service-alias { xsd:NCName }* &
-    element endpoint-alias { xsd:NCName }*
 }
 
 Include = element \include {
@@ -233,7 +225,6 @@ HttpClientApi = element http-client-api {
 # NODES:
 
 NodesOfContainerCluster = element nodes {
-    attribute jvmargs { text }? &
     attribute jvm-options { text }? &
     attribute jvm-gc-options { text }? &
     attribute preload { text }? &

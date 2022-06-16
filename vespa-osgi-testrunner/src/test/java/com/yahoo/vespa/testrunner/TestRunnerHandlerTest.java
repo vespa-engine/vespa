@@ -5,6 +5,12 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.slime.Inspector;
+import com.yahoo.vespa.test.samples.FailingExtensionTest;
+import com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest;
+import com.yahoo.vespa.test.samples.WrongBeforeAllTest;
+import com.yahoo.vespa.testrunner.TestReport.Node;
+import com.yahoo.vespa.testrunner.TestReport.OutputNode;
 import com.yahoo.vespa.testrunner.TestRunner.Status;
 import com.yahoo.vespa.testrunner.TestRunner.Suite;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,14 +18,17 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static com.yahoo.slime.SlimeUtils.jsonToSlimeOrThrow;
@@ -29,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author mortent
+ * @author jonmv
  */
 class TestRunnerHandlerTest {
 
@@ -39,19 +49,18 @@ class TestRunnerHandlerTest {
 
     @BeforeEach
     void setup() {
-        List<LogRecord> logRecords = List.of(logRecord("Tests started"));
-        Throwable exception = new RuntimeException("org.junit.ComparisonFailure: expected:<foo> but was:<bar>");
-        exception.setStackTrace(new StackTraceElement[]{new StackTraceElement("Foo", "bar", "Foo.java", 1123)});
-        TestReport testReport = TestReport.builder()
-                .withSuccessCount(1)
-                .withFailedCount(2)
-                .withIgnoredCount(3)
-                .withAbortedCount(4)
-                .withInconclusiveCount(5)
-                .withFailures(List.of(new TestReport.Failure("Foo.bar()", exception)))
-                .withLogs(logRecords).build();
-
-        aggregateRunner = AggregateTestRunner.of(List.of(new MockRunner(TestRunner.Status.SUCCESS, testReport)));
+        TestReport moreTestsReport = JunitRunnerTest.test(Suite.PRODUCTION_TEST,
+                                                          new byte[0],
+                                                          FailingTestAndBothAftersTest.class,
+                                                          WrongBeforeAllTest.class,
+                                                          FailingExtensionTest.class)
+                                                    .getReport();
+        TestReport failedReport = TestReport.createFailed(Clock.fixed(testInstant, ZoneId.of("UTC")),
+                                                          Suite.PRODUCTION_TEST,
+                                                          new ClassNotFoundException("School's out all summer!"));
+        aggregateRunner = AggregateTestRunner.of(List.of(new MockRunner(TestRunner.Status.SUCCESS,
+                                                                        AggregateTestRunnerTest.report.mergedWith(moreTestsReport)
+                                                                                                      .mergedWith(failedReport))));
         testRunnerHandler = new TestRunnerHandler(Executors.newSingleThreadExecutor(), aggregateRunner);
     }
 
@@ -61,7 +70,7 @@ class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/report", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        assertEquals(new String(toJsonBytes(jsonToSlimeOrThrow("{\"summary\":{\"success\":1,\"failed\":2,\"ignored\":3,\"aborted\":4,\"inconclusive\":5,\"failures\":[{\"testName\":\"Foo.bar()\",\"testError\":\"org.junit.ComparisonFailure: expected:<foo> but was:<bar>\",\"exception\":\"java.lang.RuntimeException: org.junit.ComparisonFailure: expected:<foo> but was:<bar>\\n\\tat Foo.bar(Foo.java:1123)\\n\"}]},\"output\":[\"00:00:12.000 Tests started\"]}").get(), false), UTF_8),
+        assertEquals(new String(toJsonBytes(jsonToSlimeOrThrow(readTestResource("/report.json")).get(), false), UTF_8),
                      new String(toJsonBytes(jsonToSlimeOrThrow(out.toByteArray()).get(), false), UTF_8));
     }
 
@@ -73,14 +82,37 @@ class TestRunnerHandlerTest {
         HttpResponse response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log", GET));
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         response.render(out);
-        assertEquals(new String(toJsonBytes(jsonToSlimeOrThrow("{\"logRecords\":[{\"id\":0,\"at\":12000,\"type\":\"info\",\"message\":\"Tests started\"}]}").get(), false), UTF_8),
-                     new String(toJsonBytes(jsonToSlimeOrThrow(out.toByteArray()).get(), false), UTF_8));
+        Inspector actualRoot = jsonToSlimeOrThrow(out.toByteArray()).get();
+        Inspector expectedRoot = jsonToSlimeOrThrow(readTestResource("/output.json")).get();
+        boolean ok = expectedRoot.field("logRecords").entries() == actualRoot.field("logRecords").entries();
+        long last = Long.MIN_VALUE;
+        // Need custom comparison, because sequence ID may be influenced by other tests.
+        for (int i = 0; i < expectedRoot.field("logRecords").entries(); i++) {
+            Inspector expectedEntry = expectedRoot.field("logRecords").entry(i);
+            Inspector actualEntry = actualRoot.field("logRecords").entry(i);
+            ok &= expectedEntry.field("at").equalTo(actualEntry.field("at"));
+            ok &= expectedEntry.field("type").equalTo(actualEntry.field("type"));
+            ok &= expectedEntry.field("message").equalTo(actualEntry.field("message"));
+            last = Math.max(last, actualEntry.field("id").asLong());
+        }
+        if ( ! ok)
+            assertEquals(new String(toJsonBytes(expectedRoot, false), UTF_8),
+                         new String(toJsonBytes(actualRoot, false), UTF_8));
 
         // Should not get old log
-        response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log?after=0", GET));
+        response = testRunnerHandler.handle(HttpRequest.createTestRequest("http://localhost:1234/tester/v1/log?after=" + last, GET));
         out = new ByteArrayOutputStream();
         response.render(out);
         assertEquals("{\"logRecords\":[]}", out.toString(UTF_8));
+    }
+
+    static byte[] readTestResource(String name) {
+        try {
+            return TestRunnerHandlerTest.class.getResourceAsStream(name).readAllBytes();
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Test
@@ -130,10 +162,19 @@ class TestRunnerHandlerTest {
 
         @Override
         public Collection<LogRecord> getLog(long after) {
-            return getReport() == null ? List.of()
-                                       : getReport().logLines().stream()
-                                                    .filter(entry -> entry.getSequenceNumber() > after)
-                                                    .collect(Collectors.toList());
+            List<LogRecord> log = new ArrayList<>();
+            if (testReport != null) addLog(log, testReport.root(), after);
+            return log;
+        }
+
+        private void addLog(List<LogRecord> log, Node node, long after) {
+            if (node instanceof OutputNode)
+                for (LogRecord record : ((OutputNode) node).log())
+                    if (record.getSequenceNumber() > after)
+                        log.add(record);
+
+            for (Node child : node.children())
+                addLog(log, child, after);
         }
 
         @Override

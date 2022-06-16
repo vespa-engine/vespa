@@ -5,7 +5,10 @@ import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.di.config.ApplicationBundlesConfig;
 import com.yahoo.net.HostName;
+import com.yahoo.vespa.config.PayloadChecksum;
+import com.yahoo.vespa.config.PayloadChecksum.Type;
 import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
 import com.yahoo.vespa.config.ConfigPayload;
@@ -33,6 +36,9 @@ class GetConfigProcessor implements Runnable {
 
     private static final Logger log = Logger.getLogger(GetConfigProcessor.class.getName());
     private static final String localHostName = HostName.getLocalhost();
+
+    private static final PayloadChecksums emptyApplicationBundlesConfigChecksums =
+            PayloadChecksums.fromPayload(Payload.from(ConfigPayload.fromInstance(new ApplicationBundlesConfig.Builder().build())));
 
     private final JRTServerConfigRequest request;
 
@@ -108,11 +114,6 @@ class GetConfigProcessor implements Runnable {
             return null;
         }
 
-        if ( ! context.requestHandler().compatibleWith(vespaVersion, context.applicationId())) {
-            handleError(request, ErrorCode.INCOMPATIBLE_VESPA_VERSION, "Version " + printableVespaVersion(vespaVersion) + " is binary incompatible with the latest deployed version");
-            return null;
-        }
-
         this.logPre = TenantRepository.logPre(context.applicationId());
         ConfigResponse config;
         try {
@@ -130,7 +131,16 @@ class GetConfigProcessor implements Runnable {
         }
 
         // config == null is not an error, but indicates that the config will be returned later.
-        if ((config != null) && (!config.hasEqualConfig(request) || config.hasNewerGeneration(request) || forceResponse)) {
+        if ((config != null) && (    ! config.getPayloadChecksums().matches(request.getRequestConfigChecksums())
+                                  ||   config.hasNewerGeneration(request)
+                                  ||   forceResponse)) {
+            if (     ApplicationBundlesConfig.class.equals(request.getConfigKey().getConfigClass())  // If it's a Java container ...
+                && ! context.requestHandler().compatibleWith(vespaVersion, context.applicationId())  // ... with a runtime version incompatible with the deploying version ...
+                && ! emptyApplicationBundlesConfigChecksums.matches(config.getPayloadChecksums())) { // ... and there actually are incompatible user bundles, then return no config:
+                handleError(request, ErrorCode.INCOMPATIBLE_VESPA_VERSION, "Version " + printableVespaVersion(vespaVersion) + " is binary incompatible with the latest deployed version");
+                return null;
+            }
+
             // debugLog(trace, "config response before encoding:" + config.toString());
             request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getPayloadChecksums());
             if (logDebug(trace)) {

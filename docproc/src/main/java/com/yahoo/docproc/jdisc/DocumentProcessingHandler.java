@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docproc.jdisc;
 
-import com.google.inject.Inject;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.component.chain.model.ChainsModel;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -12,12 +12,11 @@ import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.document.ContainerDocumentConfig;
 import com.yahoo.docproc.AbstractConcreteDocumentFactory;
 import com.yahoo.docproc.CallStack;
-import com.yahoo.docproc.DocprocService;
+import com.yahoo.docproc.impl.DocprocService;
 import com.yahoo.docproc.DocumentProcessor;
 import com.yahoo.docproc.jdisc.messagebus.MbusRequestContext;
 import com.yahoo.docproc.proxy.SchemaMap;
 import com.yahoo.document.DocumentTypeManager;
-import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -43,7 +42,6 @@ import static com.yahoo.component.chain.model.ChainsModelBuilder.buildFromConfig
 public class DocumentProcessingHandler extends AbstractRequestHandler {
 
     private static final Logger log = Logger.getLogger(DocumentProcessingHandler.class.getName());
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private final ComponentRegistry<DocprocService> docprocServiceRegistry;
     private final ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry;
     private final ChainRegistry<DocumentProcessor> chainRegistry = new ChainRegistry<>();
@@ -52,7 +50,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     private final ContainerDocumentConfig containerDocConfig;
     private final DocumentTypeManager documentTypeManager;
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                                       ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
                                       ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
@@ -85,7 +82,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
         return (maxThreads > 0) ? maxThreads : Runtime.getRuntime().availableProcessors();
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     DocumentProcessingHandler(ComponentRegistry<DocprocService> docprocServiceRegistry,
                               ComponentRegistry<DocumentProcessor> documentProcessorComponentRegistry,
                               ComponentRegistry<AbstractConcreteDocumentFactory> docFactoryRegistry,
@@ -118,13 +114,11 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     }
 
     @Override
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     protected void destroy() {
         laterExecutor.shutdown();
         docprocServiceRegistry.allComponents().forEach(docprocService -> docprocService.deconstruct());
     }
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public ComponentRegistry<DocprocService> getDocprocServiceRegistry() {
         return docprocServiceRegistry;
     }
@@ -140,7 +134,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     }
 
 
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     private static CallStack convertToCallStack(Chain<DocumentProcessor> chain, Metric metric) {
         CallStack stack = new CallStack(chain.getId().stringValue(), metric);
         for (DocumentProcessor processor : chain.components()) {
@@ -151,7 +144,6 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
     }
 
     @Override
-    @SuppressWarnings("removal") // TODO Vespa 8: remove
     public ContentChannel handleRequest(Request request, ResponseHandler handler) {
         RequestContext requestContext;
         if (request instanceof MbusRequest) {

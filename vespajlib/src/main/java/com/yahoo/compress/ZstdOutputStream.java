@@ -38,7 +38,6 @@ public class ZstdOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b) throws IOException {
-        throwIfClosed();
         write(b, 0, b.length);
     }
 

@@ -42,9 +42,6 @@
       "public boolean hasField(java.lang.String)",
       "public java.util.Collection getFields()",
       "public int getFieldCount()",
-      "public com.yahoo.compress.Compressor getCompressor()",
-      "public com.yahoo.document.CompressionConfig getCompressionConfig()",
-      "public void setCompressionConfig(com.yahoo.document.CompressionConfig)",
       "public bridge synthetic com.yahoo.document.DataType clone()",
       "public bridge synthetic com.yahoo.vespa.objects.Identifiable clone()",
       "public bridge synthetic java.lang.Object clone()"
@@ -132,7 +129,6 @@
       "public com.yahoo.document.CollectionDataType clone()",
       "public com.yahoo.document.DataType getNestedType()",
       "protected com.yahoo.document.datatypes.FieldValue createByReflection(java.lang.Object)",
-      "public void setNestedType(com.yahoo.document.DataType)",
       "public com.yahoo.document.PrimitiveDataType getPrimitiveType()",
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "protected void register(com.yahoo.document.DocumentTypeManager, java.util.List)",
@@ -149,9 +145,7 @@
   },
   "com.yahoo.document.CompressionConfig": {
     "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.io.Serializable"
-    ],
+    "interfaces": [],
     "attributes": [
       "public"
     ],
@@ -172,7 +166,6 @@
   "com.yahoo.document.DataType": {
     "superClass": "com.yahoo.vespa.objects.Identifiable",
     "interfaces": [
-      "java.io.Serializable",
       "java.lang.Comparable"
     ],
     "attributes": [
@@ -235,9 +228,7 @@
   },
   "com.yahoo.document.DataTypeName": {
     "superClass": "java.lang.Object",
-    "interfaces": [
-      "java.io.Serializable"
-    ],
+    "interfaces": [],
     "attributes": [
       "public",
       "final"
@@ -266,8 +257,6 @@
       "public void <init>(com.yahoo.document.serialization.DocumentReader)",
       "public com.yahoo.document.DocumentId getId()",
       "public void setId(com.yahoo.document.DocumentId)",
-      "public com.yahoo.document.datatypes.Struct getHeader()",
-      "public com.yahoo.document.datatypes.Struct getBody()",
       "public void assign(java.lang.Object)",
       "public com.yahoo.document.Document clone()",
       "public void setDataType(com.yahoo.document.DataType)",
@@ -340,9 +329,7 @@
   },
   "com.yahoo.document.DocumentId": {
     "superClass": "com.yahoo.vespa.objects.Identifiable",
-    "interfaces": [
-      "java.io.Serializable"
-    ],
+    "interfaces": [],
     "attributes": [
       "public"
     ],
@@ -428,9 +415,7 @@
     "methods": [
       "public void <init>(java.lang.String)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType)",
-      "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType)",
       "public void <init>(java.lang.String, com.yahoo.document.StructDataType, java.util.Set)",
-      "public void <init>(java.lang.String, com.yahoo.document.StructDataType, com.yahoo.document.StructDataType, java.util.Set)",
       "public void <init>(java.lang.String, java.util.Set)",
       "public com.yahoo.document.DocumentType clone()",
       "public com.yahoo.document.Document createFieldValue()",
@@ -439,13 +424,11 @@
       "public com.yahoo.document.StructDataType contentStruct()",
       "public com.yahoo.document.StructDataType getStructType(java.lang.String)",
       "public com.yahoo.document.StructDataType getDeclaredStructType(java.lang.String)",
-      "public com.yahoo.document.StructDataType getHeaderType()",
       "protected void register(com.yahoo.document.DocumentTypeManager, java.util.List)",
       "public boolean isA(java.lang.String)",
       "public void addField(com.yahoo.document.Field)",
       "public void addFieldSets(java.util.Map)",
       "public com.yahoo.document.Field addField(java.lang.String, com.yahoo.document.DataType)",
-      "public com.yahoo.document.Field addHeaderField(java.lang.String, com.yahoo.document.DataType)",
       "public void inherit(com.yahoo.document.DocumentType)",
       "public java.util.Collection getInheritedTypes()",
       "public java.util.ListIterator inheritedIterator()",
@@ -501,26 +484,18 @@
     "methods": [
       "public void <init>()",
       "public void <init>(com.yahoo.document.config.DocumentmanagerConfig)",
-      "public void assign(com.yahoo.document.DocumentTypeManager)",
-      "public com.yahoo.document.DocumentTypeManager configure(java.lang.String)",
       "public static com.yahoo.document.DocumentTypeManager fromFile(java.lang.String)",
-      "public boolean hasDataType(java.lang.String)",
-      "public boolean hasDataType(int)",
-      "public com.yahoo.document.DataType getDataType(java.lang.String)",
-      "public com.yahoo.document.DataType getDataType(int)",
-      "public com.yahoo.document.DataType getDataType(int, java.lang.String)",
       "public void register(com.yahoo.document.DataType)",
       "public com.yahoo.document.DocumentType registerDocumentType(com.yahoo.document.DocumentType)",
       "public com.yahoo.document.DocumentType getDocumentType(com.yahoo.document.DataTypeName)",
       "public com.yahoo.document.DocumentType getDocumentType(java.lang.String)",
+      "public boolean hasDocumentType(java.lang.String)",
       "public final com.yahoo.document.Document createDocument(com.yahoo.io.GrowableByteBuffer)",
       "public com.yahoo.document.Document createDocument(com.yahoo.document.serialization.DocumentDeserializer)",
       "public java.util.Collection getDataTypes()",
       "public java.util.Map getDocumentTypes()",
       "public java.util.Iterator documentTypeIterator()",
-      "public void clear()",
-      "public com.yahoo.document.annotation.AnnotationTypeRegistry getAnnotationTypeRegistry()",
-      "public void shutdown()"
+      "public com.yahoo.document.annotation.AnnotationTypeRegistry getAnnotationTypeRegistry()"
     ],
     "fields": []
   },
@@ -534,7 +509,6 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.DocumentTypeManager)",
-      "public static com.yahoo.compress.CompressionType toCompressorType(com.yahoo.document.config.DocumentmanagerConfig$Datatype$Structtype$Compresstype$Enum)",
       "public static com.yahoo.config.subscription.ConfigSubscriber configure(com.yahoo.document.DocumentTypeManager, java.lang.String)",
       "public com.yahoo.config.subscription.ConfigSubscriber configure(java.lang.String)",
       "public static com.yahoo.document.DocumentTypeManager configureNewManager(com.yahoo.document.config.DocumentmanagerConfig)",
@@ -662,37 +636,31 @@
     "superClass": "com.yahoo.vespa.objects.FieldBase",
     "interfaces": [
       "com.yahoo.document.fieldset.FieldSet",
-      "java.lang.Comparable",
-      "java.io.Serializable"
+      "java.lang.Comparable"
     ],
     "attributes": [
       "public"
     ],
     "methods": [
-      "public void <init>(java.lang.String, int, com.yahoo.document.DataType, boolean)",
       "public void <init>(java.lang.String, int, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, com.yahoo.document.DataType, boolean, com.yahoo.document.DocumentType)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType, com.yahoo.document.DocumentType)",
-      "public void <init>(java.lang.String, com.yahoo.document.DataType, boolean)",
       "public void <init>(java.lang.String, com.yahoo.document.DataType)",
       "public void <init>(java.lang.String, com.yahoo.document.Field)",
-      "public int compareTo(java.lang.Object)",
+      "public int compareTo(com.yahoo.document.Field)",
       "protected int calculateIdV7(com.yahoo.document.DocumentType)",
       "public void setId(int, com.yahoo.document.DocumentType)",
       "public final com.yahoo.document.DataType getDataType()",
       "public void setDataType(com.yahoo.document.DataType)",
-      "public final int getId(int)",
       "public final int getId()",
       "public final boolean hasForcedId()",
-      "public boolean isHeader()",
-      "public void setHeader(boolean)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
       "public java.lang.String toString()",
       "public boolean contains(com.yahoo.document.fieldset.FieldSet)",
       "public com.yahoo.document.fieldset.FieldSet clone()",
-      "public bridge synthetic java.lang.Object clone()"
+      "public bridge synthetic java.lang.Object clone()",
+      "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": [
       "protected com.yahoo.document.DataType dataType",
@@ -833,8 +801,9 @@
       "public int hashCode()",
       "public com.yahoo.document.BucketId toBucketId()",
       "public boolean equals(java.lang.Object)",
-      "public int compareTo(java.lang.Object)",
-      "public java.lang.String toString()"
+      "public int compareTo(com.yahoo.document.GlobalId)",
+      "public java.lang.String toString()",
+      "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": [
       "public static final int LENGTH"
@@ -854,8 +823,6 @@
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
       "public com.yahoo.document.DataType getKeyType()",
       "public com.yahoo.document.DataType getValueType()",
-      "public void setKeyType(com.yahoo.document.DataType)",
-      "public void setValueType(com.yahoo.document.DataType)",
       "public com.yahoo.document.datatypes.MapFieldValue createFieldValue()",
       "public java.lang.Class getValueClass()",
       "protected void register(com.yahoo.document.DocumentTypeManager, java.util.List)",
@@ -902,9 +869,7 @@
       "public static com.yahoo.document.datatypes.Struct fromString(java.lang.String)",
       "public static com.yahoo.document.datatypes.IntegerFieldValue getXValue(com.yahoo.document.datatypes.FieldValue)",
       "public static com.yahoo.document.datatypes.IntegerFieldValue getYValue(com.yahoo.document.datatypes.FieldValue)",
-      "public static java.lang.String getZCurveFieldName(java.lang.String)",
-      "public static java.lang.String getPositionSummaryFieldName(java.lang.String)",
-      "public static java.lang.String getDistanceSummaryFieldName(java.lang.String)"
+      "public static java.lang.String getZCurveFieldName(java.lang.String)"
     ],
     "fields": [
       "public static final com.yahoo.document.StructDataType INSTANCE",
@@ -958,11 +923,8 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.document.DocumentType, int)",
-      "public void <init>(com.yahoo.document.TemporaryStructuredDataType, int)",
       "public static com.yahoo.document.ReferenceDataType createWithInferredId(com.yahoo.document.DocumentType)",
-      "public static com.yahoo.document.ReferenceDataType createWithInferredId(com.yahoo.document.TemporaryStructuredDataType)",
       "public com.yahoo.document.StructuredDataType getTargetType()",
-      "public void setTargetType(com.yahoo.document.StructuredDataType)",
       "public com.yahoo.document.datatypes.ReferenceFieldValue createFieldValue()",
       "public java.lang.Class getValueClass()",
       "public boolean isValueCompatible(com.yahoo.document.datatypes.FieldValue)",
@@ -1059,19 +1021,6 @@
       "public static final int classId"
     ]
   },
-  "com.yahoo.document.TemporaryStructuredDataType": {
-    "superClass": "com.yahoo.document.StructDataType",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public static com.yahoo.document.TemporaryStructuredDataType create(java.lang.String)",
-      "public static com.yahoo.document.TemporaryStructuredDataType createById(int)",
-      "protected void setName(java.lang.String)"
-    ],
-    "fields": []
-  },
   "com.yahoo.document.TensorDataType": {
     "superClass": "com.yahoo.document.DataType",
     "interfaces": [],
@@ -1124,7 +1073,6 @@
     "methods": [
       "public void <init>(com.yahoo.document.DataType, boolean, boolean)",
       "public void <init>(com.yahoo.document.DataType, boolean, boolean, int)",
-      "public void <init>(java.lang.String, int, com.yahoo.document.DataType, boolean, boolean)",
       "public com.yahoo.document.WeightedSetDataType clone()",
       "public void setTag(boolean)",
       "public boolean isTag()",
@@ -2245,9 +2193,6 @@
       "public com.yahoo.document.StructDataType getDataType()",
       "public void setVersion(int)",
       "public int getVersion()",
-      "public com.yahoo.compress.CompressionType getCompressionType()",
-      "public int getCompressionLevel()",
-      "public float getCompressionThreshold()",
       "public com.yahoo.document.datatypes.Struct clone()",
       "public void clear()",
       "public java.util.Iterator iterator()",
@@ -3398,7 +3343,6 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader, com.yahoo.document.DocumentType, int)",
       "public void <init>(com.yahoo.document.serialization.DocumentUpdateReader, com.yahoo.document.DocumentType)",
       "public com.yahoo.document.DocumentType getDocumentType()",
       "public com.yahoo.document.Field getField()",

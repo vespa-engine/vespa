@@ -14,6 +14,7 @@ import com.yahoo.document.FixedBucketSpaces;
 import com.yahoo.document.TestAndSetCondition;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
 import com.yahoo.document.restapi.resource.DocumentV1ApiHandler.StorageCluster;
 import com.yahoo.document.update.FieldUpdate;
@@ -51,6 +52,7 @@ import com.yahoo.schema.derived.Deriver;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.tensor.Tensor;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
@@ -118,7 +120,9 @@ public class DocumentV1ApiTest {
     final Document doc3 = new Document(manager.getDocumentType("music"), "id:space:music:g=a:three");
     {
         doc1.setFieldValue("artist", "Tom Waits");
+        doc1.setFieldValue("embedding", new TensorFieldValue(Tensor.from("tensor(x[3]):[1,2,3]")));
         doc2.setFieldValue("artist", "Asa-Chan & Jun-Ray");
+        doc2.setFieldValue("embedding", new TensorFieldValue(Tensor.from("tensor(x[3]):[4,5,6]")));
     }
 
     final Map<String, StorageCluster> clusters = Map.of("content", new StorageCluster("content",
@@ -229,13 +233,15 @@ public class DocumentV1ApiTest {
                        "    {" +
                        "      \"id\": \"id:space:music::one\"," +
                        "      \"fields\": {" +
-                       "        \"artist\": \"Tom Waits\"" +
+                       "        \"artist\": \"Tom Waits\", " +
+                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [1.0,2.0,3.0] } " +
                        "      }" +
                        "    }," +
                        "    {" +
                        "      \"id\": \"id:space:music:n=1:two\"," +
                        "      \"fields\": {" +
-                       "        \"artist\": \"Asa-Chan & Jun-Ray\"" +
+                       "        \"artist\": \"Asa-Chan & Jun-Ray\", " +
+                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [4.0,5.0,6.0] } " +
                        "      }" +
                        "    }," +
                        "    {" +
@@ -278,13 +284,15 @@ public class DocumentV1ApiTest {
                        "    {" +
                        "      \"id\": \"id:space:music::one\"," +
                        "      \"fields\": {" +
-                       "        \"artist\": \"Tom Waits\"" +
+                       "        \"artist\": \"Tom Waits\"," +
+                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [1.0,2.0,3.0] } " +
                        "      }" +
                        "    }," +
                        "    {" +
                        "      \"id\": \"id:space:music:n=1:two\"," +
                        "      \"fields\": {" +
-                       "        \"artist\": \"Asa-Chan & Jun-Ray\"" +
+                       "        \"artist\": \"Asa-Chan & Jun-Ray\"," +
+                       "        \"embedding\": { \"type\": \"tensor(x[3])\", \"values\": [4.0,5.0,6.0] } " +
                        "      }" +
                        "    }" +
                        "  ]," +
@@ -337,7 +345,7 @@ public class DocumentV1ApiTest {
         // POST with namespace and document type is a restricted visit with a required destination cluster ("destinationCluster")
         access.expect(parameters -> {
             assertEquals("[Content:cluster=content]", parameters.getRemoteDataHandler());
-            assertEquals("[all]", parameters.fieldSet());
+            assertEquals("[document]", parameters.fieldSet());
             assertEquals(60_000L, parameters.getSessionTimeoutMs());
             parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "We made it!");
         });
@@ -491,12 +499,13 @@ public class DocumentV1ApiTest {
             parameters.responseHandler().get().handleResponse(new DocumentResponse(0, doc1));
             return new Result();
         });
-        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?");
+        response = driver.sendRequest("http://localhost/document/v1/space/music/docid/one?format.tensors=long");
         assertSameJson("{" +
                        "  \"pathId\": \"/document/v1/space/music/docid/one\"," +
                        "  \"id\": \"id:space:music::one\"," +
                        "  \"fields\": {" +
-                       "    \"artist\": \"Tom Waits\"" +
+                       "    \"artist\": \"Tom Waits\"," +
+                       "    \"embedding\": { \"cells\": [{\"address\":{\"x\":\"0\"},\"value\":1.0},{\"address\":{\"x\":\"1\"},\"value\": 2.0},{\"address\":{\"x\":\"2\"},\"value\": 3.0}]}" +
                        "  }" +
                        "}", response.readAll());
         assertEquals(200, response.getStatus());
@@ -532,7 +541,8 @@ public class DocumentV1ApiTest {
         response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?condition=test%20it&tracelevel=9", POST,
                                       "{" +
                                       "  \"fields\": {" +
-                                      "    \"artist\": \"Asa-Chan & Jun-Ray\"" +
+                                      "    \"artist\": \"Asa-Chan & Jun-Ray\"," +
+                                      "    \"embedding\": { \"values\": [4.0,5.0,6.0] } " +
                                       "  }" +
                                       "}");
         assertSameJson("{" +

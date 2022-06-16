@@ -15,8 +15,6 @@ import com.yahoo.schema.DocumentReferences;
 import com.yahoo.schema.FieldSets;
 import com.yahoo.schema.Schema;
 
-import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -33,7 +31,7 @@ import java.util.Set;
  * @author Thomas Gundersen
  * @author bratseth
  */
-public class SDDocumentType implements Cloneable, Serializable {
+public class SDDocumentType implements Cloneable {
 
     public static final SDDocumentType VESPA_DOCUMENT;
     private final Map<DataTypeName, SDDocumentType> inheritedTypes = new LinkedHashMap<>();
@@ -45,7 +43,7 @@ public class SDDocumentType implements Cloneable, Serializable {
     // to ensure that the full Search and this SDDocumentType is built first.
     private FieldSets fieldSets;
     // Document references
-    private Optional<DocumentReferences> documentReferences = Optional.empty();
+    private DocumentReferences documentReferences;
     private TemporaryImportedFields temporaryImportedFields;
 
     static {
@@ -72,16 +70,13 @@ public class SDDocumentType implements Cloneable, Serializable {
         NewDocumentType.Name name = new NewDocumentType.Name(dt.getName());
         if (getType(name) != null)
             throw new IllegalArgumentException("Data type '" + name + "' has already been used.");
-        if (name.getName() == docType.getName())
+        if (name.getName().equals(docType.getName()))
             throw new IllegalArgumentException("Data type '" + name + "' can not have same name as its defining document.");
         ownedTypes.put(name, dt);
         return this;
     }
     public final SDDocumentType getOwnedType(String name) {
          return getOwnedType(new NewDocumentType.Name(name));
-    }
-    public SDDocumentType getOwnedType(DataTypeName name) {
-        return getOwnedType(name.getName());
     }
 
     public SDDocumentType getOwnedType(NewDocumentType.Name name) {
@@ -105,9 +100,8 @@ public class SDDocumentType implements Cloneable, Serializable {
         return type;
     }
 
-    public SDDocumentType addAnnotation(AnnotationType annotation) {
+    public void addAnnotation(AnnotationType annotation) {
         annotationTypes.register(annotation);
-        return this;
     }
 
     /** Returns all owned datatypes. */
@@ -116,15 +110,6 @@ public class SDDocumentType implements Cloneable, Serializable {
     // TODO: Include inherited
     public Map<String, AnnotationType> getAnnotations() { return annotationTypes.getTypes(); }
     public AnnotationType findAnnotation(String name) { return annotationTypes.getType(name); }
-
-    public Collection<SDDocumentType> getAllTypes() {
-        Collection<SDDocumentType> list = new ArrayList<>();
-        list.addAll(getTypes());
-        for (SDDocumentType inherited : inheritedTypes.values()) {
-            list.addAll(inherited.getAllTypes());
-        }
-        return list;
-    }
 
     public Map<NewDocumentType.Name, SDDocumentType> allTypes() {
         Map<NewDocumentType.Name, SDDocumentType> map = new LinkedHashMap<>();
@@ -219,8 +204,7 @@ public class SDDocumentType implements Cloneable, Serializable {
             String subFieldName = name.substring(name.indexOf(".")+1);
             Field f = docType.getField(superFieldName);
             if (f != null) {
-                if (f instanceof SDField) {
-                    SDField superField = (SDField)f;
+                if (f instanceof SDField superField) {
                     return superField.getStructField(subFieldName);
                 } else {
                     throw new IllegalArgumentException("Field " + f.getName() + " is not an SDField");
@@ -268,7 +252,7 @@ public class SDDocumentType implements Cloneable, Serializable {
         return field;
     }
 
-    public Field addField(String fName, DataType dataType, boolean header, int code) {
+    public Field addField(String fName, DataType dataType, int code) {
         SDField field = new SDField(this, fName, code, dataType);
         addField(field);
         return field;
@@ -292,10 +276,6 @@ public class SDDocumentType implements Cloneable, Serializable {
             map.put(field.getName(), field);
         }
         return new LinkedHashSet<>(map.values());
-    }
-
-    public Iterator<Field> fieldIterator() {
-        return fieldSet().iterator();
     }
 
     /** Returns the number of fields in this only, not including inherited fields */
@@ -329,11 +309,11 @@ public class SDDocumentType implements Cloneable, Serializable {
     }
 
     public Optional<DocumentReferences> getDocumentReferences() {
-        return documentReferences;
+        return Optional.ofNullable(documentReferences);
     }
 
     public void setDocumentReferences(DocumentReferences documentReferences) {
-        this.documentReferences = Optional.of(documentReferences);
+        this.documentReferences = documentReferences;
     }
 
     public TemporaryImportedFields getTemporaryImportedFields() {

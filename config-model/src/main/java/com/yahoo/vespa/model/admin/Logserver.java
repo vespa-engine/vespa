@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
@@ -16,6 +17,7 @@ public class Logserver extends AbstractService {
 
     private static final long serialVersionUID = 1L;
     private static final String logArchiveDir = "$ROOT/logs/vespa/logarchive";
+    private String compressionType = "gzip";
 
     public Logserver(AbstractConfigProducer parent) {
         super(parent, "logserver");
@@ -25,6 +27,12 @@ public class Logserver extends AbstractService {
         portsMeta.on(3).tag("unused");
         setProp("clustertype", "admin");
         setProp("clustername", "admin");
+    }
+
+    @Override
+    public void initService(DeployState deployState) {
+        super.initService(deployState);
+        this.compressionType = deployState.featureFlags().logFileCompressionAlgorithm("gzip");
     }
 
     /**
@@ -39,9 +47,13 @@ public class Logserver extends AbstractService {
      */
     private String getMyJVMArgs() {
         StringBuilder sb = new StringBuilder();
+        sb.append("--add-opens=java.base/java.io=ALL-UNNAMED");
+        sb.append(" ");
         sb.append("-Dlogserver.rpcListenPort=").append(getRelativePort(0));
         sb.append(" ");
         sb.append("-Dlogserver.logarchive.dir=" + logArchiveDir);
+        sb.append(" ");
+        sb.append("-Dlogserver.logarchive.compression=" + compressionType);
         return sb.toString();
     }
 

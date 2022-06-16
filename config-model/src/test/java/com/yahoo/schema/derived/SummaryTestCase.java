@@ -28,7 +28,6 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     public void deriveRawAsBase64() throws ParseException {
         String sd = joinLines(
                 "schema s {",
-                "  raw-as-base64-in-summary",
                 "  document s {",
                 "      field raw_field type raw {",
                 "          indexing: summary",
@@ -44,6 +43,7 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     public void deriveRawAsLegacy() throws ParseException {
         String sd = joinLines(
                 "schema s {",
+                "  raw-as-base64-in-summary: false",
                 "  document s {",
                 "      field raw_field type raw {",
                 "          indexing: summary",

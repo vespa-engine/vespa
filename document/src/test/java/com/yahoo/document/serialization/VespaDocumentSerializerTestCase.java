@@ -18,7 +18,6 @@ import static org.junit.Assert.assertEquals;
  * @author Simon Thoresen Hult
  * @author vekterli
  */
-@SuppressWarnings("deprecation")
 public class VespaDocumentSerializerTestCase {
 
     @Test

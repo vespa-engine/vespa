@@ -1359,33 +1359,90 @@ public class QueryProfileVariantsTestCase {
         CompiledQueryProfileRegistry cRegistry = registry.compile();
         CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
 
-        assertValueForZone("default", ZoneInfo.defaultInfo(), cTest);
+        assertValueForZone("default", ZoneInfo.defaultInfo(), null, cTest);
         assertValueForZone("prod-region1-instance1",
                            new ZoneInfo(new ApplicationId("tenant1", "application1", "instance1"),
                                         new Zone(Environment.prod, "region1")),
+                           null,
                            cTest);
         assertValueForZone("prod-instance2",
                            new ZoneInfo(new ApplicationId("tenant2", "application2", "instance2"),
                                         new Zone(Environment.prod, "region1")),
+                           null,
                            cTest);
         assertValueForZone("prod-region3",
                            new ZoneInfo(new ApplicationId("tenant3", "application3", "instance3"),
                                         new Zone(Environment.prod, "region3")),
+                           null,
                            cTest);
         assertValueForZone("dev",
                            new ZoneInfo(new ApplicationId("tenant4", "application4", "instance4"),
                                         new Zone(Environment.dev, "region4")),
+                           null,
                            cTest);
     }
 
-    private void assertValueForZone(String expected, ZoneInfo zoneInfo, CompiledQueryProfile cTest) {
-        assertEquals(expected,
-                     new Query.Builder().setQueryProfile(cTest).setZoneInfo(zoneInfo).build().properties().get("value"));
+    @Test
+    public void testZoneInfoInContextWithUnoverridability() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "instance", "environment", "region" });
+        profile.set("value", "default", registry);
+        profile.set("value", "prod-beta",
+                    toMap("environment=prod", "instance=beta"),
+                    registry);
+        profile.setOverridable("value", false, toMap("environment=prod", "instance=beta"));
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        assertValueForZone("prod-beta",
+                           new ZoneInfo(new ApplicationId("tenant1", "application1", "beta"),
+                                        new Zone(Environment.prod, "region1")),
+                           "fromRequest",
+                           cTest);
+    }
+
+
+    private void assertValueForZone(String expected, ZoneInfo zoneInfo, String requestValue, CompiledQueryProfile cTest) {
+        var builder = new Query.Builder().setQueryProfile(cTest).setZoneInfo(zoneInfo);
+        if (requestValue != null)
+            builder.setRequestMap(Map.of("value", requestValue));
+        assertEquals(expected, builder.build().properties().get("value"));
+    }
+
+    @Test
+    public void testZoneInfoInContextSettingNativeProperty() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("test");
+        profile.setDimensions(new String[] { "instance", "environment", "region" });
+        profile.set("timeout", "0.3",
+                    toMap("environment=prod", "instance=beta"),
+                    registry);
+        registry.register(profile);
+
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        CompiledQueryProfile cTest = cRegistry.findQueryProfile("test");
+
+        assertTimeoutForZone(300,
+                           new ZoneInfo(new ApplicationId("tenant1", "application1", "beta"),
+                                        new Zone(Environment.prod, "region1")),
+                           null,
+                           cTest);
+    }
+
+    private void assertTimeoutForZone(int expected, ZoneInfo zoneInfo, String requestValue, CompiledQueryProfile cTest) {
+        var builder = new Query.Builder().setQueryProfile(cTest).setZoneInfo(zoneInfo);
+        if (requestValue != null)
+            builder.setRequestMap(Map.of("timeout", requestValue));
+        assertEquals(expected, builder.build().getTimeout());
     }
 
     private void assertGet(String expectedValue, String parameter, String[] dimensionValues, QueryProfile profile, CompiledQueryProfile cprofile) {
-        Map<String,String> context=toMap(profile,dimensionValues);
-        assertEquals("Looking up '" + parameter + "' for '" + Arrays.toString(dimensionValues) + "'",expectedValue,cprofile.get(parameter,context));
+        Map<String, String> context = toMap(profile,dimensionValues);
+        assertEquals("Looking up '" + parameter + "' for '" + Arrays.toString(dimensionValues) + "'",
+                     expectedValue, cprofile.get(parameter,context));
     }
 
     public static Map<String,String> toMap(QueryProfile profile, String[] dimensionValues) {

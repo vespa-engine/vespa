@@ -3,7 +3,21 @@ package com.yahoo.document.serialization;
 
 import com.yahoo.document.Document;
 import com.yahoo.document.Field;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.BoolFieldValue;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.Float16FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
+import com.yahoo.document.datatypes.Raw;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.StructuredFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.text.Utf8;
 
 import java.util.Base64;
@@ -46,7 +60,6 @@ public class XmlSerializationHelper {
         xml.addContent(b.toString());
     }
 
-    @SuppressWarnings("deprecation")
     public static void printDocumentXml(Document doc, XmlStream xml) {
         xml.addAttribute("documenttype", doc.getDataType().getName());
         xml.addAttribute("documentid", doc.getId());
@@ -119,13 +132,6 @@ public class XmlSerializationHelper {
             val.printXml(xml);
             xml.endTag();
         }
-    }
-
-    private static boolean containsNonPrintableCharactersByte(final byte[] buffer) {
-        for (byte b : buffer) {
-            if (b < 32 && (b != 9 && b != 10 && b != 13)) return true;
-        }
-        return false;
     }
 
     private static boolean containsNonPrintableCharactersString(final CharSequence buffer) {

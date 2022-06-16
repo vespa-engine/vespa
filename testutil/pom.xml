@@ -6,12 +6,12 @@
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
     <artifactId>testutil</artifactId>
     <packaging>jar</packaging>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <name>${project.artifactId}</name>
     <description>Library of useful Hamcrest matchers.</description>
     <dependencies>
@@ -25,6 +25,12 @@
             <artifactId>guice</artifactId>
             <scope>provided</scope>
             <classifier>no_aop</classifier>
+        </dependency>
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>annotations</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

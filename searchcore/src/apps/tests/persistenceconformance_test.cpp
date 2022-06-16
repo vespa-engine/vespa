@@ -38,8 +38,8 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
@@ -190,8 +190,8 @@ public:
                           const DocTypeName &docType,
                           const ConfigFactory &factory) {
         DocumentDBConfig::SP snapshot = factory.create(docType);
-        vespalib::mkdir(_baseDir, false);
-        vespalib::mkdir(_baseDir + "/" + docType.toString(), false);
+        std::filesystem::create_directory(std::filesystem::path(_baseDir));
+        std::filesystem::create_directory(std::filesystem::path(_baseDir + "/" + docType.toString()));
         vespalib::string inputCfg = _baseDir + "/" + docType.toString() + "/baseconfig";
         {
             FileConfigManager fileCfg(_shared_service.transport(), inputCfg, "", docType.getName());

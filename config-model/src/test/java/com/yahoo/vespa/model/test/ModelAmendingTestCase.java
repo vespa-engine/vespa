@@ -82,7 +82,7 @@ public class ModelAmendingTestCase {
             assertFalse(host + " is amended", host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
         }
 
-        // Check that jdisc clusters are amended
+        // Check that container clusters are amended
         assertEquals(2, model.getContainerClusters().size());
         assertNotNull(model.getContainerClusters().get("test1").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
         assertNotNull(model.getContainerClusters().get("test2").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
@@ -129,7 +129,7 @@ public class ModelAmendingTestCase {
             assertFalse(host + " is amended", host.getHost().getChildrenByTypeRecursive(AmendedService.class).isEmpty());
         }
 
-        // Check that jdisc clusters are amended
+        // Check that container clusters are amended
         assertEquals(2, model.getContainerClusters().size());
         assertNotNull(model.getContainerClusters().get("test1").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
         assertNotNull(model.getContainerClusters().get("test2").getComponentsMap().get(new ComponentId("com.yahoo.MyAmendedComponent")));
@@ -211,7 +211,7 @@ public class ModelAmendingTestCase {
 
         @Override
         public void doBuild(ContainerModelAmender model, Element spec, ConfigModelContext modelContext) {
-            if (built) return; // the same instance will be called once per jdisc cluster
+            if (built) return; // the same instance will be called once per container cluster
             for (ContainerModel containerModel : model.containerModels)
                 amend(containerModel.getCluster());
             built = true;

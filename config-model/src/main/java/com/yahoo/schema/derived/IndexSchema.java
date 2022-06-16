@@ -8,7 +8,6 @@ import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.schema.Schema;
-import com.yahoo.schema.document.BooleanIndexDefinition;
 import com.yahoo.schema.document.FieldSet;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.config.search.IndexschemaConfig;
@@ -112,14 +111,13 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
 
     @Override
     public void getConfig(IndexschemaConfig.Builder icB) {
-        for (int i = 0; i < fields.size(); ++i) {
-            IndexField f = fields.get(i);
+        for (IndexField f : fields) {
             IndexschemaConfig.Indexfield.Builder ifB = new IndexschemaConfig.Indexfield.Builder()
                 .name(f.getName())
                 .datatype(IndexschemaConfig.Indexfield.Datatype.Enum.valueOf(f.getType()))
                 .prefix(f.hasPrefix())
-                .phrases(f.hasPhrases())
-                .positions(f.hasPositions())
+                .phrases(false)
+                .positions(true)
                 .interleavedfeatures(f.useInterleavedFeatures());
             if (!f.getCollectionType().equals("SINGLE")) {
                 ifB.collectiontype(IndexschemaConfig.Indexfield.Collectiontype.Enum.valueOf(f.getCollectionType()));
@@ -137,7 +135,6 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
         }
     }
 
-    @SuppressWarnings("deprecation")
     static List<Field> flattenField(Field field) {
         DataType fieldType = field.getDataType();
         if (fieldType.getPrimitiveType() != null){
@@ -172,14 +169,11 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
      * Representation of an index field with name and data type.
      */
     public static class IndexField {
-        private String name;
-        private Index.Type type;
-        private com.yahoo.schema.Index.Type sdType; // The index type in "user intent land"
-        private DataType sdFieldType;
+        private final String name;
+        private final Index.Type type;
+        private final DataType sdFieldType;
         private boolean prefix = false;
-        private boolean phrases = false; // TODO dead, but keep a while to ensure config compatibility?
-        private boolean positions = true;// TODO dead, but keep a while to ensure config compatibility?
-        private BooleanIndexDefinition boolIndex = null;
+
         // Whether the posting lists of this index field should have interleaved features (num occs, field length) in document id stream.
         private boolean interleavedFeatures = false;
 
@@ -193,11 +187,8 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
                 prefix = index.isPrefix();
                 interleavedFeatures = index.useInterleavedFeatures();
             }
-            sdType = index.getType();
-            boolIndex = index.getBooleanIndexDefiniton();
         }
         public String getName() { return name; }
-        public Index.Type getRawType() { return type; }
         public String getType() {
             return type.equals(Index.Type.INT64)
                     ? "INT64" : "STRING";
@@ -212,21 +203,7 @@ public class IndexSchema extends Derived implements IndexschemaConfig.Producer {
                             : "SINGLE";
 	    }
         public boolean hasPrefix() { return prefix; }
-        public boolean hasPhrases() { return phrases; }
-        public boolean hasPositions() { return positions; }
         public boolean useInterleavedFeatures() { return interleavedFeatures; }
-
-        public BooleanIndexDefinition getBooleanIndexDefinition() {
-            return boolIndex;
-        }
-
-        /**
-         * The user set index type
-         * @return the type
-         */
-        public com.yahoo.schema.Index.Type getSdType() {
-            return sdType;
-        }
     }
 
     /**

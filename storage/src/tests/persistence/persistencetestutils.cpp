@@ -11,11 +11,11 @@
 #include <vespa/persistence/spi/test.h>
 #include <vespa/storage/persistence/filestorage/filestorhandlerimpl.h>
 #include <vespa/storage/persistence/persistencehandler.h>
-#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/config-stor-filestor.h>
+#include <filesystem>
 #include <thread>
 
 using document::DocumentType;
@@ -29,8 +29,8 @@ namespace {
 vdstestlib::DirConfig initialize(const std::string & rootOfRoot) {
     vdstestlib::DirConfig config(getStandardConfig(true, rootOfRoot));
     std::string rootFolder = getRootFolder(config);
-    vespalib::rmdir(rootFolder, true);
-    vespalib::mkdir(vespalib::make_string("%s/disks/d0", rootFolder.c_str()), true);
+    std::filesystem::remove_all(std::filesystem::path(rootFolder));
+    std::filesystem::create_directories(std::filesystem::path(vespalib::make_string("%s/disks/d0", rootFolder.c_str())));
     return config;
 }
 
@@ -58,7 +58,7 @@ PersistenceTestEnvironment::PersistenceTestEnvironment(const std::string & rootO
     _metrics.initDiskMetrics(1, 1);
     _handler = std::make_unique<FileStorHandlerImpl>(_messageKeeper, _metrics, _node.getComponentRegister());
     _diskEnv = std::make_unique<PersistenceUtil>(_component, *_handler,
-                                                 *_metrics.disk->threads[0], _node.getPersistenceProvider());
+                                                 *_metrics.threads[0], _node.getPersistenceProvider());
 }
 
 PersistenceTestEnvironment::~PersistenceTestEnvironment() {

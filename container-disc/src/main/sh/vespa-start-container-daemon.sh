@@ -174,7 +174,7 @@ configure_memory() {
     memory_options="-Xms${jvm_minHeapsize}m -Xmx${jvm_heapsize}m"
     memory_options="${memory_options} -XX:ThreadStackSize=${jvm_stacksize}"
     memory_options="${memory_options} -XX:MaxDirectMemorySize=${maxDirectMemorySize}m"
-    memory_options="${memory_options} -XX:+UseTransparentHugePages"
+    memory_options="${memory_options} $(get_jvm_hugepage_settings $jvm_heapsize)"
 
     if ((jvm_compressedClassSpaceSize != 0)); then
         memory_options="${memory_options} -XX:CompressedClassSpaceSize=${jvm_compressedClassSpaceSize}m"
@@ -252,13 +252,6 @@ import_cfg_var () {
    fi
 }
 
-# TODO Vespa 8: Remove when all containers use JDK 17
-configure_illegal_access() {
-  if [[ "$VESPA_JDK_VERSION" = "11" ]]; then
-      illegal_access_option="--illegal-access=debug"
-  fi
-}
-
 getconfig
 configure_memory
 configure_gcopts
@@ -267,7 +260,6 @@ configure_classpath
 configure_numactl
 configure_cpu
 configure_preload
-configure_illegal_access
 
 exec $numactlcmd $envcmd java \
         -Dconfig.id="${VESPA_CONFIG_ID}" \
@@ -281,7 +273,6 @@ exec $numactlcmd $envcmd java \
         -XX:HeapDumpPath="${VESPA_HOME}/var/crash" \
         -XX:ErrorFile="${VESPA_HOME}/var/crash/hs_err_pid%p.log" \
         -XX:+ExitOnOutOfMemoryError \
-        ${illegal_access_option} \
         --add-opens=java.base/java.io=ALL-UNNAMED \
         --add-opens=java.base/java.lang=ALL-UNNAMED \
         --add-opens=java.base/java.net=ALL-UNNAMED \

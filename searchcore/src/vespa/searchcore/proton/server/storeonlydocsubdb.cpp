@@ -27,6 +27,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.storeonlydocsubdb");
@@ -120,7 +121,7 @@ StoreOnlyDocSubDB::StoreOnlyDocSubDB(const Config &cfg, const Context &ctx)
       _fileHeaderContext(ctx._fileHeaderContext, _docTypeName, _baseDir),
       _gidToLidChangeHandler(std::make_shared<DummyGidToLidChangeHandler>())
 {
-    vespalib::mkdir(_baseDir, false); // Assume parent is created.
+    std::filesystem::create_directory(std::filesystem::path(_baseDir)); // Assume parent is created.
     vespalib::File::sync(vespalib::dirname(_baseDir));
 }
 

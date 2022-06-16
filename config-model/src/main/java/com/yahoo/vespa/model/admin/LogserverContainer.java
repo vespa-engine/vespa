@@ -23,8 +23,9 @@ public class LogserverContainer extends Container {
         super(parent, "" + 0, 0, deployState);
         if (deployState.isHosted() && deployState.getProperties().applicationId().instance().isTester()) useDynamicPorts();
         LogserverContainerCluster cluster = (LogserverContainerCluster) parent;
-        addComponent(new AccessLogComponent(
-                cluster, AccessLogType.jsonAccessLog, CompressionType.GZIP, Optional.of(cluster.getName()), true));
+        addComponent(new AccessLogComponent(cluster, AccessLogType.jsonAccessLog,
+                                            deployState.featureFlags().logFileCompressionAlgorithm("zstd"),
+                                            Optional.of(cluster.getName()), true));
     }
 
     @Override

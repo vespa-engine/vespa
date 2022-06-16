@@ -88,6 +88,8 @@ public:
      * Checks if runnable is running or not. (Started is considered running)
      */
     [[nodiscard]] bool running() const noexcept;
+
+    FastOS_ThreadId native_thread_id() const noexcept;
 };
 
 }

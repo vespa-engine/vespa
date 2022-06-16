@@ -1,0 +1,39 @@
+# Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Schema for processing components and chains
+
+ProcessingRenderer = element renderer {
+   ComponentDefinition
+}
+
+Processing =
+    element processing {
+        Processor* &
+        Chain* &
+        ProcessingRenderer* &
+        GenericConfig*
+   }
+
+ChainBaseContent =
+    ComponentId &
+    ChainInheritance &
+    GenericConfig*
+
+Chain = element chain {
+        ChainBaseContent &
+        Processor* &
+        Phase*
+    }
+
+ChainInheritance =
+    attribute inherits { text }? &
+    attribute excludes { text }? &
+    element inherits {
+        element chain { ComponentSpec }* &
+        element exclude { ComponentSpec }*
+    }?
+
+Processor =
+    element processor {
+        BundleSpec &
+        GenericSearcherOrDocumentProcessor
+    }

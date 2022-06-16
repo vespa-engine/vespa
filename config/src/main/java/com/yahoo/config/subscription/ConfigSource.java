@@ -5,9 +5,7 @@ package com.yahoo.config.subscription;
  * A type of source of config
  *
  * @author Vegard Havdal
- * @deprecated  Will be removed in Vespa 8. Only for internal use.
  */
-@Deprecated(forRemoval = true, since = "7")
 public interface ConfigSource {
 
 }

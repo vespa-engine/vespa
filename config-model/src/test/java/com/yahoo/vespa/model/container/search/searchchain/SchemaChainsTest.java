@@ -21,15 +21,10 @@ import static org.junit.Assert.assertEquals;
  */
 public class SchemaChainsTest extends SchemaChainsTestBase {
 
-    private ChainsConfig chainsConfig;
     private ClusterConfig clusterConfig;
 
     @Before
     public void subscribe() {
-        ChainsConfig.Builder chainsBuilder = new ChainsConfig.Builder();
-        chainsBuilder = (ChainsConfig.Builder)root.getConfig(chainsBuilder, "searchchains");
-        chainsConfig = new ChainsConfig(chainsBuilder);
-
         ClusterConfig.Builder clusterBuilder = new ClusterConfig.Builder();
         clusterBuilder = (ClusterConfig.Builder)root.getConfig(clusterBuilder, "searchchains/chain/cluster2/component/" + ClusterSearcher.class.getName());
         clusterConfig = new ClusterConfig(clusterBuilder);
@@ -39,7 +34,7 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
     @Override
     Element servicesXml() {
         return parse(
-            "<searchchains>",
+            "<search>",
             "  <searcher id='searcher:1' classId='classId1' />",
 
             "  <provider id='provider:1' inherits='parentChain1 parentChain2' excludes='ExcludedSearcher1 ExcludedSearcher2'",
@@ -67,20 +62,7 @@ public class SchemaChainsTest extends SchemaChainsTestBase {
             "       <queryType>PROGRAMMATIC</queryType>",
             "    </config>",
             "  </provider>",
-
-            "  <searchchain id='default:99'>",
-            "    <federation id='federation:98' provides='provide_federation' before='p1 p2' after='s1 s2'>",
-            "      <source id='source:1'>",
-            "        <federationoptions optional='false' />",
-            "      </source>",
-            "    </federation>",
-            "  </searchchain>",
-
-            "  <searchchain id='parentChain1' />",
-            "  <searchchain id='parentChain2' />",
-            "  <searchchain id='parentChain3' />",
-            "  <searchchain id='parentChain4' />",
-            "</searchchains>");
+            "</search>");
     }
 
     private SearchChains getSearchChains() {

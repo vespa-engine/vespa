@@ -21,9 +21,17 @@ ImportedAttributesContext::getOrCacheAttribute(const vespalib::string &name, Att
     if (itr != attributes.end()) {
         return itr->second->attribute();
     }
-    ImportedAttributeVector::SP result = _repo.get(name);
+    const ImportedAttributeVector::SP & result = _repo.get(name);
     if (result) {
-        auto insRes = attributes.emplace(name, result->makeReadGuard(stableEnumGuard));
+        auto metaItr = _metaStores.find(result->getTargetDocumentMetaStore().get());
+        std::shared_ptr<MetaStoreReadGuard> metaGuard;
+        if (metaItr == _metaStores.end()) {
+            metaGuard = result->getTargetDocumentMetaStore()->getReadGuard();
+            _metaStores.emplace(result->getTargetDocumentMetaStore().get(), metaGuard);
+        } else {
+            metaGuard = metaItr->second;
+        }
+        auto insRes = attributes.emplace(name, result->makeReadGuard(std::move(metaGuard), stableEnumGuard));
         return insRes.first->second->attribute();
     } else {
         return nullptr;
@@ -34,6 +42,7 @@ ImportedAttributesContext::ImportedAttributesContext(const ImportedAttributesRep
     : _repo(repo),
       _guardedAttributes(),
       _enumGuardedAttributes(),
+      _metaStores(),
       _cacheMutex()
 {
 }

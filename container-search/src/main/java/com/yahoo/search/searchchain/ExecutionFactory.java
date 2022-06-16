@@ -91,31 +91,6 @@ public class ExecutionFactory extends AbstractComponent {
         this.executor = executor != null ? executor : Executors.newSingleThreadExecutor();
     }
 
-    /** @deprecated pass SchemaInfoConfig */
-    @Deprecated
-    public ExecutionFactory(ChainsConfig chainsConfig,
-                            IndexInfoConfig indexInfo,
-                            QrSearchersConfig clusters,
-                            ComponentRegistry<Searcher> searchers,
-                            SpecialtokensConfig specialTokens,
-                            Linguistics linguistics,
-                            ComponentRegistry<Renderer> renderers,
-                            Executor executor) {
-        this(chainsConfig, indexInfo, SchemaInfo.empty(), clusters, searchers, specialTokens, linguistics, renderers, executor);
-    }
-
-    /** @deprecated pass the container threadpool */
-    @Deprecated // TODO: Remove on Vespa 8
-    public ExecutionFactory(ChainsConfig chainsConfig,
-                            IndexInfoConfig indexInfo,
-                            QrSearchersConfig clusters,
-                            ComponentRegistry<Searcher> searchers,
-                            SpecialtokensConfig specialTokens,
-                            Linguistics linguistics,
-                            ComponentRegistry<Renderer> renderers) {
-        this(chainsConfig, indexInfo, SchemaInfo.empty(), clusters, searchers, specialTokens, linguistics, renderers, null);
-    }
-
     private SearchChainRegistry createSearchChainRegistry(ComponentRegistry<Searcher> searchers,
                                                           ChainsConfig chainsConfig) {
         SearchChainRegistry searchChainRegistry = new SearchChainRegistry(searchers);

@@ -86,9 +86,9 @@ public class ArchiverHandler extends AbstractLogHandler {
      * Creates an ArchiverHandler which puts files under
      * the given root directory.
      */
-    public ArchiverHandler(String rootDir, int maxFileSize) {
+    public ArchiverHandler(String rootDir, int maxFileSize, String zip) {
         this();
-        setRootDir(rootDir);
+        setRootDir(rootDir, zip);
         this.maxFileSize = maxFileSize;
     }
 
@@ -189,7 +189,7 @@ public class ArchiverHandler extends AbstractLogHandler {
         }
     }
 
-    private void setRootDir(String rootDir) {
+    private void setRootDir(String rootDir, String zip) {
         // roundabout way of setting things, but this way we can
         // get around Java's ineptitude for file handling (relative paths in File are broken)
         absoluteRootDir = new File(rootDir).getAbsolutePath();
@@ -205,7 +205,7 @@ public class ArchiverHandler extends AbstractLogHandler {
                 log.log(Level.FINE, () -> "Created root at " + absoluteRootDir);
             }
         }
-        filesArchived = new FilesArchived(root);
+        filesArchived = new FilesArchived(root, zip);
     }
 
     public String toString() {

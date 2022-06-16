@@ -201,7 +201,7 @@ struct FileStorTestBase : Test {
                                  const Metric& metric);
 
     auto& thread_metrics_of(FileStorManager& manager) {
-        return manager.get_metrics().disk->threads[0];
+        return manager.get_metrics().threads[0];
     }
 };
 
@@ -304,7 +304,7 @@ struct PersistenceHandlerComponents : public FileStorHandlerComponents {
                 std::make_unique<PersistenceHandler>(executor, component, cfg,
                                                      test._node->getPersistenceProvider(),
                                                      *filestorHandler, bucketOwnershipNotifier,
-                                                     *metrics.disk->threads[0]);
+                                                     *metrics.threads[0]);
     }
     ~PersistenceHandlerComponents();
     std::unique_ptr<DiskThread> make_disk_thread() {
@@ -759,11 +759,11 @@ TEST_F(FileStorManagerTest, priority) {
     BucketOwnershipNotifier bucketOwnershipNotifier(component, c.messageSender);
     vespa::config::content::StorFilestorConfig cfg;
     PersistenceHandler persistenceHandler(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                          filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[0]);
+                                          filestorHandler, bucketOwnershipNotifier, *metrics.threads[0]);
     std::unique_ptr<DiskThread> thread(createThread(persistenceHandler, filestorHandler, component));
 
     PersistenceHandler persistenceHandler2(_node->executor(), component, cfg, _node->getPersistenceProvider(),
-                                           filestorHandler, bucketOwnershipNotifier, *metrics.disk->threads[1]);
+                                           filestorHandler, bucketOwnershipNotifier, *metrics.threads[1]);
     std::unique_ptr<DiskThread> thread2(createThread(persistenceHandler2, filestorHandler, component));
 
     // Creating documents to test with. Different gids, 2 locations.
@@ -813,8 +813,8 @@ TEST_F(FileStorManagerTest, priority) {
 
     // Verify that thread 1 gets documents over 50 pri
     EXPECT_EQ(documents.size(),
-              metrics.disk->threads[0]->operations.getValue()
-              + metrics.disk->threads[1]->operations.getValue());
+              metrics.threads[0]->operations.getValue()
+              + metrics.threads[1]->operations.getValue());
     // Closing file stor handler before threads are deleted, such that
     // file stor threads getNextMessage calls returns.
     filestorHandler.close();

@@ -36,8 +36,8 @@ public class DocumentGenTest {
         assertTrue(searches.get("music3").getDocument("music3").getField("pos").getDataType() instanceof StructDataType);
         assertEquals(searches.get("music3").getDocument("music3").getField("pos").getDataType().getName(), "position");
         assertTrue(searches.get("book").getDocument("book").getField("mystruct").getDataType() instanceof StructDataType);
-        assertTrue(searches.get("book").getDocument("book").getField("mywsfloat").getDataType() instanceof WeightedSetDataType);
-        assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsfloat").getDataType())).getNestedType() == DataType.FLOAT);
+        assertTrue(searches.get("book").getDocument("book").getField("mywsinteger").getDataType() instanceof WeightedSetDataType);
+        assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsinteger").getDataType())).getNestedType() == DataType.INT);
     }
 
     @Test
@@ -47,8 +47,8 @@ public class DocumentGenTest {
         Map<String, Schema> searches = mojo.getSearches();
         assertEquals(searches.get("video").getDocument("video").getField("weight").getDataType(), DataType.FLOAT);
         assertTrue(searches.get("book").getDocument("book").getField("mystruct").getDataType() instanceof StructDataType);
-        assertTrue(searches.get("book").getDocument("book").getField("mywsfloat").getDataType() instanceof WeightedSetDataType);
-        assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsfloat").getDataType())).getNestedType() == DataType.FLOAT);
+        assertTrue(searches.get("book").getDocument("book").getField("mywsinteger").getDataType() instanceof WeightedSetDataType);
+        assertTrue(((WeightedSetDataType)(searches.get("book").getDocument("book").getField("mywsinteger").getDataType())).getNestedType() == DataType.INT);
     }
 
     @Test

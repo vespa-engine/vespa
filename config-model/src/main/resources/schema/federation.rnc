@@ -2,7 +2,7 @@
 # Schema for federation configuration inside the searchchains section.
 
 GenericSource =
-    GenericSearchChainInQrservers &
+    SearchChainInFederation &
     FederationOptions?
 
 Source =
@@ -17,25 +17,10 @@ Provider =
         attribute type { xsd:string }? &
         attribute cluster { xsd:string }? &
 
-	# TODO Vespa 8 Remove yca concepts from services.xml syntax
-	attribute yca-application-id { xsd:string }? &
-	attribute yca-cache-ttl { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
-	attribute yca-cache-retry-wait { xsd:string { pattern = "\d+(\.\d*)?\s*m?s" } }? &
-	YcaProxy? &
         HttpProviderSearcherOptions &
 
         Source*
     }
-
-YcaProxy =
-    element yca-proxy {
-        GenericNode?
-    }
-
-GenericNode =
-    attribute host { xsd:string } &
-    attribute port { xsd:int }
-
 
 HttpProviderSearcherOptions =
     attribute cacheweight { xsd:float { minInclusive = "0" } }? &

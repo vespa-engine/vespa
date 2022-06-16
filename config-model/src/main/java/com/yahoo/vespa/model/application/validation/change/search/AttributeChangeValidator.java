@@ -114,7 +114,6 @@ public class AttributeChangeValidator {
                 validateAttributePredicate(id, current, next, Attribute::isFastAccess, "fast-access", result);
                 validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
                 validateAttributeProperty(id, current, next, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
-                validateAttributePredicate(id, current, next, Attribute::isHuge, "huge", result);
                 validateAttributePredicate(id, current, next, Attribute::isPaged, "paged", result);
                 validatePagedAttributeRemoval(current, next);
                 validateAttributeProperty(id, current, next, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);

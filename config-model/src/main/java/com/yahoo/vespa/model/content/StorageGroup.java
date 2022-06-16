@@ -6,6 +6,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -203,9 +204,8 @@ public class StorageGroup {
         }
 
         public StorageGroup buildRootGroup(DeployState deployState, RedundancyBuilder redundancyBuilder, ContentCluster owner) {
-            Optional<Integer> maxRedundancy = Optional.empty();
             if (owner.isHosted())
-                maxRedundancy = validateRedundancyAndGroups();
+                validateRedundancyAndGroups(deployState.zone().environment());
 
             Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
             Optional<ModelElement> nodes = getNodes(clusterElement);
@@ -222,8 +222,7 @@ public class StorageGroup {
                                         : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
 
             Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(),
-                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false),
-                                                            maxRedundancy);
+                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(false));
             owner.setRedundancy(redundancy);
             if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
                 storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
@@ -231,27 +230,24 @@ public class StorageGroup {
             return storageGroup;
         }
 
-        private Optional<Integer> validateRedundancyAndGroups() {
+        private void validateRedundancyAndGroups(Environment environment) {
             var redundancyElement = clusterElement.child("redundancy");
-            if (redundancyElement == null) return Optional.empty();
+            if (redundancyElement == null) return;
             long redundancy = redundancyElement.asLong();
 
             var nodesElement = clusterElement.child("nodes");
-            if (nodesElement == null) return Optional.empty();
+            if (nodesElement == null) return;
             var nodesSpec = NodesSpecification.from(nodesElement, context);
+
+            // Allow dev deployment of self-hosted app (w/o count attribute): absent count => 1 node
+            if (!nodesSpec.hasCountAttribute() && environment == Environment.dev) return;
 
             int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
 
-            if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify
-                context.getDeployLogger()
-                       .logApplicationPackage(Level.WARNING,
-                                              "Cluster '" + clusterElement.stringAttribute("id") + "' " +
-                                              "specifies redundancy " + redundancy + " but cannot be higher than " +
-                                              "the minimum nodes per group, which is " + minNodesPerGroup);
-                return Optional.of(minNodesPerGroup);
-            }
-            else {
-                return Optional.empty();
+            if (minNodesPerGroup < redundancy) {
+                throw new IllegalArgumentException("Cluster '" + clusterElement.stringAttribute("id") + "' " +
+                                                   "specifies redundancy " + redundancy + ", but it cannot be higher than " +
+                                                   "the minimum nodes per group, which is " + minNodesPerGroup);
             }
         }
 

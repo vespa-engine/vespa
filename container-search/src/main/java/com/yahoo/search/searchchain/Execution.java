@@ -41,10 +41,6 @@ import java.util.concurrent.Executors;
  */
 public class Execution extends com.yahoo.processing.execution.Execution {
 
-    /** @deprecated - applications should define their own summary class instead */
-    @Deprecated(since = "7", forRemoval = true)
-    public static final String ATTRIBUTEPREFETCH = "attributeprefetch";
-
     /**
      * The execution context is the search chain's current view of the indexes,
      * search chain registrys, etc. Searcher instances may set values here to
@@ -132,21 +128,6 @@ public class Execution extends com.yahoo.processing.execution.Execution {
             this.rendererRegistry = rendererRegistry;
             this.linguistics = linguistics;
             this.executor = Objects.requireNonNull(executor, "The executor cannot be null");
-        }
-
-        /** @deprecated pass schemaInfo */
-        @Deprecated
-        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
-                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics,
-                       Executor executor) {
-            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, executor);
-        }
-
-        /** @deprecated pass an executor */
-        @Deprecated // TODO: Remove on Vespa 8
-        public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
-                       SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics) {
-            this(searchChainRegistry, indexFacts, SchemaInfo.empty(), tokenRegistry, rendererRegistry, linguistics, Runnable::run);
         }
 
         /** Creates a Context instance where everything except the given arguments is empty. This is for unit testing.*/
@@ -513,7 +494,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
 
         // Transfer state between query and execution as the execution constructors does not do that completely
         query.getModel().setExecution(this);
-        trace().setTraceLevel(query.getTraceLevel());
+        trace().setTraceLevel(query.getTrace().getLevel());
 
         return (Result)super.process(query);
     }
@@ -523,7 +504,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         super.onInvoking(request,processor);
         final int traceDependencies = 6;
         Query query = (Query) request;
-        if (query.getTraceLevel() >= traceDependencies) {
+        if (query.getTrace().getLevel() >= traceDependencies) {
             query.trace(processor.getId() + " " + processor.getDependencies(), traceDependencies);
         }
     }
@@ -549,10 +530,9 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      *
      * @deprecated use fill(Result, String)
      * 
-     * TODO Remove on Vespa 9.
      * @param result the result to fill
      */
-    @Deprecated
+    @Deprecated  // TODO Remove on Vespa 9.
     public void fillAttributes(Result result) {
         fill(result, VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
     }

@@ -104,14 +104,15 @@ class LogReader {
             try {
                 in = Files.newInputStream(log);
             }
-            catch (NoSuchFileException e) {
+            catch (NoSuchFileException e) { // File may have been compressed since we found it.
                 if ( ! zipped)
                     try {
-                        in = Files.newInputStream(Paths.get(log.toString() + ".gz"));
+                        in = Files.newInputStream(Paths.get(log + ".gz"));
                         zipped = true;
                     }
                     catch (NoSuchFileException ignored) { }
             }
+
             this.reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
             this.from = from;
             this.to = to;
@@ -252,6 +253,7 @@ class LogReader {
                                 .toInstant()
                                 .plus(Duration.ofSeconds(1));
         }
+        // TODO: accept .zst files when the io.airlift library supports streamed input.
         throw new IllegalArgumentException("Unrecognized file pattern for file at '" + path + "'");
     }
 

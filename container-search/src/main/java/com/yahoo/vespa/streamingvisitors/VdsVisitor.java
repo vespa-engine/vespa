@@ -1,14 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.streamingvisitors;
 
+import com.yahoo.document.fieldset.AllFields;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.documentapi.AckToken;
 import com.yahoo.documentapi.VisitorControlHandler;
 import com.yahoo.documentapi.VisitorDataHandler;
 import com.yahoo.documentapi.VisitorParameters;
 import com.yahoo.documentapi.VisitorSession;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadType;
-import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentapi.messagebus.protocol.DocumentSummaryMessage;
 import com.yahoo.documentapi.messagebus.protocol.QueryResultMessage;
@@ -76,13 +75,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
 
     public interface VisitorSessionFactory {
         VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
-
-        /**
-         * @deprecated load types are deprecated
-         */
-        @Deprecated(forRemoval = true) // TODO: Remove on Vespa 8
-        @SuppressWarnings("removal") // TODO: Remove on Vespa 8
-        LoadTypeSet getLoadTypeSet();
     }
 
     public VdsVisitor(Query query, String searchCluster, Route route,
@@ -102,7 +94,7 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         } else if (log.isLoggable(Level.FINE)) {
             implicitLevel = 7;
         }
-        return Math.max(query.getTraceLevel(), implicitLevel);
+        return Math.max(query.getTrace().getLevel(), implicitLevel);
     }
 
     private static String createSelectionString(String documentType, String selection) {
@@ -125,7 +117,6 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         return query.properties().getString(streamingSelection);
     }
 
-    @SuppressWarnings("removal") // TODO: Remove on Vespa 8
     private void setVisitorParameters(String searchCluster, Route route, String documentType) {
         params.setDocumentSelection(createSelectionString(documentType, createQuerySelectionString()));
         params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
@@ -138,17 +129,9 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
         if (query.properties().getDouble(streamingTotimestamp) != null) {
             params.setToTimestamp(query.properties().getDouble(streamingTotimestamp).longValue());
         }
+        params.setFieldSet(AllFields.NAME); // Streaming searches need to look at _all_ fields by default.
         params.visitInconsistentBuckets(true);
         params.setPriority(DocumentProtocol.Priority.VERY_HIGH);
-
-        // TODO remove on Vespa 8
-        if (query.properties().getString(streamingLoadtype) != null) {
-            LoadType loadType = visitorSessionFactory.getLoadTypeSet().getNameMap().get(query.properties().getString(streamingLoadtype));
-            if (loadType != null) {
-                params.setLoadType(loadType);
-                params.setPriority(loadType.getPriority());
-            }
-        }
 
         if (query.properties().getString(streamingPriority) != null) {
             params.setPriority(DocumentProtocol.getPriorityByName(

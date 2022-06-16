@@ -136,8 +136,8 @@ public class DeploymentTester {
         triggerJobs();
         for (Run run : jobs.active()) {
             jobs.abort(run.id(), "DeploymentTester.abortAll");
-            runner.advance(jobs.run(run.id()).get());
-            assertTrue(jobs.run(run.id()).get().hasEnded());
+            runner.advance(jobs.run(run.id()));
+            assertTrue(jobs.run(run.id()).hasEnded());
         }
     }
 
@@ -146,7 +146,7 @@ public class DeploymentTester {
         int triggered;
         int triggeredTotal = 0;
         do {
-            triggered = (int) deploymentTrigger().triggerReadyJobs();
+            triggered = (int) deploymentTrigger().triggerReadyJobs().triggered();
             triggeredTotal += triggered;
         } while (triggered > 0);
         return triggeredTotal;

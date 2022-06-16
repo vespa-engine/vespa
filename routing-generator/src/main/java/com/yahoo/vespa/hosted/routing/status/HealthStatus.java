@@ -6,7 +6,6 @@ package com.yahoo.vespa.hosted.routing.status;
  *
 * @author oyving
 */
-// TODO(mpolden): Make this a part of the future Router interface
 public interface HealthStatus {
 
     /** Returns status of all servers */

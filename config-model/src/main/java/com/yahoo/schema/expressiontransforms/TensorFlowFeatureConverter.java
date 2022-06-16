@@ -23,9 +23,6 @@ import java.util.Map;
  */
 public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfileTransformContext>  {
 
-    /** A cache of imported models indexed by model path. This avoids importing the same model multiple times. */
-    private final Map<Path, ConvertedModel> convertedTensorFlowModels = new HashMap<>();
-
     public TensorFlowFeatureConverter() {}
 
     @Override
@@ -39,28 +36,10 @@ public class TensorFlowFeatureConverter extends ExpressionTransformer<RankProfil
     }
 
     private ExpressionNode transformFeature(ReferenceNode feature, RankProfileTransformContext context) {
-        if ( ! feature.getName().equals("tensorflow")) return feature;
-
-        try {
-            FeatureArguments arguments = asFeatureArguments(feature.getArguments());
-            ConvertedModel convertedModel =
-                    convertedTensorFlowModels.computeIfAbsent(arguments.path(),
-                                                              path -> ConvertedModel.fromSourceOrStore(path, false, context));
-            return convertedModel.expression(arguments, context);
+        if ( ! feature.getName().equals("tensorflow")) {
+            return feature;
         }
-        catch (IllegalArgumentException | UncheckedIOException e) {
-            throw new IllegalArgumentException("Could not use tensorflow model from " + feature, e);
-        }
-    }
-
-    private FeatureArguments asFeatureArguments(Arguments arguments) {
-        if (arguments.isEmpty())
-            throw new IllegalArgumentException("A tensorflow node must take an argument pointing to " +
-                                               "the tensorflow model directory under [application]/models");
-        if (arguments.expressions().size() > 3)
-            throw new IllegalArgumentException("A tensorflow feature can have at most 3 arguments");
-
-        return new FeatureArguments(arguments);
+        throw new IllegalArgumentException("Import of TensorFlow models is no longer supported");
     }
 
 }

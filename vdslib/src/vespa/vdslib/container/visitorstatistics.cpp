@@ -10,9 +10,7 @@ VisitorStatistics::VisitorStatistics()
       _documentsVisited(0),
       _bytesVisited(0),
       _documentsReturned(0),
-      _bytesReturned(0),
-      _secondPassDocumentsReturned(0),
-      _secondPassBytesReturned(0)
+      _bytesReturned(0)
 {
 }
 
@@ -24,8 +22,6 @@ VisitorStatistics::operator+(const VisitorStatistics& other) {
     vs.setBytesVisited(_bytesVisited + other._bytesVisited);
     vs.setDocumentsReturned(_documentsReturned + other._documentsReturned);
     vs.setBytesReturned(_bytesReturned + other._bytesReturned);
-    vs.setSecondPassDocumentsReturned(_secondPassDocumentsReturned + other._secondPassDocumentsReturned);
-    vs.setSecondPassBytesReturned(_secondPassBytesReturned + other._secondPassBytesReturned);
     return vs;
 }
 
@@ -37,8 +33,6 @@ VisitorStatistics::print(std::ostream& out, bool, const std::string& indent) con
     out << indent << "Bytes visited: " << _bytesVisited << "\n";
     out << indent << "Documents returned: " << _documentsReturned << "\n";
     out << indent << "Bytes returned: " << _bytesReturned << "\n";
-    out << indent << "Documents returned (2nd pass): " << _secondPassDocumentsReturned << "\n";
-    out << indent << "Bytes returned (2nd pass): " << _secondPassBytesReturned << "\n";
 }
 
 }

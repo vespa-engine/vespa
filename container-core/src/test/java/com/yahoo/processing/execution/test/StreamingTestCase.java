@@ -26,7 +26,7 @@ import static org.junit.Assert.assertEquals;
 public class StreamingTestCase {
 
     /** Tests adding a chain which is called every time new data is added to a data list */
-    @SuppressWarnings({"unchecked", "removal"})
+    @SuppressWarnings({"unchecked"})
     @Test
     public void testStreamingData() throws InterruptedException, ExecutionException, TimeoutException {
         // Set up
@@ -66,7 +66,7 @@ public class StreamingTestCase {
         assertEquals("We are getting data add events also the last time", 4, streamProcessor.invocationCount);
         assertEquals("New data is consumed", 4, response.data().asList().size());
 
-        response.data().complete().get(1000, TimeUnit.MILLISECONDS); // no-op here
+        response.data().completeFuture().get(1000, TimeUnit.MILLISECONDS); // no-op here
         assertEquals("d1",response.data().get(1).toString().toString());
         assertEquals("d2",response.data().get(2).toString().toString());
         assertEquals("d3",response.data().get(3).toString().toString());

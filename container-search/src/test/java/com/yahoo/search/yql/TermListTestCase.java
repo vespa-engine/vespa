@@ -26,7 +26,7 @@ public class TermListTestCase {
         builder.setParameter("myTerms", "{'1':1, '2':1, 3:1}");
         builder.setParameter("yql", "select * from sources * where weightedSet(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where weightedSet(user_id, {\"1\": 1, \"2\": 1, \"3\": 1});",
+        assertEquals("select * from sources * where weightedSet(user_id, {\"1\": 1, \"2\": 1, \"3\": 1})",
                      query.yqlRepresentation());
     }
 
@@ -36,7 +36,7 @@ public class TermListTestCase {
         builder.setParameter("myTerms", "{'1':1, 2:1, '3':1}");
         builder.setParameter("yql", "select * from sources * where wand(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where wand(user_id, {\"1\": 1, \"2\": 1, \"3\": 1});",
+        assertEquals("select * from sources * where wand(user_id, {\"1\": 1, \"2\": 1, \"3\": 1})",
                      query.yqlRepresentation());
     }
 
@@ -46,7 +46,7 @@ public class TermListTestCase {
         builder.setParameter("myTerms", "{'1':1, '2':1, '3':1}");
         builder.setParameter("yql", "select * from sources * where dotProduct(user_id, @myTerms)");
         Query query = searchAndAssertNoErrors(builder);
-        assertEquals("select * from sources * where dotProduct(user_id, {\"1\": 1, \"2\": 1, \"3\": 1});",
+        assertEquals("select * from sources * where dotProduct(user_id, {\"1\": 1, \"2\": 1, \"3\": 1})",
                      query.yqlRepresentation());
     }
 

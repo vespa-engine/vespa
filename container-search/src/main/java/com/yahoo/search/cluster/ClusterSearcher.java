@@ -162,7 +162,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
             if (timedOut(query))
                 return new Result(query, ErrorMessage.createTimeout("No time left for searching"));
 
-            if (query.getTraceLevel() >= 8)
+            if (query.getTrace().getLevel() >= 8)
                 query.trace("Trying " + connection, false, 8);
 
             result = robustSearch(query, execution, connection);
@@ -170,7 +170,7 @@ public abstract class ClusterSearcher<T> extends PingableSearcher implements Nod
             if ( ! shouldRetry(query, result))
                 return result;
 
-            if (query.getTraceLevel() >= 6)
+            if (query.getTrace().getLevel() >= 6)
                 query.trace("Error from connection " + connection + " : " + result.hits().getError(), false, 6);
 
             if (result.hits().getError().getCode() == Error.TIMEOUT.code)

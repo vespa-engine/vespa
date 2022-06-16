@@ -78,7 +78,7 @@ void ArrayAtLookup::onPrepareResult()
 bool ArrayAtLookup::onExecute() const
 {
     getArg().execute();
-    int64_t idx = getArg().getResult().getInteger();
+    int64_t idx = getArg().getResult()->getInteger();
     // get attribute data
     size_t numValues = _attribute->getValueCount(_docId);
     if (idx < 0) {

@@ -62,6 +62,12 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
     @Parameter(alias = "Import-Package")
     String importPackage;
 
+    // Spifly specific headers for java.util.ServiceLoader support in OSGi context. For internal use only.
+    @Parameter(alias = "SPI-Provider")
+    String spiProvider;
+    @Parameter(alias = "SPI-Consumer")
+    String spiConsumer;
+
     Map<String, String> generateManifestContent(
             Collection<Artifact> jarArtifactsToInclude,
             Map<String, ImportPackages.Import> calculatedImports,
@@ -90,7 +96,8 @@ abstract class AbstractGenerateOsgiManifestMojo extends AbstractMojo {
         addIfNotEmpty(ret, "Bundle-ClassPath", bundleClassPath(jarArtifactsToInclude));
         addIfNotEmpty(ret, "Import-Package", importPackage);
         addIfNotEmpty(ret, "Export-Package", exportPackage);
-
+        addIfNotEmpty(ret, "SPI-Provider", spiProvider);
+        addIfNotEmpty(ret, "SPI-Consumer", spiConsumer);
         return ret;
     }
 

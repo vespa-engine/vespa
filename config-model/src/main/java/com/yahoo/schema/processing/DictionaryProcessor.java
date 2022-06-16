@@ -19,9 +19,11 @@ import com.yahoo.vespa.model.container.search.QueryProfiles;
  * @author baldersheim
  */
 public class DictionaryProcessor extends Processor {
+
     public DictionaryProcessor(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
+
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : schema.allConcreteFields()) {
@@ -51,4 +53,5 @@ public class DictionaryProcessor extends Processor {
             }
         }
     }
+
 }

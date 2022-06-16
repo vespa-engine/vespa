@@ -5,12 +5,12 @@
   <parent>
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>parent</artifactId>
-    <version>7-SNAPSHOT</version>
+    <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>zookeeper-server-parent</artifactId>
   <packaging>pom</packaging>
-  <version>7-SNAPSHOT</version>
+  <version>8-SNAPSHOT</version>
   <modules>
     <module>zookeeper-server-common</module>
     <module>zookeeper-server</module>
@@ -20,6 +20,12 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>container-dev</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>security-utils</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

@@ -25,14 +25,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
-import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
-import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
 
@@ -690,22 +688,6 @@ public class RoutingPoliciesTest {
             assertSame(RoutingStatus.Value.in, policy.status().routingStatus().value());
         }
         tester.assertTargets(context.instanceId(), EndpointId.of("r0"), 0, zone1, zone2);
-    }
-
-    @Test
-    public void config_server_routing_policy() {
-        var tester = new RoutingPoliciesTester();
-        var app = SystemApplication.configServer.id();
-        RecordName name = RecordName.from("cfg.prod.us-west-1.test.vip");
-
-        tester.provisionLoadBalancers(1, app, zone1);
-        tester.routingPolicies().refresh(new DeploymentId(app, zone1), DeploymentSpec.empty);
-        new NameServiceDispatcher(tester.tester.controller(), Duration.ofSeconds(Integer.MAX_VALUE)).run();
-
-        List<Record> records = tester.controllerTester().nameService().findRecords(Record.Type.CNAME, name);
-        assertEquals(1, records.size());
-        assertEquals(RecordData.from("lb-0--hosted-vespa.zone-config-servers.default--prod.us-west-1."),
-                     records.get(0).data());
     }
 
     @Test

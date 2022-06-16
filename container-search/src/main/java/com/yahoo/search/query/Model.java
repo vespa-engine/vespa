@@ -86,7 +86,7 @@ public class Model implements Cloneable {
     private Locale locale = null;
     private QueryTree queryTree = null; // The query tree to execute. This is lazily created from the program
     private String defaultIndex = null;
-    private Query.Type type = Query.Type.ALL;
+    private Query.Type type = Query.Type.WEAKAND;
     private Query parent;
     private Set<String> sources = new LinkedHashSet<>();
     private Set<String> restrict = new LinkedHashSet<>();
@@ -248,7 +248,7 @@ public class Model implements Cloneable {
             try {
                 Parser parser = ParserFactory.newInstance(type, ParserEnvironment.fromExecutionContext(execution.context()));
                 queryTree = parser.parse(Parsable.fromQueryModel(this));
-                if (parent.getTraceLevel() >= 2)
+                if (parent.getTrace().getLevel() >= 2)
                     parent.trace("Query parsed to: " + parent.yqlRepresentation(), 2);
             }
             catch (IllegalArgumentException e) {

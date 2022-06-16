@@ -90,13 +90,13 @@ public class ModelsEvaluationHandler extends ThreadedHttpRequestHandler {
         Tensor result = evaluator.evaluate();
 
         Optional<String> format = property(request, "format.tensors");
-        if (format.isPresent() && format.get().equalsIgnoreCase("short")) {
-            return new Response(200, JsonFormat.encodeShortForm(result));
+        if (format.isPresent() && format.get().equalsIgnoreCase("long")) {
+            return new Response(200, JsonFormat.encode(result));
         }
         else if (format.isPresent() && format.get().equalsIgnoreCase("string")) {
             return new Response(200, result.toString().getBytes(StandardCharsets.UTF_8));
         }
-        return new Response(200, JsonFormat.encode(result));
+        return new Response(200, JsonFormat.encodeShortForm(result));
     }
 
     private HttpResponse listAllModels(HttpRequest request) {

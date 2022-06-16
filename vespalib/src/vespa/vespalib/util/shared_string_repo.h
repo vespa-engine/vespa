@@ -42,13 +42,14 @@ public:
     };
 
 private:
-    static constexpr uint32_t PART_BITS = 6;
+    static constexpr uint32_t PART_BITS = 8;
     static constexpr uint32_t NUM_PARTS = 1 << PART_BITS;
     static constexpr uint32_t PART_MASK = NUM_PARTS - 1;
-    static constexpr uint32_t FAST_DIGITS = 5;
-    static constexpr uint32_t FAST_ID_MAX = 99999;
+    static constexpr uint32_t FAST_DIGITS = 7;
+    static constexpr uint32_t FAST_ID_MAX = 9999999;
     static constexpr uint32_t ID_BIAS = (FAST_ID_MAX + 2);
     static constexpr size_t PART_LIMIT = (std::numeric_limits<uint32_t>::max() - ID_BIAS) / NUM_PARTS;
+    static const bool should_reclaim;
 
     struct AltKey {
         vespalib::stringref str;
@@ -132,19 +133,22 @@ private:
 
     public:
         Partition()
-            : _lock(), _entries(), _free(Entry::npos), _hash(128, Hash(), Equal(_entries))
+            : _lock(), _entries(), _free(Entry::npos), _hash(32, Hash(), Equal(_entries))
         {
-            make_entries(64);
+            make_entries(16);
         }
         ~Partition();
         void find_leaked_entries(size_t my_idx) const;
         Stats stats() const;
 
         uint32_t resolve(const AltKey &alt_key) {
+            bool count_refs = should_reclaim;
             std::lock_guard guard(_lock);
             auto pos = _hash.find(alt_key);
             if (pos != _hash.end()) {
-                _entries[pos->idx].add_ref();
+                if (count_refs) {
+                    _entries[pos->idx].add_ref();
+                }
                 return pos->idx;
             } else {
                 uint32_t idx = make_entry(alt_key);
@@ -232,7 +236,7 @@ private:
     }
 
     string_id copy(string_id id) {
-        if (id._id >= ID_BIAS) {
+        if ((id._id >= ID_BIAS) && should_reclaim) {
             uint32_t part = (id._id - ID_BIAS) & PART_MASK;
             uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
             _partitions[part].copy(local_idx);
@@ -241,7 +245,7 @@ private:
     }
 
     void reclaim(string_id id) {
-        if (id._id >= ID_BIAS) {
+        if ((id._id >= ID_BIAS) && should_reclaim) {
             uint32_t part = (id._id - ID_BIAS) & PART_MASK;
             uint32_t local_idx = (id._id - ID_BIAS) >> PART_BITS;
             _partitions[part].reclaim(local_idx);
@@ -251,6 +255,7 @@ private:
     static SharedStringRepo _repo;
 
 public:
+    static bool will_reclaim() { return should_reclaim; }
     static Stats stats();
 
     // A single stand-alone string handle with ownership

@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
 import java.util.List;
 import java.util.Objects;
@@ -87,11 +86,6 @@ public class RoutingPolicy {
 
     /** Returns the zone endpoints of this */
     public List<Endpoint> zoneEndpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
-        Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
-                                                            .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
-        if (infraEndpoint.isPresent()) {
-            return List.of(infraEndpoint.get());
-        }
         DeploymentId deployment = new DeploymentId(id.owner(), id.zone());
         return List.of(endpoint(routingMethod).target(id.cluster(), deployment).in(system));
     }

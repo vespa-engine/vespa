@@ -85,9 +85,6 @@
       "name": "RetriggerMaintainer"
     },
     {
-      "name": "SystemRoutingPolicyMaintainer"
-    },
-    {
       "name": "SystemUpgrader"
     },
     {

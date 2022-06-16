@@ -100,7 +100,7 @@ private:
 public:
     MockIndexLoader(int& index_value, FastOS_FileInterface& file)
         : _index_value(index_value),
-          _reader(file)
+          _reader(&file)
     {}
     bool load_next() override {
         _index_value = _reader.readHostOrder();

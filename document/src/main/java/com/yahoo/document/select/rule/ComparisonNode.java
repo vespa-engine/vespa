@@ -90,7 +90,6 @@ public class ComparisonNode implements ExpressionNode {
         return null;
     }
 
-    @SuppressWarnings("deprecation")
     private BucketSet compare(BucketIdFactory factory, IdNode id, LiteralNode literal, String operator) {
         String field = id.getField();
         Object value = literal.getValue();

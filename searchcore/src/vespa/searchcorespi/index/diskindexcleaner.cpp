@@ -6,6 +6,7 @@
 #include "index_disk_dir.h"
 #include <vespa/fastos/file.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <filesystem>
 #include <sstream>
 #include <vector>
 
@@ -65,7 +66,7 @@ uint32_t findLastFusionId(const string &base_dir,
 void removeDir(const string &dir) {
     LOG(debug, "Removing index dir '%s'", dir.c_str());
     invalidateIndex(dir);
-    vespalib::rmdir(dir, true);
+    std::filesystem::remove_all(std::filesystem::path(dir));
 }
 
 bool isOldIndex(const string &index, uint32_t last_fusion_id) {

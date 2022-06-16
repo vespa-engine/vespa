@@ -2,6 +2,7 @@
 
 #include "bm25_feature.h"
 #include "utils.h"
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
@@ -18,7 +19,9 @@ namespace search::features {
 using fef::AnyWrapper;
 using fef::Blueprint;
 using fef::FeatureExecutor;
+using fef::FeatureNameBuilder;
 using fef::FieldInfo;
+using fef::FieldType;
 using fef::ITermData;
 using fef::ITermFieldData;
 using fef::MatchDataDetails;
@@ -127,9 +130,14 @@ Bm25Blueprint::Bm25Blueprint()
 void
 Bm25Blueprint::visitDumpFeatures(const fef::IIndexEnvironment& env, fef::IDumpFeatureVisitor& visitor) const
 {
-    (void) env;
-    (void) visitor;
-    // TODO: Implement when feature is supported end-2-end with both memory and disk index.
+    for (uint32_t i = 0; i < env.getNumFields(); ++i) {
+        const auto* field = env.getField(i);
+        if (field->type() == FieldType::INDEX) {
+            FeatureNameBuilder fnb;
+            fnb.baseName(getBaseName()).parameter(field->name());
+            visitor.visitDumpFeature(fnb.buildName());
+        }
+    }
 }
 
 fef::Blueprint::UP

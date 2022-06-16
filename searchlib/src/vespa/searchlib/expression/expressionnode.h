@@ -37,7 +37,7 @@ public:
     DECLARE_ABSTRACT_EXPRESSIONNODE(ExpressionNode);
     using UP = std::unique_ptr<ExpressionNode>;
     using CP = vespalib::IdentifiablePtr<ExpressionNode>;
-    virtual const ResultNode & getResult() const = 0;
+    virtual const ResultNode * getResult() const = 0;
     bool execute() const { return onExecute(); }
     ExpressionNode & prepare(bool preserveAccurateTypes) { onPrepare(preserveAccurateTypes); return *this; }
     virtual ExpressionNode * clone() const = 0;
