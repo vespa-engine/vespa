@@ -239,7 +239,7 @@ public class DocumentUpdateJsonSerializer {
                     operationKey = "decrement";
                     break;
                 default:
-                    throw new RuntimeException(String.format("Unrecognized arithmetic operator '%s'", operator.name));
+                    throw new RuntimeException("Unrecognized arithmetic operator '%s'".formatted(operator.name));
             }
 
             wrapIOException(() -> generator.writeFieldName(operationKey));
