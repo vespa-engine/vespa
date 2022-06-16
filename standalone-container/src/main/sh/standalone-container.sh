@@ -167,11 +167,8 @@ StartCommand() {
     FixDataDirectory "$bundlecachedir"
     FixDataDirectory "$VESPA_HOME/var/crash"
 
-    # Note that the hardcoded memory Xmx=2048 migh be overridden by jvm_arguments,
-    # hence rendering get_jvm_hugepage_settings incorrect, but it is better than not.
-    # TODO Better way of extracting heap size arguments.
-    heap_min=128
-    heap_max=2048
+    heap_min=$(get_min_heap_mb "${jvm_arguments}" 128)
+    heap_max=$(get_max_heap_mb "${jvm_arguments}" 2048)
     java \
         -Xms${heap_min}m -Xmx${heap_max}m \
         -XX:+PreserveFramePointer \

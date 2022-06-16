@@ -158,6 +158,37 @@ get_jvm_hugepage_settings() {
     echo "$options"
 }
 
+get_heap_size() {
+    param=$1
+    args=$2
+    value=$3
+    for token in $args
+    do
+        [[ "$token" =~ ^"${param}"([0-9]+)(.)$ ]] || continue
+        size="${BASH_REMATCH[1]}"
+        unit="${BASH_REMATCH[2],,}" # lower-case
+        case "$unit" in
+            k) value=$(( $size / 1024 )) ;;
+            m) value="$size" ;;
+            g) value=$(( $size * 1024 )) ;;
+            *) echo "Warning: Invalid unit in '$token'" >&2 ;;
+        esac
+    done
+    echo "$value"
+}
+
+get_min_heap_mb() {
+    args=$1
+    size=$2
+    get_heap_size "-Xms" "$args" $size
+}
+
+get_max_heap_mb() {
+    args=$1
+    size=$2
+    get_heap_size "-Xmx" "$args" $size
+}
+
 populate_environment
 
 export LD_LIBRARY_PATH=$VESPA_HOME/lib64
