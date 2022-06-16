@@ -40,8 +40,8 @@ public class ConfigCacheKey {
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof ConfigCacheKey && key.equals(((ConfigCacheKey) o).getKey())
-                && defMd5.equals(((ConfigCacheKey)o).defMd5);
+        return o instanceof ConfigCacheKey c && key.equals(c.getKey())
+                && defMd5.equals(c.defMd5);
     }
 
     /**
