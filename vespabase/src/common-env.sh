@@ -111,8 +111,7 @@ prepend_path () {
 }
 
 add_valgrind_suppressions_file() {
-    if [ -f "$1" ]
-    then
+    if [ -f "$1" ] ; then
 	VESPA_VALGRIND_SUPPREESSIONS_OPT="$VESPA_VALGRIND_SUPPREESSIONS_OPT --suppressions=$1"
     fi
 }
@@ -130,18 +129,18 @@ optionally_reduce_base_frequency() {
 }
 
 get_thp_size_mb() {
-    thp_size=2
-    while read -r size
-    do
-        thp_size=$(($size / 1024 / 1024))
-        break
-    done < /sys/kernel/mm/transparent_hugepage/hpage_pmd_size
+    local thp_size=2
+    if [ -r /sys/kernel/mm/transparent_hugepage/hpage_pmd_size ]; then
+        local bytes
+        read -r bytes < /sys/kernel/mm/transparent_hugepage/hpage_pmd_size
+        thp_size=$((bytes / 1024 / 1024))
+    fi
     echo "$thp_size"
 }
 
 get_jvm_hugepage_settings() {
     local heap_mb="$1"
-    sz_mb=$(get_thp_size_mb)
+    local sz_mb=$(get_thp_size_mb)
     if (($sz_mb * 2 < $heap_mb)); then
         options=" -XX:+UseTransparentHugePages"
     fi
@@ -149,9 +148,9 @@ get_jvm_hugepage_settings() {
 }
 
 get_heap_size() {
-    param=$1
-    args=$2
-    value=$3
+    local param=$1
+    local args=$2
+    local value=$3
     for token in $args
     do
         [[ "$token" =~ ^"${param}"([0-9]+)(.)$ ]] || continue
