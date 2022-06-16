@@ -129,29 +129,19 @@ optionally_reduce_base_frequency() {
     fi
 }
 
-get_hugepage_size_mb() {
-    while read -r name size rest
+get_thp_size_mb() {
+    thp_size=2
+    while read -r size
     do
-        if [[ "$name" =~ ^Hugepagesize:$ ]]
-        then
-          hugepagesize="$size"
-          unit="${rest,,}"
-          break
-        fi
-    done < /proc/meminfo
-    if [[ "$unit" == "kb" ]]; then
-        hugepage_size_mb=$(($hugepagesize / 1024))
-    else
-        echo "Failed extracting hugepage size from /proc/meminfo. Unknown unit($unit)"
-        exit 1
-    fi
-    OUT=$hugepage_size_mb
+        thp_size=$(($size / 1024 / 1024))
+        break
+    done < /sys/kernel/mm/transparent_hugepage/hpage_pmd_size
+    echo "$thp_size"
 }
 
 get_jvm_hugepage_settings() {
     local heap_mb="$1"
-    get_hugepage_size_mb
-    sz_mb=$OUT
+    sz_mb=$(get_thp_size_mb)
     if (($sz_mb * 2 < $heap_mb)); then
         options=" -XX:+UseTransparentHugePages"
     fi
@@ -178,15 +168,11 @@ get_heap_size() {
 }
 
 get_min_heap_mb() {
-    args=$1
-    size=$2
-    get_heap_size "-Xms" "$args" $size
+    get_heap_size "-Xms" "$1" $2
 }
 
 get_max_heap_mb() {
-    args=$1
-    size=$2
-    get_heap_size "-Xmx" "$args" $size
+    get_heap_size "-Xmx" "$1" $2
 }
 
 populate_environment
