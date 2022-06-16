@@ -70,7 +70,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     @Test
     public void require_tenant_info() {
         var request = request("/billing/v2/tenant/" + tenant.value()).roles(tenantReader);
-        tester.assertResponse(request, "{\"tenant\":\"tenant1\",\"plan\":\"trial\",\"collection\":\"AUTO\"}");
+        tester.assertResponse(request, "{\"tenant\":\"tenant1\",\"plan\":{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},\"collection\":\"AUTO\"}");
     }
 
     @Test
@@ -135,5 +135,12 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                 .roles(Role.hostedAccountant())
                 .data("{\"from\": \"2020-05-01\",\"to\": \"2020-06-01\"}");
         tester.assertResponse(accountantRequest, "{\"message\":\"Created bill id-123\"}");
+    }
+
+    @Test
+    public void require_list_of_all_plans() {
+        var accountantRequest = request("/billing/v2/accountant/plans")
+                .roles(Role.hostedAccountant());
+        tester.assertResponse(accountantRequest, "{\"plans\":[{\"id\":\"trial\",\"name\":\"Free Trial - for testing purposes\"},{\"id\":\"paid\",\"name\":\"Paid Plan - for testing purposes\"},{\"id\":\"none\",\"name\":\"None Plan - for testing purposes\"}]}");
     }
 }
