@@ -300,7 +300,7 @@ public class QueryProperties extends Properties {
                 }
                 else if (key.size() == 3 && key.get(1).equals(Presentation.FORMAT)) {
                     if (key.last().equals(Presentation.TENSORS))
-                        query.getPresentation().setTensorShortForm(asString(value, ""));
+                        query.getPresentation().setTensorShortForm(asString(value, "short"));
                     else
                         throwIllegalParameter(key.last(), Presentation.FORMAT);
                 }

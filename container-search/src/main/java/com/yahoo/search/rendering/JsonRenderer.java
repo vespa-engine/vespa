@@ -124,13 +124,14 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private volatile JsonGenerator generator;
     private volatile FieldConsumer fieldConsumer;
     private volatile Deque<Integer> renderedChildren;
+
     static class FieldConsumerSettings {
         volatile boolean debugRendering = false;
         volatile boolean jsonDeepMaps = true;
         volatile boolean jsonWsets = true;
         volatile boolean jsonMapsAll = true;
         volatile boolean jsonWsetsAll = false;
-        volatile boolean tensorShortForm = false;
+        volatile boolean tensorShortForm = true;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
@@ -138,7 +139,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.jsonWsets = true;
             this.jsonMapsAll = true;
             this.jsonWsetsAll = true;
-            this.tensorShortForm = false;
+            this.tensorShortForm = true;
         }
         void getSettings(Query q) {
             if (q == null) {
@@ -155,6 +156,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.tensorShortForm = q.getPresentation().getTensorShortForm();
         }
     }
+
     private volatile FieldConsumerSettings fieldConsumerSettings;
     private volatile LongSupplier timeSource;
     private volatile OutputStream stream;
