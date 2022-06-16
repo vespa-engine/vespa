@@ -99,7 +99,6 @@ fixdir () {
 
 # BEGIN directory fixups
 
-fixdir ${VESPA_USER} ${VESPA_GROUP}   755  libexec/vespa/plugins/qrs
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/configserver
