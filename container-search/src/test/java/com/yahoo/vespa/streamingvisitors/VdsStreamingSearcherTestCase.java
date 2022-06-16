@@ -46,6 +46,7 @@ import static org.mockito.Mockito.when;
  * @author Ulf Carlin
  */
 public class VdsStreamingSearcherTestCase {
+
     public static final String USERDOC_ID_PREFIX = "id:namespace:mytype:n=1:userspecific";
     public static final String GROUPDOC_ID_PREFIX = "id:namespace:mytype:g=group1:userspecific";
 

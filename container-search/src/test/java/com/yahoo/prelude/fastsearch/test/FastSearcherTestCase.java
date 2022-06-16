@@ -214,7 +214,6 @@ public class FastSearcherTestCase {
 
     private DocumentdbInfoConfig documentdbInfoConfig(String schemaName) {
         var db = new DocumentdbInfoConfig.Documentdb.Builder().name(schemaName);
-        db.rankprofile(new DocumentdbInfoConfig.Documentdb.Rankprofile.Builder().name("default"));
         return new DocumentdbInfoConfig.Builder().documentdb(db).build();
     }
 

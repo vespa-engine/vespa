@@ -3,7 +3,10 @@ package com.yahoo.search.schema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -15,17 +18,17 @@ import java.util.Objects;
 public class DocumentSummary {
 
     private final String name;
-    private final List<Field> fields;
+    private final Map<String, Field> fields;
     private final boolean dynamic;
 
     private DocumentSummary(Builder builder) {
         this.name = builder.name;
-        this.fields = List.copyOf(builder.fields);
+        this.fields = Collections.unmodifiableMap(builder.fields);
         this.dynamic = builder.dynamic;
     }
 
     public String name() { return name; }
-    public List<Field> fields() { return fields; }
+    public Map<String, Field> fields() { return fields; }
 
     /** Returns whether this contains fields which are generated dynamically from the query and field data. */
     public boolean isDynamic() { return dynamic; }
@@ -54,15 +57,20 @@ public class DocumentSummary {
     public static class Builder {
 
         private final String name;
-        private final List<Field> fields = new ArrayList<>();
+        private final Map<String, Field> fields = new LinkedHashMap<>();
         private boolean dynamic;
 
         public Builder(String name) {
             this.name = name;
         }
 
+        public Builder addField(String name, String type) {
+            fields.put(name, new Field(name, type));
+            return this;
+        }
+
         public Builder add(Field field) {
-            fields.add(field);
+            fields.put(field.name(), field);
             return this;
         }
 
