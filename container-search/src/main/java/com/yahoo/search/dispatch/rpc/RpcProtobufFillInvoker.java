@@ -25,7 +25,6 @@ import com.yahoo.slime.BinaryFormat;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -80,11 +79,20 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         outstandingResponses = hitsByNode.size();
         responses = new LinkedBlockingQueue<>(outstandingResponses);
 
-        var builder = ProtobufSerialization.createDocsumRequestBuilder(result.getQuery(), serverId, summaryClass, summaryNeedsQuery);
-        for (Map.Entry<Integer, List<FastHit>> nodeHits : hitsByNode.entrySet()) {
-            var payload = ProtobufSerialization.serializeDocsumRequest(builder, nodeHits.getValue());
-            sendDocsumsRequest(nodeHits.getKey(), nodeHits.getValue(), payload, result);
+        var timeout = TimeoutHelper.calculateTimeout(result.getQuery());
+        if (timeout.timedOut()) {
+            // Need to produce an error response her in case of JVM system clock being adjusted
+            // Timeout mechanism relies on System.currentTimeMillis(), not System.nanoTime() :(
+            hitsByNode.forEach((nodeId, hits) ->
+                    receive(Client.ResponseOrError.fromTimeoutError("Timed out prior to sending docsum request to " + nodeId), hits));
+            return;
         }
+        var builder = ProtobufSerialization.createDocsumRequestBuilder(
+                result.getQuery(), serverId, summaryClass, summaryNeedsQuery, timeout.request());
+        hitsByNode.forEach((nodeId, hits) -> {
+            var payload = ProtobufSerialization.serializeDocsumRequest(builder, hits);
+            sendDocsumsRequest(nodeId, hits, payload, result, timeout.client());
+        });
     }
 
     @Override
@@ -123,7 +131,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     }
 
     /** Send a docsums request to a node. Responses will be added to the given receiver. */
-    private void sendDocsumsRequest(int nodeId, List<FastHit> hits, byte[] payload, Result result) {
+    private void sendDocsumsRequest(int nodeId, List<FastHit> hits, byte[] payload, Result result,
+                                    double clientTimeout) {
         Client.NodeConnection node = resourcePool.getConnection(nodeId);
         if (node == null) {
             String error = "Could not fill hits from unknown node " + nodeId;
@@ -134,10 +143,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
 
         Query query = result.getQuery();
-        double timeoutSeconds = ((double) query.getTimeLeft() - 3.0) / 1000.0;
         Compressor.Compression compressionResult = resourcePool.compress(query, payload);
-        node.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(), roe -> receive(roe, hits),
-                timeoutSeconds);
+        node.request(RPC_METHOD, compressionResult.type(), payload.length, compressionResult.data(),
+                roe -> receive(roe, hits), clientTimeout);
     }
 
     private void processResponses(Result result, String summaryClass) throws TimeoutException {
@@ -153,6 +161,9 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     throwTimeout();
                 }
                 var response = responseAndHits.getFirst();
+                if (response.timeout()) {
+                    throwTimeout();
+                }
                 var hitsContext = responseAndHits.getSecond();
                 skippedHits += processResponse(result, response, hitsContext, summaryClass);
                 outstandingResponses--;

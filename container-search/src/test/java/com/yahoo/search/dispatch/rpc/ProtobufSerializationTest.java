@@ -35,7 +35,7 @@ public class ProtobufSerializationTest {
                                          .setRequest("?query=test&ranking.features.query(tensor_1)=[1.200]")
                                          .build();
 
-        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9,"serverId");
+        SearchProtocol.SearchRequest request1 = ProtobufSerialization.convertFromQuery(query, 9,"serverId", 0.5);
         assertEquals(9, request1.getHits());
         assertEquals(0, request1.getRankPropertiesCount());
         assertEquals(0, request1.getTensorRankPropertiesCount());
@@ -47,7 +47,7 @@ public class ProtobufSerializationTest {
                      contentsOf(request1.getTensorFeatureOverrides(1).getValue()));
 
         query.prepare(); // calling prepare() moves "overrides" to "features" - content stays the same
-        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9,"serverId");
+        SearchProtocol.SearchRequest request2 = ProtobufSerialization.convertFromQuery(query, 9,"serverId", 0.5);
         assertEquals(9, request2.getHits());
         assertEquals(0, request2.getRankPropertiesCount());
         assertEquals(2, request2.getTensorRankPropertiesCount());
@@ -62,7 +62,7 @@ public class ProtobufSerializationTest {
     @Test
     public void testDocsumSerialization() {
         Query q = new Query("search/?query=test&hits=10&offset=3");
-        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", true);
+        var builder = ProtobufSerialization.createDocsumRequestBuilder(q, "server", "summary", true, 0.5);
         builder.setTimeout(0);
         var hit = new FastHit();
         hit.setGlobalId(new GlobalId(IdString.createIdString("id:ns:type::id")).getRawId());
