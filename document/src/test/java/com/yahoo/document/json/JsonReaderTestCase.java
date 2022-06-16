@@ -1757,7 +1757,7 @@ public class JsonReaderTestCase {
 
     @Test
     public void tensor_add_update_on_not_fully_specified_cell_throws() {
-        illegalTensorAddUpdate("Error in 'sparse_tensor': Missing a label for dimension y for tensor(x{},y{})",
+        illegalTensorAddUpdate("Error in 'sparse_tensor': Missing a label for dimension 'y' for tensor(x{},y{})",
                                "sparse_tensor",
                                "{",
                                "  'cells': [",
