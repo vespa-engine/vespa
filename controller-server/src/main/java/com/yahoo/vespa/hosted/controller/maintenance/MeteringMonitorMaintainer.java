@@ -7,6 +7,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 
 import java.time.Duration;
@@ -15,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Reports discrepancies between currently deployed applications and
@@ -27,7 +29,7 @@ public class MeteringMonitorMaintainer extends ControllerMaintainer {
     private final ResourceDatabaseClient resourceDatabaseClient;
     private final Metric metric;
 
-    protected static final String STALE_METERING_METRIC_NAME = "metering.is_stale";
+    protected static final String METERING_AGE_METRIC_NAME = "metering.age.seconds";
     private static final Logger logger = Logger.getLogger(MeteringMonitorMaintainer.class.getName());
 
     public MeteringMonitorMaintainer(Controller controller, Duration interval, ResourceDatabaseClient resourceDatabaseClient, Metric metric) {
@@ -38,46 +40,25 @@ public class MeteringMonitorMaintainer extends ControllerMaintainer {
 
     @Override
     protected double maintain() {
-        var lastSnapshots = resourceDatabaseClient.getLastSnapshots();
         var activeDeployments = activeDeployments();
-        var isStale = activeDeployments.entrySet()
-                .stream()
-                .anyMatch(entry -> {
-                    var applicationId = entry.getKey();
-                    var expectedZones = entry.getValue();
-                    var actualZones = lastSnapshots.getOrDefault(applicationId, Set.of());
-                    if (verifyProdZones(expectedZones, actualZones))
-                        return false;
-                    logger.warning(
-                            String.format("Metering discrepancy detected for application %s\n" +
-                                    "Active deployments: %s\n" +
-                                    "Last snapshots: %s\n" +
-                                    "This message can be ignored if last snapshots contains a recently deleted deployment",
-                                    applicationId.toFullString(), expectedZones, actualZones)
-                    );
-                    return true;
-                });
-
-        metric.set(STALE_METERING_METRIC_NAME, isStale ? 1 : 0, metric.createContext(Collections.emptyMap()));
+        var lastSnapshotTime = resourceDatabaseClient.getOldestSnapshotTimestamp(activeDeployments);
+        var age = controller().clock().instant().getEpochSecond() - lastSnapshotTime.getEpochSecond();
+        metric.set(METERING_AGE_METRIC_NAME, age, metric.createContext(Collections.emptyMap()));
         return 1;
     }
 
-    private Map<ApplicationId, Set<ZoneId>> activeDeployments() {
+    private Set<DeploymentId> activeDeployments() {
         return controller().applications().asList()
                 .stream()
                 .flatMap(app -> app.instances().values().stream())
-                .filter(instance -> instance.deployments().size() > 0)
-                .collect(Collectors.toMap(
-                        Instance::id,
-                        instance -> instance.deployments().keySet()
-                ));
+                .flatMap(this::instancesToDeployments)
+                .collect(Collectors.toSet());
     }
 
-    /**
-     * Verify prod zones, as test zones have fleeting deployment status
-     */
-    private boolean verifyProdZones(Set<ZoneId> expectedZones, Set<ZoneId> actualZones) {
-        return expectedZones.stream()
-                .noneMatch(zone -> zone.environment().isProduction() && !actualZones.contains(zone));
+    private Stream<DeploymentId> instancesToDeployments(Instance instance) {
+        return instance.deployments()
+                .keySet()
+                .stream()
+                .map(deployment -> new DeploymentId(instance.id(), deployment));
     }
 }

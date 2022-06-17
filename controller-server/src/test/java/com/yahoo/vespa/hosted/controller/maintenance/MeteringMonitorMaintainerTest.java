@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 
@@ -42,16 +43,9 @@ public class MeteringMonitorMaintainerTest {
     public void finds_stale_data() {
         deploymentTester.newDeploymentContext(applicationId).submit().deploy();
         maintainer.maintain();
-        assertEquals(1, metrics.getMetric(MeteringMonitorMaintainer.STALE_METERING_METRIC_NAME));
+        var now = tester.clock().instant().getEpochSecond();
+        var lastSnapshot = tester.serviceRegistry().resourceDatabase().getOldestSnapshotTimestamp(Set.of()).getEpochSecond();
+        assertEquals(now - lastSnapshot, metrics.getMetric(MeteringMonitorMaintainer.METERING_AGE_METRIC_NAME));
     }
 
-    @Test
-    public void fresh_metering_data() {
-        deploymentTester.newDeploymentContext(applicationId).submit().deploy();
-        database.setLastSnapshots(Map.of(
-                applicationId, Set.of(zone)
-        ));
-        maintainer.maintain();
-        assertEquals(0, metrics.getMetric(MeteringMonitorMaintainer.STALE_METERING_METRIC_NAME));
-    }
 }

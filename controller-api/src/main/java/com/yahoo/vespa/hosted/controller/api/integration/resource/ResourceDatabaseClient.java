@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.controller.api.integration.resource;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
@@ -30,7 +32,7 @@ public interface ResourceDatabaseClient {
 
     Set<TenantName> getTenants();
 
-    Map<ApplicationId, Set<ZoneId>> getLastSnapshots();
+    Instant getOldestSnapshotTimestamp(Set<DeploymentId> deployments);
 
     default List<ResourceUsage> getResourceSnapshotsForMonth(TenantName tenantName, YearMonth month) {
         return getResourceSnapshotsForPeriod(tenantName, getMonthStartTimeStamp(month), getMonthEndTimeStamp(month));

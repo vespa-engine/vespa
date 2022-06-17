@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 
@@ -129,8 +130,8 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     }
 
     @Override
-    public Map<ApplicationId, Set<ZoneId>> getLastSnapshots() {
-        return lastSnapshots;
+    public Instant getOldestSnapshotTimestamp(Set<DeploymentId> deployments) {
+        return Instant.ofEpochMilli(987654L);
     }
 
     public void setPlan(TenantName tenant, Plan plan) {
@@ -141,7 +142,4 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
         return hasRefreshedMaterializedView;
     }
 
-    public void setLastSnapshots(Map<ApplicationId, Set<ZoneId>> lastSnapshots) {
-        this.lastSnapshots = lastSnapshots;
-    }
 }
