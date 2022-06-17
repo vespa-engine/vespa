@@ -76,12 +76,13 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     @Test
     public void require_admin_for_update_plan() {
         var request = request("/billing/v2/tenant/" + tenant.value(), Request.Method.PATCH)
-                .data("{\"plan\": \"pay-as-you-go\"}");
+                .data("{\"plan\": \"paid\"}");
 
         var forbidden = request.roles(tenantReader);
         tester.assertResponse(forbidden, ACCESS_DENIED, 403);
         var success = request.roles(tenantAdmin);
-        tester.assertResponse(success, "{\"tenant\":\"tenant1\",\"plan\":\"pay-as-you-go\",\"collection\":\"AUTO\"}");
+        tester.assertResponse(success, """
+                {"tenant":"tenant1","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"collection":"AUTO"}""");
     }
 
     @Test
@@ -93,7 +94,8 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         tester.assertResponse(forbidden, "{\"error-code\":\"FORBIDDEN\",\"message\":\"Only accountant can change billing method\"}", 403);
 
         var success = request.roles(financeAdmin);
-        tester.assertResponse(success, "{\"tenant\":\"tenant1\",\"plan\":\"trial\",\"collection\":\"INVOICE\"}");
+        tester.assertResponse(success, """
+                {"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"collection":"INVOICE"}""");
     }
 
     @Test
@@ -108,7 +110,8 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         tester.assertResponse(listRequest, "{\"invoices\":[{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-28\",\"total\":\"123.00\",\"status\":\"OPEN\"}]}");
 
         var singleRequest = request("/billing/v2/tenant/" + tenant + "/bill/id-1").roles(tenantReader);
-        tester.assertResponse(singleRequest, "{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-28\",\"total\":\"123.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2020-05-23T00:00:00Z\",\"status\":\"OPEN\"}],\"items\":[{\"id\":\"some-id\",\"description\":\"description\",\"amount\":\"123.00\",\"plan\":\"some-plan\",\"planName\":\"Plan with id: some-plan\",\"cpu\":{},\"memory\":{},\"disk\":{}}]}");
+        tester.assertResponse(singleRequest, """
+                {"id":"id-1","from":"2020-05-23","to":"2020-05-28","total":"123.00","status":"OPEN","statusHistory":[{"at":"2020-05-23T00:00:00Z","status":"OPEN"}],"items":[{"id":"some-id","description":"description","amount":"123.00","plan":{"id":"paid","name":"Paid Plan - for testing purposes"},"cpu":{},"memory":{},"disk":{}}]}""");
     }
 
     @Test
@@ -120,7 +123,8 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
                 "}", 403);
 
         var accountantRequest = request("/billing/v2/accountant").roles(Role.hostedAccountant());
-        tester.assertResponse(accountantRequest, "{\"tenants\":[{\"tenant\":\"tenant1\",\"plan\":\"trial\",\"collection\":\"AUTO\",\"lastBill\":null,\"unbilled\":\"0.00\"}]}");
+        tester.assertResponse(accountantRequest, """
+                {"tenants":[{"tenant":"tenant1","plan":{"id":"trial","name":"Free Trial - for testing purposes"},"collection":"AUTO","lastBill":null,"unbilled":"0.00"}]}""");
     }
 
     @Test

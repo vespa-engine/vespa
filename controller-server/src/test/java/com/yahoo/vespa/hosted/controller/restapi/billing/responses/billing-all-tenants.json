@@ -15,8 +15,8 @@
             "id": "some-id",
             "description": "description",
             "amount": "123.00",
-            "plan": "some-plan",
-            "planName": "Plan with id: some-plan"
+            "plan": "paid",
+            "planName": "Plan with id: paid"
           }
         ]
       },
@@ -46,8 +46,8 @@
             "id": "some-id",
             "description": "description",
             "amount": "123.00",
-            "plan": "some-plan",
-            "planName": "Plan with id: some-plan"
+            "plan": "paid",
+            "planName": "Plan with id: paid"
           }
         ]
       },

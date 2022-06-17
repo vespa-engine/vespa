@@ -254,7 +254,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
                 "some-id",
                 "description",
                 new BigDecimal("123.00"),
-                "some-plan",
+                "paid",
                 "Smith",
                 addedAt
         );
