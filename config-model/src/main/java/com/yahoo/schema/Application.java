@@ -54,8 +54,6 @@ public class Application {
         if (validate)
             schemas.forEach(schema -> schema.validate(logger));
 
-        new TemporarySDTypeResolver(schemas, logger).process();
-
         List<SDDocumentType> sdocs = new ArrayList<>();
         sdocs.add(SDDocumentType.VESPA_DOCUMENT);
         for (Schema schema : schemas) {
@@ -63,9 +61,6 @@ public class Application {
                 sdocs.add(schema.getDocument());
             }
         }
-
-        var orderer = new SDDocumentTypeOrderer(sdocs, logger);
-        orderer.process();
 
         var resolver = new DocumentReferenceResolver(schemas);
         sdocs.forEach(resolver::resolveReferences);

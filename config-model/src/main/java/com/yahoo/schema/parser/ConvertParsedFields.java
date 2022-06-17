@@ -20,6 +20,7 @@ import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * Helper for converting ParsedField etc to SDField with settings
@@ -29,9 +30,11 @@ import java.util.Locale;
 public class ConvertParsedFields {
 
     private final TypeResolver context;
+    private final Map<String, SDDocumentType> structProxies;
     
-    ConvertParsedFields(TypeResolver context) {
+    ConvertParsedFields(TypeResolver context, Map<String, SDDocumentType> structProxies) {
         this.context = context;
+        this.structProxies = structProxies;
     }
 
     static void convertMatchSettings(SDField field, ParsedMatchSettings parsed) {
@@ -309,10 +312,11 @@ public class ConvertParsedFields {
                 structProxy.setFieldId(field, parsedField.idOverride());
             }
         }
-        for (String inherit : parsed.getInherited()) {
-            structProxy.inherit(new DataTypeName(inherit));                
+        for (var inherit: parsed.getResolvedInherits()) {
+            structProxy.inherit(structProxies.get(inherit.getFullName()));
         }
         structProxy.setStruct(context.resolveStruct(parsed));
+        structProxies.put(parsed.getFullName(), structProxy);
         return structProxy;
     }
 

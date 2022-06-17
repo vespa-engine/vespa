@@ -80,6 +80,7 @@ public class ConvertParsedSchemas {
     }
 
     private final Map<String, SDDocumentType> convertedDocuments = new LinkedHashMap<>();
+    private final Map<String, SDDocumentType> convertedStructs = new LinkedHashMap<>();
 
     public List<Schema> convertToSchemas() {
         typeConverter.convert(false);
@@ -187,7 +188,7 @@ public class ConvertParsedSchemas {
         }
         parsed.getRawAsBase64().ifPresent(value -> schema.enableRawAsBase64(value));
         var typeContext = typeConverter.makeContext(parsed.getDocument());
-        var fieldConverter = new ConvertParsedFields(typeContext);
+        var fieldConverter = new ConvertParsedFields(typeContext, convertedStructs);
         convertDocument(schema, parsed.getDocument(), fieldConverter);
         for (var field : parsed.getFields()) {
             fieldConverter.convertExtraField(schema, field);

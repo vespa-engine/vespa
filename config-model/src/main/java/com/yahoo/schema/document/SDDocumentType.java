@@ -167,16 +167,11 @@ public class SDDocumentType implements Cloneable {
     public DataTypeName getDocumentName() { return docType.getDataTypeName(); }
     public DocumentType getDocumentType() { return docType; }
 
-    public void inherit(DataTypeName name) {
-        inherit(new TemporarySDDocumentType(name));
-    }
-
     public void inherit(SDDocumentType type) {
         if (type == null) return;
         if (type.getName().equals(this.getName()))
             throw new IllegalArgumentException("Document type '" + getName() + "' cannot inherit itself");
-        if ( ! inheritedTypes.containsKey(type.getDocumentName()) ||
-             (inheritedTypes.get(type.getDocumentName()) instanceof TemporarySDDocumentType)) {
+        if (! inheritedTypes.containsKey(type.getDocumentName())) {
             inheritedTypes.put(type.getDocumentName(), type);
         }
     }
