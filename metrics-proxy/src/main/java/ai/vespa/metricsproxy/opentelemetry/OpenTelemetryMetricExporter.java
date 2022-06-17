@@ -12,7 +12,6 @@ import io.opentelemetry.sdk.metrics.data.MetricData;
 import io.opentelemetry.sdk.metrics.export.MetricExporter;
 import io.opentelemetry.sdk.metrics.internal.data.ImmutableDoublePointData;
 import io.opentelemetry.sdk.metrics.internal.data.ImmutableGaugeData;
-import io.opentelemetry.sdk.metrics.internal.data.ImmutableHistogramPointData;
 import io.opentelemetry.sdk.metrics.internal.data.ImmutableMetricData;
 import io.opentelemetry.sdk.resources.Resource;
 
@@ -75,6 +74,7 @@ public class OpenTelemetryMetricExporter extends AbstractComponent {
                     if (id.length() > 62) { // too long metric name
                         id = "xx" + k.id.substring(id.length()-60);
                     }
+                    // TODO: Support counter (and histogram)
                     var md = ImmutableMetricData.createDoubleGauge(resource,
                             InstrumentationScopeInfo.empty(),
                             id, "", "",

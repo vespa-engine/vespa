@@ -23,7 +23,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static ai.vespa.metricsproxy.metric.ExternalMetrics.extractConfigserverDimensions;
-import static ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor.applyProcessors;
 import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toList;
 
