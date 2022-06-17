@@ -206,7 +206,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             } else {
                 deployLogger.log(Level.INFO, "Services did not converge on new config generation " +
                         response.wantedGeneration + ", current generation: " + response.currentGeneration + ", will retry");
-                try { Thread.sleep(10_000); } catch (InterruptedException e) { /* ignore */ }
+                try { Thread.sleep(5_000); } catch (InterruptedException e) { /* ignore */ }
             }
         }
     }
