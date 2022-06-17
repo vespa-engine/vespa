@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -628,7 +629,7 @@ public class JobController {
 
         DeploymentId deploymentId = new DeploymentId(id, type.zone());
         Optional<Run> lastRun = last(id, type);
-        lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+        lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id(), Duration.ofMinutes(2)));
 
         long build = 1 + lastRun.map(run -> run.versions().targetRevision().number()).orElse(0L);
         RevisionId revisionId = RevisionId.forDevelopment(build, new JobId(id, type));
@@ -708,13 +709,17 @@ public class JobController {
     }
 
     /** Aborts a run and waits for it complete. */
-    private void abortAndWait(RunId id) {
+    private void abortAndWait(RunId id, Duration timeout) {
         abort(id, "replaced by new deployment");
         runner.get().accept(last(id.application(), id.type()).get());
 
+        Instant doom = controller.clock().instant().plus(timeout);
+        Duration sleep = Duration.ofMillis(100);
         while ( ! last(id.application(), id.type()).get().hasEnded()) {
+            if (controller.clock().instant().plus(sleep).isAfter(doom))
+                throw new UncheckedTimeoutException("timeout waiting for " + id + " to abort and finish");
             try {
-                Thread.sleep(100);
+                Thread.sleep(sleep.toMillis());
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
