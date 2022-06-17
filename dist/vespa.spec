@@ -78,6 +78,7 @@ BuildRequires: gcc-toolset-11-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %endif
 BuildRequires: maven
+BuildRequires: maven-openjdk17
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python36-devel
@@ -145,6 +146,7 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %if 0%{?el9}
 BuildRequires: cmake >= 3.20.2
 BuildRequires: maven
+BuildRequires: maven-openjdk17
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.11.0
@@ -162,6 +164,9 @@ BuildRequires: gmock-devel
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
+%if %{?fedora} >= 35 && ! 0%{?amzn2022}
+BuildRequires: maven-openjdk17
+%endif
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.11.0
