@@ -37,6 +37,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.objectweb.asm.ClassReader;
 
+/**
+ * @author iruotsolainen
+ */
 @Mojo(
     name = "abicheck",
     defaultPhase = LifecyclePhase.PACKAGE,
