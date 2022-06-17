@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 <browserconfig>
     <msapplication>
         <tile>
             <square150x150logo src="/icons/mstile-150x150.png"/>
-            <TileColor>#2b5797</TileColor>
+            <TileColor>#da532c</TileColor>
         </tile>
     </msapplication>
 </browserconfig>
