@@ -71,10 +71,6 @@ public class DeploymentTrigger {
         this.jobs = controller.jobController();
     }
 
-    public DeploymentSteps steps(DeploymentInstanceSpec spec) {
-        return new DeploymentSteps(spec, controller.zoneRegistry());
-    }
-
     /**
      * Propagates the latest revision to ready instances.
      * Ready instances are those whose dependencies are complete, and which aren't blocked, and, additionally,

@@ -12,6 +12,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -90,7 +91,6 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
@@ -141,6 +141,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -158,7 +159,9 @@ import java.util.stream.Stream;
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.Comparator.comparingInt;
 import static java.util.Map.Entry.comparingByKey;
+import static java.util.stream.Collectors.collectingAndThen;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -1528,10 +1531,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setString("instance", instance.name().value());
 
         if (deploymentSpec.instance(instance.name()).isPresent()) {
-            // Jobs sorted according to deployment spec
-            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                                                  .steps(deploymentSpec.requireInstance(instance.name()))
-                                                  .sortedJobs(status.instanceJobs(instance.name()).values());
+            // Jobs ordered according to deployment spec
+            Collection<JobStatus> jobStatus = status.instanceJobs(instance.name()).values();
 
             if ( ! instance.change().isEmpty())
                 toSlime(object.setObject("deploying"), instance.change(), status.application());
@@ -1559,8 +1560,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
         // Deployments sorted according to deployment spec
         List<Deployment> deployments = deploymentSpec.instance(instance.name())
-                                                     .map(spec -> new DeploymentSteps(spec, controller.zoneRegistry()))
-                                                     .map(steps -> steps.sortedDeployments(instance.deployments().values()))
+                                                     .map(spec -> sortedDeployments(instance.deployments().values(), spec))
                                                      .orElse(List.copyOf(instance.deployments().values()));
 
         Cursor deploymentsArray = object.setArray("deployments");
@@ -1613,10 +1613,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         application.projectId().ifPresent(id -> object.setLong("projectId", id));
 
         if (application.deploymentSpec().instance(instance.name()).isPresent()) {
-            // Jobs sorted according to deployment spec
-            List<JobStatus> jobStatus = controller.applications().deploymentTrigger()
-                                                  .steps(application.deploymentSpec().requireInstance(instance.name()))
-                                                  .sortedJobs(status.instanceJobs(instance.name()).values());
+            // Jobs ordered according to deployment spec
+            Collection<JobStatus> jobStatus = status.instanceJobs(instance.name()).values();
 
             if ( ! instance.change().isEmpty())
                 toSlime(object.setObject("deploying"), instance.change(), application);
@@ -1645,11 +1643,9 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         addRotationId(object, instance);
 
         // Deployments sorted according to deployment spec
-        List<Deployment> deployments =
-                application.deploymentSpec().instance(instance.name())
-                           .map(spec -> new DeploymentSteps(spec, controller.zoneRegistry()))
-                           .map(steps -> steps.sortedDeployments(instance.deployments().values()))
-                           .orElse(List.copyOf(instance.deployments().values()));
+        List<Deployment> deployments = application.deploymentSpec().instance(instance.name())
+                                                  .map(spec -> sortedDeployments(instance.deployments().values(), spec))
+                                                  .orElse(List.copyOf(instance.deployments().values()));
         Cursor instancesArray = object.setArray("instances");
         for (Deployment deployment : deployments) {
             Cursor deploymentObject = instancesArray.addObject();
@@ -3015,6 +3011,16 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             var credentials = accessControlRequests.credentials(id.tenant(), null /* not used on public */ , request.getJDiscRequest());
             controller.applications().createApplication(id, credentials);
         }
+    }
+
+    private List<Deployment> sortedDeployments(Collection<Deployment> deployments, DeploymentInstanceSpec spec) {
+        List<ZoneId> productionZones = spec.zones().stream()
+                                           .filter(z -> z.region().isPresent())
+                                           .map(z -> ZoneId.from(z.environment(), z.region().get()))
+                                           .toList();
+        return deployments.stream()
+                          .sorted(comparingInt(deployment -> productionZones.indexOf(deployment.zone())))
+                          .collect(collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
     }
 
 }

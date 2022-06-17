@@ -220,12 +220,11 @@ public class DeploymentContext {
                                 .allMatch(deployments -> deployments.stream()
                                                                     .allMatch(deployment -> deployment.version().equals(version))));
 
-        for (var spec : application().deploymentSpec().instances())
-            for (JobType type : new DeploymentSteps(spec, tester.controller().zoneRegistry()).productionJobs())
-                assertTrue(tester.configServer().nodeRepository()
-                                 .list(type.zone(),
-                                       NodeFilter.all().applications(applicationId.defaultInstance())).stream()
-                                 .allMatch(node -> node.currentVersion().equals(version)));
+        for (JobId job : deploymentStatus().jobs().matching(job -> job.id().type().isProduction()).mapToList(JobStatus::id))
+            assertTrue(tester.configServer().nodeRepository()
+                             .list(job.type().zone(),
+                                   NodeFilter.all().applications(job.application())).stream()
+                             .allMatch(node -> node.currentVersion().equals(version)));
 
         assertFalse(instance().change().hasTargets());
         return this;
