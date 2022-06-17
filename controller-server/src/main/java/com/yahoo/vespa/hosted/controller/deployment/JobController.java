@@ -41,6 +41,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
@@ -668,14 +669,6 @@ public class JobController {
     }
 
     private Version findTargetPlatform(ApplicationPackage applicationPackage, DeploymentId id, Optional<Instance> instance) {
-        Optional<Integer> major = applicationPackage.deploymentSpec().majorVersion();
-        if (major.isPresent())
-            return controller.applications().lastCompatibleVersion(major.get())
-                             .orElseThrow(() -> new IllegalArgumentException("major " + major.get() + " specified in deployment.xml, " +
-                                                                             "but no version on this major was found"));
-
-        VersionCompatibility compatibility = controller.applications().versionCompatibility(id.applicationId());
-
         // Prefer previous platform if possible. Candidates are all deployable, ascending, with existing version appended; then reversed.
         List<Version> versions = controller.readVersionStatus().deployableVersions().stream()
                                            .map(VespaVersion::versionNumber)
@@ -685,14 +678,33 @@ public class JobController {
                 .map(Deployment::version)
                 .ifPresent(versions::add);
 
+        if (versions.isEmpty())
+            throw new IllegalStateException("no deployable platform version found in the system");
+
+        VersionCompatibility compatibility = controller.applications().versionCompatibility(id.applicationId());
+        List<Version> compatibleVersions = new ArrayList<>();
         for (Version target : reversed(versions))
             if (applicationPackage.compileVersion().isEmpty() || compatibility.accept(target, applicationPackage.compileVersion().get()))
+                compatibleVersions.add(target);
+
+        if (compatibleVersions.isEmpty())
+            throw new IllegalArgumentException("no platforms are compatible with compile version " + applicationPackage.compileVersion().get());
+
+        Optional<Integer> major = applicationPackage.deploymentSpec().majorVersion();
+        List<Version> versionOnRightMajor = new ArrayList<>();
+        for (Version target : reversed(versions))
+            if (major.isEmpty() || major.get() == target.getMajor())
+                versionOnRightMajor.add(target);
+
+        if (versionOnRightMajor.isEmpty())
+            throw new IllegalArgumentException("no platforms were found for major version " + major.get() + " specified in deployment.xml");
+
+        for (Version target : compatibleVersions)
+            if (versionOnRightMajor.contains(target))
                 return target;
 
-        throw new IllegalArgumentException("no suitable platform version found" +
-                                           applicationPackage.compileVersion()
-                                                             .map(version -> " for package compiled against " + version)
-                                                             .orElse(""));
+        throw new IllegalArgumentException("no platforms on major version " + major.get() + " specified in deployment.xml " +
+                                           "are compatible with compile version " + applicationPackage.compileVersion().get());
     }
 
     /** Aborts a run and waits for it complete. */
