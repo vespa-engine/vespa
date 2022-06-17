@@ -27,8 +27,13 @@ public class ParsedStruct extends ParsedBlock {
 
     List<ParsedField> getFields() { return List.copyOf(fields.values()); }
     List<String> getInherited() { return List.copyOf(inherited); }
-    ParsedDocument getOwnerDoc() { return ownedBy; }
-    String getOwnerName() { return ownedBy.name(); }
+    ParsedDocument getOwnerDoc() {
+        verifyThat(ownedBy != null, "not owned by any document");
+        return ownedBy;
+    }
+    String getOwnerName() { return getOwnerDoc().name(); }
+    String getFullName() { return name() + " @ " + getOwnerName(); }
+
     List<ParsedStruct> getResolvedInherits() {
         assert(inherited.size() == resolvedInherits.size());
         return List.copyOf(resolvedInherits);
