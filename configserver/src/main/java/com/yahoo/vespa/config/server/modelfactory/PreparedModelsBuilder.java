@@ -8,6 +8,8 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
+import com.yahoo.config.model.api.ContainerEndpoint;
+import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.HostProvisioner;
 import com.yahoo.config.model.api.Model;
@@ -22,6 +24,8 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -31,6 +35,7 @@ import com.yahoo.vespa.config.server.host.HostValidator;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.flags.FlagSource;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -51,17 +57,24 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private static final Logger log = Logger.getLogger(PreparedModelsBuilder.class.getName());
 
     private final PermanentApplicationPackage permanentApplicationPackage;
+    private final FlagSource flagSource;
+    private final SecretStore secretStore;
+    private final List<ContainerEndpoint> containerEndpoints;
+    private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final HostValidator<ApplicationId> hostValidator;
     private final PrepareParams params;
     private final FileRegistry fileRegistry;
     private final Optional<ApplicationSet> currentActiveApplicationSet;
-    private final ModelContext.Properties properties;
     private final Curator curator;
     private final ExecutorService executor;
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  PermanentApplicationPackage permanentApplicationPackage,
+                                 FlagSource flagSource,
+                                 SecretStore secretStore,
+                                 List<ContainerEndpoint> containerEndpoints,
+                                 Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                                  ConfigDefinitionRepo configDefinitionRepo,
                                  FileRegistry fileRegistry,
                                  ExecutorService executor,
@@ -71,17 +84,20 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  DeployLogger deployLogger,
                                  PrepareParams params,
                                  Optional<ApplicationSet> currentActiveApplicationSet,
-                                 ModelContext.Properties properties,
-                                 ConfigserverConfig configserverConfig) {
-        super(modelFactoryRegistry, configserverConfig, properties.zone(), hostProvisionerProvider, deployLogger);
+                                 ConfigserverConfig configserverConfig,
+                                 Zone zone) {
+        super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, deployLogger);
         this.permanentApplicationPackage = permanentApplicationPackage;
+        this.flagSource = flagSource;
+        this.secretStore = secretStore;
+        this.containerEndpoints = containerEndpoints;
+        this.endpointCertificateSecrets = endpointCertificateSecrets;
         this.configDefinitionRepo = configDefinitionRepo;
         this.fileRegistry = fileRegistry;
         this.hostValidator = hostValidator;
         this.curator = curator;
         this.params = params;
         this.currentActiveApplicationSet = currentActiveApplicationSet;
-        this.properties = properties;
         this.executor = executor;
     }
 
@@ -107,7 +123,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 new ApplicationCuratorDatabase(applicationId.tenant(), curator).readReindexingStatus(applicationId),
                 createHostProvisioner(applicationPackage, provisioned),
                 provisioned,
-                properties,
+                createModelContextProperties(modelFactory.version(), applicationPackage),
                 getAppDir(applicationPackage),
                 wantedDockerImageRepository,
                 modelVersion,
@@ -118,7 +134,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     }
 
     private ModelCreateResult createAndValidateModel(ModelFactory modelFactory, ApplicationId applicationId, Version modelVersion, ModelContext modelContext) {
-        log.log(properties.zone().system().isCd() ? Level.INFO : Level.FINE,
+        log.log(zone().system().isCd() ? Level.INFO : Level.FINE,
                 () -> "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " +
                 modelOf(modelVersion).map(Model::version).map(Version::toFullString).orElse("non-existing"));
         ValidationParameters validationParameters =
@@ -139,7 +155,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private HostProvisioner createHostProvisioner(ApplicationPackage applicationPackage, Provisioned provisioned) {
         HostProvisioner defaultHostProvisioner = DeployState.getDefaultModelHostProvisioner(applicationPackage);
         // Note: nodeRepositoryProvisioner will always be present when hosted is true
-        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(properties.applicationId(), provisioned);
+        Optional<HostProvisioner> nodeRepositoryProvisioner = createNodeRepositoryProvisioner(params.getApplicationId(), provisioned);
         Optional<AllocatedHosts> allocatedHosts = applicationPackage.getAllocatedHosts();
 
         if (allocatedHosts.isEmpty()) return nodeRepositoryProvisioner.orElse(defaultHostProvisioner);
@@ -182,6 +198,25 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
         } while (Instant.now().isBefore(end));
 
         throw exception;
+    }
+
+    private ModelContext.Properties createModelContextProperties(Version modelVersion,
+                                                                 ApplicationPackage applicationPackage) {
+        return new ModelContextImpl.Properties(params.getApplicationId(),
+                                               modelVersion,
+                                               configserverConfig,
+                                               zone(),
+                                               Set.copyOf(containerEndpoints),
+                                               params.isBootstrap(),
+                                               currentActiveApplicationSet.isEmpty(),
+                                               LegacyFlags.from(applicationPackage, flagSource),
+                                               endpointCertificateSecrets,
+                                               params.athenzDomain(),
+                                               params.quota(),
+                                               params.tenantSecretStores(),
+                                               secretStore,
+                                               params.operatorCertificates(),
+                                               params.cloudAccount());
     }
 
     /** The result of preparing a single model version */

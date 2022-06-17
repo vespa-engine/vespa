@@ -380,7 +380,7 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<CloudAccount> cloudAccount;
 
         public Properties(ApplicationId applicationId,
-                          Version nodeVespaVersion,
+                          Version modelVersion,
                           ConfigserverConfig configserverConfig,
                           Zone zone,
                           Set<ContainerEndpoint> endpoints,
@@ -394,7 +394,7 @@ public class ModelContextImpl implements ModelContext {
                           SecretStore secretStore,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount) {
-            this.featureFlags = new FeatureFlags(flagSource, applicationId, nodeVespaVersion);
+            this.featureFlags = new FeatureFlags(flagSource, applicationId, modelVersion);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
             this.configServerSpecs = fromConfig(configserverConfig);
