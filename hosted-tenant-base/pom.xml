@@ -37,7 +37,7 @@
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <!-- NOTE: this must not be overriden by users, and must be in sync with junit version specified in 'tenant-cd-api' -->
-        <vespa.junit.version>5.8.1</junit.version>
+        <vespa.junit.version>5.8.1</vespa.junit.version>
         <test.categories>!integration</test.categories>
 
         <!-- To allow specialized base pom to include additional "test provided" dependencies -->
