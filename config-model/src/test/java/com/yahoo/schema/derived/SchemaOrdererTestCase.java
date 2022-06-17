@@ -75,6 +75,7 @@ public class SchemaOrdererTestCase extends AbstractSchemaTestCase {
     }
 
     private static void assertOrder(List<String> expectedSearchOrder, List<String> inputNames) {
+        inputNames.sort((a, b) -> a.compareTo(b));
         Map<String, Schema> schemas = createSchemas();
         List<Schema> inputSchemas = inputNames.stream()
                                               .map(schemas::get)
