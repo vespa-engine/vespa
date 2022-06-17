@@ -20,7 +20,6 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Instant;
@@ -88,15 +87,14 @@ public class ApplicationPackageValidator {
     /** Verify that each of the production zones listed in the deployment spec exist in this system */
     private void validateSteps(DeploymentSpec deploymentSpec) {
         for (var spec : deploymentSpec.instances()) {
-            new DeploymentSteps(spec, controller.zoneRegistry()).jobs();
-            spec.zones().stream()
-                .filter(zone -> zone.environment() == Environment.prod)
-                .forEach(zone -> {
-                    if ( ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(),
-                                                                         zone.region().orElseThrow()))) {
-                        throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
-                    }
-                });
+            for (var zone : spec.zones()) {
+                if (zone.environment().isManuallyDeployed())
+                    throw new IllegalArgumentException("region must be one with automated deployments, but got: " + zone.environment());
+
+                if (     zone.environment() == Environment.prod
+                    && ! controller.zoneRegistry().hasZone(ZoneId.from(zone.environment(), zone.region().orElseThrow())))
+                    throw new IllegalArgumentException("Zone " + zone + " in deployment spec was not found in this system!");
+            }
         }
     }
 

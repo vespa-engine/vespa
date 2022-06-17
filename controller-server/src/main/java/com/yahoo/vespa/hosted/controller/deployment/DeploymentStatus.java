@@ -14,6 +14,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.stream.CustomCollectors;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -76,6 +77,7 @@ public class DeploymentStatus {
     private final VersionStatus versionStatus;
     private final Version systemVersion;
     private final Function<InstanceName, VersionCompatibility> versionCompatibility;
+    private final ZoneRegistry zones;
     private final Instant now;
     private final Map<JobId, StepStatus> jobSteps;
     private final List<StepStatus> allSteps;
@@ -83,6 +85,7 @@ public class DeploymentStatus {
     public DeploymentStatus(Application application, Function<JobId, JobStatus> allJobs, ZoneRegistry zones, VersionStatus versionStatus,
                             Version systemVersion, Function<InstanceName, VersionCompatibility> versionCompatibility, Instant now) {
         this.application = requireNonNull(application);
+        this.zones = zones;
         this.systemTest = JobType.systemTest(zones);
         this.stagingTest = JobType.stagingTest(zones);
         this.versionStatus = requireNonNull(versionStatus);
@@ -148,8 +151,7 @@ public class DeploymentStatus {
     public Map<JobType, JobStatus> instanceJobs(InstanceName instance) {
         return allJobs.asList().stream()
                       .filter(job -> job.id().application().equals(application.id().instance(instance)))
-                      .collect(Collectors.toUnmodifiableMap(job -> job.id().type(),
-                                                            Function.identity()));
+                      .collect(CustomCollectors.toLinkedMap(job -> job.id().type(), Function.identity()));
     }
 
     /** Filterable job status lists for each instance of this application. */
