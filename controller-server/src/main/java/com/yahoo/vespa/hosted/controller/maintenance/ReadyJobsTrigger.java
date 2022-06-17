@@ -20,7 +20,8 @@ public class ReadyJobsTrigger extends ControllerMaintainer {
     @Override
     public double maintain() {
         TriggerResult result = controller().applications().deploymentTrigger().triggerReadyJobs();
-        return result.triggered() * 1.0f / (result.triggered() + result.failed());
+        long total = result.triggered() + result.failed();
+        return total == 0 ? 1 : (double) result.triggered() / (result.triggered() + result.failed());
     }
 
 }
