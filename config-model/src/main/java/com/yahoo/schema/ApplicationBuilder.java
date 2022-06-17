@@ -134,8 +134,9 @@ public class ApplicationBuilder {
         this.documentsOnly = documentsOnly;
         var list = new ArrayList<>(applicationPackage.getSchemas());
         list.sort((a, b) -> a.getName().compareTo(b.getName()));
-        for (NamedReader reader : applicationPackage.getSchemas())
+        for (NamedReader reader : list) {
             addSchema(reader);
+        }
     }
 
     /**
