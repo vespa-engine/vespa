@@ -402,6 +402,7 @@ public:
     // mapping from dimension name to verbatim label or child index:
     using Spec = std::map<vespalib::string, LabelOrChildIndex>;
     Spec make_spec() const;
+    const TensorFunction &param() const { return _param.get(); }
     const ValueType &param_type() const { return _param.get().result_type(); }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
