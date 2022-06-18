@@ -27,7 +27,7 @@ public class LogRetriever {
         } catch (IOException e) {
             // It takes some time before nodes are up after first-time deployment, return empty log for up to 1 minute
             // if getting logs fail
-            if (deployTime.isPresent() && Instant.now().isAfter(deployTime.get().minus(Duration.ofMinutes(1))))
+            if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(1))))
                 return new HttpResponse(200) {
                     @Override
                     public void render(OutputStream outputStream) throws IOException {
