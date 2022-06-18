@@ -7,6 +7,8 @@ import com.yahoo.vespa.config.server.http.LogRetriever;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Optional;
 
 /**
  * @author olaa
@@ -14,21 +16,14 @@ import java.nio.charset.StandardCharsets;
 public class MockLogRetriever extends LogRetriever {
 
     @Override
-    public HttpResponse getLogs(String logServerUri) {
-        return new MockHttpResponse();
-    }
+    public HttpResponse getLogs(String logServerUri, Optional<Instant>deployTime ) {
+        return new HttpResponse(200) {
+            @Override
+            public void render(OutputStream outputStream) throws IOException {
+                outputStream.write("log line".getBytes(StandardCharsets.UTF_8));
+            }
 
-    private static class MockHttpResponse extends HttpResponse {
-
-        private MockHttpResponse() {
-            super(200);
-        }
-
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            outputStream.write("log line".getBytes(StandardCharsets.UTF_8));
-        }
-
+        };
     }
 
 }

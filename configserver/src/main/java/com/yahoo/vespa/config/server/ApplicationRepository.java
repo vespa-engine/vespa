@@ -750,7 +750,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, String apiParams) {
         String logServerURI = getLogServerURI(applicationId, hostname) + apiParams;
-        return logRetriever.getLogs(logServerURI);
+        return logRetriever.getLogs(logServerURI, lastDeployTime(applicationId));
     }
 
     // ---------------- Methods to do call against tester containers in hosted ------------------------------
