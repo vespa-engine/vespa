@@ -24,7 +24,7 @@ public class ServerCache {
     private final ConfigDefinitionRepo builtinConfigDefinitions;
     private final ConfigDefinitionRepo userConfigDefinitions;
 
-    // NOTE: The reason we do a double mapping here is to de-dupe configs that have the same md5.
+    // NOTE: The reason we do a double mapping here is to de-dupe configs that have the same checksum.
     private final Map<ConfigCacheKey, PayloadChecksum> checksums = new ConcurrentHashMap<>();
     private final Map<PayloadChecksum, ConfigResponse> checksumToConfig = new ConcurrentHashMap<>();
     private final Object [] stripedLocks = new Object[113];
