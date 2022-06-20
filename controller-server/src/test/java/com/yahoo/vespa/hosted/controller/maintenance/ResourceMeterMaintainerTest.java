@@ -121,15 +121,6 @@ public class ResourceMeterMaintainerTest {
         assertEquals(lastRefreshTime + millisAdvanced, tester.curator().readMeteringRefreshTime());
     }
 
-    @Test
-    public void scaling_events_report() {
-        tester.createTenant("tenant1");
-        tester.createApplication("tenant1", "app1", "default");
-
-        setUpZones();
-        maintainer.maintain();
-    }
-
     private void setUpZones() {
         ZoneApiMock zone1 = ZoneApiMock.newBuilder().withId("prod.region-2").build();
         ZoneApiMock zone2 = ZoneApiMock.newBuilder().withId("test.region-3").build();
