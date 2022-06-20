@@ -103,11 +103,11 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     public void createProviderResourceGroup(AthenzDomain tenantDomain, AthenzIdentity providerService, String resourceGroup,
                                             Set<RoleAction> roleActions, OAuthCredentials oAuthCredentials) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/provDomain/%s/provService/%s/resourceGroup/%s", tenantDomain.getName(), providerService.getDomainName(), providerService.getName(), resourceGroup));
-        HttpUriRequest request = RequestBuilder.put()
+        RequestBuilder builder = RequestBuilder.put()
                 .setUri(uri)
-                .addHeader(createCookieHeader(oAuthCredentials))
-                .setEntity(toJsonStringEntity(new ResourceGroupRolesEntity(providerService, tenantDomain, roleActions, resourceGroup)))
-                .build();
+                .setEntity(toJsonStringEntity(new ResourceGroupRolesEntity(providerService, tenantDomain, roleActions, resourceGroup)));
+        if (oAuthCredentials != null) builder.addHeader(createCookieHeader(oAuthCredentials));
+        HttpUriRequest request = builder.build();
         execute(request, response -> readEntity(response, Void.class)); // Note: The ZMS API will actually return a json object that is similar to ProviderResourceGroupRolesRequestEntity
     }
 
