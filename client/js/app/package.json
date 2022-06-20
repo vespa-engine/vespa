@@ -14,6 +14,8 @@
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@mantine/core": "^4",
+    "@mantine/hooks": "^4",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^1",
