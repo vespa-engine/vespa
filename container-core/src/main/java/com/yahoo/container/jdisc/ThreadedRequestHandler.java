@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 
 /**
  * A request handler which assigns a worker thread to handle each request.
- * This is mean to be subclasses by handlers who does work by executing each
+ * This is meant to be subclassed by handlers who do work by executing each
  * request in a separate thread.
  * <p>
  * Note that this means that subclass handlers are synchronous - the request io can

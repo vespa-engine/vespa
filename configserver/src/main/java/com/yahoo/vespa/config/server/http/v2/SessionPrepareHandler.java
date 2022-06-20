@@ -53,11 +53,6 @@ public class SessionPrepareHandler extends SessionHandler {
         return new SessionPrepareResponse(tenant.getName(), request, sessionId);
     }
 
-    @Override
-    public Duration getTimeout() {
-        return zookeeperBarrierTimeout.plus(Duration.ofSeconds(10));
-    }
-
     private Tenant getExistingTenant(HttpRequest request) {
         TenantName tenantName = Utils.getTenantNameFromSessionRequest(request);
         Utils.checkThatTenantExists(tenantRepository, tenantName);
