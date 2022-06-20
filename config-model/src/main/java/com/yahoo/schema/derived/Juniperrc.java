@@ -15,20 +15,22 @@ import java.util.Set;
  */
 public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
 
-    // List of all fields that should be bolded.
-    private Set<String> boldingFields = new java.util.LinkedHashSet<>();
+    private static final int Mb = 1024 * 1024;
+
+    /** List of all fields that should be bolded. */
+    private final Set<String> boldingFields = new java.util.LinkedHashSet<>();
 
     /**
-     * Constructs a new juniper rc instance for a given search object. This will derive the configuration automatically,
+     * Constructs a new juniper rc instance for a given search object.
+     * This will derive the configuration automatically,
      * so there is no need to call {@link #derive(Schema)}.
      *
-     * @param schema The search model to use for deriving.
+     * @param schema the search model to use for deriving
      */
     public Juniperrc(Schema schema) {
         derive(schema);
     }
 
-    // Inherit doc from Derived.
     @Override
     protected void derive(Schema schema) {
         super.derive(schema);
@@ -39,11 +41,8 @@ public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
         }
     }
 
-    // Inherit doc from Derived.
     @Override
-    protected String getDerivedName() {
-        return "juniperrc";
-    }
+    protected String getDerivedName() { return "juniperrc"; }
 
     @Override
     public void getConfig(JuniperrcConfig.Builder builder) {
@@ -52,11 +51,12 @@ public class Juniperrc extends Derived implements JuniperrcConfig.Producer {
             for (String name : boldingFields) {
                 builder.override(new JuniperrcConfig.Override.Builder()
                     .fieldname(name)
-                    .length(65536)
+                    .length(64*Mb)
                     .max_matches(1)
                     .min_length(8192)
-                    .surround_max(65536));
+                    .surround_max(64*Mb));
             }
         }
     }
+
 }
