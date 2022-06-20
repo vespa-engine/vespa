@@ -77,6 +77,10 @@ findhost
 [ "$VESPA_HOME" ] || { echo "Missing VESPA_HOME variable" 1>&2; exit 1; }
 if [ "$VESPA_USER" = "" ]; then
     VESPA_USER=$(id -run)
+else
+    if [ "$VESPA_GROUP" = "" ]; then
+	VESPA_GROUP=$(id -gn $VESPA_USER)
+    fi
 fi
 if [ "$VESPA_GROUP" = "" ]; then
     VESPA_GROUP=$(id -rgn)
