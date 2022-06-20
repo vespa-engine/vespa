@@ -574,25 +574,6 @@ public class DynamicProvisioningMaintainerTest {
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
     }
 
-    @Test
-    public void deprovision_parked_node_with_allocation() {
-        var tester = new DynamicProvisioningTester();
-        tester.hostProvisioner.with(Behaviour.failProvisioning);
-        Node host4 = tester.addNode("host4", Optional.empty(), NodeType.host, Node.State.parked);
-        Node host41 = tester.addNode("host4-1", Optional.of("host4"), NodeType.tenant, Node.State.parked, DynamicProvisioningTester.tenantApp);
-        tester.nodeRepository.nodes().deprovision("host4", Agent.operator, Instant.now());
-
-        assertEquals(Optional.of(true), tester.nodeRepository.nodes().node("host4").map(n -> n.status().wantToDeprovision()));
-        assertEquals(Optional.of(Node.State.parked), tester.nodeRepository.nodes().node("host4").map(Node::state));
-        assertEquals(Optional.of(true), tester.nodeRepository.nodes().node("host4-1").map(n -> n.status().wantToDeprovision()));
-        assertEquals(Optional.of(Node.State.parked), tester.nodeRepository.nodes().node("host4-1").map(Node::state));
-
-        tester.maintainer.maintain();
-
-        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node("host4"));
-        assertEquals(Optional.empty(), tester.nodeRepository.nodes().node("host4-1"));
-    }
-
     private void assertCfghost3IsActive(DynamicProvisioningTester tester) {
         assertEquals(5, tester.nodeRepository.nodes().list(Node.State.active).size());
         assertEquals(3, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.confighost).size());
