@@ -168,8 +168,8 @@ TEST("require that Unaligned wrapper works as expected") {
     Data data;
     EXPECT_EQUAL(sizeof(Unaligned<uint32_t>), sizeof(uint32_t));
     EXPECT_EQUAL(alignof(Unaligned<uint32_t>), 1u);
-    Unaligned<uint32_t> *arr = &Unaligned<uint32_t>::at(data.get(0));
-    const Unaligned<uint32_t> *carr = &Unaligned<uint32_t>::at(data.cget(0));
+    Unaligned<uint32_t> *arr = Unaligned<uint32_t>::ptr(data.get(0));
+    const Unaligned<uint32_t> *carr = Unaligned<uint32_t>::ptr(data.cget(0));
     Unaligned<uint32_t>::at(data.get(0)).write(123);
     Unaligned<uint32_t>::at(data.get(1)) = 456;
     arr[2] = 789;
