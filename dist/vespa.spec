@@ -725,6 +725,7 @@ fi
 %exclude %{_prefix}/bin/vespa-fbench
 %exclude %{_prefix}/bin/vespa-feeder
 %exclude %{_prefix}/bin/vespa-get
+%exclude %{_prefix}/bin/vespa-jvm-dumper
 %exclude %{_prefix}/bin/vespa-logfmt
 %exclude %{_prefix}/bin/vespa-query-profile-dump-tool
 %exclude %{_prefix}/bin/vespa-stat
@@ -779,6 +780,7 @@ fi
 %{_prefix}/libexec
 %exclude %{_prefix}/libexec/vespa_ann_benchmark
 %exclude %{_prefix}/libexec/vespa/common-env.sh
+%exclude %{_prefix}/libexec/vespa/find-pid
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
 %exclude %{_prefix}/libexec/vespa/vespa-curl-wrapper
