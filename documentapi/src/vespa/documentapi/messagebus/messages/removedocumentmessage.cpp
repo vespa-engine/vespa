@@ -2,6 +2,7 @@
 #include "removedocumentmessage.h"
 #include "removedocumentreply.h"
 #include <vespa/documentapi/messagebus/documentprotocol.h>
+#include <vespa/vespalib/util/memory.h>
 
 namespace documentapi {
 
@@ -35,7 +36,7 @@ RemoveDocumentMessage::hasSequenceId() const
 uint64_t
 RemoveDocumentMessage::getSequenceId() const
 {
-    return *reinterpret_cast<const uint64_t*>(_documentId.getGlobalId().get());
+    return vespalib::Unaligned<uint64_t>::at(_documentId.getGlobalId().get()).read();
 }
 
 uint32_t
