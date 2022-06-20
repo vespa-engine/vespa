@@ -98,8 +98,7 @@ EncodeContext64EBase<false>::writeBits(uint64_t data, uint32_t length)
         // Shift new bits into cacheInt
         _cacheInt |= (data << (64 - _cacheFree));
         *_valI++ = bswap(_cacheInt);
-
-        data >>= _cacheFree;
+        data = (_cacheFree < 64) ? data >> _cacheFree : 0;
         // Initialize variables for receiving new bits
         length -= _cacheFree;
         _cacheInt = 0;
@@ -194,9 +193,9 @@ writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
     if (bitOffset + bitLength < 64) {
         uint32_t length = bitLength;
         if (bigEndian) {
-            uint64_t data = (EC::bswap(*bits) >>
-                             (64 - bitOffset - length)) &
-                            CodingTables::_intMask64[length];
+            uint64_t data = ((bitOffset + length) > 0)
+                ? (EC::bswap(*bits) >> (64 - bitOffset - length)) & CodingTables::_intMask64[length]
+                : 0;
             UC64BE_WRITEBITS_NS(o, EC);
         } else {
             uint64_t data = (EC::bswap(*bits) >> bitOffset) &
