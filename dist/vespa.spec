@@ -692,12 +692,6 @@ exit 0
 %postun base
 if [ $1 -eq 0 ]; then # this is an uninstallation
     rm -f /etc/profile.d/vespa.sh
-%if %{_create_vespa_user}
-    ! getent passwd %{_vespa_user} >/dev/null || userdel %{_vespa_user}
-%endif
-%if %{_create_vespa_group}
-    ! getent group %{_vespa_group} >/dev/null || groupdel %{_vespa_group}
-%endif
 fi
 # Keep modifications to conf/vespa/default-env.txt across
 # package uninstall + install.
