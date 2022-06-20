@@ -6,7 +6,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "prepare": "cd ../../../ && husky install client/js/app/.husky"
+    "prepare": "cd ../../../ && husky install client/js/app/.husky",
+    "lint": "eslint '{**/*,*}.{js,jsx}'"
   },
   "dependencies": {
     "react": "^18",
