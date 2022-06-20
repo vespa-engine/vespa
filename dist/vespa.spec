@@ -735,8 +735,9 @@ fi
 %exclude %{_prefix}/conf/configserver-app/components/config-model-fat.jar
 %exclude %{_prefix}/conf/configserver-app/config-models.xml
 %dir %{_prefix}/conf/logd
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/telegraf
 %dir %{_prefix}/conf/vespa
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/conf/zookeeper
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/zookeeper
 %dir %{_prefix}/etc
 %{_prefix}/etc/systemd
 %{_prefix}/etc/vespa
@@ -779,21 +780,40 @@ fi
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
 %exclude %{_prefix}/libexec/vespa/vespa-curl-wrapper
-%dir %attr(1777,-,-) %{_prefix}/logs
-%dir %attr(1777,%{_vespa_user},-) %{_prefix}/logs/vespa
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/configserver
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/node-admin
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/search
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/telegraf
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/access
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/configserver
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/node-admin
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/search
 %{_prefix}/man
 %{_prefix}/sbin
 %{_prefix}/share
-%dir %attr(1777,-,-) %{_prefix}/tmp
-%dir %attr(1777,%{_vespa_user},-) %{_prefix}/tmp/vespa
-%dir %{_prefix}/var
-%dir %{_prefix}/var/db
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/db/vespa
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/db/vespa/logcontrol
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/zookeeper
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/tmp
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/tmp/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/crash
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb/tenants
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/filedistribution
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/index
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/logcontrol
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/search
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/tmp
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/jdisc_container
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/run
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/application
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/bundlecache
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/bundlecache/configserver
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/cache
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/cache/config
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper/version-2
 %config(noreplace) %{_prefix}/conf/logd/logd.cfg
 %if %{_create_vespa_service}
 %attr(644,root,root) /usr/lib/systemd/system/vespa.service

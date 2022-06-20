@@ -77,6 +77,10 @@ findhost
 [ "$VESPA_HOME" ] || { echo "Missing VESPA_HOME variable" 1>&2; exit 1; }
 if [ "$VESPA_USER" = "" ]; then
     VESPA_USER=$(id -run)
+else
+    if [ "$VESPA_GROUP" = "" ]; then
+	VESPA_GROUP=$(id -gn $VESPA_USER)
+    fi
 fi
 if [ "$VESPA_GROUP" = "" ]; then
     VESPA_GROUP=$(id -rgn)
@@ -101,8 +105,8 @@ fixdir () {
 
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa
-fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/configserver
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/access
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/configserver
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  logs/vespa/search
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  tmp/vespa
@@ -123,7 +127,7 @@ fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/application
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache
 fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/bundlecache/configserver
-fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config/
+fixdir ${VESPA_USER} ${VESPA_GROUP}   755  var/vespa/cache/config
 
 if [ "${VESPA_UNPRIVILEGED}" != yes ]; then
   chown -hR ${VESPA_USER} logs/vespa
