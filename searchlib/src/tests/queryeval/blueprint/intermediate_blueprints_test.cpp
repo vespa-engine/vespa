@@ -2,6 +2,7 @@
 
 #include "mysearch.h"
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
@@ -22,6 +23,14 @@ using namespace search::queryeval;
 using namespace search::fef;
 using namespace search::query;
 using search::BitVector;
+
+struct InvalidSelector : ISourceSelector {
+    InvalidSelector() : ISourceSelector(Source()) {}
+    void setSource(uint32_t, Source) override { abort(); }
+    uint32_t getDocIdLimit() const override { abort(); }
+    void compactLidSpace(uint32_t) override { abort(); }
+    std::unique_ptr<sourceselector::Iterator> createIterator() const override { abort(); }
+};
 
 struct WeightOrder {
     bool operator()(const wand::Term &t1, const wand::Term &t2) const {
@@ -412,7 +421,7 @@ TEST("test Rank Blueprint") {
 }
 
 TEST("test SourceBlender Blueprint") {
-    ISourceSelector *selector = nullptr; // not needed here
+    auto selector = std::make_unique<InvalidSelector>(); // not needed here
     SourceBlenderBlueprint b(*selector);
     { // combine
         std::vector<Blueprint::HitEstimate> est;
@@ -485,8 +494,8 @@ TEST("test SourceBlender Blueprint") {
 }
 
 TEST("test SourceBlender below AND optimization") {
-    ISourceSelector *selector_1 = 0; // the one
-    ISourceSelector *selector_2 = reinterpret_cast<ISourceSelector*>(100); // not the one
+    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
+    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
     AndBlueprint *top = new AndBlueprint();
     Blueprint::UP top_bp(top);
@@ -567,8 +576,8 @@ TEST("test SourceBlender below AND optimization") {
 }
 
 TEST("test SourceBlender below OR optimization") {
-    ISourceSelector *selector_1 = 0; // the one
-    ISourceSelector *selector_2 = reinterpret_cast<ISourceSelector*>(100); // not the one
+    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
+    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
     OrBlueprint *top = new OrBlueprint();
     Blueprint::UP top_up(top);
@@ -649,8 +658,8 @@ TEST("test SourceBlender below OR optimization") {
 }
 
 TEST("test SourceBlender below AND_NOT optimization") {
-    ISourceSelector *selector_1 = 0; // the one
-    ISourceSelector *selector_2 = reinterpret_cast<ISourceSelector*>(100); // not the one
+    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
+    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
     AndNotBlueprint *top = new AndNotBlueprint();
     Blueprint::UP top_up(top);
@@ -741,8 +750,8 @@ TEST("test SourceBlender below AND_NOT optimization") {
 }
 
 TEST("test SourceBlender below RANK optimization") {
-    ISourceSelector *selector_1 = 0; // the one
-    ISourceSelector *selector_2 = reinterpret_cast<ISourceSelector*>(100); // not the one
+    auto selector_1 = std::make_unique<InvalidSelector>(); // the one
+    auto selector_2 = std::make_unique<InvalidSelector>(); // not the one
     //-------------------------------------------------------------------------
     RankBlueprint *top = new RankBlueprint();
     Blueprint::UP top_up(top);
@@ -876,7 +885,7 @@ TEST("test empty root node optimization and safeness") {
 }
 
 TEST("and with one empty child is optimized away") {
-    ISourceSelector *selector = 0;
+    auto selector = std::make_unique<InvalidSelector>();
     Blueprint::UP top(ap((new SourceBlenderBlueprint(*selector))->
                           addChild(ap(MyLeafSpec(10).create())).
                           addChild(ap((new AndBlueprint())->
@@ -891,7 +900,7 @@ TEST("and with one empty child is optimized away") {
 }
 
 TEST("test single child optimization") {
-    ISourceSelector *selector = 0;
+    auto selector = std::make_unique<InvalidSelector>();
     //-------------------------------------------------------------------------
     Blueprint::UP top_up(
             ap((new AndNotBlueprint())->
