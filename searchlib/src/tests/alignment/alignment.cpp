@@ -6,6 +6,9 @@ LOG_SETUP("alignment_test");
 #include <sys/time.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/memory.h>
+
+using vespalib::Unaligned;
 
 struct Timer {
     rusage usage;
@@ -28,7 +31,7 @@ TEST_SETUP(Test);
 double
 timeAccess(void *bufp, uint32_t len, double &sum)
 {
-    double *buf = (double *)bufp;
+    auto buf = Unaligned<double>::ptr(bufp);
     Timer timer;
     timer.start();
     for(uint32_t i = 0; i < 512_Ki; ++i) {

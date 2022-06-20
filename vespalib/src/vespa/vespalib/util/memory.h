@@ -51,12 +51,20 @@ public:
     static_assert(std::is_trivial_v<T>);
     static_assert(alignof(T) > 1, "value is always aligned");
 
-    constexpr static Unaligned &at(void *ptr) noexcept {
-        return *reinterpret_cast<Unaligned*>(ptr);
+    constexpr static Unaligned &at(void *p) noexcept {
+        return *reinterpret_cast<Unaligned*>(p);
     }
-    constexpr static const Unaligned &at(const void *ptr) noexcept {
-        return *reinterpret_cast<const Unaligned*>(ptr);
+    constexpr static const Unaligned &at(const void *p) noexcept {
+        return *reinterpret_cast<const Unaligned*>(p);
     }
+
+    constexpr static Unaligned *ptr(void *p) noexcept {
+        return reinterpret_cast<Unaligned*>(p);
+    }
+    constexpr static const Unaligned *ptr(const void *p) noexcept {
+        return reinterpret_cast<const Unaligned*>(p);
+    }
+
     T read() const noexcept {
         T value;
         static_assert(sizeof(_data) == sizeof(value));
