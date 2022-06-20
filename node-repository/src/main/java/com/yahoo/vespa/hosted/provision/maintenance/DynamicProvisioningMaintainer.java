@@ -204,7 +204,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 .collect(Collectors.toMap(Node::hostname, Function.identity())));
 
         nodes.stream()
-             .filter(node -> node.allocation().isPresent() && !node.status().wantToDeprovision())
+             .filter(node -> node.allocation().isPresent())
              .flatMap(node -> node.parentHostname().stream())
              .distinct()
              .forEach(hostsByHostname::remove);
