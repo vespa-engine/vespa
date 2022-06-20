@@ -720,9 +720,11 @@ fi
 %doc
 %dir %{_prefix}
 %{_prefix}/bin
+%exclude %{_prefix}/bin/vespa
 %exclude %{_prefix}/bin/vespa-destination
 %exclude %{_prefix}/bin/vespa-document-statistics
 %exclude %{_prefix}/bin/vespa-fbench
+%exclude %{_prefix}/bin/vespa-feed-client
 %exclude %{_prefix}/bin/vespa-feeder
 %exclude %{_prefix}/bin/vespa-get
 %exclude %{_prefix}/bin/vespa-logfmt
