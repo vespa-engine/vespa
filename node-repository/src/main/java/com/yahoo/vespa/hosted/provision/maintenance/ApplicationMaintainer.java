@@ -89,7 +89,7 @@ public abstract class ApplicationMaintainer extends NodeRepositoryMaintainer {
         }
     }
 
-    /** Returns the last time application was deployed. Epoch is returned if the application has never been deployed. */
+    /** Returns the last time application was activated. Epoch is returned if the application has never been deployed. */
     protected final Instant getLastDeployTime(ApplicationId application) {
         return deployer.lastDeployTime(application).orElse(Instant.EPOCH);
     }

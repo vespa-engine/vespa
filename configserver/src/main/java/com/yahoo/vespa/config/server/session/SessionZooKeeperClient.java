@@ -33,7 +33,7 @@ import com.yahoo.vespa.config.server.zookeeper.ZKApplicationPackage;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-
+import org.apache.zookeeper.data.Stat;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
@@ -237,6 +237,11 @@ public class SessionZooKeeperClient {
     public Instant readCreateTime() {
         Optional<byte[]> data = curator.getData(getCreateTimePath());
         return data.map(d -> Instant.ofEpochSecond(Long.parseLong(Utf8.toString(d)))).orElse(Instant.EPOCH);
+    }
+
+    public Instant readActivatedTime() {
+        Optional<Stat> statData = curator.getStat(sessionStatusPath);
+        return statData.map(s -> Instant.ofEpochMilli(s.getMtime())).orElse(Instant.EPOCH);
     }
 
     private Path getCreateTimePath() {
