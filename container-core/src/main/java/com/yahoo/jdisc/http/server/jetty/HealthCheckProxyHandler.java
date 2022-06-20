@@ -259,18 +259,10 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         }
     }
 
-    private static class StatusResponse {
-        final long createdAt = System.nanoTime();
-        final int statusCode;
-        final String contentType;
-        final byte[] content;
-
+    private record StatusResponse(long createdAt, int statusCode, String contentType, byte[] content) {
         StatusResponse(int statusCode, String contentType, byte[] content) {
-            this.statusCode = statusCode;
-            this.contentType = contentType;
-            this.content = content;
+            this(System.nanoTime(), statusCode, contentType, content);
         }
-
         boolean isExpired() { return System.nanoTime() - createdAt > Duration.ofSeconds(1).toNanos(); }
     }
 }
