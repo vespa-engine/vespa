@@ -30,7 +30,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
     @Override
     protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
-        int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted(), deployState.getDeployLogger());
+        int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted());
         ConnectorFactory.Builder builder = new ConnectorFactory.Builder(name, port);
         XmlHelper.getOptionalAttribute(serverSpec, "default-request-chain")
                 .map(ComponentId::new)
