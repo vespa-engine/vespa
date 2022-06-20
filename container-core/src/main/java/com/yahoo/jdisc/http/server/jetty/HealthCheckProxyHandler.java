@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -182,6 +183,8 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         private StatusResponse getStatusResponse() {
             try {
                 var request = client().newRequest("https://localhost:" + port + HEALTH_CHECK_PATH);
+                request.timeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
+                request.idleTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
                 if (proxyProtocol) {
                     request.tag(new ProxyProtocolClientConnectionFactory.V1.Tag());
                 }
@@ -204,18 +207,18 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 synchronized (this) {
                     if (client == null) {
                         int timeoutMillis = (int) timeout.toMillis();
-                            SslContextFactory.Client clientSsl = new SslContextFactory.Client();
-                            clientSsl.setHostnameVerifier((__, ___) -> true);
-                            clientSsl.setSslContext(getSslContext(serverSsl));
-                            HttpClient client = new HttpClient(clientSsl);
-                            client.setMaxConnectionsPerDestination(4);
-                            client.setConnectTimeout(timeoutMillis);
-                            client.setStopTimeout(timeoutMillis);
-                            client.setIdleTimeout(timeoutMillis);
-                            client.setUserAgentField(new HttpField(HttpHeader.USER_AGENT, "health-check-proxy-client"));
-                            client.start();
-                            this.client = client;
-                        }
+                        SslContextFactory.Client clientSsl = new SslContextFactory.Client();
+                        clientSsl.setHostnameVerifier((__, ___) -> true);
+                        clientSsl.setSslContext(getSslContext(serverSsl));
+                        HttpClient client = new HttpClient(clientSsl);
+                        client.setMaxConnectionsPerDestination(4);
+                        client.setConnectTimeout(timeoutMillis);
+                        client.setStopTimeout(timeoutMillis);
+                        client.setIdleTimeout(timeoutMillis);
+                        client.setUserAgentField(new HttpField(HttpHeader.USER_AGENT, "health-check-proxy-client"));
+                        client.start();
+                        this.client = client;
+                    }
                 }
             }
             return client;
