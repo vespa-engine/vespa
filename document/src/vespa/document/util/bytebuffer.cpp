@@ -164,7 +164,9 @@ void ByteBuffer::getBytes(void *buffer, uint32_t count)
 {
     const char *v = getBufferAtPos();
     incPos(count);
-    memcpy(buffer, v, count);
+    if (count > 0) {
+        memcpy(buffer, v, count);
+    }
 }
 
 } // document

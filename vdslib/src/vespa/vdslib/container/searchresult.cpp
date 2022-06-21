@@ -63,7 +63,9 @@ size_t BlobContainer::append(const void * v, size_t sz)
     if (getSize() > _blob.size()) {
         _blob.realloc(getSize()*2);
     }
-    memcpy(_blob.str() + _offsets[index], v, sz);
+    if (sz > 0) {
+        memcpy(_blob.str() + _offsets[index], v, sz);
+    }
     return index;
 }
 
