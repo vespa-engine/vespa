@@ -10,13 +10,18 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -37,6 +42,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Creates a {@link ResourceSnapshot} per application, which is then passed on to a MeteringClient
@@ -57,7 +63,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
-    private final MeteringClient meteringClient;
+    private final ResourceDatabaseClient resourceClient;
     private final CuratorDb curator;
     private final SystemName systemName;
     private final Metric metric;
@@ -71,11 +77,11 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     public ResourceMeterMaintainer(Controller controller,
                                    Duration interval,
                                    Metric metric,
-                                   MeteringClient meteringClient) {
+                                   ResourceDatabaseClient resourceClient) {
         super(controller, interval);
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
-        this.meteringClient = meteringClient;
+        this.resourceClient = resourceClient;
         this.curator = controller.curator();
         this.systemName = controller.serviceRegistry().zoneRegistry().system();
         this.metric = metric;
@@ -94,6 +100,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         }
 
         if (systemName.isPublic()) reportResourceSnapshots(resourceSnapshots);
+        if (systemName.isPublic()) reportAllScalingEvents();
         updateDeploymentCost(resourceSnapshots);
         return 1.0;
     }
@@ -124,13 +131,13 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
     }
 
     private void reportResourceSnapshots(Collection<ResourceSnapshot> resourceSnapshots) {
-        meteringClient.consume(resourceSnapshots);
+        resourceClient.writeResourceSnapshots(resourceSnapshots);
 
         updateMeteringMetrics(resourceSnapshots);
 
         try (var lock = curator.lockMeteringRefreshTime()) {
             if (needsRefresh(curator.readMeteringRefreshTime())) {
-                meteringClient.refresh();
+                resourceClient.refreshMaterializedView();
                 curator.writeMeteringRefreshTime(clock.millis());
             }
         } catch (TimeoutException ignored) {
@@ -145,6 +152,37 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, NodeFilter.all())))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
+    }
+
+    private Stream<Instance> mapApplicationToInstances(Application application) {
+        return application.instances().values().stream();
+    }
+
+    private Stream<DeploymentId> mapInstanceToDeployments(Instance instance) {
+        return instance.deployments().keySet().stream().map(zoneId -> {
+            return new DeploymentId(instance.id(), zoneId);
+        });
+    }
+
+    private Stream<Map.Entry<ClusterId, List<Cluster.ScalingEvent>>> mapDeploymentToClusterScalingEvent(DeploymentId deploymentId) {
+        return nodeRepository.getApplication(deploymentId.zoneId(), deploymentId.applicationId())
+                .clusters().entrySet().stream()
+                .map(cluster -> Map.entry(new ClusterId(deploymentId, cluster.getKey()), cluster.getValue().scalingEvents()));
+    }
+
+    private void reportAllScalingEvents() {
+        var clusters = controller().applications().asList().stream()
+                .flatMap(this::mapApplicationToInstances)
+                .flatMap(this::mapInstanceToDeployments)
+                .flatMap(this::mapDeploymentToClusterScalingEvent)
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue
+                ));
+
+        for (var cluster : clusters.entrySet()) {
+            resourceClient.writeScalingEvents(cluster.getKey(), cluster.getValue());
+        }
     }
 
     private Collection<ResourceSnapshot> createResourceSnapshotsFromNodes(ZoneId zoneId, List<Node> nodes) {

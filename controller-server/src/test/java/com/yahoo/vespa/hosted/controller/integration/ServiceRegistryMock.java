@@ -44,7 +44,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummyOwnershipIss
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.DummySystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.LoggingDeploymentIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.user.RoleMaintainer;
@@ -69,7 +68,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockMailer mockMailer = new MockMailer();
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock(clock);
     private final EndpointCertificateValidatorMock endpointCertificateValidatorMock = new EndpointCertificateValidatorMock();
-    private final MockMeteringClient mockMeteringClient = new MockMeteringClient();
     private final MockContactRetriever mockContactRetriever = new MockContactRetriever();
     private final MockIssueHandler mockIssueHandler = new MockIssueHandler();
     private final DummyOwnershipIssues dummyOwnershipIssues = new DummyOwnershipIssues();
@@ -145,11 +143,6 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public EndpointCertificateValidator endpointCertificateValidator() {
         return endpointCertificateValidatorMock;
-    }
-
-    @Override
-    public MockMeteringClient meteringService() {
-        return mockMeteringClient;
     }
 
     @Override

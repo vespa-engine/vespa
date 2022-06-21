@@ -7,6 +7,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -131,6 +132,28 @@ public class Cluster {
         public Instant at() { return at; }
         public Optional<Instant> completion() { return completion; }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ScalingEvent that = (ScalingEvent) o;
+            return Objects.equals(from, that.from) && Objects.equals(to, that.to) && Objects.equals(at, that.at) && Objects.equals(completion, that.completion);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(from, to, at, completion);
+        }
+
+        @Override
+        public String toString() {
+            return "ScalingEvent{" +
+                    "from=" + from +
+                    ", to=" + to +
+                    ", at=" + at +
+                    ", completion=" + completion +
+                    '}';
+        }
     }
 
 }

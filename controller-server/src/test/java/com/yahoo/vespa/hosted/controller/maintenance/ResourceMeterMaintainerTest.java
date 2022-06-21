@@ -9,9 +9,10 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistryMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClientMock;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
-import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -38,10 +39,10 @@ import static org.junit.Assert.assertTrue;
 public class ResourceMeterMaintainerTest {
 
     private final ControllerTester tester = new ControllerTester(SystemName.Public);
-    private final MockMeteringClient snapshotConsumer = new MockMeteringClient();
+    private final ResourceDatabaseClientMock resourceClient = new ResourceDatabaseClientMock(new PlanRegistryMock());
     private final MetricsMock metrics = new MetricsMock();
     private final ResourceMeterMaintainer maintainer =
-            new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), metrics, snapshotConsumer);
+            new ResourceMeterMaintainer(tester.controller(), Duration.ofMinutes(5), metrics, resourceClient);
 
     @Test
     public void updates_deployment_costs() {
@@ -89,7 +90,7 @@ public class ResourceMeterMaintainerTest {
         long lastRefreshTime = tester.clock().millis();
         tester.curator().writeMeteringRefreshTime(lastRefreshTime);
         maintainer.maintain();
-        Collection<ResourceSnapshot> consumedResources = snapshotConsumer.consumedResources();
+        Collection<ResourceSnapshot> consumedResources = resourceClient.resourceSnapshots();
 
         // The mocked repository contains two applications, so we should also consume two ResourceSnapshots
         assertEquals(4, consumedResources.size());
@@ -110,13 +111,13 @@ public class ResourceMeterMaintainerTest {
         assertEquals(40d, (Double) metrics.getMetric(context -> "tenant2".equals(context.get("tenant")), "metering.vcpu").get(), Double.MIN_VALUE);
 
         // Metering is not refreshed
-        assertFalse(snapshotConsumer.isRefreshed());
+        assertFalse(resourceClient.hasRefreshedMaterializedView());
         assertEquals(lastRefreshTime, tester.curator().readMeteringRefreshTime());
 
         var millisAdvanced = 3600 * 1000;
         tester.clock().advance(Duration.ofMillis(millisAdvanced));
         maintainer.maintain();
-        assertTrue(snapshotConsumer.isRefreshed());
+        assertTrue(resourceClient.hasRefreshedMaterializedView());
         assertEquals(lastRefreshTime + millisAdvanced, tester.curator().readMeteringRefreshTime());
     }
 

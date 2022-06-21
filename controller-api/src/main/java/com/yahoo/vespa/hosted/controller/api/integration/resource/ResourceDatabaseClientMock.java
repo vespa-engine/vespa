@@ -1,17 +1,17 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
-import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,6 +33,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     PlanRegistry planRegistry;
     Map<TenantName, Plan> planMap = new HashMap<>();
     List<ResourceSnapshot> resourceSnapshots = new ArrayList<>();
+    Map<ClusterId, List<Cluster.ScalingEvent>> scalingEvents = new HashMap<>();
     private boolean hasRefreshedMaterializedView = false;
 
     public ResourceDatabaseClientMock(PlanRegistry planRegistry) {
@@ -104,7 +105,7 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     public List<ResourceUsage> getResourceSnapshotsForPeriod(TenantName tenantName, long start, long end) {
         var tenantPlan = planMap.getOrDefault(tenantName, planRegistry.defaultPlan());
 
-        var snapshotsPerDeployment = resourceSnapshots.stream()
+        return resourceSnapshots.stream()
                 .filter(snapshot -> snapshot.getTimestamp().isAfter(Instant.ofEpochMilli(start)))
                 .filter(snapshot -> snapshot.getTimestamp().isBefore(Instant.ofEpochMilli(end)))
                 .filter(snapshot -> snapshot.getApplicationId().tenant().equals(tenantName))
@@ -117,13 +118,21 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.toList());
-
-        return snapshotsPerDeployment;
     }
 
     @Override
     public void refreshMaterializedView() {
         hasRefreshedMaterializedView = true;
+    }
+
+    @Override
+    public void writeScalingEvents(ClusterId clusterId, Collection<Cluster.ScalingEvent> scalingEvents) {
+        this.scalingEvents.put(clusterId, List.copyOf(scalingEvents));
+    }
+
+    @Override
+    public List<Cluster.ScalingEvent> scalingEvents(Instant from, Instant to, Optional<ApplicationId> application) {
+        return List.of();
     }
 
     public void setPlan(TenantName tenant, Plan plan) {
@@ -132,5 +141,9 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
 
     public boolean hasRefreshedMaterializedView() {
         return hasRefreshedMaterializedView;
+    }
+
+    public List<ResourceSnapshot> resourceSnapshots() {
+        return resourceSnapshots;
     }
 }
