@@ -8,9 +8,9 @@
    --secondary-dark: #333;
    --muted: #777;
 
-   --fontprimary: HelveticaNeue,Helvetica,Arial,sans-serif;
-   --fontsecondary: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
- };
+   --fontprimary: "Hind Madurai",Helvetica,Arial,sans-serif;
+   --fontsecondary: "Hind Madurai",Helvetica,Arial,sans-serif;
+ }
 
 .bg-light-blue {
     background-image: linear-gradient(-1deg, rgba(63,157,216,0.08) 0%, rgba(163, 195, 215, 0.08) 97%);
@@ -39,7 +39,7 @@
 /*** Tooltips! ***/
 .tip {
   visibility: visible;
-  border-bottom: 1px dotted [#FFFFFF];
+  border-bottom: 1px dotted;
   position: relative;
   cursor: help;
   text-decoration: none;
@@ -91,7 +91,7 @@ section h2.section-subheading,
 section h3.section-heading,
 section h3.section-subheading {
     text-transform: none;
-    font-family: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
+    font-family: "Hind Madurai",Helvetica,Arial,sans-serif;
     font-weight: normal;
     font-style: normal;
 }
@@ -135,7 +135,7 @@ header .help-title {
 }
 
 .navbar-default {
-    background-color: #3F9DD8;
+    background-color: #005A8E;
     padding: 0;
     border-bottom: 2px solid rgba(255, 255, 255, 0.2);
 }
@@ -146,14 +146,14 @@ header .help-title {
 }
 
 .navbar-default .navbar-brand {
-    background: transparent url("../../img/Vespa-V2.png") no-repeat;
+    background: transparent url("https://vespa.ai/assets/vespa-logo.png") no-repeat;
     background-size: contain;
     direction: ltr;
     text-indent: -9000px;
     height: 28px;
     width: 100px;
     display: inline-block;
-    font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
+    font-family: "Hind Madurai",Helvetica,Arial,sans-serif;
     font-weight: bold;
     color: var(--primary);
     margin-top: 16px;
@@ -166,7 +166,7 @@ header .help-title {
     letter-spacing: 1px;
     color: #FFFFFF;
     text-transform: none;
-    font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
+    font-family: "Hind Madurai",Helvetica,Arial,sans-serif;
 }
 
 .navbar-default .navbar-nav > li > a:hover,
@@ -189,7 +189,8 @@ section[id]:before {
 }
 
 header {
-    background-image: linear-gradient(0deg, #98C1DB 7%, #3F9DD8 100%);
+    /*background-image: linear-gradient(0deg, #98C1DB 7%, #3F9DD8 100%); */
+    background-color: #005A8E;
     min-height: 1150px;
 }
 
@@ -310,7 +311,7 @@ header .propvalue {
   margin-bottom: 3px;
 }
 
-header .propvalue:-webkit-input-placeholder { /* Safari, Chrome(, Opera?) */
+header .propvalue::-webkit-input-placeholder { /* Safari, Chrome(, Opera?) */
  color:gray;
  font-style:italic;
 }
@@ -396,7 +397,6 @@ header .copyJSON{
   height: 25px;
   border-width: 0px;
   border-radius: 5px;
-  padding: 0px
   padding-left: 1px;
   margin-top: 10px;
   margin-bottom: 20px;
@@ -412,8 +412,7 @@ header .showJSON{
   height: 25px;
   border-width: 0px;
   border-radius: 5px;
-  padding: 0px
-  padding-left: 1px;
+  padding: 0px;
   margin-top: 5px;
   margin-bottom: 10px;
 }
@@ -426,13 +425,10 @@ header .pasteJSON{
   height: 25px;
   border-width: 0px;
   border-radius: 5px;
-  padding: 0px;
   padding-left: 0px;
   padding-bottom: 2px;
   margin-top: 35px;
   margin-bottom: 10px;
-
-  align-content: 30%;
 }
 
 
@@ -444,7 +440,6 @@ header .copyURL{
   height: 25px;
   border-width: 0px;
   border-radius: 5px;
-  padding: 0px
   padding-left: 1px;
   margin-top: 25px;
   margin-bottom: 10px;
@@ -457,7 +452,7 @@ header .intro .intro-lead-in {
     font-size: 22px;
     line-height: 50px;
     margin-bottom: 25px;
-    font-family: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
+    font-family: "Hind Madurai",Helvetica,Arial,sans-serif;
 }
 
 header .intro .intro-heading {
@@ -476,12 +471,12 @@ header .intro .btn-xl {
     color: #3F9DD8;
     font-weight: normal;
     text-transform: none;
-    font-family: HelveticaNeue,Helvetica,Arial,sans-serif;
+    font-family: "Hind Madurai",Helvetica,Arial,sans-serif;
 }
 
 
 header .intro-copy {
-    display:inline-block
+    display:inline-block;
     position: inherit;
     margin-top: 10px;
     padding-left: 50px;
@@ -641,7 +636,7 @@ footer .credits {
     font-size: 12px;
     font-weight: normal;
     text-align: right;
-    font-family: HelveticaNeue-Thin,Helvetica,Arial,sans-serif;
+    font-family: "Hind Madurai",Helvetica,Arial,sans-serif;
 }
 
 footer .credits a {

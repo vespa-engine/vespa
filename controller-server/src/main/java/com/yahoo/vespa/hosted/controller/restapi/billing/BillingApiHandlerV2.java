@@ -20,7 +20,9 @@ import com.yahoo.vespa.hosted.controller.TenantController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Bill;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingController;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.CollectionMethod;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -44,6 +46,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private final ApplicationController applications;
     private final TenantController tenants;
     private final BillingController billing;
+    private final PlanRegistry planRegistry;
     private final Clock clock;
 
     public BillingApiHandlerV2(ThreadedHttpRequestHandler.Context context, Controller controller) {
@@ -51,6 +54,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         this.applications = controller.applications();
         this.tenants = controller.tenants();
         this.billing = controller.serviceRegistry().billingController();
+        this.planRegistry = controller.serviceRegistry().planRegistry();
         this.clock = controller.serviceRegistry().clock();
     }
 
@@ -76,6 +80,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                 .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
                         .get(self::previewBill)
                         .post(Slime.class, self::createBill))
+                .addRoute(RestApi.route("/billing/v2/accountant/plans")
+                        .get(self::plans))
                 .addExceptionMapper(RuntimeException.class, (__, e) -> ErrorResponse.internalServerError(e.getMessage()))
                 .build();
     }
@@ -86,13 +92,14 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
 
-        var plan = billing.getPlan(tenant.name());
+        var plan = planFor(tenant.name());
         var collectionMethod = billing.getCollectionMethod(tenant.name());
 
         var response = new Slime();
         var cursor = response.setObject();
         cursor.setString("tenant", tenant.name().value());
-        cursor.setString("plan", plan.value());
+
+        toSlime(cursor.setObject("plan"), plan);
         cursor.setString("collection", collectionMethod.name());
         return response;
     }
@@ -129,7 +136,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var response = new Slime();
         var cursor = response.setObject();
         cursor.setString("tenant", tenant.name().value());
-        cursor.setString("plan", billing.getPlan(tenant.name()).value());
+        toSlime(cursor.setObject("plan"), planFor(tenant.name()));
         cursor.setString("collection", billing.getCollectionMethod(tenant.name()).name());
         return response;
     }
@@ -197,7 +204,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
             var usage = Optional.ofNullable(usagePerTenant.get(tenant.name()));
             var tenantResponse = tenantsResponse.addObject();
             tenantResponse.setString("tenant", tenant.name().value());
-            tenantResponse.setString("plan", billing.getPlan(tenant.name()).value());
+            toSlime(tenantResponse.setObject("plan"), planFor(tenant.name()));
             tenantResponse.setString("collection", billing.getCollectionMethod(tenant.name()).name());
             tenantResponse.setString("lastBill", usage.map(Bill::getStartDate).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
             tenantResponse.setString("unbilled", usage.map(Bill::sum).map(BigDecimal::toPlainString).orElse("0.00"));
@@ -234,6 +241,18 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
         // TODO: Make a redirect to the bill itself
         return new MessageResponse("Created bill " + invoiceId.value());
+    }
+
+    private HttpResponse plans(RestApi.RequestContext ctx) {
+        var slime = new Slime();
+        var root = slime.setObject();
+        var plans = root.setArray("plans");
+        for (var plan : planRegistry.all()) {
+            var p = plans.addObject();
+            p.setString("id", plan.id().value());
+            p.setString("name", plan.displayName());
+        }
+        return new SlimeJsonResponse(slime);
     }
 
 
@@ -284,8 +303,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         slime.setString("id", item.id());
         slime.setString("description", item.description());
         slime.setString("amount",item.amount().toString());
-        slime.setString("plan", item.plan());
-        slime.setString("planName", billing.getPlanDisplayName(PlanId.from(item.plan())));
+        toSlime(slime.setObject("plan"), planRegistry.plan(item.plan()).orElseThrow(() -> new RuntimeException("No such plan: '" + item.plan() + "'")));
 
         item.applicationId().ifPresent(appId -> {
             slime.setString("application", appId.application().value());
@@ -334,4 +352,14 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         return inspector.field(field).asString();
     }
 
+    private void toSlime(Cursor cursor, Plan plan) {
+        cursor.setString("id", plan.id().value());
+        cursor.setString("name", plan.displayName());
+    }
+
+    private Plan planFor(TenantName tenant) {
+        var planId = billing.getPlan(tenant);
+        return planRegistry.plan(planId)
+                .orElseThrow(() -> new RuntimeException("No such plan: '" + planId + "'"));
+    }
 }

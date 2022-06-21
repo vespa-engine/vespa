@@ -52,13 +52,6 @@ public class NginxHealthClientTest {
         assertFalse(service.servers().isHealthy("frog.prod.music.vespa.us-east-2.prod"));
     }
 
-    @Test
-    public void all_up_but_other_endpoint_down_stream() {
-        NginxHealthClient service = createClient("nginx-health-output-stream.json");
-        assertTrue(service.servers().isHealthy("gateway.prod.music.vespa.us-east-2.prod"));
-        assertFalse(service.servers().isHealthy("frog.prod.music.vespa.us-east-2.prod"));
-    }
-
     private static NginxHealthClient createClient(String file) {
         HttpClientMock httpClient = new HttpClientMock().setResponse("GET",
                                                                      "http://localhost:4080/health-status/?format=json",

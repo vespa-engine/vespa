@@ -22,6 +22,7 @@
         <module>../config-class-plugin</module>
         <module>../configgen</module>
         <module>../vespa-application-maven-plugin</module>
+        <module>../vespa-enforcer-extensions</module>
     </modules>
 
     <properties>

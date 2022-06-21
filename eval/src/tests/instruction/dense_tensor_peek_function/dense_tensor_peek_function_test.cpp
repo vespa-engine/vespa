@@ -56,10 +56,10 @@ TEST("require that tensor peek can be optimized for dense tensors") {
     TEST_DO(verify("x3y2f{x:(a-1),y:(b)}", 0.0, 1, 0));
 }
 
-TEST("require that tensor peek is not optimized for sparse tensor") {
+TEST("require that tensor peek is optimized differently for sparse tensor") {
     TEST_DO(verify("xm{x:1}", 1.0, 0, 1));
-    TEST_DO(verify("xm{x:(c)}", 3.0, 0, 1));
-    TEST_DO(verify("xm{x:(c+1)}", 0.0, 0, 1));
+    TEST_DO(verify("xm{x:(c)}", 3.0, 0, 0));
+    TEST_DO(verify("xm{x:(c+1)}", 0.0, 0, 0));
 }
 
 TEST("require that tensor peek is not optimized for mixed tensor") {
@@ -71,10 +71,10 @@ TEST("require that tensor peek is not optimized for mixed tensor") {
 TEST("require that indexes are truncated when converted to integers") {
     TEST_DO(verify("x3{x:(a+0.7)}", 2.0, 1, 0));
     TEST_DO(verify("x3{x:(a+0.3)}", 2.0, 1, 0));
-    TEST_DO(verify("xm{x:(a+0.7)}", 1.0, 0, 1));
-    TEST_DO(verify("xm{x:(a+0.3)}", 1.0, 0, 1));
-    TEST_DO(verify("xm{x:(-a-0.7)}", 4.0, 0, 1));
-    TEST_DO(verify("xm{x:(-a-0.3)}", 4.0, 0, 1));
+    TEST_DO(verify("xm{x:(a+0.7)}", 1.0, 0, 0));
+    TEST_DO(verify("xm{x:(a+0.3)}", 1.0, 0, 0));
+    TEST_DO(verify("xm{x:(-a-0.7)}", 4.0, 0, 0));
+    TEST_DO(verify("xm{x:(-a-0.3)}", 4.0, 0, 0));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

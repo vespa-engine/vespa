@@ -1,0 +1,9 @@
+node_modules/*
+public/*
+storybook-static/*
+dist/*
+build/*
+*.css
+*.json
+*.png
+*.svg

@@ -61,6 +61,11 @@
           <groupId>com.google.code.findbugs</groupId>
           <artifactId>annotations</artifactId>
         </exclusion>
+        <exclusion>
+          <!-- We want the declaration from our parent, not the one in airlift -->
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>

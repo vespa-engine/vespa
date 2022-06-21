@@ -33,10 +33,11 @@
 
     <properties>
         <vespaversion>${project.version}</vespaversion>
-        <target_jdk_version>11</target_jdk_version>
+        <target_jdk_version>17</target_jdk_version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
-        <junit.version>5.8.1</junit.version> <!-- NOTE: this must be in sync with junit version specified in 'tenant-cd-api' -->
+        <!-- NOTE: this must not be overriden by users, and must be in sync with junit version specified in 'tenant-cd-api' -->
+        <vespa.junit.version>5.8.1</vespa.junit.version>
         <test.categories>!integration</test.categories>
 
         <!-- To allow specialized base pom to include additional "test provided" dependencies -->
@@ -94,13 +95,13 @@
             <dependency>
                 <groupId>org.junit.jupiter</groupId>
                 <artifactId>junit-jupiter-engine</artifactId>
-                <version>${junit.version}</version>
+                <version>${vespa.junit.version}</version>
             </dependency>
 
             <dependency>
                 <groupId>org.junit.vintage</groupId>
                 <artifactId>junit-vintage-engine</artifactId>
-                <version>${junit.version}</version>
+                <version>${vespa.junit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -235,8 +236,8 @@
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:compile</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:provided</exclude>
                                                 <exclude>org.junit.jupiter:junit-jupiter-api:*:jar:runtime</exclude>
-                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${junit.version}):jar:*</exclude>
-                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${junit.version},):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(,${vespa.junit.version}):jar:*</exclude>
+                                                <exclude>org.junit.jupiter:junit-jupiter-api:(${vespa.junit.version},):jar:*</exclude>
                                             </excludes>
                                         </bannedDependencies>
                                     </rules>
@@ -433,9 +434,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${maven-compiler-plugin.version}</version>
                 <configuration>
-                    <jdkToolchain>
-                        <version>${target_jdk_version}</version>
-                    </jdkToolchain>
                     <release>${target_jdk_version}</release>
                     <showWarnings>true</showWarnings>
                     <showDeprecation>true</showDeprecation>

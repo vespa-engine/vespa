@@ -7,7 +7,7 @@ namespace storage {
 using metrics::MetricSet;
 
 VisitorMetricSet::VisitorMetricSet(MetricSet* owner)
-    : PersistenceOperationMetricSet("visitor.sum", owner),
+    : PersistenceOperationMetricSet("visitor", owner),
       buckets_per_visitor("buckets_per_visitor", {},
                           "The number of sub buckets visited as part of a "
                           "single client visitor command", this),

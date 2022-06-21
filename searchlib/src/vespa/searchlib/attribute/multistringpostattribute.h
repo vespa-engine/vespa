@@ -38,6 +38,7 @@ private:
         void collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
         void create(vespalib::datastore::EntryRef idx, std::vector<DocumentWeightIterator> &dst) const override;
         DocumentWeightIterator create(vespalib::datastore::EntryRef idx) const override;
+        std::unique_ptr<queryeval::SearchIterator> make_bitvector_iterator(vespalib::datastore::EntryRef idx, uint32_t doc_id_limit, fef::TermFieldMatchData &match_data, bool strict) const override;
     };
     DocumentWeightAttributeAdapter _document_weight_attribute_adapter;
 

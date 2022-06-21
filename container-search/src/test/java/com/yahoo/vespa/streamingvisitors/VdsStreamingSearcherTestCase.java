@@ -46,6 +46,7 @@ import static org.mockito.Mockito.when;
  * @author Ulf Carlin
  */
 public class VdsStreamingSearcherTestCase {
+
     public static final String USERDOC_ID_PREFIX = "id:namespace:mytype:n=1:userspecific";
     public static final String GROUPDOC_ID_PREFIX = "id:namespace:mytype:g=group1:userspecific";
 
@@ -170,10 +171,10 @@ public class VdsStreamingSearcherTestCase {
             } else if (i == 1) {
                 query.getPresentation().setSummary("summary");
             } else if (i == 2) {
-                query.setTraceLevel(100);
+                query.getTrace().setLevel(100);
             } else if (i == 3) {
                 query.getPresentation().setSummary("summary");
-                query.setTraceLevel(100);
+                query.getTrace().setLevel(100);
             }
             queries[i] = query;
         }

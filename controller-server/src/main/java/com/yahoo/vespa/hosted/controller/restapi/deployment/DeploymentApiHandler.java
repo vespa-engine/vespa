@@ -94,9 +94,8 @@ public class DeploymentApiHandler extends ThreadedHttpRequestHandler {
         Cursor root = slime.setObject();
         Cursor platformArray = root.setArray("versions");
         var versionStatus = controller.readVersionStatus();
-        var systemVersion = controller.systemVersion(versionStatus);
         ApplicationList applications = ApplicationList.from(controller.applications().asList()).withJobs();
-        var deploymentStatuses = controller.jobController().deploymentStatuses(applications, systemVersion);
+        var deploymentStatuses = controller.jobController().deploymentStatuses(applications, versionStatus);
         var deploymentStatistics = DeploymentStatistics.compute(versionStatus.versions().stream().map(VespaVersion::versionNumber).collect(toList()),
                                                                 deploymentStatuses)
                                                        .stream().collect(toMap(DeploymentStatistics::version, identity()));

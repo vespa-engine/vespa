@@ -157,12 +157,6 @@ public:
     void expect_empty_add() const {
         EXPECT_TRUE(_adds.empty());
     }
-    void expect_empty_prepare_add() const {
-        EXPECT_TRUE(_prepare_adds.empty());
-    }
-    void expect_empty_complete_add() const {
-        EXPECT_TRUE(_complete_adds.empty());
-    }
     void expect_entry(uint32_t exp_docid, const DoubleVector& exp_vector, const EntryVector& entries) const {
         EXPECT_EQUAL(1u, entries.size());
         EXPECT_EQUAL(exp_docid, entries.back().first);
@@ -884,30 +878,6 @@ TEST_F("nearest neighbor index can be updated in two phases", DenseTensorAttribu
         index.expect_remove(1, {3, 5});
         f.assertGetTensor(vec_b, 1);
         index.expect_complete_add(1, {7, 9});
-    }
-}
-
-TEST_F("nearest neighbor index is NOT updated when tensor value is unchanged", DenseTensorAttributeMockIndex)
-{
-    auto& index = f.mock_index();
-    {
-        auto vec_a = vec_2d(3, 5);
-        auto prepare_result = f.prepare_set_tensor(1, vec_a);
-        index.expect_prepare_add(1, {3, 5});
-        f.complete_set_tensor(1, vec_a, std::move(prepare_result));
-        f.assertGetTensor(vec_a, 1);
-        index.expect_complete_add(1, {3, 5});
-    }
-    index.clear();
-    {
-        // Replaces previous value with the same value
-        auto vec_b = vec_2d(3, 5);
-        auto prepare_result = f.prepare_set_tensor(1, vec_b);
-        EXPECT_TRUE(prepare_result.get() == nullptr);
-        index.expect_empty_prepare_add();
-        f.complete_set_tensor(1, vec_b, std::move(prepare_result));
-        f.assertGetTensor(vec_b, 1);
-        index.expect_empty_complete_add();
     }
 }
 

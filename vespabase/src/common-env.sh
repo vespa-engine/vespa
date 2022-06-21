@@ -111,8 +111,7 @@ prepend_path () {
 }
 
 add_valgrind_suppressions_file() {
-    if [ -f "$1" ]
-    then
+    if [ -f "$1" ] ; then
 	VESPA_VALGRIND_SUPPREESSIONS_OPT="$VESPA_VALGRIND_SUPPREESSIONS_OPT --suppressions=$1"
     fi
 }
@@ -129,33 +128,50 @@ optionally_reduce_base_frequency() {
     fi
 }
 
-get_hugepage_size_mb() {
-    while read -r name size rest
-    do
-        if [[ "$name" =~ ^Hugepagesize:$ ]]
-        then
-          hugepagesize="$size"
-          unit="${rest,,}"
-          break
-        fi
-    done < /proc/meminfo
-    if [[ "$unit" == "kb" ]]; then
-        hugepage_size_mb=$(($hugepagesize / 1024))
-    else
-        echo "Failed extracting hugepage size from /proc/meminfo. Unknown unit($unit)"
-        exit 1
+get_thp_size_mb() {
+    local thp_size=2
+    if [ -r /sys/kernel/mm/transparent_hugepage/hpage_pmd_size ]; then
+        local bytes
+        read -r bytes < /sys/kernel/mm/transparent_hugepage/hpage_pmd_size
+        thp_size=$((bytes / 1024 / 1024))
     fi
-    OUT=$hugepage_size_mb
+    echo "$thp_size"
 }
 
 get_jvm_hugepage_settings() {
     local heap_mb="$1"
-    get_hugepage_size_mb
-    sz_mb=$OUT
+    local sz_mb=$(get_thp_size_mb)
     if (($sz_mb * 2 < $heap_mb)); then
         options=" -XX:+UseTransparentHugePages"
     fi
     echo "$options"
+}
+
+get_heap_size() {
+    local param=$1
+    local args=$2
+    local value=$3
+    for token in $args
+    do
+        [[ "$token" =~ ^"${param}"([0-9]+)(.)$ ]] || continue
+        size="${BASH_REMATCH[1]}"
+        unit="${BASH_REMATCH[2],,}" # lower-case
+        case "$unit" in
+            k) value=$(( $size / 1024 )) ;;
+            m) value="$size" ;;
+            g) value=$(( $size * 1024 )) ;;
+            *) echo "Warning: Invalid unit in '$token'" >&2 ;;
+        esac
+    done
+    echo "$value"
+}
+
+get_min_heap_mb() {
+    get_heap_size "-Xms" "$1" $2
+}
+
+get_max_heap_mb() {
+    get_heap_size "-Xmx" "$1" $2
 }
 
 populate_environment

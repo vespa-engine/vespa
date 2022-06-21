@@ -2,7 +2,8 @@
 {"servers": {
   "total": 2,
   "generation": 1,
-  "server": [
+  "http": [],
+  "stream": [
     {"index": 0, "upstream": "gateway.prod.music.vespa.us-east-2.prod", "name": "10.78.114.166:4080", "status": "up", "rise": 0, "fall": 1, "type": "http", "port": 0},
     {"index": 1, "upstream": "gateway.prod.music.vespa.us-east-2.prod", "name": "10.78.115.68:4080", "status": "up", "rise": 2, "fall": 0, "type": "http", "port": 0},
     {"index": 0, "upstream": "frog.prod.music.vespa.us-east-2.prod", "name": "10.78.114.166:4080", "status": "down", "rise": 0, "fall": 1, "type": "http", "port": 0},

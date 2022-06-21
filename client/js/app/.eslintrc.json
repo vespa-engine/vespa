@@ -1,0 +1,51 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true,
+    "commonjs": true,
+    "es6": true,
+    "jest": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:import/recommended"
+  ],
+  "parserOptions": {
+    "ecmaFeatures": {
+      "jsx": true
+    },
+    "ecmaVersion": 2021,
+    "sourceType": "module"
+  },
+  "plugins": ["prettier", "react", "react-hooks", "unused-imports"],
+  "rules": {
+    "strict": 0,
+    "react/jsx-uses-react": "error",
+    "react/prop-types": "off",
+    "react/display-name": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": [
+      "warn",
+      {
+        "additionalHooks": "use(CustomCompare(Callback|Effect)|Cancelable(Layout)?Effect)"
+      }
+    ],
+    "unused-imports/no-unused-imports": "error",
+    "import/order": ["error", { "newlines-between": "never" }],
+    "import/no-unassigned-import": ["error", { "allow": ["**/*.css"] }],
+    "prettier/prettier": "error"
+  },
+  "settings": {
+    "react": {
+      "version": "detect"
+    },
+    "import/resolver": {
+      "node": {
+        "extensions": [".js", ".jsx"],
+        "moduleDirectory": ["node_modules", "src"]
+      }
+    }
+  }
+}

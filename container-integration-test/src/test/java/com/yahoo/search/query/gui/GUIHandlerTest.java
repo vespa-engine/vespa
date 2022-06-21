@@ -47,8 +47,6 @@ public class GUIHandlerTest {
     public void testContentTypes() throws Exception{
         assertResponse("/querybuilder/_includes/css/vespa.css", "/**","text/css; charset=UTF-8", 200);
         assertResponse("/querybuilder/js/agency.js", "/*!","application/javascript; charset=UTF-8", 200);
-        assertResponse("/querybuilder/img/reload.svg", "<?xml","image/svg+xml; charset=UTF-8", 200);
-        assertResponse("/querybuilder/img/Vespa-V2.png", null,"image/png; charset=UTF-8", 200);
     }
 
     @Test

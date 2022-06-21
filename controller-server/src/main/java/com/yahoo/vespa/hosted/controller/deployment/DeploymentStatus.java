@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.collections.Iterables;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -13,6 +14,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.stream.CustomCollectors;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
@@ -22,6 +24,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
+import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -41,6 +45,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.collections.Iterables.reversed;
 import static com.yahoo.config.application.api.DeploymentSpec.RevisionTarget.next;
 import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
@@ -69,17 +74,21 @@ public class DeploymentStatus {
     private final JobList allJobs;
     private final JobType systemTest;
     private final JobType stagingTest;
+    private final VersionStatus versionStatus;
     private final Version systemVersion;
     private final Function<InstanceName, VersionCompatibility> versionCompatibility;
+    private final ZoneRegistry zones;
     private final Instant now;
     private final Map<JobId, StepStatus> jobSteps;
     private final List<StepStatus> allSteps;
 
-    public DeploymentStatus(Application application, Function<JobId, JobStatus> allJobs, ZoneRegistry zones,
+    public DeploymentStatus(Application application, Function<JobId, JobStatus> allJobs, ZoneRegistry zones, VersionStatus versionStatus,
                             Version systemVersion, Function<InstanceName, VersionCompatibility> versionCompatibility, Instant now) {
         this.application = requireNonNull(application);
+        this.zones = zones;
         this.systemTest = JobType.systemTest(zones);
         this.stagingTest = JobType.stagingTest(zones);
+        this.versionStatus = requireNonNull(versionStatus);
         this.systemVersion = requireNonNull(systemVersion);
         this.versionCompatibility = versionCompatibility;
         this.now = requireNonNull(now);
@@ -142,8 +151,7 @@ public class DeploymentStatus {
     public Map<JobType, JobStatus> instanceJobs(InstanceName instance) {
         return allJobs.asList().stream()
                       .filter(job -> job.id().application().equals(application.id().instance(instance)))
-                      .collect(Collectors.toUnmodifiableMap(job -> job.id().type(),
-                                                            Function.identity()));
+                      .collect(CustomCollectors.toLinkedMap(job -> job.id().type(), Function.identity()));
     }
 
     /** Filterable job status lists for each instance of this application. */
@@ -202,12 +210,29 @@ public class DeploymentStatus {
                                                                        .filter(jobId -> jobId.type().isProduction() && jobId.type().isDeployment())
                                                                        .filter(jobId -> deploymentFor(jobId).isPresent())
                                                                        .findFirst();
-            Versions versions = Versions.from(change, application, firstProductionJobWithDeployment.flatMap(this::deploymentFor), systemVersion);
+            Versions versions = Versions.from(change,
+                                              application,
+                                              firstProductionJobWithDeployment.flatMap(this::deploymentFor),
+                                              fallbackPlatform(change, job));
             if (step.completedAt(change, Optional.empty()).isEmpty())
                 jobs.merge(job, List.of(new Job(job.type(), versions, step.readyAt(change), change)), DeploymentStatus::union);
         });
         return Collections.unmodifiableMap(jobs);
     }
+
+    /** Fall back to the newest, deployable platform, which is compatible with what we want to deploy. */
+    public Version fallbackPlatform(Change change, JobId job) {
+        Optional<Version> compileVersion = change.revision().map(application.revisions()::get).flatMap(ApplicationVersion::compileVersion);
+        if (compileVersion.isEmpty())
+            return systemVersion;
+
+        for (VespaVersion version : reversed(versionStatus.deployableVersions()))
+            if (versionCompatibility.apply(job.application().instance()).accept(version.versionNumber(), compileVersion.get()))
+                return version.versionNumber();
+
+        throw new IllegalArgumentException("no legal platform version exists in this system for compile version " + compileVersion.get());
+    }
+
 
     /** The set of jobs that need to run for the given changes to be considered complete. */
     public boolean hasCompleted(InstanceName instance, Change change) {
@@ -365,7 +390,7 @@ public class DeploymentStatus {
                     return;
 
                 Change currentChange = application.require(instance).change();
-                Versions target = Versions.from(currentChange, application, deployment, systemVersion);
+                Versions target = Versions.from(currentChange, application, deployment, fallbackPlatform(currentChange, job));
                 existingPlatform = Optional.of(target.targetPlatform());
                 existingRevision = Optional.of(target.targetRevision());
             }
@@ -373,7 +398,7 @@ public class DeploymentStatus {
             List<Change> changes = deployingCompatibilityChange ? List.of(change) : changes(job, step, change);
             for (Change partial : changes) {
                 Job jobToRun = new Job(job.type(),
-                                       Versions.from(partial, application, existingPlatform, existingRevision, systemVersion),
+                                       Versions.from(partial, application, existingPlatform, existingRevision, fallbackPlatform(partial, job)),
                                        step.readyAt(partial, Optional.of(job)),
                                        partial);
                 toRun.add(jobToRun);
@@ -847,7 +872,7 @@ public class DeploymentStatus {
                 @Override
                 public Optional<Instant> readyAt(Change change, Optional<JobId> dependent) {
                     Optional<Instant> readyAt = super.readyAt(change, dependent);
-                    Optional<Instant> testedAt = status.verifiedAt(job.id(), Versions.from(change, status.application, existingDeployment, status.systemVersion));
+                    Optional<Instant> testedAt = status.verifiedAt(job.id(), Versions.from(change, status.application, existingDeployment, status.fallbackPlatform(change, job.id())));
                     if (readyAt.isEmpty() || testedAt.isEmpty()) return Optional.empty();
                     return readyAt.get().isAfter(testedAt.get()) ? readyAt : testedAt;
                 }
@@ -918,7 +943,7 @@ public class DeploymentStatus {
                                                             .map(deployment -> run.versions().targetsMatch(Versions.from(change,
                                                                                                                          status.application,
                                                                                                                          Optional.of(deployment),
-                                                                                                                         status.systemVersion)))
+                                                                                                                         status.fallbackPlatform(change, dependent.get()))))
                                                             .orElseGet(() ->    (change.platform().isEmpty() || change.platform().get().equals(run.versions().targetPlatform()))
                                                                              && (change.revision().isEmpty() || change.revision().get().equals(run.versions().targetRevision()))))
                                   .matching(Run::hasSucceeded)

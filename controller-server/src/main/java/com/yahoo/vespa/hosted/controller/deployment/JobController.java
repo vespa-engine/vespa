@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
+import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.transaction.Mutex;
@@ -34,12 +35,14 @@ import com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.BufferedLogStore;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
@@ -343,7 +346,7 @@ public class JobController {
     public List<Run> active() {
         return controller.applications().idList().stream()
                          .flatMap(id -> active(id).stream())
-                         .collect(toUnmodifiableList());
+                         .toList();
     }
 
     /** Returns a list of all active runs for the given application. */
@@ -353,7 +356,7 @@ public class JobController {
                                                  .map(type -> last(id.instance(name), type))
                                                  .flatMap(Optional::stream)
                                                  .filter(run -> ! run.hasEnded()))
-                         .collect(toUnmodifiableList());
+                         .toList();
     }
 
     /** Returns a list of all active runs for the given instance. */
@@ -362,7 +365,7 @@ public class JobController {
                       .map(type -> last(id, type))
                       .flatMap(Optional::stream)
                       .filter(run -> !run.hasEnded())
-                      .collect(toUnmodifiableList());
+                      .toList();
     }
 
     /** Returns the job status of the given job, possibly empty. */
@@ -372,28 +375,32 @@ public class JobController {
 
     /** Returns the deployment status of the given application. */
     public DeploymentStatus deploymentStatus(Application application) {
-        return deploymentStatus(application, controller.readSystemVersion());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        return deploymentStatus(application, versionStatus, controller.systemVersion(versionStatus));
     }
 
-    private DeploymentStatus deploymentStatus(Application application, Version systemVersion) {
+    private DeploymentStatus deploymentStatus(Application application, VersionStatus versionStatus, Version systemVersion) {
         return new DeploymentStatus(application,
                                     this::jobStatus,
                                     controller.zoneRegistry(),
+                                    versionStatus,
                                     systemVersion,
                                     instance -> controller.applications().versionCompatibility(application.id().instance(instance)),
                                     controller.clock().instant());
     }
 
     /** Adds deployment status to each of the given applications. */
-    public DeploymentStatusList deploymentStatuses(ApplicationList applications, Version systemVersion) {
+    public DeploymentStatusList deploymentStatuses(ApplicationList applications, VersionStatus versionStatus) {
+        Version systemVersion = controller.systemVersion(versionStatus);
         return DeploymentStatusList.from(applications.asList().stream()
-                                                     .map(application -> deploymentStatus(application, systemVersion))
-                                                     .collect(toUnmodifiableList()));
+                                                     .map(application -> deploymentStatus(application, versionStatus, systemVersion))
+                                                     .toList());
     }
 
     /** Adds deployment status to each of the given applications. Calling this will do an implicit read of the controller's version status */
     public DeploymentStatusList deploymentStatuses(ApplicationList applications) {
-        return deploymentStatuses(applications, controller.readSystemVersion());
+        VersionStatus versionStatus = controller.readVersionStatus();
+        return deploymentStatuses(applications, versionStatus);
     }
 
     /** Changes the status of the given step, for the given run, provided it is still active. */
@@ -508,7 +515,7 @@ public class JobController {
 
             application = application.withProjectId(projectId == -1 ? OptionalLong.empty() : OptionalLong.of(projectId));
             application = application.withRevisions(revisions -> revisions.with(version.get()));
-            application = withPrunedPackages(application);
+            application = withPrunedPackages(application, version.get().id());
 
             TestSummary testSummary = TestPackage.validateTests(submission.applicationPackage().deploymentSpec(), submission.testPackage());
             if (testSummary.problems().isEmpty())
@@ -531,21 +538,25 @@ public class JobController {
             });
 
             applications.storeWithUpdatedConfig(application, submission.applicationPackage());
-            applications.deploymentTrigger().triggerNewRevision(id);
+            if (application.get().projectId().isPresent())
+                applications.deploymentTrigger().triggerNewRevision(id);
         });
         return version.get();
     }
 
-    private LockedApplication withPrunedPackages(LockedApplication application){
+    private LockedApplication withPrunedPackages(LockedApplication application, RevisionId latest){
         TenantAndApplicationId id = application.get().id();
-        Optional<RevisionId> oldestDeployed = application.get().oldestDeployedRevision();
-        if (oldestDeployed.isPresent()) {
-            controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed.get());
+        Application wrapped = application.get();
+        RevisionId oldestDeployed = application.get().oldestDeployedRevision()
+                                               .or(() -> wrapped.instances().values().stream()
+                                                                .flatMap(instance -> instance.change().revision().stream())
+                                                                .min(naturalOrder()))
+                                               .orElse(latest);
+        controller.applications().applicationStore().prune(id.tenant(), id.application(), oldestDeployed);
 
-            for (ApplicationVersion version : application.get().revisions().withPackage())
-                if (version.id().compareTo(oldestDeployed.get()) < 0)
-                    application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
-        }
+        for (ApplicationVersion version : application.get().revisions().withPackage())
+            if (version.id().compareTo(oldestDeployed) < 0)
+                application = application.withRevisions(revisions -> revisions.with(version.withoutPackage()));
         return application;
     }
 
@@ -584,8 +595,8 @@ public class JobController {
         if (revision.compileVersion()
                     .map(version -> controller.applications().versionCompatibility(id).refuse(versions.targetPlatform(), version))
                     .orElse(false))
-            throw new IllegalArgumentException("Will not start a job with incompatible platform version (" + versions.targetPlatform() + ") " +
-                                               "and compile versions (" + revision.compileVersion().get() + ")");
+            throw new IllegalArgumentException("Will not start " + type + " for " + id + " with incompatible platform version (" +
+                                               versions.targetPlatform() + ") " + "and compile versions (" + revision.compileVersion().get() + ")");
 
         locked(id, type, __ -> {
             Optional<Run> last = last(id, type);
@@ -618,7 +629,7 @@ public class JobController {
 
         DeploymentId deploymentId = new DeploymentId(id, type.zone());
         Optional<Run> lastRun = last(id, type);
-        lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id()));
+        lastRun.filter(run -> ! run.hasEnded()).ifPresent(run -> abortAndWait(run.id(), Duration.ofMinutes(2)));
 
         long build = 1 + lastRun.map(run -> run.versions().targetRevision().number()).orElse(0L);
         RevisionId revisionId = RevisionId.forDevelopment(build, new JobId(id, type));
@@ -659,14 +670,6 @@ public class JobController {
     }
 
     private Version findTargetPlatform(ApplicationPackage applicationPackage, DeploymentId id, Optional<Instance> instance) {
-        Optional<Integer> major = applicationPackage.deploymentSpec().majorVersion();
-        if (major.isPresent())
-            return controller.applications().lastCompatibleVersion(major.get())
-                             .orElseThrow(() -> new IllegalArgumentException("major " + major.get() + " specified in deployment.xml, " +
-                                                                             "but no version on this major was found"));
-
-        VersionCompatibility compatibility = controller.applications().versionCompatibility(id.applicationId());
-
         // Prefer previous platform if possible. Candidates are all deployable, ascending, with existing version appended; then reversed.
         List<Version> versions = controller.readVersionStatus().deployableVersions().stream()
                                            .map(VespaVersion::versionNumber)
@@ -676,24 +679,47 @@ public class JobController {
                 .map(Deployment::version)
                 .ifPresent(versions::add);
 
+        if (versions.isEmpty())
+            throw new IllegalStateException("no deployable platform version found in the system");
+
+        VersionCompatibility compatibility = controller.applications().versionCompatibility(id.applicationId());
+        List<Version> compatibleVersions = new ArrayList<>();
         for (Version target : reversed(versions))
             if (applicationPackage.compileVersion().isEmpty() || compatibility.accept(target, applicationPackage.compileVersion().get()))
+                compatibleVersions.add(target);
+
+        if (compatibleVersions.isEmpty())
+            throw new IllegalArgumentException("no platforms are compatible with compile version " + applicationPackage.compileVersion().get());
+
+        Optional<Integer> major = applicationPackage.deploymentSpec().majorVersion();
+        List<Version> versionOnRightMajor = new ArrayList<>();
+        for (Version target : reversed(versions))
+            if (major.isEmpty() || major.get() == target.getMajor())
+                versionOnRightMajor.add(target);
+
+        if (versionOnRightMajor.isEmpty())
+            throw new IllegalArgumentException("no platforms were found for major version " + major.get() + " specified in deployment.xml");
+
+        for (Version target : compatibleVersions)
+            if (versionOnRightMajor.contains(target))
                 return target;
 
-        throw new IllegalArgumentException("no suitable platform version found" +
-                                           applicationPackage.compileVersion()
-                                                             .map(version -> " for package compiled against " + version)
-                                                             .orElse(""));
+        throw new IllegalArgumentException("no platforms on major version " + major.get() + " specified in deployment.xml " +
+                                           "are compatible with compile version " + applicationPackage.compileVersion().get());
     }
 
     /** Aborts a run and waits for it complete. */
-    private void abortAndWait(RunId id) {
+    private void abortAndWait(RunId id, Duration timeout) {
         abort(id, "replaced by new deployment");
         runner.get().accept(last(id.application(), id.type()).get());
 
+        Instant doom = controller.clock().instant().plus(timeout);
+        Duration sleep = Duration.ofMillis(100);
         while ( ! last(id.application(), id.type()).get().hasEnded()) {
+            if (controller.clock().instant().plus(sleep).isAfter(doom))
+                throw new UncheckedTimeoutException("timeout waiting for " + id + " to abort and finish");
             try {
-                Thread.sleep(100);
+                Thread.sleep(sleep.toMillis());
             }
             catch (InterruptedException e) {
                 Thread.currentThread().interrupt();

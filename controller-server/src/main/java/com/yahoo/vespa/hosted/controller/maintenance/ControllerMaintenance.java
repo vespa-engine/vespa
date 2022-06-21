@@ -58,7 +58,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer));
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
-        maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().meteringService()));
+        maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().resourceDatabase()));
         maintainers.add(new ResourceTagMaintainer(controller, intervals.resourceTagMaintainer, controller.serviceRegistry().resourceTagger()));
         maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
         maintainers.add(new ArtifactExpirer(controller, intervals.containerImageExpirer));

@@ -45,9 +45,9 @@ import java.util.logging.Logger;
  */
 public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
-    private static final CompoundName streamingUserid=new CompoundName("streaming.userid");
-    private static final CompoundName streamingGroupname=new CompoundName("streaming.groupname");
-    private static final CompoundName streamingSelection=new CompoundName("streaming.selection");
+    private static final CompoundName streamingUserid = new CompoundName("streaming.userid");
+    private static final CompoundName streamingGroupname = new CompoundName("streaming.groupname");
+    private static final CompoundName streamingSelection = new CompoundName("streaming.selection");
 
     static final String STREAMING_STATISTICS = "streaming.statistics";
     private final VisitorFactory visitorFactory;
@@ -142,13 +142,13 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     private boolean shouldTraceQuery(Query query) {
         // Only trace for explicit bucket subset queries, as otherwise we'd get a trace entry for every superbucket in the system.
         return (queryIsLocationConstrained(query) &&
-                ((query.getTraceLevel() > 0) || tracingOptions.getSamplingStrategy().shouldSample()));
+                ((query.getTrace().getLevel() > 0) || tracingOptions.getSamplingStrategy().shouldSample()));
     }
 
     private int inferEffectiveQueryTraceLevel(Query query) {
-        return ((query.getTraceLevel() == 0) && shouldTraceQuery(query)) // Honor query's explicit trace level if present.
+        return ((query.getTrace().getLevel() == 0) && shouldTraceQuery(query)) // Honor query's explicit trace level if present.
                 ? tracingOptions.getTraceLevelOverride()
-                : query.getTraceLevel();
+                : query.getTrace().getLevel();
     }
 
     @Override
@@ -308,7 +308,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
     }
 
     private static void lazyTrace(Query query, int level, Object... args) {
-        if (query.isTraceable(level)) {
+        if (query.getTrace().isTraceable(level)) {
             StringBuilder s = new StringBuilder();
             for (Object arg : args) {
                 s.append(arg);

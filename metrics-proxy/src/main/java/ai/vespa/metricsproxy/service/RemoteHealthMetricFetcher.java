@@ -4,12 +4,14 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.metric.HealthMetric;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 
-import java.io.InputStream;
-import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -31,26 +33,21 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
      * Connect to remote service over http and fetch metrics
      */
     public HealthMetric getHealth(int fetchCount) {
-        try (InputStream stream = getJson()) {
-            return createHealthMetrics(stream, fetchCount);
-        } catch (IOException | InterruptedException | ExecutionException e) {
+        try (CloseableHttpResponse response = getResponse()) {
+            HttpEntity entity = response.getEntity();
+            try {
+                return parse(new BufferedInputStream(entity.getContent(), HttpMetricFetcher.BUFFER_SIZE));
+            } catch (Exception e) {
+                handleException(e, entity.getContentType(), fetchCount);
+                return HealthMetric.getDown("Failed fetching status page for service");
+            } finally {
+                EntityUtils.consumeQuietly(entity);
+            }
+        } catch (IOException e) {
             if (service.isAlive()) {
                 logMessageNoResponse(errMsgNoResponse(e), fetchCount);
             }
             return HealthMetric.getUnknown("Failed fetching metrics for service: " + service.getMonitoringName());
-        }
-    }
-
-    /**
-     * Connect to remote service over http and fetch metrics
-     */
-    private HealthMetric createHealthMetrics(InputStream data, int fetchCount) throws IOException {
-        try {
-            return parse(data);
-        } catch (Exception e) {
-            handleException(e, data, fetchCount);
-            while (data.read() != -1) {}
-            return HealthMetric.getDown("Failed fetching status page for service");
         }
     }
 

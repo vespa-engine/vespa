@@ -3,8 +3,10 @@ package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
+
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -12,7 +14,7 @@ import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -25,6 +27,10 @@ public interface ResourceDatabaseClient {
     List<ResourceUsage> getResourceSnapshotsForPeriod(TenantName tenantName, long startTimestamp, long endTimestamp);
 
     void refreshMaterializedView();
+
+    void writeScalingEvents(ClusterId clusterId, Collection<Cluster.ScalingEvent> scalingEvents);
+
+    List<Cluster.ScalingEvent> scalingEvents(Instant from, Instant to, Optional<ApplicationId> application);
 
     Set<YearMonth> getMonthsWithSnapshotsForTenant(TenantName tenantName);
 

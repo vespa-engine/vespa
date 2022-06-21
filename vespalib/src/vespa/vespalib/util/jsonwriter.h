@@ -75,36 +75,4 @@ public:
     stringref toString() const;
 };
 
-template<typename T>
-struct JSONPrinter
-{
-    static void printJSON(JSONWriter& w, T v) {
-        w.appendInt64(v);
-    }
-};
-
-template<>
-struct JSONPrinter<uint64_t>
-{
-    static void printJSON(JSONWriter& w, uint64_t v) {
-        w.appendUInt64(v);
-    }
-};
-
-template<>
-struct JSONPrinter<float>
-{
-    static void printJSON(JSONWriter& w, float v) {
-        w.appendDouble(v);
-    }
-};
-
-template<>
-struct JSONPrinter<double>
-{
-    static void printJSON(JSONWriter& w, double v) {
-        w.appendDouble(v);
-    }
-};
-
 }

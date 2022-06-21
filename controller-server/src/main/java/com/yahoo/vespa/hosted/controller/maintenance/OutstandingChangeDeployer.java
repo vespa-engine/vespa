@@ -22,6 +22,7 @@ public class OutstandingChangeDeployer extends ControllerMaintainer {
     protected double maintain() {
         for (Application application : ApplicationList.from(controller().applications().readable())
                                                       .withProductionDeployment()
+                                                      .withProjectId()
                                                       .withDeploymentSpec()
                                                       .asList())
             controller().applications().deploymentTrigger().triggerNewRevision(application.id());

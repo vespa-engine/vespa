@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import java.time.Duration;
-
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.provision.ApplicationId;
@@ -12,14 +10,15 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.http.v2.response.SessionActiveResponse;
-import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.http.Utils;
+import com.yahoo.vespa.config.server.http.v2.response.SessionActiveResponse;
+import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import java.time.Duration;
+import java.util.logging.Level;
 
 /**
  * Handler that activates a session given by tenant and id (PUT).

@@ -161,7 +161,7 @@ public class ControllerApiTest extends ControllerContainerTest {
                 new ResourceSnapshot(applicationId, 12,48,1200, NodeResources.Architecture.arm64, timestamp, zoneId),
                 new ResourceSnapshot(applicationId, 24, 96,2400,  NodeResources.Architecture.x86_64, timestamp, zoneId)
         );
-        tester.controller().serviceRegistry().meteringService().consume(snapshots);
+        tester.controller().serviceRegistry().resourceDatabase().writeResourceSnapshots(snapshots);
         tester.assertResponse(
                 operatorRequest("http://localhost:8080/controller/v1/metering/tenant/tenantName/month/2020-02", "", Request.Method.GET),
                 new File("metering.json")

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.TriggerResult;
 
 import java.time.Duration;
 
@@ -18,8 +19,9 @@ public class ReadyJobsTrigger extends ControllerMaintainer {
 
     @Override
     public double maintain() {
-        controller().applications().deploymentTrigger().triggerReadyJobs();
-        return 1.0;
+        TriggerResult result = controller().applications().deploymentTrigger().triggerReadyJobs();
+        long total = result.triggered() + result.failed();
+        return total == 0 ? 1 : (double) result.triggered() / (result.triggered() + result.failed());
     }
 
 }

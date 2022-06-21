@@ -48,14 +48,14 @@ public class SearchNodeTest {
         root.freezeModelTopology();
     }
 
-    private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey,
-                                               NodeSpec nodeSpec, boolean flushOnShutDown, boolean isHosted, boolean loadCodeAsHugePages) {
+    private static SearchNode createSearchNode(MockRoot root, String name, int distributionKey, NodeSpec nodeSpec,
+                                               boolean flushOnShutDown, boolean isHosted, ModelContext.FeatureFlags featureFlags) {
         return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                Optional.empty(), Optional.empty(), isHosted, loadCodeAsHugePages, 0.0);
+                Optional.empty(), Optional.empty(), isHosted, 0.0, featureFlags);
     }
 
     private static SearchNode createSearchNode(MockRoot root) {
-        return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true, false);
+        return createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), true, true, new TestProperties());
     }
 
     @Test
@@ -68,7 +68,7 @@ public class SearchNodeTest {
     @Test
     public void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), new TestProperties());
         prepare(root, node, true);
         assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/n3"), node);
     }
@@ -76,7 +76,7 @@ public class SearchNodeTest {
     @Test
     public void requireThatPreShutdownCommandIsEmptyWhenNotActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), false);
+        SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), new TestProperties());
         node.setHostResource(new HostResource(new Host(node, "mynbode")));
         node.initService(root.getDeployState());
         assertFalse(node.getPreShutdownCommand().isPresent());
@@ -85,7 +85,7 @@ public class SearchNodeTest {
     @Test
     public void requireThatPreShutdownCommandUsesPrepareRestartWhenActivated() {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted(), false);
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, root.getDeployState().isHosted(), new TestProperties());
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
         assertTrue(node.getPreShutdownCommand().isPresent());
@@ -94,7 +94,7 @@ public class SearchNodeTest {
 
     private void verifyCodePlacement(boolean hugePages) {
         MockRoot root = new MockRoot("");
-        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, hugePages);
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().loadCodeAsHugePages(hugePages));
         node.setHostResource(new HostResource(new Host(node, "mynbode2")));
         node.initService(root.getDeployState());
         assertEquals(hugePages, node.getStartupCommand().contains("VESPA_LOAD_CODE_AS_HUGEPAGES="));
@@ -104,6 +104,20 @@ public class SearchNodeTest {
     public void requireThatCodePageTypeCanBeControlled() {
         verifyCodePlacement(true);
         verifyCodePlacement(false);
+    }
+
+    private void verifySharedStringRepoReclaim(boolean sharedStringRepoNoReclaim) {
+        MockRoot root = new MockRoot("");
+        SearchNode node = createSearchNode(root, "mynode2", 4, new NodeSpec(7, 5), true, false, new TestProperties().sharedStringRepoNoReclaim(sharedStringRepoNoReclaim));
+        node.setHostResource(new HostResource(new Host(node, "mynbode2")));
+        node.initService(root.getDeployState());
+        assertEquals(sharedStringRepoNoReclaim, node.getStartupCommand().contains("VESPA_SHARED_STRING_REPO_NO_RECLAIM="));
+    }
+
+    @Test
+    public void requireThatSharedRepoReclaimCanBeControlled() {
+        verifySharedStringRepoReclaim(true);
+        verifySharedStringRepoReclaim(false);
     }
 
     private MockRoot createRoot(ModelContext.Properties properties) {

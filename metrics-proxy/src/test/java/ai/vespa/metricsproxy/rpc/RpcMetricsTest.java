@@ -21,10 +21,10 @@ import org.junit.rules.Timeout;
 import java.io.IOException;
 import java.util.List;
 
-import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.TestUtil.getFileContents;
 import static ai.vespa.metricsproxy.core.VespaMetrics.vespaMetricsConsumerId;
 import static ai.vespa.metricsproxy.metric.model.DimensionId.toDimensionId;
+import static ai.vespa.metricsproxy.metric.model.MetricId.toMetricId;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.CUSTOM_CONSUMER_ID;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.MONITORING_SYSTEM;
 import static ai.vespa.metricsproxy.rpc.IntegrationTester.SERVICE_1_CONFIG_ID;

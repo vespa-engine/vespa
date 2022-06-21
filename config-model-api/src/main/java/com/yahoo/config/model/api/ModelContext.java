@@ -87,6 +87,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxConcurrentMergesPerNode() { return 16; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxMergeQueueSize() { return 100; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sharedStringRepoNoReclaim() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean loadCodeAsHugePages() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double containerShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
@@ -115,6 +116,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean enableBitVectors() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default Architecture adminClusterArchitecture() { return Architecture.getDefault(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }
+        @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

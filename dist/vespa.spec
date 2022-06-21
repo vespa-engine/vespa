@@ -78,6 +78,7 @@ BuildRequires: gcc-toolset-11-libatomic-devel
 %define _devtoolset_enable /opt/rh/gcc-toolset-11/enable
 %endif
 BuildRequires: maven
+BuildRequires: maven-openjdk17
 BuildRequires: pybind11-devel
 BuildRequires: python3-pytest
 BuildRequires: python36-devel
@@ -145,6 +146,7 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %if 0%{?el9}
 BuildRequires: cmake >= 3.20.2
 BuildRequires: maven
+BuildRequires: maven-openjdk17
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.11.0
@@ -162,6 +164,9 @@ BuildRequires: gmock-devel
 %if 0%{?fedora}
 BuildRequires: cmake >= 3.9.1
 BuildRequires: maven
+%if %{?fedora} >= 35 && ! 0%{?amzn2022}
+BuildRequires: maven-openjdk17
+%endif
 BuildRequires: openssl-devel
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.11.0
@@ -687,12 +692,6 @@ exit 0
 %postun base
 if [ $1 -eq 0 ]; then # this is an uninstallation
     rm -f /etc/profile.d/vespa.sh
-%if %{_create_vespa_user}
-    ! getent passwd %{_vespa_user} >/dev/null || userdel %{_vespa_user}
-%endif
-%if %{_create_vespa_group}
-    ! getent group %{_vespa_group} >/dev/null || groupdel %{_vespa_group}
-%endif
 fi
 # Keep modifications to conf/vespa/default-env.txt across
 # package uninstall + install.
@@ -715,11 +714,14 @@ fi
 %doc
 %dir %{_prefix}
 %{_prefix}/bin
+%exclude %{_prefix}/bin/vespa
 %exclude %{_prefix}/bin/vespa-destination
 %exclude %{_prefix}/bin/vespa-document-statistics
 %exclude %{_prefix}/bin/vespa-fbench
+%exclude %{_prefix}/bin/vespa-feed-client
 %exclude %{_prefix}/bin/vespa-feeder
 %exclude %{_prefix}/bin/vespa-get
+%exclude %{_prefix}/bin/vespa-jvm-dumper
 %exclude %{_prefix}/bin/vespa-logfmt
 %exclude %{_prefix}/bin/vespa-query-profile-dump-tool
 %exclude %{_prefix}/bin/vespa-stat
@@ -733,8 +735,9 @@ fi
 %exclude %{_prefix}/conf/configserver-app/components/config-model-fat.jar
 %exclude %{_prefix}/conf/configserver-app/config-models.xml
 %dir %{_prefix}/conf/logd
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/telegraf
 %dir %{_prefix}/conf/vespa
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/conf/zookeeper
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/conf/zookeeper
 %dir %{_prefix}/etc
 %{_prefix}/etc/systemd
 %{_prefix}/etc/vespa
@@ -742,7 +745,6 @@ fi
 %{_prefix}/include
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
-%{_prefix}/lib/jars/application-model-jar-with-dependencies.jar
 %{_prefix}/lib/jars/application-preprocessor-jar-with-dependencies.jar
 %{_prefix}/lib/jars/athenz-identity-provider-service-jar-with-dependencies.jar
 %{_prefix}/lib/jars/cloud-tenant-cd-jar-with-dependencies.jar
@@ -774,24 +776,44 @@ fi
 %{_prefix}/libexec
 %exclude %{_prefix}/libexec/vespa_ann_benchmark
 %exclude %{_prefix}/libexec/vespa/common-env.sh
+%exclude %{_prefix}/libexec/vespa/find-pid
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
 %exclude %{_prefix}/libexec/vespa/vespa-curl-wrapper
-%dir %attr(1777,-,-) %{_prefix}/logs
-%dir %attr(1777,%{_vespa_user},-) %{_prefix}/logs/vespa
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/configserver
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/node-admin
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/logs/vespa/search
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/telegraf
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/access
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/configserver
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/node-admin
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/logs/vespa/search
 %{_prefix}/man
 %{_prefix}/sbin
 %{_prefix}/share
-%dir %attr(1777,-,-) %{_prefix}/tmp
-%dir %attr(1777,%{_vespa_user},-) %{_prefix}/tmp/vespa
-%dir %{_prefix}/var
-%dir %{_prefix}/var/db
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/db/vespa
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/db/vespa/logcontrol
-%dir %attr(-,%{_vespa_user},-) %{_prefix}/var/zookeeper
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/tmp
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/tmp/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/crash
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/config_server/serverdb/tenants
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/filedistribution
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/index
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/logcontrol
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/search
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/db/vespa/tmp
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/jdisc_container
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/run
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/application
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/bundlecache
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/bundlecache/configserver
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/cache
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/vespa/cache/config
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper
+%dir %attr(-,%{_vespa_user},%{_vespa_group}) %{_prefix}/var/zookeeper/version-2
 %config(noreplace) %{_prefix}/conf/logd/logd.cfg
 %if %{_create_vespa_service}
 %attr(644,root,root) /usr/lib/systemd/system/vespa.service

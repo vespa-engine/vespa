@@ -1,0 +1,34 @@
+{
+  "name": "app",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "prepare": "cd ../../../ && husky install client/js/app/.husky",
+    "lint": "eslint '{**/*,*}.{js,jsx}'"
+  },
+  "dependencies": {
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@mantine/core": "^4",
+    "@mantine/hooks": "^4",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^1",
+    "eslint": "^8",
+    "eslint-plugin-import": "^2",
+    "eslint-plugin-prettier": "^4",
+    "eslint-plugin-react": "^7",
+    "eslint-plugin-react-hooks": "^4",
+    "eslint-plugin-react-perf": "^3",
+    "eslint-plugin-unused-imports": "^2",
+    "husky": "^7",
+    "prettier": "2",
+    "pretty-quick": "^3",
+    "vite": "^2"
+  }
+}

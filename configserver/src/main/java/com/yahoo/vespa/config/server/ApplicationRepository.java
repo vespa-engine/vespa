@@ -437,7 +437,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public Optional<Instant> lastDeployTime(ApplicationId application) {
         Tenant tenant = tenantRepository.getTenant(application.tenant());
         if (tenant == null) return Optional.empty();
-        return getActiveSession(tenant, application).map(Session::getCreateTime);
+        Optional<Instant> activatedTime = getActiveSession(tenant, application).map(Session::getActivatedTime);
+        log.log(Level.FINE, application + " last activated " + activatedTime.orElse(Instant.EPOCH));
+        return activatedTime;
     }
 
     public ApplicationId activate(Tenant tenant,
@@ -750,7 +752,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public HttpResponse getLogs(ApplicationId applicationId, Optional<DomainName> hostname, String apiParams) {
         String logServerURI = getLogServerURI(applicationId, hostname) + apiParams;
-        return logRetriever.getLogs(logServerURI);
+        return logRetriever.getLogs(logServerURI, lastDeployTime(applicationId));
     }
 
     // ---------------- Methods to do call against tester containers in hosted ------------------------------

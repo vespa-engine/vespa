@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.organization.Mailer;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.OwnershipIssues;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.SystemMonitor;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportConsumer;
-import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceDatabaseClient;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.GcpSecretStore;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
@@ -62,8 +61,6 @@ public interface ServiceRegistry {
     EndpointCertificateProvider endpointCertificateProvider();
 
     EndpointCertificateValidator endpointCertificateValidator();
-
-    MeteringClient meteringService();
 
     ContactRetriever contactRetriever();
 

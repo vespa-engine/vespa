@@ -44,7 +44,7 @@ public class LiteralBoostSearcher extends Searcher {
         if (newRankTerms.getItemCount() > 0)
             addTopLevelRankTerms(newRankTerms, query);
 
-        if (query.getTraceLevel() >= 2 && newRankTerms.getItemCount() > 0)
+        if (query.getTrace().getLevel() >= 2 && newRankTerms.getItemCount() > 0)
             query.trace("Added rank terms for possible literal field matches.", true, 2);
     }
 

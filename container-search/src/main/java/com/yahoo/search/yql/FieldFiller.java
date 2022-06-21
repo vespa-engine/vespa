@@ -1,104 +1,45 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.chain.dependencies.After;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb.Summaryclass;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb.Summaryclass.Fields;
 import static com.yahoo.prelude.fastsearch.VespaBackEndSearcher.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.query.Presentation;
+import com.yahoo.search.schema.DocumentSummary;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.searchchain.Execution;
 
 /**
- * Ensure the fields specified in {@link Presentation#getSummaryFields()} are
- * available after filling phase.
+ * Ensure the fields specified in {@link Presentation#getSummaryFields()} are available after filling phase.
  *
  * @author stiankri
  * @author Steinar Knutsen
  */
-@Beta
 @After(MinimalQueryInserter.EXTERNAL_YQL)
 public class FieldFiller extends Searcher {
 
     private final Set<String> intersectionOfAttributes;
-    private final SummaryIntersections summaryDb = new SummaryIntersections();
+    private final SchemaInfo schemaInfo;
     public static final CompoundName FIELD_FILLER_DISABLE = new CompoundName("FieldFiller.disable");
 
-    private static class SummaryIntersections {
-        private final Map<String, Map<String, Set<String>>> db = new HashMap<>();
+    public FieldFiller(SchemaInfo schemaInfo) {
+        this.schemaInfo = schemaInfo;
 
-        void add(String dbName, Summaryclass summary) {
-            Map<String, Set<String>> docType = getOrCreateDocType(dbName);
-            Set<String> fields = new HashSet<>(summary.fields().size());
-            for (Fields f : summary.fields()) {
-                fields.add(f.name());
-            }
-            docType.put(summary.name(), fields);
-        }
-
-        private Map<String, Set<String>> getOrCreateDocType(String dbName) {
-            Map<String, Set<String>> docType = db.get(dbName);
-            if (docType == null) {
-                docType = new HashMap<>();
-                db.put(dbName, docType);
-            }
-            return docType;
-        }
-
-        boolean hasAll(Set<String> requested, String summaryName, Set<String> restrict) {
-            Set<String> explicitRestriction;
-            Set<String> intersection = null;
-
-            if (restrict.isEmpty()) {
-                explicitRestriction = db.keySet();
-            } else {
-                explicitRestriction = restrict;
-            }
-
-            for (String docType : explicitRestriction) {
-                Map<String, Set<String>> summaries = db.get(docType);
-                Set<String> summary;
-
-                if (summaries == null) {
-                    continue;
-                }
-                summary = summaries.get(summaryName);
-                if (summary == null) {
-                    intersection = null;
-                    break;
-                }
-                if (intersection == null) {
-                    intersection = new HashSet<>(summary.size());
-                    intersection.addAll(summary);
-                } else {
-                    intersection.retainAll(summary);
-                }
-            }
-            return intersection != null && intersection.containsAll(requested);
-        }
-    }
-
-    public FieldFiller(DocumentdbInfoConfig config) {
         intersectionOfAttributes = new HashSet<>();
         boolean first = true;
-
-        for (Documentdb db : config.documentdb()) {
-            for (Summaryclass summary : db.summaryclass()) {
+        for (Schema schema : schemaInfo.schemas().values()) {
+            for (DocumentSummary summary : schema.documentSummaries().values()) {
                 Set<String> attributes;
                 if (SORTABLE_ATTRIBUTES_SUMMARY_CLASS.equals(summary.name())) {
                     attributes = new HashSet<>(summary.fields().size());
-                    for (Fields f : summary.fields()) {
+                    for (DocumentSummary.Field f : summary.fields().values()) {
                         attributes.add(f.name());
                     }
                     if (first) {
@@ -108,12 +49,6 @@ public class FieldFiller extends Searcher {
                         intersectionOfAttributes.retainAll(attributes);
                     }
                 }
-                // yes, we store attribute prefetch here as well, this is in
-                // case we get a query where we have a restrict parameter which
-                // makes filling with attribute prefetch possible even though it
-                // wouldn't have been possible without restricting the set of
-                // doctypes
-                summaryDb.add(db.name(), summary);
             }
         }
     }
@@ -140,10 +75,31 @@ public class FieldFiller extends Searcher {
             }
         } else {
             // Yes, summaryClass may be SORTABLE_ATTRIBUTES_SUMMARY_CLASS here
-            if ( ! summaryDb.hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
+            if ( ! hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
                 execution.fill(result, null);
             }
         }
+    }
+
+    private boolean hasAll(Set<String> requested, String summaryName, Set<String> restrict) {
+        Set<String> intersection = null;
+        for (String schemaName : restrict.isEmpty() ? schemaInfo.schemas().keySet() : restrict) {
+            Schema schema = schemaInfo.schemas().get(schemaName);
+            if (schema == null) continue;
+
+            DocumentSummary summary = schema.documentSummaries().get(summaryName);
+            if (summary == null) {
+                intersection = null;
+                break;
+            }
+            if (intersection == null) {
+                intersection = new HashSet<>(summary.fields().size());
+                intersection.addAll(summary.fields().keySet());
+            } else {
+                intersection.retainAll(summary.fields().keySet());
+            }
+        }
+        return intersection != null && intersection.containsAll(requested);
     }
 
 }

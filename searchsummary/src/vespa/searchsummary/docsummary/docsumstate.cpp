@@ -24,10 +24,8 @@ namespace search::docsummary {
 
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
     : _args(),
-      _docsumbuf(nullptr),
-      _docsumcnt(0),
+      _docsumbuf(),
       _kwExtractor(nullptr),
-      _keywords(nullptr),
       _callback(callback),
       _dynteaser(),
       _attrCtx(),
@@ -53,8 +51,6 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
 
 GetDocsumsState::~GetDocsumsState()
 {
-    free(_docsumbuf);
-    free(_keywords);
     if (_dynteaser._result != nullptr) {
         juniper::ReleaseResult(_dynteaser._result);
     }

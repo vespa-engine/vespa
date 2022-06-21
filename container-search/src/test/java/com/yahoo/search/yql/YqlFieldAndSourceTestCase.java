@@ -5,19 +5,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import com.yahoo.search.schema.DocumentSummary;
+import com.yahoo.search.schema.Schema;
+import com.yahoo.search.schema.SchemaInfo;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb.Summaryclass;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig.Documentdb.Summaryclass.Fields;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -57,10 +56,7 @@ public class YqlFieldAndSourceTestCase {
         mockBackend.addSummaryClassByCopy(SORTABLE_ATTRIBUTES_SUMMARY_CLASS, Arrays.asList(FIELD2));
         mockBackend.addSummaryClassByCopy(THIRD_OPTION, Arrays.asList(FIELD3));
 
-        DocumentdbInfoConfig config = new DocumentdbInfoConfig(new DocumentdbInfoConfig.Builder()
-                                                               .documentdb(buildDocumentdbArray()));
-
-        searchChain = new Chain<>(new FieldFiller(config), mockBackend);
+        searchChain = new Chain<>(new FieldFiller(schemaInfo()), mockBackend);
         context = Execution.Context.createContextStub();
         execution = new Execution(searchChain, context);
     }
@@ -75,29 +71,13 @@ public class YqlFieldAndSourceTestCase {
         return h;
     }
 
-    private List<Documentdb.Builder> buildDocumentdbArray() {
-        List<Documentdb.Builder> configArray = new ArrayList<>(1);
-        configArray.add(new Documentdb.Builder().summaryclass(
-                buildSummaryclassArray()).name("defaultsearchdefinition"));
-
-        return configArray;
-    }
-
-    private List<Summaryclass.Builder> buildSummaryclassArray() {
-        return Arrays.asList(
-                new Summaryclass.Builder()
-                        .id(0)
-                        .name(DEFAULT_SUMMARY_CLASS)
-                        .fields(Arrays.asList(new Fields.Builder().name(FIELD1).type("string"),
-                                              new Fields.Builder().name(FIELD2).type("string"))),
-                new Summaryclass.Builder()
-                        .id(1)
-                        .name(SORTABLE_ATTRIBUTES_SUMMARY_CLASS)
-                        .fields(Arrays.asList(new Fields.Builder().name(FIELD2).type("string"))),
-                new Summaryclass.Builder()
-                        .id(2)
-                        .name(THIRD_OPTION)
-                        .fields(Arrays.asList(new Fields.Builder().name(FIELD3).type("string"))));
+    private SchemaInfo schemaInfo() {
+        var schema = new Schema.Builder("defaultsearchdefinition");
+        schema.add(new DocumentSummary.Builder(DEFAULT_SUMMARY_CLASS).addField(FIELD1, "string")
+                                                                     .addField(FIELD2, "string").build())
+              .add((new DocumentSummary.Builder(SORTABLE_ATTRIBUTES_SUMMARY_CLASS).addField(FIELD2, "string").build()))
+              .add((new DocumentSummary.Builder(THIRD_OPTION).addField(FIELD3, "string").build()));
+        return new SchemaInfo(List.of(schema.build()), Map.of());
     }
 
     @After

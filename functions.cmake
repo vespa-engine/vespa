@@ -749,10 +749,6 @@ function(vespa_detect_build_platform)
   endif()
 endfunction()
 
-function(vespa_install_empty_tmp_dir TARGET)
-install(DIRECTORY DESTINATION ${TARGET} DIRECTORY_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_WRITE GROUP_EXECUTE WORLD_READ WORLD_WRITE WORLD_EXECUTE SETGID)
-endfunction()
-
 function(vespa_suppress_warnings_for_protobuf_sources)
     cmake_parse_arguments(
         ARG

@@ -26,6 +26,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
+import com.yahoo.vespa.config.server.ConfigServerSpec;
 import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
@@ -60,6 +61,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
 
 /**
  * A SessionPreparer is responsible for preparing a session given an application package.
@@ -157,7 +160,6 @@ public class SessionPreparer {
 
         final ContainerEndpointsCache containerEndpointsCache;
         final List<ContainerEndpoint> containerEndpoints;
-        final ModelContext.Properties properties;
         private final EndpointCertificateMetadataStore endpointCertificateMetadataStore;
         private final Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
         private final Optional<AthenzDomain> athenzDomain;
@@ -191,24 +193,13 @@ public class SessionPreparer {
                     .flatMap(endpointCertificateRetriever::readEndpointCertificateSecrets);
             this.containerEndpoints = readEndpointsIfNull(params.containerEndpoints());
             this.athenzDomain = params.athenzDomain();
-            this.properties = new ModelContextImpl.Properties(params.getApplicationId(),
-                                                              vespaVersion,
-                                                              configserverConfig,
-                                                              zone,
-                                                              Set.copyOf(containerEndpoints),
-                                                              params.isBootstrap(),
-                                                              currentActiveApplicationSet.isEmpty(),
-                                                              LegacyFlags.from(applicationPackage, flagSource),
-                                                              endpointCertificateSecrets,
-                                                              athenzDomain,
-                                                              params.quota(),
-                                                              params.tenantSecretStores(),
-                                                              secretStore,
-                                                              params.operatorCertificates(),
-                                                              params.cloudAccount());
             this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
+                                                                   flagSource,
+                                                                   secretStore,
+                                                                   containerEndpoints,
+                                                                   endpointCertificateSecrets,
                                                                    configDefinitionRepo,
                                                                    fileRegistry,
                                                                    executor,
@@ -218,8 +209,8 @@ public class SessionPreparer {
                                                                    logger,
                                                                    params,
                                                                    currentActiveApplicationSet,
-                                                                   properties,
-                                                                   configserverConfig);
+                                                                   configserverConfig,
+                                                                   zone);
         }
 
         void checkTimeout(String step) {
@@ -236,7 +227,7 @@ public class SessionPreparer {
             FileDistribution fileDistribution = fileDistributionFactory.createFileDistribution();
             log.log(Level.FINE, () -> "Ask other config servers to download application package for " +
                     applicationId + " (" + fileReference + ")");
-            properties.configServerSpecs()
+            ConfigServerSpec.fromConfig(configserverConfig)
                       .stream()
                       .filter(spec -> !spec.getHostName().equals(HostName.getLocalhost()))
                       .forEach(spec -> fileDistribution.startDownload(spec.getHostName(), spec.getConfigServerPort(), Set.of(fileReference)));
@@ -247,7 +238,7 @@ public class SessionPreparer {
 
         void preprocess() {
             try {
-                this.preprocessedApplicationPackage = applicationPackage.preprocess(properties.zone(), logger);
+                this.preprocessedApplicationPackage = applicationPackage.preprocess(zone, logger);
             } catch (IOException | RuntimeException e) {
                 throw new IllegalArgumentException("Error preprocessing application package for " + applicationId +
                                                            ", session " + sessionZooKeeperClient.sessionId(), e);

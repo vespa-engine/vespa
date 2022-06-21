@@ -235,7 +235,7 @@ public class SessionRepository {
     public ConfigChangeActions prepareLocalSession(Session session, DeployLogger logger, PrepareParams params, Instant now) {
         params.vespaVersion().ifPresent(version -> {
             if ( ! params.isBootstrap() && ! modelFactoryRegistry.allVersions().contains(version))
-                throw new UnknownVespaVersionException("Vespa version '" + version + "' not known by this configserver");
+                throw new UnknownVespaVersionException("Vespa version '" + version + "' not known by this config server");
         });
 
         applicationRepo.createApplication(params.getApplicationId()); // TODO jvenstad: This is wrong, but it has to be done now, since preparation can change the application ID of a session :(

@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attributedfw.h"
-#include "docsumstate.h"
 #include "docsumwriter.h"
 #include "docsum_field_writer_state.h"
 #include <vespa/eval/eval/value.h>
@@ -39,11 +38,6 @@ AttrDFW::AttrDFW(const vespalib::string & attrName) :
 {
 }
 
-const attribute::IAttributeVector &
-AttrDFW::get_attribute(const GetDocsumsState& s) const {
-    return *s.getAttribute(getIndex());
-}
-
 namespace {
 
 class SingleAttrDFW : public AttrDFW
@@ -53,13 +47,10 @@ public:
         AttrDFW(attrName)
     { }
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, Inserter &target) override;
-    bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override;
+    bool isDefaultValue(uint32_t docid, const GetDocsumsState * state) const override {
+        return get_attribute(*state).isUndefined(docid);
+    }
 };
-
-bool SingleAttrDFW::isDefaultValue(uint32_t docid, const GetDocsumsState * state) const
-{
-    return get_attribute(*state).isUndefined(docid);
-}
 
 void
 SingleAttrDFW::insertField(uint32_t docid, GetDocsumsState * state, ResType type, Inserter &target)

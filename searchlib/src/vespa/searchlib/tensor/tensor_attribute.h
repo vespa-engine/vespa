@@ -32,7 +32,7 @@ protected:
 
     template <typename RefType>
     void doCompactWorst();
-    void checkTensorType(const vespalib::eval::Value &tensor) const;
+    void checkTensorType(const vespalib::eval::Value &tensor);
     void setTensorRef(DocId docId, EntryRef ref);
     virtual vespalib::MemoryUsage update_stat();
     virtual vespalib::MemoryUsage memory_usage() const;

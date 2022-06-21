@@ -82,12 +82,9 @@ public class NginxHealthClient extends AbstractComponent implements HealthStatus
         Cursor root = slime.get();
         List<ServerGroup.Server> servers = new ArrayList<>();
         Cursor serversObject = root.field("servers");
+        Cursor serverArray = serversObject.field("stream");
 
-        Cursor streamArray = serversObject.field("stream");
-        Cursor serverArray = serversObject.field("server"); // TODO(mpolden): Remove after 2022-03-01
-        Cursor array = streamArray.valid() ? streamArray : serverArray;
-
-        array.traverse((ArrayTraverser) (idx, inspector) -> {
+        serverArray.traverse((ArrayTraverser) (idx, inspector) -> {
             String upstreamName = inspector.field("upstream").asString();
             String hostPort = inspector.field("name").asString();
             boolean up = "up".equals(inspector.field("status").asString());

@@ -9,6 +9,7 @@
 #include <vespa/eval/instruction/sparse_112_dot_product.h>
 #include <vespa/eval/instruction/mixed_112_dot_product.h>
 #include <vespa/eval/instruction/sparse_merge_function.h>
+#include <vespa/eval/instruction/sparse_singledim_lookup.h>
 #include <vespa/eval/instruction/sparse_no_overlap_join_function.h>
 #include <vespa/eval/instruction/sparse_full_overlap_join_function.h>
 #include <vespa/eval/instruction/mixed_inner_product_function.h>
@@ -100,6 +101,7 @@ const TensorFunction &optimize_for_factory(const ValueBuilderFactory &, const Te
                           child.set(SparseMergeFunction::optimize(child.get(), stash));
                           child.set(SparseNoOverlapJoinFunction::optimize(child.get(), stash));
                           child.set(SparseFullOverlapJoinFunction::optimize(child.get(), stash));
+                          child.set(SparseSingledimLookup::optimize(child.get(), stash));
                       });
     return root.get();
 }

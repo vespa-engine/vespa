@@ -59,8 +59,9 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     private boolean canTriggerAt(Instant instant) {
         int hourOfDay = instant.atZone(ZoneOffset.UTC).getHour();
         int dayOfWeek = instant.atZone(ZoneOffset.UTC).getDayOfWeek().getValue();
-        // Upgrade can only be scheduled between 07:00 and 12:59 UTC, Monday-Thursday
-        return hourOfDay >= 7 && hourOfDay <= 12 && dayOfWeek < 5;
+        // Upgrade can only be scheduled between 07:00 (02:00 in CD systems) and 12:59 UTC, Monday-Thursday
+        int startHour = controller().system().isCd() ? 2 : 7;
+        return hourOfDay >= startHour && hourOfDay <= 12 && dayOfWeek < 5;
     }
 
     private Release releaseIn(CloudName cloud) {

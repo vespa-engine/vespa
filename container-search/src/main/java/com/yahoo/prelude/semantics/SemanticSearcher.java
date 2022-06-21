@@ -84,7 +84,7 @@ public class SemanticSearcher extends Searcher {
         if (query.properties().getBoolean(rulesOff))
             return execution.search(query);
 
-        int traceLevel = query.properties().getInteger(tracelevelRules, query.getTraceLevel() - 2);
+        int traceLevel = query.properties().getInteger(tracelevelRules, query.getTrace().getLevel() - 2);
         if (traceLevel < 0) traceLevel = 0;
         RuleBase ruleBase = resolveRuleBase(query);
         if (ruleBase == null)

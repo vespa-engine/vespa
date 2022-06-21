@@ -7,7 +7,6 @@ import com.yahoo.net.URI;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.prelude.fastsearch.FastHit;
-import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;

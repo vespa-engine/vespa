@@ -282,7 +282,7 @@ public class HostedDeployTest {
         int newMajor = 8;
         Version wantedVersion = new Version(newMajor, 1, 2);
         Version oldVersion = new Version(oldMajor, 2, 3);
-        List<Host> hosts = createHosts(9, oldVersion.toFullString(), wantedVersion.toFullString());
+        List<Host> hosts = createHosts(9, oldVersion.toFullString());
 
         CountingModelFactory oldFactory = createHostedModelFactory(oldVersion);
         ModelFactory newFactory = createFailingModelFactory(wantedVersion);
@@ -333,7 +333,7 @@ public class HostedDeployTest {
         String oldestVersion = oldestMajorVersion + ".0.0";
         String newestOnOldMajorVersion = oldestMajorVersion + ".1.0";
         String newestOnNewMajorVersion = newestMajorVersion + ".2.0";
-        List<Host> hosts = createHosts(9, oldestVersion, newestOnNewMajorVersion);
+        List<Host> hosts = createHosts(9, oldestVersion, newestOnOldMajorVersion);
 
         CountingModelFactory factory1 = createHostedModelFactory(Version.fromString(oldestVersion));
         CountingModelFactory factory2 = createHostedModelFactory(Version.fromString(newestOnOldMajorVersion));

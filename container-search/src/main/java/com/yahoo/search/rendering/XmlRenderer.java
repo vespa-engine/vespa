@@ -160,7 +160,7 @@ public final class XmlRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @SuppressWarnings("UnusedParameters")
     public void queryContext(XMLWriter writer, QueryContext queryContext, Query owner) throws IOException {
-        if (owner.getTraceLevel()!=0) {
+        if (owner.getTrace().getLevel()!=0) {
             XMLWriter xmlWriter=XMLWriter.from(writer);
             xmlWriter.openTag("meta").attribute("type", QueryContext.ID);
             TraceNode traceRoot = owner.getModel().getExecution().trace().traceNode().root();

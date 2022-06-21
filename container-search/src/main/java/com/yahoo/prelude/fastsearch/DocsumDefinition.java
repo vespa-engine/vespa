@@ -25,7 +25,7 @@ public class DocsumDefinition {
     public DocsumDefinition(DocumentSummary documentSummary) {
         this.name = documentSummary.name();
         this.dynamic = documentSummary.isDynamic();
-        this.fields = documentSummary.fields()
+        this.fields = documentSummary.fields().values()
                                      .stream()
                                      .map(field -> DocsumField.create(field.name(), field.type().asString()))
                                      .collect(Collectors.toUnmodifiableMap(field -> field.getName(),

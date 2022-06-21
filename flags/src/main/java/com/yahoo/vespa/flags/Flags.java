@@ -15,7 +15,6 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -120,6 +119,13 @@ public class Flags {
             "feed-concurrency", 0.5,
             List.of("baldersheim"), "2020-12-02", "2023-01-01",
             "How much concurrency should be allowed for feed",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag SHARED_STRING_REPO_NO_RECLAIM = defineFeatureFlag(
+            "shared-string-repo-no-reclaim", false,
+            List.of("baldersheim"), "2022-06-14", "2023-01-01",
+            "Controls whether we do track usage and reclaim unused enum values in shared string repo",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -369,6 +375,13 @@ public class Flags {
             "Use yumproxy-v2",
             "Takes effect on host admin restart",
             HOSTNAME);
+
+    public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
+            "log-file-compression-algorithm", "",
+            List.of("arnej"), "2022-06-14", "2024-12-31",
+            "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
+            "Takes effect immediately",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

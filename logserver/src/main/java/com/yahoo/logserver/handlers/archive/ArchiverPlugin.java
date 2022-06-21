@@ -20,7 +20,7 @@ public class ArchiverPlugin implements Plugin {
      */
     private static final String DEFAULT_MAXFILESIZE = "20971520";
 
-    private static final String DEFAULT_COMPRESSION = "zstd";
+    private static final String DEFAULT_COMPRESSION = "gzip";
 
     private final Server server = Server.getInstance();
     private static final Logger log = Logger.getLogger(ArchiverPlugin.class.getName());

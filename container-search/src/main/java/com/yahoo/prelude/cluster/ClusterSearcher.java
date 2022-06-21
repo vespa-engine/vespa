@@ -204,7 +204,7 @@ public class ClusterSearcher extends Searcher {
     private void validateQueryTimeout(Query query) {
         if (query.getTimeout() <= maxQueryTimeout) return;
 
-        if (query.isTraceable(2)) {
+        if (query.getTrace().isTraceable(2)) {
             query.trace("Query timeout (" + query.getTimeout() + " ms) > max query timeout (" +
                         maxQueryTimeout + " ms). Setting timeout to " + maxQueryTimeout + " ms.", 2);
         }
@@ -215,7 +215,7 @@ public class ClusterSearcher extends Searcher {
         if ( ! query.getRanking().getQueryCache() ) return;
         if (query.getTimeout() <= maxQueryCacheTimeout) return;
 
-        if (query.isTraceable(2)) {
+        if (query.getTrace().isTraceable(2)) {
             query.trace("Query timeout (" + query.getTimeout() + " ms) > max query cache timeout (" +
                         maxQueryCacheTimeout + " ms). Disabling query cache.", 2);
         }

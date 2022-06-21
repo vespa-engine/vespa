@@ -33,10 +33,6 @@ public class SearchOrderer {
      * @return a new list containing the same search instances in the right order
      */
     public List<Schema> order(List<Schema> unordered) {
-        // Description above state that the original order should be preserved, except for the dependency constraint.
-        // Yet we botch that guarantee by sorting the list...
-        unordered.sort(Comparator.comparing(Schema::getName));
-
         // No, this is not a fast algorithm...
         indexOnDocumentName(unordered);
         List<Schema> ordered = new ArrayList<>(unordered.size());

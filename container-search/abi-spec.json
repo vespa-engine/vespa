@@ -1983,6 +1983,7 @@
       "public com.yahoo.search.query.Select getSelect()",
       "public com.yahoo.search.query.Ranking getRanking()",
       "public com.yahoo.search.query.Model getModel()",
+      "public com.yahoo.search.query.Trace getTrace()",
       "public com.yahoo.container.jdisc.HttpRequest getHttpRequest()",
       "public com.yahoo.search.query.SessionId getSessionId()",
       "public com.yahoo.search.query.SessionId getSessionId(java.lang.String)",
@@ -1993,15 +1994,16 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": [
+      "public com.yahoo.search.query.Trace trace",
       "public static final com.yahoo.processing.request.CompoundName OFFSET",
       "public static final com.yahoo.processing.request.CompoundName HITS",
       "public static final com.yahoo.processing.request.CompoundName QUERY_PROFILE",
       "public static final com.yahoo.processing.request.CompoundName SEARCH_CHAIN",
-      "public static final com.yahoo.processing.request.CompoundName TRACE_LEVEL",
-      "public static final com.yahoo.processing.request.CompoundName EXPLAIN_LEVEL",
       "public static final com.yahoo.processing.request.CompoundName NO_CACHE",
       "public static final com.yahoo.processing.request.CompoundName GROUPING_SESSION_CACHE",
       "public static final com.yahoo.processing.request.CompoundName TIMEOUT",
+      "public static final com.yahoo.processing.request.CompoundName TRACE_LEVEL",
+      "public static final com.yahoo.processing.request.CompoundName EXPLAIN_LEVEL",
       "public static final java.util.List nativeProperties"
     ]
   },
@@ -5613,6 +5615,46 @@
       "public static final java.lang.String LOWERCASE"
     ]
   },
+  "com.yahoo.search.query.Trace": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Cloneable"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void <init>(com.yahoo.search.Query)",
+      "public int getLevel()",
+      "public void setLevel(int)",
+      "public boolean isTraceable(int)",
+      "public void setExplainLevel(int)",
+      "public int getExplainLevel()",
+      "public boolean getTimestamps()",
+      "public void setTimestamps(boolean)",
+      "public boolean getQuery()",
+      "public void setQuery(boolean)",
+      "public void trace(java.lang.String, int)",
+      "public void trace(java.lang.Object, int)",
+      "public void trace(java.lang.String, boolean, int)",
+      "public varargs void trace(boolean, int, java.lang.Object[])",
+      "public void traceProperties()",
+      "public com.yahoo.search.query.Trace cloneFor(com.yahoo.search.Query)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public com.yahoo.search.query.Trace clone()",
+      "public java.lang.String toString()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields": [
+      "public static final java.lang.String TRACE",
+      "public static final java.lang.String LEVEL",
+      "public static final java.lang.String EXPLAIN_LEVEL",
+      "public static final java.lang.String TIMESTAMPS",
+      "public static final java.lang.String QUERY"
+    ]
+  },
   "com.yahoo.search.query.UniqueRequestId": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -5992,6 +6034,7 @@
       "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile)",
       "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, com.yahoo.language.process.Embedder)",
       "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, java.util.Map)",
+      "public void <init>(com.yahoo.search.query.profile.compiled.CompiledQueryProfile, java.util.Map, ai.vespa.cloud.ZoneInfo)",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile getQueryProfile()",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
@@ -6687,7 +6730,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(java.util.Map, ai.vespa.cloud.ZoneInfo)",
+      "public void <init>(java.util.Map)",
       "public java.lang.Object get(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)",
       "public void set(com.yahoo.processing.request.CompoundName, java.lang.Object, java.util.Map)",
       "public java.util.Map listProperties(com.yahoo.processing.request.CompoundName, java.util.Map, com.yahoo.processing.request.Properties)"
@@ -7931,6 +7974,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public com.yahoo.search.schema.DocumentSummary$Builder addField(java.lang.String, java.lang.String)",
       "public com.yahoo.search.schema.DocumentSummary$Builder add(com.yahoo.search.schema.DocumentSummary$Field)",
       "public com.yahoo.search.schema.DocumentSummary$Builder setDynamic(boolean)",
       "public com.yahoo.search.schema.DocumentSummary build()"
@@ -7997,7 +8041,7 @@
     ],
     "methods": [
       "public java.lang.String name()",
-      "public java.util.List fields()",
+      "public java.util.Map fields()",
       "public boolean isDynamic()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -8188,7 +8232,6 @@
     "methods": [
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.config.SchemaInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.search.schema.SchemaInfo, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
-      "public void <init>(com.yahoo.container.core.ChainsConfig, com.yahoo.search.config.IndexInfoConfig, com.yahoo.container.QrSearchersConfig, com.yahoo.component.provider.ComponentRegistry, com.yahoo.vespa.configdefinition.SpecialtokensConfig, com.yahoo.language.Linguistics, com.yahoo.component.provider.ComponentRegistry, java.util.concurrent.Executor)",
       "public com.yahoo.search.searchchain.Execution newExecution(com.yahoo.component.chain.Chain)",
       "public com.yahoo.search.searchchain.Execution newExecution(java.lang.String)",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",

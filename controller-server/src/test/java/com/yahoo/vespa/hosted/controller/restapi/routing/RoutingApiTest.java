@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.routing;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
@@ -35,6 +36,7 @@ public class RoutingApiTest extends ControllerContainerTest {
     public void before() {
         tester = new ContainerTester(container, responseFiles);
         deploymentTester = new DeploymentTester(new ControllerTester(tester));
+        deploymentTester.controllerTester().upgradeSystem(Version.fromString("6.1"));
     }
 
     @Test

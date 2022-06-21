@@ -42,22 +42,6 @@ public class Pong {
         this.error = error;
     }
 
-    /**
-     * @deprecated do not use. Additional errors are ignored.
-     */
-    @Deprecated
-    public void addError(ErrorMessage error) { }
-
-    /**
-     * @deprecated use error() instead
-     */
-    @Deprecated
-    public ErrorMessage getError(int i) {
-        if (i > 1) throw new IllegalArgumentException("No error at position " + i);
-        if (i == 0 && error.isEmpty()) throw new IllegalArgumentException("No error at position " + i);
-        return error.get();
-    }
-
     public Optional<ErrorMessage> error() { return error; }
 
     /** Returns the number of active documents in the backend responding in this Pong, if available */
@@ -65,27 +49,6 @@ public class Pong {
 
     /** Returns true if the pinged node is currently blocking write operations due to being full */
     public boolean isBlockingWrites() { return isBlockingWrites; }
-
-    /**
-     * Returns Optional.empty()
-     *
-     * @return empty
-     * @deprecated do not use. There is always one pong per node.
-     */
-    @Deprecated
-    public Optional<Integer> activeNodes() {
-        return Optional.empty();
-    }
-
-    /**
-     * Returns a list containing 0 or 1 errors
-     *
-     * @deprecated use error() instead
-     */
-    @Deprecated
-    public List<ErrorMessage> getErrors() {
-        return error.stream().collect(Collectors.toList());
-    }
 
     /** Returns whether there is an error or not */
     public boolean badResponse() { return error.isPresent(); }

@@ -7,6 +7,17 @@ LOG_SETUP(".vespalib.shared_string_repo");
 
 namespace vespalib {
 
+namespace {
+
+bool resolve_should_reclaim_flag() {
+    bool no_reclaim = (getenv("VESPA_SHARED_STRING_REPO_NO_RECLAIM") != nullptr);
+    return !no_reclaim;
+}
+
+}
+
+const bool SharedStringRepo::should_reclaim = resolve_should_reclaim_flag();
+
 SharedStringRepo::Stats::Stats()
     : active_entries(0),
       total_entries(0),
@@ -86,8 +97,10 @@ SharedStringRepo SharedStringRepo::_repo;
 SharedStringRepo::SharedStringRepo() = default;
 SharedStringRepo::~SharedStringRepo()
 {
-    for (size_t p = 0; p < _partitions.size(); ++p) {
-        _partitions[p].find_leaked_entries(p);
+    if (should_reclaim) {
+        for (size_t p = 0; p < _partitions.size(); ++p) {
+            _partitions[p].find_leaked_entries(p);
+        }
     }
 }
 
@@ -103,6 +116,13 @@ SharedStringRepo::stats()
     return stats;
 }
 
+SharedStringRepo::Handle
+SharedStringRepo::Handle::handle_from_number_slow(int64_t value) {
+    char buf[24];
+    auto res = std::to_chars(buf, buf + sizeof(buf), value, 10);
+    return Handle(vespalib::stringref(buf, res.ptr - buf));
+}
+
 SharedStringRepo::Handles::Handles()
     : _handles()
 {
@@ -116,8 +136,10 @@ SharedStringRepo::Handles::Handles(Handles &&rhs)
 
 SharedStringRepo::Handles::~Handles()
 {
-    for (string_id handle: _handles) {
-        _repo.reclaim(handle);
+    if (should_reclaim) {
+        for (string_id handle: _handles) {
+            _repo.reclaim(handle);
+        }
     }
 }
 

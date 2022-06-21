@@ -2146,6 +2146,14 @@ public class DeploymentTriggerTest {
         app.deploy();
         assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version2, app.application().revisions().get(tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+
+        DeploymentContext newApp = tester.newDeploymentContext("new", "app", "default")
+                                         .submit(new ApplicationPackageBuilder().region("us-east-3")
+                                                                                .compileVersion(version1)
+                                                                                .build())
+                                         .deploy();
+        assertEquals(version1, tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetPlatform());
+        assertEquals(version1, newApp.application().revisions().get(tester.jobs().last(newApp.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
     }
 
     @Test

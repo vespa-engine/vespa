@@ -488,7 +488,7 @@ public class InterleavedSearchInvokerTest {
         public TestQuery() {
             super();
             setTimeout(5000);
-            setTraceLevel(5);
+            getTrace().setLevel(5);
         }
 
         @Override

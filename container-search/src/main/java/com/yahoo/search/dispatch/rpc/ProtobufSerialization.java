@@ -33,15 +33,14 @@ import com.yahoo.vespa.objects.BufferSerializer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ProtobufSerialization {
 
     private static final int INITIAL_SERIALIZATION_BUFFER_SIZE = 10 * 1024;
 
-    static byte[] serializeSearchRequest(Query query, int hits, String serverId) {
-        return convertFromQuery(query, hits, serverId).toByteArray();
+    static byte[] serializeSearchRequest(Query query, int hits, String serverId, double requestTimeout) {
+        return convertFromQuery(query, hits, serverId, requestTimeout).toByteArray();
     }
 
     private static void convertSearchReplyErrors(Result target, List<SearchProtocol.Error> errors) {
@@ -50,9 +49,9 @@ public class ProtobufSerialization {
         }
     }
 
-    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId) {
+    static SearchProtocol.SearchRequest convertFromQuery(Query query, int hits, String serverId, double requestTimeout) {
         var builder = SearchProtocol.SearchRequest.newBuilder().setHits(hits).setOffset(query.getOffset())
-                .setTimeout((int) query.getTimeLeft());
+                .setTimeout((int) (requestTimeout * 1000));
 
         var documentDb = query.getModel().getDocumentDb();
         if (documentDb != null) {
@@ -89,12 +88,12 @@ public class ProtobufSerialization {
     }
 
     public static int getTraceLevelForBackend(Query query) {
-        int traceLevel = query.getTraceLevel();
+        int traceLevel = query.getTrace().getLevel();
         if (query.getModel().getExecution().trace().getForceTimestamps()) {
             traceLevel = Math.max(traceLevel, 5); // Backend produces timing information on level 4 and 5
         }
-        if (query.getExplainLevel() > 0) {
-            traceLevel = Math.max(traceLevel, query.getExplainLevel() + 5);
+        if (query.getTrace().getExplainLevel() > 0) {
+            traceLevel = Math.max(traceLevel, query.getTrace().getExplainLevel() + 5);
         }
         return traceLevel;
     }
@@ -130,9 +129,10 @@ public class ProtobufSerialization {
     static SearchProtocol.DocsumRequest.Builder createDocsumRequestBuilder(Query query,
                                                                            String serverId,
                                                                            String summaryClass,
-                                                                           boolean includeQueryData) {
+                                                                           boolean includeQueryData,
+                                                                           double requestTimeout) {
         var builder = SearchProtocol.DocsumRequest.newBuilder()
-                .setTimeout((int) query.getTimeLeft())
+                .setTimeout((int) (requestTimeout * 1000))
                 .setDumpFeatures(query.properties().getBoolean(Ranking.RANKFEATURES, false));
 
         if (summaryClass != null) {
@@ -157,7 +157,7 @@ public class ProtobufSerialization {
         if (includeQueryData) {
             mergeQueryDataToDocsumRequest(query, builder);
         }
-        if (query.getTraceLevel() >= 3) {
+        if (query.getTrace().getLevel() >= 3) {
             query.trace((includeQueryData ? "ProtoBuf: Resending " : "Not resending ") + "query during document summary fetching", 3);
         }
 
@@ -250,7 +250,7 @@ public class ProtobufSerialization {
         if ( ! slimeTrace.isEmpty()) {
             var traces = new Value.ArrayValue();
             traces.add(new SlimeAdapter(BinaryFormat.decode(slimeTrace.toByteArray()).get()));
-            query.trace(traces, query.getTraceLevel());
+            query.trace(traces, query.getTrace().getLevel());
         }
         return result;
     }
