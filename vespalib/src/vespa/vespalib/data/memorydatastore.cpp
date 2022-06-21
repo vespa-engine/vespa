@@ -35,7 +35,9 @@ MemoryDataStore::push_back(const void * data, const size_t sz)
     Reference ref(static_cast<char *>(buf.get()) + _writePos);
     _writePos += sz;
     guard.reset();
-    memcpy(ref.data(), data, sz);
+    if (sz > 0) {
+        memcpy(ref.data(), data, sz);
+    }
     return ref;
 }
 
