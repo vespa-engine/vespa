@@ -135,7 +135,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
             }
         }
     }
-    proto.set_grouping_blob(&reply.groupResult[0], reply.groupResult.size());
+    proto.set_grouping_blob(reply.groupResult.data(), reply.groupResult.size());
     const auto &slime_trace = reply.propertiesMap.trace().lookup("slime");
     proto.set_slime_trace(slime_trace.get().data(), slime_trace.get().size());
     if (reply.my_issues) {

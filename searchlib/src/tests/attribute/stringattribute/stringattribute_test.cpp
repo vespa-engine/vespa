@@ -48,7 +48,7 @@ checkCount(Attribute & vec, uint32_t doc, uint32_t valueCount,
 {
     std::vector<vespalib::string> buffer(valueCount);
     EXPECT_TRUE(static_cast<uint32_t>(vec.getValueCount(doc)) == valueCount);
-    EXPECT_TRUE(vec.get(doc, &buffer[0], buffer.size()) == valueCount);
+    EXPECT_TRUE(vec.get(doc, buffer.data(), buffer.size()) == valueCount);
     EXPECT_TRUE(std::count(buffer.begin(), buffer.end(), value) == numValues);
 }
 
@@ -125,10 +125,10 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
 
         // test get all
         std::vector<vespalib::string> values(valueCount);
-        ASSERT_TRUE(attr.get(doc, &values[0], valueCount) == valueCount);
+        ASSERT_TRUE(attr.get(doc, values.data(), valueCount) == valueCount);
 
         std::vector<uint32_t> enums(valueCount);
-        ASSERT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, &enums[0], valueCount) == valueCount);
+        ASSERT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, enums.data(), valueCount) == valueCount);
 
         auto combined = zipped_and_sorted_by_first(values, enums);
         for (uint32_t j = 0; j < valueCount; ++j) {
@@ -167,10 +167,10 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
 
         // test get all
         std::vector<vespalib::string> values(valueCount);
-        EXPECT_TRUE(attr.get(doc, &values[0], valueCount) == valueCount);
+        EXPECT_TRUE(attr.get(doc, values.data(), valueCount) == valueCount);
 
         std::vector<uint32_t> enums(valueCount);
-        EXPECT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, &enums[0], valueCount) == valueCount);
+        EXPECT_TRUE((static_cast<search::attribute::IAttributeVector &>(attr)).get(doc, enums.data(), valueCount) == valueCount);
 
         auto combined = zipped_and_sorted_by_first(values, enums);
         for (uint32_t j = 0; j < valueCount; ++j) {

@@ -47,7 +47,7 @@ public:
         for (auto& key : keys) {
             adds.emplace_back(KeyData(key, 1));
         }
-        _postings.apply(_trees[idx], &*adds.begin(), &*adds.end(), &*removes.begin(), &*removes.end());
+        _postings.apply(_trees[idx], adds.data(), adds.data() + adds.size(), removes.data(), removes.data() + removes.size());
     }
 
     void clear_tree(size_t idx) {

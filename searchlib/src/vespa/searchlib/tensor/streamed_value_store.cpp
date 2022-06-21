@@ -68,7 +68,7 @@ struct MyFastValueView final : Value {
     {
         const StringIdVector &labels = handle_view;
         for (size_t i = 0; i < num_spaces; ++i) {
-            ConstArrayRef<string_id> addr(&labels[i * num_mapped], num_mapped);
+            ConstArrayRef<string_id> addr(labels.data() + (i * num_mapped), num_mapped);
             my_index.map.add_mapping(FastAddrMap::hash_labels(addr));
         }
         assert(my_index.map.size() == num_spaces);

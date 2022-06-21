@@ -196,8 +196,8 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
         GroupingContext groupingContext(_clock, request.getTimeOfDoom(),
-                                        &request.groupSpec[0], request.groupSpec.size());
-        SessionId sessionId(&request.sessionId[0], request.sessionId.size());
+                                        request.groupSpec.data(), request.groupSpec.size());
+        SessionId sessionId(request.sessionId.data(), request.sessionId.size());
         bool shouldCacheSearchSession = false;
         bool shouldCacheGroupingSession = false;
         if (!sessionId.empty()) {
@@ -355,7 +355,7 @@ Matcher::create_docsum_matcher(const DocsumRequest &req, ISearchContext &search_
         }
     }
     std::sort(docs.begin(), docs.end());
-    SessionId sessionId(&req.sessionId[0], req.sessionId.size());
+    SessionId sessionId(req.sessionId.data(), req.sessionId.size());
     bool expectedSessionCached(false);
     if (!sessionId.empty()) {
         const Properties &cache_props = req.propertiesMap.cacheProperties();

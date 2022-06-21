@@ -20,9 +20,9 @@ void mergeHits(size_t maxHits,
     std::vector<search::RankedHit> my_hits;
     std::swap(hits, my_hits);
     hits.reserve(maxHits);
-    const search::RankedHit *a_pos = &my_hits[0];
+    const search::RankedHit *a_pos = my_hits.data();
     const search::RankedHit *a_end = a_pos + my_hits.size();
-    const search::RankedHit *b_pos = &rhs_hits[0];
+    const search::RankedHit *b_pos = rhs_hits.data();
     const search::RankedHit *b_end = b_pos + rhs_hits.size();
     while (a_pos < a_end && b_pos < b_end && hits.size() < maxHits) {
         if (before(*a_pos, *b_pos)) {
@@ -64,12 +64,12 @@ size_t mergeHits(size_t maxHits,
     std::swap(sortData, my_sortData);
     hits.reserve(maxHits);
     sortData.reserve(maxHits);
-    const search::RankedHit *a_pos = &my_hits[0];
+    const search::RankedHit *a_pos = my_hits.data();
     const search::RankedHit *a_end = a_pos + my_hits.size();
-    const search::RankedHit *b_pos = &rhs_hits[0];
+    const search::RankedHit *b_pos = rhs_hits.data();
     const search::RankedHit *b_end = b_pos + rhs_hits.size();
-    const PartialResult::SortRef *a_sort_pos = &my_sortData[0];
-    const PartialResult::SortRef *b_sort_pos = &rhs_sortData[0];
+    const PartialResult::SortRef *a_sort_pos = my_sortData.data();
+    const PartialResult::SortRef *b_sort_pos = rhs_sortData.data();
     while (a_pos < a_end && b_pos < b_end && hits.size() < maxHits) {
         if (before(*a_sort_pos, a_pos->_docId,
                    *b_sort_pos, b_pos->_docId))

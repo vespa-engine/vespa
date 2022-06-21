@@ -111,7 +111,7 @@ public:
     void operator()(IAttributeVector &attributeVector) override {
         OP op(attributeVector, _operand);
         if (op.valid()) {
-            const RankedHit *hits = &_result.second[0];
+            const RankedHit *hits = _result.second.data();
             size_t numHits   = _result.second.size();
             std::for_each(hits, hits+numHits,  [&op](RankedHit hit) { op(hit.getDocId()); });
             if (_result.first) {

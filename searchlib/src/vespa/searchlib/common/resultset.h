@@ -26,7 +26,7 @@ public:
     void allocArray(unsigned int arrayAllocated);
 
     void setBitOverflow(std::unique_ptr<BitVector> newBitOverflow);
-    const RankedHit * getArray() const { return &_rankedHitsArray[0]; }
+    const RankedHit * getArray() const { return _rankedHitsArray.data(); }
     RankedHit & operator [](uint32_t i) { return _rankedHitsArray[i]; }
     void push_back(RankedHit hit) { _rankedHitsArray.push_back_fast(hit); }
     unsigned int      getArrayUsed() const { return _rankedHitsArray.size(); }
