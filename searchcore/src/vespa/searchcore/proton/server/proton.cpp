@@ -150,12 +150,9 @@ VESPA_THREAD_STACK_TAG(proton_initialize_executor)
 VESPA_THREAD_STACK_TAG(proton_close_executor)
 
 void ensureWritableDir(const vespalib::string &dirName) {
-    int pidnum = ::getpid();
-    int secnum = ::time(0);
-    auto pidstr = std::to_string(pidnum);
-    auto secstr = std::to_string(secnum);
-    auto filename = dirName + "/tmp.file." + pidstr + "." + secstr;
+    auto filename = dirName + "/tmp.filesystem.probe";
     vespalib::File probe(filename);
+    probe.unlink();
     probe.open(vespalib::File::CREATE);
     probe.write("probe\n", 6, 0);
     probe.close();
