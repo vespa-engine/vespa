@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "propertiesmap.h"
 #include "request.h"
 #include "lazy_source.h"
 #include <vespa/document/base/globalid.h>

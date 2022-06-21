@@ -41,7 +41,6 @@ Memory DOCSUM("docsum");
 Memory ERRORS("errors");
 Memory TYPE("type");
 Memory MESSAGE("message");
-Memory DETAILS("details");
 Memory TIMEOUT("timeout");
 
 }
@@ -51,14 +50,10 @@ DocsumContext::initState()
 {
     const DocsumRequest & req = _request;
     _docsumState._args.initFromDocsumRequest(req);
-    _docsumState._docsumcnt = req.hits.size();
-
-    _docsumState._docsumbuf = (_docsumState._docsumcnt > 0)
-                              ? (uint32_t*)malloc(sizeof(uint32_t) * _docsumState._docsumcnt)
-                              : nullptr;
-
-    for (uint32_t i = 0; i < _docsumState._docsumcnt; i++) {
-        _docsumState._docsumbuf[i] = req.hits[i].docid;
+    _docsumState._docsumbuf.clear();
+    _docsumState._docsumbuf.reserve(req.hits.size());
+    for (uint32_t i = 0; i < req.hits.size(); i++) {
+        _docsumState._docsumbuf.push_back(req.hits[i].docid);
     }
 }
 
@@ -77,7 +72,7 @@ vespalib::Slime::UP
 DocsumContext::createSlimeReply()
 {
     _docsumWriter.InitState(_attrMgr, &_docsumState);
-    const size_t estimatedChunkSize(std::min(0x200000ul, _docsumState._docsumcnt*0x400ul));
+    const size_t estimatedChunkSize(std::min(0x200000ul, _docsumState._docsumbuf.size()*0x400ul));
     vespalib::Slime::UP response(std::make_unique<vespalib::Slime>(makeSlimeParams(estimatedChunkSize)));
     Cursor & root = response->setObject();
     Cursor & array = root.setArray(DOCSUMS);
@@ -85,17 +80,18 @@ DocsumContext::createSlimeReply()
     IDocsumWriter::ResolveClassInfo rci = _docsumWriter.resolveClassInfo(_docsumState._args.getResultClassName(),
                                                                          _docsumStore.getSummaryClassId());
     _docsumState._omit_summary_features = rci.outputClass->omit_summary_features();
-    uint32_t i(0);
-    for (i = 0; (i < _docsumState._docsumcnt) && !_request.expired(); ++i) {
-        uint32_t docId = _docsumState._docsumbuf[i];
-        Cursor & docSumC = array.addObject();
+    uint32_t num_ok(0);
+    for (uint32_t docId : _docsumState._docsumbuf) {
+        if (_request.expired() ) { break; }
+        Cursor &docSumC = array.addObject();
         ObjectSymbolInserter inserter(docSumC, docsumSym);
         if ((docId != search::endDocId) && !rci.mustSkip) {
             _docsumWriter.insertDocsum(rci, docId, &_docsumState, &_docsumStore, *response, inserter);
         }
+        num_ok++;
     }
-    if (i != _docsumState._docsumcnt) {
-        const uint32_t numTimedOut = _docsumState._docsumcnt - i;
+    if (num_ok != _docsumState._docsumbuf.size()) {
+        const uint32_t numTimedOut = _docsumState._docsumbuf.size() - num_ok;
         Cursor & errors = root.setArray(ERRORS);
         Cursor & timeout = errors.addObject();
         timeout.setString(TYPE, TIMEOUT);

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "docsumfieldwriter.h"
-
+#include "docsumstate.h"
 
 namespace search { class MatchingElementsFields; }
 namespace search::attribute { class IAttributeVector; }
@@ -27,7 +27,9 @@ class AttrDFW : public ISimpleDFW
 private:
     vespalib::string _attrName;
 protected:
-    const attribute::IAttributeVector& get_attribute(const GetDocsumsState& s) const;
+    const attribute::IAttributeVector& get_attribute(const GetDocsumsState& s) const {
+        return *s.getAttribute(getIndex());
+    }
     const vespalib::string & getAttributeName() const override { return _attrName; }
 public:
     AttrDFW(const vespalib::string & attrName);

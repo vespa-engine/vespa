@@ -53,12 +53,8 @@ public:
     const search::attribute::IAttributeVector * getAttribute(size_t index) const { return _attributes[index]; }
 
     GetDocsumArgs               _args;      // from getdocsums request
-
-    uint32_t                   *_docsumbuf; // from getdocsums request
-    uint32_t                    _docsumcnt; // from getdocsums request
-
+    std::vector<uint32_t>       _docsumbuf; // from getdocsums request
     KeywordExtractor           *_kwExtractor;
-    char                       *_keywords;  // list of keywords from query
 
     GetDocsumsStateCallback    &_callback;
 
@@ -85,12 +81,12 @@ public:
     void parse_locations();
 
     // used by SummaryFeaturesDFW
-    FeatureSet::SP _summaryFeatures;
+    std::shared_ptr<FeatureSet> _summaryFeatures;
     bool           _summaryFeaturesCached;
     bool           _omit_summary_features;
 
     // used by RankFeaturesDFW
-    FeatureSet::SP _rankFeatures;
+    std::shared_ptr<FeatureSet> _rankFeatures;
 
     // Used by AttributeCombinerDFW and MultiAttrDFW when filtering is enabled
     std::unique_ptr<search::MatchingElements> _matching_elements;
