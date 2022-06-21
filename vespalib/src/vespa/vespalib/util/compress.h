@@ -35,7 +35,7 @@ public:
         } else if ( n < (0x1 << 30)) {
             return 4;
         } else {
-            too_big(n);
+            throw_too_big(n);
         }
     }
     /**
@@ -53,7 +53,7 @@ public:
         } else if ( n < (0x1 << 29)) {
             return 4;
         } else {
-            too_big(n);
+            throw_too_big(n);
         }
     }
     /**
@@ -106,8 +106,8 @@ public:
         return numbytes;
     }
 private:
-    [[ noreturn ]] static void too_big(int64_t n);
-    [[ noreturn ]] static void too_big(uint64_t n);
+    [[ noreturn ]] static void throw_too_big(int64_t n);
+    [[ noreturn ]] static void throw_too_big(uint64_t n);
 };
 
 }
