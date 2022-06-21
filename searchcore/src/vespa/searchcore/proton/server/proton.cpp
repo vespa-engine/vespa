@@ -149,7 +149,17 @@ const vespalib::string CUSTOM_COMPONENT_API_PATH = "/state/v1/custom/component";
 VESPA_THREAD_STACK_TAG(proton_initialize_executor)
 VESPA_THREAD_STACK_TAG(proton_close_executor)
 
+void ensureWritableDir(const vespalib::string &dirName) {
+    auto filename = dirName + "/tmp.filesystem.probe";
+    vespalib::File probe(filename);
+    probe.unlink();
+    probe.open(vespalib::File::CREATE);
+    probe.write("probe\n", 6, 0);
+    probe.close();
+    probe.unlink();
 }
+
+} // namespace <unnamed>
 
 Proton::ProtonFileHeaderContext::ProtonFileHeaderContext(const vespalib::string &creator)
     : _hostName(),
@@ -278,6 +288,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 {
     assert( _initStarted && ! _initComplete );
     const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
+    ensureWritableDir(protonConfig.basedir);
     const HwInfo & hwInfo = configSnapshot->getHwInfo();
     _hw_info = hwInfo;
 
