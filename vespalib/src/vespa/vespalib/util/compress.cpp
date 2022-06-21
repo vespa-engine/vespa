@@ -6,19 +6,6 @@
 
 namespace vespalib::compress {
 
-size_t Integer::compressedPositiveLength(uint64_t n)
-{
-    if (n < (0x1 << 6)) {
-        return 1;
-    } else if (n < (0x1 << 14)) {
-        return 2;
-    } else if ( n < (0x1 << 30)) {
-        return 4;
-    } else {
-        throw IllegalArgumentException(make_string("Number '%" PRIu64 "' too big, must extend encoding", n));
-    }
-}
-
 size_t Integer::compressPositive(uint64_t n, void *destination)
 {
     uint8_t * d = static_cast<uint8_t *>(destination);
@@ -37,24 +24,19 @@ size_t Integer::compressPositive(uint64_t n, void *destination)
         d[3] = n & 0xff;
         return 4;
     } else {
-        throw IllegalArgumentException(make_string("Number '%" PRIu64 "' too big, must extend encoding", n));
+        throw_too_big(n);
     }
 }
 
-size_t Integer::compressedLength(int64_t n)
-{
-    if (n < 0) {
-        n = -n;
-    }
-    if (n < (0x1 << 5)) {
-        return 1;
-    } else if (n < (0x1 << 13)) {
-        return 2;
-    } else if ( n < (0x1 << 29)) {
-        return 4;
-    } else {
-        throw IllegalArgumentException(make_string("Number '%" PRId64 "' too big, must extend encoding", n));
-    }
+
+void
+Integer::throw_too_big(int64_t n) {
+    throw IllegalArgumentException(make_string("Number '%" PRId64 "' too big, must extend encoding", n));
+}
+
+void
+Integer::throw_too_big(uint64_t n) {
+    throw IllegalArgumentException(make_string("Number '%" PRIu64 "' too big, must extend encoding", n));
 }
 
 size_t Integer::compress(int64_t n, void *destination)
@@ -78,7 +60,7 @@ size_t Integer::compress(int64_t n, void *destination)
         d[3] = n & 0xff;
         return 4;
     } else {
-        throw IllegalArgumentException(make_string("Number '%" PRId64 "' too big, must extend encoding", negative ? -n : n));
+        throw_too_big(negative ? -n : n);
     }
 }
 

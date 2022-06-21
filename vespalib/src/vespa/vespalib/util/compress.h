@@ -27,12 +27,35 @@ public:
      * @param unsigned number to compute compressed size of in bytes.
      * @return Will return the number of bytes this positive number will require
      **/
-    static size_t compressedPositiveLength(uint64_t n);
+    static size_t compressedPositiveLength(uint64_t n) {
+        if (n < (0x1 << 6)) {
+            return 1;
+        } else if (n < (0x1 << 14)) {
+            return 2;
+        } else if ( n < (0x1 << 30)) {
+            return 4;
+        } else {
+            throw_too_big(n);
+        }
+    }
     /**
      * @param number to compute compressed size of in bytes.
      * @return Will return the number of bytes this number will require
      **/
-    static size_t compressedLength(int64_t n);
+    static size_t compressedLength(int64_t n) {
+        if (n < 0) {
+            n = -n;
+        }
+        if (n < (0x1 << 5)) {
+            return 1;
+        } else if (n < (0x1 << 13)) {
+            return 2;
+        } else if ( n < (0x1 << 29)) {
+            return 4;
+        } else {
+            throw_too_big(n);
+        }
+    }
     /**
      * Will decompress an integer.
      * @param pointer to buffer. pointer is automatically advanced.
@@ -82,6 +105,9 @@ public:
         }
         return numbytes;
     }
+private:
+    [[ noreturn ]] static void throw_too_big(int64_t n);
+    [[ noreturn ]] static void throw_too_big(uint64_t n);
 };
 
 }
