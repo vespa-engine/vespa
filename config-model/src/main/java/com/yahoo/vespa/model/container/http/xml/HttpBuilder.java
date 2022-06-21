@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.container.http.xml;
 
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -19,7 +18,6 @@ import com.yahoo.vespa.model.container.http.FilterBinding;
 import com.yahoo.vespa.model.container.http.FilterChains;
 import com.yahoo.vespa.model.container.http.Http;
 import org.w3c.dom.Element;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +34,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
     static final List<String> VALID_FILTER_CHAIN_TAG_NAMES = List.of(REQUEST_CHAIN_TAG_NAME, RESPONSE_CHAIN_TAG_NAME);
 
     @Override
-    protected Http doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element spec) {
+    protected Http doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element spec) {
         FilterChains filterChains;
         List<FilterBinding> bindings = new ArrayList<>();
         AccessControl accessControl = null;
@@ -74,16 +72,18 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
 
         getContainerCluster(ancestor).ifPresent(builder::setHandlers);
 
+        // TODO: Remove in Vespa 9
         XmlHelper.getOptionalAttribute(accessControlElem, "read").ifPresent(
                 readAttr -> deployState.getDeployLogger()
                         .logApplicationPackage(Level.WARNING,
                                 "The 'read' attribute of the 'access-control' element has no effect and is deprecated. " +
-                                        "Please remove the attribute from services.xml"));
+                                        "Please remove the attribute from services.xml, support will be removed in Vespa 9"));
+        // TODO: Remove in Vespa 9
         XmlHelper.getOptionalAttribute(accessControlElem, "write").ifPresent(
                 writeAttr -> deployState.getDeployLogger()
                         .logApplicationPackage(Level.WARNING,
                                 "The 'write' attribute of the 'access-control' element has no effect and is deprecated. " +
-                                        "Please remove the attribute from services.xml"));
+                                        "Please remove the attribute from services.xml, support will be removed in Vespa 9"));
 
         AccessControl.ClientAuthentication clientAuth =
                 XmlHelper.getOptionalAttribute(accessControlElem, "tls-handshake-client-auth")
@@ -129,8 +129,8 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         return tenantDomain != null ? tenantDomain : explicitDomain;
     }
 
-    private static Optional<ApplicationContainerCluster> getContainerCluster(AbstractConfigProducer configProducer) {
-        AbstractConfigProducer currentProducer = configProducer;
+    private static Optional<ApplicationContainerCluster> getContainerCluster(AbstractConfigProducer<?> configProducer) {
+        AbstractConfigProducer<?> currentProducer = configProducer;
         while (! ApplicationContainerCluster.class.isAssignableFrom(currentProducer.getClass())) {
             currentProducer = currentProducer.getParent();
             if (currentProducer == null)
@@ -164,7 +164,7 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
         }
     }
 
-    static int readPort(ModelElement spec, boolean isHosted, DeployLogger logger) {
+    static int readPort(ModelElement spec, boolean isHosted) {
         Integer port = spec.integerAttribute("port");
         if (port == null)
             return Defaults.getDefaults().vespaWebServicePort();
