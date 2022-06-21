@@ -178,6 +178,10 @@ else()
   set(VESPA_USER "vespa")
 endif()
 
+if(NOT DEFINED VESPA_GROUP)
+  set(VESPA_GROUP "vespa")
+endif()
+
 if(VESPA_UNPRIVILEGED)
 else()
   set(VESPA_UNPRIVILEGED "no")
