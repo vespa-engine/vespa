@@ -43,8 +43,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author jonmv
  */
 class LogReader {
-    static final Pattern logArchivePathPattern = Pattern.compile("(\\d{4})/(\\d{2})/(\\d{2})/(\\d{2})-\\d+(.gz)?");
-    static final Pattern vespaLogPathPattern = Pattern.compile("vespa\\.log(?:-(\\d{4})-(\\d{2})-(\\d{2})\\.(\\d{2})-(\\d{2})-(\\d{2})(?:.gz)?)?");
+    static final Pattern logArchivePathPattern = Pattern.compile("(\\d{4})/(\\d{2})/(\\d{2})/(\\d{2})-\\d+(\\.gz|\\.zst)?");
+    static final Pattern vespaLogPathPattern = Pattern.compile("vespa\\.log(?:-(\\d{4})-(\\d{2})-(\\d{2})\\.(\\d{2})-(\\d{2})-(\\d{2})(?:\\.gz|\\.zst)?)?");
 
     private final Path logDirectory;
     private final Pattern logFilePattern;
@@ -97,23 +97,44 @@ class LogReader {
         private final double to;
         private final Optional<String> hostname;
         private LineWithTimestamp next;
+        private Process zcat = null;
+
+        private InputStream openFile(Path log) {
+            boolean gzipped = log.toString().endsWith(".gz");
+            boolean is_zstd = log.toString().endsWith(".zst");
+            try {
+                if (gzipped) {
+                    var in_gz = Files.newInputStream(log);
+                    return new GZIPInputStream(in_gz);
+                } else if (is_zstd) {
+                    var pb = new ProcessBuilder("zstdcat", log.toString());
+                    pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+                    zcat = pb.start();
+                    zcat.getOutputStream().close();
+                    return zcat.getInputStream();
+                } else {
+                    try {
+                        return Files.newInputStream(log);
+                    } catch (NoSuchFileException e) { // File may have been compressed since we found it.
+                        Path p = Paths.get(log + ".gz");
+                        if (Files.exists(p)) {
+                            return openFile(p);
+                        }
+                        p = Paths.get(log + ".zst");
+                        if (Files.exists(p)) {
+                            return openFile(p);
+                        }
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+            // failure fallback:
+            return InputStream.nullInputStream();
+        }
 
         private LogLineIterator(Path log, double from, double to, Optional<String> hostname) throws IOException {
-            boolean zipped = log.toString().endsWith(".gz");
-            InputStream in = InputStream.nullInputStream();
-            try {
-                in = Files.newInputStream(log);
-            }
-            catch (NoSuchFileException e) { // File may have been compressed since we found it.
-                if ( ! zipped)
-                    try {
-                        in = Files.newInputStream(Paths.get(log + ".gz"));
-                        zipped = true;
-                    }
-                    catch (NoSuchFileException ignored) { }
-            }
-
-            this.reader = new BufferedReader(new InputStreamReader(zipped ? new GZIPInputStream(in) : in, UTF_8));
+            InputStream in = openFile(log);
+            this.reader = new BufferedReader(new InputStreamReader(in, UTF_8));
             this.from = from;
             this.to = to;
             this.hostname = hostname;
@@ -135,6 +156,9 @@ class LogReader {
         @Override
         public void close() throws IOException {
             reader.close();
+            if (zcat != null) {
+                zcat.destroy();
+            }
         }
 
         private LineWithTimestamp readNext() {

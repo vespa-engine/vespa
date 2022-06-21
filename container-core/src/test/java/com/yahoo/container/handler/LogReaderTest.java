@@ -1,9 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.handler;
 
-import com.yahoo.vespa.test.file.TestFileSystem;
+import com.yahoo.compress.ZstdCompressor;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -22,8 +24,9 @@ import static org.junit.Assert.assertEquals;
 
 public class LogReaderTest {
 
-    private final FileSystem fileSystem = TestFileSystem.create();
-    private final Path logDirectory = fileSystem.getPath("/opt/vespa/logs");
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+    private Path logDirectory;
 
     private static final String logv11 = "3600.2\tnode1.com\t5480\tcontainer\tstdout\tinfo\tfourth\n";
     private static final String logv   = "90000.1\tnode1.com\t5480\tcontainer\tstdout\tinfo\tlast\n";
@@ -34,12 +37,13 @@ public class LogReaderTest {
 
     @Before
     public void setup() throws IOException {
+        logDirectory = folder.newFolder("opt/vespa/logs").toPath();
         // Log archive paths and file names indicate what hour they contain logs for, with the start of that hour.
         // Multiple entries may exist for each hour.
         Files.createDirectories(logDirectory.resolve("1970/01/01"));
-        Files.write(logDirectory.resolve("1970/01/01/00-0.gz"), compress(log100));
+        Files.write(logDirectory.resolve("1970/01/01/00-0.gz"), compress1(log100));
         Files.write(logDirectory.resolve("1970/01/01/00-1"), log101.getBytes(UTF_8));
-        Files.write(logDirectory.resolve("1970/01/01/01-0.gz"), compress(log110));
+        Files.write(logDirectory.resolve("1970/01/01/01-0.zst"), compress2(log110));
 
         Files.createDirectories(logDirectory.resolve("1970/01/02"));
         Files.write(logDirectory.resolve("1970/01/02/00-0"), log200.getBytes(UTF_8));
@@ -86,12 +90,17 @@ public class LogReaderTest {
         assertEquals(log101 + log100 + log200, baos.toString(UTF_8));
     }
 
-    private byte[] compress(String input) throws IOException {
+    private byte[] compress1(String input) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         OutputStream zip = new GZIPOutputStream(baos);
         zip.write(input.getBytes());
         zip.close();
         return baos.toByteArray();
+    }
+
+    private byte[] compress2(String input) throws IOException {
+        byte[] data = input.getBytes();
+        return new ZstdCompressor().compress(data, 0, data.length);
     }
 
 }
