@@ -315,18 +315,12 @@ public class SessionRepository {
     public void deleteLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
         log.log(Level.FINE, () -> "Deleting local session " + sessionId);
-        SessionStateWatcher watcher = removeSessionStateWatcher(sessionId);
+        SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
         if (watcher != null) watcher.close();
         localSessionCache.remove(sessionId);
         NestedTransaction transaction = new NestedTransaction();
         transaction.add(FileTransaction.from(FileOperations.delete(getSessionAppDir(sessionId).getAbsolutePath())));
         transaction.commit();
-    }
-
-    private SessionStateWatcher removeSessionStateWatcher(long sessionId) {
-        synchronized (sessionStateWatchers) {
-            return sessionStateWatchers.remove(sessionId);
-        }
     }
 
     private void deleteAllSessions() {
@@ -892,15 +886,13 @@ public class SessionRepository {
     }
 
     private void updateSessionStateWatcher(long sessionId, RemoteSession remoteSession) {
-        synchronized (sessionStateWatchers) {
-            SessionStateWatcher sessionStateWatcher = sessionStateWatchers.get(sessionId);
-            if (sessionStateWatcher == null) {
-                Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
-                fileCache.addListener(this::nodeChanged);
-                sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metricUpdater, zkWatcherExecutor, this));
-            } else {
-                sessionStateWatcher.updateRemoteSession(remoteSession);
-            }
+        SessionStateWatcher sessionStateWatcher = sessionStateWatchers.get(sessionId);
+        if (sessionStateWatcher == null) {
+            Curator.FileCache fileCache = curator.createFileCache(getSessionStatePath(sessionId).getAbsolute(), false);
+            fileCache.addListener(this::nodeChanged);
+            sessionStateWatchers.put(sessionId, new SessionStateWatcher(fileCache, remoteSession, metricUpdater, zkWatcherExecutor, this));
+        } else {
+            sessionStateWatcher.updateRemoteSession(remoteSession);
         }
     }
 
@@ -936,7 +928,7 @@ public class SessionRepository {
             long sessionId = it.next().sessionId;
             if (existingSessions.contains(sessionId)) continue;
 
-            SessionStateWatcher watcher = removeSessionStateWatcher(sessionId);
+            SessionStateWatcher watcher = sessionStateWatchers.remove(sessionId);
             if (watcher != null) watcher.close();
             it.remove();
             metricUpdater.incRemovedSessions();
