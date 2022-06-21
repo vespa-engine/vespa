@@ -2,10 +2,10 @@
 
 #pragma once
 
+#include <vespa/vespalib/geo/zcurve.h>
 #include <string>
 #include <cstdint>
 #include <limits>
-#include <vespa/vespalib/geo/zcurve.h>
 
 namespace search::common {
 

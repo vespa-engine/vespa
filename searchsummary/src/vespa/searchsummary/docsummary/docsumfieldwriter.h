@@ -18,13 +18,11 @@ class IDocsumFieldWriter
 public:
     using UP = std::unique_ptr<IDocsumFieldWriter>;
     IDocsumFieldWriter() : _index(0) { }
-    virtual ~IDocsumFieldWriter() {}
+    virtual ~IDocsumFieldWriter() = default;
 
-    static bool IsBinaryCompatible(ResType a, ResType b)
-    { return ResultConfig::IsBinaryCompatible(a, b); }
-
-    static bool IsRuntimeCompatible(ResType a, ResType b)
-    { return ResultConfig::IsRuntimeCompatible(a, b); }
+    static bool IsRuntimeCompatible(ResType a, ResType b) {
+        return ResultConfig::IsRuntimeCompatible(a, b);
+    }
 
     virtual bool IsGenerated() const = 0;
     virtual void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType type,
@@ -83,6 +81,5 @@ public:
     void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType type,
                      vespalib::slime::Inserter &target) override;
 };
-
 
 }
