@@ -5,16 +5,14 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.jdisc.ReferencedResource;
 import com.yahoo.jdisc.service.CurrentContainer;
-import java.util.logging.Level;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.jdisc.MbusServer;
 import com.yahoo.messagebus.shared.SharedIntermediateSession;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * TODO: Javadoc
- *
  * @author Tony Vaagenes
  */
 public class MbusServerProvider implements Provider<MbusServer> {
@@ -49,9 +47,12 @@ public class MbusServerProvider implements Provider<MbusServer> {
     @Override
     public void deconstruct() {
         log.log(Level.INFO, "Deconstructing mbus server: " + server);
+        long start = System.currentTimeMillis();
         server.close();
         server.release();
         sessionRef.getReference().close();
+        log.log(Level.INFO, String.format("Mbus server deconstruction completed in %.3f seconds",
+                (System.currentTimeMillis()-start)/1000D));
     }
 
 }
