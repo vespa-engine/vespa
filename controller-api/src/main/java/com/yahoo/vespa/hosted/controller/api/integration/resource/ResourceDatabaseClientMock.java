@@ -2,8 +2,10 @@
 package com.yahoo.vespa.hosted.controller.api.integration.resource;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.identifiers.ClusterId;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Plan;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
@@ -126,6 +128,11 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     }
 
     @Override
+    public Instant getOldestSnapshotTimestamp(Set<DeploymentId> deployments) {
+        return Instant.ofEpochMilli(987654L);
+    }
+
+    @Override
     public void writeScalingEvents(ClusterId clusterId, Collection<Cluster.ScalingEvent> scalingEvents) {
         this.scalingEvents.put(clusterId, List.copyOf(scalingEvents));
     }
@@ -146,4 +153,5 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     public List<ResourceSnapshot> resourceSnapshots() {
         return resourceSnapshots;
     }
+
 }

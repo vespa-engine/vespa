@@ -55,6 +55,9 @@
       "name": "JobRunner"
     },
     {
+      "name": "MeteringMonitorMaintainer"
+    },
+    {
       "name": "MetricsReporter"
     },
     {
