@@ -15,7 +15,7 @@ LOG_SETUP(".searchlib.common.geo_location_parser");
 namespace {
 
 int getInt(const char * &p) {
-    int val;
+    uint32_t val;
     bool isminus;
     val = 0;
     isminus = false;

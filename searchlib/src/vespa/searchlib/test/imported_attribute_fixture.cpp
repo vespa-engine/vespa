@@ -10,10 +10,7 @@ namespace search {
 
 namespace {
     struct MockReadGuard : public IDocumentMetaStoreContext::IReadGuard {
-        virtual const search::IDocumentMetaStore &get() const override {
-            search::IDocumentMetaStore *nullStore = nullptr;
-            return static_cast<search::IDocumentMetaStore &>(*nullStore);
-        }
+        virtual const search::IDocumentMetaStore &get() const override { abort(); }
     };
 }
 

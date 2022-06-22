@@ -369,7 +369,7 @@ TEST(DistributionTest, testHighSplitBit)
 
     for (uint32_t bits = 33; bits < 36; ++bits) {
         uint64_t base = 0x23456789;
-        base |= (1 << bits);
+        base |= (1L << bits);
 
         document::BucketId bid1 = document::BucketId(bits, base);
         document::BucketId bid2 = document::BucketId(bits, base);
