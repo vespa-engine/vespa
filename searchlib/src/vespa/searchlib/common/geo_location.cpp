@@ -8,6 +8,12 @@ namespace search::common {
 
 namespace {
 
+uint64_t abs_diff(int32_t a, int32_t b) {
+    return (a > b)
+        ? (int64_t(a) - int64_t(b))
+        : (int64_t(b) - int64_t(a));
+}
+
 ZCurve::BoundingBox to_z(GeoLocation::Box box) {
     return ZCurve::BoundingBox(box.x.low, box.x.high,
                                box.y.low, box.y.high);
@@ -158,13 +164,13 @@ GeoLocation::GeoLocation(Box b, Point p, uint32_t r, Aspect xa)
 
 uint64_t GeoLocation::sq_distance_to(Point p) const {
     if (has_point) {
-        uint64_t dx = (p.x > point.x) ? (p.x - point.x) : (point.x - p.x);
+        uint64_t dx = abs_diff(p.x, point.x);
         if (x_aspect.active()) {
             // x_aspect is a 32-bit fixed-point number in range [0,1]
             // this implements dx = (dx * x_aspect)
             dx = (dx * x_aspect.multiplier) >> 32;
         }
-        uint64_t dy = (p.y > point.y) ? (p.y - point.y) : (point.y - p.y);
+        uint64_t dy = abs_diff(p.y, point.y);
         return dx*dx + dy*dy;
     }
     return 0;
