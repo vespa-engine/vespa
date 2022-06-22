@@ -17,13 +17,6 @@
   <packaging>jar</packaging>
   <dependencies>
     <dependency>
-      <!-- This dep is a workaround for bugs 7272469, 7259035 -->
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-annotations</artifactId>
-      <version>${jackson2.version}</version>
-    </dependency>
-
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_core</artifactId>
       <version>${project.version}</version>
@@ -248,12 +241,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jrt</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.bouncycastle</groupId>
-          <artifactId>bcpkix-jdk15on</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <!-- NOTE: Dependencies below are added explicitly to exclude transitive deps that are not provided runtime by the container,
