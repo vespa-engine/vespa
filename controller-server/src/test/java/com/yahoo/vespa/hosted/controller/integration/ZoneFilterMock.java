@@ -81,6 +81,11 @@ public class ZoneFilterMock implements ZoneList {
     }
 
     @Override
+    public ZoneList in(CloudName... clouds) {
+        return filter(zone -> Set.of(clouds).contains(zone.getCloudName()));
+    }
+
+    @Override
     public ZoneList among(ZoneId... zones) {
         return filter(zone -> Set.of(zones).contains(zone.getId()));
     }
@@ -88,11 +93,6 @@ public class ZoneFilterMock implements ZoneList {
     @Override
     public List<? extends ZoneApi> zones() {
         return List.copyOf(zones);
-    }
-
-    @Override
-    public ZoneList ofCloud(CloudName cloud) {
-        return filter(zone -> zone.getCloudName().equals(cloud));
     }
 
     private ZoneFilterMock filter(Predicate<ZoneApi> condition) {

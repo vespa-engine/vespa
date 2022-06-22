@@ -45,8 +45,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
     private final SystemName system; // Don't even think about making it non-final!   ƪ(`▿▿▿▿´ƪ)
 
-
-
     private List<? extends ZoneApi> zones;
     private UpgradePolicy upgradePolicy = null;
 

@@ -63,7 +63,7 @@ public class EndpointCertificates {
         if (duration.toSeconds() > 30)
             log.log(Level.INFO, Text.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
 
-        if (controller.zoneRegistry().zones().ofCloud(CloudName.from("gcp")).ids().contains(zone)) { // Until CKMS is available from GCP
+        if (controller.zoneRegistry().zones().all().in(CloudName.from("gcp")).ids().contains(zone)) { // Until CKMS is available from GCP
             if(metadata.isPresent()) {
                 var m = metadata.get();
                 GcpSecretStore gcpSecretStore = controller.serviceRegistry().gcpSecretStore();
