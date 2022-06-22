@@ -791,7 +791,7 @@ AttributeTest::checkCount(const AttributePtr & ptr, uint32_t doc, uint32_t value
     if (!result) {
         return false;
     }
-    EXPECT_EQ(valueCount, ptr->get(doc, &buffer[0], buffer.size())) << (result = false, "");
+    EXPECT_EQ(valueCount, ptr->get(doc, buffer.data(), buffer.size())) << (result = false, "");
     if (!result) {
         return false;
     }
@@ -807,7 +807,7 @@ AttributeTest::checkContent(const AttributePtr & ptr, uint32_t doc, uint32_t val
     std::vector<BufferType> buffer(valueCount);
     bool retval = true;
     EXPECT_TRUE((retval = retval && (static_cast<uint32_t>(ptr->getValueCount(doc)) == valueCount)));
-    EXPECT_TRUE((retval = retval && (ptr->get(doc, &buffer[0], buffer.size()) == valueCount)));
+    EXPECT_TRUE((retval = retval && (ptr->get(doc, buffer.data(), buffer.size()) == valueCount)));
     for (uint32_t i = 0; i < valueCount; ++i) {
         EXPECT_TRUE((retval = retval && (buffer[i] == values[i % range])));
     }
@@ -868,7 +868,7 @@ AttributeTest::testSingle(const AttributePtr & ptr, const std::vector<BufferType
             ptr->clearDoc(doc);
         }
         ptr->commit();
-        EXPECT_EQ(1u, ptr->get(doc, &buffer[0], buffer.size()));
+        EXPECT_EQ(1u, ptr->get(doc, buffer.data(), buffer.size()));
         if (doc % 2 == 0) {
             if (smallUInt) {
                 expectZero(buffer[0]);
@@ -1156,7 +1156,7 @@ AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<Buffe
             EXPECT_TRUE(v.append(doc, values[j].getValue(), values[j].getWeight()));
         }
         commit(ptr);
-        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount);
+        ASSERT_TRUE(ptr->get(doc, buffer.data(), buffer.size()) == valueCount);
         std::sort(buffer.begin(), buffer.begin() + valueCount, order_by_weight());
         for (uint32_t j = 0; j < valueCount; ++j) {
             EXPECT_TRUE(buffer[j].getValue() == ordered_values[j].getValue());
@@ -1173,20 +1173,20 @@ AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<Buffe
         // append non-existent value
         EXPECT_TRUE(v.append(doc, values[doc].getValue(), values[doc].getWeight()));
         commit(ptr);
-        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
+        ASSERT_TRUE(ptr->get(doc, buffer.data(), buffer.size()) == valueCount + 1);
         EXPECT_TRUE(contains(buffer, valueCount + 1, values[doc]));
 
         // append existent value
         EXPECT_TRUE(v.append(doc, values[doc].getValue(), values[doc].getWeight() + 10));
         commit(ptr);
-        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
+        ASSERT_TRUE(ptr->get(doc, buffer.data(), buffer.size()) == valueCount + 1);
         EXPECT_TRUE(contains(buffer, valueCount + 1, BufferType(values[doc].getValue(), values[doc].getWeight() + 10)));
 
         // append non-existent value two times
         EXPECT_TRUE(v.append(doc, values[doc + 1].getValue(), values[doc + 1].getWeight()));
         EXPECT_TRUE(v.append(doc, values[doc + 1].getValue(), values[doc + 1].getWeight() + 10));
         commit(ptr);
-        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 2);
+        ASSERT_TRUE(ptr->get(doc, buffer.data(), buffer.size()) == valueCount + 2);
         EXPECT_TRUE(contains(buffer, valueCount + 2, BufferType(values[doc + 1].getValue(), values[doc + 1].getWeight() + 10)));
     }
     EXPECT_EQ(ptr->getStatus().getUpdateCount(), numDocs + (numDocs*(numDocs-1))/2 + numDocs*4);
@@ -1203,11 +1203,11 @@ AttributeTest::testWeightedSet(const AttributePtr & ptr, const std::vector<Buffe
         EXPECT_TRUE(static_cast<uint32_t>(v.getValueCount(doc)) == valueCount + 2);
 
         // remove existent value
-        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 2);
+        ASSERT_TRUE(ptr->get(doc, buffer.data(), buffer.size()) == valueCount + 2);
         EXPECT_TRUE(contains_value(buffer, valueCount + 2, values[doc + 1].getValue()));
         EXPECT_TRUE(v.remove(doc, values[doc + 1].getValue(), 0));
         commit(ptr);
-        ASSERT_TRUE(ptr->get(doc, &buffer[0], buffer.size()) == valueCount + 1);
+        ASSERT_TRUE(ptr->get(doc, buffer.data(), buffer.size()) == valueCount + 1);
         EXPECT_FALSE(contains_value(buffer, valueCount + 1, values[doc + 1].getValue()));
     }
     EXPECT_EQ(ptr->getStatus().getUpdateCount(), numDocs + (numDocs*(numDocs-1))/2 + numDocs*4 + numDocs * 2);

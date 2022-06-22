@@ -42,9 +42,9 @@ public:
     { }
 
     void setup(const DocIdMapping &mapping) {
-        _selector = (mapping._selector != nullptr) ? &((*mapping._selector)[0]) : nullptr;
+        _selector = (mapping._selector != nullptr) ? mapping._selector->data() : nullptr;
         _docIdLimit = mapping._docIdLimit;
-        _selectorLimit = (mapping._selector != nullptr) ? (*mapping._selector).size() : 0u;
+        _selectorLimit = (mapping._selector != nullptr) ? mapping._selector->size() : 0u;
         _selectorId = mapping._selectorId;
     }
 

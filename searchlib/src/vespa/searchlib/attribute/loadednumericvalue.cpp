@@ -14,7 +14,7 @@ sortLoadedByValue(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loade
         typename LoadedNumericValue<T>::ValueCompare, 56>::
         radix_sort(typename LoadedNumericValue<T>::ValueRadix(),
                    typename LoadedNumericValue<T>::ValueCompare(),
-                   &loaded[0],
+                   loaded.data(),
                    loaded.size(),
                    16);
 }
@@ -29,7 +29,7 @@ sortLoadedByDocId(SequentialReadModifyWriteVector<LoadedNumericValue<T>> & loade
         typename LoadedNumericValue<T>::DocOrderCompare, 56>::
         radix_sort(typename LoadedNumericValue<T>::DocRadix(),
                    typename LoadedNumericValue<T>::DocOrderCompare(),
-                   &loaded[0],
+                   loaded.data(),
                    loaded.size(),
                    16);
 }

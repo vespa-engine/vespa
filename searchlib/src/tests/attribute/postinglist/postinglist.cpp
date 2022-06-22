@@ -379,8 +379,8 @@ insertRandomValues(Tree &tree,
         std::vector<AttributePosting> additions;
         std::vector<uint32_t> removals;
         additions.push_back(newPosting);
-        postings.apply(newIdx, &additions[0], &additions[0] + additions.size(),
-                               &removals[0], &removals[0] + removals.size());
+        postings.apply(newIdx, additions.data(), additions.data() + additions.size(),
+                       removals.data(), removals.data() + removals.size());
         std::atomic_thread_fence(std::memory_order_release);
         itr.writeData(newIdx);
 
@@ -461,8 +461,8 @@ removeRandomValues(Tree &tree,
             std::vector<AttributePosting> additions;
             std::vector<uint32_t> removals;
             removals.push_back(i->_docId);
-            postings.apply(newIdx, &additions[0], &additions[0]+additions.size(),
-                                   &removals[0], &removals[0] + removals.size());
+            postings.apply(newIdx, additions.data(), additions.data() + additions.size(),
+                           removals.data(), removals.data() + removals.size());
             if (newIdx != oldIdx) {
                 std::atomic_thread_fence(std::memory_order_release);
                 itr.writeData(newIdx);

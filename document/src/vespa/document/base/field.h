@@ -56,7 +56,7 @@ public:
         bool contains(const Set & field) const;
         size_t size() const { return _fields.size(); }
         bool empty() const { return _fields.empty(); }
-        const CPtr * begin() const { return &_fields[0]; }
+        const CPtr * begin() const { return _fields.data(); }
         const CPtr * end() const { return begin() + _fields.size(); }
         static Set emptySet() { return Builder().build(); }
     private:

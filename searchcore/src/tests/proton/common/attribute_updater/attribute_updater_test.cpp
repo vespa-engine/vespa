@@ -159,7 +159,7 @@ check(const AttributePtr &vec, uint32_t docId, const std::vector<T> &values)
     uint32_t sz = vec->getValueCount(docId);
     if (!EXPECT_EQUAL(sz, values.size())) return false;
     std::vector<T> buf(sz);
-    uint32_t asz = vec->get(docId, &buf[0], sz);
+    uint32_t asz = vec->get(docId, buf.data(), sz);
     if (!EXPECT_EQUAL(sz, asz)) return false;
     std::vector<T> wanted(values.begin(), values.end());
     if (vec->hasWeightedSetType()) {

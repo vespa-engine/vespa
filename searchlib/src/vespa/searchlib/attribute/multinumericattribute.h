@@ -49,7 +49,7 @@ protected:
     using WType = MultiValueType;
     uint32_t get(DocId doc, const WType * & values) const {
         MultiValueArrayRef array(this->_mvMapping.get(doc));
-        values = &array[0];
+        values = array.data();
         return array.size();
     }
 

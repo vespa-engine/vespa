@@ -365,7 +365,7 @@ PageDict4SPWriter::flushPage()
                        _prevL3Size - wordsSize * 8;
     e.padBits(padding);
     if (wordsSize > 0) {
-        e.writeBytes(vespalib::ConstArrayRef<char>(&_words[0], wordsSize));
+        e.writeBytes(vespalib::ConstArrayRef<char>(_words.data(), wordsSize));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l6Word = _l3Word;
@@ -676,7 +676,7 @@ PageDict4PWriter::flushPage()
                        _countsSize - _countsWordOffset * 8;
     e.padBits(padding);
     if (_countsWordOffset > 0) {
-        e.writeBytes(vespalib::ConstArrayRef(&_words[0], _countsWordOffset));
+        e.writeBytes(vespalib::ConstArrayRef(_words.data(), _countsWordOffset));
     }
     assert((e.getWriteOffset() & (getPageBitSize() - 1)) == 0);
     _l3Word = _pendingCountsWord;
@@ -1055,7 +1055,7 @@ lookup(vespalib::stringref key)
     L7Vector::const_iterator l7lb;
     l7lb = std::lower_bound(_l7.begin(), _l7.end(), key);
 
-    l7Pos = &*l7lb - &_l7[0];
+    l7Pos = l7lb - _l7.cbegin();
     StartOffset startOffset;
     uint64_t pageNum = _pFirstPageNum;
     uint32_t sparsePageNum = _spFirstPageNum;
@@ -1863,7 +1863,7 @@ PageDict4Reader::setupPage()
     uint32_t padding = (getPageBitSize() - wordsSize * 8 - pageOffset) & (getPageBitSize() - 1);
     _pd.skipBits(padding);
     _words.resize(wordsSize);
-    _pd.readBytes(reinterpret_cast<uint8_t *>(&_words[0]), wordsSize);
+    _pd.readBytes(reinterpret_cast<uint8_t *>(_words.data()), wordsSize);
     _wc = _words.begin();
     _we = _words.end();
     checkWordOffsets(_words, _l1SkipChecks, _l2SkipChecks);
@@ -1985,7 +1985,7 @@ PageDict4Reader::setupSPage()
     uint32_t padding = getPageBitSize() - wordsSize * 8 - pageOffset;
     _spd.skipBits(padding);
     _spwords.resize(wordsSize);
-    _spd.readBytes(reinterpret_cast<uint8_t *>(&_spwords[0]), wordsSize);
+    _spd.readBytes(reinterpret_cast<uint8_t *>(_spwords.data()), wordsSize);
     _spwc = _spwords.begin();
     _spwe = _spwords.end();
     checkWordOffsets(_spwords, _l4SkipChecks, _l5SkipChecks);

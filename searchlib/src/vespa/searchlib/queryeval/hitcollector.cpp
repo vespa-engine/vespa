@@ -18,7 +18,7 @@ HitCollector::sortHitsByScore(size_t topn)
             _scoreOrder.push_back(i);
         }
         ShiftBasedRadixSorter<uint32_t, IndirectScoreRadix, IndirectScoreComparator, 56, true>::
-           radix_sort(IndirectScoreRadix(&_hits[0]), IndirectScoreComparator(&_hits[0]), &_scoreOrder[0], _scoreOrder.size(), 16, topn);
+            radix_sort(IndirectScoreRadix(_hits.data()), IndirectScoreComparator(_hits.data()), _scoreOrder.data(), _scoreOrder.size(), 16, topn);
         _scoreOrder.resize(topn);
     }
 }
@@ -28,7 +28,7 @@ HitCollector::sortHitsByDocId()
 {
     if (_hitsSortOrder != SortOrder::DOC_ID) {
         ShiftBasedRadixSorter<Hit, DocIdRadix, DocIdComparator, 24>::
-           radix_sort(DocIdRadix(), DocIdComparator(), &_hits[0], _hits.size(), 16);
+            radix_sort(DocIdRadix(), DocIdComparator(), _hits.data(), _hits.size(), 16);
         _hitsSortOrder = SortOrder::DOC_ID;
         _scoreOrder.clear();
     }
@@ -170,7 +170,7 @@ HitCollector::getSortedHitSequence(size_t max_hits)
 {
     size_t num_hits = std::min(_hits.size(), max_hits);
     sortHitsByScore(num_hits);
-    return SortedHitSequence(&_hits[0], &_scoreOrder[0], num_hits);
+    return SortedHitSequence(_hits.data(), _scoreOrder.data(), num_hits);
 }
 
 void

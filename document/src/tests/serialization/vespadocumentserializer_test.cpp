@@ -812,7 +812,7 @@ DocumenttypesConfig getTensorDocTypesConfig() {
 
 const DocumentTypeRepo tensor_doc_repo(getTensorDocTypesConfig());
 const FixedTypeRepo tensor_repo(tensor_doc_repo,
-                                *tensor_doc_repo.getDocumentType(doc_type_id));
+                                *tensor_doc_repo.getDocumentType(tensor_doc_type_id));
 
 const DocumentTypeRepo tensor_doc_repo1(getTensorDocTypesConfig("tensor(dimX{})"));
 

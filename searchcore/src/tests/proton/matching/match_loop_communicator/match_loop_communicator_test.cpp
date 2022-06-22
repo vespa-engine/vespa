@@ -32,7 +32,7 @@ std::tuple<size_t,Hits,RangePair> second_phase(MatchLoopCommunicator &com, const
     for (size_t i = 0; i < hits.size(); ++i) {
         refs.push_back(i);
     }
-    auto my_work = com.get_second_phase_work(SortedHitSequence(&hits[0], &refs[0], refs.size()), thread_id);
+    auto my_work = com.get_second_phase_work(SortedHitSequence(hits.data(), refs.data(), refs.size()), thread_id);
     // the DocumentScorer used by the match thread will sort on docid here to ensure increasing seek order, this is not needed here
     size_t work_size = my_work.size();
     for (auto &[hit, tag]: my_work) {

@@ -131,7 +131,7 @@ ConfigFile::ConfigFile(const vespalib::string &name, const vespalib::string &ful
         return;
     int64_t fileSize = file.getSize();
     _content.resize(fileSize);
-    file.ReadBuf(&_content[0], fileSize);
+    file.ReadBuf(_content.data(), fileSize);
     _modTime = file.GetModificationTime();
 }
 
@@ -143,7 +143,7 @@ ConfigFile::serialize(nbostream &stream) const
     stream << static_cast<int64_t>(_modTime);;
     uint32_t sz = _content.size();
     stream << sz;
-    stream.write(&_content[0], sz);
+    stream.write(_content.data(), sz);
     return stream;
 }
 
@@ -159,7 +159,7 @@ ConfigFile::deserialize(nbostream &stream)
     stream >> sz;
     _content.resize(sz);
     assert(stream.size() >= sz);
-    memcpy(&_content[0], stream.peek(), sz);
+    memcpy(_content.data(), stream.peek(), sz);
     stream.adjustReadPos(sz);
     return stream;
 }
@@ -173,7 +173,7 @@ ConfigFile::save(const vespalib::string &snapDir) const
     assert(openRes);
     (void) openRes;
 
-    file.WriteBuf(&_content[0], _content.size());
+    file.WriteBuf(_content.data(), _content.size());
     bool closeRes = file.Close();
     assert(closeRes);
     (void) closeRes;

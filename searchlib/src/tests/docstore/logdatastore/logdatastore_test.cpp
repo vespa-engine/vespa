@@ -18,6 +18,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/memory.h>
 #include <iomanip>
 
 using document::BucketId;
@@ -275,7 +276,7 @@ void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz
     vespalib::DataBuffer buf;
     EXPECT_EQUAL(static_cast<ssize_t>(sz), datastore.read(lid, buf));
     EXPECT_EQUAL(buf.getDataLen(), sz);
-    EXPECT_TRUE(memcmp(a, buf.getData(), sz) == 0);
+    EXPECT_TRUE(vespalib::memcmp_safe(a, buf.getData(), sz) == 0);
 }
 
 TEST("testTruncatedIdxFile"){

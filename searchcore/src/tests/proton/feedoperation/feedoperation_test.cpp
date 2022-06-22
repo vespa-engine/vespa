@@ -232,9 +232,9 @@ TEST("require that serialize/deserialize works for CompactLidSpaceOperation")
         op.serialize(stream);
     }
     {
-        const document::DocumentTypeRepo *repo = NULL;
+        const document::DocumentTypeRepo repo;
         CompactLidSpaceOperation op;
-        op.deserialize(stream, *repo);
+        op.deserialize(stream, repo);
         EXPECT_EQUAL(FeedOperation::COMPACT_LID_SPACE, op.getType());
         EXPECT_EQUAL(2u, op.getSubDbId());
         EXPECT_EQUAL(99u, op.getLidLimit());
