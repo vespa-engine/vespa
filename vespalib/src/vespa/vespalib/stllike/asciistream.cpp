@@ -433,6 +433,8 @@ unsigned long long normalize(long long v, bool &negative) {
     if (v < 0) {
         negative = true;
         if (v == std::numeric_limits<long long>::min()) {
+            // according to UBSAN:
+            // negation of -9223372036854775808 cannot be represented in type 'long long int'; cast to an unsigned type to negate this value to itself
             return v;
         }
         return -v;
