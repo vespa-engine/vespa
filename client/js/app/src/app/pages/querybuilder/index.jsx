@@ -1,25 +1,30 @@
+import './css/agency.css';
+import './css/vespa.css';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './font-awesome/css/font-awesome.min.css';
+
 import React from 'react';
-import SimpleButton from './Components/Buttons/SimpleButton';
-import QueryInput from './Components/Text/QueryInput';
-import SimpleDropDownForm from './Components/Text/SimpleDropDownForm';
-import SimpleForm from './Components/Text/SimpleForm';
-import TextBox from './Components/Text/TextBox';
-import ImageButton from './Components/Buttons/ImageButton';
-import OverlayImageButton from './Components/Buttons/OverlayImageButton';
-import AddQueryInput from './Components/Buttons/AddQueryInputButton';
-import { QueryInputProvider } from './Components/Contexts/QueryInputContext';
-import pasteImage from './assets/img/paste.svg';
-import copyImage from './assets/img/copy.svg';
-import refreshImage from './assets/img/reload.svg';
+import ReactDOM from 'react-dom/client';
+import SimpleButton from 'Components/Buttons/SimpleButton';
+import QueryInput from 'Components/Text/QueryInput';
+import SimpleDropDownForm from 'Components/Text/SimpleDropDownForm';
+import SimpleForm from 'Components/Text/SimpleForm';
+import TextBox from 'Components/Text/TextBox';
+import ImageButton from 'Components/Buttons/ImageButton';
+import OverlayImageButton from 'Components/Buttons/OverlayImageButton';
+import AddQueryInput from 'Components/Buttons/AddQueryInputButton';
+import { QueryInputProvider } from 'Components/Contexts/QueryInputContext';
 
-export function QueryBuilder() {
-  const messageMethodArray = ['POST', 'GET'];
+const root = ReactDOM.createRoot(document.getElementById('root'));
+const messageMethodArray = ['POST', 'GET'];
 
-  // const pasteImage = require("./assets/img/paste.svg").default;
-  // const copyImage = require("./assets/img/copy.svg").default;
-  // const refreshImage = require("./assets/img/reload.svg").default;
-  return (
-    <>
+const pasteImage = require('./assets/img/paste.svg').default;
+const copyImage = require('./assets/img/copy.svg').default;
+const refreshImage = require('./assets/img/reload.svg').default;
+
+root.render(
+  <>
+    <React.StrictMode>
       <header>
         <div className="intro container">
           <TextBox className={'intro-lead-in'}>Vespa Search Engine</TextBox>
@@ -37,7 +42,7 @@ export function QueryBuilder() {
             initial="http://localhost:8080/search/"
             size="30"
           ></SimpleForm>
-          <SimpleButton id="send" className="button">
+          <SimpleButton id="send" className="button" onClick={handleClick}>
             Send
           </SimpleButton>
           <br />
@@ -88,6 +93,10 @@ export function QueryBuilder() {
           <br />
         </div>
       </header>
-    </>
-  );
+    </React.StrictMode>
+  </>
+);
+
+function handleClick() {
+  console.log('Click happened');
 }
