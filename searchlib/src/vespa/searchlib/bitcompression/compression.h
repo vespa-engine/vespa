@@ -165,8 +165,7 @@ public:
 
 #define UC64BE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)   \
   do {                                                                \
-    length =                                                          \
-      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val); \
+    length = __builtin_clzl(val);                                     \
     unsigned int olength = length;                                    \
     val <<= length;                                                   \
     if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) {         \
@@ -174,8 +173,9 @@ public:
       length = 0;                                                     \
     }                                                                 \
     val64 = (val >> (63 - olength - (k))) - (UINT64_C(1) << (k));     \
-    val <<= olength + 1 + (k);                                        \
-    if (__builtin_expect(olength + 1 + (k) == 64, false)) {           \
+    if (__builtin_expect(olength + 1 + (k) != 64, true)) {            \
+      val <<= olength + 1 + (k);                                      \
+    } else {                                                          \
       val = 0;                                                        \
     }                                                                 \
     length += olength + 1 + (k);                                      \
@@ -193,8 +193,7 @@ public:
 #define UC64BE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, \
                      EC)                                              \
   do {                                                                \
-    length =                                                          \
-      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val); \
+    length = __builtin_clzl(val);                                   \
     val <<= length;                                                   \
     val64 = (val >> (63 - length - (k))) - (UINT64_C(1) << (k));      \
     val <<= length + 1 + (k);                                         \
@@ -219,8 +218,7 @@ public:
 #define UC64BE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, \
                        k, EC, resop)                                     \
   do {                                                                   \
-    length =                                                             \
-      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val);    \
+    length = __builtin_clzl(val);                                        \
     val <<= length;                                                      \
     resop (val >> (63 - length - (k))) - (UINT64_C(1) << (k));           \
     val <<= length + 1 + (k);                                            \
@@ -231,16 +229,16 @@ public:
 
 #define UC64BE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC)     \
   do {                                                                \
-    length =                                                          \
-      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val); \
+    length = __builtin_clzl(val);                                     \
     unsigned int olength = length;                                    \
     val <<= length;                                                   \
     if (__builtin_expect(length * 2 + 1 + (k) > 64, false)) {         \
       UC64BE_READBITS(val, valI, preRead, cacheInt, EC);              \
       length = 0;                                                     \
     }                                                                 \
-    val <<= olength + 1 + (k);                                        \
-    if (__builtin_expect(olength + 1 + (k) == 64, false)) {           \
+    if (__builtin_expect(olength + 1 + (k) != 64, true)) {            \
+      val <<= olength + 1 + (k);                                      \
+    } else {                                                          \
       val = 0;                                                        \
     }                                                                 \
     length += olength + 1 + (k);                                      \
@@ -258,8 +256,7 @@ public:
 #define UC64BE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k,   \
                    EC)                                                \
   do {                                                                \
-    length =                                                          \
-      63 - ::search::bitcompression::EncodeContext64BE::asmlog2(val); \
+    length = __builtin_clzl(val);                                     \
     val <<= length;                                                   \
     val <<= length + 1 + (k);                                         \
     length += length + 1 + (k);                                       \
@@ -394,11 +391,11 @@ public:
 
 #define UC64LE_DECODEEXPGOLOMB(val, valI, preRead, cacheInt, k, EC) \
   do {                                                              \
-    unsigned int olength =                                          \
-      ::search::bitcompression::EncodeContext64LE::ffsl(val);       \
+    unsigned int olength = __builtin_ctzl(val);                     \
     length = olength + 1;                                           \
-    val >>= length;                                                 \
-    if (__builtin_expect(length == 64, false)) {                    \
+    if (__builtin_expect(length != 64, true)) {                     \
+      val >>= length;                                               \
+    } else {                                                        \
       val = 0;                                                      \
     }                                                               \
     if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {      \
@@ -423,7 +420,7 @@ public:
 #define UC64LE_DECODEEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k, \
                      EC)                                              \
   do {                                                                \
-    length = ::search::bitcompression::EncodeContext64LE::ffsl(val);  \
+    length = __builtin_ctzl(val);                                     \
     val >>= length + 1;                                               \
     val64 = (val & ((UINT64_C(1) << (length + (k))) - 1)) +           \
        (UINT64_C(1) << (length + (k))) - (UINT64_C(1) << (k));        \
@@ -449,7 +446,7 @@ public:
 #define UC64LE_DECODEEXPGOLOMB_SMALL_APPLY(val, valI, preRead, cacheInt, \
                        k, EC, resop)                                     \
   do {                                                                   \
-    length = ::search::bitcompression::EncodeContext64LE::ffsl(val);     \
+    length = __builtin_ctzl(val);                                        \
     val >>= length + 1;                                                  \
     resop (val & ((UINT64_C(1) << (length + (k))) - 1)) +                \
        (UINT64_C(1) << (length + (k))) - (UINT64_C(1) << (k));           \
@@ -461,11 +458,11 @@ public:
 
 #define UC64LE_SKIPEXPGOLOMB(val, valI, preRead, cacheInt, k, EC) \
   do {                                                            \
-    unsigned int olength =                                        \
-      ::search::bitcompression::EncodeContext64LE::ffsl(val);     \
+    unsigned int olength = __builtin_ctzl(val);                   \
     length = olength + 1;                                         \
-    val >>= length;                                               \
-    if (__builtin_expect(length == 64, false)) {                  \
+    if (__builtin_expect(length != 64, true)) {                   \
+      val >>= length;                                             \
+    } else {                                                      \
       val = 0;                                                    \
     }                                                             \
     if (__builtin_expect(olength * 2 + 1 + (k) > 64, false)) {    \
@@ -488,7 +485,7 @@ public:
 #define UC64LE_SKIPEXPGOLOMB_SMALL(val, valI, preRead, cacheInt, k,  \
                    EC)                                               \
   do {                                                               \
-    length = ::search::bitcompression::EncodeContext64LE::ffsl(val); \
+    length = __builtin_ctzl(val);                                    \
     val >>= length + 1;                                              \
     val >>= length + (k);                                            \
     length += length + 1 + (k);                                      \
