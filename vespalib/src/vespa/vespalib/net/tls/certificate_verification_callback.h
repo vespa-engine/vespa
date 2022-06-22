@@ -22,7 +22,7 @@ struct CertificateVerificationCallback {
 // and it is signed by a trusted CA.
 struct AcceptAllPreVerifiedCertificates : CertificateVerificationCallback {
     VerificationResult verify([[maybe_unused]] const PeerCredentials& peer_creds) const override {
-        return VerificationResult::make_authorized_for_all_roles(); // yolo
+        return VerificationResult::make_authorized_with_all_capabilities(); // yolo
     }
 };
 

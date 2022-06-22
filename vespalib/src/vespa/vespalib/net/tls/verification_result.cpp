@@ -8,8 +8,8 @@ namespace vespalib::net::tls {
 
 VerificationResult::VerificationResult() = default;
 
-VerificationResult::VerificationResult(AssumedRoles assumed_roles)
-    : _assumed_roles(std::move(assumed_roles))
+VerificationResult::VerificationResult(CapabilitySet granted_capabilities)
+    : _granted_capabilities(std::move(granted_capabilities))
 {}
 
 VerificationResult::VerificationResult(const VerificationResult&) = default;
@@ -23,19 +23,19 @@ void VerificationResult::print(asciistream& os) const {
     if (!success()) {
         os << "NOT AUTHORIZED";
     } else {
-        os << _assumed_roles;
+        os << _granted_capabilities;
     }
     os << ')';
 }
 
 VerificationResult
-VerificationResult::make_authorized_for_roles(AssumedRoles assumed_roles) {
-    return VerificationResult(std::move(assumed_roles));
+VerificationResult::make_authorized_with_capabilities(CapabilitySet granted_capabilities) {
+    return VerificationResult(std::move(granted_capabilities));
 }
 
 VerificationResult
-VerificationResult::make_authorized_for_all_roles() {
-    return VerificationResult(AssumedRoles::make_wildcard_role());
+VerificationResult::make_authorized_with_all_capabilities() {
+    return VerificationResult(CapabilitySet::make_with_all_capabilities());
 }
 
 VerificationResult

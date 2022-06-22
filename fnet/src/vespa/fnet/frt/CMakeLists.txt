@@ -5,6 +5,7 @@ vespa_add_library(fnet_frt OBJECT
     invoker.cpp
     packets.cpp
     reflection.cpp
+    require_capability.cpp
     rpcrequest.cpp
     supervisor.cpp
     target.cpp

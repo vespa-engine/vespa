@@ -198,6 +198,68 @@ TEST("unknown fields are ignored at parse-time") {
     EXPECT_TRUE(read_options_from_json_string(json).get() != nullptr); // And no exception thrown.
 }
 
+TEST("policy without explicit capabilities implicitly get all capabilities") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "SAN_DNS", "must-match": "hello.world"}
+      ]
+    })";
+    EXPECT_EQUAL(authorized_peers({policy_with({required_san_dns("hello.world")},
+                                               CapabilitySet::make_with_all_capabilities())}),
+                 parse_policies(json).authorized_peers());
+}
+
+TEST("specifying a capability set adds all its underlying capabilities") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "SAN_DNS", "must-match": "*.cool-content-clusters.example" }
+      ],
+      "capabilities": ["vespa.content_node"]
+    })";
+    EXPECT_EQUAL(authorized_peers({policy_with({required_san_dns("*.cool-content-clusters.example")},
+                                               CapabilitySet::content_node())}),
+                 parse_policies(json).authorized_peers());
+}
+
+TEST("can specify single leaf capabilities") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "SAN_DNS", "must-match": "*.cool-content-clusters.example" }
+      ],
+      "capabilities": ["vespa.content.metrics_api", "vespa.slobrok.api"]
+    })";
+    EXPECT_EQUAL(authorized_peers({policy_with({required_san_dns("*.cool-content-clusters.example")},
+                                               CapabilitySet::of({Capability::content_metrics_api(),
+                                                                  Capability::slobrok_api()}))}),
+                 parse_policies(json).authorized_peers());
+}
+
+TEST("specifying multiple capability sets adds union of underlying capabilities") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "SAN_DNS", "must-match": "*.cool-content-clusters.example" }
+      ],
+      "capabilities": ["vespa.content_node", "vespa.container_node"]
+    })";
+    CapabilitySet caps;
+    caps.add_all(CapabilitySet::content_node());
+    caps.add_all(CapabilitySet::container_node());
+    EXPECT_EQUAL(authorized_peers({policy_with({required_san_dns("*.cool-content-clusters.example")}, caps)}),
+                 parse_policies(json).authorized_peers());
+}
+
+TEST("empty capabilities array is not allowed") {
+    const char* json = R"({
+      "required-credentials":[
+         {"field": "SAN_DNS", "must-match": "*.cool-content-clusters.example" }
+      ],
+      "capabilities": []
+    })";
+    EXPECT_EXCEPTION(parse_policies(json), vespalib::IllegalArgumentException,
+                     "\"capabilities\" array must either be not present (implies "
+                     "all capabilities) or contain at least one capability name");
+}
+
 // TODO test parsing of multiple policies
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -542,7 +542,7 @@ struct PrintingCertificateCallback : CertificateVerificationCallback {
         for (auto& dns : peer_creds.dns_sans) {
             fprintf(stderr, "Got a DNS SAN entry: %s\n", dns.c_str());
         }
-        return VerificationResult::make_authorized_for_all_roles();
+        return VerificationResult::make_authorized_with_all_capabilities();
     }
 };
 
@@ -551,7 +551,7 @@ struct MockCertificateCallback : CertificateVerificationCallback {
     mutable PeerCredentials creds; // only used in single thread testing context
     VerificationResult verify(const PeerCredentials& peer_creds) const override {
         creds = peer_creds;
-        return VerificationResult::make_authorized_for_all_roles();
+        return VerificationResult::make_authorized_with_all_capabilities();
     }
 };
 
@@ -710,6 +710,29 @@ TEST_F("Server allows client with certificate that DOES match peer policy", Cert
     f.reset_client_with_cert_opts(client_ck, AuthorizedPeers::allow_all_authenticated());
 
     EXPECT_TRUE(f.handshake());
+}
+
+TEST_F("Authz policy-derived peer capabilities are propagated to CryptoCodec", CertFixture) {
+    auto server_ck = f.create_ca_issued_peer_cert({}, {{"DNS:hello.world.example.com"}});
+    auto authorized = authorized_peers({policy_with({required_san_dns("stale.memes.example.com")},
+                                                    CapabilitySet::of({Capability::content_search_api(),
+                                                                       Capability::content_status_pages()})),
+                                        policy_with({required_san_dns("fresh.memes.example.com")},
+                                                    CapabilitySet::make_with_all_capabilities())});
+    f.reset_server_with_cert_opts(server_ck, std::move(authorized));
+    auto client_ck = f.create_ca_issued_peer_cert({}, {{"DNS:stale.memes.example.com"}});
+    f.reset_client_with_cert_opts(client_ck, AuthorizedPeers::allow_all_authenticated());
+
+    ASSERT_TRUE(f.handshake());
+
+    // Note: "inversion" of client <-> server is because the capabilities are that of the _peer_.
+    auto client_caps = f.server->granted_capabilities();
+    auto server_caps = f.client->granted_capabilities();
+    // Server (from client's PoV) implicitly has all capabilities since client doesn't specify any policies
+    EXPECT_EQUAL(server_caps, CapabilitySet::make_with_all_capabilities());
+    // Client (from server's PoV) only has capabilities for the rule matching its DNS SAN entry
+    EXPECT_EQUAL(client_caps, CapabilitySet::of({Capability::content_search_api(),
+                                                 Capability::content_status_pages()}));
 }
 
 void reset_peers_with_server_authz_mode(CertFixture& f, AuthorizationMode authz_mode) {

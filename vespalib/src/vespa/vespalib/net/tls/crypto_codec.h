@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "capability_set.h"
 #include <vespa/vespalib/net/socket_address.h>
 #include <memory>
 
@@ -54,7 +55,6 @@ struct DecodeResult {
 
 struct TlsContext;
 struct PeerCredentials;
-class AssumedRoles;
 
 // TODO move to different namespace, not dependent on TLS?
 
@@ -185,9 +185,9 @@ public:
     [[nodiscard]] virtual const PeerCredentials& peer_credentials() const noexcept = 0;
 
     /**
-     * Union set of all assumed roles in the peer policy rules that fully matched the peer's credentials.
+     * Union set of all granted capabilities in the peer policy rules that fully matched the peer's credentials.
      */
-    [[nodiscard]] virtual const AssumedRoles& assumed_roles() const noexcept = 0;
+    [[nodiscard]] virtual CapabilitySet granted_capabilities() const noexcept = 0;
 
     /*
      * Creates an implementation defined CryptoCodec that provides at least TLSv1.2

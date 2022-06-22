@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "assumed_roles.h"
+#include "capability_set.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <memory>
 #include <vector>
@@ -50,26 +50,26 @@ public:
 class PeerPolicy {
     // _All_ credentials must match for the policy itself to match.
     std::vector<RequiredPeerCredential> _required_peer_credentials;
-    AssumedRoles                        _assumed_roles;
+    CapabilitySet                       _granted_capabilities;
 public:
     PeerPolicy();
-    // This policy is created with a wildcard role set, i.e. full access.
+    // This policy is created with a full capability set, i.e. unrestricted access.
     explicit PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials);
 
     PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials,
-               AssumedRoles assumed_roles);
+               CapabilitySet granted_capabilities);
 
     ~PeerPolicy();
 
     bool operator==(const PeerPolicy& rhs) const noexcept {
         return ((_required_peer_credentials == rhs._required_peer_credentials) &&
-                (_assumed_roles == rhs._assumed_roles));
+                (_granted_capabilities == rhs._granted_capabilities));
     }
     [[nodiscard]] const std::vector<RequiredPeerCredential>& required_peer_credentials() const noexcept {
         return _required_peer_credentials;
     }
-    [[nodiscard]] const AssumedRoles& assumed_roles() const noexcept {
-        return _assumed_roles;
+    [[nodiscard]] const CapabilitySet& granted_capabilities() const noexcept {
+        return _granted_capabilities;
     }
 };
 

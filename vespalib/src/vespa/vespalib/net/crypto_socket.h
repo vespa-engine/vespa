@@ -7,6 +7,8 @@
 
 namespace vespalib {
 
+namespace net { class ConnectionAuthContext; }
+
 /**
  * Abstraction of a low-level async network socket which can produce
  * io events and allows encrypting written data and decrypting read
@@ -142,6 +144,18 @@ struct CryptoSocket {
      * indicates that no further progress can be made.
      **/
     virtual void drop_empty_buffers() = 0;
+
+    /**
+     * If the underlying transport channel supports authn/authz,
+     * returns a new ConnectionAuthContext object containing the verified
+     * credentials of the peer as well as the resulting peer capabilities
+     * inferred by our own policy matching.
+     *
+     * If the underlying transport channel does _not_ support authn/authz
+     * (such as a plaintext connection) a dummy context is returned which
+     * offers _all_ capabilities.
+     */
+    [[nodiscard]] virtual std::unique_ptr<net::ConnectionAuthContext> make_auth_context();
 
     virtual ~CryptoSocket();
 };

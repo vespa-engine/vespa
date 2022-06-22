@@ -3,6 +3,8 @@
 #pragma once
 
 #include "invokable.h"
+#include "request_access_filter.h"
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -23,6 +25,7 @@ private:
     FRT_METHOD_PT      _method;        // method pointer
     FRT_Invokable     *_handler;       // method handler
     std::vector<char>  _doc;           // method documentation
+    std::unique_ptr<FRT_RequestAccessFilter> _access_filter; // (optional) access filter
 
 public:
     FRT_Method(const FRT_Method &) = delete;
@@ -41,6 +44,10 @@ public:
     const char *GetReturnSpec() { return _returnSpec.c_str(); }
     FRT_METHOD_PT GetMethod() { return _method; }
     FRT_Invokable *GetHandler() { return _handler; }
+    const FRT_RequestAccessFilter* GetRequestAccessFilter() const noexcept { return _access_filter.get(); }
+    void SetRequestAccessFilter(std::unique_ptr<FRT_RequestAccessFilter> access_filter) noexcept {
+        _access_filter = std::move(access_filter);
+    }
     void SetDocumentation(FRT_Values *values);
     void GetDocumentation(FRT_Values *values);
 };
@@ -104,6 +111,7 @@ private:
     FRT_StringValue *_arg_desc;
     FRT_StringValue *_ret_name;
     FRT_StringValue *_ret_desc;
+    std::unique_ptr<FRT_RequestAccessFilter> _access_filter;
 
     FRT_ReflectionBuilder(const FRT_ReflectionBuilder &);
     FRT_ReflectionBuilder &operator=(const FRT_ReflectionBuilder &);
@@ -122,5 +130,6 @@ public:
     void MethodDesc(const char *desc);
     void ParamDesc(const char *name, const char *desc);
     void ReturnDesc(const char *name, const char *desc);
+    void RequestAccessFilter(std::unique_ptr<FRT_RequestAccessFilter> access_filter);
 };
 

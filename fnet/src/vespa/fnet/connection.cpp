@@ -9,6 +9,7 @@
 #include "config.h"
 #include "transport_thread.h"
 #include "transport.h"
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/socket_spec.h>
 
 #include <vespa/log/log.h>
@@ -241,6 +242,8 @@ FNET_Connection::handshake()
         break;
     case vespalib::CryptoSocket::HandshakeResult::DONE: {
         LOG(debug, "Connection(%s): handshake done with peer %s", GetSpec(), GetPeerSpec().c_str());
+        _auth_context = _socket->make_auth_context();
+        assert(_auth_context);
         EnableReadEvent(true);
         EnableWriteEvent(writePendingAfterConnect());
         _flags._framed = (_socket->min_read_buffer_size() > 1);
@@ -763,4 +766,11 @@ vespalib::string
 FNET_Connection::GetPeerSpec() const
 {
     return vespalib::SocketAddress::peer_address(_socket->get_fd()).spec();
+}
+
+const vespalib::net::ConnectionAuthContext&
+FNET_Connection::auth_context() const noexcept
+{
+    assert(_auth_context);
+    return *_auth_context;
 }

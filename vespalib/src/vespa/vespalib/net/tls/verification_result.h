@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "assumed_roles.h"
+#include "capability_set.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <iosfwd>
 
@@ -13,14 +13,14 @@ namespace vespalib::net::tls {
  * The result of evaluating configured mTLS authorization rules against the
  * credentials presented by a successfully authenticated peer certificate.
  *
- * This result contains the union set of all roles specified by the matching
- * authorization rules. If no rules matched, the set will be empty. The role
+ * This result contains the union set of all capabilities granted by the matching
+ * authorization rules. If no rules matched, the set will be empty. The capability
  * set will also be empty for a default-constructed instance.
  */
 class VerificationResult {
-    AssumedRoles _assumed_roles;
+    CapabilitySet _granted_capabilities;
 
-    explicit VerificationResult(AssumedRoles assumed_roles);
+    explicit VerificationResult(CapabilitySet granted_capabilities);
 public:
     VerificationResult();
     VerificationResult(const VerificationResult&);
@@ -29,22 +29,19 @@ public:
     VerificationResult& operator=(VerificationResult&&) noexcept;
     ~VerificationResult();
 
-    // Returns true iff at least one assumed role has been granted.
+    // Returns true iff at least one capability been granted.
     [[nodiscard]] bool success() const noexcept {
-        return !_assumed_roles.empty();
+        return !_granted_capabilities.empty();
     }
 
-    [[nodiscard]] const AssumedRoles& assumed_roles() const noexcept {
-        return _assumed_roles;
-    }
-    [[nodiscard]] AssumedRoles steal_assumed_roles() noexcept {
-        return std::move(_assumed_roles);
+    [[nodiscard]] const CapabilitySet& granted_capabilities() const noexcept {
+        return _granted_capabilities;
     }
 
     void print(asciistream& os) const;
 
-    static VerificationResult make_authorized_for_roles(AssumedRoles assumed_roles);
-    static VerificationResult make_authorized_for_all_roles();
+    static VerificationResult make_authorized_with_capabilities(CapabilitySet granted_capabilities);
+    static VerificationResult make_authorized_with_all_capabilities();
     static VerificationResult make_not_authorized();
 };
 

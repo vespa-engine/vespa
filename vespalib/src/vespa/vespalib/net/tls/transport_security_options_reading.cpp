@@ -5,6 +5,8 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/memory_input.h>
+#include <vespa/vespalib/net/tls/capability_set.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace vespalib::net::tls {
 
@@ -24,7 +26,8 @@ namespace vespalib::net::tls {
         { "field":"CN", "must-match": "*.config.blarg"},
         { "field":"SAN_DNS", "must-match": "*.fancy.config.blarg"}
       ],
-      "name": "funky config servers"
+      "name": "funky config servers",
+      "capabilities": ["vespa.content.coolstuff"]
     }
   ]
 }
@@ -68,8 +71,7 @@ RequiredPeerCredential parse_peer_credential(const Inspector& req_entry) {
     return RequiredPeerCredential(field, std::move(match));
 }
 
-PeerPolicy parse_peer_policy(const Inspector& peer_entry) {
-    auto& creds = peer_entry["required-credentials"];
+std::vector<RequiredPeerCredential> parse_peer_credentials(const Inspector& creds) {
     if (creds.children() == 0) {
         throw IllegalArgumentException("\"required-credentials\" array can't be empty (would allow all peers)");
     }
@@ -77,7 +79,31 @@ PeerPolicy parse_peer_policy(const Inspector& peer_entry) {
     for (size_t i = 0; i < creds.children(); ++i) {
         required_creds.emplace_back(parse_peer_credential(creds[i]));
     }
-    return PeerPolicy(std::move(required_creds));
+    return required_creds;
+}
+
+CapabilitySet parse_capabilities(const Inspector& caps) {
+    CapabilitySet capabilities;
+    if (caps.valid() && (caps.children() == 0)) {
+        throw IllegalArgumentException("\"capabilities\" array must either be not present (implies "
+                                       "all capabilities) or contain at least one capability name");
+    } else if (caps.valid()) {
+        for (size_t i = 0; i < caps.children(); ++i) {
+            // TODO warn if resolve_and_add returns false; means capability is unknown!
+            (void)capabilities.resolve_and_add(caps[i].asString().make_string());
+        }
+    } else {
+        // If no capabilities are specified, all are implicitly granted.
+        // This avoids breaking every legacy mTLS app ever.
+        capabilities = CapabilitySet::make_with_all_capabilities();
+    }
+    return capabilities;
+}
+
+PeerPolicy parse_peer_policy(const Inspector& peer_entry) {
+    auto required_creds = parse_peer_credentials(peer_entry["required-credentials"]);
+    auto capabilities   = parse_capabilities(peer_entry["capabilities"]);
+    return {std::move(required_creds), std::move(capabilities)};
 }
 
 AuthorizedPeers parse_authorized_peers(const Inspector& authorized_peers) {

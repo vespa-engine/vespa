@@ -46,6 +46,7 @@ public:
     ssize_t flush() override;
     ssize_t half_close() override;
     void drop_empty_buffers() override;
+    std::unique_ptr<net::ConnectionAuthContext> make_auth_context() override;
 };
 
 } // namespace vespalib::net::tls

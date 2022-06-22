@@ -127,9 +127,9 @@ bool verify(AuthorizedPeers authorized_peers, const PeerCredentials& peer_creds)
     return verifier->verify(peer_creds).success();
 }
 
-AssumedRoles verify_roles(AuthorizedPeers authorized_peers, const PeerCredentials& peer_creds) {
+CapabilitySet verify_capabilities(AuthorizedPeers authorized_peers, const PeerCredentials& peer_creds) {
     auto verifier = create_verify_callback_from(std::move(authorized_peers));
-    return verifier->verify(peer_creds).steal_assumed_roles();
+    return verifier->verify(peer_creds).granted_capabilities();
 }
 
 TEST("Default-constructed AuthorizedPeers does not allow all authenticated peers") {
@@ -142,14 +142,16 @@ TEST("Specially constructed set of policies allows all authenticated peers") {
     EXPECT_TRUE(verify(allow_all, creds_with_dns_sans({{"anything.goes"}})));
 }
 
-TEST("specially constructed set of policies returns wildcard role set") {
+TEST("specially constructed set of policies returns full capability set") {
     auto allow_all = AuthorizedPeers::allow_all_authenticated();
-    EXPECT_EQUAL(verify_roles(allow_all, creds_with_dns_sans({{"anything.goes"}})), AssumedRoles::make_wildcard_role());
+    EXPECT_EQUAL(verify_capabilities(allow_all, creds_with_dns_sans({{"anything.goes"}})),
+                 CapabilitySet::make_with_all_capabilities());
 }
 
-TEST("policy without explicit role set implicitly returns wildcard role set") {
+TEST("policy without explicit capability set implicitly returns full capability set") {
     auto authorized = authorized_peers({policy_with({required_san_dns("yolo.swag")})});
-    EXPECT_EQUAL(verify_roles(authorized, creds_with_dns_sans({{"yolo.swag"}})), AssumedRoles::make_wildcard_role());
+    EXPECT_EQUAL(verify_capabilities(authorized, creds_with_dns_sans({{"yolo.swag"}})),
+                 CapabilitySet::make_with_all_capabilities());
 }
 
 TEST("Non-empty policies do not allow all authenticated peers") {
@@ -246,11 +248,11 @@ struct MultiPolicyMatchFixture {
 };
 
 MultiPolicyMatchFixture::MultiPolicyMatchFixture()
-    : authorized(authorized_peers({policy_with({required_san_dns("hello.world")},   assumed_roles({"r1"})),
-                                   policy_with({required_san_dns("foo.bar")},       assumed_roles({"r2"})),
-                                   policy_with({required_san_dns("zoid.berg")},     assumed_roles({"r2", "r3"})),
-                                   policy_with({required_san_dns("secret.sauce")},  AssumedRoles::make_wildcard_role()),
-                                   policy_with({required_san_uri("zoid://be.rg/")}, assumed_roles({"r4"}))}))
+    : authorized(authorized_peers({policy_with({required_san_dns("hello.world")},   CapabilitySet::of({cap_1()})),
+                                   policy_with({required_san_dns("foo.bar")},       CapabilitySet::of({cap_2()})),
+                                   policy_with({required_san_dns("zoid.berg")},     CapabilitySet::of({cap_2(), cap_3()})),
+                                   policy_with({required_san_dns("secret.sauce")},  CapabilitySet::make_with_all_capabilities()),
+                                   policy_with({required_san_uri("zoid://be.rg/")}, CapabilitySet::of({cap_4()}))}))
 {}
 
 MultiPolicyMatchFixture::~MultiPolicyMatchFixture() = default;
@@ -262,32 +264,37 @@ TEST_F("peer verifies if it matches at least 1 policy of multiple", MultiPolicyM
     EXPECT_TRUE(verify(f.authorized, creds_with_uri_sans({{"zoid://be.rg/"}})));
 }
 
-TEST_F("role set is returned for single matched policy", MultiPolicyMatchFixture) {
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"hello.world"}})),   assumed_roles({"r1"}));
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"foo.bar"}})),       assumed_roles({"r2"}));
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"zoid.berg"}})),     assumed_roles({"r2", "r3"}));
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"secret.sauce"}})),  AssumedRoles::make_wildcard_role());
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_uri_sans({{"zoid://be.rg/"}})), assumed_roles({"r4"}));
+TEST_F("capability set is returned for single matched policy", MultiPolicyMatchFixture) {
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_dns_sans({{"hello.world"}})),
+                 CapabilitySet::of({cap_1()}));
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_dns_sans({{"foo.bar"}})),
+                 CapabilitySet::of({cap_2()}));
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_dns_sans({{"zoid.berg"}})),
+                 CapabilitySet::of({cap_2(), cap_3()}));
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_dns_sans({{"secret.sauce"}})),
+                 CapabilitySet::make_with_all_capabilities());
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_uri_sans({{"zoid://be.rg/"}})),
+                 CapabilitySet::of({cap_4()}));
 }
 
 TEST_F("peer verifies if it matches multiple policies", MultiPolicyMatchFixture) {
     EXPECT_TRUE(verify(f.authorized, creds_with_dns_sans({{"hello.world"}, {"zoid.berg"}})));
 }
 
-TEST_F("union role set is returned if multiple policies match", MultiPolicyMatchFixture) {
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"zoid.berg"}})),
-                 assumed_roles({"r1", "r2", "r3"}));
-    // Wildcard role is tracked as a distinct role string
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"secret.sauce"}})),
-                 assumed_roles({"r1", "r2", "*"}));
+TEST_F("union capability set is returned if multiple policies match", MultiPolicyMatchFixture) {
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"zoid.berg"}})),
+                 CapabilitySet::of({cap_1(), cap_2(), cap_3()}));
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_dns_sans({{"hello.world"}, {"foo.bar"}, {"secret.sauce"}})),
+                 CapabilitySet::make_with_all_capabilities());
 }
 
 TEST_F("peer must match at least 1 of multiple policies", MultiPolicyMatchFixture) {
     EXPECT_FALSE(verify(f.authorized, creds_with_dns_sans({{"does.not.exist"}})));
 }
 
-TEST_F("empty role set is returned if no policies match", MultiPolicyMatchFixture) {
-    EXPECT_EQUAL(verify_roles(f.authorized, creds_with_dns_sans({{"does.not.exist"}})), AssumedRoles::make_empty());
+TEST_F("empty capability set is returned if no policies match", MultiPolicyMatchFixture) {
+    EXPECT_EQUAL(verify_capabilities(f.authorized, creds_with_dns_sans({{"does.not.exist"}})),
+                 CapabilitySet::make_empty());
 }
 
 TEST("CN requirement without glob pattern is matched as exact string") {
@@ -308,62 +315,32 @@ TEST("CN requirement can include glob wildcards") {
     EXPECT_FALSE(verify(authorized, creds_with_cn("world")));
 }
 
-TEST("AssumedRoles by default contains no roles") {
-    AssumedRoles roles;
-    EXPECT_TRUE(roles.empty());
-    EXPECT_FALSE(roles.can_assume_role("foo"));
-    auto empty = AssumedRoles::make_empty();
-    EXPECT_EQUAL(roles, empty);
-}
-
-TEST("AssumedRoles can be constructed with an explicit set of roles") {
-    auto roles = AssumedRoles::make_for_roles({"foo", "bar"});
-    EXPECT_TRUE(roles.can_assume_role("foo"));
-    EXPECT_TRUE(roles.can_assume_role("bar"));
-    EXPECT_FALSE(roles.can_assume_role("baz"));
-}
-
-TEST("AssumedRoles wildcard role can assume any role") {
-    auto roles = AssumedRoles::make_wildcard_role();
-    EXPECT_TRUE(roles.can_assume_role("foo"));
-    EXPECT_TRUE(roles.can_assume_role("bar"));
-}
-
-TEST("AssumedRolesBuilder builds union set of added roles") {
-    AssumedRolesBuilder builder;
-    builder.add_union(AssumedRoles::make_for_roles({"hello", "world"}));
-    builder.add_union(AssumedRoles::make_for_roles({"hello", "moon"}));
-    builder.add_union(AssumedRoles::make_for_roles({"goodbye", "moon"}));
-    auto roles = builder.build_with_move();
-    EXPECT_EQUAL(roles, AssumedRoles::make_for_roles({"hello", "goodbye", "moon", "world"}));
-}
-
 TEST("VerificationResult is not authorized by default") {
     VerificationResult result;
     EXPECT_FALSE(result.success());
-    EXPECT_TRUE(result.assumed_roles().empty());
+    EXPECT_TRUE(result.granted_capabilities().empty());
 }
 
 TEST("VerificationResult can be explicitly created as not authorized") {
     auto result = VerificationResult::make_not_authorized();
     EXPECT_FALSE(result.success());
-    EXPECT_TRUE(result.assumed_roles().empty());
+    EXPECT_TRUE(result.granted_capabilities().empty());
 }
 
-TEST("VerificationResult can be pre-authorized for all roles") {
-    auto result = VerificationResult::make_authorized_for_all_roles();
+TEST("VerificationResult can be pre-authorized with all capabilities") {
+    auto result = VerificationResult::make_authorized_with_all_capabilities();
     EXPECT_TRUE(result.success());
-    EXPECT_FALSE(result.assumed_roles().empty());
-    EXPECT_TRUE(result.assumed_roles().can_assume_role("foo"));
+    EXPECT_FALSE(result.granted_capabilities().empty());
+    EXPECT_EQUAL(result.granted_capabilities(), CapabilitySet::make_with_all_capabilities());
 }
 
-TEST("VerificationResult can be pre-authorized for an explicit set of roles") {
-    auto result = VerificationResult::make_authorized_for_roles(AssumedRoles::make_for_roles({"elden", "ring"}));
+TEST("VerificationResult can be pre-authorized for an explicit set of capabilities") {
+    auto result = VerificationResult::make_authorized_with_capabilities(CapabilitySet::of({cap_2(), cap_3()}));
     EXPECT_TRUE(result.success());
-    EXPECT_FALSE(result.assumed_roles().empty());
-    EXPECT_TRUE(result.assumed_roles().can_assume_role("elden"));
-    EXPECT_TRUE(result.assumed_roles().can_assume_role("ring"));
-    EXPECT_FALSE(result.assumed_roles().can_assume_role("O you don't have the right"));
+    EXPECT_FALSE(result.granted_capabilities().empty());
+    EXPECT_TRUE(result.granted_capabilities().contains(cap_2()));
+    EXPECT_TRUE(result.granted_capabilities().contains(cap_3()));
+    EXPECT_FALSE(result.granted_capabilities().contains(cap_1()));
 }
 
 // TODO test CN _and_ SAN
