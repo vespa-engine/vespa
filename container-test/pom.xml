@@ -26,7 +26,21 @@
           <groupId>biz.aQute.bnd</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>vespajlib</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.bouncycastle</groupId>
+          <artifactId>bcpkix-jdk15on</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+    <!-- Excluded above, and re-declared here, to work around a presumed Maven bug which otherwise puts this
+         in provided scope when container-test is declared before, and together with, the container artifact -->
+    <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
     </dependency>
 
     <!-- All dependencies that should be visible in test classpath, but not compile classpath,

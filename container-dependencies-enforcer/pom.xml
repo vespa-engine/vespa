@@ -19,15 +19,16 @@
     <dependencies>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>container-test</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
+        </dependency>
+        <!-- Declare container-test before container here, opposite of what we do in hosted-tenant-base, to cover both cases -->
+        <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>container</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
