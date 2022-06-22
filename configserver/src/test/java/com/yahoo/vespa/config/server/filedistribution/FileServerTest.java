@@ -75,7 +75,7 @@ public class FileServerTest {
         File dir = getFileServerRootDir();
         IOUtils.writeFile(dir + "/12y/f1", "dummy-data", true);
         CompletableFuture<byte []> content = new CompletableFuture<>();
-        fileServer.startFileServing("12y", new FileReceiver(content));
+        fileServer.startFileServing(new FileReference("12y"), new FileReceiver(content));
         assertEquals(new String(content.get()), "dummy-data");
     }
 

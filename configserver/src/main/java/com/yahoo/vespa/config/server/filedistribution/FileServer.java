@@ -13,10 +13,10 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.EmptyFileReferenceData;
 import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
@@ -49,9 +49,11 @@ public class FileServer {
     private final ExecutorService executor;
     private final FileDownloader downloader;
 
+    // TODO: Move to filedistribution module, so that it can be used by both clients and servers
     private enum FileApiErrorCodes {
         OK(0, "OK"),
-        NOT_FOUND(1, "Filereference not found");
+        NOT_FOUND(1, "File reference not found"),
+        TIMEOUT(2, "Timeout");
         private final int code;
         private final String description;
         FileApiErrorCodes(int code, String description) {
@@ -112,13 +114,9 @@ public class FileServer {
 
     FileDirectory getRootDir() { return root; }
 
-    void startFileServing(String fileName, Receiver target) {
-        FileReference reference = new FileReference(fileName);
-        File file = root.getFile(reference);
-
-        if (file.exists()) {
-            serveFile(reference, target);
-        }
+    void startFileServing(FileReference fileReference, Receiver target) {
+        if (root.getFile(fileReference).exists())
+            serveFile(fileReference, target);
     }
 
     private void serveFile(FileReference reference, Receiver target) {
@@ -152,44 +150,43 @@ public class FileServer {
         }
     }
 
-    public void serveFile(String fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
+    public void serveFile(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
         if (executor instanceof ThreadPoolExecutor)
             log.log(Level.FINE, () -> "Active threads: " + ((ThreadPoolExecutor) executor).getActiveCount());
 
         log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target());
         Instant deadline = Instant.now().plus(timeout);
-        executor.execute(() -> serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, request, receiver, deadline));
+        String client = request.target().toString();
+        executor.execute(() -> {
+            var result = serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, client, receiver, deadline);
+            request.returnValues()
+                   .add(new Int32Value(result.getCode()))
+                   .add(new StringValue(result.getDescription()));
+            request.returnRequest();
+        });
     }
 
-    private void serveFileInternal(String fileReference,
-                                   boolean downloadFromOtherSourceIfNotFound,
-                                   Request request,
-                                   Receiver receiver,
-                                   Instant deadline) {
+    private FileApiErrorCodes serveFileInternal(FileReference fileReference,
+                                                boolean downloadFromOtherSourceIfNotFound,
+                                                String client,
+                                                Receiver receiver,
+                                                Instant deadline) {
         if (Instant.now().isAfter(deadline)) {
-            log.log(Level.INFO, () -> "Deadline exceeded for request for file reference '" + fileReference + "' from " + request.target() +
-                    " , giving up");
-            return;
+            log.log(Level.INFO, () -> "Deadline exceeded for request for file reference '" + fileReference + "' from " + client);
+            return FileApiErrorCodes.TIMEOUT;
         }
 
         boolean fileExists;
         try {
-            String client = request.target().toString();
-            FileReferenceDownload fileReferenceDownload = new FileReferenceDownload(new FileReference(fileReference),
-                                                                                    client,
-                                                                                    downloadFromOtherSourceIfNotFound);
+            var fileReferenceDownload = new FileReferenceDownload(fileReference, client, downloadFromOtherSourceIfNotFound);
             fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
             if (fileExists) startFileServing(fileReference, receiver);
         } catch (IllegalArgumentException e) {
             fileExists = false;
-            log.warning("Failed serving file reference '" + fileReference + "', request was from " + request.target() + ", with error " + e.toString());
+            log.warning("Failed serving file reference '" + fileReference + "', request from " + client + " failed with: " + e.getMessage());
         }
 
-        FileApiErrorCodes result = fileExists ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND;
-        request.returnValues()
-                .add(new Int32Value(result.getCode()))
-                .add(new StringValue(result.getDescription()));
-        request.returnRequest();
+        return (fileExists ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND);
     }
 
     boolean hasFileDownloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
@@ -199,17 +196,16 @@ public class FileServer {
         if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
             log.log(Level.FINE, "File not found, downloading from another source");
             // Create new FileReferenceDownload with downloadFromOtherSourceIfNotFound set to false
-            // to avoid config servers requesting a file reference perpetually, e.g. for a file that
-            // does not exist anymore
+            // to avoid requesting a file reference perpetually, e.g. for a file that does not exist anymore
             FileReferenceDownload newDownload = new FileReferenceDownload(fileReference,
                                                                           fileReferenceDownload.client(),
                                                                           false);
             boolean fileExists = downloader.getFile(newDownload).isPresent();
             if ( ! fileExists)
-                log.log(Level.WARNING, "Failed downloading '" + fileReferenceDownload + "'");
+                log.log(Level.INFO, "Failed downloading '" + fileReferenceDownload + "'");
             return fileExists;
         } else {
-            log.log(Level.FINE, "File not found, will not download from another source, since request came from another config server");
+            log.log(Level.FINE, "File not found, will not download from another source");
             return false;
         }
     }

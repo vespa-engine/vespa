@@ -566,7 +566,10 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         rpcAuthorizer.authorizeFileRequest(request)
                 .thenRun(() -> { // okay to do in authorizer thread as serveFile is async
                     FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
-                    fileServer.serveFile(request.parameters().get(0).asString(), request.parameters().get(1).asInt32() == 0, request, receiver);
+                    fileServer.serveFile(new FileReference(request.parameters().get(0).asString()),
+                                         request.parameters().get(1).asInt32() == 0,
+                                         request,
+                                         receiver);
                 });
     }
 

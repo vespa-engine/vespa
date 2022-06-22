@@ -112,11 +112,12 @@ public class FileReferenceDownloader {
         FileReference fileReference = fileReferenceDownload.fileReference();
         if (validateResponse(request)) {
             log.log(Level.FINE, () -> "Request callback, OK. Req: " + request + "\nSpec: " + connection);
-            if (request.returnValues().get(0).asInt32() == 0) {
+            int errorCode = request.returnValues().get(0).asInt32();
+            if (errorCode == 0) {
                 log.log(Level.FINE, () -> "Found " + fileReference + " available at " + connection.getAddress());
                 return true;
             } else {
-                log.log(logLevel, fileReference + " not found at " + connection.getAddress());
+                log.log(logLevel, fileReference + " not found or timed out (error code " +  errorCode + ") at " + connection.getAddress());
                 return false;
             }
         } else {
