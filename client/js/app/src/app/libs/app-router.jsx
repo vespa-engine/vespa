@@ -2,7 +2,7 @@ import React from 'react';
 import { Redirect, Router } from '@reach/router';
 import { Error } from 'app/components';
 
-const mainTitle = 'Vespa Console';
+const mainTitle = 'Vespa App';
 
 function AppRoute({ element, title, default: isDefault, ...props }) {
   const clone = React.cloneElement(element, props, props.children);

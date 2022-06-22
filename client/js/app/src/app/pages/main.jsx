@@ -9,7 +9,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AppRouter>
       <App path="/" />
-      <QueryBuilder path="query-builder" />
+      <QueryBuilder path="querybuilder" />
     </AppRouter>
   </React.StrictMode>
 );
