@@ -16,6 +16,7 @@
   "devDependencies": {
     "@mantine/core": "^4",
     "@mantine/hooks": "^4",
+    "@reach/router": "^1",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vitejs/plugin-react": "^1",

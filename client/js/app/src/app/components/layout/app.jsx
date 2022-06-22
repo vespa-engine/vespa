@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import logo from 'app/assets/logo.svg';
 import 'app/styles/App.css';
 
-function App() {
+export function App() {
   const [count, setCount] = useState(0);
 
   return (
@@ -41,5 +41,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
