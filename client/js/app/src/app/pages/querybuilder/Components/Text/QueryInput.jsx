@@ -6,7 +6,7 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import QueryDropdownFormn from './QueryDropDownForm';
 
-export default function QueryInput({ id, onClick }) {
+export default function QueryInput({ id }) {
   const choices = ['yql', 'hits', 'offset', 'tracelevel'];
 
   const { inputs, setInputs } = useContext(QueryInputContext);
@@ -16,6 +16,15 @@ export default function QueryInput({ id, onClick }) {
     setInputs(newList);
   }
 
+  const updateInput = (e) => {
+    e.preventDefault();
+    const id = parseInt(e.target.id.replace('v', ''));
+    const index = inputs.findIndex((element) => element.id === id);
+    inputs[index].input = e.target.value;
+    setInputs(inputs);
+    console.log(inputs);
+  };
+
   const inputList = inputs.map((value, index) => {
     return (
       <div key={value.id} id={value.id} className="queryinput">
@@ -23,9 +32,12 @@ export default function QueryInput({ id, onClick }) {
           choices={choices}
           id={value.id}
         ></QueryDropdownFormn>
-        {/* <SimpleDropDownForm choices={choices} id={`i${value.id}`}></SimpleDropDownForm> */}
         <Info id={value.id} height="15" width="15"></Info>
-        <SimpleForm id={`v${value.id}`} size="30"></SimpleForm>
+        <SimpleForm
+          id={`v${value.id}`}
+          size="30"
+          onChange={updateInput}
+        ></SimpleForm>
         <OverlayTrigger
           placement="right"
           delay={{ show: 250, hide: 400 }}

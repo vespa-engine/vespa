@@ -12,12 +12,13 @@ import pasteImage from './assets/img/paste.svg';
 import copyImage from './assets/img/copy.svg';
 import refreshImage from './assets/img/reload.svg';
 
+import '../../styles/agency.css';
+import '../../styles/vespa.css';
+//import 'bootstrap/dist/css/bootstrap.min.css'; //TODO: Find out how to get this css
+
 export function QueryBuilder() {
   const messageMethodArray = ['POST', 'GET'];
 
-  // const pasteImage = require("./assets/img/paste.svg").default;
-  // const copyImage = require("./assets/img/copy.svg").default;
-  // const refreshImage = require("./assets/img/reload.svg").default;
   return (
     <>
       <header>

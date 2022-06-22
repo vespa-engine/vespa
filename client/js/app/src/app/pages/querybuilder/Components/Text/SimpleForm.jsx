@@ -6,18 +6,26 @@ export default function SimpleForm({
   className = 'propvalue',
   initial,
   size = '20',
+  onChange,
 }) {
+  SimpleForm.defaultProps = {
+    onChange: handleChange,
+  };
   const [input, setValue] = useState(initial);
 
+  function handleChange(e) {
+    setValue(e.target.value);
+  }
+
   return (
-    <form className={className}>
+    <form className={className} id={id}>
       <input
         size={size}
         type="text"
         id={id}
         className={className}
-        value={input}
-        onChange={(e) => setValue(e.target.value)}
+        defaultValue={initial}
+        onChange={onChange}
       />
     </form>
   );

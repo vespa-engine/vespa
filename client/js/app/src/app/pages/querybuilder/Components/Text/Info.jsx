@@ -7,7 +7,6 @@ export default function Info({
   height = 15,
   width = 15,
 }) {
-  //const image = require("../../assets/img/information.svg").default;
   return (
     <>
       <a
