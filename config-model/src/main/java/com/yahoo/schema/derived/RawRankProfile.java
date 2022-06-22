@@ -154,7 +154,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
         private final OptionalDouble postFilterThreshold;
         private final OptionalDouble approximateThreshold;
         private final double rankScoreDropLimit;
-        private final boolean mapBackRankingExpressionFeatures;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -193,7 +192,6 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
             approximateThreshold = compiled.getApproximateThreshold();
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
-            mapBackRankingExpressionFeatures = deployProperties.featureFlags().avoidRenamingSummaryFeatures();
             ignoreDefaultRankFeatures = compiled.getIgnoreDefaultRankFeatures();
             rankProperties = new ArrayList<>(compiled.getRankProperties());
 
@@ -274,10 +272,8 @@ public class RawRankProfile implements RankProfilesConfig.Producer {
                     ReferenceNode backendReferenceNode = new ReferenceNode("rankingExpression(" + referenceNode.getName() + ")",
                                                                            referenceNode.getArguments().expressions(),
                                                                            referenceNode.getOutput());
-                    if (mapBackRankingExpressionFeatures) {
-                        // tell backend to map back to the name the user expects:
-                        featureRenames.put(backendReferenceNode.toString(), referenceNode.toString());
-                    }
+                    // tell backend to map back to the name the user expects:
+                    featureRenames.put(backendReferenceNode.toString(), referenceNode.toString());
                     functionFeatures.put(referenceNode.getName(), backendReferenceNode);
                     i.remove(); // Will add the expanded one in next block
                 }
