@@ -52,6 +52,10 @@ for MODULE in $(comm -2 -3 \
     echo "No javadoc available for module" > $MODULE/src/main/javadoc/README
 done
 
+# Workaround new module without java code and no javadoc
+mkdir -p container-spifly/src/main/javadoc
+echo "No javadoc available for module" > container-spifly/src/main/javadoc/README
+
 # Workaround for broken nexus-staging-maven-plugin instead of swapping JDK
 export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.desktop/java.awt.font=ALL-UNNAMED"
 export VESPA_MAVEN_EXTRA_OPTS="--show-version --batch-mode"
