@@ -159,7 +159,9 @@ ConfigFile::deserialize(nbostream &stream)
     stream >> sz;
     _content.resize(sz);
     assert(stream.size() >= sz);
-    memcpy(_content.data(), stream.peek(), sz);
+    if (sz > 0) {
+        memcpy(_content.data(), stream.peek(), sz);
+    }
     stream.adjustReadPos(sz);
     return stream;
 }

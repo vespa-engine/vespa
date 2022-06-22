@@ -21,6 +21,7 @@
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/vespalib/util/memory.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <limits>
 #include <cmath>
@@ -184,8 +185,8 @@ MemAttr::bufEqual(const Buffer &lhs, const Buffer &rhs) const
         return true;
     if (!EXPECT_TRUE(lhs->getDataLen() == rhs->getDataLen()))
         return false;
-    if (!EXPECT_TRUE(memcmp(lhs->getData(), rhs->getData(),
-                            lhs->getDataLen()) == 0))
+    if (!EXPECT_TRUE(vespalib::memcmp_safe(lhs->getData(), rhs->getData(),
+                                           lhs->getDataLen()) == 0))
         return false;
     return true;
 }
@@ -480,7 +481,7 @@ EnumeratedSaveTest::getSearch(const V &vec, const T &term, bool prefix)
     buildTermQuery(query, vec.getName(), ss.str(), prefix);
 
     return (static_cast<const AttributeVector &>(vec)).
-        getSearch(vespalib::stringref(&query[0], query.size()),
+        getSearch(vespalib::stringref(query.data(), query.size()),
                   SearchContextParams());
 }
 

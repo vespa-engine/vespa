@@ -429,22 +429,32 @@ printInt(unsigned long long r, char * tmp, uint8_t i)
     return i;
 }
 
+unsigned long long normalize(long long v, bool &negative) {
+    if (v < 0) {
+        negative = true;
+        if (v == std::numeric_limits<long long>::min()) {
+            // according to UBSAN:
+            // negation of -9223372036854775808 cannot be represented in type 'long long int'; cast to an unsigned type to negate this value to itself
+            return v;
+        }
+        return -v;
+    }
+    return v;
+}
+
 }
 
 
 asciistream &
-asciistream::operator << (long long v)
+asciistream::operator << (long long v_in)
 {
     char tmp[72];
     uint8_t i(sizeof(tmp));
     bool negative(false);
-    if (v == 0) {
+    if (v_in == 0) {
         tmp[--i] = '0';
     } else {
-        if (v < 0) {
-            v = -v;
-            negative = true;
-        }
+        unsigned long long v = normalize(v_in, negative);
         switch (_base) {
           case 2:
             i = printInt<2>(v, tmp, i); break;

@@ -209,9 +209,9 @@ FastS_SortSpec::realloc(uint32_t n, size_t & variableWidth, uint32_t & available
     variableWidth *= 2;
     available += variableWidth * n;
     dataSize += variableWidth * n;
-    uint32_t byteUsed = mySortData - &_binarySortData[0];
+    uint32_t byteUsed = mySortData - _binarySortData.data();
     _binarySortData.resize(dataSize);
-    return &_binarySortData[0] + byteUsed;
+    return _binarySortData.data() + byteUsed;
 }
 
 void
@@ -237,7 +237,7 @@ FastS_SortSpec::initSortData(const RankedHit *hits, uint32_t n)
     uint32_t dataSize = (fixedWidth + variableWidth) * n;
     uint32_t available = dataSize;
     _binarySortData.resize(dataSize);
-    uint8_t *mySortData = &_binarySortData[0];
+    uint8_t *mySortData = _binarySortData.data();
 
     _sortDataArray.resize(n);
 
@@ -342,7 +342,7 @@ void
 FastS_SortSpec::copySortData(uint32_t offset, uint32_t n,
                              uint32_t *idx, char *buf)
 {
-    const uint8_t * sortData = &_binarySortData[0];
+    const uint8_t * sortData = _binarySortData.data();
     uint32_t totalLen = 0;
     for (uint32_t i = offset; i < (offset + n); ++i, ++idx) {
         const uint8_t * src = sortData + _sortDataArray[i]._idx;
@@ -378,7 +378,7 @@ inline int
 FastS_SortSpec::Compare(const FastS_SortSpec *self, const SortData &a,
                         const SortData &b)
 {
-    const uint8_t * ref = &(self->_binarySortData[0]);
+    const uint8_t * ref = self->_binarySortData.data();
     uint32_t len = a._len < b._len ? a._len : b._len;
     int retval = memcmp(ref + a._idx,
                         ref + b._idx, len);
@@ -448,10 +448,10 @@ void
 FastS_SortSpec::sortResults(RankedHit a[], uint32_t n, uint32_t topn)
 {
     initSortData(a, n);
-    SortData * sortData = &_sortDataArray[0];
+    SortData * sortData = _sortDataArray.data();
     {
         Array<uint32_t> radixScratchPad(n, Alloc::alloc(0, MMAP_LIMIT));
-        search::radix_sort(SortDataRadix(&_binarySortData[0]), StdSortDataCompare(&_binarySortData[0]), SortDataEof(), 1, sortData, n, &radixScratchPad[0], 0, 96, topn);
+        search::radix_sort(SortDataRadix(_binarySortData.data()), StdSortDataCompare(_binarySortData.data()), SortDataEof(), 1, sortData, n, radixScratchPad.data(), 0, 96, topn);
     }
     for (uint32_t i(0), m(_sortDataArray.size()); i < m; ++i) {
         a[i]._rankValue = _sortDataArray[i]._rankValue;
