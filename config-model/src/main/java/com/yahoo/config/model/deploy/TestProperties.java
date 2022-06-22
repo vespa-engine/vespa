@@ -74,7 +74,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean persistenceThrottlingOfMergeFeedOps = true;
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
-    private boolean avoidRenamingSummaryFeatures = true;
     private boolean enableBitVectors = false;
     private boolean loadCodeAsHugePages = false;
     private boolean sharedStringRepoNoReclaim = false;
@@ -131,7 +130,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean persistenceThrottlingOfMergeFeedOps() { return persistenceThrottlingOfMergeFeedOps; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
-    @Override public boolean avoidRenamingSummaryFeatures() { return this.avoidRenamingSummaryFeatures; }
     @Override public boolean enableBitVectors() { return this.enableBitVectors; }
     @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
     @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
@@ -348,11 +346,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEnvironmentVariables(List<String> value) {
         this.environmentVariables = value;
-        return this;
-    }
-
-    public TestProperties setAvoidRenamingSummaryFeatures(boolean value) {
-        this.avoidRenamingSummaryFeatures = value;
         return this;
     }
 

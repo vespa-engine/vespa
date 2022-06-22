@@ -115,7 +115,7 @@ public class ExportingTestCase extends AbstractExportingTestCase {
     @Test
     public void testAvoidRenamingRankingExpression() throws IOException, ParseException {
         assertCorrectDeriving("renamedfeatures", "foo",
-                              new TestProperties().setAvoidRenamingSummaryFeatures(true),
+                              new TestProperties(),
                               new TestableDeployLogger());
     }
 
