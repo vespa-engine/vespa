@@ -36,14 +36,16 @@
         </exclusion>
       </exclusions>
     </dependency>
-
-    <!-- All dependencies that should be visible in test classpath, but not compile classpath,
-         for user projects must be added in compile scope here. These dependencies are explicitly excluded
-         (or set to non-compile scope) in the container and/or container-dev modules. -->
+    <!-- Excluded above, and re-declared here, to work around a presumed Maven bug which otherwise puts this
+         in provided scope when container-test is declared before, and together with, the container artifact -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcpkix-jdk15on</artifactId>
     </dependency>
+
+    <!-- All dependencies that should be visible in test classpath, but not compile classpath,
+         for user projects must be added in compile scope here. These dependencies are explicitly excluded
+         (or set to non-compile scope) in the container and/or container-dev modules. -->
     <dependency>
       <groupId>com.ibm.icu</groupId>
       <artifactId>icu4j</artifactId>
