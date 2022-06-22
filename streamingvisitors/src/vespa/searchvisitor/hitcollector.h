@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchlib/common/featureset.h>
+#include <vespa/searchlib/common/stringmap.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/vdslib/container/searchresult.h>
 #include <vespa/vsm/common/docsum.h>
@@ -132,7 +133,8 @@ public:
      * @param resolver   feature resolver, gives feature names and values
      **/
     search::FeatureSet::SP getFeatureSet(IRankProgram &rankProgram,
-                                         const search::fef::FeatureResolver &resolver);
+                                         const search::fef::FeatureResolver &resolver,
+                                         const search::StringStringMap &feature_rename_map);
 
 };
 

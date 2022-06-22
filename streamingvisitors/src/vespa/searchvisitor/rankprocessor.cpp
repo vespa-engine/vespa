@@ -212,7 +212,7 @@ RankProcessor::calculateFeatureSet()
     search::fef::FeatureResolver resolver(rankProgram.get_seeds(false));
     LOG(debug, "Feature handles: numNames(%ld)", resolver.num_features());
     RankProgramWrapper wrapper(*_match_data);
-    FeatureSet::SP sf = _hitCollector->getFeatureSet(wrapper, resolver);
+    FeatureSet::SP sf = _hitCollector->getFeatureSet(wrapper, resolver, _rankSetup.get_feature_rename_map());
     LOG(debug, "Feature set: numFeatures(%u), numDocs(%u)", sf->numFeatures(), sf->numDocs());
     return sf;
 }

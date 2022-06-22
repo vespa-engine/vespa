@@ -143,7 +143,8 @@ HitCollector::fillSearchResult(vdslib::SearchResult & searchResult)
 
 FeatureSet::SP
 HitCollector::getFeatureSet(IRankProgram &rankProgram,
-                            const search::fef::FeatureResolver &resolver)
+                            const search::fef::FeatureResolver &resolver,
+                            const search::StringStringMap &feature_rename_map)
 {
     if (resolver.num_features() == 0 || _hits.empty()) {
         return FeatureSet::SP(new FeatureSet());
@@ -152,7 +153,11 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     std::vector<vespalib::string> names;
     names.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
-        names.emplace_back(resolver.name_of(i));
+        vespalib::string name = resolver.name_of(i);
+        if (feature_rename_map.contains(name)) {
+            name = feature_rename_map[name];
+        }
+        names.emplace_back(name);
     }
     FeatureSet::SP retval = FeatureSet::SP(new FeatureSet(names, _hits.size()));
     for (const Hit & hit : _hits) {
