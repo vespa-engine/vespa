@@ -76,7 +76,7 @@ public:
                             bool readAll,
                             ComprFileDecodeContext &decodeContext,
                             int &bitOffset,
-                            FastOS_FileInterface &file,
+                            FastOS_FileInterface *file,
                             uint64_t &fileReadByteOffset,
                             uint64_t fileSize,
                             ComprBuffer &cbuf);
