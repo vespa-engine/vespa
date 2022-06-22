@@ -155,7 +155,7 @@ ComprFileReadBase::SetPosition(uint64_t newPosition,
                                bool readAll,
                                ComprFileDecodeContext &decodeContext,
                                int &bitOffset,
-                               FastOS_FileInterface &file,
+                               FastOS_FileInterface *file,
                                uint64_t &fileReadByteOffset,
                                uint64_t fileSize,
                                ComprBuffer &cbuf)
@@ -176,7 +176,7 @@ ComprFileReadBase::SetPosition(uint64_t newPosition,
                                 readAll,
                                 decodeContext,
                                 bitOffset,
-                                file,
+                                *file,
                                 fileReadByteOffset,
                                 fileSize,
                                 cbuf);
@@ -200,7 +200,7 @@ ComprFileReadBase::SetPosition(uint64_t newPosition,
                             readAll,
                             decodeContext,
                             bitOffset,
-                            file,
+                            *file,
                             fileReadByteOffset,
                             fileSize,
                             cbuf);
@@ -221,9 +221,8 @@ ComprFileReadBase::SetPosition(uint64_t newPosition,
                                  (cbuf.getUnitBitSize() - 1));
 
     assert(pos <= static_cast<int64_t>(fileSize));
-
-    file.SetPosition(pos);
-    assert(pos == file.GetPosition());
+    file->SetPosition(pos);
+    assert(pos == file->GetPosition());
 
     decodeContext.emptyBuffer(newPosition);
     assert(decodeContext.getBitPos(bitOffset,
@@ -337,7 +336,7 @@ ComprFileReadContext::setPosition(uint64_t newPosition)
             _readAll,
             *_decodeContext,
             _bitOffset,
-            *_file,
+            _file,
             _fileReadByteOffset,
             _fileSize,
             *this);
