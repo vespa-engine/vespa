@@ -138,8 +138,8 @@ public class ResourceDatabaseClientMock implements ResourceDatabaseClient {
     }
 
     @Override
-    public List<Cluster.ScalingEvent> scalingEvents(Instant from, Instant to, Optional<ApplicationId> application) {
-        return List.of();
+    public Map<ClusterId, List<Cluster.ScalingEvent>> scalingEvents(Instant from, Instant to, DeploymentId deploymentId) {
+        return Map.of();
     }
 
     public void setPlan(TenantName tenant, Plan plan) {

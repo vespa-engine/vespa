@@ -14,6 +14,7 @@ import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,7 +31,7 @@ public interface ResourceDatabaseClient {
 
     void writeScalingEvents(ClusterId clusterId, Collection<Cluster.ScalingEvent> scalingEvents);
 
-    List<Cluster.ScalingEvent> scalingEvents(Instant from, Instant to, Optional<ApplicationId> application);
+    Map<ClusterId, List<Cluster.ScalingEvent>> scalingEvents(Instant from, Instant to, DeploymentId deploymentId);
 
     Set<YearMonth> getMonthsWithSnapshotsForTenant(TenantName tenantName);
 
