@@ -1,11 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
-import ai.vespa.cloud.Environment;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -990,36 +988,38 @@ public class DeploymentTriggerTest {
         DeploymentContext i3 = tester.newDeploymentContext("t", "a", "i3");
         DeploymentContext i4 = tester.newDeploymentContext("t", "a", "i4");
         ApplicationPackage applicationPackage = ApplicationPackageBuilder
-                .fromDeploymentXml("<deployment version='1'>\n" +
-                                   "  <upgrade revision-change='when-failing' />\n" +
-                                   "  <parallel>\n" +
-                                   "    <instance id='i1'>\n" +
-                                   "      <prod>\n" +
-                                   "        <region>us-east-3</region>\n" +
-                                   "        <delay hours='6' />\n" +
-                                   "      </prod>\n" +
-                                   "    </instance>\n" +
-                                   "    <instance id='i2'>\n" +
-                                   "      <prod>\n" +
-                                   "        <region>us-east-3</region>\n" +
-                                   "      </prod>\n" +
-                                   "    </instance>\n" +
-                                   "  </parallel>\n" +
-                                   "  <instance id='i3'>\n" +
-                                   "    <prod>\n" +
-                                   "      <region>us-east-3</region>\n" +
-                                   "        <delay hours='18' />\n" +
-                                   "      <test>us-east-3</test>\n" +
-                                   "    </prod>\n" +
-                                   "  </instance>\n" +
-                                   "  <instance id='i4'>\n" +
-                                   "    <test />\n" +
-                                   "    <staging />\n" +
-                                   "    <prod>\n" +
-                                   "      <region>us-east-3</region>\n" +
-                                   "    </prod>\n" +
-                                   "  </instance>\n" +
-                                   "</deployment>\n");
+                .fromDeploymentXml("""
+                                   <deployment version='1'>
+                                     <upgrade revision-change='when-failing' />
+                                     <parallel>
+                                       <instance id='i1'>
+                                         <prod>
+                                           <region>us-east-3</region>
+                                           <delay hours='6' />
+                                         </prod>
+                                       </instance>
+                                       <instance id='i2'>
+                                         <prod>
+                                           <region>us-east-3</region>
+                                         </prod>
+                                       </instance>
+                                     </parallel>
+                                     <instance id='i3'>
+                                       <prod>
+                                         <region>us-east-3</region>
+                                           <delay hours='18' />
+                                         <test>us-east-3</test>
+                                       </prod>
+                                     </instance>
+                                     <instance id='i4'>
+                                       <test />
+                                       <staging />
+                                       <prod>
+                                         <region>us-east-3</region>
+                                       </prod>
+                                     </instance>
+                                   </deployment>
+                                   """);
 
         // Package is submitted, and change propagated to the two first instances.
         i1.submit(applicationPackage);
@@ -1094,20 +1094,22 @@ public class DeploymentTriggerTest {
 
     @Test
     public void testMultipleInstancesWithRevisionCatchingUpToUpgrade() {
-        String spec = "<deployment>\n" +
-                      "    <instance id='alpha'>\n" +
-                      "        <upgrade rollout=\"simultaneous\" revision-target=\"next\" />\n" +
-                      "        <test />\n" +
-                      "        <staging />\n" +
-                      "    </instance>\n" +
-                      "    <instance id='beta'>\n" +
-                      "        <upgrade rollout=\"simultaneous\" revision-change=\"when-clear\" revision-target=\"next\" />\n" +
-                      "        <prod>\n" +
-                      "            <region>us-east-3</region>\n" +
-                      "            <test>us-east-3</test>\n" +
-                      "        </prod>\n" +
-                      "    </instance>\n" +
-                      "</deployment>\n";
+        String spec = """
+                      <deployment>
+                          <instance id='alpha'>
+                              <upgrade rollout="simultaneous" revision-target="next" />
+                              <test />
+                              <staging />
+                          </instance>
+                          <instance id='beta'>
+                              <upgrade rollout="simultaneous" revision-change="when-clear" revision-target="next" />
+                              <prod>
+                                  <region>us-east-3</region>
+                                  <test>us-east-3</test>
+                              </prod>
+                          </instance>
+                      </deployment>
+                      """;
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
         DeploymentContext alpha = tester.newDeploymentContext("t", "a", "alpha");
         DeploymentContext beta = tester.newDeploymentContext("t", "a", "beta");
@@ -1245,67 +1247,69 @@ public class DeploymentTriggerTest {
     @Test
     public void testDeployComplicatedDeploymentSpec() {
         String complicatedDeploymentSpec =
-                "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
-                "    <parallel>\n" +
-                "        <instance id='instance' athenz-service='in-service'>\n" +
-                "            <staging />\n" +
-                "            <prod>\n" +
-                "                <parallel>\n" +
-                "                    <region active='true'>us-west-1</region>\n" +
-                "                    <steps>\n" +
-                "                        <region active='true'>us-east-3</region>\n" +
-                "                        <delay hours='2' />\n" +
-                "                        <region active='true'>eu-west-1</region>\n" +
-                "                        <delay hours='2' />\n" +
-                "                    </steps>\n" +
-                "                    <steps>\n" +
-                "                        <delay hours='3' />\n" +
-                "                        <region active='true'>aws-us-east-1a</region>\n" +
-                "                        <parallel>\n" +
-                "                            <region active='true' athenz-service='no-service'>ap-northeast-1</region>\n" +
-                "                            <region active='true'>ap-northeast-2</region>\n" +
-                "                            <test>aws-us-east-1a</test>\n" +
-                "                        </parallel>\n" +
-                "                    </steps>\n" +
-                "                    <delay hours='3' minutes='30' />\n" +
-                "                </parallel>\n" +
-                "                <parallel>\n" +
-                "                   <test>ap-northeast-2</test>\n" +
-                "                   <test>ap-northeast-1</test>\n" +
-                "                </parallel>\n" +
-                "                <test>us-east-3</test>\n" +
-                "                <region active='true'>ap-southeast-1</region>\n" +
-                "            </prod>\n" +
-                "            <endpoints>\n" +
-                "                <endpoint id='foo' container-id='bar'>\n" +
-                "                    <region>us-east-3</region>\n" +
-                "                </endpoint>\n" +
-                "                <endpoint id='nalle' container-id='frosk' />\n" +
-                "                <endpoint container-id='quux' />\n" +
-                "            </endpoints>\n" +
-                "        </instance>\n" +
-                "        <instance id='other'>\n" +
-                "            <upgrade policy='conservative' />\n" +
-                "            <test />\n" +
-                "            <block-change revision='true' version='false' days='sat' hours='0-23' time-zone='CET' />\n" +
-                "            <prod>\n" +
-                "                <region active='true'>eu-west-1</region>\n" +
-                "                <test>eu-west-1</test>\n" +
-                "            </prod>\n" +
-                "            <notifications when='failing'>\n" +
-                "                <email role='author' />\n" +
-                "                <email address='john@dev' when='failing-commit' />\n" +
-                "                <email address='jane@dev' />\n" +
-                "            </notifications>\n" +
-                "        </instance>\n" +
-                "    </parallel>\n" +
-                "    <instance id='last'>\n" +
-                "        <upgrade policy='conservative' />\n" +
-                "        <prod>\n" +
-                "            <region active='true'>eu-west-1</region>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "</deployment>\n";
+                """
+                <deployment version='1.0' athenz-domain='domain' athenz-service='service'>
+                    <parallel>
+                        <instance id='instance' athenz-service='in-service'>
+                            <staging />
+                            <prod>
+                                <parallel>
+                                    <region active='true'>us-west-1</region>
+                                    <steps>
+                                        <region active='true'>us-east-3</region>
+                                        <delay hours='2' />
+                                        <region active='true'>eu-west-1</region>
+                                        <delay hours='2' />
+                                    </steps>
+                                    <steps>
+                                        <delay hours='3' />
+                                        <region active='true'>aws-us-east-1a</region>
+                                        <parallel>
+                                            <region active='true' athenz-service='no-service'>ap-northeast-1</region>
+                                            <region active='true'>ap-northeast-2</region>
+                                            <test>aws-us-east-1a</test>
+                                        </parallel>
+                                    </steps>
+                                    <delay hours='3' minutes='30' />
+                                </parallel>
+                                <parallel>
+                                   <test>ap-northeast-2</test>
+                                   <test>ap-northeast-1</test>
+                                </parallel>
+                                <test>us-east-3</test>
+                                <region active='true'>ap-southeast-1</region>
+                            </prod>
+                            <endpoints>
+                                <endpoint id='foo' container-id='bar'>
+                                    <region>us-east-3</region>
+                                </endpoint>
+                                <endpoint id='nalle' container-id='frosk' />
+                                <endpoint container-id='quux' />
+                            </endpoints>
+                        </instance>
+                        <instance id='other'>
+                            <upgrade policy='conservative' />
+                            <test />
+                            <block-change revision='true' version='false' days='sat' hours='0-23' time-zone='CET' />
+                            <prod>
+                                <region active='true'>eu-west-1</region>
+                                <test>eu-west-1</test>
+                            </prod>
+                            <notifications when='failing'>
+                                <email role='author' />
+                                <email address='john@dev' when='failing-commit' />
+                                <email address='jane@dev' />
+                            </notifications>
+                        </instance>
+                    </parallel>
+                    <instance id='last'>
+                        <upgrade policy='conservative' />
+                        <prod>
+                            <region active='true'>eu-west-1</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
 
         tester.atMondayMorning();
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(complicatedDeploymentSpec);
@@ -1649,31 +1653,33 @@ public class DeploymentTriggerTest {
     @Test
     public void testVeryLengthyPipelineRevisions() {
         String lengthyDeploymentSpec =
-                "<deployment version='1.0'>\n" +
-                "    <instance id='alpha'>\n" +
-                "        <test />\n" +
-                "        <staging />\n" +
-                "        <upgrade revision-change='always' />\n" +
-                "        <prod>\n" +
-                "            <region>us-east-3</region>\n" +
-                "            <test>us-east-3</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "    <instance id='beta'>\n" +
-                "        <upgrade revision-change='when-failing' />\n" +
-                "        <prod>\n" +
-                "            <region>us-east-3</region>\n" +
-                "            <test>us-east-3</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "    <instance id='gamma'>\n" +
-                "        <upgrade revision-change='when-clear' revision-target='next' min-risk='3' max-risk='6' />\n" +
-                "        <prod>\n" +
-                "            <region>us-east-3</region>\n" +
-                "            <test>us-east-3</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "</deployment>\n";
+                """
+                <deployment version='1.0'>
+                    <instance id='alpha'>
+                        <test />
+                        <staging />
+                        <upgrade revision-change='always' />
+                        <prod>
+                            <region>us-east-3</region>
+                            <test>us-east-3</test>
+                        </prod>
+                    </instance>
+                    <instance id='beta'>
+                        <upgrade revision-change='when-failing' />
+                        <prod>
+                            <region>us-east-3</region>
+                            <test>us-east-3</test>
+                        </prod>
+                    </instance>
+                    <instance id='gamma'>
+                        <upgrade revision-change='when-clear' revision-target='next' min-risk='3' max-risk='6' />
+                        <prod>
+                            <region>us-east-3</region>
+                            <test>us-east-3</test>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
         var appPackage = ApplicationPackageBuilder.fromDeploymentXml(lengthyDeploymentSpec);
         var alpha = tester.newDeploymentContext("t", "a", "alpha");
         var beta  = tester.newDeploymentContext("t", "a", "beta");
@@ -1792,31 +1798,33 @@ public class DeploymentTriggerTest {
     @Test
     public void testVeryLengthyPipelineUpgrade() {
         String lengthyDeploymentSpec =
-                "<deployment version='1.0'>\n" +
-                "    <instance id='alpha'>\n" +
-                "        <test />\n" +
-                "        <staging />\n" +
-                "        <upgrade rollout='simultaneous' />\n" +
-                "        <prod>\n" +
-                "            <region>us-east-3</region>\n" +
-                "            <test>us-east-3</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "    <instance id='beta'>\n" +
-                "        <upgrade rollout='simultaneous' />\n" +
-                "        <prod>\n" +
-                "            <region>us-east-3</region>\n" +
-                "            <test>us-east-3</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "    <instance id='gamma'>\n" +
-                "        <upgrade rollout='separate' />\n" +
-                "        <prod>\n" +
-                "            <region>us-east-3</region>\n" +
-                "            <test>us-east-3</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "</deployment>\n";
+                """
+                <deployment version='1.0'>
+                    <instance id='alpha'>
+                        <test />
+                        <staging />
+                        <upgrade rollout='simultaneous' />
+                        <prod>
+                            <region>us-east-3</region>
+                            <test>us-east-3</test>
+                        </prod>
+                    </instance>
+                    <instance id='beta'>
+                        <upgrade rollout='simultaneous' />
+                        <prod>
+                            <region>us-east-3</region>
+                            <test>us-east-3</test>
+                        </prod>
+                    </instance>
+                    <instance id='gamma'>
+                        <upgrade rollout='separate' />
+                        <prod>
+                            <region>us-east-3</region>
+                            <test>us-east-3</test>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
         var appPackage = ApplicationPackageBuilder.fromDeploymentXml(lengthyDeploymentSpec);
         var alpha = tester.newDeploymentContext("t", "a", "alpha");
         var beta  = tester.newDeploymentContext("t", "a", "beta");
@@ -1995,19 +2003,21 @@ public class DeploymentTriggerTest {
     @Test
     public void testsInSeparateInstance() {
         String deploymentSpec =
-                "<deployment version='1.0' athenz-domain='domain' athenz-service='service'>\n" +
-                "    <instance id='canary'>\n" +
-                "        <upgrade policy='canary' />\n" +
-                "        <test />\n" +
-                "        <staging />\n" +
-                "    </instance>\n" +
-                "    <instance id='default'>\n" +
-                "        <prod>\n" +
-                "            <region>eu-west-1</region>\n" +
-                "            <test>eu-west-1</test>\n" +
-                "        </prod>\n" +
-                "    </instance>\n" +
-                "</deployment>\n";
+                """
+                <deployment version='1.0' athenz-domain='domain' athenz-service='service'>
+                    <instance id='canary'>
+                        <upgrade policy='canary' />
+                        <test />
+                        <staging />
+                    </instance>
+                    <instance id='default'>
+                        <prod>
+                            <region>eu-west-1</region>
+                            <test>eu-west-1</test>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
 
         ApplicationPackage applicationPackage = ApplicationPackageBuilder.fromDeploymentXml(deploymentSpec);
         var canary = tester.newDeploymentContext("t", "a", "canary").submit(applicationPackage);
@@ -2167,18 +2177,20 @@ public class DeploymentTriggerTest {
 
     @Test
     public void testInstanceWithOnlySystemTest() {
-        String spec = "<deployment>\n" +
-                      "  <instance id='tests'>" +
-                      "    <test />\n" +
-                      "    <upgrade revision-target='next' />" +
-                      "  </instance>\n" +
-                      "  <instance id='main'>\n" +
-                      "    <prod>\n" +
-                      "      <region>us-east-3</region>\n" +
-                      "    </prod>\n" +
-                      "    <upgrade revision-target='next' />" +
-                      "  </instance>\n" +
-                      "</deployment>\n";
+        String spec = """
+                      <deployment>
+                        <instance id='tests'>
+                          <test />
+                          <upgrade revision-target='next' />
+                        </instance>
+                        <instance id='main'>
+                          <prod>
+                            <region>us-east-3</region>
+                          </prod>
+                          <upgrade revision-target='next' />
+                        </instance>
+                      </deployment>
+                      """;
         ApplicationPackage appPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
         DeploymentContext tests = tester.newDeploymentContext("tenant", "application", "tests");
         DeploymentContext main = tester.newDeploymentContext("tenant", "application", "main");
