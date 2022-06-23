@@ -4,8 +4,8 @@ import SimpleButton from '../Buttons/SimpleButton';
 import SimpleForm from './SimpleForm';
 
 export default function SendQuery() {
-  const messageMethodArray = ['POST', 'GET'];
-  const [method, setMethod] = useState(messageMethodArray[0]);
+  const messageMethods = { post: { name: 'POST' }, get: { name: 'GET' } };
+  const [method, setMethod] = useState(messageMethods.post.name);
 
   const updateMethod = (e) => {
     e.preventDefault();
@@ -21,7 +21,7 @@ export default function SendQuery() {
   return (
     <>
       <SimpleDropDownForm
-        choices={messageMethodArray}
+        choices={messageMethods}
         id="method"
         className="methodselector"
         onChange={updateMethod}

@@ -13,10 +13,10 @@ export default function SimpleDropDownForm({
   };
   const { choice, setChoice } = useState(choices[0]);
 
-  const options = choices.map((value, index) => {
+  const options = Object.keys(choices).map((choice) => {
     return (
-      <option className="options" key={index} value={value}>
-        {value}
+      <option className="options" key={choice} value={choices[choice].name}>
+        {choices[choice].name}
       </option>
     );
   });

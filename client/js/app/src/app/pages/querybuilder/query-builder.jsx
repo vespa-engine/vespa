@@ -64,15 +64,6 @@ export function QueryBuilder() {
           >
             Copy
           </OverlayImageButton>
-          <OverlayImageButton
-            className="intro-refresh"
-            image={refreshImage}
-            height="30"
-            width="30"
-            tooltip="Refresh"
-          >
-            Refresh
-          </OverlayImageButton>
           <br />
           <br />
         </div>

@@ -5,6 +5,10 @@ import SimpleDropDownForm from './SimpleDropDownForm';
 export default function QueryDropdownFormn({ choices, id }) {
   const { inputs, setInputs } = useContext(QueryInputContext);
 
+  var stringType = ['select'];
+  var booleanType = ['nocachewrite'];
+  var floatType = ['timeout'];
+
   const updateType = (e) => {
     e.preventDefault();
     const index = inputs.findIndex((element) => element.id === id);

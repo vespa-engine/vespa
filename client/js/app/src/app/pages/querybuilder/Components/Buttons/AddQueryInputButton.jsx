@@ -10,7 +10,7 @@ export default function AddQueryInput() {
     setId(id + 1);
     setInputs((prevInputs) => [
       ...prevInputs,
-      { id: id + 1, type: '', input: '' },
+      { id: id + 1, type: '', input: '', hasChildren: false, children: [] },
     ]);
   };
 

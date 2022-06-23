@@ -9,7 +9,8 @@ import QueryDropdownFormn from './QueryDropDownForm';
 export default function QueryInput({ id }) {
   const choices = ['yql', 'hits', 'offset', 'tracelevel'];
 
-  const { inputs, setInputs } = useContext(QueryInputContext);
+  const { inputs, setInputs, levelZeroParameters, childMap } =
+    useContext(QueryInputContext);
 
   function removeRow(id) {
     const newList = inputs.filter((item) => item.id !== id);
@@ -29,10 +30,10 @@ export default function QueryInput({ id }) {
     return (
       <div key={value.id} id={value.id} className="queryinput">
         <QueryDropdownFormn
-          choices={choices}
+          choices={levelZeroParameters}
           id={value.id}
         ></QueryDropdownFormn>
-        <Info id={value.id} height="15" width="15"></Info>
+        <Info id={value.id} height="15" width="15" />
         <SimpleForm
           id={`v${value.id}`}
           size="30"

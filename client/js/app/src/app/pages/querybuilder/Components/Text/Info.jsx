@@ -1,4 +1,5 @@
 import React from 'react';
+import { OverlayTrigger, Popover } from 'react-bootstrap';
 import image from '../../assets/img/information.svg';
 
 export default function Info({
@@ -7,24 +8,31 @@ export default function Info({
   height = 15,
   width = 15,
 }) {
+  //TODO: Make popver reflect tooltip for selected query type
+  const popover = (
+    <Popover id={`inf${id}`}>
+      <Popover.Header as="h3">Popover right</Popover.Header>
+      <Popover.Body>Content</Popover.Body>
+    </Popover>
+  );
+
   return (
     <>
-      <a
-        href="#"
-        className={className}
-        id={`inf${id}`}
-        style={{ visibility: 'visible' }}
+      <OverlayTrigger
+        placement="right"
+        delay={{ show: 250, hide: 400 }}
+        overlay={popover}
       >
-        <img
-          src={image}
-          height={height}
-          width={width}
-          className="information"
-          alt="Missing"
-        />
-        <span id={`span${id}`}></span>
-      </a>
+        <span>
+          <img
+            src={image}
+            height={height}
+            width={width}
+            className="information"
+            alt="Missing"
+          />
+        </span>
+      </OverlayTrigger>
     </>
-    //TODO: Swap <a> with a bootstrap Overlay
   );
 }
