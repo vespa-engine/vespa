@@ -504,7 +504,11 @@ public:
     if (length >= cacheFree) {                               \
         cacheInt |= (data << (64 - cacheFree));              \
         *bufI++ = EC::bswap(cacheInt);                       \
-        data >>= cacheFree;                                  \
+        if (__builtin_expect(cacheFree != 64, true)) {       \
+          data >>= cacheFree;                                \
+        } else {                                             \
+          data = 0;                                          \
+        }                                                    \
         length -= cacheFree;                                 \
         cacheInt = 0;                                        \
         cacheFree = 64;                                      \
