@@ -14,9 +14,9 @@ import ImageButton from 'Components/Buttons/ImageButton';
 import OverlayImageButton from 'Components/Buttons/OverlayImageButton';
 import AddQueryInput from 'Components/Buttons/AddQueryInputButton';
 import { QueryInputProvider } from 'Components/Contexts/QueryInputContext';
+import SendQuery from './Components/Text/SendQuery';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-const messageMethodArray = ['POST', 'GET'];
 
 const pasteImage = require('./assets/img/paste.svg').default;
 const copyImage = require('./assets/img/copy.svg').default;
@@ -31,20 +31,7 @@ root.render(
           <TextBox className={'intro-long'}>
             Select the method for sending a request and construct a query.
           </TextBox>
-          <SimpleDropDownForm
-            choices={messageMethodArray}
-            id="method"
-            className="methodselector"
-          ></SimpleDropDownForm>
-          <SimpleForm
-            id="url"
-            className="textbox"
-            initial="http://localhost:8080/search/"
-            size="30"
-          ></SimpleForm>
-          <SimpleButton id="send" className="button" onClick={handleClick}>
-            Send
-          </SimpleButton>
+          <SendQuery />
           <br />
           <QueryInputProvider>
             <div id="request">
@@ -65,12 +52,7 @@ root.render(
           </ImageButton>
           <SimpleButton className="showJSON">Show query JSON</SimpleButton>
           <TextBox className="response">Response</TextBox>
-          <textarea
-            className="responsebox"
-            readOnly
-            cols="70"
-            rows="25"
-          ></textarea>
+          <textarea className="responsebox" readOnly cols="70" rows="25" />
           <OverlayImageButton
             className="intro-copy"
             image={copyImage}
@@ -96,7 +78,3 @@ root.render(
     </React.StrictMode>
   </>
 );
-
-function handleClick() {
-  console.log('Click happened');
-}

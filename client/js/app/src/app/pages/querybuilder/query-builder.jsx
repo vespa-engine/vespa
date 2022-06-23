@@ -14,6 +14,7 @@ import refreshImage from './assets/img/reload.svg';
 
 import '../../styles/agency.css';
 import '../../styles/vespa.css';
+import SendQuery from './Components/Text/SendQuery';
 //import 'bootstrap/dist/css/bootstrap.min.css'; //TODO: Find out how to get this css
 
 export function QueryBuilder() {
@@ -27,24 +28,11 @@ export function QueryBuilder() {
           <TextBox className={'intro-long'}>
             Select the method for sending a request and construct a query.
           </TextBox>
-          <SimpleDropDownForm
-            choices={messageMethodArray}
-            id="method"
-            className="methodselector"
-          ></SimpleDropDownForm>
-          <SimpleForm
-            id="url"
-            className="textbox"
-            initial="http://localhost:8080/search/"
-            size="30"
-          ></SimpleForm>
-          <SimpleButton id="send" className="button">
-            Send
-          </SimpleButton>
+          <SendQuery />
           <br />
           <QueryInputProvider>
             <div id="request">
-              <QueryInput></QueryInput>
+              <QueryInput />
             </div>
             <br />
             <AddQueryInput />

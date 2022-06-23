@@ -18,8 +18,8 @@ export default function QueryInput({ id }) {
 
   const updateInput = (e) => {
     e.preventDefault();
-    const id = parseInt(e.target.id.replace('v', ''));
-    const index = inputs.findIndex((element) => element.id === id);
+    const fid = parseInt(e.target.id.replace('v', ''));
+    const index = inputs.findIndex((element) => element.id === fid);
     inputs[index].input = e.target.value;
     setInputs(inputs);
     console.log(inputs);

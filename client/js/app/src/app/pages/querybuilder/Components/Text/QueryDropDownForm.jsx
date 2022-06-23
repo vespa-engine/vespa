@@ -1,5 +1,5 @@
 import { QueryInputContext } from '../Contexts/QueryInputContext';
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import SimpleDropDownForm from './SimpleDropDownForm';
 
 export default function QueryDropdownFormn({ choices, id }) {
@@ -12,7 +12,11 @@ export default function QueryDropdownFormn({ choices, id }) {
     setInputs(inputs);
   };
 
-  //TODO: Try to move this into SimpleDropDownForm
+  useEffect(() => {
+    const index = inputs.findIndex((element) => element.id === id);
+    inputs[index].type = choices[0];
+    setInputs(inputs);
+  }, []);
 
   return (
     <SimpleDropDownForm

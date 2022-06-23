@@ -1,4 +1,5 @@
-import React from 'react';
+import { useSetState } from '@mantine/hooks';
+import React, { useEffect } from 'react';
 import { useState } from 'react';
 
 export default function SimpleDropDownForm({
@@ -10,7 +11,7 @@ export default function SimpleDropDownForm({
   SimpleDropDownForm.defaultProps = {
     onChange: handleChange,
   };
-  const { choice, setChoice } = useState();
+  const { choice, setChoice } = useState(choices[0]);
 
   const options = choices.map((value, index) => {
     return (
@@ -26,7 +27,7 @@ export default function SimpleDropDownForm({
 
   return (
     <form id={id}>
-      <select className={className} value={choice} onChange={onChange}>
+      <select className={className} id={id} value={choice} onChange={onChange}>
         {options}
       </select>
     </form>
