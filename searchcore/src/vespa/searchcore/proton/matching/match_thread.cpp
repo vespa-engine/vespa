@@ -276,9 +276,6 @@ MatchThread::findMatches(MatchTools &tools)
     match_loop_helper(tools, hits);
     if (tools.has_second_phase_rank()) {
         trace->addEvent(4, "Start second phase rerank");
-        tools.setup_second_phase();
-        DocidRange docid_range(1, matchParams.numDocs);
-        tools.search().initRange(docid_range.begin, docid_range.end);
         auto sorted_hit_seq = matchToolsFactory.should_diversify()
                               ? hits.getSortedHitSequence(matchParams.arraySize)
                               : hits.getSortedHitSequence(matchParams.heapSize);
@@ -286,11 +283,14 @@ MatchThread::findMatches(MatchTools &tools)
         WaitTimer get_second_phase_work_timer(wait_time_s);
         auto my_work = communicator.get_second_phase_work(sorted_hit_seq, thread_id);
         get_second_phase_work_timer.done();
-        DocumentScorer scorer(tools.rank_program(), tools.search());
         if (tools.getDoom().hard_doom()) {
             my_work.clear();
         }
-        scorer.score(my_work);
+        if (!my_work.empty()) {
+            tools.setup_second_phase();
+            DocumentScorer scorer(tools.rank_program(), tools.search());
+            scorer.score(my_work);
+        }
         thread_stats.docsReRanked(my_work.size());
         trace->addEvent(5, "Synchronize before rank scaling");
         WaitTimer complete_second_phase_timer(wait_time_s);
