@@ -1,10 +1,12 @@
 import React from 'react';
-import { Container, Link } from 'app/components';
+import { Container, Link, CardLink } from 'app/components';
 
 export function Home() {
   return (
     <Container>
-      <Link to="/querybuilder">query builder</Link>
+      <CardLink component={Link} to="/querybuilder">
+        query builder
+      </CardLink>
     </Container>
   );
 }
