@@ -1,6 +1,10 @@
 import React from 'react';
-import { Container } from 'app/components';
+import { Container, Link } from 'app/components';
 
 export function Home() {
-  return <Container>home</Container>;
+  return (
+    <Container>
+      <Link to="/querybuilder">query builder</Link>
+    </Container>
+  );
 }
