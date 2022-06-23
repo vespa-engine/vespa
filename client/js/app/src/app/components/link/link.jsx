@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link as InternalLink } from '@reach/router';
+import { Link as InternalLink } from 'react-router-dom';
 import { Anchor } from '@mantine/core';
 
 export const isInternalLink = (link) => {
@@ -9,6 +9,7 @@ export const isInternalLink = (link) => {
 
 export function Link({ to, api = false, ...props }) {
   const internal = !api && isInternalLink(to);
+
   if (!props.download && to && internal)
     return <Anchor component={InternalLink} to={to} {...props} />;
 
@@ -17,7 +18,6 @@ export function Link({ to, api = false, ...props }) {
     to && !internal && { target: '_blank', rel: 'noopener noreferrer' },
     props
   );
-  delete fixedProps.getProps; // Callback to reach Link to detect active links, this is an external link so don't bother
 
   return <Anchor {...fixedProps} />;
 }
