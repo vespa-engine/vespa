@@ -34,8 +34,12 @@ DocumentScorer::DocumentScorer(RankProgram &rankProgram,
 void
 DocumentScorer::score(TaggedHits &hits)
 {
+    if (hits.empty()) {
+        return;
+    }
     auto sort_on_docid = [](const TaggedHit &a, const TaggedHit &b){ return (a.first.first < b.first.first); };
     std::sort(hits.begin(), hits.end(), sort_on_docid);
+    _searchItr.initRange(hits.front().first.first, hits.back().first.first + 1);
     for (auto &hit: hits) {
         hit.first.second = doScore(hit.first.first);
     }
