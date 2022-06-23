@@ -3,7 +3,9 @@
 #include "common.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <stdexcept>
+#include <system_error>
 
 namespace search::transactionlog {
 
@@ -32,7 +34,9 @@ makeDirectory(const char * dir)
     if ( FastOS_File::Stat(dir, &st) ) {
         retval = st._isDirectory ? 0 : -2;
     } else {
-        retval = FastOS_File::MakeDirectory(dir) ? 0 : -3;
+        std::error_code ec;
+        std::filesystem::create_directory(std::filesystem::path(dir), ec);
+        retval = (!ec) ? 0 : -3;
     }
 
     return retval;

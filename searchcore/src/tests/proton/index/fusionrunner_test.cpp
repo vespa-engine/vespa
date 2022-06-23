@@ -20,6 +20,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <set>
 
 using document::Document;
@@ -134,7 +135,7 @@ Schema getSchema() {
 }
 
 void Test::setUp() {
-    FastOS_FileInterface::EmptyAndRemoveDirectory(base_dir.c_str());
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
     _fusion_runner.reset(new FusionRunner(base_dir, getSchema(),
                                  TuneFileAttributes(),
                                  _fileHeaderContext));
@@ -144,7 +145,7 @@ void Test::setUp() {
 }
 
 void Test::tearDown() {
-    FastOS_FileInterface::EmptyAndRemoveDirectory(base_dir.c_str());
+    std::filesystem::remove_all(std::filesystem::path(base_dir));
     _selector.reset(0);
 }
 
@@ -167,7 +168,7 @@ void addDocument(DocBuilder & doc_builder, MemoryIndex &index, ISourceSelector &
 }
 
 void Test::createIndex(const string &dir, uint32_t id, bool fusion) {
-    FastOS_FileInterface::MakeDirIfNotPresentOrExit(dir.c_str());
+    std::filesystem::create_directory(std::filesystem::path(dir));
     vespalib::asciistream ost;
     if (fusion) {
         ost << dir << "/index.fusion." << id;

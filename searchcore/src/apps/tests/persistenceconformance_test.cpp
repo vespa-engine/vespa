@@ -379,7 +379,7 @@ public:
     }
 
     void clear() override {
-        FastOS_FileInterface::EmptyAndRemoveDirectory(_baseDir.c_str());
+        std::filesystem::remove_all(std::filesystem::path(_baseDir));
     }
 
     bool hasPersistence() const override { return true; }

@@ -12,12 +12,12 @@
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchlib/util/filekit.h>
-#include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/posting_priority_queue_merger.hpp>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <filesystem>
+#include <system_error>
 
 #include <vespa/log/log.h>
 
@@ -107,8 +107,9 @@ FieldMerger::clean_tmp_dirs()
     while (i > 0) {
         i--;
         vespalib::string tmpindexpath = createTmpPath(_field_dir, i);
-        search::DirectoryTraverse dt(tmpindexpath.c_str());
-        if (!dt.RemoveTree()) {
+        std::error_code ec;
+        std::filesystem::remove_all(std::filesystem::path(tmpindexpath), ec);
+        if (ec) {
             LOG(error, "Failed to clean tmpdir %s", tmpindexpath.c_str());
             return false;
         }

@@ -6,7 +6,6 @@
 #include <vespa/searchlib/common/serialnumfileheadercontext.h>
 #include <vespa/searchlib/attribute/fixedsourceselector.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
-#include <vespa/searchlib/util/dirtraverse.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchcorespi.index.fusionrunner");

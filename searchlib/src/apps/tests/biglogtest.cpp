@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <filesystem>
 
 using namespace search;
 using search::index::DummyFileHeaderContext;
@@ -148,9 +149,8 @@ Test::testDIO()
 {
     uint64_t serial = 0;
 
-    FastOS_File::EmptyDirectory(_dir.c_str());
-    FastOS_File::RemoveDirectory(_dir.c_str());
-    EXPECT_TRUE(FastOS_File::MakeDirectory(_dir.c_str()));
+    std::filesystem::remove_all(std::filesystem::path(_dir));
+    std::filesystem::create_directory(std::filesystem::path(_dir));
 
     Map lidToBlobMap;
     vespalib::DataBuffer buf;
@@ -238,7 +238,6 @@ Test::testDIO()
         factory<DS> ds(_dir);
         checkBlobs(ds(), lidToBlobMap);
     }
-    FastOS_File::EmptyDirectory(_dir.c_str());
-    FastOS_File::RemoveDirectory(_dir.c_str());
+    std::filesystem::remove_all(std::filesystem::path(_dir));
     TEST_FLUSH();
 }
