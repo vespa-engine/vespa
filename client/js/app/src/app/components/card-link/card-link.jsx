@@ -5,17 +5,19 @@ export function CardLink({
   sx,
   withBorder = true,
   borderStyle = 'solid',
-  height = '144px',
-  width = '377px',
+  minHeight = '89px',
+  minWidth = 'auto',
   ...props
 }) {
   return (
     <Box
       sx={(theme) => ({
-        width,
-        height,
+        minHeight,
+        minWidth,
         display: 'grid',
         placeContent: 'center',
+        justifyItems: 'center',
+        rowGap: '8px',
         ...theme.fn.hover({
           cursor: 'pointer',
           background: theme.cr.getSubtleBackground(),

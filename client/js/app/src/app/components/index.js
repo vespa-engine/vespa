@@ -6,3 +6,4 @@ export { Content } from 'app/components/containers/content';
 export { Section } from 'app/components/containers/section';
 export { Link } from 'app/components/link/link';
 export { CardLink } from 'app/components/card-link/card-link';
+export { Icon } from 'app/components/icon/icon';
