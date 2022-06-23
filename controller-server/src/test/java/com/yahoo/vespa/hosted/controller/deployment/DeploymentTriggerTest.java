@@ -2212,12 +2212,28 @@ public class DeploymentTriggerTest {
         DeploymentContext main = tester.newDeploymentContext("tenant", "application", "main");
         Version version1 = new Version("7");
         tester.controllerTester().upgradeSystem(version1);
-        tests.submit(appPackage).deploy();
+        tests.submit(appPackage);
         Optional<RevisionId> revision1 = tests.lastSubmission();
         JobId systemTestJob = new JobId(tests.instanceId(), systemTest);
         JobId stagingTestJob = new JobId(tests.instanceId(), stagingTest);
         JobId mainJob = new JobId(main.instanceId(), productionUsEast3);
         JobId centauriJob = new JobId(main.instanceId(), JobType.deploymentTo(prodAlphaCentauri.getId()));
+
+        assertEquals(Set.of(systemTestJob, stagingTestJob, mainJob, centauriJob), tests.deploymentStatus().jobsToRun().keySet());
+        tests.runJob(systemTest).runJob(stagingTest).triggerJobs();
+
+        assertEquals(Set.of(systemTestJob, stagingTestJob, mainJob, centauriJob), tests.deploymentStatus().jobsToRun().keySet());
+        tests.triggerJobs();
+        assertEquals(3, tester.jobs().active().size());
+
+        tests.runJob(systemTest);
+        tester.outstandingChangeDeployer().run();
+
+        assertEquals(2, tester.jobs().active().size());
+        main.assertRunning(productionUsEast3);
+
+        tests.runJob(stagingTest);
+        main.runJob(productionUsEast3).runJob(centauriJob.type());
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
@@ -2235,19 +2251,21 @@ public class DeploymentTriggerTest {
         assertEquals(Change.of(version2), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
         assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
+        assertEquals(2, tests.deploymentStatus().jobsToRun().get(systemTestJob).size());
 
         Version version3 = new Version("9");
         tester.controllerTester().upgradeSystem(version3);
-        tests.failDeployment(systemTest);
+        tests.runJob(systemTest)            // Success in default cloud.
+             .failDeployment(systemTest);   // Failure in centauri cloud.
         tester.upgrader().run();
 
         assertEquals(Change.of(version3), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
         assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
 
-        tests.runJob(systemTest);
+        tests.runJob(systemTest).runJob(systemTest);
         tester.upgrader().run();
-        tests.runJob(stagingTest);
+        tests.runJob(stagingTest).runJob(stagingTest);
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.of(version3), main.instance().change());
@@ -2276,6 +2294,7 @@ public class DeploymentTriggerTest {
         assertEquals(Change.of(revision2.get()), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
         assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
+        assertEquals(2, tests.deploymentStatus().jobsToRun().get(systemTestJob).size());
 
         tests.submit(appPackage);
         Optional<RevisionId> revision3 = tests.lastSubmission();
@@ -2292,8 +2311,26 @@ public class DeploymentTriggerTest {
         assertEquals(Set.of(systemTestJob), tests.deploymentStatus().jobsToRun().keySet());
 
         tests.runJob(systemTest);
+        assertEquals(Change.of(revision3.get()), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(systemTestJob, stagingTestJob), tests.deploymentStatus().jobsToRun().keySet());
+
         tester.outstandingChangeDeployer().run();
         tester.outstandingChangeDeployer().run();
+        tests.runJob(stagingTest);
+
+        assertEquals(Change.of(revision3.get()), tests.instance().change());
+        assertEquals(Change.empty(), main.instance().change());
+        assertEquals(Set.of(systemTestJob, stagingTestJob), tests.deploymentStatus().jobsToRun().keySet());
+
+        tests.runJob(systemTest);
+        tester.outstandingChangeDeployer().run();
+        tester.outstandingChangeDeployer().run();
+
+        assertEquals(Change.empty(), tests.instance().change());
+        assertEquals(Change.of(revision3.get()), main.instance().change());
+        assertEquals(Set.of(stagingTestJob, mainJob, centauriJob), tests.deploymentStatus().jobsToRun().keySet());
+
         tests.runJob(stagingTest);
 
         assertEquals(Change.empty(), tests.instance().change());
