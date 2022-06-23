@@ -47,7 +47,6 @@ public class JavaClassBuilder implements ClassBuilder {
             try (PrintStream out = new PrintStream(new FileOutputStream(outFile))) {
                 out.print(getConfigClass(className));
             }
-            System.err.println(outFile.getPath() + " successfully written.");
         } catch (FileNotFoundException e) {
             throw new CodegenRuntimeException(e);
         }
