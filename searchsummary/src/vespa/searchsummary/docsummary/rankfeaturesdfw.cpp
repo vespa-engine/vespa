@@ -14,7 +14,7 @@ RankFeaturesDFW::~RankFeaturesDFW() = default;
 
 void
 RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
-                             ResType type, vespalib::slime::Inserter &target)
+                             ResType, vespalib::slime::Inserter &target)
 {
     if ( !state->_rankFeatures ) {
         state->_callback.FillRankFeatures(state, _env);
@@ -24,16 +24,15 @@ RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
     }
     const FeatureSet::StringVector & names = state->_rankFeatures->getNames();
     const FeatureSet::Value * values = state->_rankFeatures->getFeaturesByDocId(docid);
-    assert(type == RES_FEATUREDATA);
-    if (values != nullptr) {
-        vespalib::slime::Cursor& obj = target.insertObject();
-        for (uint32_t i = 0; i < names.size(); ++i) {
-            vespalib::Memory name(names[i].c_str(), names[i].size());
-            if (values[i].is_data()) {
-                obj.setData(name, values[i].as_data());
-            } else {
-                obj.setDouble(name, values[i].as_double());
-            }
+    if (values == nullptr) { return; }
+
+    vespalib::slime::Cursor& obj = target.insertObject();
+    for (uint32_t i = 0; i < names.size(); ++i) {
+        vespalib::Memory name(names[i].c_str(), names[i].size());
+        if (values[i].is_data()) {
+            obj.setData(name, values[i].as_data());
+        } else {
+            obj.setDouble(name, values[i].as_double());
         }
     }
 }
