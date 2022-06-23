@@ -11,7 +11,7 @@
 #include "fsa.h"
 #include "automaton.h"
 #include "checksum.h"
-
+#include "unaligned.h"
 
 namespace fsa {
 
@@ -354,7 +354,7 @@ void Automaton::PackedAutomaton::finalize()
     uint32_t j=lastsize;
     bool fixedsize = true;
     while(i<_blob_used){
-      currsize = *((uint32_t*)(void *)(_blob+i));
+        currsize = Unaligned<uint32_t>::at(_blob+i);
       if(currsize!=lastsize){
         fixedsize = false;
         break;
@@ -597,14 +597,14 @@ bool Automaton::PackedAutomaton::getFSA(FSA::Descriptor &d)
 
   d._version = FSA::VER;
   d._serial = 0;
-  d._state = _packed_idx;
+  d._state = Unaligned<state_t>::ptr(_packed_idx);
   d._symbol = _symbol;
   d._size = size;
   d._data = _blob;
   d._data_size = _blob_used;
   d._data_type = _blob_type;
   d._fixed_data_size = _fixed_blob_size;
-  d._perf_hash = _perf_hash;
+  d._perf_hash = Unaligned<hash_t>::ptr(_perf_hash);
   d._start = _start_state;
 
   _symbol = NULL;
