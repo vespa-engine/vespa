@@ -48,18 +48,13 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
             throw IllegalArgumentException("Missing argument");
         }
     } else if (overrideName == "summaryfeatures") {
-        SummaryFeaturesDFW *fw = new SummaryFeaturesDFW();
-        fieldWriter.reset(fw);
-        fw->init(getEnvironment());
+        fieldWriter = std::make_unique<SummaryFeaturesDFW>(getEnvironment());
         rc = true;
     } else if (overrideName == "rankfeatures") {
-        RankFeaturesDFW * fw = new RankFeaturesDFW();
-        fw->init(getEnvironment());
-        fieldWriter.reset(fw);
+        fieldWriter = std::make_unique<RankFeaturesDFW>(getEnvironment());
         rc = true;
     } else if (overrideName == "empty") {
-        EmptyDFW *fw = new EmptyDFW();
-        fieldWriter.reset(fw);
+        fieldWriter = std::make_unique<EmptyDFW>();
         rc = true;
     } else if (overrideName == "copy") {
         if ( ! argument.empty() ) {
@@ -71,21 +66,18 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         }
     } else if (overrideName == "absdist") {
         if (getEnvironment()) {
-            IAttributeManager *am = getEnvironment()->getAttributeManager();
-            fieldWriter = AbsDistanceDFW::create(argument.c_str(), am);
-            rc = fieldWriter.get();
+            fieldWriter = AbsDistanceDFW::create(argument.c_str(), getEnvironment()->getAttributeManager());
+            rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "positions") {
         if (getEnvironment()) {
-            IAttributeManager *am = getEnvironment()->getAttributeManager();
-            fieldWriter = PositionsDFW::create(argument.c_str(), am, resultConfig.useV8geoPositions());
-            rc = fieldWriter.get();
+            fieldWriter = PositionsDFW::create(argument.c_str(), getEnvironment()->getAttributeManager(), resultConfig.useV8geoPositions());
+            rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "geopos") {
         if (getEnvironment()) {
-            IAttributeManager *am = getEnvironment()->getAttributeManager();
-            fieldWriter = GeoPositionDFW::create(argument.c_str(), am, resultConfig.useV8geoPositions());
-            rc = fieldWriter.get();
+            fieldWriter = GeoPositionDFW::create(argument.c_str(), getEnvironment()->getAttributeManager(), resultConfig.useV8geoPositions());
+            rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "attribute") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
@@ -135,7 +127,7 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
         const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
         bool rc(false);
         IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, matching_elems_fields);
-        if (rc && fieldWriter.get() != NULL) {
+        if (rc && fieldWriter) {
             rc = _writer->Override(o.field.c_str(), fieldWriter.release()); // OBJECT HAND-OVER
         }
         if (!rc) {

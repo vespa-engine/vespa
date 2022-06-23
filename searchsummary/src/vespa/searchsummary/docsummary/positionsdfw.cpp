@@ -65,35 +65,6 @@ AbsDistanceDFW::AbsDistanceDFW(const vespalib::string & attrName)
     : LocationAttrDFW(attrName)
 { }
 
-double
-AbsDistanceDFW::kmMinDistance(uint32_t docid, GetDocsumsState *state,
-                              const std::vector<const GeoLoc *> &locations)
-{
-    double best = std::numeric_limits<double>::max();
-    const auto& attribute = get_attribute(*state);
-    for (auto location : locations) {
-        double lat = to_degrees(location->point.y);
-        double lng = to_degrees(location->point.x);
-        GeoGcd point{lat, lng};
-        int32_t docx = 0;
-        int32_t docy = 0;
-        IntegerContent pos;
-        pos.fill(attribute, docid);
-        uint32_t numValues = pos.size();
-        for (uint32_t i = 0; i < numValues; i++) {
-            int64_t docxy(pos[i]);
-            vespalib::geo::ZCurve::decode(docxy, &docx, &docy);
-            lat = to_degrees(docy);
-            lng = to_degrees(docx);
-            double dist = point.km_great_circle_distance(lat, lng);
-            if (dist < best) {
-                best = dist;
-            }
-        }
-    }
-    return best;
-}
-
 uint64_t
 AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState *state,
                                 const std::vector<const GeoLoc *> &locations)

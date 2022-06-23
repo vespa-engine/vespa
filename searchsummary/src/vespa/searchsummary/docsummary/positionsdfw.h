@@ -36,8 +36,6 @@ public:
 class AbsDistanceDFW : public LocationAttrDFW
 {
 private:
-    double kmMinDistance(uint32_t docid, GetDocsumsState *state,
-                         const std::vector<const GeoLoc *> &locations);
     uint64_t findMinDistance(uint32_t docid, GetDocsumsState *state,
                              const std::vector<const GeoLoc *> &locations);
 public:
