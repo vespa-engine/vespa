@@ -538,6 +538,10 @@ public class DeploymentStatus {
         return Collections.unmodifiableMap(testJobs);
     }
 
+    private CloudName findCloud(JobType job) {
+        return zones.zones().all().among(job.zone()).zones().stream().findFirst().map(ZoneApi::getCloudName).orElse(null);
+    }
+
     private JobId firstDeclaredOrElseImplicitTest(JobType testJob) {
         return application.deploymentSpec().instanceNames().stream()
                           .map(name -> new JobId(application.id().instance(name), testJob))

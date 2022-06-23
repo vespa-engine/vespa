@@ -51,10 +51,6 @@ public final class JobType implements Comparable<JobType> {
         return testIn(staging, zones, cloud);
     }
 
-    private static CloudName extractCloud(String jobNameRest) {
-        return jobNameRest.contains("-") ? CloudName.from(jobNameRest.substring(jobNameRest.indexOf('-') + 1)) : null;
-    }
-
     /** Returns a test job in the given environment, preferring the given cloud, is possible; using the system cloud otherwise. */
     private static JobType testIn(Environment environment, ZoneRegistry zones, CloudName cloud) {
         ZoneList candidates = zones.zones().controllerUpgraded().in(environment);
@@ -107,18 +103,6 @@ public final class JobType implements Comparable<JobType> {
     }
 
     /** A deployment to the given zone; this may be a zone in the {@code test} or {@code staging} environments. */
-    public static JobType deploymentTo(ZoneId zone, CloudName cloud) {
-        String name;
-        switch (zone.environment()) {
-            case prod: name = "production-" + zone.region().value(); break;
-            case test: name = "system-test"; break;
-            case staging: name = "staging-test"; break;
-            default: name = zone.environment().value() + "-" + zone.region().value();
-        }
-        return new JobType(name, zone, false);
-    }
-
-    /** A deployment to the given zone; this may be a zone in the {@code test} or {@code staging} environments. */
     public static JobType deploymentTo(ZoneId zone) {
         String name;
         switch (zone.environment()) {
@@ -144,27 +128,33 @@ public final class JobType implements Comparable<JobType> {
         throw new IllegalArgumentException("illegal serialized job type '" + raw + "'");
     }
 
-    /** Creates a new job type from a job name, and a zone registry for looking up zones for the special system and staging test types. */
+    /**
+     * Creates a new job type from a job name, and a zone registry for looking up zones for the special system and staging test types.
+     * Note: system and staging tests retrieved by job name always use the default cloud for the system!
+     */
     public static JobType fromJobName(String jobName, ZoneRegistry zones) {
+        switch (jobName) {
+            case "system-test": return systemTest(zones, null);
+            case "staging-test": return stagingTest(zones, null);
+        }
         String[] parts = jobName.split("-", 2);
         if (parts.length == 2)
             switch (parts[0]) {
-                case "system": return systemTest(zones, extractCloud(parts[1]));
-                case "staging": return stagingTest(zones, extractCloud(parts[1]));
                 case "production": return prod(parts[1]);
                 case "test": return test(parts[1]);
                 case "dev": return dev(parts[1]);
                 case "perf": return perf(parts[1]);
             }
-        throw new IllegalArgumentException("job names must be 'system-test[-<cloud>]', 'staging-test[-<cloud>]', or <test|environment>-<region>, but got: " + jobName);
+        throw new IllegalArgumentException("job names must be 'system-test', 'staging-test', or <test|environment>-<region>, but got: " + jobName);
     }
 
     public static List<JobType> allIn(ZoneRegistry zones) {
         return zones.zones().reachable().zones().stream()
                     .flatMap(zone -> zone.getEnvironment().isProduction() ? Stream.of(deploymentTo(zone.getId()), productionTestOf(zone.getId()))
                                                                           : Stream.of(deploymentTo(zone.getId())))
+                    .distinct()
                     .sorted(naturalOrder())
-                    .collect(toUnmodifiableList());
+                    .toList();
     }
 
     /** A serialized form of this: {@code &lt;environment&gt;.&lt;region&gt;[.test]}; the inverse of {@link #ofSerialized(String)} */

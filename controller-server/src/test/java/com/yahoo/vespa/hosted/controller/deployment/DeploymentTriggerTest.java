@@ -3,8 +3,11 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -16,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
@@ -2176,7 +2180,7 @@ public class DeploymentTriggerTest {
     }
 
     @Test
-    public void testInstanceWithOnlySystemTest() {
+    public void testInstanceWithOnlySystemTestInTwoClouds() {
         String spec = """
                       <deployment>
                         <instance id='tests'>
@@ -2186,11 +2190,23 @@ public class DeploymentTriggerTest {
                         <instance id='main'>
                           <prod>
                             <region>us-east-3</region>
+                            <region>alpha-centauri</region>
                           </prod>
                           <upgrade revision-target='next' />
                         </instance>
                       </deployment>
                       """;
+
+        RegionName alphaCentauri = RegionName.from("alpha-centauri");
+        ZoneApiMock.Builder builder = ZoneApiMock.newBuilder().withCloud("centauri").withSystem(tester.controller().system());
+        ZoneApi testAlphaCentauri = builder.with(ZoneId.from(Environment.test, alphaCentauri)).build();
+        ZoneApi stagingAlphaCentauri = builder.with(ZoneId.from(Environment.staging, alphaCentauri)).build();
+        ZoneApi prodAlphaCentauri = builder.with(ZoneId.from(Environment.prod, alphaCentauri)).build();
+
+        tester.controllerTester().zoneRegistry().addZones(testAlphaCentauri, stagingAlphaCentauri, prodAlphaCentauri);
+        tester.controllerTester().setRoutingMethod(tester.controllerTester().zoneRegistry().zones().all().ids(), RoutingMethod.sharedLayer4);
+        tester.configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(), SystemApplication.notController());
+
         ApplicationPackage appPackage = ApplicationPackageBuilder.fromDeploymentXml(spec);
         DeploymentContext tests = tester.newDeploymentContext("tenant", "application", "tests");
         DeploymentContext main = tester.newDeploymentContext("tenant", "application", "main");
@@ -2201,6 +2217,7 @@ public class DeploymentTriggerTest {
         JobId systemTestJob = new JobId(tests.instanceId(), systemTest);
         JobId stagingTestJob = new JobId(tests.instanceId(), stagingTest);
         JobId mainJob = new JobId(main.instanceId(), productionUsEast3);
+        JobId centauriJob = new JobId(main.instanceId(), JobType.deploymentTo(prodAlphaCentauri.getId()));
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
@@ -2234,9 +2251,10 @@ public class DeploymentTriggerTest {
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.of(version3), main.instance().change());
-        assertEquals(Set.of(mainJob), tests.deploymentStatus().jobsToRun().keySet());
+        assertEquals(Set.of(mainJob, centauriJob), tests.deploymentStatus().jobsToRun().keySet());
 
         main.runJob(productionUsEast3);
+        main.runJob(centauriJob.type());
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.empty(), main.instance().change());
@@ -2280,9 +2298,10 @@ public class DeploymentTriggerTest {
 
         assertEquals(Change.empty(), tests.instance().change());
         assertEquals(Change.of(revision3.get()), main.instance().change());
-        assertEquals(Set.of(mainJob), tests.deploymentStatus().jobsToRun().keySet());
+        assertEquals(Set.of(mainJob, centauriJob), tests.deploymentStatus().jobsToRun().keySet());
 
         main.runJob(productionUsEast3);
+        main.runJob(centauriJob.type());
         tester.outstandingChangeDeployer().run();
 
         assertEquals(Change.empty(), tests.instance().change());
@@ -2315,19 +2334,21 @@ public class DeploymentTriggerTest {
         existing.add(ZoneApiMock.newBuilder().withCloud("pink-clouds").withId("test.zone").build());
         zones.setZones(existing);
 
-        JobType systemTest = JobType.systemTest(zones, CloudName.defaultName());
+        JobType defaultSystemTest = JobType.systemTest(zones, CloudName.defaultName());
         JobType pinkSystemTest = JobType.systemTest(zones, CloudName.from("pink-clouds"));
 
-        assertEquals(systemTest, JobType.systemTest(zones, null));
-        assertEquals(systemTest, JobType.systemTest(zones, CloudName.from("dark-clouds")));
+        // Job name is identity, used for looking up run history, etc..
+        assertEquals(defaultSystemTest, pinkSystemTest);
 
-        assertEquals(systemTest, JobType.fromJobName("system-test", zones));
-        assertEquals(systemTest, JobType.fromJobName("system-test-default", zones));
-        assertEquals(systemTest, JobType.fromJobName("system-test-dark-clouds", zones));
-        assertEquals(pinkSystemTest, JobType.fromJobName("system-test-pink-clouds", zones));
+        assertEquals(defaultSystemTest, JobType.systemTest(zones, null));
+        assertEquals(defaultSystemTest, JobType.systemTest(zones, CloudName.from("dark-clouds")));
+        assertEquals(defaultSystemTest, JobType.fromJobName("system-test", zones));
 
-        assertEquals(ZoneId.from("test", "us-east-1"), systemTest.zone());
+        assertEquals(ZoneId.from("test", "us-east-1"), defaultSystemTest.zone());
         assertEquals(ZoneId.from("staging", "us-east-3"), JobType.stagingTest(zones, null).zone());
+
+        assertEquals(ZoneId.from("test", "zone"), pinkSystemTest.zone());
+        assertEquals(ZoneId.from("staging", "us-east-3"), JobType.stagingTest(zones, CloudName.from("pink-clouds")).zone());
     }
 
 }
