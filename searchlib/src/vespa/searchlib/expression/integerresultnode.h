@@ -28,7 +28,7 @@ public:
         T bv(static_cast<const IntegerResultNodeT &>(b)._value);
         return (_value < bv) ? -1 : (_value > bv) ? 1 : 0;
     }
-    void add(const ResultNode & b) override { _value += b.getInteger(); }
+    void add(const ResultNode & b) override { _value = uint64_t(_value) + uint64_t(b.getInteger()); }
     void negate() override { _value = - _value; }
     void multiply(const ResultNode & b) override {
         if constexpr (std::is_same_v<T, bool>) {
