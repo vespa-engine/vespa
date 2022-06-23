@@ -65,6 +65,8 @@ public class EndpointCertificates {
 
         if (controller.zoneRegistry().zones().ofCloud(CloudName.from("gcp")).ids().contains(zone)) { // Until CKMS is available from GCP
             if(metadata.isPresent()) {
+                // Validate metadata before copying cert to GCP. This will ensure we don't bug out on the first deployment, but will take more time
+                certificateValidator.validate(metadata.get(), instance.id().serializedForm(), zone, controller.routing().certificateDnsNames(new DeploymentId(instance.id(), zone), deploymentSpec));
                 var m = metadata.get();
                 GcpSecretStore gcpSecretStore = controller.serviceRegistry().gcpSecretStore();
                 String mangledCertName = "endpointCert_" + m.certName().replace('.', '_') + "-v" + m.version(); // Google cloud does not accept dots in secrets, but they accept underscores
