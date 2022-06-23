@@ -137,6 +137,8 @@ import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
@@ -283,6 +285,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/logs")) return logs(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/access/support")) return supportAccess(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request.propertyMap());
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/node/{node}/service-dump")) return getServiceDump(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), path.get("node"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/scaling")) return scaling(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/metrics")) return metrics(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation")) return rotationStatus(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), Optional.ofNullable(request.getProperty("endpointId")));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return getGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"));
@@ -1424,6 +1427,29 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         DeploymentId deployment = new DeploymentId(application, zone);
         List<ProtonMetrics> protonMetrics = controller.serviceRegistry().configServer().getProtonMetrics(deployment);
         return buildResponseFromProtonMetrics(protonMetrics);
+    }
+
+    private HttpResponse scaling(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+        var from = Optional.ofNullable(request.getProperty("from"))
+                .map(Long::valueOf)
+                .map(Instant::ofEpochSecond)
+                .orElse(Instant.EPOCH);
+        var until = Optional.ofNullable(request.getProperty("until"))
+                .map(Long::valueOf)
+                .map(Instant::ofEpochSecond)
+                .orElse(Instant.now(controller.clock()));
+
+        var application = ApplicationId.from(tenantName, applicationName, instanceName);
+        var zone = requireZone(environment, region);
+        var deployment = new DeploymentId(application, zone);
+        var events = controller.serviceRegistry().resourceDatabase().scalingEvents(from, until, deployment);
+        var slime = new Slime();
+        var root = slime.setObject();
+        for (var entry : events.entrySet()) {
+            var serviceRoot = root.setArray(entry.getKey().clusterId().value());
+            scalingEventsToSlime(entry.getValue(), serviceRoot);
+        }
+        return new SlimeJsonResponse(slime);
     }
 
     private JsonResponse buildResponseFromProtonMetrics(List<ProtonMetrics> protonMetrics) {
