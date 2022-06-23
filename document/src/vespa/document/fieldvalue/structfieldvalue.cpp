@@ -50,8 +50,8 @@ StructFieldValue::getStructType() const {
 void
 StructFieldValue::lazyDeserialize(const FixedTypeRepo &repo, uint16_t version, SerializableArray::EntryMap && fm, ByteBuffer buffer)
 {
-    _repo = &repo.getDocumentTypeRepo();
-    _doc_type = &repo.getDocumentType();
+    _repo = repo.getDocumentTypeRepoPtr();
+    _doc_type = repo.getDocumentTypePtr();
     _version = version;
 
     _fields.set(std::move(fm), std::move(buffer));
@@ -117,7 +117,7 @@ StructFieldValue::getField(vespalib::stringref name) const
 namespace {
 
 void
-createFV(FieldValue & value, const DocumentTypeRepo & repo, nbostream & stream, const DocumentType & doc_type, uint32_t version)
+createFV(FieldValue & value, const DocumentTypeRepo * repo, nbostream & stream, const DocumentType * doc_type, uint32_t version)
 {
     FixedTypeRepo frepo(repo, doc_type);
     try {
@@ -142,9 +142,9 @@ StructFieldValue::getFieldValue(const Field& field) const
         FieldValue::UP value(field.getDataType().createFieldValue());
         if ((_repo == nullptr) && (_doc_type != nullptr)) {
             DocumentTypeRepo tmpRepo(*_doc_type);
-            createFV(*value, tmpRepo, stream, *_doc_type, _version);
+            createFV(*value, &tmpRepo, stream, _doc_type, _version);
         } else {
-            createFV(*value, *_repo, stream, *_doc_type, _version);
+            createFV(*value, _repo, stream, _doc_type, _version);
         }
         return value;
     }
@@ -172,9 +172,9 @@ StructFieldValue::getFieldValue(const Field& field, FieldValue& value) const
         nbostream_longlivedbuf stream(buf.c_str(), buf.size());
         if ((_repo == nullptr) && (_doc_type != nullptr)) {
             DocumentTypeRepo tmpRepo(*_doc_type);
-            createFV(value, tmpRepo, stream, *_doc_type, _version);
+            createFV(value, &tmpRepo, stream, _doc_type, _version);
         } else {
-            createFV(value, *_repo, stream, *_doc_type, _version);
+            createFV(value, _repo, stream, _doc_type, _version);
         }
         return true;
     }

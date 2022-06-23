@@ -17,6 +17,8 @@ public:
         : _repo(&repo), _doc_type(repo.getDefaultDocType()) {}
     FixedTypeRepo(const DocumentTypeRepo &repo, const DocumentType &doc_type) noexcept
         : _repo(&repo), _doc_type(&doc_type) {}
+    FixedTypeRepo(const DocumentTypeRepo *repo, const DocumentType *doc_type) noexcept
+        : _repo(repo), _doc_type(doc_type) {}
     FixedTypeRepo(const DocumentTypeRepo &repo, const vespalib::string &type) noexcept;
 
     const DataType *getDataType(int32_t id) const { return _repo->getDataType(*_doc_type, id); }
@@ -24,6 +26,8 @@ public:
     const AnnotationType *getAnnotationType(int32_t id) const { return _repo->getAnnotationType(*_doc_type, id); }
     const DocumentTypeRepo &getDocumentTypeRepo() const { return *_repo; }
     const DocumentType &getDocumentType() const noexcept { return *_doc_type; }
+    const DocumentTypeRepo *getDocumentTypeRepoPtr() const { return _repo; }
+    const DocumentType *getDocumentTypePtr() const noexcept { return _doc_type; }
 };
 
 }  // namespace document
