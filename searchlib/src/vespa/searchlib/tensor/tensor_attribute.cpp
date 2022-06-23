@@ -135,7 +135,7 @@ TensorAttribute::addDoc(DocId &docId)
 }
 
 void
-TensorAttribute::checkTensorType(const vespalib::eval::Value &tensor)
+TensorAttribute::checkTensorType(const vespalib::eval::Value &tensor) const
 {
     const ValueType &fieldTensorType = getConfig().tensorType();
     const ValueType &tensorType = tensor.type();

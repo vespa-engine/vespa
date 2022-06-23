@@ -6,6 +6,7 @@
 #include "dense_tensor_store.h"
 #include "doc_vector_access.h"
 #include "tensor_attribute.h"
+#include "typed_cells_comparator.h"
 #include <memory>
 
 namespace search::tensor {
@@ -20,7 +21,9 @@ class DenseTensorAttribute : public TensorAttribute, public DocVectorAccess {
 private:
     DenseTensorStore _denseTensorStore;
     std::unique_ptr<NearestNeighborIndex> _index;
+    TypedCellsComparator _comp;
 
+    bool tensor_is_unchanged(DocId docid, const vespalib::eval::Value& new_tensor) const;
     void internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor);
     void consider_remove_from_index(DocId docid);
     vespalib::MemoryUsage update_stat() override;
