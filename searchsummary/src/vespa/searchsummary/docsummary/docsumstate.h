@@ -2,11 +2,9 @@
 
 #pragma once
 
-#include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/searchsummary/docsummary/getdocsumargs.h>
+#include "getdocsumargs.h"
 #include <vespa/searchlib/common/featureset.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
-#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/stash.h>
 
 namespace juniper {
@@ -97,11 +95,7 @@ public:
     ~GetDocsumsState();
 
     const MatchingElements &get_matching_elements(const MatchingElementsFields &matching_elems_fields);
-    vespalib::JSONStringer & jsonStringer();
     vespalib::Stash& get_stash() noexcept { return _stash; }
-private:
-    // Only used by rank/summary features, so make it lazy
-    std::unique_ptr<vespalib::JSONStringer>   _jsonStringer;
 };
 
 }
