@@ -1,9 +1,13 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
+import com.yahoo.config.provision.Cloud;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.util.Comparator;
@@ -38,18 +42,28 @@ public final class JobType implements Comparable<JobType> {
     }
 
     /** A system test in a test zone, or throws if no test zones are present.. */
-    public static JobType systemTest(ZoneRegistry zones) {
-        return testIn(test, zones);
+    public static JobType systemTest(ZoneRegistry zones, CloudName cloud) {
+        return testIn(test, zones, cloud);
     }
 
     /** A staging test in a staging zone, or throws if no staging zones are present. */
-    public static JobType stagingTest(ZoneRegistry zones){
-        return testIn(staging, zones);
+    public static JobType stagingTest(ZoneRegistry zones, CloudName cloud){
+        return testIn(staging, zones, cloud);
     }
 
-    private static JobType testIn(Environment environment, ZoneRegistry zones) {
-        return zones.zones().controllerUpgraded().in(environment).zones().stream().map(zone -> deploymentTo(zone.getId()))
-                    .findFirst().orElseThrow(() -> new IllegalArgumentException("no zones in " + environment + " among " + zones.zones().controllerUpgraded().zones()));
+    private static CloudName extractCloud(String jobNameRest) {
+        return jobNameRest.contains("-") ? CloudName.from(jobNameRest.substring(jobNameRest.indexOf('-') + 1)) : null;
+    }
+
+    /** Returns a test job in the given environment, preferring the given cloud, is possible; using the system cloud otherwise. */
+    private static JobType testIn(Environment environment, ZoneRegistry zones, CloudName cloud) {
+        ZoneList candidates = zones.zones().controllerUpgraded().in(environment);
+        if (cloud == null || candidates.in(cloud).zones().isEmpty())
+            cloud = zones.systemZone().getCloudName();
+
+        return candidates.in(cloud).zones().stream().map(zone -> deploymentTo(zone.getId()))
+                         .findFirst().orElseThrow(() -> new IllegalArgumentException("no zones in " + environment + " among " +
+                                                                                     zones.zones().controllerUpgraded().zones()));
     }
 
     /** A deployment to the given dev region. */
@@ -93,6 +107,18 @@ public final class JobType implements Comparable<JobType> {
     }
 
     /** A deployment to the given zone; this may be a zone in the {@code test} or {@code staging} environments. */
+    public static JobType deploymentTo(ZoneId zone, CloudName cloud) {
+        String name;
+        switch (zone.environment()) {
+            case prod: name = "production-" + zone.region().value(); break;
+            case test: name = "system-test"; break;
+            case staging: name = "staging-test"; break;
+            default: name = zone.environment().value() + "-" + zone.region().value();
+        }
+        return new JobType(name, zone, false);
+    }
+
+    /** A deployment to the given zone; this may be a zone in the {@code test} or {@code staging} environments. */
     public static JobType deploymentTo(ZoneId zone) {
         String name;
         switch (zone.environment()) {
@@ -121,16 +147,16 @@ public final class JobType implements Comparable<JobType> {
     /** Creates a new job type from a job name, and a zone registry for looking up zones for the special system and staging test types. */
     public static JobType fromJobName(String jobName, ZoneRegistry zones) {
         String[] parts = jobName.split("-", 2);
-        if (parts.length != 2) throw new IllegalArgumentException("job names must be 'system-test', 'staging-test', or environment and region parts, separated by '-', but got: " + jobName);
-        switch (parts[0]) {
-            case "system": return systemTest(zones);
-            case "staging": return stagingTest(zones);
-            case "production": return prod(parts[1]);
-            case "test": return test(parts[1]);
-            case "dev": return dev(parts[1]);
-            case "perf": return perf(parts[1]);
-            default: throw new IllegalArgumentException("job names must begin with one of: system, staging, production, test, dev, perf; but got: " + jobName);
-        }
+        if (parts.length == 2)
+            switch (parts[0]) {
+                case "system": return systemTest(zones, extractCloud(parts[1]));
+                case "staging": return stagingTest(zones, extractCloud(parts[1]));
+                case "production": return prod(parts[1]);
+                case "test": return test(parts[1]);
+                case "dev": return dev(parts[1]);
+                case "perf": return perf(parts[1]);
+            }
+        throw new IllegalArgumentException("job names must be 'system-test[-<cloud>]', 'staging-test[-<cloud>]', or <test|environment>-<region>, but got: " + jobName);
     }
 
     public static List<JobType> allIn(ZoneRegistry zones) {

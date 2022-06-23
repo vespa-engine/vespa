@@ -11,8 +11,10 @@ import com.yahoo.config.application.api.DeploymentSpec.DeclaredTest;
 import com.yahoo.config.application.api.DeploymentSpec.DeclaredZone;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradeRollout;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.stream.CustomCollectors;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -86,8 +88,8 @@ public class DeploymentStatus {
                             Version systemVersion, Function<InstanceName, VersionCompatibility> versionCompatibility, Instant now) {
         this.application = requireNonNull(application);
         this.zones = zones;
-        this.systemTest = JobType.systemTest(zones);
-        this.stagingTest = JobType.stagingTest(zones);
+        this.systemTest = JobType.systemTest(zones, null);
+        this.stagingTest = JobType.stagingTest(zones, null);
         this.versionStatus = requireNonNull(versionStatus);
         this.systemVersion = requireNonNull(systemVersion);
         this.versionCompatibility = versionCompatibility;

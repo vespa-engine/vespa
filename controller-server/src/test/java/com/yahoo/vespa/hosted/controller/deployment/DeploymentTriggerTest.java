@@ -1,24 +1,33 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.deployment;
 
+import ai.vespa.cloud.Environment;
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -2285,6 +2294,28 @@ public class DeploymentTriggerTest {
         assertFalse(tester.jobs().last(app.instanceId(), systemTest).get().hasSucceeded());
         app.failTests(stagingTest, true);
         assertTrue(tester.jobs().last(app.instanceId(), stagingTest).get().hasSucceeded());
+    }
+
+    @Test
+    public void testJobNames() {
+        ZoneRegistryMock zones = new ZoneRegistryMock(SystemName.main);
+        List<ZoneApi> existing = new ArrayList<>(zones.zones().all().zones());
+        existing.add(ZoneApiMock.newBuilder().withCloud("pink-clouds").withId("test.zone").build());
+        zones.setZones(existing);
+
+        JobType systemTest = JobType.systemTest(zones, CloudName.defaultName());
+        JobType pinkSystemTest = JobType.systemTest(zones, CloudName.from("pink-clouds"));
+
+        assertEquals(systemTest, JobType.systemTest(zones, null));
+        assertEquals(systemTest, JobType.systemTest(zones, CloudName.from("dark-clouds")));
+
+        assertEquals(systemTest, JobType.fromJobName("system-test", zones));
+        assertEquals(systemTest, JobType.fromJobName("system-test-default", zones));
+        assertEquals(systemTest, JobType.fromJobName("system-test-dark-clouds", zones));
+        assertEquals(pinkSystemTest, JobType.fromJobName("system-test-pink-clouds", zones));
+
+        assertEquals(ZoneId.from("test", "us-east-1"), systemTest.zone());
+        assertEquals(ZoneId.from("staging", "us-east-3"), JobType.stagingTest(zones, null).zone());
     }
 
 }
