@@ -214,6 +214,12 @@ function getInputVariantStyles({ fn, cr }, variant, size) {
 }
 
 export const defaultStyles = {
+  AppShell: () => ({
+    main: {
+      maxWidth: '1920px',
+      margin: '0 auto',
+    },
+  }),
   ActionIcon: (theme, { color }) => ({
     root: {
       '&:disabled': {
