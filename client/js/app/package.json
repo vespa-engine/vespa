@@ -14,6 +14,10 @@
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6",
+    "@fortawesome/free-regular-svg-icons": "^6",
+    "@fortawesome/free-solid-svg-icons": "^6",
+    "@fortawesome/react-fontawesome": "^0",
     "@mantine/core": "^4",
     "@mantine/hooks": "^4",
     "@types/react": "^18",
