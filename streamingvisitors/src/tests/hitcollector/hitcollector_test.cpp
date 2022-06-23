@@ -283,11 +283,13 @@ HitCollectorTest::testFeatureSet()
 
     MyRankProgram rankProgram;
     FeatureResolver resolver(rankProgram.get_resolver());
-    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver);
+    search::StringStringMap renames;
+    renames["bar"] = "qux";
+    search::FeatureSet::SP sf = hc.getFeatureSet(rankProgram, resolver, renames);
 
     EXPECT_EQUAL(sf->getNames().size(), 3u);
     EXPECT_EQUAL(sf->getNames()[0], "foo");
-    EXPECT_EQUAL(sf->getNames()[1], "bar");
+    EXPECT_EQUAL(sf->getNames()[1], "qux");
     EXPECT_EQUAL(sf->getNames()[2], "baz");
     EXPECT_EQUAL(sf->numFeatures(), 3u);
     EXPECT_EQUAL(sf->numDocs(), 3u);
