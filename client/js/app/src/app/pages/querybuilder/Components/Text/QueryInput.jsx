@@ -6,9 +6,7 @@ import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import QueryDropdownFormn from './QueryDropDownForm';
 
-export default function QueryInput({ id }) {
-  const choices = ['yql', 'hits', 'offset', 'tracelevel'];
-
+export default function QueryInput() {
   const { inputs, setInputs, levelZeroParameters, childMap } =
     useContext(QueryInputContext);
 
@@ -34,11 +32,17 @@ export default function QueryInput({ id }) {
           id={value.id}
         ></QueryDropdownFormn>
         <Info id={value.id} height="15" width="15" />
-        <SimpleForm
-          id={`v${value.id}`}
-          size="30"
-          onChange={updateInput}
-        ></SimpleForm>
+        {value.hasChildren ? (
+          <SimpleButton id={`b${value.id}`} className={'addpropsbutton'}>
+            + Add property
+          </SimpleButton>
+        ) : (
+          <SimpleForm
+            id={`v${value.id}`}
+            size="30"
+            onChange={updateInput}
+          ></SimpleForm>
+        )}
         <OverlayTrigger
           placement="right"
           delay={{ show: 250, hide: 400 }}

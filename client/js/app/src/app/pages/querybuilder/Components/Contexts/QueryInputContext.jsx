@@ -3,6 +3,7 @@ import React, { useState, createContext } from 'react';
 export const QueryInputContext = createContext();
 
 export const QueryInputProvider = (prop) => {
+  // inputs reflect the state of the individual QueryInputs
   const [inputs, setInputs] = useState([
     {
       id: 1,
@@ -12,7 +13,11 @@ export const QueryInputProvider = (prop) => {
       children: [],
     },
   ]);
+
+  // id is the id if the newest QueryInput, gets updated each time a new one is added
   const [id, setId] = useState(1);
+
+  // These are the methods that can be chosen in a QueryInput
   const levelZeroParameters = {
     yql: { name: 'yql', type: 'String', hasChildren: false },
     hits: { name: 'hits', type: 'Integer', hasChildren: false },
@@ -47,66 +52,88 @@ export const QueryInputProvider = (prop) => {
     user: { name: 'user', type: 'String', hasChildren: false },
     metrics: { name: 'metrics', type: 'Parent', hasChildren: true },
   };
+
+  // Children of the levelZeroParameters that has attributes
   const childMap = {
-    collapse: [{ child: 'summary', type: 'String', hasChildren: false }],
-    metrics: [{ child: 'ignore', type: 'Boolean', hasChildren: false }],
-    model: [
-      { child: 'defaultIndex', type: 'String', hasChildren: false },
-      { child: 'encoding', type: 'String', hasChildren: false },
-      { child: 'language', type: 'String', hasChildren: false },
-      { child: 'queryString', type: 'String', hasChildren: false },
-      { child: 'restrict', type: 'List', hasChildren: false },
-      { child: 'searchPath', type: 'String', hasChildren: false },
-      { child: 'sources', type: 'List', hasChildren: false },
-      { child: 'type', type: 'String', hasChildren: false },
-    ],
-    pos: [
-      { child: 'll', type: 'String', hasChildren: false },
-      { child: 'radius', type: 'String', hasChildren: false },
-      { child: 'bb', type: 'List', hasChildren: false },
-      { child: 'attribute', type: 'String', hasChildren: false },
-    ],
-    presentation: [
-      { child: 'bolding', type: 'Boolean', hasChildren: false },
-      { child: 'format', type: 'String', hasChildren: false },
-      { child: 'summary', type: 'String', hasChildren: false },
-      { child: 'template', type: 'String', hasChildren: false },
-      { child: 'timing', type: 'Boolean', hasChildren: false },
-    ],
-    ranking: [
-      { child: 'location', type: 'String', hasChildren: false },
-      { child: 'features', type: 'String', hasChildren: false },
-      { child: 'listFeatures', type: 'Boolean', hasChildren: false },
-      { child: 'profile', type: 'String', hasChildren: false },
-      { child: 'properties', type: 'String', hasChildren: false },
-      { child: 'sorting', type: 'String', hasChildren: false },
-      { child: 'freshness', type: 'String', hasChildren: false },
-      { child: 'queryCache', type: 'Boolean', hasChildren: false },
-      { child: 'matchPhase', type: 'Parent', hasChildren: true },
-    ],
-    ranking_matchPhase: [
-      { child: 'maxHits', type: 'Long', hasChildren: false },
-      { child: 'attribute', type: 'String', hasChildren: false },
-      { child: 'ascending', type: 'Boolean', hasChildren: false },
-      { child: 'diversity', type: 'Parent', hasChildren: true },
-    ],
-    ranking_matchPhase_diversity: [
-      { child: 'attribute', type: 'String', hasChildren: false },
-      { child: 'minGroups', type: 'Long', hasChildren: false },
-    ],
-    rules: [
-      { child: 'off', type: 'Boolean', hasChildren: false },
-      { child: 'rulebase', type: 'String', hasChildren: false },
-    ],
-    streaming: [
-      { child: 'userid', type: 'Integer', hasChildren: false },
-      { child: 'groupname', type: 'String', hasChildren: false },
-      { child: 'selection', type: 'String', hasChildren: false },
-      { child: 'priority', type: 'String', hasChildren: false },
-      { child: 'maxbucketspervisitor', type: 'Integer', hasChildren: false },
-    ],
-    trace: [{ child: 'timestamps', type: 'Boolean', hasChildren: false }],
-    tracelevel: [{ child: 'rules', type: 'Integer', hasChildren: false }],
+    collapse: {
+      summary: { child: 'summary', type: 'String', hasChildren: false },
+    },
+    metrics: {
+      ignore: { child: 'ignore', type: 'Boolean', hasChildren: false },
+    },
+    model: {
+      defaultIndex: {
+        child: 'defaultIndex',
+        type: 'String',
+        hasChildren: false,
+      },
+      encoding: { child: 'encoding', type: 'String', hasChildren: false },
+      language: { child: 'language', type: 'String', hasChildren: false },
+      queryString: { child: 'queryString', type: 'String', hasChildren: false },
+      restrict: { child: 'restrict', type: 'List', hasChildren: false },
+      searchPath: { child: 'searchPath', type: 'String', hasChildren: false },
+      sources: { child: 'sources', type: 'List', hasChildren: false },
+      type: { child: 'type', type: 'String', hasChildren: false },
+    },
+    pos: {
+      ll: { child: 'll', type: 'String', hasChildren: false },
+      radius: { child: 'radius', type: 'String', hasChildren: false },
+      bb: { child: 'bb', type: 'List', hasChildren: false },
+      attribute: { child: 'attribute', type: 'String', hasChildren: false },
+    },
+    presentation: {
+      bolding: { child: 'bolding', type: 'Boolean', hasChildren: false },
+      format: { child: 'format', type: 'String', hasChildren: false },
+      summary: { child: 'summary', type: 'String', hasChildren: false },
+      template: { child: 'template', type: 'String', hasChildren: false },
+      timing: { child: 'timing', type: 'Boolean', hasChildren: false },
+    },
+    ranking: {
+      location: { child: 'location', type: 'String', hasChildren: false },
+      features: { child: 'features', type: 'String', hasChildren: false },
+      listFeatures: {
+        child: 'listFeatures',
+        type: 'Boolean',
+        hasChildren: false,
+      },
+      profile: { child: 'profile', type: 'String', hasChildren: false },
+      properties: { child: 'properties', type: 'String', hasChildren: false },
+      sorting: { child: 'sorting', type: 'String', hasChildren: false },
+      freshness: { child: 'freshness', type: 'String', hasChildren: false },
+      queryCache: { child: 'queryCache', type: 'Boolean', hasChildren: false },
+      matchPhase: { child: 'matchPhase', type: 'Parent', hasChildren: true },
+    },
+    ranking_matchPhase: {
+      maxHits: { child: 'maxHits', type: 'Long', hasChildren: false },
+      attribute: { child: 'attribute', type: 'String', hasChildren: false },
+      ascending: { child: 'ascending', type: 'Boolean', hasChildren: false },
+      diversity: { child: 'diversity', type: 'Parent', hasChildren: true },
+    },
+    ranking_matchPhase_diversity: {
+      attribute: { child: 'attribute', type: 'String', hasChildren: false },
+      minGroups: { child: 'minGroups', type: 'Long', hasChildren: false },
+    },
+    rules: {
+      off: { child: 'off', type: 'Boolean', hasChildren: false },
+      rulebase: { child: 'rulebase', type: 'String', hasChildren: false },
+    },
+    streaming: {
+      userid: { child: 'userid', type: 'Integer', hasChildren: false },
+      groupname: { child: 'groupname', type: 'String', hasChildren: false },
+      selection: { child: 'selection', type: 'String', hasChildren: false },
+      priority: { child: 'priority', type: 'String', hasChildren: false },
+      maxbucketspervisitor: {
+        child: 'maxbucketspervisitor',
+        type: 'Integer',
+        hasChildren: false,
+      },
+    },
+    trace: {
+      timestamps: { child: 'timestamps', type: 'Boolean', hasChildren: false },
+    },
+    tracelevel: {
+      rules: { child: 'rules', type: 'Integer', hasChildren: false },
+    },
   };
 
   return (
