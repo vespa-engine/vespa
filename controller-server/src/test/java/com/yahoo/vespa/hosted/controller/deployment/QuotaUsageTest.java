@@ -15,7 +15,7 @@ public class QuotaUsageTest {
     public void testQuotaUsageIsPersisted() {
         var tester = new DeploymentTester();
         var context = tester.newDeploymentContext().submit().deploy();
-        assertEquals(1.062, context.deployment(ZoneId.from("prod.us-west-1")).quota().rate(), 0.01);
+        assertEquals(1.304, context.deployment(ZoneId.from("prod.us-west-1")).quota().rate(), 0.01);
     }
 
 }

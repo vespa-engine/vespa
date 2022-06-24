@@ -29,7 +29,7 @@
     "commit": "commit1"
   },
   "status": "complete",
-  "quota": 1.062,
+  "quota": 1.304,
   "activity": { },
   "metrics": {
     "queriesPerSecond": 0.0,

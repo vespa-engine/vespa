@@ -65,8 +65,8 @@ public class ResourceMeterMaintainerTest {
                 new ResourceSnapshot(app1, 23, 45, 67, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2),
                 new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1));
         maintainer.updateDeploymentCost(resourceSnapshots);
-        assertCost.accept(app1, Map.of(z1, 1.40, z2, 2.50));
-        assertCost.accept(app2, Map.of(z1, 3.59));
+        assertCost.accept(app1, Map.of(z1, 1.72, z2, 3.05));
+        assertCost.accept(app2, Map.of(z1, 4.39));
 
         // Remove a region from app1 and add region to app2
         resourceSnapshots = List.of(
@@ -74,9 +74,9 @@ public class ResourceMeterMaintainerTest {
                 new ResourceSnapshot(app2, 34, 56, 78, NodeResources.Architecture.getDefault(), Instant.EPOCH, z1),
                 new ResourceSnapshot(app2, 45, 67, 89, NodeResources.Architecture.getDefault(), Instant.EPOCH, z2));
         maintainer.updateDeploymentCost(resourceSnapshots);
-        assertCost.accept(app1, Map.of(z2, 2.50));
-        assertCost.accept(app2, Map.of(z1, 3.59, z2, 4.68));
-        assertEquals(1.4,
+        assertCost.accept(app1, Map.of(z2, 3.05));
+        assertCost.accept(app2, Map.of(z1, 4.39, z2, 5.72));
+        assertEquals(1.72,
                 (Double) metrics.getMetric(context ->
                                 z1.value().equals(context.get("zoneId")) &&
                                 app1.tenant().value().equals(context.get("tenant")),

@@ -13,7 +13,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": 0.09
+        "cost": 0.11
       },
       "max": {
         "nodes": 2,
@@ -26,7 +26,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": 0.35
+        "cost": 0.43
       },
       "current": {
         "nodes": 2,
@@ -39,7 +39,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": 0.18
+        "cost": 0.22
       },
       "target": {
         "nodes": 2,
@@ -52,7 +52,7 @@
           "diskSpeed": "slow",
           "storageType": "remote"
         },
-        "cost": 0.24
+        "cost": 0.29
       },
       "utilization": {
         "cpu": 0.1,
@@ -91,7 +91,7 @@
               "diskSpeed": "slow",
               "storageType": "remote"
             },
-            "cost": 0.18
+            "cost": 0.22
           },
           "at": 1234,
           "completion": 2234

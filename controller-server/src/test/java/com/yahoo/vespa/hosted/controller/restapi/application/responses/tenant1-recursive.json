@@ -72,7 +72,7 @@
           "deployTimeEpochMs": 1600000000000,
           "screwdriverId": "123",
           "status": "complete",
-          "quota": 1.062,
+          "quota": 1.304,
           "activity": {
             "lastQueried": 1527848130000,
             "lastWritten": 1527848130000,
@@ -147,7 +147,7 @@
             "commit": "commit1"
           },
           "status": "complete",
-          "quota": 1.062,
+          "quota": 1.304,
           "activity": {
             "lastQueried": 1527848130000,
             "lastWritten": 1527848130000,
