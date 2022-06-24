@@ -21,7 +21,7 @@ public class QuotaValidatorTest {
 
     private final Zone publicZone = new Zone(SystemName.Public, Environment.prod, RegionName.from("foo"));
     private final Zone publicCdZone = new Zone(SystemName.PublicCd, Environment.prod, RegionName.from("foo"));
-    private final Quota quota = Quota.unlimited().withClusterSize(10).withBudget(BigDecimal.valueOf(1));
+    private final Quota quota = Quota.unlimited().withClusterSize(10).withBudget(BigDecimal.valueOf(1.25));
 
     @Test
     public void test_deploy_under_quota() {
