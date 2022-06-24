@@ -227,7 +227,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
   checksum += Checksum::compute(_symbol,_size*sizeof(symbol_t));
 
   if(_mmap_addr==NULL){
-    _state = (state_t*)malloc(_size*sizeof(state_t));
+    _state = Unaligned<state_t>::ptr(malloc(_size*sizeof(state_t)));
     r=::read(fd,_state,_size*sizeof(state_t));
     if(r!=_size*sizeof(state_t)){
       ::close(fd);
@@ -236,8 +236,8 @@ bool FSA::read(const char *file, FileAccessMethod fam)
     }
   }
   else {
-    _state = (state_t*)(void *)((uint8_t*)_mmap_addr + sizeof(header) +
-                                               _size*sizeof(symbol_t));
+    _state = Unaligned<state_t>::ptr((uint8_t*)_mmap_addr + sizeof(header) +
+                                     _size*sizeof(symbol_t));
   }
   checksum += Checksum::compute(_state,_size*sizeof(state_t));
 
@@ -259,7 +259,7 @@ bool FSA::read(const char *file, FileAccessMethod fam)
 
   if(header._has_perfect_hash){
     if(_mmap_addr==NULL){
-      _perf_hash = (hash_t*)malloc(_size*sizeof(hash_t));
+      _perf_hash = Unaligned<hash_t>::ptr(malloc(_size*sizeof(hash_t)));
       r=::read(fd,_perf_hash,_size*sizeof(hash_t));
       if(r!=_size*sizeof(hash_t)){
         ::close(fd);
@@ -268,10 +268,10 @@ bool FSA::read(const char *file, FileAccessMethod fam)
       }
     }
     else {
-      _perf_hash = (hash_t*)(void *)((uint8_t*)_mmap_addr + sizeof(header) +
-                                                    _size*sizeof(symbol_t) +
-                                                    _size*sizeof(state_t) +
-                                                    _data_size);
+      _perf_hash = Unaligned<hash_t>::ptr((uint8_t*)_mmap_addr + sizeof(header) +
+                                          _size*sizeof(symbol_t) +
+                                          _size*sizeof(state_t) +
+                                          _data_size);
     }
     checksum += Checksum::compute(_perf_hash,_size*sizeof(hash_t));
     _has_perfect_hash = true;

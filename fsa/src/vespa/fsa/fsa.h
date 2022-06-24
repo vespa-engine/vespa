@@ -15,6 +15,7 @@
 #include <inttypes.h>
 
 #include "file.h" // for FileAccessMethod
+#include "unaligned.h"
 
 namespace fsa {
 
@@ -614,10 +615,10 @@ public:
         return (uint32_t)((const uint8_t*)da)[0];
       case 2:
       case 3:
-        return (uint32_t)((const uint16_t*)(const void *)da)[0];
+        return (uint32_t)Unaligned<uint16_t>::at(da).read();
       case 4:
       default:
-        return ((const uint32_t*)(const void *) da)[0];
+        return Unaligned<uint32_t>::at(da).read();
       }
     }
 
@@ -2019,14 +2020,14 @@ public:
   struct Descriptor {
     uint32_t   _version;
     uint32_t   _serial;
-    state_t   *_state;
+    Unaligned<state_t> *_state;
     symbol_t  *_symbol;
     uint32_t   _size;
     data_t    *_data;
     uint32_t   _data_size;
     uint32_t   _data_type;
     uint32_t   _fixed_data_size;
-    hash_t    *_perf_hash;
+    Unaligned<hash_t> *_perf_hash;
     uint32_t   _start;
   };
 
@@ -2040,7 +2041,7 @@ private:
   uint32_t       _version;               /**< Version of fsalib used to build this fsa. */
   uint32_t       _serial;                /**< Serial number of this fsa.                */
 
-  state_t       *_state;                 /**< State table for transitions.       */
+  Unaligned<state_t> *_state;                 /**< State table for transitions.       */
   symbol_t      *_symbol;                /**< Symbol table for transitions.      */
   uint32_t       _size;                  /**< Size (number of cells).            */
 
@@ -2050,7 +2051,7 @@ private:
   uint32_t       _fixed_data_size;       /**< Size of data items if fixed.       */
 
   bool           _has_perfect_hash;      /**< Indicator of perfect hash present. */
-  hash_t        *_perf_hash;             /**< Perfect hash table, if present.    */
+  Unaligned<hash_t> *_perf_hash;             /**< Perfect hash table, if present.    */
 
   state_t        _start;                 /**< Index of start state.              */
 
@@ -2205,7 +2206,7 @@ public:
       if(_data_type==DATA_FIXED)
         return _fixed_data_size;
       else
-        return (int)(*((uint32_t*)(void *)(_data+_state[fs+FINAL_SYMBOL])));
+        return (int)Unaligned<uint32_t>::at(_data+_state[fs+FINAL_SYMBOL]).read();
     }
     return -1;
   }
