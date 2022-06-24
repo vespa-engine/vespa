@@ -122,6 +122,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundDoubleFlag FEED_NICENESS = defineDoubleFlag(
+            "feed-niceness", 0.0,
+            List.of("baldersheim"), "2022-06-24", "2023-01-01",
+            "How nice feeding shall be",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundBooleanFlag SHARED_STRING_REPO_NO_RECLAIM = defineFeatureFlag(
             "shared-string-repo-no-reclaim", false,
             List.of("baldersheim"), "2022-06-14", "2023-01-01",
