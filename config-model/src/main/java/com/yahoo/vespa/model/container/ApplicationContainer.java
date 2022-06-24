@@ -28,7 +28,6 @@ public final class ApplicationContainer extends Container implements
 
     private final boolean isHostedVespa;
     private final boolean enableServerOcspStapling;
-    private final boolean useQrserverServiceName;
 
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
@@ -38,7 +37,6 @@ public final class ApplicationContainer extends Container implements
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
         this.enableServerOcspStapling = deployState.featureFlags().enableServerOcspStapling();
-        this.useQrserverServiceName = false;
 
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerHolder"));
         addComponent(new SimpleComponent("com.yahoo.container.jdisc.messagebus.NetworkMultiplexerProvider"));
@@ -59,13 +57,6 @@ public final class ApplicationContainer extends Container implements
 
     @Override
     protected ContainerServiceType myServiceType() {
-        if (parent instanceof ContainerCluster) {
-            ContainerCluster<?> cluster = (ContainerCluster<?>)parent;
-            // TODO: The 'qrserver' name is retained for legacy reasons (e.g. system tests and log parsing).
-            if (useQrserverServiceName && cluster.getSearch() != null && cluster.getDocproc() == null && cluster.getDocumentApi() == null) {
-                return ContainerServiceType.QRSERVER;
-            }
-        }
         return ContainerServiceType.CONTAINER;
     }
 
