@@ -6,6 +6,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -39,6 +40,11 @@ public interface ZoneList extends ZoneFilter {
 
     /** Zones where traffic is routed using given method */
     ZoneList routingMethod(RoutingMethod method);
+
+    /** Returns the zone with the given id, if this exists. */
+    default Optional<? extends ZoneApi> get(ZoneId id) {
+        return among(id).zones().stream().findFirst();
+    }
 
     /** Returns the ZoneApi of all zones in this list. */
     List<? extends ZoneApi> zones();

@@ -580,7 +580,7 @@ public class DeploymentStatus {
     }
 
     private CloudName findCloud(JobType job) {
-        return zones.zones().all().among(job.zone()).zones().stream().findFirst().map(ZoneApi::getCloudName).orElse(null);
+        return zones.zones().all().get(job.zone()).map(ZoneApi::getCloudName).orElse(null);
     }
 
     private JobId firstDeclaredOrElseImplicitTest(JobType testJob) {
