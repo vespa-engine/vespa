@@ -3,6 +3,8 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowsToDot, faChartGantt } from '@fortawesome/free-solid-svg-icons';
 
+// TODO: use dynamic import
+
 library.add(faArrowsToDot, faChartGantt);
 
 export function Icon({ name, type = 'solid', ...rest }) {

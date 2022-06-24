@@ -2,6 +2,8 @@ import React from 'react';
 import { Link as InternalLink } from 'react-router-dom';
 import { Anchor } from '@mantine/core';
 
+// TODO: adapt it according to new Console link component
+
 export const isInternalLink = (link) => {
   if (!link) return false;
   return !/^[a-z]+:\/\//.test(link);

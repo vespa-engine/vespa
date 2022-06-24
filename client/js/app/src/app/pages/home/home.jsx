@@ -2,6 +2,8 @@ import React from 'react';
 import { Container, SimpleGrid, Space } from '@mantine/core';
 import { Link, CardLink, Icon } from 'app/components';
 
+// TODO: move SimpleGrid to components
+
 export function Home() {
   return (
     <Container>
