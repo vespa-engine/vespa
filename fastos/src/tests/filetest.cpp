@@ -7,38 +7,6 @@
 #include <sys/mman.h>
 #include <filesystem>
 
-namespace {
-
-// Create the named file, and write it's filename into it.
-// Return true on success
-bool createFile(const char* fileName) {
-    FastOS_StatInfo statInfo;
-    FastOS_File cf(fileName);
-    return ( cf.OpenWriteOnly() &&
-            cf.CheckedWrite(fileName, strlen(fileName)) &&
-            cf.Close() &&
-            FastOS_File::Stat(fileName, &statInfo) &&
-            statInfo._isRegular );
-}
-
-bool createFile(const char* fileName,
-                const unsigned int size) {
-    FastOS_File cf(fileName);
-    bool success = false;
-    if (cf.OpenWriteOnlyTruncate()) {
-        auto buf = std::make_unique<char[]>(size); // Could be dangerous..
-        if (buf) {
-            memset(buf.get(), 0, size); // dont write uninitialized bytes since valgrind will complain
-            if (cf.CheckedWrite(buf.get(), size)) {
-                success = true;
-            }
-        }
-    }
-    return success;
-}
-} // namespace <unnamed>
-
-
 class FileTest : public BaseTest
 {
 public:
@@ -546,90 +514,11 @@ public:
         PrintSeparator();
     }
 
-    void CopyFileTest ()
-    {
-        FastOS_StatInfo statInfo;
-        TestHeader("CopyFile Test");
-        const char *dirName = "tmpDir";
-        char file1[1024];
-        char file2[1024];
-        char file3[1024];
-        char file4[1024];
-        char file5[1024];
-        sprintf(file1, "%s%sfile1", dirName, FastOS_File::GetPathSeparator());
-        sprintf(file2, "%s%sfile2", dirName, FastOS_File::GetPathSeparator());
-        sprintf(file3, "%s%sfile3", dirName, FastOS_File::GetPathSeparator());
-        sprintf(file4, "%s%sfile4", dirName, FastOS_File::GetPathSeparator());
-        sprintf(file5, "%s%sfile5", dirName, FastOS_File::GetPathSeparator());
-
-        std::filesystem::remove_all(std::filesystem::path(dirName));
-        std::filesystem::create_directory(std::filesystem::path(dirName));
-        printf("Creating files to copy. Some of them are quite large...\n\n");
-        createFile(file1);
-        createFile(file3, 20*1024*1024); // 20MB file.
-        createFile(file4, 1024*1024); // 1MB file, i.e. exact size of buffer.
-        createFile(file5, 1024*1024 + 100); // 1.001MB file
-
-        FastOS_File::Stat(file4, &statInfo);
-        unsigned int sizeOfFile4 = statInfo._size;
-
-        FastOS_File::Stat(file5, &statInfo);
-        unsigned int sizeOfFile5 = statInfo._size;
-
-        // Tests start here.
-        bool copyOK = FastOS_File::CopyFile(file1, file2);
-        Progress(copyOK,
-                 "File copy from %s to %s.", file1, file2);
-
-        FastOS_File::Delete(file2);
-        copyOK = FastOS_File::CopyFile(file3, file2);
-        Progress(copyOK,
-                 "File copy from %s to %s.", file3, file2);
-        FastOS_File::Stat(file2, &statInfo);
-        Progress(statInfo._size == 20*1024*1024,
-                 "Size of copied file is 20MB.");
-
-        copyOK = FastOS_File::CopyFile(file3, file3);
-        Progress(!copyOK,
-                 "File copy onto itself should fail.");
-
-        FastOS_File::Delete(file1);
-        copyOK = FastOS_File::CopyFile(file1, file2);
-        Progress(!copyOK,
-                 "File copy of a missing file should fail.");
-
-        copyOK = FastOS_File::CopyFile(file4, file2);
-        Progress(copyOK,
-                 "Copying a smaller file onto a larger one.");
-        FastOS_File::Stat(file2, &statInfo);
-        Progress(statInfo._size == sizeOfFile4,
-                 "Size of copied file should be %u bytes.", sizeOfFile4);
-
-        copyOK = FastOS_File::CopyFile(file4, file1);
-        Progress(copyOK,
-                 "Copying a file with exact size of buffer.");
-        FastOS_File::Stat(file1, &statInfo);
-        Progress(statInfo._size == sizeOfFile4,
-                 "Size of copied file should be %u bytes.", sizeOfFile4);
-
-        copyOK = FastOS_File::CopyFile(file5, file1);
-        Progress(copyOK,
-                 "Copying a file with size %u bytes.", sizeOfFile5);
-        FastOS_File::Stat(file1, &statInfo);
-        Progress(statInfo._size == sizeOfFile5,
-                 "Size of copied file should be %u bytes.", sizeOfFile5);
-
-
-        std::filesystem::remove_all(std::filesystem::path("tmpDir"));
-        PrintSeparator();
-    }
-
     int Main () override
     {
         printf("This test should be run in the 'tests' directory.\n\n");
         printf("grep for the string '%s' to detect failures.\n\n", failString);
 
-        CopyFileTest();
         GetCurrentDirTest();
         DirectIOTest();
         MaxLengthTest();
