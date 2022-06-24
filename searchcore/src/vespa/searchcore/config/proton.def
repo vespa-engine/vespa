@@ -485,7 +485,7 @@ feeding.concurrency double default = 0.2 restart
 
 ## A number between 0.0 and 1.0 telling how nice the feed and background threads shall be.
 ## A value of 0.0, which is default, means 'not any nicer than anyone else'.
-## The scale from 0.0 to 1.0 is not linear. It is OS specific. A large number means 'not less nice than a lower number'.
+## The scale from 0.0 to 1.0 is not linear. It is OS specific.
 feeding.niceness double default = 0.0 restart
 
 ## Maximum number of pending tasks for the master thread in each document db.
