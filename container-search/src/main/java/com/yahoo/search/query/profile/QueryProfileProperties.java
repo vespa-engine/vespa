@@ -303,9 +303,9 @@ public class QueryProfileProperties extends Properties {
         if (context.containsKey(ENVIRONMENT) && context.containsKey(REGION) && context.containsKey(INSTANCE)) return context;
 
         Map<String, String> contextWithZoneInfo = new HashMap<>(context);
-        contextWithZoneInfo.putIfAbsent("environment", zoneInfo.zone().environment().name());
-        contextWithZoneInfo.putIfAbsent("region", zoneInfo.zone().region());
-        contextWithZoneInfo.putIfAbsent("instance", zoneInfo.application().instance());
+        contextWithZoneInfo.putIfAbsent(ENVIRONMENT, zoneInfo.zone().environment().name());
+        contextWithZoneInfo.putIfAbsent(REGION, zoneInfo.zone().region());
+        contextWithZoneInfo.putIfAbsent(INSTANCE, zoneInfo.application().instance());
         return Collections.unmodifiableMap(contextWithZoneInfo);
     }
 
