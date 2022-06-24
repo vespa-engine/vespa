@@ -10,7 +10,7 @@ function setColorResolver(theme) {
   return theme;
 }
 
-export function AppProvider({ children }) {
+export function ThemeProvider({ children }) {
   return (
     <MantineProvider
       styles={defaultStyles}
