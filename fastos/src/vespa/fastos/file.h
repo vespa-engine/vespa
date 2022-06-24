@@ -99,16 +99,6 @@ public:
     void setFAdviseOptions(int options)               { _fAdviseOptions = options; }
 
     /**
-     * Copy a single file. Will overwrite destination if it already exists.
-     *
-     * @author Sveinar Rasmussen
-     * @return        success/failure
-     * @param src a 'const char *' value with the file to copy from
-     * @param dst a 'const char *' value with the name of the resulting copy
-     */
-    static bool CopyFile( const char *src, const char *dst );
-
-    /**
      * Return path separator string. This will yield "/" on UNIX systems.
      * @return pointer to path separator character string
      */

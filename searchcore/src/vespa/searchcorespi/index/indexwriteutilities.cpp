@@ -7,7 +7,9 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <filesystem>
 #include <sstream>
+#include <system_error>
 #include <unistd.h>
 
 #include <vespa/log/log.h>
@@ -80,7 +82,10 @@ IndexWriteUtilities::copySerialNumFile(const vespalib::string &sourceDir,
     vespalib::string source = IndexDiskLayout::getSerialNumFileName(sourceDir);
     vespalib::string dest = IndexDiskLayout::getSerialNumFileName(destDir);
     vespalib::string tmpDest = dest + ".tmp";
-    if (!FastOS_FileInterface::CopyFile(source.c_str(), tmpDest.c_str())) {
+    std::error_code ec;
+
+    std::filesystem::copy_file(std::filesystem::path(source), std::filesystem::path(tmpDest), ec);
+    if (ec) {
         LOG(error, "Unable to copy file '%s'", source.c_str());
         return false;
     }

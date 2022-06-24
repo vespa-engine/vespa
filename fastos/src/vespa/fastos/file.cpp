@@ -207,59 +207,6 @@ FastOS_FileInterface::IsMemoryMapped() const
     return false;
 }
 
-bool
-FastOS_FileInterface::CopyFile( const char *src, const char *dst )
-{
-    FastOS_File s, d;
-    FastOS_StatInfo statInfo;
-    bool success = false;
-
-    if ( src != nullptr &&
-        dst != nullptr &&
-        strcmp(src, dst) != 0 &&
-        FastOS_File::Stat( src, &statInfo )) {
-
-        if ( s.OpenReadOnly( src ) && d.OpenWriteOnlyTruncate( dst ) ) {
-
-            unsigned int bufSize = 1024*1024;
-            int64_t bufSizeBound = statInfo._size;
-            if (bufSizeBound < 1)
-                bufSizeBound = 1;
-            if (bufSizeBound < static_cast<int64_t>(bufSize))
-                bufSize = static_cast<unsigned int>(bufSizeBound);
-            char *tmpBuf = new char[ bufSize ];
-
-            if ( tmpBuf != nullptr ) {
-                int64_t copied = 0;
-                success = true;
-                do {
-                    unsigned int readBytes = s.Read( tmpBuf, bufSize );
-                    if (readBytes > 0) {
-                        ssize_t written = d.Write2(tmpBuf, readBytes);
-                        if ( written != readBytes) {
-                            success = false;
-                        }
-                        copied += readBytes;
-                    } else {
-                        // Could not read from src.
-                        success = false;
-                    }
-                } while (copied < statInfo._size && success);
-
-                delete [] tmpBuf;
-            } // else out of memory ?
-
-            bool close_ok = s.Close();
-            assert(close_ok);
-            close_ok = d.Close();
-            assert(close_ok);
-        } // else Could not open source or destination file.
-    } // else Source file does not exist, or input args are invalid.
-
-    return success;
-}
-
-
 void
 FastOS_FileInterface::SetFileName(const char *filename)
 {
