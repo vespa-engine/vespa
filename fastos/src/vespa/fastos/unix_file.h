@@ -39,8 +39,6 @@ public:
     }
 
     static bool Stat(const char *filename, FastOS_StatInfo *statInfo);
-    static bool MakeDirectory(const char *name);
-    static void RemoveDirectory(const char *name);
 
     static std::string getCurrentDirectory();
 

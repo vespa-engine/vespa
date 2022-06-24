@@ -109,53 +109,6 @@ public:
     static bool CopyFile( const char *src, const char *dst );
 
     /**
-     * Move a file from src to dst. Has the same semantics as
-     * FastOS_File::Rename, except that it works across different
-     * volumes / disks as well (Via copy and remove).
-     *
-     * @author Terje Loken
-     * @return success / failure
-     * @param src a 'const char *' value with the file to move from
-     * @param dst a 'const char *' value with the name of the resulting filename
-     */
-    static bool MoveFile( const char *src, const char *dst);
-
-    /**
-     * Remove a directory, even if it is non-empty. Missing directory does not cause error.
-     *
-     * @author Terje Loken
-     * @throws    std::runtime_error if there are errors.
-     * @param dir a 'const char *' valuem, with the path to the directory we
-     *            want to remove.
-     */
-    static void EmptyAndRemoveDirectory(const char *dir);
-
-    /**
-     * Empty a directory. Delete all files and directories within the
-     * dir, with the exception of files matching a specific name
-     * (optional).  The exception does not apply files in
-     * subdirectories.
-     *
-     * @author Terje Loken
-     * @throws    std::runtime_error if there are errors.
-     * @param  dir      a 'const char *' value with the directory to empty.
-     * @param  keepFile a 'const char *' value. If supplied, leave files with
-     *                  this name alone.
-     */
-    static void EmptyDirectory( const char *dir, const char *keepFile = nullptr);
-
-    /**
-     * Make a directory (special compatibility version)
-     * Succeed if the directory already exists. A stat is performed
-     * to check the directory before attempting to create the
-     * directory.
-     * If the procedure fails, an error is printed to stderr and
-     * the program exits.
-     * @param name  Name of directory
-     */
-    static void MakeDirIfNotPresentOrExit(const char *name);
-
-    /**
      * Return path separator string. This will yield "/" on UNIX systems.
      * @return pointer to path separator character string
      */

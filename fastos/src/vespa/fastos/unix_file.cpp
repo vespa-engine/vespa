@@ -128,24 +128,6 @@ int FastOS_UNIX_File::GetMaximumPathLength(const char *pathName)
     return pathconf(pathName, _PC_PATH_MAX);
 }
 
-bool
-FastOS_UNIX_File::MakeDirectory (const char *name)
-{
-    return (mkdir(name, 0775) == 0);
-}
-
-
-void
-FastOS_UNIX_File::RemoveDirectory (const char *name)
-{
-    if ((rmdir(name) != 0) && (ERR_ENOENT != GetLastError())) {
-        std::ostringstream os;
-        os << "Remove of directory '" << name << "' failed with error :'" << getLastErrorString() << "'";
-        throw std::runtime_error(os.str());
-    }
-}
-
-
 std::string
 FastOS_UNIX_File::getCurrentDirectory(void)
 {
