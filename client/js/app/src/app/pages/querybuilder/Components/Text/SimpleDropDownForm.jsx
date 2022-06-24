@@ -22,7 +22,7 @@ export default function SimpleDropDownForm({
   });
 
   function handleChange(e) {
-    setChoice(e.target.value);
+    setChoice((choice) => (choice = e.target.value));
   }
 
   return (

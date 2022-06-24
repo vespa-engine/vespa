@@ -7,7 +7,7 @@ export default function AddQueryInput() {
 
   const updateInputs = (e) => {
     e.preventDefault();
-    setId(id + 1);
+    setId((id) => id + 1);
     setInputs((prevInputs) => [
       ...prevInputs,
       { id: id + 1, type: '', input: '', hasChildren: false, children: [] },

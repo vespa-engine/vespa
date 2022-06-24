@@ -14,7 +14,7 @@ export const QueryInputProvider = (prop) => {
     },
   ]);
 
-  // id is the id if the newest QueryInput, gets updated each time a new one is added
+  // This is the id of the newest QueryInput, gets updated each time a new one is added
   const [id, setId] = useState(1);
 
   // These are the methods that can be chosen in a QueryInput

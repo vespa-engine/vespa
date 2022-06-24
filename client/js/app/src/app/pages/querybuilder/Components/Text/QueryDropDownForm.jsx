@@ -10,18 +10,20 @@ export default function QueryDropdownFormn({ choices, id }) {
   const updateType = (e) => {
     e.preventDefault();
     const newType = e.target.value;
-    const index = inputs.findIndex((element) => element.id === id);
-    inputs[index].type = newType;
+    const newInputs = inputs.slice();
+    const index = newInputs.findIndex((element) => element.id === id);
+    newInputs[index].type = newType;
     let hasChildren = levelZeroParameters[newType].hasChildren;
-    inputs[index].hasChildren = hasChildren;
-    setInputs(inputs);
+    newInputs[index].hasChildren = hasChildren;
+    setInputs(newInputs);
   };
 
   // On start set the type of the first QueryInput to the first in the list of choices
   useEffect(() => {
-    const index = inputs.findIndex((element) => element.id === id);
+    const newInputs = inputs.slice();
+    const index = newInputs.findIndex((element) => element.id === id);
     const key = Object.keys(choices)[0];
-    inputs[index].type = choices[key].name;
+    newInputs[index].type = choices[key].name;
     setInputs(inputs);
   }, []);
 

@@ -1,8 +1,6 @@
 import React from 'react';
 import SimpleButton from './Components/Buttons/SimpleButton';
 import QueryInput from './Components/Text/QueryInput';
-import SimpleDropDownForm from './Components/Text/SimpleDropDownForm';
-import SimpleForm from './Components/Text/SimpleForm';
 import TextBox from './Components/Text/TextBox';
 import ImageButton from './Components/Buttons/ImageButton';
 import OverlayImageButton from './Components/Buttons/OverlayImageButton';
@@ -10,7 +8,6 @@ import AddQueryInput from './Components/Buttons/AddQueryInputButton';
 import { QueryInputProvider } from './Components/Contexts/QueryInputContext';
 import pasteImage from './assets/img/paste.svg';
 import copyImage from './assets/img/copy.svg';
-import refreshImage from './assets/img/reload.svg';
 
 import '../../styles/agency.css';
 import '../../styles/vespa.css';
