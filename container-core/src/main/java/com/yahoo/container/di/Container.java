@@ -55,6 +55,8 @@ public class Container {
     private long previousConfigGeneration = -1L;
     private long leastGeneration = -1L;
 
+    public record ComponentGraphResult(ComponentGraph newGraph, Runnable oldComponentsCleanupTask) { }
+
     public Container(SubscriberFactory subscriberFactory, String configId, ComponentDeconstructor destructor, Osgi osgi) {
         this.subscriberFactory = subscriberFactory;
         this.destructor = destructor;
@@ -300,19 +302,6 @@ public class Container {
 
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
         return BundleInstantiationSpecification.getFromStrings(config.id(), config.classId(), config.bundle());
-    }
-
-    public static class ComponentGraphResult {
-        private final ComponentGraph newGraph;
-        private final Runnable oldComponentsCleanupTask;
-
-        public ComponentGraphResult(ComponentGraph newGraph, Runnable oldComponentsCleanupTask) {
-            this.newGraph = newGraph;
-            this.oldComponentsCleanupTask = oldComponentsCleanupTask;
-        }
-
-        public ComponentGraph newGraph() { return newGraph; }
-        public Runnable oldComponentsCleanupTask() { return oldComponentsCleanupTask; }
     }
 
 }
