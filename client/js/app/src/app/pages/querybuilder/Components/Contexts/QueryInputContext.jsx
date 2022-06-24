@@ -3,17 +3,6 @@ import React, { useState, createContext } from 'react';
 export const QueryInputContext = createContext();
 
 export const QueryInputProvider = (prop) => {
-  // inputs reflect the state of the individual QueryInputs
-  const [inputs, setInputs] = useState([
-    {
-      id: 1,
-      type: '',
-      input: '',
-      hasChildren: false,
-      children: [],
-    },
-  ]);
-
   // This is the id of the newest QueryInput, gets updated each time a new one is added
   const [id, setId] = useState(1);
 
@@ -135,6 +124,19 @@ export const QueryInputProvider = (prop) => {
       rules: { child: 'rules', type: 'Integer', hasChildren: false },
     },
   };
+
+  const firstChoice =
+    levelZeroParameters[Object.keys(levelZeroParameters)[0]].name;
+  // inputs reflect the state of the individual QueryInputs
+  const [inputs, setInputs] = useState([
+    {
+      id: 1,
+      type: firstChoice,
+      input: '',
+      hasChildren: false,
+      children: [],
+    },
+  ]);
 
   return (
     <QueryInputContext.Provider

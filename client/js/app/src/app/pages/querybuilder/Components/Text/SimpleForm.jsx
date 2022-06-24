@@ -7,6 +7,7 @@ export default function SimpleForm({
   initial,
   size = '20',
   onChange,
+  placeholder,
 }) {
   SimpleForm.defaultProps = {
     onChange: handleChange,
@@ -26,6 +27,7 @@ export default function SimpleForm({
         className={className}
         defaultValue={initial}
         onChange={onChange}
+        placeholder={placeholder}
       />
     </form>
   );

@@ -22,10 +22,19 @@ export default function QueryInput() {
     const index = newInputs.findIndex((element) => element.id === fid);
     newInputs[index].input = e.target.value;
     setInputs(newInputs);
-    console.log(newInputs);
   };
 
-  const inputList = inputs.map((value, index) => {
+  const setPlaceholder = (id) => {
+    try {
+      const index = inputs.findIndex((element) => element.id === id);
+      const key = inputs[index].type;
+      return levelZeroParameters[key].type;
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const inputList = inputs.map((value) => {
     return (
       <div key={value.id} id={value.id} className="queryinput">
         <QueryDropdownFormn
@@ -34,7 +43,7 @@ export default function QueryInput() {
         ></QueryDropdownFormn>
         <Info id={value.id} height="15" width="15" />
         {value.hasChildren ? (
-          <SimpleButton id={`b${value.id}`} className={'addpropsbutton'}>
+          <SimpleButton id={`propb${value.id}`} className={'addpropsbutton'}>
             + Add property
           </SimpleButton>
         ) : (
@@ -42,6 +51,7 @@ export default function QueryInput() {
             id={`v${value.id}`}
             size="30"
             onChange={updateInput}
+            placeholder={setPlaceholder(value.id)}
           ></SimpleForm>
         )}
         <OverlayTrigger
