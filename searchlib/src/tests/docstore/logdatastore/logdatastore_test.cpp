@@ -667,13 +667,13 @@ TEST("test that the integrated visit cache works.") {
 }
 
 TEST("testWriteRead") {
-    FastOS_File::RemoveDirectory("empty");
+    std::filesystem::remove_all(std::filesystem::path("empty"));
     const char * bufA = "aaaaaaaaaaaaaaaaaaaaa";
     const char * bufB = "bbbbbbbbbbbbbbbb";
     const vespalib::ConstBufferRef a[2] = { vespalib::ConstBufferRef(bufA, strlen(bufA)), vespalib::ConstBufferRef(bufB, strlen(bufB))};
     LogDataStore::Config config;
     {
-        EXPECT_TRUE(FastOS_File::MakeDirectory("empty"));
+        std::filesystem::create_directory(std::filesystem::path("empty"));
         DummyFileHeaderContext fileHeaderContext;
         vespalib::ThreadStackExecutor executor(1, 128_Ki);
         MyTlSyncer tlSyncer;
@@ -737,7 +737,7 @@ TEST("testWriteRead") {
         EXPECT_EQUAL(0ul, datastore.getDiskBloat());
         EXPECT_EQUAL(0ul, datastore.getMaxSpreadAsBloat());
     }
-    FastOS_File::EmptyAndRemoveDirectory("empty");
+    std::filesystem::remove_all(std::filesystem::path("empty"));
 }
 
 TEST("requireThatSyncTokenIsUpdatedAfterFlush") {

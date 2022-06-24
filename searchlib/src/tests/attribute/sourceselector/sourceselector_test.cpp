@@ -6,7 +6,7 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/fastos/file.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sourceselector_test");
@@ -161,8 +161,8 @@ Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
         selector.compactLidSpace(maxDocId - 4);
     }
 
-    FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
-    FastOS_FileInterface::MakeDirIfNotPresentOrExit(index_dir.c_str());
+    std::filesystem::remove_all(std::filesystem::path(index_dir));
+    std::filesystem::create_directory(std::filesystem::path(index_dir));
 
     SourceSelector::SaveInfo::UP save_info =
         selector.extractSaveInfo(base_file_name);
@@ -177,7 +177,7 @@ Test::requireThatSelectorCanSaveAndLoad(bool compactLidSpace)
         EXPECT_EQUAL(maxDocId + 2, selector2->getDocIdLimit());
     }
 
-    FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
+    std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
 void

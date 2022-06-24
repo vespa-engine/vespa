@@ -42,6 +42,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <filesystem>
 #include <regex>
 
 #include <vespa/log/log.h>
@@ -82,11 +83,11 @@ public:
     DirMaker(const vespalib::string & dir) :
         _dir(dir)
     {
-        FastOS_File::MakeDirectory(dir.c_str());
+        std::filesystem::create_directory(std::filesystem::path(dir));
     }
     ~DirMaker()
     {
-        FastOS_File::EmptyAndRemoveDirectory(_dir.c_str());
+        std::filesystem::remove_all(std::filesystem::path(_dir));
     }
 private:
     vespalib::string _dir;
@@ -180,7 +181,7 @@ public:
     vespalib::ThreadStackExecutor _summaryExecutor;
     MockSharedThreadingService    _shared_service;
     TransLogServer                _tls;
-    bool _mkdirOk;
+    bool _made_dir;
     matching::QueryLimiter _queryLimiter;
     DummyWireService _dummy;
     ::config::DirSpec _spec;
@@ -199,7 +200,7 @@ public:
           _summaryExecutor(8, 128_Ki),
           _shared_service(_summaryExecutor, _summaryExecutor),
           _tls(_shared_service.transport(), "tmp", 9013, ".", _fileHeaderContext),
-          _mkdirOk(FastOS_File::MakeDirectory("tmpdb")),
+          _made_dir(std::filesystem::create_directory(std::filesystem::path("tmpdb"))),
           _queryLimiter(),
           _dummy(),
           _spec(TEST_PATH("")),
@@ -212,7 +213,7 @@ public:
           _aw(),
           _sa()
     {
-        assert(_mkdirOk);
+        (void) _made_dir;
         auto b = std::make_shared<BootstrapConfig>(1, _documenttypesConfig, _repo,
                                                    std::make_shared<ProtonConfig>(),
                                                    std::make_shared<FiledistributorrpcConfig>(),
@@ -220,9 +221,7 @@ public:
                                                    _tuneFileDocumentDB, _hwInfo);
         _configMgr.forwardConfig(b);
         _configMgr.nextGeneration(_shared_service.transport(), 0ms);
-        if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) {
-            LOG_ABORT("should not be reached");
-        }
+        std::filesystem::create_directory(std::filesystem::path(std::string("tmpdb/") + docTypeName));
         _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter,
                                   DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
                                   _shared_service, _tls, _dummy, _fileHeaderContext,
@@ -239,8 +238,8 @@ public:
         _sa.reset();
         _aw.reset();
         _ddb.reset();
-        FastOS_File::EmptyAndRemoveDirectory("tmp");
-        FastOS_File::EmptyAndRemoveDirectory("tmpdb");
+        std::filesystem::remove_all(std::filesystem::path("tmp"));
+        std::filesystem::remove_all(std::filesystem::path("tmpdb"));
     }
 
     void

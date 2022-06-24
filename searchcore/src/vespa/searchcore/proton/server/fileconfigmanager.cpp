@@ -389,7 +389,7 @@ FileConfigManager::removeInvalid()
         vespalib::string snapDirBaseName(makeSnapDirBaseName(serial));
         vespalib::string snapDir(_baseDir + "/" + snapDirBaseName);
         try {
-            FastOS_FileInterface::EmptyAndRemoveDirectory(snapDir.c_str());
+            std::filesystem::remove_all(std::filesystem::path(snapDir));
         } catch (const std::exception &e) {
             LOG(warning, "Removing obsolete config directory '%s' failed due to %s", snapDir.c_str(), e.what());
         }

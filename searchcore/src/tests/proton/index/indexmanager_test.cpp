@@ -85,7 +85,7 @@ Schema getSchema() {
 }
 
 void removeTestData() {
-    FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
+    std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
 Document::UP buildDocument(DocBuilder &doc_builder, int id,

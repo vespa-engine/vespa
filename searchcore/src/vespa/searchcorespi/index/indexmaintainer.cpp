@@ -13,7 +13,6 @@
 #include <vespa/searchcorespi/flush/lambdaflushtask.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/array.hpp>
@@ -23,6 +22,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/fastos/file.h>
+#include <filesystem>
 #include <sstream>
 
 #include <vespa/log/log.h>
@@ -1103,7 +1103,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
         } else {
             LOG(error, "Fusion failed, fusion dir \"%s\".", fail_dir.c_str());
         }
-        FastOS_FileInterface::EmptyAndRemoveDirectory(fail_dir.c_str());
+        std::filesystem::remove_all(std::filesystem::path(fail_dir));
         {
             LockGuard slock(_state_lock);
             LockGuard ilock(_index_update_lock);

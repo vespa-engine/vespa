@@ -6,6 +6,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("diskindexcleaner_test");
@@ -30,7 +31,7 @@ public:
 const string index_dir = "diskindexcleaner_test_data";
 
 void removeTestData() {
-    FastOS_FileInterface::EmptyAndRemoveDirectory(index_dir.c_str());
+    std::filesystem::remove_all(std::filesystem::path(index_dir));
 }
 
 int
@@ -52,9 +53,9 @@ Test::Main()
 }
 
 void createIndex(const string &name) {
-    FastOS_FileInterface::MakeDirIfNotPresentOrExit(index_dir.c_str());
+    std::filesystem::create_directory(std::filesystem::path(index_dir));
     const string dir_name = index_dir + "/" + name;
-    FastOS_FileInterface::MakeDirIfNotPresentOrExit(dir_name.c_str());
+    std::filesystem::create_directory(std::filesystem::path(dir_name));
     const string serial_file = dir_name + "/serial.dat";
     FastOS_File file(serial_file.c_str());
     file.OpenWriteOnlyTruncate();

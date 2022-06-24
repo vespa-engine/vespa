@@ -8,13 +8,13 @@
 #include <vespa/searchlib/common/documentsummary.h>
 #include <vespa/searchlib/common/i_flush_token.h>
 #include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/error.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/document/util/queue.h>
 #include <filesystem>
+#include <system_error>
 
 #include <vespa/log/log.h>
 
@@ -117,8 +117,9 @@ Fusion::merge(vespalib::Executor& shared_executor, std::shared_ptr<IFlushToken> 
             LOG(error, "\"%s\" is not a directory", _fusion_out_index.get_path().c_str());
             return false;
         }
-        search::DirectoryTraverse dt(_fusion_out_index.get_path().c_str());
-        if (!dt.RemoveTree()) {
+        std::error_code ec;
+        std::filesystem::remove_all(std::filesystem::path(_fusion_out_index.get_path()), ec);
+        if (ec) {
             LOG(error, "Failed to clean directory \"%s\"", _fusion_out_index.get_path().c_str());
             return false;
         }
