@@ -31,6 +31,9 @@ import java.util.Map;
  */
 public class QueryProfileProperties extends Properties {
 
+    private static final String ENVIRONMENT = "environment";
+    private static final String REGION = "region";
+    private static final String INSTANCE = "instance";
     private final CompiledQueryProfile profile;
     private final Map<String, Embedder> embedders;
     private final ZoneInfo zoneInfo;
@@ -70,9 +73,9 @@ public class QueryProfileProperties extends Properties {
         this.embedders = embedders;
         this.zoneInfo = zoneInfo;
         this.zoneContext = Map.of(
-                "environment", zoneInfo.zone().environment().name(),
-                "region", zoneInfo.zone().region(),
-                "instance", zoneInfo.application().instance());
+                ENVIRONMENT, zoneInfo.zone().environment().name(),
+                REGION, zoneInfo.zone().region(),
+                INSTANCE, zoneInfo.application().instance());
 
     }
 
@@ -297,6 +300,7 @@ public class QueryProfileProperties extends Properties {
         if (zoneInfo == ZoneInfo.defaultInfo()) return context;
         if (context == null) return zoneContext;
         if (context == zoneContext) return context;
+        if (context.containsKey(ENVIRONMENT) && context.containsKey(REGION) && context.containsKey(INSTANCE)) return context;
 
         Map<String, String> contextWithZoneInfo = new HashMap<>(context);
         contextWithZoneInfo.putIfAbsent("environment", zoneInfo.zone().environment().name());
