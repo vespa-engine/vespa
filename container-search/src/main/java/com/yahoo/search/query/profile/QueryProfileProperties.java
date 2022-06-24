@@ -34,6 +34,7 @@ public class QueryProfileProperties extends Properties {
     private final CompiledQueryProfile profile;
     private final Map<String, Embedder> embedders;
     private final ZoneInfo zoneInfo;
+    private final Map<String, String> zoneContext;
 
     // Note: The priority order is: values has precedence over references
 
@@ -68,6 +69,11 @@ public class QueryProfileProperties extends Properties {
         this.profile = profile;
         this.embedders = embedders;
         this.zoneInfo = zoneInfo;
+        this.zoneContext = Map.of(
+                "environment", zoneInfo.zone().environment().name(),
+                "region", zoneInfo.zone().region(),
+                "instance", zoneInfo.application().instance());
+
     }
 
     /** Returns the query profile backing this, or null if none */
@@ -289,8 +295,10 @@ public class QueryProfileProperties extends Properties {
 
     private Map<String, String> contextWithZoneInfo(Map<String, String> context) {
         if (zoneInfo == ZoneInfo.defaultInfo()) return context;
+        if (context == null) return zoneContext;
+        if (context == zoneContext) return context;
 
-        Map<String, String> contextWithZoneInfo = context == null ? new HashMap<>() : new HashMap<>(context);
+        Map<String, String> contextWithZoneInfo = new HashMap<>(context);
         contextWithZoneInfo.putIfAbsent("environment", zoneInfo.zone().environment().name());
         contextWithZoneInfo.putIfAbsent("region", zoneInfo.zone().region());
         contextWithZoneInfo.putIfAbsent("instance", zoneInfo.application().instance());
