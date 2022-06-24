@@ -364,7 +364,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag FILE_DISTRIBUTION_COMPRESS_SINGLE_FILES = defineFeatureFlag(
             "file-distribution-compress-single-files", false,
-            List.of("hmusum"), "2022-05-24", "2022-06-24",
+            List.of("hmusum"), "2022-05-24", "2022-07-24",
             "Whether to compress a file references that is a single file (directories are compressed by default).",
             "Takes effect immediately",
             APPLICATION_ID);
