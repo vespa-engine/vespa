@@ -298,7 +298,7 @@ public class QueryProfileProperties extends Properties {
 
     private Map<String, String> contextWithZoneInfo(Map<String, String> context) {
         if (zoneInfo == ZoneInfo.defaultInfo()) return context;
-        if (context == null) return zoneContext;
+        if (context == null || context.isEmpty()) return zoneContext;
         if (context == zoneContext) return context;
         if (context.containsKey(ENVIRONMENT) && context.containsKey(REGION) && context.containsKey(INSTANCE)) return context;
 

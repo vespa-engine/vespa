@@ -1,12 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.query.properties;
 
-import ai.vespa.cloud.ZoneInfo;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.query.Properties;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 /**

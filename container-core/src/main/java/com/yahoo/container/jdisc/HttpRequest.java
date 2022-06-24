@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import com.google.inject.Key;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Container;
 import com.yahoo.jdisc.References;
