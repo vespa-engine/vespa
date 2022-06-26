@@ -55,10 +55,10 @@ private:
 
 }
 
-RPCSend::RPCSend() :
-    _net(nullptr),
-    _clientIdent("client"),
-    _serverIdent("server")
+RPCSend::RPCSend()
+    : _net(nullptr),
+      _clientIdent("client"),
+      _serverIdent("server")
 { }
 
 RPCSend::~RPCSend() = default;
@@ -220,19 +220,19 @@ RPCSend::decode(vespalib::stringref protocolName, const vespalib::Version & vers
 void
 RPCSend::handleReply(Reply::UP reply)
 {
-    const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
-    if (!protocol || protocol->requireSequencing() || !_net->allowDispatchForEncode()) {
-        doHandleReply(protocol, std::move(reply));
+    if (!_net->allowDispatchForEncode()) {
+        doHandleReply(std::move(reply));
     } else {
-        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, protocol, reply = std::move(reply)]() mutable {
-            doHandleReply(protocol, std::move(reply));
+        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, reply = std::move(reply)]() mutable {
+            doHandleReply(std::move(reply));
         }));
         assert (!rejected);
     }
 }
 
 void
-RPCSend::doHandleReply(const IProtocol * protocol, Reply::UP reply) {
+RPCSend::doHandleReply(Reply::UP reply) {
+    const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
     ReplyContext::UP ctx(static_cast<ReplyContext*>(reply->getContext().value.PTR));
     FRT_RPCRequest &req = ctx->getRequest();
     string version = ctx->getVersion().toString();
@@ -256,8 +256,21 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-    FRT_Values &args = *req->GetParams();
 
+    if (!_net->allowDispatchForDecode()) {
+        doRequest(req);
+    } else {
+        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req]() {
+            doRequest(req);
+        }));
+        assert (!rejected);
+    }
+}
+
+void
+RPCSend::doRequest(FRT_RPCRequest *req)
+{
+    FRT_Values &args = *req->GetParams();
     std::unique_ptr<Params> params = toParams(args);
     IProtocol * protocol = _net->getOwner().getProtocol(params->getProtocol());
     if (protocol == nullptr) {
@@ -266,19 +279,6 @@ RPCSend::invoke(FRT_RPCRequest *req)
                                                                   vespalib::string(params->getProtocol()).c_str(), _serverIdent.c_str())));
         return;
     }
-    if (protocol->requireSequencing() || !_net->allowDispatchForDecode()) {
-        doRequest(req, protocol, std::move(params));
-    } else {
-        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req, protocol, params = std::move(params)]() mutable {
-            doRequest(req, protocol, std::move(params));
-        }));
-        assert (!rejected);
-    }
-}
-
-void
-RPCSend::doRequest(FRT_RPCRequest *req, const IProtocol * protocol, std::unique_ptr<Params> params)
-{
     Routable::UP routable = protocol->decode(params->getVersion(), params->getPayload());
     req->DiscardBlobs();
     if ( ! routable ) {

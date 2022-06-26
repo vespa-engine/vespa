@@ -79,9 +79,6 @@ public:
      * @return The decoded routable.
      */
     virtual Routable::UP decode(const vespalib::Version &version, BlobRef data) const = 0; // throw()
-
-
-    virtual bool requireSequencing() const = 0;
 };
 
 } // namespace mbus

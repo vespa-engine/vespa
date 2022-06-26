@@ -13,42 +13,23 @@ private:
 
 public:
 
-    TestProtocol(const string &name)
+    TestProtocol(const string &name) noexcept
         : _name(name)
-    {
-        // empty
-    }
+    { }
 
-    const string &
-    getName() const override
-    {
-        return _name;
-    }
+    const string & getName() const override { return _name; }
 
-    IRoutingPolicy::UP
-    createPolicy(const string &name, const string &param) const override
-    {
-        (void)name;
-        (void)param;
+    IRoutingPolicy::UP createPolicy(const string &, const string &) const override {
         throw std::exception();
     }
 
-    Blob
-    encode(const vespalib::Version &version, const Routable &routable) const override
-    {
-        (void)version;
-        (void)routable;
+    Blob encode(const vespalib::Version &, const Routable &) const override {
         throw std::exception();
     }
 
-    Routable::UP
-    decode(const vespalib::Version &version, BlobRef data) const override
-    {
-        (void)version;
-        (void)data;
+    Routable::UP decode(const vespalib::Version &, BlobRef ) const override {
         throw std::exception();
     }
-    bool requireSequencing() const override { return false; }
 };
 
 int
@@ -58,16 +39,16 @@ Test::Main()
 
     ProtocolRepository repo;
     IProtocol::SP prev;
-    prev = repo.putProtocol(IProtocol::SP(new TestProtocol("foo")));
-    ASSERT_TRUE(prev.get() == NULL);
+    prev = repo.putProtocol(std::make_shared<TestProtocol>("foo"));
+    ASSERT_FALSE(prev);
 
     IRoutingPolicy::SP policy = repo.getRoutingPolicy("foo", "bar", "baz");
-    prev = repo.putProtocol(IProtocol::SP(new TestProtocol("foo")));
-    ASSERT_TRUE(prev.get() != NULL);
+    prev = repo.putProtocol(std::make_shared<TestProtocol>("foo"));
+    ASSERT_TRUE(prev);
     ASSERT_NOT_EQUAL(prev.get(), repo.getProtocol("foo"));
 
     policy = repo.getRoutingPolicy("foo", "bar", "baz");
-    ASSERT_TRUE(policy.get() == NULL);
+    ASSERT_FALSE(policy);
 
     TEST_DONE();
 }
