@@ -26,7 +26,7 @@ cd $BUILD_DIR
 git clone --depth 1 https://github.com/vespa-engine/docker-image
 cd docker-image
 
-docker build --build-arg VESPA_VERSION=$VESPA_VERSION --file Dockerfile.stream8 \
+docker build --build-arg VESPA_VERSION=$VESPA_VERSION --file Dockerfile \
        --tag docker.io/vespaengine/vespa:$VESPA_VERSION --tag docker.io/vespaengine/vespa:latest \
        --tag ghcr.io/vespa-engine/vespa:$VESPA_VERSION  --tag ghcr.io/vespa-engine/vespa:latest .
 
