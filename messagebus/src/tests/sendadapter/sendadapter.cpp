@@ -5,7 +5,6 @@
 #include <vespa/messagebus/testlib/simplereply.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/messagebus/network/rpcsendv1.h>
 #include <vespa/messagebus/network/rpcsendv2.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
@@ -211,10 +210,8 @@ TEST("test that all known versions are present") {
     TestData data;
     ASSERT_TRUE(data.start());
     EXPECT_FALSE(data._srcServer.net.getSendAdapter(vespalib::Version(4, 999)) != nullptr);
-    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0)) != nullptr);
-    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0))) != nullptr);
-    EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148)) != nullptr);
-    EXPECT_TRUE(dynamic_cast<mbus::RPCSendV1 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148))) != nullptr);
+    EXPECT_FALSE(data._srcServer.net.getSendAdapter(vespalib::Version(5, 0)) != nullptr);
+    EXPECT_FALSE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 148)) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(6, 149)) != nullptr);
     EXPECT_TRUE(dynamic_cast<mbus::RPCSendV2 *>(data._srcServer.net.getSendAdapter(vespalib::Version(6, 149))) != nullptr);
     EXPECT_TRUE(data._srcServer.net.getSendAdapter(vespalib::Version(9, 999)) != nullptr);
@@ -224,7 +221,7 @@ TEST("test that all known versions are present") {
 TEST("test that we can send between multiple versions") {
     TestData data;
     ASSERT_TRUE(data.start());
-    TEST_DO(testSendAdapters(data, {vespalib::Version(5, 0), vespalib::Version(6, 148), vespalib::Version(6, 149), vespalib::Version(9, 999)}));
+    TEST_DO(testSendAdapters(data, {vespalib::Version(6, 149), vespalib::Version(9, 999)}));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

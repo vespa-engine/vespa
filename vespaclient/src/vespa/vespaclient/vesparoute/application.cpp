@@ -10,7 +10,6 @@
 #include <vespa/messagebus/routing/routingtable.h>
 #include <vespa/messagebus/routing/routedirective.h>
 #include <vespa/messagebus/rpcmessagebus.h>
-#include <vespa/messagebus/network/rpcsendv1.h>
 #include <vespa/messagebus/network/rpcsendv2.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config/common/exceptions.h>
@@ -495,8 +494,7 @@ Application::isService(FRT_Supervisor &frt, const std::string &spec) const
         FRT_StringValue *retList = req->GetReturn()->GetValue(2)._string_array._pt;
 
         for (uint32_t i = 0; i < numMethods; ++i) {
-            if (mbus::RPCSendV1::isCompatible(methods[i]._str,argList[i]._str, retList[i]._str) ||
-                mbus::RPCSendV2::isCompatible(methods[i]._str,argList[i]._str, retList[i]._str)) {
+            if ( mbus::RPCSendV2::isCompatible(methods[i]._str,argList[i]._str, retList[i]._str)) {
                 ret = true;
                 break;
             }
