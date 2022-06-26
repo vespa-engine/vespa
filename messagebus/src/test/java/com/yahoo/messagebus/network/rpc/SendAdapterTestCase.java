@@ -4,7 +4,16 @@ package com.yahoo.messagebus.network.rpc;
 import com.yahoo.component.Version;
 import com.yahoo.jrt.ListenFailedException;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import com.yahoo.messagebus.*;
+import com.yahoo.messagebus.DestinationSession;
+import com.yahoo.messagebus.DestinationSessionParams;
+import com.yahoo.messagebus.IntermediateSession;
+import com.yahoo.messagebus.IntermediateSessionParams;
+import com.yahoo.messagebus.Message;
+import com.yahoo.messagebus.MessageBusParams;
+import com.yahoo.messagebus.Reply;
+import com.yahoo.messagebus.Routable;
+import com.yahoo.messagebus.SourceSession;
+import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.Identity;
 import com.yahoo.messagebus.network.rpc.test.TestServer;
 import com.yahoo.messagebus.routing.Route;
@@ -20,7 +29,11 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
 
 /**
  * @author Simon Thoresen Hult
@@ -81,17 +94,15 @@ public class SendAdapterTestCase {
     @Test
     public void requireCorrectVersionSelection() {
         assertNull(srcServer.net.getSendAdapter(new Version(4,999)));
-        assertTrue(srcServer.net.getSendAdapter(new Version(5,0)) instanceof RPCSendV1);
-        assertTrue(srcServer.net.getSendAdapter(new Version(6,148)) instanceof RPCSendV1);
+        assertNull(srcServer.net.getSendAdapter(new Version(5,0)));
+        assertNull(srcServer.net.getSendAdapter(new Version(6,148)));
         assertTrue(srcServer.net.getSendAdapter(new Version(6,149)) instanceof RPCSendV2);
         assertTrue(srcServer.net.getSendAdapter(new Version(9,9999)) instanceof RPCSendV2);
     }
 
     @Test
-    public void requireThatMessagesCanBeSentAcrossAllSupportedVersions() throws Exception {
+    public void requireThatMessagesCanBeSentAcrossAllSupportedVersions() {
         List<Version> versions = Arrays.asList(
-                new Version(5, 0),
-                new Version(6, 148),
                 new Version(6, 149),
                 new Version(9, 999)
         );
