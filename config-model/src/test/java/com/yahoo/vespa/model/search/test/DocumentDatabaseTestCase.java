@@ -100,6 +100,24 @@ public class DocumentDatabaseTestCase {
         assertEquals(expectedConcurrency, proton.feeding().concurrency(), SMALL);
     }
 
+    private void verifyFeedNiceness(List<DocType> nameAndModes, Double expectedNiceness, Double featureFlagNiceness) {
+        TestProperties properties = new TestProperties();
+        if (featureFlagNiceness != null) {
+            properties.setFeedNiceness(featureFlagNiceness);
+        }
+        var tester = new SchemaTester();
+        VespaModel model = tester.createModel(nameAndModes, "", new DeployState.Builder().properties(properties));
+        ContentSearchCluster contentSearchCluster = model.getContentClusters().get("test").getSearch();
+        ProtonConfig proton = tester.getProtonConfig(contentSearchCluster);
+        assertEquals(expectedNiceness, proton.feeding().niceness(), SMALL);
+    }
+
+    @Test
+    public void requireFeedNicenessIsReflected() {
+        verifyFeedNiceness(Arrays.asList(DocType.create("a", "index")), 0.0, null);
+        verifyFeedNiceness(Arrays.asList(DocType.create("a", "index")), 0.32, 0.32);
+    }
+
     @Test
     public void requireThatModeIsSet() {
         var tester = new SchemaTester();

@@ -67,6 +67,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
+    private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
     private final int defaultMaxCompactBuffers;
 
@@ -213,6 +214,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
         this.feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
+        this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
         this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
     }
@@ -399,6 +401,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.feeding.concurrency(defaultFeedConcurrency);
         }
+        builder.feeding.niceness(defaultFeedNiceness);
         builder.flush.memory.diskbloatfactor(DEFAULT_DISK_BLOAT);
         builder.flush.memory.each.diskbloatfactor(DEFAULT_DISK_BLOAT);
         builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
