@@ -914,7 +914,13 @@ final class ProgramParser {
         String text = literal.getChild(0).getText();
         switch(parseTreeIndex) {
             case yqlplusParser.INT:
-                return Integer.valueOf(text);
+                Long as_long = Long.valueOf(text);
+                int as_int = as_long.intValue();
+                if (as_int == as_long) {
+                    return Integer.valueOf(as_int);
+                } else {
+                    return as_long;
+                }
             case yqlplusParser.FLOAT:
                 return Double.valueOf(text);
             case yqlplusParser.STRING:

@@ -745,6 +745,7 @@ public class YqlParserTestCase {
     @Test
     public void testLongNumberInSimpleExpression() {
         assertParse("select foo from bar where price = 8589934592L", "price:8589934592");
+        assertParse("select foo from bar where price = 8589934592", "price:8589934592");
     }
 
     @Test
