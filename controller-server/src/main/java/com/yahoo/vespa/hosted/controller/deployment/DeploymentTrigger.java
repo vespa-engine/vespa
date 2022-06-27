@@ -104,8 +104,9 @@ public class DeploymentTrigger {
         // If the outstanding revision requires a certain platform for compatibility, add that here.
         VersionCompatibility compatibility = applications().versionCompatibility(status.application().id().instance(instance));
         Predicate<Version> compatibleWithCompileVersion = version -> compileVersion.map(compiled -> compatibility.accept(version, compiled)).orElse(true);
-        if (status.application().productionDeployments().getOrDefault(instance, List.of()).stream()
-                  .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
+        if (   status.application().productionDeployments().isEmpty()
+            || status.application().productionDeployments().getOrDefault(instance, List.of()).stream()
+                     .anyMatch(deployment -> ! compatibleWithCompileVersion.test(deployment.version()))) {
             return targetsForPolicy(controller.readVersionStatus(), status.application().deploymentSpec().requireInstance(instance).upgradePolicy())
                     .stream() // Pick the latest platform which is compatible with the compile version, and is ready for this instance.
                     .filter(compatibleWithCompileVersion)
