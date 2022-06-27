@@ -65,7 +65,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     private Release releaseIn(CloudName cloud) {
-        boolean useTaggedRelease = controller().zoneRegistry().zones().all().reprovisionToUpgradeOs().in(cloud)
+        boolean useTaggedRelease = controller().zoneRegistry().zones().reprovisionToUpgradeOs().ofCloud(cloud)
                                                .zones().isEmpty();
         if (useTaggedRelease) {
             return new TaggedRelease(controller().system(), controller().serviceRegistry().artifactRepository());
