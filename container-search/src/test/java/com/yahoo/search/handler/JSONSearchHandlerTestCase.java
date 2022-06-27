@@ -1,5 +1,5 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.search.handler.test;
+package com.yahoo.search.handler;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -324,8 +325,7 @@ public class JSONSearchHandlerTestCase {
         json.set("select", select);
 
         Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes(StandardCharsets.UTF_8)).get();
-        Map<String, String> map = new HashMap<>();
-        searchHandler.createRequestMapping(inspector, map, "");
+        Map<String, String> map = new Json2SingleLevelMap(new ByteArrayInputStream(inspector.toString().getBytes(StandardCharsets.UTF_8))).parse();
 
         JsonNode processedWhere = jsonMapper.readTree(map.get("select.where"));
         JsonTestHelper.assertJsonEquals(where.toString(), processedWhere.toString());
@@ -510,8 +510,7 @@ public class JSONSearchHandlerTestCase {
 
         // Create mapping
         Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes(StandardCharsets.UTF_8)).get();
-        Map<String, String> map = new HashMap<>();
-        searchHandler.createRequestMapping(inspector, map, "");
+        Map<String, String> map = new Json2SingleLevelMap(new ByteArrayInputStream(inspector.toString().getBytes(StandardCharsets.UTF_8))).parse();
 
         // Create GET-request with same query
         String url = uri + "&model.sources=source1%2Csource2&select=_all&model.language=en&presentation.timing=false&pos.attribute=default&pos.radius=71234m&model.searchPath=node1&nocachewrite=false&ranking.matchPhase.maxHits=100&presentation.summary=none" +

@@ -17,7 +17,6 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.VespaHeaders;
-import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
 import com.yahoo.language.process.Embedder;
@@ -43,14 +42,13 @@ import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.statistics.ElapsedTime;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.ObjectTraverser;
-import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
@@ -490,23 +488,9 @@ public class SearchHandler extends LoggingRequestHandler {
             ||  ! JSON_CONTENT_TYPE.equals(getMediaType(request)))
             return request.propertyMap();
 
-        Inspector inspector;
-        try {
-            // Use an 4k buffer, that should be plenty for most json requests to pass in a single chunk
-            byte[] byteArray = IOUtils.readBytes(request.getData(), 4096);
-            inspector = SlimeUtils.jsonToSlime(byteArray).get();
-            if (inspector.field("error_message").valid()) {
-                throw new IllegalInputException("Illegal query: " + inspector.field("error_message").asString() + " at: '" +
-                                                new String(inspector.field("offending_input").asData(), StandardCharsets.UTF_8) + "'");
-            }
-
-        } catch (IOException e) {
-            throw new RuntimeException("Problem reading POSTed data", e);
-        }
+        Map<String, String> requestMap = new Json2SingleLevelMap(request.getData()).parse();
 
         // Add fields from JSON to the request map
-        Map<String, String> requestMap = new HashMap<>();
-        createRequestMapping(inspector, requestMap, "");
         requestMap.putAll(request.propertyMap());
 
         if (requestMap.containsKey("yql") && (requestMap.containsKey("select.where") || requestMap.containsKey("select.grouping")) )
@@ -517,35 +501,13 @@ public class SearchHandler extends LoggingRequestHandler {
         return requestMap;
     }
 
+    @Deprecated // TODO: Remove on Vespa 9
     public void createRequestMapping(Inspector inspector, Map<String, String> map, String parent) {
-        inspector.traverse((ObjectTraverser) (key, value) -> {
-            String qualifiedKey = parent + key;
-            switch (value.type()) {
-                case BOOL:
-                    map.put(qualifiedKey, Boolean.toString(value.asBool()));
-                    break;
-                case DOUBLE:
-                    map.put(qualifiedKey, Double.toString(value.asDouble()));
-                    break;
-                case LONG:
-                    map.put(qualifiedKey, Long.toString(value.asLong()));
-                    break;
-                case STRING:
-                    map.put(qualifiedKey , value.asString());
-                    break;
-                case ARRAY:
-                    map.put(qualifiedKey, value.toString()); // XXX: Causes parsing the JSON twice (Query.setPropertiesFromRequestMap)
-                    break;
-                case OBJECT:
-                    if (qualifiedKey.equals("select.where") || qualifiedKey.equals("select.grouping")) {
-                        map.put(qualifiedKey, value.toString());  // XXX: Causes parsing the JSON twice (Query.setPropertiesFromRequestMap)
-                        break;
-                    }
-                    createRequestMapping(value, map, qualifiedKey + ".");
-                    break;
-            }
-
-        });
+        try {
+            new Json2SingleLevelMap(new ByteArrayInputStream(inspector.toString().getBytes(StandardCharsets.UTF_8))).parse(map, parent);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed creating request mapping for parent '" + parent + "'", e);
+        }
     }
 
     @Override
