@@ -199,7 +199,6 @@ public class RPCNetwork implements Network, MethodHandler {
         }
         this.owner = owner;
 
-        sendAdapters.put(new Version(5), new RPCSendV1(this));
         sendAdapters.put(new Version(6,149), new RPCSendV2(this));
     }
 
