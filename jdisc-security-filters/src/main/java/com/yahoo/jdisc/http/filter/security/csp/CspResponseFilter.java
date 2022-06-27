@@ -10,8 +10,8 @@ import com.yahoo.yolean.chain.Provides;
 
 /**
  * The HTTP Content-Security-Policy (CSP) sandbox directive enables a sandbox for the requested resource similar to
- * the <iframe> sandbox attribute. It applies restrictions to a page's actions including preventing popups, preventing
- * the execution of plugins and scripts, and enforcing a same-origin policy.
+ * the &lt;iframe&gt; sandbox attribute. It applies restrictions to a page's actions including preventing popups,
+ * preventing the execution of plugins and scripts, and enforcing a same-origin policy.
  *
  * @author freva
  */
