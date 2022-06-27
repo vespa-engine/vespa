@@ -384,13 +384,13 @@ public class DeploymentContext {
     /** Runs and returns all remaining jobs for the application, at most once, and asserts the current change is rolled out. */
     public DeploymentContext completeRollout(boolean multiInstance) {
         triggerJobs();
-        Map<ApplicationId, Map<JobType, Versions>> jobsByInstance = new HashMap<>();
+        Map<ApplicationId, Map<JobType, Run>> runsByInstance = new HashMap<>();
         List<Run> activeRuns;
         while ( ! (activeRuns = this.jobs.active(applicationId)).isEmpty())
             for (Run run : activeRuns) {
-                Map<JobType, Versions> jobs = jobsByInstance.computeIfAbsent(run.id().application(), k -> new HashMap<>());
-                Versions previous = jobs.put(run.id().type(), run.versions());
-                if (run.versions().equals(previous)) {
+                Map<JobType, Run> runs = runsByInstance.computeIfAbsent(run.id().application(), k -> new HashMap<>());
+                Run previous = runs.put(run.id().type(), run);
+                if (previous != null && run.versions().equals(previous.versions()) && run.id().type().zone().equals(previous.id().type().zone())) {
                     throw new AssertionError("Job '" + run.id() + "' was run twice on same versions");
                 }
                 runJob(run.id().type(), run.id().application());
@@ -451,8 +451,8 @@ public class DeploymentContext {
 
     /** Pulls the ready job trigger, and then runs the whole of job for the given instance, successfully. */
     private DeploymentContext runJob(JobType type, ApplicationId instance) {
-        var job = new JobId(instance, type);
         triggerJobs();
+        var job = currentRun(new JobId(instance, type)).id().job();
         doDeploy(job);
         if (job.type().isDeployment()) {
             doUpgrade(job);

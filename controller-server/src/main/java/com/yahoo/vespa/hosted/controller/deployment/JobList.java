@@ -119,8 +119,12 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     }
 
     /** Returns the jobs with successful runs matching the given versions — targets only for system test, everything present otherwise. */
-    public JobList successOn(Versions versions) {
-        return matching(job -> ! RunList.from(job).matching(Run::hasSucceeded).on(versions).isEmpty());
+    public JobList successOn(JobType type, Versions versions) {
+        return matching(job ->      job.id().type().equals(type)
+                               && ! RunList.from(job)
+                                           .matching(run -> run.hasSucceeded() && run.id().type().zone().equals(type.zone()))
+                                           .on(versions)
+                                           .isEmpty());
     }
 
     // ----------------------------------- JobRun filtering
