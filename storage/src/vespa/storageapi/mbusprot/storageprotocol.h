@@ -22,7 +22,6 @@ public:
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string& name, const mbus::string& param) const override;
     mbus::Blob encode(const vespalib::Version&, const mbus::Routable&) const override;
     mbus::Routable::UP decode(const vespalib::Version&, mbus::BlobRef) const override;
-    bool requireSequencing() const override { return true; }
 private:
     ProtocolSerialization5_0 _serializer5_0;
     ProtocolSerialization5_1 _serializer5_1;

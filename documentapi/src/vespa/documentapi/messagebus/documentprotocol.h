@@ -292,7 +292,6 @@ public:
     mbus::IRoutingPolicy::UP createPolicy(const mbus::string &name, const mbus::string &param) const override;
     mbus::Blob encode(const vespalib::Version &version, const mbus::Routable &routable) const override;
     mbus::Routable::UP decode(const vespalib::Version &version, mbus::BlobRef data) const override;
-    bool requireSequencing() const override { return false; }
 };
 
 }

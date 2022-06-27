@@ -51,7 +51,7 @@ mbus.dispatch_on_encode bool default=true restart
 ## Enable to use above thread pool for decoding replies
 ## False will use network(fnet) thread
 ## Todo: Change default once verified in large scale deployment.
-mbus.dispatch_on_decode bool default=false restart
+mbus.dispatch_on_decode bool default=true restart
 
 ## Skip messenger thread on reply
 ## Experimental

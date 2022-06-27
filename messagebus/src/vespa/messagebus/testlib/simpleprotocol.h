@@ -72,7 +72,6 @@ public:
     IRoutingPolicy::UP createPolicy(const string &name, const string &param) const override;
     Blob encode(const vespalib::Version &version, const Routable &routable) const override;
     Routable::UP decode(const vespalib::Version &version, BlobRef data) const override;
-    virtual bool requireSequencing() const override { return false; }
 };
 
 } // namespace mbus

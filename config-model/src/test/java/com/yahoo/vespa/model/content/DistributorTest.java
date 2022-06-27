@@ -291,7 +291,7 @@ public class DistributorTest {
         cluster.getChildren().get("0").getConfig(builder);
         StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
         assertTrue(config.mbus().dispatch_on_encode());
-        assertFalse(config.mbus().dispatch_on_decode());
+        assertTrue(config.mbus().dispatch_on_decode());
         assertEquals(4, config.mbus().num_threads());
         assertEquals(StorCommunicationmanagerConfig.Mbus.Optimize_for.LATENCY, config.mbus().optimize_for());
         assertFalse(config.skip_thread());
