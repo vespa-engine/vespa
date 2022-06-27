@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "rpcnetwork.h"
 #include "rpcservicepool.h"
-#include "rpcsendv1.h"
 #include "rpcsendv2.h"
 #include "rpctargetpool.h"
 #include "rpcnetworkparams.h"
@@ -137,7 +136,6 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
     _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
     _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 64_Ki)),
-    _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
     _compressionConfig(params.getCompressionConfig()),
@@ -195,9 +193,7 @@ RPCNetwork::attach(INetworkOwner &owner)
     LOG_ASSERT(_owner == nullptr);
     _owner = &owner;
 
-    _sendV1->attach(*this);
     _sendV2->attach(*this);
-    _sendAdapters[vespalib::Version(5)] = _sendV1.get();
     _sendAdapters[vespalib::Version(6, 149)] = _sendV2.get();
 
     FRT_ReflectionBuilder builder(_orb.get());

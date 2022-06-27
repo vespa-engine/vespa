@@ -66,7 +66,6 @@ private:
     std::unique_ptr<FNET_Task>                         _targetPoolTask;
     std::unique_ptr<RPCServicePool>                    _servicePool;
     std::unique_ptr<vespalib::SyncableThreadExecutor>  _executor;
-    std::unique_ptr<RPCSendAdapter>                    _sendV1;
     std::unique_ptr<RPCSendAdapter>                    _sendV2;
     SendAdapterMap                                     _sendAdapters;
     CompressionConfig                                  _compressionConfig;
