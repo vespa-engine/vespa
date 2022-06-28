@@ -213,7 +213,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             AthenzRole athenzRole = new AthenzRole(new AthenzDomain(domain), role);
             // Make sure to request a certificate which triggers creating a new key manager for this role
-            X509Certificate x509Certificate = roleSslCertCache.get(athenzRole);
+            X509Certificate x509Certificate = getRoleCertificate(athenzRole);
             MutableX509KeyManager keyManager = roleKeyManagerCache.get(athenzRole);
             return new SslContextBuilder()
                     .withKeyManager(keyManager)
@@ -276,6 +276,19 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     @Override
     public List<X509Certificate> getIdentityCertificate() {
         return Collections.singletonList(credentials.getCertificate());
+    }
+
+    @Override
+    public X509Certificate getRoleCertificate(String domain, String role) {
+        return getRoleCertificate(new AthenzRole(new AthenzDomain(domain), role));
+    }
+
+    private X509Certificate getRoleCertificate(AthenzRole athenzRole) {
+        try {
+            return roleSslCertCache.get(athenzRole);
+        } catch (Exception e) {
+            throw new AthenzIdentityProviderException("Could not retrieve role certificate: " + e.getMessage(), e);
+        }
     }
 
     private void updateIdentityCredentials(AthenzCredentials credentials) {
