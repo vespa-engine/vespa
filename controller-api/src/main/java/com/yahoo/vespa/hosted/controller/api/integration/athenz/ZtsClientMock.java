@@ -65,12 +65,12 @@ public class ZtsClientMock implements ZtsClient {
     }
 
     @Override
-    public ZToken getRoleToken(AthenzDomain domain) {
+    public ZToken getRoleToken(AthenzDomain domain, Duration expiry) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public ZToken getRoleToken(AthenzRole athenzRole) {
+    public ZToken getRoleToken(AthenzRole athenzRole, Duration expiry) {
         throw new UnsupportedOperationException();
     }
 

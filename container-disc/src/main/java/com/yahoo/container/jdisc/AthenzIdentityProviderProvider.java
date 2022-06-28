@@ -76,6 +76,11 @@ public class AthenzIdentityProviderProvider implements Provider<AthenzIdentityPr
         }
 
         @Override
+        public X509Certificate getRoleCertificate(String domain, String role) {
+            throw new UnsupportedOperationException(message);
+        }
+
+        @Override
         public PrivateKey getPrivateKey() {
             throw new UnsupportedOperationException(message);
         }

@@ -21,6 +21,7 @@ public interface AthenzIdentityProvider {
     String getAccessToken(String domain);
     String getAccessToken(String domain, List<String> roles);
     List<X509Certificate> getIdentityCertificate();
+    X509Certificate getRoleCertificate(String domain, String role);
     PrivateKey getPrivateKey();
     Path trustStorePath();
 

@@ -68,7 +68,8 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
     static final Duration UPDATE_PERIOD = Duration.ofDays(1);
     static final Duration AWAIT_TERMINTATION_TIMEOUT = Duration.ofSeconds(90);
     private final static Duration ROLE_SSL_CONTEXT_EXPIRY = Duration.ofHours(2);
-    private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(30);
+    // TODO CMS expects 10min or less token ttl. Use 10min default until we have configurable expiry
+    private final static Duration ROLE_TOKEN_EXPIRY = Duration.ofMinutes(10);
 
     // TODO Make path to trust store paths config
     private static final Path CLIENT_TRUST_STORE = Paths.get("/opt/yahoo/share/ssl/certs/yahoo_certificate_bundle.pem");
@@ -213,7 +214,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         try {
             AthenzRole athenzRole = new AthenzRole(new AthenzDomain(domain), role);
             // Make sure to request a certificate which triggers creating a new key manager for this role
-            X509Certificate x509Certificate = roleSslCertCache.get(athenzRole);
+            X509Certificate x509Certificate = getRoleCertificate(athenzRole);
             MutableX509KeyManager keyManager = roleKeyManagerCache.get(athenzRole);
             return new SslContextBuilder()
                     .withKeyManager(keyManager)
@@ -278,6 +279,19 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
         return Collections.singletonList(credentials.getCertificate());
     }
 
+    @Override
+    public X509Certificate getRoleCertificate(String domain, String role) {
+        return getRoleCertificate(new AthenzRole(new AthenzDomain(domain), role));
+    }
+
+    private X509Certificate getRoleCertificate(AthenzRole athenzRole) {
+        try {
+            return roleSslCertCache.get(athenzRole);
+        } catch (Exception e) {
+            throw new AthenzIdentityProviderException("Could not retrieve role certificate: " + e.getMessage(), e);
+        }
+    }
+
     private void updateIdentityCredentials(AthenzCredentials credentials) {
         this.credentials = credentials;
         this.identityKeyManager.updateKeystore(
@@ -308,13 +322,13 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     private ZToken createRoleToken(AthenzRole athenzRole) {
         try (ZtsClient client = createZtsClient()) {
-            return client.getRoleToken(athenzRole);
+            return client.getRoleToken(athenzRole, ROLE_TOKEN_EXPIRY);
         }
     }
 
     private ZToken createRoleToken(AthenzDomain domain) {
         try (ZtsClient client = createZtsClient()) {
-            return client.getRoleToken(domain);
+            return client.getRoleToken(domain, ROLE_TOKEN_EXPIRY);
         }
     }
 
