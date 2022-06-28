@@ -57,9 +57,10 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
                 // This works, but is suboptimal. We could consolidate to a minimal set and
                 // use the right value from the minimal set as the third parameter here,
                 // and add "override" commands to multiple static values
+                boolean useFieldNameAsArgument = summaryField.getTransform().isDynamic() || summaryField.getTransform() == SummaryTransform.TEXTEXTRACTOR;
                 resultTransforms.put(summaryField.getName(), new FieldResultTransform(summaryField.getName(),
                                                                                       summaryField.getTransform(),
-                                                                                      summaryField.getName()));
+                                                                                      useFieldNameAsArgument ? summaryField.getName() : ""));
             }
         }
     }
@@ -99,20 +100,8 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
         for (FieldResultTransform frt : resultTransforms.values()) {
             SummarymapConfig.Override.Builder oB = new SummarymapConfig.Override.Builder()
                 .field(frt.getFieldName())
-                .command(getCommand(frt.getTransform()));
-            if (frt.getTransform().isDynamic() ||
-                    frt.getTransform().equals(SummaryTransform.ATTRIBUTE) ||
-                    frt.getTransform().equals(SummaryTransform.DISTANCE) ||
-                    frt.getTransform().equals(SummaryTransform.GEOPOS) ||
-                    frt.getTransform().equals(SummaryTransform.POSITIONS) ||
-                    frt.getTransform().equals(SummaryTransform.TEXTEXTRACTOR) ||
-                    frt.getTransform().equals(SummaryTransform.MATCHED_ELEMENTS_FILTER) ||
-                    frt.getTransform().equals(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER))
-                {
-                    oB.arguments(frt.getArgument());
-                } else {
-                    oB.arguments("");
-                }
+                .command(getCommand(frt.getTransform()))
+                .arguments(frt.getArgument());
             builder.override(oB);
         }
     }
