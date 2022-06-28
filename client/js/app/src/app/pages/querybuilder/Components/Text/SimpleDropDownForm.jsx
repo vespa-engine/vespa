@@ -11,6 +11,7 @@ export default function SimpleDropDownForm({
   SimpleDropDownForm.defaultProps = {
     onChange: handleChange,
   };
+
   const { choice, setChoice } = useState(choices[0]);
 
   const options = Object.keys(choices).map((choice) => {

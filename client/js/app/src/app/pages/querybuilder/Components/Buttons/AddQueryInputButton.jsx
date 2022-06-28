@@ -10,7 +10,13 @@ export default function AddQueryInput() {
     setId((id) => id + 1);
     setInputs((prevInputs) => [
       ...prevInputs,
-      { id: id + 1, type: '', input: '', hasChildren: false, children: [] },
+      {
+        id: `${id + 1}`,
+        type: 'yql',
+        input: '',
+        hasChildren: false,
+        children: [],
+      },
     ]);
   };
 

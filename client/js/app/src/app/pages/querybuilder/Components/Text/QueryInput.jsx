@@ -1,10 +1,11 @@
 import React, { useContext } from 'react';
 import SimpleButton from '../Buttons/SimpleButton';
-import Info from './Info';
 import SimpleForm from './SimpleForm';
 import { OverlayTrigger, Tooltip } from 'react-bootstrap';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
-import QueryDropdownFormn from './QueryDropDownForm';
+import QueryDropdownForm from './QueryDropDownForm';
+import AddPropertyButton from '../Buttons/AddPropertyButton';
+import QueryInputChild from './QueryInputChild';
 
 export default function QueryInput() {
   const { inputs, setInputs, levelZeroParameters, childMap } =
@@ -37,22 +38,19 @@ export default function QueryInput() {
   const inputList = inputs.map((value) => {
     return (
       <div key={value.id} id={value.id} className="queryinput">
-        <QueryDropdownFormn
-          choices={levelZeroParameters}
-          id={value.id}
-        ></QueryDropdownFormn>
-        <Info id={value.id} height="15" width="15" />
+        <QueryDropdownForm choices={levelZeroParameters} id={value.id} />
         {value.hasChildren ? (
-          <SimpleButton id={`propb${value.id}`} className={'addpropsbutton'}>
-            + Add property
-          </SimpleButton>
+          <>
+            <AddPropertyButton id={value.id} />
+            <QueryInputChild id={value.id} />
+          </>
         ) : (
           <SimpleForm
             id={`v${value.id}`}
             size="30"
             onChange={updateInput}
             placeholder={setPlaceholder(value.id)}
-          ></SimpleForm>
+          />
         )}
         <OverlayTrigger
           placement="right"
