@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author gjoranv
- * @since 5.1.10
  */
 public class ApplicationStatusHandlerTest {
 
