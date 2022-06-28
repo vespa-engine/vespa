@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -44,8 +45,6 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     private final Map<ZoneApi, List<RoutingMethod>> zoneRoutingMethods = new HashMap<>();
     private final Set<ZoneApi> reprovisionToUpgradeOs = new HashSet<>();
     private final SystemName system; // Don't even think about making it non-final!   ƪ(`▿▿▿▿´ƪ)
-
-
 
     private List<? extends ZoneApi> zones;
     private UpgradePolicy upgradePolicy = null;
@@ -98,6 +97,12 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
 
     public ZoneRegistryMock setZones(ZoneApi... zone) {
         return setZones(List.of(zone));
+    }
+
+    public ZoneRegistryMock addZones(ZoneApi... zones) {
+        List<ZoneApi> allZones = new ArrayList<>(this.zones);
+        Collections.addAll(allZones, zones);
+        return setZones(allZones);
     }
 
     public ZoneRegistryMock setUpgradePolicy(UpgradePolicy upgradePolicy) {

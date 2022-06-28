@@ -48,7 +48,7 @@ public class CostCalculator {
         // Sum up allocations
         Map<Property, ResourceAllocation> allocationByProperty = new HashMap<>();
         var nodes = controller.zoneRegistry().zones()
-                              .reachable().in(Environment.prod).ofCloud(cloudName).zones().stream()
+                              .reachable().in(Environment.prod).in(cloudName).zones().stream()
                               .flatMap(zone -> uncheck(() -> nodeRepository.list(zone.getId(), NodeFilter.all()).stream()))
                               .filter(node -> node.owner().isPresent() && !node.owner().get().tenant().equals(SystemApplication.TENANT))
                               .collect(Collectors.toList());
