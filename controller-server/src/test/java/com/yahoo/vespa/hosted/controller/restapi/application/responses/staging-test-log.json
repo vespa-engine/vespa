@@ -85,11 +85,6 @@
       {
         "at": 14503000,
         "type": "info",
-        "message": "Deploying with CA signed certificate version 0"
-      },
-      {
-        "at": 14503000,
-        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -165,7 +160,7 @@
       }
     ]
   },
-  "lastId": 30,
+  "lastId": 29,
   "steps": {
     "deployTester": {
       "status": "succeeded",
