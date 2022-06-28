@@ -19,7 +19,7 @@ import java.util.Objects;
 public class UnsafeContentInputStream extends InputStream {
 
     private final ReadableContentChannel content;
-    private ByteBuffer buf = ByteBuffer.allocate(0);
+    private ByteBuffer currBuf = ByteBuffer.allocate(0);
     private byte [] marked;
     private int readSinceMarked;
 
@@ -34,13 +34,10 @@ public class UnsafeContentInputStream extends InputStream {
 
     @Override
     public int read() {
-        while (buf != null && buf.remaining() == 0) {
-            buf = content.read();
-        }
-        if (buf == null) {
-            return -1;
-        }
-        byte b = buf.get();
+        fetchNonEmptyBuffer();
+        if (currBuf == null) return -1;
+
+        byte b = currBuf.get();
         if (marked != null) {
             if (readSinceMarked < marked.length) {
                 marked[readSinceMarked++] = b;
@@ -51,34 +48,45 @@ public class UnsafeContentInputStream extends InputStream {
         return ((int)b) & 0xFF;
     }
 
+    private boolean fetchNonEmptyBuffer() {
+        while (currBuf != null && currBuf.remaining() == 0) {
+            currBuf = content.read();
+        }
+        return (currBuf != null && currBuf.hasRemaining());
+    }
+
     @Override
     public int read(byte buf[], int off, int len) {
         Objects.requireNonNull(buf, "buf");
         if (off < 0 || len < 0 || len > buf.length - off) {
             throw new IndexOutOfBoundsException();
         }
-        if (len == 0) {
-            return 0;
+        if (len == 0) return 0;
+
+        if ( ! fetchNonEmptyBuffer() ) return -1;
+        int read = 0;
+        while ((available() > 0) && fetchNonEmptyBuffer() && ((len - read) > 0)) {
+            int toRead = Math.min(currBuf.remaining(), (len - read));
+            currBuf.get(buf, off + read, toRead);
+            read += toRead;
         }
-        int c = read();
-        if (c == -1) {
-            return -1;
-        }
-        buf[off] = (byte)c;
-        int cnt = 1;
-        for (; cnt < len && available() > 0; ++cnt) {
-            if ((c = read()) == -1) {
-                break;
+        if (marked != null) {
+            if (readSinceMarked + len < marked.length) {
+                for (int i=0; i < len; i++) {
+                    marked[readSinceMarked++] = buf[off+i];
+                }
+            } else {
+                marked = null;
             }
-            buf[off + cnt] = (byte)c;
+
         }
-        return cnt;
+        return read;
     }
 
     @Override
     public int available() {
-        if (buf != null && buf.remaining() > 0) {
-            return buf.remaining();
+        if (currBuf != null && currBuf.remaining() > 0) {
+            return currBuf.remaining();
         }
         return content.available();
     }
@@ -102,11 +110,11 @@ public class UnsafeContentInputStream extends InputStream {
         if (marked == null) {
             throw new IOException("mark has not been called, or too much has been read since marked.");
         }
-        ByteBuffer newBuf = ByteBuffer.allocate(readSinceMarked + buf.remaining());
+        ByteBuffer newBuf = ByteBuffer.allocate(readSinceMarked + currBuf.remaining());
         newBuf.put(marked, 0, readSinceMarked);
-        newBuf.put(buf);
+        newBuf.put(currBuf);
         newBuf.flip();
-        buf = newBuf;
+        currBuf = newBuf;
         marked = null;
     }
 
