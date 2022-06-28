@@ -4,28 +4,28 @@
     "name": "Production test",
     "status": "error",
     "start": 0,
-    "end": 0,
+    "duration": 0,
     "children": [
       {
         "type": "container",
         "name": "JUnit Jupiter",
         "status": "error",
         "start": 0,
-        "end": 0,
+        "duration": 0,
         "children": [
           {
             "type": "container",
             "name": "SampleTest",
             "status": "error",
             "start": 0,
-            "end": 0,
+            "duration": 0,
             "children": [
               {
                 "type": "test",
                 "name": "aborted()",
                 "status": "aborted",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "output",
@@ -44,7 +44,7 @@
                 "name": "error()",
                 "status": "error",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "output",
@@ -68,7 +68,7 @@
                 "name": "failing()",
                 "status": "failed",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "output",
@@ -97,14 +97,14 @@
                 "name": "ignored()",
                 "status": "skipped",
                 "start": 0,
-                "end": 0
+                "duration": 0
               },
               {
                 "type": "test",
                 "name": "inconclusive(TestReporter)",
                 "status": "inconclusive",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "output",
@@ -133,7 +133,7 @@
                 "name": "successful()",
                 "status": "successful",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "output",
@@ -168,14 +168,14 @@
                 "name": "Inner",
                 "status": "failed",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "container",
                     "name": "others()",
                     "status": "failed",
                     "start": 0,
-                    "end": 0,
+                    "duration": 0,
                     "children": [
                       {
                         "type": "output",
@@ -192,7 +192,7 @@
                         "name": "second",
                         "status": "successful",
                         "start": 0,
-                        "end": 0,
+                        "duration": 0,
                         "children": [
                           {
                             "type": "output",
@@ -211,7 +211,7 @@
                         "name": "third",
                         "status": "failed",
                         "start": 0,
-                        "end": 0,
+                        "duration": 0,
                         "children": [
                           {
                             "type": "failure",
@@ -227,7 +227,7 @@
                     "name": "first()",
                     "status": "successful",
                     "start": 0,
-                    "end": 0,
+                    "duration": 0,
                     "children": [
                       {
                         "type": "output",
@@ -248,14 +248,14 @@
                 "name": "Skipped",
                 "status": "skipped",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "test",
                     "name": "disabled()",
                     "status": "skipped",
                     "start": 0,
-                    "end": 0
+                    "duration": 0
                   }
                 ]
               }
@@ -268,21 +268,21 @@
         "name": "JUnit Jupiter",
         "status": "error",
         "start": 0,
-        "end": 0,
+        "duration": 0,
         "children": [
           {
             "type": "container",
             "name": "FailingTestAndBothAftersTest",
             "status": "error",
             "start": 0,
-            "end": 0,
+            "duration": 0,
             "children": [
               {
                 "type": "test",
                 "name": "test()",
                 "status": "failed",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "failure",
@@ -303,7 +303,7 @@
             "name": "WrongBeforeAllTest",
             "status": "error",
             "start": 0,
-            "end": 0,
+            "duration": 0,
             "children": [
               {
                 "type": "failure",
@@ -315,14 +315,14 @@
                 "name": "fest()",
                 "status": "skipped",
                 "start": 0,
-                "end": 0
+                "duration": 0
               },
               {
                 "type": "test",
                 "name": "test()",
                 "status": "skipped",
                 "start": 0,
-                "end": 0
+                "duration": 0
               }
             ]
           },
@@ -331,14 +331,14 @@
             "name": "FailingExtensionTest",
             "status": "error",
             "start": 0,
-            "end": 0,
+            "duration": 0,
             "children": [
               {
                 "type": "test",
                 "name": "test()",
                 "status": "error",
                 "start": 0,
-                "end": 0,
+                "duration": 0,
                 "children": [
                   {
                     "type": "failure",

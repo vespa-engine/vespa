@@ -197,7 +197,7 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         nodeObject.setString("name", node.name());
         nodeObject.setString("status", node.status().name());
         nodeObject.setLong("start", node.start().toEpochMilli());
-        nodeObject.setLong("end", node.duration().toMillis());
+        nodeObject.setLong("duration", node.duration().toMillis());
     }
 
     static void toSlime(Cursor nodeObject, TestNode node) {
@@ -205,7 +205,7 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         nodeObject.setString("name", node.name());
         nodeObject.setString("status", node.status().name());
         nodeObject.setLong("start", node.start().toEpochMilli());
-        nodeObject.setLong("end", node.duration().toMillis());
+        nodeObject.setLong("duration", node.duration().toMillis());
     }
 
     static void toSlime(Cursor nodeObject, OutputNode node) {

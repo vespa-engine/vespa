@@ -392,12 +392,6 @@
       "startMillis": 0
     }
   },
-  "testReport": {
-    "summary": {
-      "success": 1,
-      "failed": 0
-    }
-  },
   "testReports": [
     {
       "summary": {
