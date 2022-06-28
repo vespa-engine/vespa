@@ -382,8 +382,8 @@ public class DeploymentStatus {
                                                                         .filter(run -> run.versions().equals(versions))
                                                                         .findFirst())
                                                .map(Run::start);
-        Optional<Instant> systemTestedAt = testedAt(job.application(), systemTest(null), versions);
-        Optional<Instant> stagingTestedAt = testedAt(job.application(), stagingTest(null), versions);
+        Optional<Instant> systemTestedAt = testedAt(job.application(), systemTest(job.type()), versions);
+        Optional<Instant> stagingTestedAt = testedAt(job.application(), stagingTest(job.type()), versions);
         if (systemTestedAt.isEmpty() || stagingTestedAt.isEmpty()) return triggeredAt;
         Optional<Instant> testedAt = systemTestedAt.get().isAfter(stagingTestedAt.get()) ? systemTestedAt : stagingTestedAt;
         return triggeredAt.isPresent() && triggeredAt.get().isBefore(testedAt.get()) ? triggeredAt : testedAt;
@@ -990,6 +990,8 @@ public class DeploymentStatus {
             return new JobStepStatus(StepType.test, step, dependencies, job, status) {
                 @Override
                 Optional<Instant> completedAt(Change change, Optional<JobId> dependent) {
+                    Optional<ZoneId> requiredTestZone = dependent.map(dep -> job.id().type().isSystemTest() ? status.systemTest(dep.type()).zone()
+                                                                                                            : status.stagingTest(dep.type()).zone());
                     return RunList.from(job)
                                   .matching(run -> dependent.flatMap(status::deploymentFor)
                                                             .map(deployment -> run.versions().targetsMatch(Versions.from(change,
@@ -999,7 +1001,7 @@ public class DeploymentStatus {
                                                             .orElseGet(() ->    (change.platform().isEmpty() || change.platform().get().equals(run.versions().targetPlatform()))
                                                                              && (change.revision().isEmpty() || change.revision().get().equals(run.versions().targetRevision()))))
                                   .matching(Run::hasSucceeded)
-                                  .matching(run -> dependent.isEmpty() || status.findCloud(dependent.get().type()).equals(status.findCloud(run.id().type())))
+                                  .matching(run -> requiredTestZone.isEmpty() || requiredTestZone.get().equals(run.id().type().zone()))
                                   .asList().stream()
                                   .map(run -> run.end().get())
                                   .max(naturalOrder());

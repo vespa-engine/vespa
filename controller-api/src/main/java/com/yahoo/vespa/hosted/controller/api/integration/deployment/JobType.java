@@ -57,8 +57,9 @@ public final class JobType implements Comparable<JobType> {
         if (cloud == null || candidates.in(cloud).zones().isEmpty())
             cloud = zones.systemZone().getCloudName();
 
-        return candidates.in(cloud).zones().stream().map(zone -> deploymentTo(zone.getId()))
-                         .findFirst().orElseThrow(() -> new IllegalArgumentException("no zones in " + environment + " among " +
+        return candidates.in(cloud).zones().stream().findFirst()
+                         .map(zone -> deploymentTo(zone.getId()))
+                         .orElseThrow(() -> new IllegalArgumentException("no zones in " + environment + " among " +
                                                                                      zones.zones().controllerUpgraded().zones()));
     }
 
