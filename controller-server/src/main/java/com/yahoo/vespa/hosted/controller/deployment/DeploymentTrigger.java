@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.InstanceName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
@@ -24,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -366,6 +368,7 @@ public class DeploymentTrigger {
                                                       .withDeploymentSpec())
                    .withChanges()
                    .asList().stream()
+                   .filter(status -> ! hasExceededQuota(status.application().id().tenant()))
                    .map(this::computeReadyJobs)
                    .flatMap(Collection::stream)
                    .collect(toList());
@@ -375,19 +378,23 @@ public class DeploymentTrigger {
     private List<Job> computeReadyJobs(DeploymentStatus status) {
         List<Job> jobs = new ArrayList<>();
         Map<JobId, List<DeploymentStatus.Job>> jobsToRun = status.jobsToRun();
-        jobsToRun.forEach((job, versionsList) -> {
-            versionsList.get(0).readyAt()
-                        .filter(readyAt -> ! clock.instant().isBefore(readyAt))
-                        .filter(__ -> ! (job.type().isProduction() && isUnhealthyInAnotherZone(status.application(), job)))
-                        .filter(__ -> abortIfRunning(status, jobsToRun, job)) // Abort and trigger this later if running with outdated parameters.
-                        .map(readyAt -> deploymentJob(status.application().require(job.application().instance()),
-                                                      versionsList.get(0).versions(),
-                                                      versionsList.get(0).type(),
-                                                      status.instanceJobs(job.application().instance()).get(job.type()),
-                                                      readyAt))
-                        .ifPresent(jobs::add);
+        jobsToRun.forEach((jobId, jobsList) -> {
+            DeploymentStatus.Job job = jobsList.get(0);
+            if (     job.readyAt().isPresent()
+                && ! clock.instant().isBefore(job.readyAt().get())
+                && ! (jobId.type().isProduction() && isUnhealthyInAnotherZone(status.application(), jobId))
+                &&   abortIfRunning(status, jobsToRun, jobId)) // Abort and trigger this later if running with outdated parameters.
+                jobs.add(deploymentJob(status.application().require(jobId.application().instance()),
+                                       job.versions(),
+                                       job.type(),
+                                       status.instanceJobs(jobId.application().instance()).get(jobId.type()),
+                                       job.readyAt().get()));
         });
         return Collections.unmodifiableList(jobs);
+    }
+
+    private boolean hasExceededQuota(TenantName tenant) {
+        return controller.serviceRegistry().billingController().getQuota(tenant).budget().equals(Optional.of(BigDecimal.ZERO));
     }
 
     /** Returns whether the application is healthy in all other production zones. */
