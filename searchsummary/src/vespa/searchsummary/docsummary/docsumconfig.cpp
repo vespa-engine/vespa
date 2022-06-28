@@ -87,11 +87,12 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
     } else if (overrideName == "attributecombiner") {
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
-            fieldWriter = AttributeCombinerDFW::create(fieldName, *attr_ctx, false, std::shared_ptr<MatchingElementsFields>());
+            const string& source_field = argument.empty() ? fieldName : argument;
+            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, false, std::shared_ptr<MatchingElementsFields>());
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "matchedattributeelementsfilter") {
-        string source_field = argument.empty() ? fieldName : argument;
+        const string& source_field = argument.empty() ? fieldName : argument;
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
             if (attr_ctx->getAttribute(source_field) != nullptr) {
@@ -102,7 +103,7 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
             rc = static_cast<bool>(fieldWriter);
         }
     } else if (overrideName == "matchedelementsfilter") {
-        string source_field = argument.empty() ? fieldName : argument;
+        const string& source_field = argument.empty() ? fieldName : argument;
         if (getEnvironment() && getEnvironment()->getAttributeManager()) {
             auto attr_ctx = getEnvironment()->getAttributeManager()->createContext();
             fieldWriter = MatchedElementsFilterDFW::create(source_field, resultConfig.GetFieldNameEnum().Lookup(source_field.c_str()),
