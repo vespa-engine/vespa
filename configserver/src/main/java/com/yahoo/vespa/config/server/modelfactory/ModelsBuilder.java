@@ -92,9 +92,6 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         Instant start = Instant.now();
         log.log(Level.FINE, () -> "Will build models for " + applicationId);
         Set<Version> versions = modelFactoryRegistry.allVersions();
-        if (applicationPackage.getMajorVersion().isPresent() && applicationPackage.getMajorVersion().get() != wantedNodeVespaVersion.getMajor())
-            throw new IllegalArgumentException("requested node version (" + wantedNodeVespaVersion + ") has a different major version " +
-                                               "than specified in deployment.xml (" + applicationPackage.getMajorVersion().get() + ")");
 
         // If the application specifies a major, skip models on a newer major
         Optional<Integer> requestedMajorVersion = applicationPackage.getMajorVersion();
