@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.Component;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.Vtag;
 import com.yahoo.component.annotation.Inject;
@@ -52,7 +52,7 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         Map<String, ? extends JsonNode> produceExtraFields(ApplicationStatusHandler handler);
     }
 
-    public static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     private final JsonNode applicationJson;
     private final JsonNode clientsJson;
@@ -83,10 +83,6 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
 
     @Override
     public ContentChannel handleRequest(com.yahoo.jdisc.Request request, ResponseHandler handler) {
-        JsonNode json = new StatusResponse(applicationJson, clientsJson, serversJson,
-                requestFiltersJson, responseFiltersJson, bindingsConfig, this, extensions)
-                .render();
-
         FastContentWriter writer = new FastContentWriter(new ResponseDispatch() {
             @Override
             protected com.yahoo.jdisc.Response newResponse() {
@@ -97,7 +93,7 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         }.connect(handler));
 
         try {
-            writer.write(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(json));
+            writer.write(jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(render()));
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Invalid JSON: " + e.getMessage(), e);
         }
@@ -106,8 +102,18 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         return new IgnoredContent();
     }
 
+    public ObjectMapper jsonMapper() { return jsonMapper; }
+
+    public Collection<RequestHandler> requestHandlers() { return container().getRequestHandlerRegistry().allComponents(); }
+
+    private Map<ComponentId, RequestHandler> requestHandlersById() { return container().getRequestHandlerRegistry().allComponentsById(); }
+
+    private List<? extends Component> components() { return container().getComponentRegistry().allComponents(); }
+
+    private static Container container() { return Container.get();  }
+
     static JsonNode renderApplicationConfigs(ApplicationMetadataConfig metaConfig,
-                                             ApplicationUserdataConfig userConfig) {
+                                      ApplicationUserdataConfig userConfig) {
         ObjectNode vespa = jsonMapper.createObjectNode();
         vespa.put("version", Vtag.currentVersion.toString());
 
@@ -177,10 +183,10 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         return ret;
     }
 
-    private static JsonNode renderAbstractComponents(List<? extends AbstractComponent> components) {
+    private static JsonNode renderAbstractComponents(List<? extends Component> components) {
         ArrayNode ret = jsonMapper.createArrayNode();
 
-        for (AbstractComponent c : components) {
+        for (Component c : components) {
             JsonNode jc = renderComponent(c, c.getId());
             ret.add(jc);
         }
@@ -223,79 +229,48 @@ public class ApplicationStatusHandler extends AbstractRequestHandler {
         }
     }
 
-    public static final class StatusResponse {
-        private final JsonNode applicationJson;
-        private final JsonNode clientsJson;
-        private final JsonNode serversJson;
-        private final JsonNode requestFiltersJson;
-        private final JsonNode responseFiltersJson;
-        private final JdiscBindingsConfig bindingsConfig;
-        private final ApplicationStatusHandler handler;
-        private final Collection<Extension> extensions;
+    JsonNode render() {
+        ObjectNode root = jsonMapper.createObjectNode();
 
-        StatusResponse(JsonNode applicationJson,
-                       JsonNode clientsJson,
-                       JsonNode serversJson,
-                       JsonNode requestFiltersJson,
-                       JsonNode responseFiltersJson,
-                       JdiscBindingsConfig bindingsConfig,
-                       ApplicationStatusHandler handler,
-                       Collection<Extension> extensions) {
-            this.applicationJson = applicationJson;
-            this.clientsJson = clientsJson;
-            this.serversJson = serversJson;
-            this.requestFiltersJson = requestFiltersJson;
-            this.responseFiltersJson = responseFiltersJson;
-            this.bindingsConfig = bindingsConfig;
-            this.handler = handler;
-            this.extensions = extensions;
+        root.set("application", applicationJson);
+        root.set("abstractComponents",
+                renderAbstractComponents(components()));
+
+        root.set("handlers", renderRequestHandlers(bindingsConfig, requestHandlersById()));
+        root.set("clients", clientsJson);
+        root.set("servers", serversJson);
+        root.set("httpRequestFilters", requestFiltersJson);
+        root.set("httpResponseFilters", responseFiltersJson);
+
+        root.set("processingChains", renderProcessingChains());
+        for (Extension extension : extensions) {
+            extension.produceExtraFields(this).forEach((field, json) -> {
+                if (root.has(field)) throw new IllegalArgumentException("Field '" + field + "' already defined");
+                root.set(field, json);
+            });
+
         }
+        return root;
+    }
 
-        public JsonNode render() {
-            ObjectNode root = jsonMapper.createObjectNode();
-
-            root.set("application", applicationJson);
-            root.set("abstractComponents",
-                    renderAbstractComponents(Container.get().getComponentRegistry().allComponents()));
-
-            root.set("handlers",
-                    renderRequestHandlers(bindingsConfig, Container.get().getRequestHandlerRegistry().allComponentsById()));
-            root.set("clients", clientsJson);
-            root.set("servers", serversJson);
-            root.set("httpRequestFilters", requestFiltersJson);
-            root.set("httpResponseFilters", responseFiltersJson);
-
-            root.set("processingChains", renderProcessingChains(Container.get()));
-            for (Extension extension : extensions) {
-                extension.produceExtraFields(handler).forEach((field, json) -> {
-                    if (root.has(field)) throw new IllegalArgumentException("Field '" + field + "' already defined");
-                    root.set(field, json);
-                });
-
+    private JsonNode renderProcessingChains() {
+        JsonNode ret = jsonMapper.createObjectNode();
+        for (RequestHandler h : requestHandlers()) {
+            if (h instanceof ProcessingHandler) {
+                ChainRegistry<Processor> registry = ((ProcessingHandler) h).getChainRegistry();
+                return renderChains(registry);
             }
-            return root;
         }
+        return ret;
+    }
 
-        private static JsonNode renderProcessingChains(Container container) {
-            JsonNode ret = jsonMapper.createObjectNode();
-            for (RequestHandler h : container.getRequestHandlerRegistry().allComponents()) {
-                if (h instanceof ProcessingHandler) {
-                    ChainRegistry<Processor> registry = ((ProcessingHandler) h).getChainRegistry();
-                    return renderChains(registry);
-                }
-            }
-            return ret;
+    // Note the generic param here! The key to make this work is '? extends Chain', but why?
+    public static JsonNode renderChains(ComponentRegistry<? extends Chain<?>> chains) {
+        ObjectNode ret = jsonMapper.createObjectNode();
+        for (Chain<?> chain : chains.allComponents()) {
+            ret.set(chain.getId().stringValue(), renderAbstractComponents(chain.components()));
         }
-
-        // Note the generic param here! The key to make this work is '? extends Chain', but why?
-        public static JsonNode renderChains(ComponentRegistry<? extends Chain<?>> chains) {
-            ObjectNode ret = jsonMapper.createObjectNode();
-            for (Chain<?> chain : chains.allComponents()) {
-                ret.set(chain.getId().stringValue(), renderAbstractComponents(chain.components()));
-            }
-            return ret;
-        }
-
+        return ret;
     }
 
     private class IgnoredContent implements ContentChannel {

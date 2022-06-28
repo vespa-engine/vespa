@@ -2,7 +2,6 @@
 package com.yahoo.search.handler.observability;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.yahoo.container.Container;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.search.handler.SearchHandler;
@@ -16,18 +15,18 @@ import java.util.Map;
 public class SearchStatusExtension implements ApplicationStatusHandler.Extension {
 
     @Override
-    public Map<String, ? extends JsonNode> produceExtraFields(ApplicationStatusHandler handler) {
-        return Map.of("searchChains", renderSearchChains(Container.get()));
+    public Map<String, ? extends JsonNode> produceExtraFields(ApplicationStatusHandler statusHandler) {
+        return Map.of("searchChains", renderSearchChains(statusHandler));
     }
 
-    private static JsonNode renderSearchChains(Container container) {
-        for (RequestHandler h : container.getRequestHandlerRegistry().allComponents()) {
+    private static JsonNode renderSearchChains(ApplicationStatusHandler statusHandler) {
+        for (RequestHandler h : statusHandler.requestHandlers()) {
             if (h instanceof SearchHandler) {
                 SearchChainRegistry scReg = ((SearchHandler) h).getSearchChainRegistry();
-                return ApplicationStatusHandler.StatusResponse.renderChains(scReg);
+                return ApplicationStatusHandler.renderChains(scReg);
             }
         }
-        return ApplicationStatusHandler.jsonMapper.createObjectNode();
+        return statusHandler.jsonMapper().createObjectNode();
     }
 
 }

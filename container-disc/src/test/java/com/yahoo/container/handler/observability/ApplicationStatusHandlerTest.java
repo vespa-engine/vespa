@@ -113,7 +113,7 @@ public class ApplicationStatusHandlerTest {
         Chain<Processor> chain = new Chain<>("myChain", new VoidProcessor(new ComponentId("voidProcessor")));
         chains.register(new ComponentId("myChain"), chain);
 
-        String json = ApplicationStatusHandler.StatusResponse.renderChains(chains).toString();
+        String json = ApplicationStatusHandler.renderChains(chains).toString();
         assertTrue(json.contains("myChain"));
         assertTrue(json.contains("voidProcessor"));
     }
