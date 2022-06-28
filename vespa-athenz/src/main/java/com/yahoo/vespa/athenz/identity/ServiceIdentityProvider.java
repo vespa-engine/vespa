@@ -41,17 +41,4 @@ public interface ServiceIdentityProvider {
      */
     Path privateKeyPath();
 
-    /**
-     * @return Path to Athenz truststore in PEM format
-     */
-    Path athenzTruststorePath();
-
-    /**
-     * The client truststore contains the Athenz certificates from {@link #athenzTruststorePath()}
-     * and additional certificate authorities that issues trusted server certificates.
-     *
-     * @return Path to client truststore in PEM format
-     */
-    Path clientTruststorePath();
-
 }

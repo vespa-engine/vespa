@@ -204,10 +204,6 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     @Override public Path privateKeyPath() { return athenzCredentialsService.privateKeyPath(); }
 
-    @Override public Path athenzTruststorePath() { return ATHENZ_TRUST_STORE; }
-
-    @Override public Path clientTruststorePath() { return CLIENT_TRUST_STORE; }
-
     @Override
     public SSLContext getRoleSslContext(String domain, String role) {
         try {
@@ -346,7 +342,7 @@ public final class AthenzIdentityProviderImpl extends AbstractComponent implemen
 
     private static SiaIdentityProvider createNodeIdentityProvider(IdentityConfig config) {
         return new SiaIdentityProvider(
-                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, ATHENZ_TRUST_STORE, CLIENT_TRUST_STORE);
+                new AthenzService(config.nodeIdentityName()), SiaUtils.DEFAULT_SIA_DIRECTORY, CLIENT_TRUST_STORE);
     }
 
     private boolean isExpired(AthenzCredentials credentials) {

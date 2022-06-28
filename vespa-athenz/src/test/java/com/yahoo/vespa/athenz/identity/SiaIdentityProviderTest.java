@@ -50,7 +50,6 @@ public class SiaIdentityProviderTest {
                         new AthenzService("domain", "service-name"),
                         keyFile.toPath(),
                         certificateFile.toPath(),
-                        trustStoreFile.toPath(),
                         trustStoreFile.toPath());
 
         assertNotNull(provider.getIdentitySslContext());
@@ -74,7 +73,6 @@ public class SiaIdentityProviderTest {
                         new AthenzService("domain", "service-name"),
                         keyFile.toPath(),
                         certificateFile.toPath(),
-                        trustStoreFile.toPath(),
                         trustStoreFile.toPath());
 
         assertNotNull(provider.getIdentitySslContext());

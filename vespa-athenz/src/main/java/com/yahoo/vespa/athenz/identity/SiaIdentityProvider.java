@@ -27,41 +27,33 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     private final AthenzIdentity service;
     private final Path certificateFile;
     private final Path privateKeyFile;
-    private final Path clientTruststoreFile;
-    private final Path athenzTruststoreFile;
 
     @Inject
     public SiaIdentityProvider(SiaProviderConfig config) {
         this(new AthenzService(config.athenzDomain(), config.athenzService()),
              SiaUtils.getPrivateKeyFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())),
              SiaUtils.getCertificateFile(Paths.get(config.keyPathPrefix()), new AthenzService(config.athenzDomain(), config.athenzService())),
-             Paths.get(config.athenzTruststorePath()),
              Paths.get(config.trustStorePath()));
     }
 
     public SiaIdentityProvider(AthenzIdentity service,
                                Path siaPath,
-                               Path athenzTruststoreFile,
                                Path clientTruststoreFile) {
         this(service,
                 SiaUtils.getPrivateKeyFile(siaPath, service),
                 SiaUtils.getCertificateFile(siaPath, service),
-                athenzTruststoreFile,
                 clientTruststoreFile);
     }
 
     public SiaIdentityProvider(AthenzIdentity service,
                                Path privateKeyFile,
                                Path certificateFile,
-                               Path athenzTruststoreFile,
                                Path clientTruststoreFile) {
         this.service = service;
         this.keyManager = AutoReloadingX509KeyManager.fromPemFiles(privateKeyFile, certificateFile);
         this.sslContext = createIdentitySslContext(keyManager, clientTruststoreFile);
         this.certificateFile = certificateFile;
         this.privateKeyFile = privateKeyFile;
-        this.athenzTruststoreFile = athenzTruststoreFile;
-        this.clientTruststoreFile = clientTruststoreFile;
     }
 
     @Override
@@ -77,8 +69,6 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     @Override public X509CertificateWithKey getIdentityCertificateWithKey() { return keyManager.getCurrentCertificateWithKey(); }
     @Override public Path certificatePath() { return certificateFile; }
     @Override public Path privateKeyPath() { return privateKeyFile; }
-    @Override public Path athenzTruststorePath() { return athenzTruststoreFile; }
-    @Override public Path clientTruststorePath() { return clientTruststoreFile; }
 
     private static SSLContext createIdentitySslContext(AutoReloadingX509KeyManager keyManager, Path trustStoreFile) {
         return new SslContextBuilder()
