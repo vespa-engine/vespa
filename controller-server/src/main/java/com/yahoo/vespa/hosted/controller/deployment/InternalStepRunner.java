@@ -174,7 +174,7 @@ public class InternalStepRunner implements StepRunner {
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
         Optional<X509Certificate> testerCertificate = controller.jobController().run(id).testerCertificate();
-        return deploy(() -> controller.applications().deploy(id.job(), setTheStage, logger::log),
+        return deploy(() -> controller.applications().deploy(id.job(), setTheStage),
                       controller.jobController().run(id)
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),

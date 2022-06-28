@@ -6,11 +6,6 @@
       {
         "at": 0,
         "type": "info",
-        "message": "Found endpoints:"
-      },
-      {
-        "at": 0,
-        "type": "info",
         "message": "- dev.us-east-1"
       },
       {
@@ -25,7 +20,7 @@
       }
     ]
   },
-  "lastId": 12,
+  "lastId": 11,
   "steps": {
     "deployReal": {
       "status": "succeeded",
