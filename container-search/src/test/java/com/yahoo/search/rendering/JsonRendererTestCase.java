@@ -116,8 +116,10 @@ public class JsonRendererTestCase {
 
     @After
     public void deconstructClone() {
-        renderer.deconstruct();
-        renderer = null;
+        if (renderer != null) {
+            renderer.deconstruct();
+            renderer = null;
+        }
     }
 
     @AfterClass
@@ -436,10 +438,7 @@ public class JsonRendererTestCase {
         e2.search(subQuery);
         subQuery.trace("yellow", 1);
         q.trace("marker", 1);
-        ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
-        assertTrue(f.get());
-        String summary = Utf8.toString(bs.toByteArray());
+        String summary = render(execution, r);
         assertEqualJson(expected, summary);
     }
 
@@ -478,10 +477,7 @@ public class JsonRendererTestCase {
 
         execution.search(q);
         new Execution(new Chain<>(), execution.context());
-        ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
-        assertTrue(f.get());
-        String summary = Utf8.toString(bs.toByteArray());
+        String summary = render(execution, r);
         ObjectMapper m = new ObjectMapper();
 
         Map<String, Object> exp = m.readValue(expected, Map.class);
@@ -1478,10 +1474,15 @@ public class JsonRendererTestCase {
     }
 
     private String render(Execution execution, Result r) throws InterruptedException, ExecutionException {
-        ByteArrayOutputStream bs = new ByteArrayOutputStream();
-        CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
-        assertTrue(f.get());
-        return Utf8.toString(bs.toByteArray());
+        if (renderer == null) createClone();
+        try {
+            ByteArrayOutputStream bs = new ByteArrayOutputStream();
+            CompletableFuture<Boolean> f = renderer.renderResponse(bs, r, execution, null);
+            assertTrue(f.get());
+            return Utf8.toString(bs.toByteArray());
+        } finally {
+            deconstructClone();
+        }
     }
 
     @SuppressWarnings("unchecked")
