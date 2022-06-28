@@ -116,22 +116,23 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public ZToken getRoleToken(AthenzDomain domain) {
-        return getRoleToken(domain, null);
+    public ZToken getRoleToken(AthenzDomain domain, Duration expiry) {
+        return getRoleToken(domain, null, expiry);
     }
 
     @Override
-    public ZToken getRoleToken(AthenzRole athenzRole) {
-        return getRoleToken(athenzRole.domain(), athenzRole.roleName());
+    public ZToken getRoleToken(AthenzRole athenzRole, Duration expiry) {
+        return getRoleToken(athenzRole.domain(), athenzRole.roleName(), expiry);
     }
 
-    private ZToken getRoleToken(AthenzDomain domain, String roleName) {
+    private ZToken getRoleToken(AthenzDomain domain, String roleName, Duration expiry) {
         URI uri = ztsUrl.resolve(String.format("domain/%s/token", domain.getName()));
         RequestBuilder requestBuilder = RequestBuilder.get(uri)
                 .addHeader("Content-Type", "application/json");
         if (roleName != null) {
             requestBuilder.addParameter("role", roleName);
         }
+        requestBuilder.addParameter("maxExpiryTime", Long.toString(expiry.getSeconds()));
         HttpUriRequest request = requestBuilder.build();
         return execute(request, response -> {
             RoleTokenResponseEntity roleTokenResponseEntity = readEntity(response, RoleTokenResponseEntity.class);
