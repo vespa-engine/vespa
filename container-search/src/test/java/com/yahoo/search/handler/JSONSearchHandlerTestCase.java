@@ -12,7 +12,6 @@ import com.yahoo.container.jdisc.RequestHandlerTestDriver;
 import com.yahoo.container.protect.Error;
 import com.yahoo.io.IOUtils;
 import com.yahoo.net.HostName;
-import com.yahoo.search.handler.SearchHandler;
 import com.yahoo.search.searchchain.config.test.SearchChainConfigurerTestCase;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
@@ -20,6 +19,7 @@ import com.yahoo.test.json.JsonTestHelper;
 import org.assertj.core.api.Assertions;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -28,11 +28,12 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
@@ -52,7 +53,6 @@ public class JSONSearchHandlerTestCase {
     private static final String selfHostname = HostName.getLocalhost();
 
     private static String tempDir = "";
-    private static String configId = null;
     private static final String uri = "http://localhost?";
     private static final String JSON_CONTENT_TYPE = "application/json";
 
@@ -67,7 +67,7 @@ public class JSONSearchHandlerTestCase {
     public void startUp() throws IOException {
         File cfgDir = tempfolder.newFolder("SearchHandlerTestCase");
         tempDir = cfgDir.getAbsolutePath();
-        configId = "dir:" + tempDir;
+        String configId = "dir:" + tempDir;
 
         IOUtils.copyDirectory(new File(testDir), cfgDir, 1); // make configs active
         generateComponentsConfigForActive();
@@ -533,6 +533,29 @@ public class JSONSearchHandlerTestCase {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
         assertOkResult(driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, json.toString(), "Application/JSON; charset=utf-8"), jsonResult);
+    }
+
+    private static String createBenchmarkRequest(int num) {
+        Random rand = new Random();
+        StringBuilder sb = new StringBuilder("{\"yql\": \"select id from vectors where {targetHits:10, approximate:true}nearestNeighbor(vector,q);\", \"input.query(q)\":[");
+        sb.append(rand.nextDouble());
+        for (int i=1; i < num; i++) {
+            sb.append(',');
+            sb.append(rand.nextDouble());
+        }
+        sb.append("]}");
+        return sb.toString();
+    }
+    @Ignore
+    public void benchmarkJsonParsing() {
+        String request = createBenchmarkRequest(768);
+        for (int i=0; i < 10000; i++) {
+            RequestHandlerTestDriver.MockResponseHandler responseHandler =
+                    driver.sendRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.POST, request, JSON_CONTENT_TYPE);
+            String response = responseHandler.readAll();
+            assertEquals(200, responseHandler.getStatus());
+            assertFalse(response.isEmpty());
+        }
     }
 
 }
