@@ -63,7 +63,7 @@ public class EndpointCertificates {
         if (duration.toSeconds() > 30)
             log.log(Level.INFO, Text.format("Getting endpoint certificate metadata for %s took %d seconds!", instance.id().serializedForm(), duration.toSeconds()));
 
-        if (controller.zoneRegistry().zones().ofCloud(CloudName.from("gcp")).ids().contains(zone)) { // Until CKMS is available from GCP
+        if (controller.zoneRegistry().zones().all().in(CloudName.from("gcp")).ids().contains(zone)) { // Until CKMS is available from GCP
             if(metadata.isPresent()) {
                 // Validate metadata before copying cert to GCP. This will ensure we don't bug out on the first deployment, but will take more time
                 certificateValidator.validate(metadata.get(), instance.id().serializedForm(), zone, controller.routing().certificateDnsNames(new DeploymentId(instance.id(), zone), deploymentSpec));

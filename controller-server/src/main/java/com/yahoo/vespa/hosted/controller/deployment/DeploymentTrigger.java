@@ -382,7 +382,7 @@ public class DeploymentTrigger {
                         .filter(__ -> abortIfRunning(status, jobsToRun, job)) // Abort and trigger this later if running with outdated parameters.
                         .map(readyAt -> deploymentJob(status.application().require(job.application().instance()),
                                                       versionsList.get(0).versions(),
-                                                      job.type(),
+                                                      versionsList.get(0).type(),
                                                       status.instanceJobs(job.application().instance()).get(job.type()),
                                                       readyAt))
                         .ifPresent(jobs::add);
