@@ -115,6 +115,7 @@ public class NodeSerializer {
     private static final String restartGenerationKey = "restartGeneration";
     private static final String currentRestartGenerationKey = "currentRestartGeneration";
     private static final String removableKey = "removable";
+    private static final String reusableKey = "reusable";
     // Saved as part of allocation instead of serviceId, since serviceId serialized form is not easily extendable.
     private static final String wantedVespaVersionKey = "wantedVespaVersion";
     private static final String wantedContainerImageRepoKey = "wantedDockerImageRepo";
@@ -217,7 +218,8 @@ public class NodeSerializer {
         object.setString(serviceIdKey, allocation.membership().stringValue());
         object.setLong(restartGenerationKey, allocation.restartGeneration().wanted());
         object.setLong(currentRestartGenerationKey, allocation.restartGeneration().current());
-        object.setBool(removableKey, allocation.isRemovable());
+        object.setBool(removableKey, allocation.removable());
+        object.setBool(reusableKey, allocation.reusable());
         object.setString(wantedVespaVersionKey, allocation.membership().cluster().vespaVersion().toString());
         allocation.membership().cluster().dockerImageRepo().ifPresent(repo -> object.setString(wantedContainerImageRepoKey, repo.untagged()));
         allocation.networkPorts().ifPresent(ports -> NetworkPortsSerializer.toSlime(ports, object.setArray(networkPortsKey)));
@@ -330,6 +332,7 @@ public class NodeSerializer {
                                                                  .orElse(assignedResources),
                                           generationFromSlime(object, restartGenerationKey, currentRestartGenerationKey),
                                           object.field(removableKey).asBool(),
+                                          object.field(reusableKey).asBool(),
                                           NetworkPortsSerializer.fromSlime(object.field(networkPortsKey))));
     }
 

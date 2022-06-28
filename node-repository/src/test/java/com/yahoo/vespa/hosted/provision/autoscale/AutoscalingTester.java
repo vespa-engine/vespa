@@ -124,7 +124,7 @@ class AutoscalingTester {
         try (Mutex lock = nodeRepository().nodes().lock(application)){
             for (Node node : nodeRepository().nodes().list(Node.State.active).owner(application)) {
                 if (node.allocation().get().membership().retired())
-                    nodeRepository().nodes().write(node.with(node.allocation().get().removable(true)), lock);
+                    nodeRepository().nodes().write(node.with(node.allocation().get().removable(true, true)), lock);
             }
         }
         deploy(application, cluster, resources);
