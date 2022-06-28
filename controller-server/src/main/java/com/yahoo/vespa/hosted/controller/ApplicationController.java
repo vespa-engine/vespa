@@ -446,7 +446,7 @@ public class ApplicationController {
     }
 
     /** Deploys an application package for an existing application instance. */
-    public ActivateResult deploy(JobId job, boolean deploySourceVersions) {
+    public ActivateResult deploy(JobId job, boolean deploySourceVersions, Consumer<String> deployLogger) {
         if (job.application().instance().isTester())
             throw new IllegalArgumentException("'" + job.application() + "' is a tester application!");
 
@@ -479,6 +479,8 @@ public class ApplicationController {
                     applicationPackage = applicationPackage.withTrustedCertificate(run.testerCertificate().get());
 
                 endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone, applicationPackage.deploymentSpec());
+                endpointCertificateMetadata.ifPresent(e -> deployLogger.accept("Deploying with CA signed certificate version %s".formatted(e.version())));
+
                 containerEndpoints = controller.routing().of(deployment).prepare(application);
 
             } // Release application lock while doing the deployment, which is a lengthy task.
