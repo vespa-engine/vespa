@@ -151,13 +151,7 @@ class JobControllerApiHandlerHelper {
         Optional<String> testReport = jobController.getTestReports(runId);
         testReport.map(SlimeUtils::jsonToSlime)
                   .map(Slime::get)
-                  .ifPresent(reportArrayCursor -> {
-                      reportArrayCursor.traverse((ArrayTraverser) (i, reportCursor) -> {
-                          if (i > 0) return;
-                          SlimeUtils.copyObject(reportCursor, detailsObject.setObject("testReport"));
-                      });
-                      SlimeUtils.copyArray(reportArrayCursor, detailsObject.setArray("testReports"));
-                  });
+                  .ifPresent(reportArrayCursor -> SlimeUtils.copyArray(reportArrayCursor, detailsObject.setArray("testReports")));
 
         return new SlimeJsonResponse(slime);
     }
