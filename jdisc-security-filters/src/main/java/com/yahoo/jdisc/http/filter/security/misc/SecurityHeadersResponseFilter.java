@@ -18,5 +18,6 @@ public class SecurityHeadersResponseFilter implements SecurityResponseFilter {
         response.setHeader("Pragma", "no-cache");
         response.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
         response.setHeader("X-Content-Type-Options", "nosniff");
+        response.setHeader("X-Frame-Options", "DENY");
     }
 }
