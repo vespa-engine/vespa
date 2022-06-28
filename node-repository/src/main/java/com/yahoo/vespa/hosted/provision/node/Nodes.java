@@ -226,13 +226,14 @@ public class Nodes {
      * Sets a list of nodes to have their allocation removable (active to inactive) in the node repository.
      *
      * @param application the application the nodes belong to
-     * @param nodes the nodes to make removable. These nodes MUST be in the active state.
+     * @param nodes the nodes to make removable. These nodes MUST be in the active state
+     * @param reusable move the node directly to {@link Node.State#dirty} after removal
      */
-    public void setRemovable(ApplicationId application, List<Node> nodes) {
+    public void setRemovable(ApplicationId application, List<Node> nodes, boolean reusable) {
         try (Mutex lock = lock(application)) {
             List<Node> removableNodes = nodes.stream()
-                                             .map(node -> node.with(node.allocation().get().removable(true)))
-                                             .collect(Collectors.toList());
+                                             .map(node -> node.with(node.allocation().get().removable(true, reusable)))
+                                             .toList();
             write(removableNodes, lock);
         }
     }
@@ -247,9 +248,12 @@ public class Nodes {
 
         var stateless = NodeList.copyOf(nodes).stateless();
         var stateful  = NodeList.copyOf(nodes).stateful();
+        var statefulToInactive  = stateful.not().reusable();
+        var statefulToDirty = stateful.reusable();
         List<Node> written = new ArrayList<>();
         written.addAll(deallocate(stateless.asList(), Agent.application, "Deactivated by application", transaction.nested()));
-        written.addAll(db.writeTo(Node.State.inactive, stateful.asList(), Agent.application, Optional.empty(), transaction.nested()));
+        written.addAll(deallocate(statefulToDirty.asList(), Agent.application, "Deactivated by application (recycled)", transaction.nested()));
+        written.addAll(db.writeTo(Node.State.inactive, statefulToInactive.asList(), Agent.application, Optional.empty(), transaction.nested()));
         return written;
     }
 

@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -21,7 +20,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static java.util.stream.Collectors.toUnmodifiableList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Abstract, immutable list for subclassing with concrete types and domain specific filters.
@@ -51,7 +50,7 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
 
     /** Returns a new list which is the result of filtering with the -- possibly negated -- condition. */
     public final ListType matching(Predicate<Type> condition) {
-        return constructor.apply(items.stream().filter(negate ? condition.negate() : condition).collect(toUnmodifiableList()), false);
+        return constructor.apply(items.stream().filter(negate ? condition.negate() : condition).toList(), false);
     }
 
     /** Returns the first n items in this list, or everything except those if negated. */
@@ -72,7 +71,7 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
 
     /** Returns the union of the two lists. */
     public ListType and(ListType others) {
-        return constructor.apply(Stream.concat(items.stream(), others.asList().stream()).collect(toUnmodifiableList()), false);
+        return constructor.apply(Stream.concat(items.stream(), others.asList().stream()).toList(), false);
     }
 
     /** Returns the items in this as an immutable list. */
@@ -83,19 +82,19 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
 
     /** Returns the items in this as an immutable list after mapping with the given function. */
     public final <OtherType> List<OtherType> mapToList(Function<Type, OtherType> mapper) {
-        return items.stream().map(mapper).collect(toUnmodifiableList());
+        return items.stream().map(mapper).toList();
     }
 
     /** Returns the items sorted by the given comparator. */
     public final ListType sortedBy(Comparator<? super Type> comparator) {
-        return constructor.apply(items.stream().sorted(comparator).collect(toUnmodifiableList()), false);
+        return constructor.apply(items.stream().sorted(comparator).toList(), false);
     }
 
     /** Returns the items grouped by the given classifier. */
     public final <OtherType> Map<OtherType, ListType> groupingBy(Function<Type, OtherType> classifier) {
         return items.stream().collect(Collectors.groupingBy(classifier,
                                                             LinkedHashMap::new,
-                                                            Collectors.collectingAndThen(toUnmodifiableList(),
+                                                            Collectors.collectingAndThen(toList(),
                                                                                          (list) -> constructor.apply(list, false))));
     }
 

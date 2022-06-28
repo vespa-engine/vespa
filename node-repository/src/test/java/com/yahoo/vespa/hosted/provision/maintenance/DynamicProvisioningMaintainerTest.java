@@ -457,7 +457,7 @@ public class DynamicProvisioningMaintainerTest {
         // Initial config server hosts are provisioned manually
         List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType, 1).stream()
                                             .sorted(Comparator.comparing(Node::hostname))
-                                            .collect(Collectors.toList());
+                                            .toList();
         tester.prepareAndActivateInfraApplication(hostApp, hostType);
 
         // Provision config servers
@@ -485,18 +485,14 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue("Redeployment retires node", nodeToRemove.get().allocation().get().membership().retired());
 
         // Config server becomes removable (done by RetiredExpirer in a real system) and redeployment moves it
-        // to inactive
-        tester.nodeRepository().nodes().setRemovable(configSrvApp, List.of(nodeToRemove.get()));
-        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
-        assertEquals("Node moves to inactive", Node.State.inactive, nodeToRemove.get().state());
-
-        // Node is parked (done by InactiveExpirer and host-admin in a real system)
+        // to parked
         int removedIndex = nodeToRemove.get().allocation().get().membership().index();
-        Node parkedConfigServer = tester.nodeRepository().nodes().deallocate(nodeToRemove.get(), Agent.system, getClass().getSimpleName());
-        assertSame("Node moves to parked", Node.State.parked, parkedConfigServer.state());
+        tester.nodeRepository().nodes().setRemovable(configSrvApp, List.of(nodeToRemove.get()), true);
+        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
+        assertSame("Node moves to expected state", Node.State.parked, nodeToRemove.get().state());
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).state(Node.State.active).size());
 
-        // ... same for host
+        // Host is parked (done by DynamicProvisioningMaintainer in a real system)
         tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
         assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
 

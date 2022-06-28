@@ -9,7 +9,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
-import com.yahoo.vespa.hosted.provision.node.Report;
 
 import java.util.Comparator;
 import java.util.EnumSet;
@@ -57,7 +56,12 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the subset of nodes which are removable */
     public NodeList removable() {
-        return matching(node -> node.allocation().isPresent() && node.allocation().get().isRemovable());
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().removable());
+    }
+
+    /** Returns the subset of nodes which are reusable immediately after removal */
+    public NodeList reusable() {
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().reusable());
     }
 
     /** Returns the subset of nodes having exactly the given resources */

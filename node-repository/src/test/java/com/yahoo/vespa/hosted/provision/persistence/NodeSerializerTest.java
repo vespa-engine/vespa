@@ -114,7 +114,7 @@ public class NodeSerializerTest {
         assertEquals(node.allocation().get().owner(), copy.allocation().get().owner());
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
         assertEquals(node.allocation().get().requestedResources(), copy.allocation().get().requestedResources());
-        assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
+        assertEquals(node.allocation().get().removable(), copy.allocation().get().removable());
         assertEquals(4, copy.history().events().size());
         assertEquals(5, copy.history().log().size());
         assertEquals(Instant.ofEpochMilli(1), copy.history().event(History.Event.Type.reserved).get().at());
@@ -167,7 +167,7 @@ public class NodeSerializerTest {
         assertEquals(4, node.allocation().get().restartGeneration().current());
         assertEquals(List.of(History.Event.Type.provisioned, History.Event.Type.reserved),
                      node.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
-        assertTrue(node.allocation().get().isRemovable());
+        assertTrue(node.allocation().get().removable());
         assertEquals(NodeType.tenant, node.type());
     }
 
@@ -193,9 +193,10 @@ public class NodeSerializerTest {
                      (copy.history().event(History.Event.Type.retired).get()).agent());
         assertTrue(copy.allocation().get().membership().retired());
 
-        Node removable = copy.with(node.allocation().get().removable(true));
+        Node removable = copy.with(node.allocation().get().removable(true, true));
         Node removableCopy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(removable));
-        assertTrue(removableCopy.allocation().get().isRemovable());
+        assertTrue(removableCopy.allocation().get().removable());
+        assertTrue(removableCopy.allocation().get().reusable());
     }
 
     @Test

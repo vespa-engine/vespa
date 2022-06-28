@@ -115,7 +115,7 @@ public class Autoscaler {
         // The cluster is processing recent changes
         if (clusterNodes.stream().anyMatch(node -> node.status().wantToRetire() ||
                                                    node.allocation().get().membership().retired() ||
-                                                   node.allocation().get().isRemovable()))
+                                                   node.allocation().get().removable()))
             return false;
 
         // A deployment is ongoing

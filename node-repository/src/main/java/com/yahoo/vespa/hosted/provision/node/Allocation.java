@@ -27,25 +27,33 @@ public class Allocation {
      */
     private final Generation restartGeneration;
 
-    /** This node can (and should) be removed from the cluster on the next deployment */
+    /** This node should be removed from the cluster on the next deployment */
     private final boolean removable;
+
+    /** This node can be reused (dirtied) immediately after being removed from the cluster */
+    private final boolean reusable;
 
     private final Optional<NetworkPorts> networkPorts;
 
 
     public Allocation(ApplicationId owner, ClusterMembership clusterMembership, NodeResources requestedResources,
                       Generation restartGeneration, boolean removable) {
-        this(owner, clusterMembership, requestedResources, restartGeneration, removable, Optional.empty());
+        this(owner, clusterMembership, requestedResources, restartGeneration, removable, false, Optional.empty());
     }
 
     public Allocation(ApplicationId owner, ClusterMembership clusterMembership, NodeResources requestedResources,
-                      Generation restartGeneration, boolean removable, Optional<NetworkPorts> networkPorts) {
+                      Generation restartGeneration, boolean removable, boolean reusable,
+                      Optional<NetworkPorts> networkPorts) {
         this.owner = owner;
         this.clusterMembership = clusterMembership;
         this.requestedResources = requestedResources;
         this.restartGeneration = restartGeneration;
         this.removable = removable;
+        this.reusable = reusable;
         this.networkPorts = networkPorts;
+        if (!removable && reusable) {
+            throw new IllegalArgumentException("Allocation must be removable in order to be reusable");
+        }
     }
 
     /** Returns the id of the application this is allocated to */
@@ -65,37 +73,45 @@ public class Allocation {
 
     /** Returns a copy of this which is retired */
     public Allocation retire() {
-        return new Allocation(owner, clusterMembership.retire(), requestedResources, restartGeneration, removable, networkPorts);
+        return new Allocation(owner, clusterMembership.retire(), requestedResources, restartGeneration, removable, reusable, networkPorts);
     }
 
     /** Returns a copy of this which is not retired */
     public Allocation unretire() {
-        return new Allocation(owner, clusterMembership.unretire(), requestedResources, restartGeneration, removable, networkPorts);
+        return new Allocation(owner, clusterMembership.unretire(), requestedResources, restartGeneration, removable, reusable, networkPorts);
     }
 
-    /** Return whether this node is ready to be removed from the application */
-    public boolean isRemovable() { return removable; }
+    /** Returns whether this node is ready to be removed from the application */
+    public boolean removable() { return removable; }
+
+    /** Returns whether this node has fully retired and can be reused immediately */
+    public boolean reusable() {
+        return reusable;
+    }
 
     public Allocation withRequestedResources(NodeResources resources) {
-        return new Allocation(owner, clusterMembership, resources, restartGeneration, removable, networkPorts);
+        return new Allocation(owner, clusterMembership, resources, restartGeneration, removable, reusable, networkPorts);
     }
 
     /** Returns a copy of this with the current restart generation set to generation */
     public Allocation withRestart(Generation generation) {
-        return new Allocation(owner, clusterMembership, requestedResources, generation, removable, networkPorts);
+        return new Allocation(owner, clusterMembership, requestedResources, generation, removable, reusable, networkPorts);
     }
 
-    /** Returns a copy of this allocation where removable is set to the given value */
-    public Allocation removable(boolean removable) {
-        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, removable, networkPorts);
+    /**
+     * Returns a copy of this allocation where removable and reusable are set to the given values. A node which is
+     * reusable may be moved directly to {@link com.yahoo.vespa.hosted.provision.Node.State#dirty} after removal.
+     */
+    public Allocation removable(boolean removable, boolean reusable) {
+        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, removable, reusable, networkPorts);
     }
 
     public Allocation with(ClusterMembership newMembership) {
-        return new Allocation(owner, newMembership, requestedResources, restartGeneration, removable, networkPorts);
+        return new Allocation(owner, newMembership, requestedResources, restartGeneration, removable, reusable, networkPorts);
     }
 
     public Allocation withNetworkPorts(NetworkPorts ports) {
-        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, removable, Optional.of(ports));
+        return new Allocation(owner, clusterMembership, requestedResources, restartGeneration, removable, reusable, Optional.of(ports));
     }
 
     @Override

@@ -88,8 +88,7 @@ class Activator {
         validateParentHosts(application, allNodes, reserved);
 
         NodeList activeToRemove = oldActive.matching(node ->  ! hostnames.contains(node.hostname()));
-        activeToRemove = NodeList.copyOf(activeToRemove.mapToList(Node::unretire)); // only active nodes can be retired. TODO: Move this line to deactivate
-        deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
+        remove(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
         nodeRepository.nodes().activate(newActive.asList(), transaction.nested()); // activate also continued active to update node state
 
         rememberResourceChange(transaction, generation, activationTime,
@@ -99,9 +98,10 @@ class Activator {
         return newActive;
     }
 
-    private void deactivate(NodeList toDeactivate, ApplicationTransaction transaction) {
-        nodeRepository.nodes().deactivate(toDeactivate.not().failing().asList(), transaction);
-        nodeRepository.nodes().fail(toDeactivate.failing().asList(), transaction);
+    private void remove(NodeList nodes, ApplicationTransaction transaction) {
+        nodes = NodeList.copyOf(nodes.mapToList(Node::unretire)); // clear retire flag when moving to non-active state
+        nodeRepository.nodes().deactivate(nodes.not().failing().asList(), transaction);
+        nodeRepository.nodes().fail(nodes.failing().asList(), transaction);
     }
 
     private void rememberResourceChange(ApplicationTransaction transaction, long generation, Instant at,

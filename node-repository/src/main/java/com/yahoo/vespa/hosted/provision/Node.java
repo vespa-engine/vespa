@@ -304,7 +304,7 @@ public final class Node implements Nodelike {
 
     /** Returns a copy of this with removable set to the given value */
     public Node removable(boolean removable) {
-        return with(requireAllocation("Cannot set removable").removable(removable));
+        return with(requireAllocation("Cannot set removable").removable(removable, false));
     }
 
     /** Returns a copy of this with the restart generation set to generation */
@@ -385,9 +385,8 @@ public final class Node implements Nodelike {
 
     /** Returns a copy of this with allocation set as specified. <code>node.state</code> is *not* changed. */
     public Node allocate(ApplicationId owner, ClusterMembership membership, NodeResources requestedResources, Instant at) {
-        return this
-                .with(new Allocation(owner, membership, requestedResources, new Generation(0, 0), false))
-                .with(history.with(new History.Event(History.Event.Type.reserved, Agent.application, at)));
+        return this.with(new Allocation(owner, membership, requestedResources, new Generation(0, 0), false))
+                   .with(history.with(new History.Event(History.Event.Type.reserved, Agent.application, at)));
     }
 
     /**

@@ -75,7 +75,7 @@ public class VirtualNodeProvisioningTest {
 
         // Go down to 3 nodes in container cluster
         List<HostSpec> containerHosts2 = tester.prepare(applicationId, containerClusterSpec, containerNodeCount - 1, groups, resources1);
-        tester.activate(applicationId, containerHosts2);
+        tester.activate(applicationId, concat(containerHosts2, contentHosts));
         NodeList nodes2 = tester.getNodes(applicationId, Node.State.active);
         assertDistinctParentHosts(nodes2, ClusterSpec.Type.container, containerNodeCount - 1);
 
@@ -637,7 +637,7 @@ public class VirtualNodeProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
         // Deactivate any retired nodes - usually done by the RetiredExpirer
-        tester.nodeRepository().nodes().setRemovable(app1, tester.getNodes(app1).retired().asList());
+        tester.nodeRepository().nodes().setRemovable(app1, tester.getNodes(app1).retired().asList(), false);
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
         if (expectedReuse) {
@@ -691,7 +691,7 @@ public class VirtualNodeProvisioningTest {
     }
 
     private static <T> List<T> concat(List<T> list1, List<T> list2) {
-        return Stream.concat(list1.stream(), list2.stream()).collect(Collectors.toList());
+        return Stream.concat(list1.stream(), list2.stream()).toList();
     }
 
 }
