@@ -2,6 +2,8 @@
 
 #include "nearest_neighbor_iterator.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/tensor/distance_calculator.h>
+#include <vespa/searchlib/tensor/distance_function.h>
 
 using search::tensor::ITensorAttribute;
 using vespalib::ConstArrayRef;
@@ -34,11 +36,10 @@ public:
 
     NearestNeighborImpl(Params params_in)
         : NearestNeighborIterator(params_in),
-          _lhs(params().queryTensor.cells()),
           _lastScore(0.0)
     {
-        assert(is_compatible(params().tensorAttribute.getTensorType(),
-                             params().queryTensor.type()));
+        assert(is_compatible(params().distance_calc.attribute_tensor().getTensorType(),
+                             params().distance_calc.query_tensor().type()));
     }
 
     ~NearestNeighborImpl();
@@ -64,7 +65,7 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        double score = params().distanceFunction->to_rawscore(_lastScore);
+        double score = params().distance_calc.function().to_rawscore(_lastScore);
         params().tfmd.setRawScore(docId, score);
         params().distanceHeap.used(_lastScore);
     }
@@ -73,11 +74,9 @@ public:
 
 private:
     double computeDistance(uint32_t docId, double limit) {
-        auto rhs = params().tensorAttribute.extract_cells_ref(docId);
-        return params().distanceFunction->calc_with_limit(_lhs, rhs, limit);
+        return params().distance_calc.calc_with_limit(docId, limit);
     }
 
-    TypedCells             _lhs;
     double                 _lastScore;
 };
 
@@ -105,14 +104,12 @@ std::unique_ptr<NearestNeighborIterator>
 NearestNeighborIterator::create(
         bool strict,
         fef::TermFieldMatchData &tfmd,
-        const vespalib::eval::Value &queryTensor,
-        const search::tensor::ITensorAttribute &tensorAttribute,
+        const search::tensor::DistanceCalculator &distance_calc,
         NearestNeighborDistanceHeap &distanceHeap,
-        const search::BitVector *filter,
-        const search::tensor::DistanceFunction *dist_fun)
+        const search::BitVector *filter)
 
 {
-    Params params(tfmd, queryTensor, tensorAttribute, distanceHeap, filter, dist_fun);
+    Params params(tfmd, distance_calc, distanceHeap, filter);
     if (filter) {
         return resolve_strict<true>(strict, params);
     } else  {
