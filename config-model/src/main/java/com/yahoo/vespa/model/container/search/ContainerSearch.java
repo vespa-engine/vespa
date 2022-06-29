@@ -5,7 +5,6 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
 import com.yahoo.search.config.SchemaInfoConfig;
-import com.yahoo.search.handler.observability.SearchStatusExtension;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
@@ -58,7 +57,6 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
 
         owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, searchAndDocprocBundle));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class.getName(), searchAndDocprocBundle));
-        owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class.getName(), searchAndDocprocBundle));
     }
 
     public void connectSearchClusters(Map<String, SearchCluster> searchClusters) {
