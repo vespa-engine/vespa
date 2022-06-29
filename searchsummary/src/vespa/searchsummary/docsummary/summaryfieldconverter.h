@@ -4,6 +4,8 @@
 
 #include <vespa/document/fieldvalue/fieldvalue.h>
 
+namespace vespalib::slime { struct Inserter; }
+
 namespace search::docsummary {
 
 /**
@@ -22,6 +24,8 @@ public:
     static document::FieldValue::UP convert_field_with_filter(bool markup,
                                                               const document::FieldValue& value,
                                                               const std::vector<uint32_t>& matching_elems);
+
+    static void insert_summary_field(bool markup, const document::FieldValue& value, vespalib::slime::Inserter& inserter);
 };
 
 }

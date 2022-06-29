@@ -3,6 +3,7 @@
 #include "docsumfieldwriter.h"
 #include "idocsumenvironment.h"
 #include "docsumstate.h"
+#include "summaryfieldconverter.h"
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
@@ -45,7 +46,8 @@ EmptyDFW::insertField(uint32_t, GetDocsumsState *, ResType, vespalib::slime::Ins
 //--------------------------------------------------------------------------
 
 CopyDFW::CopyDFW()
-    : _inputFieldEnumValue(static_cast<uint32_t>(-1))
+    : _inputFieldEnumValue(static_cast<uint32_t>(-1)),
+      _input_field_name()
 {
 }
 
@@ -55,6 +57,7 @@ bool
 CopyDFW::Init(const ResultConfig & config, const char *inputField)
 {
     _inputFieldEnumValue = config.GetFieldNameEnum().Lookup(inputField);
+    _input_field_name = inputField;
 
     if (_inputFieldEnumValue >= config.GetFieldNameEnum().GetNumEntries()) {
         LOG(warning, "no docsum format contains field '%s'; copied fields will be empty", inputField);
@@ -85,8 +88,12 @@ CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *,
     int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
     ResEntry *entry = gres->GetEntry(idx);
 
-    if (entry != nullptr &&
-        IsRuntimeCompatible(entry->_type, type))
+    if (entry == nullptr) {
+        auto input_field_value = gres->get_field_value(_input_field_name);
+        if (input_field_value) {
+            SummaryFieldConverter::insert_summary_field(false, *input_field_value, target);
+        }
+    } else if (IsRuntimeCompatible(entry->_type, type))
     {
         switch (type) {
         case RES_INT: {
