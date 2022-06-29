@@ -3,32 +3,32 @@ import { QueryInputContext } from '../Contexts/QueryInputContext';
 import SimpleButton from './SimpleButton';
 
 export default function AddPropertyButton({ id }) {
-  const { inputs, setInputs } = useContext(QueryInputContext);
+  const { inputs, setInputs, childMap } = useContext(QueryInputContext);
   const [childId, setChildId] = useState(1);
 
   const addChildProperty = () => {
     const newInputs = inputs.slice();
-    //this is needed because substring() is exclusive the last parameter
-    const iterId = id + '.';
-    //TODO: the id can be of type 1.1.2, need to iterate over it to go through the tree of children.
-    let currentId = iterId.substring(0, 1);
+    let currentId = id.substring(0, 1);
     let index = newInputs.findIndex((element) => element.id === currentId); //get the index of the root parent
     let children = newInputs[index].children;
-    for (let i = 3; i < iterId.length; i += 2) {
-      currentId = iterId.substring(0, i);
+    let parentType = newInputs[index].type;
+    for (let i = 3; i < id.length + 1; i += 2) {
+      currentId = id.substring(0, i);
       index = children.findIndex((element) => element.id === currentId);
+      parentType = parentType + '_' + children[index].type;
       children = children[index].children;
     }
+    let type = childMap[parentType];
+    type = type[Object.keys(type)[0]].name;
     children.push({
       id: id + '.' + childId,
-      type: newInputs[index].type,
+      type: type,
       input: '',
       hasChildren: false,
       children: [],
     });
     setInputs(newInputs);
     setChildId((childId) => childId + 1);
-    console.log('BUTTON CLICK');
   };
 
   return (
