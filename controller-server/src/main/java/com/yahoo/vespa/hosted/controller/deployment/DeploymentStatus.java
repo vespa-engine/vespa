@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.google.common.collect.ImmutableMap;
-import com.yahoo.collections.Iterables;
 import com.yahoo.component.Version;
 import com.yahoo.component.VersionCompatibility;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -231,9 +230,9 @@ public class DeploymentStatus {
                                                   firstProductionJobWithDeploymentInCloud.flatMap(this::deploymentFor),
                                                   fallbackPlatform(change, job));
                 if (step.completedAt(change, firstProductionJobWithDeploymentInCloud).isEmpty()) {
-                    JobType actualType = job.type().isSystemTest() ? systemTest(firstProductionJobWithDeploymentInCloud.map(JobId::type).orElse(null))
-                                                                   : stagingTest(firstProductionJobWithDeploymentInCloud.map(JobId::type).orElse(null));
-                    jobs.merge(job, List.of(new Job(actualType, versions, step.readyAt(change), change)), DeploymentStatus::union);
+                    CloudName cloud = firstProductionJobWithDeploymentInCloud.map(JobId::type).map(this::findCloud).orElse(zones.systemZone().getCloudName());
+                    JobType typeWithZone = job.type().isSystemTest() ? JobType.systemTest(zones, cloud) : JobType.stagingTest(zones, cloud);
+                    jobs.merge(job, List.of(new Job(typeWithZone, versions, step.readyAt(change), change)), DeploymentStatus::union);
                 }
             }
         });
@@ -291,19 +290,16 @@ public class DeploymentStatus {
     }
 
     private <T extends Comparable<T>> Optional<T> newestTested(InstanceName instance, Function<Run, T> runMapper) {
-        Set<CloudName> clouds = jobSteps.keySet().stream()
-                                        .filter(job -> job.type().isProduction())
-                                        .map(job -> findCloud(job.type()))
-                                        .collect(toSet());
+        Set<CloudName> clouds = Stream.concat(Stream.of(zones.systemZone().getCloudName()),
+                                              jobSteps.keySet().stream()
+                                                      .filter(job -> job.type().isProduction())
+                                                      .map(job -> findCloud(job.type())))
+                                      .collect(toSet());
         List<ZoneId> testZones = new ArrayList<>();
-        if (application.deploymentSpec().requireInstance(instance).concerns(test)) {
-            if (clouds.isEmpty()) testZones.add(JobType.systemTest(zones, null).zone());
-            else for (CloudName cloud: clouds) testZones.add(JobType.systemTest(zones, cloud).zone());
-        }
-        if (application.deploymentSpec().requireInstance(instance).concerns(staging)) {
-            if (clouds.isEmpty()) testZones.add(JobType.stagingTest(zones, null).zone());
-            else for (CloudName cloud: clouds) testZones.add(JobType.stagingTest(zones, cloud).zone());
-        }
+        if (application.deploymentSpec().requireInstance(instance).concerns(test))
+            for (CloudName cloud: clouds) testZones.add(JobType.systemTest(zones, cloud).zone());
+        if (application.deploymentSpec().requireInstance(instance).concerns(staging))
+            for (CloudName cloud: clouds) testZones.add(JobType.stagingTest(zones, cloud).zone());
 
         Map<ZoneId, Optional<T>> newestPerZone = instanceJobs().get(application.id().instance(instance))
                                                                .type(systemTest(null), stagingTest(null))
@@ -580,7 +576,7 @@ public class DeploymentStatus {
     }
 
     private CloudName findCloud(JobType job) {
-        return zones.zones().all().get(job.zone()).map(ZoneApi::getCloudName).orElse(null);
+        return zones.zones().all().get(job.zone()).map(ZoneApi::getCloudName).orElse(zones.systemZone().getCloudName());
     }
 
     private JobId firstDeclaredOrElseImplicitTest(JobType testJob) {
