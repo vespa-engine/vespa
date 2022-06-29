@@ -71,15 +71,6 @@ struct ResEntry
         void *_pt;
     };
 
-    uint32_t _get_length() const { return _len; }
-    uint32_t _get_real_length() const
-    {
-        // precond: IsVariableSize(_type) && _len >= sizeof(uint32_t)
-
-        uint32_t rlen;
-        memcpy(&rlen, _pt, sizeof(rlen));
-        return rlen;
-    }
     void _resolve_field(const char **buf, uint32_t *buflen) const
     {
         // precond: IsVariableSize(_type)
