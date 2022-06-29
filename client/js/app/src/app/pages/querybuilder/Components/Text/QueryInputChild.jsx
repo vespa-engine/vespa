@@ -1,8 +1,10 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useContext } from 'react';
 import AddPropertyButton from '../Buttons/AddPropertyButton';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import QueryDropdownForm from './QueryDropDownForm';
 import SimpleForm from './SimpleForm';
+import { OverlayTrigger, Tooltip } from 'react-bootstrap';
+import SimpleButton from '../Buttons/SimpleButton';
 
 export default function QueryInputChild({ id }) {
   const { inputs, setInputs, childMap } = useContext(QueryInputContext);
@@ -57,6 +59,21 @@ export default function QueryInputChild({ id }) {
     }
   };
 
+  const removeRow = (id) => {
+    let newInputs = inputs.slice();
+    let currentId = id.substring(0, 1);
+    let index = newInputs.findIndex((element) => element.id === currentId);
+    let children = newInputs[index].children;
+    for (let i = 3; i < id.length; i += 2) {
+      currentId = id.substring(0, i);
+      index = children.findIndex((element) => element.id === currentId);
+      children = children[index].children;
+    }
+    index = children.findIndex((element) => element === id);
+    children.splice(index, 1);
+    setInputs(newInputs);
+  };
+
   const inputList = childArray.map((child) => {
     return (
       <div key={child.id} id={child.id}>
@@ -77,11 +94,27 @@ export default function QueryInputChild({ id }) {
             placeholder={setPlaceHolder(child.id)}
           />
         )}
+        <OverlayTrigger
+          placement="right"
+          delay={{ show: 250, hide: 400 }}
+          overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
+        >
+          <span>
+            <SimpleButton
+              id={`b${child.id}`}
+              className="removeRow"
+              onClick={() => removeRow(child.id)}
+              children="-"
+            ></SimpleButton>
+          </span>
+        </OverlayTrigger>
+        <br />
         <Child
           type={currentType + '_' + child.type}
           child={child}
           onChange={updateInput}
           placeholder={setPlaceHolder}
+          removeRow={removeRow}
         />
       </div>
     );
@@ -90,7 +123,7 @@ export default function QueryInputChild({ id }) {
   return <>{inputList}</>;
 }
 
-function Child({ child, type, onChange, placeholder }) {
+function Child({ child, type, onChange, placeholder, removeRow }) {
   const { childMap } = useContext(QueryInputContext);
 
   const nestedChildren = (child.children || []).map((child) => {
@@ -113,12 +146,28 @@ function Child({ child, type, onChange, placeholder }) {
             placeholder={placeholder(child.id)}
           />
         )}
+        <OverlayTrigger
+          placement="right"
+          delay={{ show: 250, hide: 400 }}
+          overlay={<Tooltip id="button-tooltip">Remove row</Tooltip>}
+        >
+          <span>
+            <SimpleButton
+              id={`b${child.id}`}
+              className="removeRow"
+              onClick={() => removeRow(child.id)}
+              children="-"
+            ></SimpleButton>
+          </span>
+        </OverlayTrigger>
+        <br />
         <Child
           child={child}
           id={child.id}
           type={type + '_' + child.type}
           onChange={onChange}
           placeholder={placeholder}
+          removeRow={removeRow}
         />
       </div>
     );
