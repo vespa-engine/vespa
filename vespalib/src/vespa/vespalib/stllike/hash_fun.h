@@ -69,10 +69,10 @@ size_t hashValue(const char *str) noexcept;
 size_t hashValue(const void *str, size_t sz) noexcept;
 
 struct hash_strings {
-    size_t operator() (const vespalib::string & arg) const noexcept { return hashValue(arg.c_str()); }
+    size_t operator() (const vespalib::string & arg) const noexcept { return hashValue(arg.data(), arg.size()); }
     size_t operator() (vespalib::stringref arg) const noexcept { return hashValue(arg.data(), arg.size()); }
     size_t operator() (const char * arg) const noexcept { return hashValue(arg); }
-    size_t operator() (const std::string& arg) const noexcept { return hashValue(arg.c_str()); }
+    size_t operator() (const std::string& arg) const noexcept { return hashValue(arg.data(), arg.size()); }
 };
 
 template<> struct hash<const char *> : hash_strings { };
