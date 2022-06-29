@@ -31,7 +31,7 @@ public class SystemInfo {
     /** Returns the zone this is running in */
     public Zone zone() { return zone; }
 
-    /** Returns the cloud provider this is using */
+    /** Returns the cloud provider this is running in */
     public Cloud cloud() {
         return cloud;
     }
