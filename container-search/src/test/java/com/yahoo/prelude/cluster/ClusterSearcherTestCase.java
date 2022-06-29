@@ -127,11 +127,11 @@ public class ClusterSearcherTestCase {
 
     @Test
     public void testThatDocumentTypesAreResolvedTODO_REMOVE() {
-        ClusterSearcher cluster1 = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("type1", "type2", "type3")));
+        ClusterSearcher cluster1 = new ClusterSearcher(new LinkedHashSet<>(List.of("type1", "type2", "type3")));
         try {
-            ClusterSearcher type1 = new ClusterSearcher(new LinkedHashSet<>(Arrays.asList("type6")));
+            ClusterSearcher type1 = new ClusterSearcher(new LinkedHashSet<>(List.of("type6")));
             try {
-                assertEquals(new LinkedHashSet<>(Arrays.asList()), resolve(cluster1, "&sources=cluster2"));
+                assertEquals(new LinkedHashSet<>(List.of()), resolve(cluster1, "&sources=cluster2"));
             } finally {
                 type1.deconstruct();
             }

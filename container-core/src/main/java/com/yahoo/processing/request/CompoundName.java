@@ -2,6 +2,7 @@
 package com.yahoo.processing.request;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -86,7 +87,8 @@ public final class CompoundName {
             }
         }
         if (p == 0) {
-            return List.of(s);
+            if (l == null) return List.of(s);
+            l.add(s);
         } else if (p < m) {
             l.add(s.substring(p, m));
         } else {
@@ -135,7 +137,7 @@ public final class CompoundName {
         if (isEmpty()) return fromComponents(nameParts);
 
         List<String> newCompounds = new ArrayList<>(nameParts.length + compounds.size());
-        newCompounds.addAll(List.of(nameParts));
+        newCompounds.addAll(Arrays.asList(nameParts));
         newCompounds.addAll(this.compounds);
         return new CompoundName(newCompounds);
     }
@@ -255,11 +257,9 @@ public final class CompoundName {
     public int hashCode() { return hashCode; }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof CompoundName)) return false;
-        CompoundName other = (CompoundName)o;
-        return this.name.equals(other.name);
+    public boolean equals(Object arg) {
+        if (arg == this) return true;
+        return (arg instanceof CompoundName o) && name.equals(o.name);
     }
 
     /**
