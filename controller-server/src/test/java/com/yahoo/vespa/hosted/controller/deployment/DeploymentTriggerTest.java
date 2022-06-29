@@ -64,6 +64,7 @@ import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -2382,10 +2383,14 @@ public class DeploymentTriggerTest {
         assertEquals(defaultSystemTest, JobType.fromJobName("system-test", zones));
 
         assertEquals(ZoneId.from("test", "us-east-1"), defaultSystemTest.zone());
-        assertEquals(ZoneId.from("staging", "us-east-3"), JobType.stagingTest(zones, null).zone());
+        assertEquals(ZoneId.from("staging", "us-east-3"), JobType.stagingTest(zones, zones.systemZone().getCloudName()).zone());
 
         assertEquals(ZoneId.from("test", "zone"), pinkSystemTest.zone());
         assertEquals(ZoneId.from("staging", "us-east-3"), JobType.stagingTest(zones, CloudName.from("pink-clouds")).zone());
+
+        assertThrows(IllegalStateException.class, JobType.systemTest(zones, null)::zone);
+        assertThrows(IllegalStateException.class, JobType.fromJobName("system-test", zones)::zone);
+        assertThrows(IllegalStateException.class, JobType.fromJobName("staging-test", zones)::zone);
     }
 
 }

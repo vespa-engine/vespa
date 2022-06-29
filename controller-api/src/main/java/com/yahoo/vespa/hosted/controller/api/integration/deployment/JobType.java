@@ -1,18 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
-import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static ai.vespa.validation.Validation.require;
@@ -22,7 +18,6 @@ import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.config.provision.Environment.staging;
 import static com.yahoo.config.provision.Environment.test;
 import static java.util.Comparator.naturalOrder;
-import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * Specification for a deployment and/or test job to run: what zone, and whether it is a production test.
@@ -30,6 +25,8 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * @author jonmv
  */
 public final class JobType implements Comparable<JobType> {
+
+    private static final RegionName unknown = RegionName.from("unknown");
 
     private final String jobName;
     private final ZoneId zone;
@@ -53,8 +50,11 @@ public final class JobType implements Comparable<JobType> {
 
     /** Returns a test job in the given environment, preferring the given cloud, is possible; using the system cloud otherwise. */
     private static JobType testIn(Environment environment, ZoneRegistry zones, CloudName cloud) {
+        if (cloud == null)
+            return deploymentTo(ZoneId.from(environment, unknown));
+
         ZoneList candidates = zones.zones().controllerUpgraded().in(environment);
-        if (cloud == null || candidates.in(cloud).zones().isEmpty())
+        if (candidates.in(cloud).zones().isEmpty())
             cloud = zones.systemZone().getCloudName();
 
         return candidates.in(cloud).zones().stream().findFirst()
@@ -152,7 +152,8 @@ public final class JobType implements Comparable<JobType> {
     public static List<JobType> allIn(ZoneRegistry zones) {
         return zones.zones().reachable().zones().stream()
                     .flatMap(zone -> zone.getEnvironment().isProduction() ? Stream.of(deploymentTo(zone.getId()), productionTestOf(zone.getId()))
-                                                                          : Stream.of(deploymentTo(zone.getId())))
+                                                                          : zone.getEnvironment().isTest() ? Stream.of(deploymentTo(ZoneId.from(zone.getEnvironment(), unknown)))
+                                                                                                           : Stream.of(deploymentTo(zone.getId())))
                     .distinct()
                     .sorted(naturalOrder())
                     .toList();
@@ -169,6 +170,10 @@ public final class JobType implements Comparable<JobType> {
 
     /** Returns the zone for this job. */
     public ZoneId zone() {
+        // sigh ... but the alternative is worse.
+        if (zone.region() == unknown)
+            throw new IllegalStateException("this job type was not initiated with a proper zone, programming error");
+
         return zone;
     }
 
@@ -203,7 +208,7 @@ public final class JobType implements Comparable<JobType> {
     @Override
     public int compareTo(JobType other) {
         int result;
-        if (0 != (result = environment().compareTo(other.environment()))) return -result;
+        if (0 != (result = environment().compareTo(other.environment())) || environment().isTest()) return -result;
         if (0 != (result = zone.region().compareTo(other.zone.region()))) return result;
         return Boolean.compare(isProductionTest, other.isProductionTest);
     }

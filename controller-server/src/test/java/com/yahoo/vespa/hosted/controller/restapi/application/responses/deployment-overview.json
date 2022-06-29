@@ -62,7 +62,6 @@
       "jobName": "system-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/system-test",
       "environment": "test",
-      "region": "test.us-east-1",
       "toRun": [ ],
       "runs": [
         {
@@ -191,7 +190,6 @@
       "jobName": "staging-test",
       "url": "http://localhost:8080/application/v4/tenant/tenant1/application/application1/instance/instance1/job/staging-test",
       "environment": "staging",
-      "region": "staging.us-east-3",
       "toRun": [ ],
       "runs": [
         {

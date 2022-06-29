@@ -158,7 +158,6 @@
       "jobName": "system-test",
       "url": "https://some.url:43/instance/default/job/system-test",
       "environment": "test",
-      "region": "test.us-east-1",
       "toRun": [ ],
       "runs": [
         {
@@ -348,7 +347,6 @@
       "jobName": "staging-test",
       "url": "https://some.url:43/instance/default/job/staging-test",
       "environment": "staging",
-      "region": "staging.us-east-3",
       "toRun": [
         {
           "versions": {
