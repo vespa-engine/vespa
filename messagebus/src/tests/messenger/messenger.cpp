@@ -39,7 +39,7 @@ public:
 
 TEST("messenger_test") {
 
-    Messenger msn(true, true);
+    Messenger msn;
     msn.start();
 
     vespalib::Barrier barrier(2);

@@ -25,7 +25,7 @@ TestServer::TestServer(const Identity &ident,
                        const Slobrok &slobrok,
                        IProtocol::SP protocol) :
     net(RPCNetworkParams(slobrok.config()).setIdentity(ident)),
-    mb(net, ProtocolSet().add(std::make_shared<SimpleProtocol>()).add(protocol), true, true)
+    mb(net, ProtocolSet().add(std::make_shared<SimpleProtocol>()).add(protocol))
 {
     mb.setupRouting(spec);
 }

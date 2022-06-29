@@ -25,7 +25,7 @@ RPCMessageBus::RPCMessageBus(const ProtocolSet &protocols,
                              const RPCNetworkParams &rpcParams,
                              const config::ConfigUri &routingCfgUri) :
     _net(rpcParams),
-    _bus(_net, protocols, rpcParams.getSkipRequestThread(), rpcParams.getSkipReplyThread()),
+    _bus(_net, protocols),
     _agent(_bus),
     _subscriber(routingCfgUri.getContext())
 {
