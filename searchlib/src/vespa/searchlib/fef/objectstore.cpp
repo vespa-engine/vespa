@@ -2,8 +2,7 @@
 #include "objectstore.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 ObjectStore::ObjectStore() :
     _objectMap()
@@ -36,5 +35,4 @@ ObjectStore::get(const vespalib::string & key) const
     return (found != _objectMap.end()) ? found->second : NULL;
 }
 
-}
 }
