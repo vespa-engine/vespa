@@ -52,7 +52,7 @@ FRT_RPCInvoker::FRT_RPCInvoker(FRT_Supervisor *supervisor,
         std::string methodName(_req->GetMethodName(), _req->GetMethodNameLen());
         LOG(debug, "invoke(server) init: '%s'", methodName.c_str());
     }
-    req->SetReturnHandler(this); // Must be set prior to any access filter being invoked
+    req->SetReturnHandler(this); // RPC req -> FNET_Connection link is via this ptr; set prior to access filter invocation.
     if (_method == nullptr) {
         if (!req->IsError()) { // may be BAD_REQUEST
             req->SetError(FRTE_RPC_NO_SUCH_METHOD);
