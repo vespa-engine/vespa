@@ -1,14 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.abicheck.collector;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.objectweb.asm.Opcodes;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class Util {
 
-  public static final List<AccessFlag> classFlags = Arrays.asList(
+  public static final List<AccessFlag> classFlags = List.of(
       AccessFlag.make(Opcodes.ACC_PUBLIC, "public"),
       AccessFlag.make(Opcodes.ACC_PRIVATE, "private"),
       AccessFlag.make(Opcodes.ACC_PROTECTED, "protected"),
@@ -19,12 +19,13 @@ public class Util {
       AccessFlag.make(Opcodes.ACC_SYNTHETIC, "synthetic"), // FIXME: Do we want this?
       AccessFlag.make(Opcodes.ACC_ANNOTATION, "annotation"),
       AccessFlag.make(Opcodes.ACC_ENUM, "enum"),
+      AccessFlag.make(Opcodes.ACC_RECORD, "record"),
 // FIXME: Module support
 //      AccessFlag.make(Opcodes.ACC_MODULE, "module")
       AccessFlag.ignored(Opcodes.ACC_DEPRECATED)
   );
 
-  public static final List<AccessFlag> methodFlags = Arrays.asList(
+  public static final List<AccessFlag> methodFlags = List.of(
       AccessFlag.make(Opcodes.ACC_PUBLIC, "public"),
       AccessFlag.make(Opcodes.ACC_PRIVATE, "private"),
       AccessFlag.make(Opcodes.ACC_PROTECTED, "protected"),
@@ -40,7 +41,7 @@ public class Util {
       AccessFlag.ignored(Opcodes.ACC_DEPRECATED)
   );
 
-  public static final List<AccessFlag> fieldFlags = Arrays.asList(
+  public static final List<AccessFlag> fieldFlags = List.of(
       AccessFlag.make(Opcodes.ACC_PUBLIC, "public"),
       AccessFlag.make(Opcodes.ACC_PRIVATE, "private"),
       AccessFlag.make(Opcodes.ACC_PROTECTED, "protected"),
