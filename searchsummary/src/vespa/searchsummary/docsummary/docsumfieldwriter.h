@@ -70,6 +70,7 @@ class CopyDFW : public IDocsumFieldWriter
 {
 private:
     uint32_t _inputFieldEnumValue;
+    vespalib::string _input_field_name;
 
 public:
     CopyDFW();

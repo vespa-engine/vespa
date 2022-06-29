@@ -593,5 +593,11 @@ SummaryFieldConverter::convert_field_with_filter(bool markup,
     return SummaryFieldValueConverter(markup, sub_conv).convert(value);
 }
 
+void
+SummaryFieldConverter::insert_summary_field(bool markup, const FieldValue& value, vespalib::slime::Inserter& inserter)
+{
+    SlimeFiller visitor(inserter, markup);
+    value.accept(visitor);
+}
 
 }
