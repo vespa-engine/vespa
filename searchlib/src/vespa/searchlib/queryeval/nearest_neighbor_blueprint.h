@@ -3,6 +3,7 @@
 
 #include "blueprint.h"
 #include "nearest_neighbor_distance_heap.h"
+#include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/searchlib/tensor/distance_function.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 #include <optional>
@@ -28,7 +29,8 @@ public:
     };
 private:
     const tensor::ITensorAttribute& _attr_tensor;
-    std::unique_ptr<vespalib::eval::Value> _query_tensor;
+    search::tensor::DistanceCalculator _distance_calc;
+    const vespalib::eval::Value& _query_tensor;
     uint32_t _target_hits;
     uint32_t _adjusted_target_hits;
     bool _approximate;
@@ -36,8 +38,6 @@ private:
     double _distance_threshold;
     double _global_filter_lower_limit;
     double _global_filter_upper_limit;
-    search::tensor::DistanceFunction::UP _fallback_dist_fun;
-    const search::tensor::DistanceFunction *_dist_fun;
     mutable NearestNeighborDistanceHeap _distance_heap;
     std::vector<search::tensor::NearestNeighborIndex::Neighbor> _found_hits;
     Algorithm _algorithm;
@@ -59,7 +59,7 @@ public:
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
     ~NearestNeighborBlueprint();
     const tensor::ITensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
-    const vespalib::eval::Value& get_query_tensor() const { return *_query_tensor; }
+    const vespalib::eval::Value& get_query_tensor() const { return _query_tensor; }
     uint32_t get_target_hits() const { return _target_hits; }
     uint32_t get_adjusted_target_hits() const { return _adjusted_target_hits; }
     void set_global_filter(const GlobalFilter &global_filter, double estimated_hit_ratio) override;

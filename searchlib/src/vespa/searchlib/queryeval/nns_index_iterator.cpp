@@ -18,13 +18,13 @@ class NeighborVectorIterator : public NnsIndexIterator
 private:
     fef::TermFieldMatchData &_tfmd;
     const std::vector<Neighbor> &_hits;
-    const search::tensor::DistanceFunction * const _dist_fun;
+    const search::tensor::DistanceFunction &_dist_fun;
     uint32_t _idx;
     double _last_abstract_dist;
 public:
     NeighborVectorIterator(fef::TermFieldMatchData &tfmd,
                            const std::vector<Neighbor> &hits,
-                           const search::tensor::DistanceFunction *dist_fun)
+                           const search::tensor::DistanceFunction &dist_fun)
         : _tfmd(tfmd),
           _hits(hits),
           _dist_fun(dist_fun),
@@ -54,7 +54,7 @@ public:
     }
 
     void doUnpack(uint32_t docId) override {
-        double score = _dist_fun->to_rawscore(_last_abstract_dist);
+        double score = _dist_fun.to_rawscore(_last_abstract_dist);
         _tfmd.setRawScore(docId, score);
     }
 
@@ -65,7 +65,7 @@ std::unique_ptr<NnsIndexIterator>
 NnsIndexIterator::create(
         fef::TermFieldMatchData &tfmd,
         const std::vector<Neighbor> &hits,
-        const search::tensor::DistanceFunction *dist_fun)
+        const search::tensor::DistanceFunction &dist_fun)
 {
     return std::make_unique<NeighborVectorIterator>(tfmd, hits, dist_fun);
 }

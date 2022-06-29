@@ -11,6 +11,7 @@ vespa_add_library(searchlib_tensor OBJECT
     direct_tensor_attribute.cpp
     direct_tensor_saver.cpp
     direct_tensor_store.cpp
+    distance_calculator.cpp
     distance_function_factory.cpp
     euclidean_distance.cpp
     geo_degrees_distance.cpp
