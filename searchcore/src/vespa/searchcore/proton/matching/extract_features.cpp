@@ -32,8 +32,9 @@ auto extract_names(const FeatureResolver &resolver, const StringStringMap &renam
     result.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         vespalib::string name = resolver.name_of(i);
-        if (renames.contains(name)) {
-            name = renames[name];
+        auto iter = renames.find(name);
+        if (iter != renames.end()) {
+            name = iter->second;
         }
         result.emplace_back(name);
     }
