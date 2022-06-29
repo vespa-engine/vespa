@@ -154,8 +154,9 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
     names.reserve(resolver.num_features());
     for (size_t i = 0; i < resolver.num_features(); ++i) {
         vespalib::string name = resolver.name_of(i);
-        if (feature_rename_map.contains(name)) {
-            name = feature_rename_map[name];
+        auto iter = feature_rename_map.find(name);
+        if (iter != feature_rename_map.end()) {
+            name = iter->second;
         }
         names.emplace_back(name);
     }
