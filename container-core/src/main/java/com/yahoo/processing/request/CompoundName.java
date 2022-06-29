@@ -1,10 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.yahoo.text.Lowercase.toLowerCase;
@@ -25,7 +22,7 @@ public final class CompoundName {
     private final String name;
     private final String lowerCasedName;
 
-    private final ImmutableList<String> compounds;
+    private final List<String> compounds;
 
     /** A hashcode which is always derived from the compounds (NEVER the string) */
     private final int hashCode;
@@ -42,12 +39,12 @@ public final class CompoundName {
      * @throws NullPointerException if name is null
      */
     public CompoundName(String name) {
-        this(name, parse(name));
+        this(name, parse(name, null));
     }
 
     /** Constructs this from an array of name components which are assumed not to contain dots */
     public static CompoundName fromComponents(String ... components) {
-        return new CompoundName(Arrays.asList(components));
+        return new CompoundName(List.of(components));
     }
 
     /** Constructs this from a list of compounds. */
@@ -68,9 +65,9 @@ public final class CompoundName {
         this.name = name;
         this.lowerCasedName = toLowerCase(name);
         if (compounds.size() == 1 && compounds.get(0).isEmpty())
-            this.compounds = ImmutableList.of();
+            this.compounds = List.of();
         else
-            this.compounds = ImmutableList.copyOf(compounds);
+            this.compounds = List.copyOf(compounds);
         this.hashCode = this.compounds.hashCode();
 
         int size = this.compounds.size();
@@ -78,9 +75,7 @@ public final class CompoundName {
                         : size == 1 ? empty : this; // size==0 -> this needed during construction of empty
     }
 
-    private static List<String> parse(String s) {
-        ArrayList<String> l = null;
-
+    private static List<String> parse(String s, List<String> l) {
         int p = 0;
         final int m = s.length();
         for (int i = 0; i < m; i++) {
@@ -91,7 +86,7 @@ public final class CompoundName {
             }
         }
         if (p == 0) {
-            return ImmutableList.of(s);
+            return List.of(s);
         } else if (p < m) {
             l.add(s.substring(p, m));
         } else {
@@ -108,8 +103,7 @@ public final class CompoundName {
     public CompoundName append(String name) {
         if (name.isEmpty()) return this;
         if (isEmpty()) return new CompoundName(name);
-        List<String> newCompounds = new ArrayList<>(compounds);
-        newCompounds.addAll(parse(name));
+        List<String> newCompounds = parse(name, new ArrayList<>(compounds));
         return new CompoundName(concat(this.name, name), newCompounds);
     }
 
@@ -126,7 +120,7 @@ public final class CompoundName {
         return new CompoundName(concat(this.name, name.name), newCompounds);
     }
 
-    private String concat(String name1, String name2) {
+    private static String concat(String name1, String name2) {
         return name1 + "." + name2;
     }
 
@@ -141,7 +135,7 @@ public final class CompoundName {
         if (isEmpty()) return fromComponents(nameParts);
 
         List<String> newCompounds = new ArrayList<>(nameParts.length + compounds.size());
-        newCompounds.addAll(Arrays.asList(nameParts));
+        newCompounds.addAll(List.of(nameParts));
         newCompounds.addAll(this.compounds);
         return new CompoundName(newCompounds);
     }
