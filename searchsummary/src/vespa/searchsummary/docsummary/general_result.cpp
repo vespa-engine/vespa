@@ -12,55 +12,32 @@ LOG_SETUP(".searchlib.docsummary.urlresult");
 namespace search::docsummary {
 
 void
-GeneralResult::AllocEntries(uint32_t buflen, bool inplace)
+GeneralResult::AllocEntries()
 {
     uint32_t cnt = _resClass->GetNumEntries();
-    uint32_t needMem = (inplace)
-                       ? cnt * sizeof(ResEntry)
-                       : cnt * sizeof(ResEntry) + buflen + 1;
+    uint32_t needMem = cnt * sizeof(ResEntry);
 
     if (cnt > 0) {
         _entrycnt = cnt;
         _entries = (ResEntry *) malloc(needMem);
         assert(_entries != nullptr);
-        if (inplace) {
-            _buf = nullptr;
-            _bufEnd = nullptr;
-        } else {
-            _buf = ((char *)_entries) + cnt * sizeof(ResEntry);
-            _bufEnd = _buf + buflen + 1;
-        }
         memset(_entries, 0, cnt * sizeof(ResEntry));
     } else {
         _entrycnt = 0;
         _entries  = nullptr;
-        _buf      = nullptr;
-        _bufEnd   = nullptr;
     }
 }
 
 void
 GeneralResult::FreeEntries()
 {
-    uint32_t cnt = _entrycnt;
-
-    // (_buf == nullptr) <=> (_inplace_unpack() || (cnt == 0))
-    if (_buf != nullptr) {
-        for (uint32_t i = 0; i < cnt; i++) {
-            if (ResultConfig::IsVariableSize(_entries[i]._type) &&
-                !InBuf(_entries[i]._stringval))
-                delete [] (_entries[i]._stringval);
-        }
-    }
-    free(_entries); // free '_entries'/'_buf' chunk
+    free(_entries); // free '_entries' chunk
 }
 
 GeneralResult::GeneralResult(const ResultClass *resClass)
     : _resClass(resClass),
       _entrycnt(0),
       _entries(nullptr),
-      _buf(nullptr),
-      _bufEnd(nullptr),
       _document()
 {
 }
@@ -117,7 +94,7 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
     if (_entries != nullptr)
         FreeEntries();
 
-    AllocEntries(buflen, true);
+    AllocEntries();
 
     for (uint32_t i = 0; rc && i < _entrycnt; i++) {
         const ResConfigEntry *entry = _resClass->GetEntry(i);
@@ -331,8 +308,6 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
     FreeEntries();
     _entrycnt = 0;
     _entries  = nullptr;
-    _buf      = nullptr;
-    _bufEnd   = nullptr;
 
     return false;   // FAIL
 }
