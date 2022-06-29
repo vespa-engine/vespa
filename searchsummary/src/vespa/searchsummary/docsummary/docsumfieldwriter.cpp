@@ -6,6 +6,7 @@
 #include <vespa/searchlib/common/documentlocations.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.docsumfieldwriter");
@@ -121,7 +122,23 @@ CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *,
             target.insertLong(valint64);
             break; }
 
-        case RES_JSONSTRING:
+        case RES_JSONSTRING: {
+            uint32_t    len;
+            const char *spt;
+            // resolve field
+            entry->_resolve_field(&spt, &len);
+            if (len != 0) {
+                // note: 'JSONSTRING' really means 'structured data'
+                vespalib::Slime input_field_as_slime;
+                size_t d = vespalib::slime::BinaryFormat::decode(vespalib::Memory(spt, len), input_field_as_slime);
+                if (d != len) {
+                    LOG(warning, "could not decode %u bytes: %zu bytes decoded", len, d);
+                }
+                if (d != 0) {
+                    inject(input_field_as_slime.get(), target);
+                }
+            }
+            break; }
         case RES_FEATUREDATA:
         case RES_LONG_STRING:
         case RES_STRING: {
