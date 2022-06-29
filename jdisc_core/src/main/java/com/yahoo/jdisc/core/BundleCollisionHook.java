@@ -18,6 +18,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * A bundle {@link CollisionHook} that contains a set of bundles that are allowed to collide with bundles
@@ -50,8 +51,10 @@ public class BundleCollisionHook implements CollisionHook, EventHook, FindHook {
 
     /**
      * Adds a collection of bundles to the allowed duplicates.
+     * Also clears any previous allowed duplicates of the new allowed duplicates.
      */
     synchronized void allowDuplicateBundles(Collection<Bundle> bundles) {
+        allowedDuplicates.values().removeAll(bundles.stream().map(BsnVersion::new).collect(Collectors.toSet()));
         for (var bundle : bundles) {
             allowedDuplicates.put(bundle, new BsnVersion(bundle));
         }
