@@ -6,6 +6,9 @@ export default function AddPropertyButton({ id }) {
   const { inputs, setInputs, childMap } = useContext(QueryInputContext);
   const [childId, setChildId] = useState(1);
 
+  /**
+   * Add a child to the input that has the provided id
+   */
   const addChildProperty = () => {
     const newInputs = inputs.slice();
     let currentId = id.substring(0, 1);

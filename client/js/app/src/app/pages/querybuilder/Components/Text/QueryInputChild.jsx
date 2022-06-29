@@ -11,8 +11,12 @@ export default function QueryInputChild({ id }) {
 
   let index = inputs.findIndex((element) => element.id === id);
   let childArray = inputs[index].children;
-  let currentType = inputs[index].type;
+  let currentTypes = inputs[index].type;
 
+  /**
+   * Update the state of inputs to reflect what is written into the form.
+   * @param {Event} e Event containing the new input.
+   */
   const updateInput = (e) => {
     e.preventDefault();
     let newInputs = inputs.slice();
@@ -20,65 +24,79 @@ export default function QueryInputChild({ id }) {
     let currentId = iterId.substring(0, 1);
     let index = newInputs.findIndex((element) => element.id === currentId);
     let children = newInputs[index].children;
-    for (let i = 3; i < iterId.length; i += 2) {
-      currentId = iterId.substring(0, i);
-      index = children.findIndex((element) => element.id === currentId);
-      children = children[index].children;
-    }
+    const traversedChildren = traverseChildren(iterId, children, '');
+    children = traversedChildren.children;
     index = children.findIndex((element) => element.id === iterId);
     children[index].input = e.target.value;
+    console.log(children[index]);
     setInputs(newInputs);
   };
 
   /**
-   * Returns a placeholder text for a SimpleForm component
-   * @param {the id of the SimpleForm component} id
-   * @returns Placeholder text
+   * Returns a placeholder text for a SimpleForm component.
+   * @param {String} id The id of the SimpleForm component.
+   * @returns {String} The placeholder text
    */
   const setPlaceHolder = (id) => {
     let currentId = id.substring(0, 1);
     let index = inputs.findIndex((element) => element.id === currentId);
-    let currentType = inputs[index].type;
+    let combinedType = inputs[index].type;
     let children = inputs[index].children;
     if (id.length > 3) {
-      for (let i = 3; i < id.length; i += 2) {
-        currentId = id.substring(0, i);
-        index = children.findIndex((element) => element.id === currentId);
-        currentType = currentType + '_' + children[index].type;
-        children = children[index].children;
-      }
-      const currentChoice = childMap[currentType];
+      const traversedChildren = traverseChildren(id, children, combinedType);
+      combinedType = traversedChildren.combinedType;
+      children = traversedChildren.children;
+      const currentChoice = childMap[combinedType];
       index = children.findIndex((element) => element.id === id);
-      currentType = children[index].type;
-      return currentChoice[currentType].type;
+      combinedType = children[index].type;
+      return currentChoice[combinedType].type;
     } else {
-      const currentChoice = childMap[currentType];
+      const currentChoice = childMap[combinedType];
       index = children.findIndex((element) => element.id === id);
-      currentType = children[index].type;
-      return currentChoice[currentType].type;
+      combinedType = children[index].type;
+      return currentChoice[combinedType].type;
     }
   };
 
+  /**
+   * Removes the row with the provided id.
+   * @param {String} id Id of row.
+   */
   const removeRow = (id) => {
     let newInputs = inputs.slice();
     let currentId = id.substring(0, 1);
     let index = newInputs.findIndex((element) => element.id === currentId);
     let children = newInputs[index].children;
+    const traversedChildren = traverseChildren(id, children, '');
+    index = traversedChildren.children.findIndex((element) => element === id);
+    traversedChildren.children.splice(index, 1);
+    setInputs(newInputs);
+  };
+
+  /**
+   * Traverses the children until a child with the provided id is reached.
+   * @param {String} id Id of the innermost child.
+   * @param {Array} children Array containing serveral child objects.
+   * @param {String} combinedType The combined type of all traversed children
+   * @returns {Object} An object containing the children of the child with the provided id and the combined type.
+   */
+  function traverseChildren(id, children, combinedType) {
+    let currentId;
+    let index;
     for (let i = 3; i < id.length; i += 2) {
       currentId = id.substring(0, i);
       index = children.findIndex((element) => element.id === currentId);
+      combinedType = combinedType + '_' + children[index].type;
       children = children[index].children;
     }
-    index = children.findIndex((element) => element === id);
-    children.splice(index, 1);
-    setInputs(newInputs);
-  };
+    return { children: children, combinedType: combinedType };
+  }
 
   const inputList = childArray.map((child) => {
     return (
       <div key={child.id} id={child.id}>
         <QueryDropdownForm
-          choices={childMap[currentType]}
+          choices={childMap[currentTypes]}
           id={child.id}
           child={true}
         />
@@ -110,7 +128,7 @@ export default function QueryInputChild({ id }) {
         </OverlayTrigger>
         <br />
         <Child
-          type={currentType + '_' + child.type}
+          type={currentTypes + '_' + child.type}
           child={child}
           onChange={updateInput}
           placeholder={setPlaceHolder}

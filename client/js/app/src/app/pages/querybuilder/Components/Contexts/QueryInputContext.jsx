@@ -42,7 +42,7 @@ export const QueryInputProvider = (prop) => {
     metrics: { name: 'metrics', type: 'Parent', hasChildren: true },
   };
 
-  // Children of the levelZeroParameters that has attributes
+  // Children of the levelZeroParameters that have child attributes
   const childMap = {
     collapse: {
       summary: { name: 'summary', type: 'String', hasChildren: false },

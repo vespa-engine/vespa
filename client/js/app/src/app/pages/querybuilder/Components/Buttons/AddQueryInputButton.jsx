@@ -5,6 +5,10 @@ import OverlayImageButton from '../Buttons/OverlayImageButton';
 export default function AddQueryInput() {
   const { inputs, setInputs, id, setId } = useContext(QueryInputContext);
 
+  /**
+   * Adds a new element to inputs.
+   * @param {Event} e Event that happened.
+   */
   const updateInputs = (e) => {
     e.preventDefault();
     setId((id) => id + 1);
