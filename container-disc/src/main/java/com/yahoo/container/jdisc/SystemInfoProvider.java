@@ -2,6 +2,7 @@
 package com.yahoo.container.jdisc;
 
 import ai.vespa.cloud.ApplicationId;
+import ai.vespa.cloud.Cloud;
 import ai.vespa.cloud.Cluster;
 import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.Node;
@@ -34,6 +35,7 @@ public class SystemInfoProvider extends AbstractComponent implements Provider<Sy
                                                          applicationIdConfig.application(),
                                                          applicationIdConfig.instance()),
                                        new Zone(Environment.valueOf(csConfig.environment()), csConfig.region()),
+                                       new Cloud(csConfig.cloud()),
                                        new Cluster(ciConfig.nodeCount(), ciConfig.nodeIndices()),
                                        new Node(qrConfig.nodeIndex()));
     }
