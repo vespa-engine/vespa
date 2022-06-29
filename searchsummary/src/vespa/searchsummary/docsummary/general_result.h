@@ -21,16 +21,9 @@ private:
     const ResultClass      *_resClass;
     uint32_t                _entrycnt;
     ResEntry               *_entries;
-    char                   *_buf;     // allocated in same chunk as _entries
-    char                   *_bufEnd;  // first byte after _buf
     const document::Document* _document;
 
-    bool InBuf(const void *pt) const {
-        return ((const char *)pt >= _buf &&
-                (const char *)pt < _bufEnd);
-    }
-
-    void AllocEntries(uint32_t buflen, bool inplace = false);
+    void AllocEntries();
     void FreeEntries();
 
 public:
