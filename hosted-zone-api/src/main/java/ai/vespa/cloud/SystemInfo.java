@@ -17,6 +17,12 @@ public class SystemInfo {
     private final Cluster cluster;
     private final Node node;
 
+    // TODO: Remove on Vespa 9
+    @Deprecated(forRemoval = true)
+    public SystemInfo(ApplicationId application, Zone zone, Cluster cluster, Node node) {
+        this(application, zone, new Cloud(""), cluster, node);
+    }
+
     public SystemInfo(ApplicationId application, Zone zone, Cloud cloud, Cluster cluster, Node node) {
         this.application = Objects.requireNonNull(application, "Application cannot be null");
         this.zone = Objects.requireNonNull(zone, "Zone cannot be null");
