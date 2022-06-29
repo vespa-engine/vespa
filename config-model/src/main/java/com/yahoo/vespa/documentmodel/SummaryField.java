@@ -263,6 +263,10 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         }
     }
 
+    /**
+     * Returns true if the summary field uses an explicit source, i.e.
+     * a field with different name that is not a nested field.
+     */
     public boolean hasExplicitSingleSource() {
         String fieldName = getName();
         String sourceName = getSingleSource();

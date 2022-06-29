@@ -71,8 +71,8 @@ public class SummaryConsistency extends Processor {
     /** If the source is a complex field with only struct field attributes then make this use the attribute combiner transform */
     private void makeAttributeCombinerTransformIfAppropriate(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
-            String source_field_name = summaryField.getSingleSource();
-            ImmutableSDField source = schema.getField(source_field_name);
+            String sourceFieldName = summaryField.getSingleSource();
+            ImmutableSDField source = schema.getField(sourceFieldName);
             if (source != null && isComplexFieldWithOnlyStructFieldAttributes(source)) {
                 summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
             }
@@ -80,12 +80,12 @@ public class SummaryConsistency extends Processor {
     }
 
     /*
-     * This function must be called after makeAttributeCombinerIfAppropriate().
+     * This function must be called after makeAttributeCombinerTransformIfAppropriate().
      */
     private void makeCopyTransformIfAppropriate(SummaryField summaryField, Schema schema) {
         if (summaryField.getTransform() == SummaryTransform.NONE) {
-            String source_field_name = summaryField.getSingleSource();
-            ImmutableSDField source = schema.getField(source_field_name);
+            String sourceFieldName = summaryField.getSingleSource();
+            ImmutableSDField source = schema.getField(sourceFieldName);
             if (source != null && source.usesStructOrMap() && summaryField.hasExplicitSingleSource()) {
                 summaryField.setTransform(SummaryTransform.COPY);
             }
