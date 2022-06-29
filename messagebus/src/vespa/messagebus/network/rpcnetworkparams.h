@@ -218,20 +218,6 @@ public:
     }
 
     bool getDispatchOnEncode() const { return _dispatchOnEncode; }
-
-    RPCNetworkParams &setSkipRequestThread(bool skip_request_thread) {
-        _skip_request_thread = skip_request_thread;
-        return *this;
-    }
-
-    bool getSkipRequestThread() const { return _skip_request_thread; }
-
-    RPCNetworkParams &setSkipReplyThread(bool skip_reply_thread) {
-        _skip_reply_thread = skip_reply_thread;
-        return *this;
-    }
-
-    bool getSkipReplyThread() const { return _skip_reply_thread; }
 };
 
 }

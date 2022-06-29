@@ -42,17 +42,15 @@ private:
     mutable std::mutex      _lock;
     std::condition_variable _cond;
     FastOS_ThreadPool       _pool;
-    std::vector<ITask*> _children;
+    std::vector<ITask*>     _children;
     vespalib::ArrayQueue<ITask*>  _queue;
     bool                _closed;
-    const bool          _skip_request_thread;
-    const bool          _skip_reply_thread;
 
 protected:
     void Run(FastOS_ThreadInterface *thread, void *arg) override;
 
 public:
-    Messenger(bool skip_request_thread, bool skip_reply_thread);
+    Messenger();
 
     /**
      * Frees any allocated resources. Also destroys all queued tasks.
