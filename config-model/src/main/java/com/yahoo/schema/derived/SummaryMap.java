@@ -42,6 +42,8 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
             if (summaryField.getTransform()== SummaryTransform.NONE) continue;
 
             if (summaryField.getTransform()==SummaryTransform.ATTRIBUTE ||
+                (summaryField.getTransform()==SummaryTransform.ATTRIBUTECOMBINER && summaryField.hasExplicitSingleSource()) ||
+                summaryField.getTransform()==SummaryTransform.COPY ||
                 summaryField.getTransform()==SummaryTransform.DISTANCE ||
                 summaryField.getTransform()==SummaryTransform.GEOPOS ||
                 summaryField.getTransform()==SummaryTransform.POSITIONS ||

@@ -22,7 +22,8 @@ public enum SummaryTransform {
     GEOPOS("geopos"),
     ATTRIBUTECOMBINER("attributecombiner"),
     MATCHED_ELEMENTS_FILTER("matchedelementsfilter"),
-    MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter");
+    MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter"),
+    COPY("copy");
 
     private final String name;
 

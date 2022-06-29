@@ -29,4 +29,8 @@ schema test {
       }
     }
   }
+  document-summary rename {
+    summary new_str_elem_map type map<string,elem> { source: str_elem_map }
+    summary new_int_elem_map type map<int,elem> { source: int_elem_map }
+  }
 }
