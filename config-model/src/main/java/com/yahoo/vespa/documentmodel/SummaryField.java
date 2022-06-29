@@ -263,6 +263,18 @@ public class SummaryField extends Field implements Cloneable, TypedKey {
         }
     }
 
+    public boolean hasExplicitSingleSource() {
+        String fieldName = getName();
+        String sourceName = getSingleSource();
+        if (fieldName.equals(sourceName)) {
+            return false;
+        }
+        if (sourceName.contains(".")) {
+            return false;
+        }
+        return true;
+    }
+
     public VsmCommand getVsmCommand() {
         return vsmCommand;
     }
