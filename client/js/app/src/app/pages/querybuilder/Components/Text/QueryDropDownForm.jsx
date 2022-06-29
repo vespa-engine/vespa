@@ -28,11 +28,13 @@ export default function QueryDropdownForm({ choices, id, child = false }) {
       index = children.findIndex((element) => element.id === id);
       children[index].type = newType;
       children[index].hasChildren = childChoices[newType].hasChildren;
+      children[index].children = [];
     } else {
       const index = newInputs.findIndex((element) => element.id === id);
       newInputs[index].type = newType;
       let hasChildren = levelZeroParameters[newType].hasChildren;
       newInputs[index].hasChildren = hasChildren;
+      newInputs[index].children = [];
     }
     setInputs(newInputs);
   };
