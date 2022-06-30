@@ -20,6 +20,8 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.servlet.AsyncContext;
+import javax.servlet.AsyncEvent;
+import javax.servlet.AsyncListener;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.WriteListener;
@@ -34,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -97,6 +100,18 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         ProxyTarget proxyTarget = portToProxyTargetMapping.get(localPort);
         if (proxyTarget != null) {
             AsyncContext asyncContext = servletRequest.startAsync();
+            asyncContext.setTimeout(proxyTarget.timeout.plusSeconds(1).toMillis()); // add additional time for response sending
+            asyncContext.addListener(new AsyncListener() {
+                @Override public void onComplete(AsyncEvent event) {}
+                @Override public void onError(AsyncEvent event) {}
+                @Override public void onStartAsync(AsyncEvent event) {}
+                @Override
+                public void onTimeout(AsyncEvent event) {
+                    log.log(Level.FINE, event.getThrowable(), () -> "Original request timeout");
+                    servletResponse.setStatus(HttpServletResponse.SC_GATEWAY_TIMEOUT);
+                    asyncContext.complete();
+                }
+            });
             ServletOutputStream out = servletResponse.getOutputStream();
             if (servletRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
                 executor.execute(new ProxyRequestTask(asyncContext, proxyTarget, servletResponse, out));
@@ -201,8 +216,11 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                 } else {
                     return new StatusResponse(response.getStatus(), null, null);
                 }
+            } catch (TimeoutException e) {
+                log.log(Level.FINE, e, () -> "Proxy request timeout ('" + e.getMessage() + "')");
+                return new StatusResponse(503, null, null);
             } catch (Exception e) {
-                log.log(Level.FINE, e, () -> "Proxy request failed" + e.getMessage());
+                log.log(Level.FINE, e, () -> "Proxy request failed ('" + e.getMessage() + "')");
                 return new StatusResponse(500, "text/plain", e.getMessage().getBytes());
             }
         }
