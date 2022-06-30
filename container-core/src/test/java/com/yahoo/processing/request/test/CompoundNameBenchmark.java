@@ -9,34 +9,37 @@ import com.yahoo.processing.request.CompoundName;
 public class CompoundNameBenchmark {
     public void run() {
         long result=0;
-        String strings[] = createStrings(1000);
+        String [] strings = createStrings(1000);
         // Warm-up
         out("Warming up...");
-        for (int i=0; i<10*1000; i++)
+        for (int i=0; i<2*1000; i++)
             result+=createCompundName(strings);
 
         long startTime=System.currentTimeMillis();
         out("Running...");
-        for (int i=0; i<100*1000; i++)
+        for (int i=0; i<10*1000; i++)
             result+=createCompundName(strings);
         out("Ignore this: " + result); // Make sure we are not fooled by optimization by creating an observable result
         long endTime=System.currentTimeMillis();
         out("Compoundification 1000 strings 100.000 times took " + (endTime-startTime) + " ms");
     }
 
-    private final String [] createStrings(int num) {
-        String strings [] = new String [num];
+    private String [] createStrings(int num) {
+        String [] strings = new String [num];
         for(int i=0; i < strings.length; i++) {
             strings[i] = "this.is.a.short.compound.name." + i;
         }
         return strings;
     }
 
-    private final int createCompundName(String [] strings) {
+    private int createCompundName(String [] strings) {
         int retval = 0;
-        for (int i=0; i < strings.length; i++) {
-            CompoundName n = new CompoundName(strings[i]);
+        CompoundName toAppend = new CompoundName("appended.twice");
+        for (String s : strings) {
+            CompoundName n = new CompoundName(s);
             retval += n.size();
+            CompoundName a = n.append(toAppend);
+            retval += a.size();
         }
         return retval;
     }

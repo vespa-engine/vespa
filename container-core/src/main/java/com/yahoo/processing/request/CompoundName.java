@@ -1,8 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.processing.request;
 
-import com.google.common.collect.ImmutableList;
-
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +24,7 @@ public final class CompoundName {
     private final String name;
     private final String lowerCasedName;
 
-    private final ImmutableList<String> compounds;
+    private final List<String> compounds;
 
     /** A hashcode which is always derived from the compounds (NEVER the string) */
     private final int hashCode;
@@ -42,16 +41,20 @@ public final class CompoundName {
      * @throws NullPointerException if name is null
      */
     public CompoundName(String name) {
-        this(name, parse(name));
+        this(name, parse(name).toArray(new String[1]));
     }
 
     /** Constructs this from an array of name components which are assumed not to contain dots */
     public static CompoundName fromComponents(String ... components) {
-        return new CompoundName(Arrays.asList(components));
+        return new CompoundName(List.of(components));
     }
 
     /** Constructs this from a list of compounds. */
     public CompoundName(List<String> compounds) {
+        this(compounds.toArray(new String[compounds.size()]));
+    }
+
+    private CompoundName(String [] compounds) {
         this(toCompoundString(compounds), compounds);
     }
 
@@ -62,25 +65,26 @@ public final class CompoundName {
      * @param name the string representation of the compounds
      * @param compounds the compounds of this name
      */
-    private CompoundName(String name, List<String> compounds) {
+    private CompoundName(String name, String [] compounds) {
         if (name == null) throw new NullPointerException("Name can not be null");
 
         this.name = name;
         this.lowerCasedName = toLowerCase(name);
-        if (compounds.size() == 1 && compounds.get(0).isEmpty())
-            this.compounds = ImmutableList.of();
-        else
-            this.compounds = ImmutableList.copyOf(compounds);
+        if (compounds.length == 1 && compounds[0].isEmpty()) {
+            this.compounds = List.of();
+            this.hashCode = 0;
+            rest = this;
+            return;
+        }
+        this.compounds = new ImmutableArrayList(compounds);
         this.hashCode = this.compounds.hashCode();
 
-        int size = this.compounds.size();
-        rest = size > 1 ? new CompoundName(compounds.subList(1, size))
-                        : size == 1 ? empty : this; // size==0 -> this needed during construction of empty
+        rest = compounds.length > 1 ? new CompoundName(name.substring(compounds[0].length()+1), Arrays.copyOfRange(compounds, 1, compounds.length))
+                        : empty;
     }
 
     private static List<String> parse(String s) {
         ArrayList<String> l = null;
-
         int p = 0;
         final int m = s.length();
         for (int i = 0; i < m; i++) {
@@ -91,7 +95,8 @@ public final class CompoundName {
             }
         }
         if (p == 0) {
-            return ImmutableList.of(s);
+            if (l == null) return List.of(s);
+            l.add(s);
         } else if (p < m) {
             l.add(s.substring(p, m));
         } else {
@@ -107,10 +112,7 @@ public final class CompoundName {
      */
     public CompoundName append(String name) {
         if (name.isEmpty()) return this;
-        if (isEmpty()) return new CompoundName(name);
-        List<String> newCompounds = new ArrayList<>(compounds);
-        newCompounds.addAll(parse(name));
-        return new CompoundName(concat(this.name, name), newCompounds);
+        return append(new CompoundName(name));
     }
 
     /**
@@ -121,12 +123,14 @@ public final class CompoundName {
     public CompoundName append(CompoundName name) {
         if (name.isEmpty()) return this;
         if (isEmpty()) return name;
-        List<String> newCompounds = new ArrayList<>(compounds);
-        newCompounds.addAll(name.compounds);
+        String [] newCompounds = new String[compounds.size() + name.compounds.size()];
+        int count = 0;
+        for (String s : compounds) { newCompounds[count++] = s; }
+        for (String s : name.compounds) { newCompounds[count++] = s; }
         return new CompoundName(concat(this.name, name.name), newCompounds);
     }
 
-    private String concat(String name1, String name2) {
+    private static String concat(String name1, String name2) {
         return name1 + "." + name2;
     }
 
@@ -215,7 +219,7 @@ public final class CompoundName {
      * As an optimization, if the given name == the name component at this index, this is returned.
      */
     public CompoundName set(int i, String name) {
-        if (get(i) == name) return this;
+        if (get(i).equals(name)) return this;
         List<String> newCompounds = new ArrayList<>(compounds);
         newCompounds.set(i, name);
         return new CompoundName(newCompounds);
@@ -261,11 +265,9 @@ public final class CompoundName {
     public int hashCode() { return hashCode; }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this) return true;
-        if ( ! (o instanceof CompoundName)) return false;
-        CompoundName other = (CompoundName)o;
-        return this.name.equals(other.name);
+    public boolean equals(Object arg) {
+        if (arg == this) return true;
+        return (arg instanceof CompoundName o) && name.equals(o.name);
     }
 
     /**
@@ -278,13 +280,42 @@ public final class CompoundName {
         return lowerCasedName;
     }
 
-    private static String toCompoundString(List<String> compounds) {
-        StringBuilder b = new StringBuilder();
-        for (String compound : compounds)
-            b.append(compound).append(".");
+    private static String toCompoundString(String [] compounds) {
+        int all = compounds.length;
+        for (int i = 0; i < compounds.length; i++)
+            all += compounds[i].length();
+        StringBuilder b = new StringBuilder(all);
+        for (int i = 0; i < compounds.length; i++)
+            b.append(compounds[i]).append(".");
         return b.length()==0 ? "" : b.substring(0, b.length()-1);
     }
 
     public static CompoundName from(String name) { return new CompoundName(name); }
+
+    private static class ImmutableArrayList extends AbstractList<String> {
+
+        private final String [] array;
+        ImmutableArrayList(String [] array) {
+            this.array = array;
+        }
+        @Override
+        public String get(int index) {
+            return array[index];
+        }
+
+        @Override
+        public int size() {
+            return array.length;
+        }
+
+        @Override
+        public int hashCode() {
+            int hashCode = 0;
+            for (String s : array) {
+                hashCode = hashCode ^ s.hashCode();
+            }
+            return hashCode;
+        }
+    }
 
 }
