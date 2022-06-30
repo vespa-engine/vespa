@@ -28,6 +28,7 @@ import (
 const (
 	applicationFlag = "application"
 	instanceFlag    = "instance"
+	clusterFlag     = "cluster"
 	zoneFlag        = "zone"
 	targetFlag      = "target"
 	waitFlag        = "wait"
@@ -178,14 +179,16 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 		target      string
 		application string
 		instance    string
+		cluster     string
 		zone        string
 		waitSecs    int
 		color       string
 		quiet       bool
 	)
 	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
-	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", "The application to manage")
-	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to manage")
+	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", "The application to use")
+	c.cmd.PersistentFlags().StringVarP(&instance, instanceFlag, "i", "", "The instance of the application to use")
+	c.cmd.PersistentFlags().StringVarP(&cluster, clusterFlag, "C", "", "The container cluster to use. This is only required for applications with multiple clusters")
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone")
 	c.cmd.PersistentFlags().IntVarP(&waitSecs, waitFlag, "w", 0, "Number of seconds to wait for a service to become ready")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
@@ -213,19 +216,17 @@ func (c *CLI) configureSpinner() {
 func (c *CLI) configureCommands() {
 	rootCmd := c.cmd
 	authCmd := newAuthCmd()
-	certCmd := newCertCmd(c, false)
+	certCmd := newCertCmd(c)
 	configCmd := newConfigCmd()
 	documentCmd := newDocumentCmd(c)
 	prodCmd := newProdCmd()
 	statusCmd := newStatusCmd(c)
 	certCmd.AddCommand(newCertAddCmd(c))            // auth cert add
 	authCmd.AddCommand(certCmd)                     // auth cert
-	authCmd.AddCommand(newAPIKeyCmd(c, false))      // auth api-key
+	authCmd.AddCommand(newAPIKeyCmd(c))             // auth api-key
 	authCmd.AddCommand(newLoginCmd(c))              // auth login
 	authCmd.AddCommand(newLogoutCmd(c))             // auth logout
 	rootCmd.AddCommand(authCmd)                     // auth
-	rootCmd.AddCommand(newCertCmd(c, true))         // cert     TODO: Remove this after 2022-06-01
-	rootCmd.AddCommand(newAPIKeyCmd(c, true))       // api-key  TODO: Remove this after 2022-06-01
 	rootCmd.AddCommand(newCloneCmd(c))              // clone
 	configCmd.AddCommand(newConfigGetCmd(c))        // config get
 	configCmd.AddCommand(newConfigSetCmd(c))        // config set

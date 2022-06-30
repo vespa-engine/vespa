@@ -13,9 +13,6 @@ func TestAPIKey(t *testing.T) {
 	t.Run("auth api-key", func(t *testing.T) {
 		testAPIKey(t, []string{"auth", "api-key"})
 	})
-	t.Run("api-key (deprecated)", func(t *testing.T) {
-		testAPIKey(t, []string{"api-key"})
-	})
 }
 
 func testAPIKey(t *testing.T, subcommand []string) {

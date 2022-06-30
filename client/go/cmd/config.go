@@ -62,6 +62,14 @@ and "hosted" targets. See https://cloud.vespa.ai/en/tenant-apps-instances for
 more details. This has no default value. Examples: tenant1.app1,
 tenant1.app1.instance1
 
+cluster
+
+Specifies the container cluster to manage. If left empty (default) and the
+application has only one container cluster, that cluster is chosen
+automatically. When an application has multiple cluster this must be set a
+valid cluster name, as specified in services.xml. See
+https://docs.vespa.ai/en/reference/services-container.html for more details.
+
 color
 
 Controls how Vespa CLI uses colors. Setting this to "auto" (default) enables
@@ -353,6 +361,11 @@ func (c *Config) application() (vespa.ApplicationID, error) {
 	return application, nil
 }
 
+func (c *Config) cluster() string {
+	cluster, _ := c.get(clusterFlag)
+	return cluster
+}
+
 func (c *Config) deploymentIn(system vespa.System) (vespa.Deployment, error) {
 	zone := system.DefaultZone
 	zoneName, ok := c.get(zoneFlag)
@@ -557,6 +570,9 @@ func (c *Config) set(option, value string) error {
 		return nil
 	case instanceFlag:
 		c.config.Set(option, value)
+		return nil
+	case clusterFlag:
+		c.config.Set(clusterFlag, value)
 		return nil
 	case waitFlag:
 		if n, err := strconv.Atoi(value); err != nil || n < 0 {

@@ -81,7 +81,7 @@ func printServiceStatus(cli *CLI, name string) error {
 	if timeout > 0 {
 		log.Printf("Waiting up to %s for service to become ready ...", color.CyanString(timeout.String()))
 	}
-	s, err := t.Service(name, timeout, 0, "")
+	s, err := t.Service(name, timeout, 0, cli.config.cluster())
 	if err != nil {
 		return err
 	}

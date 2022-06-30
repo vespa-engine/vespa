@@ -16,7 +16,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-func newCertCmd(cli *CLI, deprecated bool) *cobra.Command {
+func newCertCmd(cli *CLI) *cobra.Command {
 	var (
 		noApplicationPackage bool
 		overwriteCertificate bool
@@ -57,12 +57,7 @@ $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
 		},
 	}
 	cmd.Flags().BoolVarP(&overwriteCertificate, "force", "f", false, "Force overwrite of existing certificate and private key")
-	if deprecated {
-		// TODO: Remove this after 2022-06-01
-		cmd.Deprecated = "use 'vespa auth cert' instead"
-	} else {
-		cmd.Flags().BoolVarP(&noApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
-	}
+	cmd.Flags().BoolVarP(&noApplicationPackage, "no-add", "N", false, "Do not add certificate to the application package")
 	cmd.MarkPersistentFlagRequired(applicationFlag)
 	return cmd
 }
