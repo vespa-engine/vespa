@@ -4,6 +4,7 @@ package ai.vespa.feed.client.impl;
 import ai.vespa.feed.client.HttpResponse;
 import ai.vespa.feed.client.OperationStats;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -80,12 +81,13 @@ public class BenchmarkingCluster implements Cluster {
     }
 
     private OperationStats getStats() {
+        long requests = this.requests.get();
+
         Map<Integer, Long> responses = new HashMap<>();
         for (int code = 0; code < responsesByCode.length; code++)
             if (responsesByCode[code] > 0)
                 responses.put(code, responsesByCode[code]);
 
-        long requests = this.requests.get();
         return new OperationStats(requests,
                                   responses,
                                   exceptions,
@@ -100,6 +102,14 @@ public class BenchmarkingCluster implements Cluster {
     @Override
     public void close() {
         delegate.close();
+        Instant doom = Instant.now().plusSeconds(10);
+        while (Instant.now().isBefore(doom) && getStats().inflight() != 0)
+            try  {
+                Thread.sleep(10);
+            }
+            catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
         executor.shutdown();
     }
 
