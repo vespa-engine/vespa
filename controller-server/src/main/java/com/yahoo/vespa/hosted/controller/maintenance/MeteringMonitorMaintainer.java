@@ -51,14 +51,15 @@ public class MeteringMonitorMaintainer extends ControllerMaintainer {
         return controller().applications().asList()
                 .stream()
                 .flatMap(app -> app.instances().values().stream())
-                .flatMap(this::instancesToDeployments)
+                .flatMap(this::toProdDeployments)
                 .collect(Collectors.toSet());
     }
 
-    private Stream<DeploymentId> instancesToDeployments(Instance instance) {
+    private Stream<DeploymentId> toProdDeployments(Instance instance) {
         return instance.deployments()
                 .keySet()
                 .stream()
+                .filter(deployment -> deployment.environment().isProduction())
                 .map(deployment -> new DeploymentId(instance.id(), deployment));
     }
 }
