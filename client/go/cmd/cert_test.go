@@ -20,9 +20,6 @@ func TestCert(t *testing.T) {
 	t.Run("auth cert", func(t *testing.T) {
 		testCert(t, []string{"auth", "cert"})
 	})
-	t.Run("cert (deprecated)", func(t *testing.T) {
-		testCert(t, []string{"cert"})
-	})
 }
 
 func testCert(t *testing.T, subcommand []string) {
@@ -52,9 +49,6 @@ func testCert(t *testing.T, subcommand []string) {
 func TestCertCompressedPackage(t *testing.T) {
 	t.Run("auth cert", func(t *testing.T) {
 		testCertCompressedPackage(t, []string{"auth", "cert"})
-	})
-	t.Run("cert (deprecated)", func(t *testing.T) {
-		testCertCompressedPackage(t, []string{"cert"})
 	})
 }
 

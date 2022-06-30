@@ -14,7 +14,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/vespa"
 )
 
-func newAPIKeyCmd(cli *CLI, deprecated bool) *cobra.Command {
+func newAPIKeyCmd(cli *CLI) *cobra.Command {
 	var overwriteKey bool
 	cmd := &cobra.Command{
 		Use:   "api-key",
@@ -45,9 +45,6 @@ always be used. It's not possible to specify a tenant-specific key.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return doApiKey(cli, overwriteKey, args)
 		},
-	}
-	if deprecated {
-		cmd.Deprecated = "use 'vespa auth api-key' instead"
 	}
 	cmd.Flags().BoolVarP(&overwriteKey, "force", "f", false, "Force overwrite of existing API key")
 	cmd.MarkPersistentFlagRequired(applicationFlag)

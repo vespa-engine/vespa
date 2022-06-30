@@ -213,19 +213,17 @@ func (c *CLI) configureSpinner() {
 func (c *CLI) configureCommands() {
 	rootCmd := c.cmd
 	authCmd := newAuthCmd()
-	certCmd := newCertCmd(c, false)
+	certCmd := newCertCmd(c)
 	configCmd := newConfigCmd()
 	documentCmd := newDocumentCmd(c)
 	prodCmd := newProdCmd()
 	statusCmd := newStatusCmd(c)
 	certCmd.AddCommand(newCertAddCmd(c))            // auth cert add
 	authCmd.AddCommand(certCmd)                     // auth cert
-	authCmd.AddCommand(newAPIKeyCmd(c, false))      // auth api-key
+	authCmd.AddCommand(newAPIKeyCmd(c))             // auth api-key
 	authCmd.AddCommand(newLoginCmd(c))              // auth login
 	authCmd.AddCommand(newLogoutCmd(c))             // auth logout
 	rootCmd.AddCommand(authCmd)                     // auth
-	rootCmd.AddCommand(newCertCmd(c, true))         // cert     TODO: Remove this after 2022-06-01
-	rootCmd.AddCommand(newAPIKeyCmd(c, true))       // api-key  TODO: Remove this after 2022-06-01
 	rootCmd.AddCommand(newCloneCmd(c))              // clone
 	configCmd.AddCommand(newConfigGetCmd(c))        // config get
 	configCmd.AddCommand(newConfigSetCmd(c))        // config set
