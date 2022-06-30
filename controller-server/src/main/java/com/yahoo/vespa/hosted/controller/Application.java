@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * An application. Belongs to a {@link Tenant}, and may have multiple {@link Instance}s.
@@ -161,7 +162,7 @@ public class Application {
     public ApplicationActivity activity() {
         return ApplicationActivity.from(instances.values().stream()
                                                  .flatMap(instance -> instance.deployments().values().stream())
-                                                 .collect(Collectors.toUnmodifiableList()));
+                                                 .toList());
     }
 
     public Map<InstanceName, List<Deployment>> productionDeployments() {
@@ -183,33 +184,44 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    /**
-     * Returns the oldest application version this has deployed in a permanent zone (not test or staging).
-     */
+    /** Returns the oldest application version this has deployed in a permanent zone (not test or staging) */
     public Optional<RevisionId> oldestDeployedRevision() {
+        return productionRevisions().min(Comparator.naturalOrder());
+    }
+
+    /** Returns the latest application version this has deployed in a permanent zone (not test or staging) */
+    public Optional<RevisionId> latestDeployedRevision() {
+        return productionRevisions().max(Comparator.naturalOrder());
+    }
+
+    private Stream<RevisionId> productionRevisions() {
         return productionDeployments().values().stream().flatMap(List::stream)
                                       .map(Deployment::revision)
-                                      .filter(RevisionId::isProduction)
-                                      .min(Comparator.naturalOrder());
+                                      .filter(RevisionId::isProduction);
     }
 
     /** Returns the total quota usage for this application, excluding temporary deployments */
     public QuotaUsage quotaUsage() {
         return instances().values().stream()
-                          .map(Instance::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+                          .map(Instance::quotaUsage)
+                          .reduce(QuotaUsage::add)
+                          .orElse(QuotaUsage.none);
     }
 
     /** Returns the total quota usage for manual deployments for this application */
     public QuotaUsage manualQuotaUsage() {
         return instances().values().stream()
-                .map(Instance::manualQuotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+                          .map(Instance::manualQuotaUsage)
+                          .reduce(QuotaUsage::add)
+                          .orElse(QuotaUsage.none);
     }
 
     /** Returns the total quota usage for this application, excluding one specific deployment (and temporary deployments) */
     public QuotaUsage quotaUsage(ApplicationId application, ZoneId zone) {
         return instances().values().stream()
                           .map(instance -> instance.quotaUsageExcluding(application, zone))
-                          .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
+                          .reduce(QuotaUsage::add)
+                          .orElse(QuotaUsage.none);
     }
 
     /** Returns the set of deploy keys for this application. */

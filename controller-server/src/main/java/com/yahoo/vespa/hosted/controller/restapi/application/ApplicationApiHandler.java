@@ -10,8 +10,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
@@ -137,8 +137,6 @@ import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Base64;
@@ -955,19 +953,24 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse applicationPackage(String tenantName, String applicationName, HttpRequest request) {
         TenantAndApplicationId tenantAndApplication = TenantAndApplicationId.from(tenantName, applicationName);
-        long build;
-        String parameter = request.getProperty("build");
-        if (parameter != null)
-        try {
-            build = Validation.requireAtLeast(Long.parseLong(request.getProperty("build")), "build number", 1L);
-        }
-        catch (NumberFormatException e) {
-            throw new IllegalArgumentException("invalid value for request parameter 'build'", e);
-        }
-        else {
+        final long build;
+        String requestedBuild = request.getProperty("build");
+        if (requestedBuild != null) {
+            if (requestedBuild.equals("latestDeployed")) {
+                build = controller.applications().requireApplication(tenantAndApplication).latestDeployedRevision()
+                                  .map(RevisionId::number)
+                                  .orElseThrow(() -> new NotExistsException("no application package has been deployed in production for " + tenantAndApplication));
+            } else {
+                try {
+                    build = Validation.requireAtLeast(Long.parseLong(request.getProperty("build")), "build number", 1L);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("invalid value for request parameter 'build'", e);
+                }
+            }
+        } else {
             build = controller.applications().requireApplication(tenantAndApplication).revisions().last()
-                    .map(version -> version.id().number())
-                    .orElseThrow(() -> new NotExistsException("no application package has been submitted for " + tenantAndApplication));
+                              .map(version -> version.id().number())
+                              .orElseThrow(() -> new NotExistsException("no application package has been submitted for " + tenantAndApplication));
         }
         RevisionId revision = RevisionId.forProduction(build);
         boolean tests = request.getBooleanProperty("tests");
