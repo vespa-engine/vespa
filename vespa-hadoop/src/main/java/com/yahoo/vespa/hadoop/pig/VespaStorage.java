@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hadoop.pig;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hadoop.mapreduce.VespaOutputFormat;
 import com.yahoo.vespa.hadoop.mapreduce.util.TupleTools;
 import com.yahoo.vespa.hadoop.mapreduce.util.VespaConfiguration;
@@ -165,27 +166,13 @@ public class VespaStorage extends StoreFunc {
         return VespaDocumentOperation.create(operation, docId, fields, properties, schema);
     }
 
-
-    public static String base64Serialize(Object o) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            oos.writeObject(o);
-        }
-        return Base64.getEncoder().encodeToString(baos.toByteArray());
+    public static String base64Serialize(ResourceSchema resourceSchema) throws IOException {
+        byte[] bytes = new ObjectMapper().writeValueAsBytes(resourceSchema);
+        return Base64.getEncoder().encodeToString(bytes);
     }
 
-
-    @SuppressWarnings("unchecked")
-    public static <T extends Serializable> T base64Deserialize(String s) throws IOException {
-        Object ret;
+    public static ResourceSchema  base64Deserialize(String s) throws IOException {
         byte[] data = Base64.getDecoder().decode(s);
-        ByteArrayInputStream bais = new ByteArrayInputStream(data);
-        try (ObjectInputStream ois = new ObjectInputStream(bais)) {
-            ret = ois.readObject();
-        } catch (ClassNotFoundException e) {
-            throw new IOException(e);
-        }
-        return (T) ret;
+        return new ObjectMapper().readValue(data, ResourceSchema.class);
     }
-
 }
