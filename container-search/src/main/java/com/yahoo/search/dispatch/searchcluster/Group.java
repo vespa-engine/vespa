@@ -74,7 +74,7 @@ public class Group {
             long average = activeDocs / numWorkingNodes;
             long skew = nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).mapToLong(node -> Math.abs(node.getActiveDocuments() - average)).sum();
             boolean balanced = skew <= activeDocs * maxContentSkew;
-            if (!isBalanced.get() || balanced != isBalanced.get()) {
+            if (balanced != isBalanced.get()) {
                 if (!isSparse())
                     log.info("Content in " + this + ", with " + numWorkingNodes + "/" + nodes.size() + " working nodes, is " +
                              (balanced ? "" : "not ") + "well balanced. Current deviation: " + skew * 100 / activeDocs +
