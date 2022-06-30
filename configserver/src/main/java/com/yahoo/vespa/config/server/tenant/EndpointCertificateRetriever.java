@@ -19,13 +19,7 @@ import java.util.logging.Logger;
  *
  * @author andreer
  */
-public class EndpointCertificateRetriever {
-
-    private final SecretStore secretStore;
-
-    public EndpointCertificateRetriever(SecretStore secretStore) {
-        this.secretStore = secretStore;
-    }
+public record EndpointCertificateRetriever(SecretStore secretStore) {
 
     private static final Logger log = Logger.getLogger(EndpointCertificateRetriever.class.getName());
 
@@ -40,11 +34,11 @@ public class EndpointCertificateRetriever {
 
             verifyKeyMatchesCertificate(endpointCertificateMetadata, cert, key);
 
-            return new EndpointCertificateSecrets(cert, key);
+            return new EndpointCertificateSecrets(cert, key, endpointCertificateMetadata.version());
         } catch (RuntimeException e) {
             log.log(Level.WARNING, "Exception thrown during certificate retrieval", e);
             // Assume not ready yet
-            return EndpointCertificateSecrets.MISSING;
+            return EndpointCertificateSecrets.missing(endpointCertificateMetadata.version());
         }
     }
 

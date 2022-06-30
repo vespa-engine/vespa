@@ -11,6 +11,11 @@
       {
         "at": 0,
         "type": "info",
+        "message": "Using CA signed certificate version 0"
+      },
+      {
+        "at": 0,
+        "type": "info",
         "message": "Deployment successful."
       },
       {
@@ -49,7 +54,7 @@
       }
     ]
   },
-  "lastId": 7,
+  "lastId": 8,
   "steps": {
     "deployReal": {
       "status": "succeeded",
