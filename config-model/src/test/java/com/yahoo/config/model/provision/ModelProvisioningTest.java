@@ -4,6 +4,7 @@ package com.yahoo.config.model.provision;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.cloud.config.log.LogdConfig;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -40,11 +41,13 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
@@ -268,7 +271,8 @@ public class ModelProvisioningTest {
                         "</services>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(5);
-        VespaModel model = tester.createModel(xmlWithNodes, true);
+        TestLogger logger = new TestLogger();
+        VespaModel model = tester.createModel(xmlWithNodes, true, new DeployState.Builder().deployLogger(logger));
         assertEquals("Nodes in content1", 2, model.getContentClusters().get("content1").getRootGroup().getNodes().size());
         assertEquals("Nodes in container1", 2, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Heap size is lowered with combined clusters",
@@ -278,6 +282,10 @@ public class ModelProvisioningTest {
                                                                                                                .get("content1")));
         assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
+        assertEquals(1, logger.msgs().size());
+        assertEquals("Declaring combined cluster with <nodes of=\"...\"> is deprecated without replacement, " +
+                     "and the feature will be removed in Vespa 9. Use separate container and content clusters instead",
+                     logger.msgs().get(0).message);
     }
 
     @Test
@@ -2293,6 +2301,21 @@ public class ModelProvisioningTest {
 
     private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
         assertProvisioned(nodeCount, id, null, type, model);
+    }
+
+    record TestLogger(List<LogMessage> msgs) implements DeployLogger {
+
+        public TestLogger() {
+            this(new ArrayList<>());
+        }
+
+        @Override
+        public void log(Level level, String message) {
+            msgs.add(new LogMessage(level, message));
+        }
+
+        record LogMessage(Level level, String message) {}
+
     }
 
 }
