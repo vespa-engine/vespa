@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, useParams, Navigate } from 'react-router-dom';
 import { Error } from 'app/components';
 
-const mainTitle = 'Vespa Console';
+const mainTitle = 'Vespa App';
 
 function TitledRoute({ element, title, default: isDefault, ...props }) {
   const params = useParams();
