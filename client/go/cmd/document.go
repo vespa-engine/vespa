@@ -178,7 +178,7 @@ func documentService(cli *CLI) (*vespa.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return cli.service(target, vespa.DocumentService, 0, "")
+	return cli.service(target, vespa.DocumentService, 0, cli.config.cluster())
 }
 
 func operationOptions(stderr io.Writer, printCurl bool, timeoutSecs int) vespa.OperationOptions {

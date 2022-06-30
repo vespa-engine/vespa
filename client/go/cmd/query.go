@@ -62,7 +62,7 @@ func query(cli *CLI, arguments []string, timeoutSecs int, curl bool) error {
 	if err != nil {
 		return err
 	}
-	service, err := cli.service(target, vespa.QueryService, 0, "")
+	service, err := cli.service(target, vespa.QueryService, 0, cli.config.cluster())
 	if err != nil {
 		return err
 	}

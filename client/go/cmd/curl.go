@@ -38,7 +38,7 @@ $ vespa curl -- -v --data-urlencode "yql=select * from music where album contain
 			if err != nil {
 				return err
 			}
-			service, err := target.Service(curlService, 0, 0, "")
+			service, err := target.Service(curlService, 0, 0, cli.config.cluster())
 			if err != nil {
 				return err
 			}

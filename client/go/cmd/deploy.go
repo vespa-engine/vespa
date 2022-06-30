@@ -178,7 +178,7 @@ func waitForQueryService(cli *CLI, target vespa.Target, sessionOrRunID int64) er
 	}
 	if timeout > 0 {
 		log.Println()
-		_, err := cli.service(target, vespa.QueryService, sessionOrRunID, "")
+		_, err := cli.service(target, vespa.QueryService, sessionOrRunID, cli.config.cluster())
 		return err
 	}
 	return nil

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/vespa-engine/vespa/client/go/auth/auth0"
@@ -82,28 +83,27 @@ func CloudTarget(httpClient util.HTTPClient, apiOptions APIOptions, deploymentOp
 	}, nil
 }
 
-func (t *cloudTarget) resolveEndpoint(cluster string) (string, error) {
+func (t *cloudTarget) findClusterURL(cluster string) (string, error) {
+	clusters := make([]string, 0, len(t.deploymentOptions.ClusterURLs))
+	for c := range t.deploymentOptions.ClusterURLs {
+		clusters = append(clusters, c)
+	}
 	if cluster == "" {
-		for _, u := range t.deploymentOptions.ClusterURLs {
+		for _, url := range t.deploymentOptions.ClusterURLs {
 			if len(t.deploymentOptions.ClusterURLs) == 1 {
-				return u, nil
+				return url, nil
 			} else {
-				return "", fmt.Errorf("multiple clusters, none chosen: %v", t.deploymentOptions.ClusterURLs)
+				return "", fmt.Errorf("no cluster specified: found multiple clusters '%s'", strings.Join(clusters, "', '"))
 			}
 		}
 	} else {
-		u := t.deploymentOptions.ClusterURLs[cluster]
-		if u == "" {
-			clusters := make([]string, len(t.deploymentOptions.ClusterURLs))
-			for c := range t.deploymentOptions.ClusterURLs {
-				clusters = append(clusters, c)
-			}
-			return "", fmt.Errorf("unknown cluster '%s': must be one of %v", cluster, clusters)
+		url, ok := t.deploymentOptions.ClusterURLs[cluster]
+		if !ok {
+			return "", fmt.Errorf("invalid cluster '%s': must be one of '%s'", cluster, strings.Join(clusters, "', '"))
 		}
-		return u, nil
+		return url, nil
 	}
-
-	return "", fmt.Errorf("no endpoints")
+	return "", fmt.Errorf("no endpoints found")
 }
 
 func (t *cloudTarget) Type() string {
@@ -142,7 +142,7 @@ func (t *cloudTarget) Service(name string, timeout time.Duration, runID int64, c
 				return nil, err
 			}
 		}
-		url, err := t.resolveEndpoint(cluster)
+		url, err := t.findClusterURL(cluster)
 		if err != nil {
 			return nil, err
 		}

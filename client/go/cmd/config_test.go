@@ -35,6 +35,11 @@ func TestConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, "", "config", "set", "application", "t1.a1")
 	assertConfigCommand(t, configHome, "application = t1.a1.default\n", "config", "get", "application")
 
+	// cluster
+	assertConfigCommand(t, configHome, "cluster = <unset>\n", "config", "get", "cluster")
+	assertConfigCommand(t, configHome, "", "config", "set", "cluster", "feed")
+	assertConfigCommand(t, configHome, "cluster = feed\n", "config", "get", "cluster")
+
 	// instance
 	assertConfigCommand(t, configHome, "instance = <unset>\n", "config", "get", "instance")
 	assertConfigCommand(t, configHome, "", "config", "set", "instance", "i2")
@@ -99,6 +104,7 @@ func TestLocalConfig(t *testing.T) {
 	// get merges settings from local and global config
 	assertConfigCommand(t, configHome, "", "config", "set", "--local", "application", "t1.a1")
 	assertConfigCommand(t, configHome, `application = t1.a1.default
+cluster = <unset>
 color = auto
 instance = foo
 quiet = false
