@@ -187,6 +187,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addEmbedderComponents(deployState, cluster, spec);
         addModelEvaluation(spec, cluster, context);
+        addVespaBundles(cluster);
         addModelEvaluationBundles(cluster);
 
         addProcessing(deployState, spec, cluster);
@@ -581,6 +582,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private int getIntValue(Element element, String name, int defaultValue) {
         Element child = XML.getChild(element, name);
         return (child != null) ? Integer.parseInt(child.getTextContent()) : defaultValue;
+    }
+
+    private void addVespaBundles(ApplicationContainerCluster cluster) {
+        // Skip model-evaluation bundles for node-admin
+        if (cluster.id().value().equals("node-admin")) return;
+
+        Set<String> bundles = Set.of(
+                "container-search-and-docproc", "container-search-gui", "docprocs",
+                "linguistics-components", "vespaclient-container-plugin");
+        bundles.forEach(b -> cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath(b)));
+        addModelEvaluationBundles(cluster);
     }
 
     protected void addModelEvaluationBundles(ApplicationContainerCluster cluster) {
