@@ -14,4 +14,3 @@ rm -rf summary
 rm -rf indexingdocument
 rm -rf searchdocument
 rm -rf *.dat
-$VALGRIND ./searchcore_summaryfieldconverter_test_app
