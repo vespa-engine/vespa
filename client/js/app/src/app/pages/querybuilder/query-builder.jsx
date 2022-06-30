@@ -1,5 +1,6 @@
 import React from 'react';
+import { Container } from 'app/components';
 
 export function QueryBuilder() {
-  return <>query builder</>;
+  return <Container>query builder</Container>;
 }
