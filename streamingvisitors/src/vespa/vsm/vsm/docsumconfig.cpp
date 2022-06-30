@@ -9,6 +9,7 @@
 
 using search::MatchingElementsFields;
 using search::docsummary::IDocsumFieldWriter;
+using search::docsummary::CopyDFW;
 using search::docsummary::EmptyDFW;
 using search::docsummary::MatchedElementsFilterDFW;
 using search::docsummary::ResultConfig;
@@ -55,8 +56,16 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
         fieldWriter = std::make_unique<EmptyDFW>();
         rc = true;
     } else if ((overrideName == "attribute") ||
-            (overrideName == "attributecombiner") ||
-            (overrideName == "geopos")) {
+               (overrideName == "attributecombiner")) {
+        if (!argument.empty() && argument != fieldName) {
+            auto fw = std::make_unique<CopyDFW>();
+            const ResultConfig& resultConfig = getResultConfig();
+            if (fw->Init(resultConfig, argument.c_str())) {
+                fieldWriter = std::move(fw);
+            }
+        }
+        rc = true;
+    } else if (overrideName == "geopos") {
         rc = true;
     } else if ((overrideName == "matchedattributeelementsfilter") ||
                (overrideName == "matchedelementsfilter")) {
