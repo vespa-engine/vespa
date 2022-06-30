@@ -106,7 +106,18 @@ public interface ZtsClient extends AutoCloseable {
      * @param domain Target domain
      * @return An Athenz access token
      */
-    AthenzAccessToken getAccessToken(AthenzDomain domain);
+    default AthenzAccessToken getAccessToken(AthenzDomain domain) {
+        return getAccessToken(domain, List.of());
+    }
+
+    /**
+     * Fetch an access token for the target domain
+     *
+     * @param domain Target domain
+     * @param proxyPrincipals List of principals to allow proxying token
+     * @return An Athenz access token
+     */
+    AthenzAccessToken getAccessToken(AthenzDomain domain, List<AthenzIdentity> proxyPrincipals);
 
     /**
      * Fetch an access token for the target roles
