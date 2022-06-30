@@ -746,8 +746,6 @@ void Test::testLoadBalancer() {
     entries.push_back(IMirrorAPI::Spec("foo/1/default", "tcp/bar:2"));
     entries.push_back(IMirrorAPI::Spec("foo/2/default", "tcp/bar:3"));
 
-    const std::vector<LoadBalancer::NodeInfo>& nodeInfo = lb.getNodeInfo();
-
     for (int i = 0; i < 99; i++) {
         std::pair<string, int> recipient = lb.getRecipient(entries);
         EXPECT_EQUAL((i % 3), recipient.second);
@@ -766,8 +764,8 @@ void Test::testLoadBalancer() {
         lb.received(1, false);
     }
 
-    EXPECT_EQUAL(421, (int)(100 * nodeInfo[0].weight / nodeInfo[1].weight));
-    EXPECT_EQUAL(421, (int)(100 * nodeInfo[2].weight / nodeInfo[1].weight));
+    EXPECT_EQUAL(421, (int)(100 * lb.getWeight(0) / lb.getWeight(1)));
+    EXPECT_EQUAL(421, (int)(100 * lb.getWeight(2) / lb.getWeight(1)));
 
     EXPECT_EQUAL(0 , lb.getRecipient(entries).second);
     EXPECT_EQUAL(0 , lb.getRecipient(entries).second);

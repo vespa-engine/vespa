@@ -3,33 +3,17 @@
 
 #include <vespa/documentapi/common.h>
 #include <vespa/slobrok/imirrorapi.h>
+#include <mutex>
 
 namespace documentapi {
 
 class LoadBalancer {
 public:
-    class NodeInfo {
-    public:
-        NodeInfo() noexcept : valid(false), sent(0), busy(0), weight(1.0) {};
-
-        bool valid;
-        uint32_t sent;
-        uint32_t busy;
-        double weight;
-        string lastSpec;
-    };
-
-    std::vector<NodeInfo> _nodeInfo;
-    string _cluster;
-    string _session;
-    double _position;
-
     LoadBalancer(const string& cluster, const string& session);
     ~LoadBalancer();
 
-    const std::vector<NodeInfo>& getNodeInfo() const { return _nodeInfo; }
-
-    uint32_t getIndex(const string& name) const;
+    string getLastSpec(size_t target) const;
+    double getWeight(size_t target) const;
 
     /**
        Returns the spec and the node index of the node we should send to.
@@ -37,9 +21,28 @@ public:
     */
     std::pair<string, int> getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices);
 
-    void normalizeWeights();
-
     void received(uint32_t nodeIndex, bool busy);
+private:
+    using lock_guard = std::lock_guard<std::mutex>;
+    std::pair<string, int> getRecipient(const lock_guard & guard, const slobrok::api::IMirrorAPI::SpecList& choices);
+    void normalizeWeights(const lock_guard & guard);
+    uint32_t getIndex(const string& name) const;
+
+    class NodeInfo {
+    public:
+        NodeInfo() noexcept : weight(1.0), sent(0), busy(0), valid(false), lastSpec() {}
+
+        double weight;
+        uint32_t sent;
+        uint32_t busy;
+        bool valid;
+        string lastSpec;
+    };
+    mutable std::mutex _mutex;
+    std::vector<NodeInfo> _nodeInfo;
+    string _cluster;
+    string _session;
+    double _position;
 };
 
 }
