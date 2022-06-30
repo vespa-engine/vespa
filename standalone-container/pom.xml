@@ -99,10 +99,12 @@
             config-model-api-jar-with-dependencies.jar,
             config-model-jar-with-dependencies.jar,
             container-disc-jar-with-dependencies.jar,
+            <!-- START config-model dependencies -->
             container-search-and-docproc-jar-with-dependencies.jar,
             linguistics-components-jar-with-dependencies.jar,
             model-evaluation-jar-with-dependencies.jar,
             model-integration-jar-with-dependencies.jar,
+            <!-- END config-model dependencies -->
           </discPreInstallBundle>
         </configuration>
       </plugin>

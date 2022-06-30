@@ -36,7 +36,6 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
-import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.utils.FileSender;
 
 import java.util.ArrayList;
@@ -115,6 +114,14 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
         addMetricsHandlers();
         addTestrunnerComponentsIfTester(deployState);
+        addPlatformBundlesForApplicationCluster();
+    }
+
+    private void addPlatformBundlesForApplicationCluster() {
+        Set<String> bundles = Set.of(
+                "container-search-and-docproc", "container-search-gui", "docprocs",
+                "linguistics-components", "vespaclient-container-plugin");
+        bundles.forEach(b -> addPlatformBundle(PlatformBundles.absoluteBundlePath(b)));
     }
 
     @Override
