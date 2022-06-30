@@ -139,7 +139,7 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     private Optional<HostResource> getExistingHost(HostSpec key) {
         List<HostResource> hosts = hostname2host.values().stream()
                 .filter(resource -> resource.getHostname().equals(key.hostname()))
-                .collect(Collectors.toList());
+                .toList();
         if (hosts.isEmpty()) {
             return Optional.empty();
         } else {

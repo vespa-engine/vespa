@@ -211,14 +211,17 @@ public class EndpointCertificatesTest {
     @Test
     public void includes_zones_in_deployment_spec_when_deploying_to_staging() {
         DeploymentSpec deploymentSpec = new DeploymentSpecXmlReader(true).read(
-                "<deployment version=\"1.0\">\n" +
-                        "  <instance id=\"default\">\n" +
-                        "    <prod>\n" +
-                        "      <region active=\"true\">aws-us-east-1a</region>\n" +
-                        "      <region active=\"true\">ap-northeast-1</region>\n" +
-                        "    </prod>\n" +
-                        "  </instance>\n" +
-                        "</deployment>\n");
+                """
+                        <deployment version="1.0">
+                          <instance id="default">
+                            <prod>
+                              <region active="true">aws-us-east-1a</region>
+                              <region active="true">ap-northeast-1</region>
+                            </prod>
+                          </instance>
+                        </deployment>
+                        """
+        );
 
         ZoneId testZone = tester.zoneRegistry().zones().all().in(Environment.staging).zones().stream().findFirst().orElseThrow().getId();
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, deploymentSpec);

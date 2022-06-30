@@ -32,8 +32,8 @@ public class Simplifier extends ExpressionTransformer<TransformContext> {
             node = transformChildren((CompositeNode) node, context); // depth first
         if (node instanceof IfNode)
             node = transformIf((IfNode) node);
-        if (node instanceof EmbracedNode && hasSingleUndividableChild((EmbracedNode)node))
-            node = ((EmbracedNode)node).children().get(0);
+        if (node instanceof EmbracedNode e && hasSingleUndividableChild(e))
+            node = e.children().get(0);
         if (node instanceof ArithmeticNode)
             node = transformArithmetic((ArithmeticNode) node);
         if (node instanceof NegativeNode)
