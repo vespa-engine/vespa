@@ -29,6 +29,16 @@ import java.util.stream.Collectors;
  * @author enygaard
  */
 public class Notifier {
+    private static final String header = """ 
+                <div style="background: #00598c; height: 55px; width: 100%">
+                  <img
+                    src="https://vespa.ai/assets/vespa-logo.png"
+                    style="width: auto; height: 34px; margin: 10px"
+                  />
+                </div>
+                <br>
+                """;
+
     private final CuratorDb curatorDb;
     private final Mailer mailer;
     private final FlagSource flagSource;
@@ -111,14 +121,15 @@ public class Notifier {
     public Mail mailOf(FormattedNotification content, Collection<String> recipients) {
         var notification = content.notification();
         var subject = Text.format("[%s] %s Vespa Notification for %s", notification.level().toString().toUpperCase(), content.prettyType(), applicationIdSource(notification.source()));
-        var body = new StringBuilder();
-        body.append(content.messagePrefix()).append("\n")
+        String body = new StringBuilder()
+                .append(content.messagePrefix()).append("\n")
                 .append(notification.messages().stream().map(m -> " * " + m).collect(Collectors.joining("\n"))).append("\n")
                 .append("\n")
                 .append("Vespa Console link:\n")
-                .append(content.uri().toString());
-        var html = new StringBuilder();
-        html.append(content.messagePrefix()).append("<br>\n")
+                .append(content.uri().toString()).toString();
+        String html = new StringBuilder()
+                .append(header)
+                .append(content.messagePrefix()).append("<br>\n")
                 .append("<ul>\n")
                 .append(notification.messages().stream()
                         .map(Notifier::linkify)
@@ -126,8 +137,8 @@ public class Notifier {
                         .collect(Collectors.joining("<br>\n")))
                 .append("</ul>\n")
                 .append("<br>\n")
-                .append("<a href=\"" + content.uri() + "\">Vespa Console</a>");
-        return new Mail(recipients, subject, body.toString(), html.toString());
+                .append("<a href=\"" + content.uri() + "\">Vespa Console</a>").toString();
+        return new Mail(recipients, subject, body, html);
     }
 
     @VisibleForTesting

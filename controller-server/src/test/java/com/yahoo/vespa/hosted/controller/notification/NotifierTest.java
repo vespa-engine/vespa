@@ -68,12 +68,20 @@ public class NotifierTest {
         var mail = mailer.inbox(email).get(0);
 
         assertEquals("[WARNING] Test package Vespa Notification for tenant1.default.default", mail.subject());
-        assertEquals("There are problems with tests for default.default<br>\n" +
-                "<ul>\n" +
-                "<li>test package has production tests, but no production tests are declared in deployment.xml</li><br>\n" +
-                "<li>see <a href=\"https://docs.vespa.ai/en/testing.html\">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</li></ul>\n" +
-                "<br>\n" +
-                "<a href=\"https://dashboard.tld/tenant1/default\">Vespa Console</a>",
+        assertEquals("""
+                        <div style="background: #00598c; height: 55px; width: 100%">
+                          <img
+                            src="https://vespa.ai/assets/vespa-logo.png"
+                            style="width: auto; height: 34px; margin: 10px"
+                          />
+                        </div>
+                        <br>
+                        There are problems with tests for default.default<br>
+                        <ul>
+                        <li>test package has production tests, but no production tests are declared in deployment.xml</li><br>
+                        <li>see <a href="https://docs.vespa.ai/en/testing.html">https://docs.vespa.ai/en/testing.html</a> for details on how to write system tests for Vespa</li></ul>
+                        <br>
+                        <a href="https://dashboard.tld/tenant1/default">Vespa Console</a>""",
                 mail.htmlMessage().get());
     }
 
