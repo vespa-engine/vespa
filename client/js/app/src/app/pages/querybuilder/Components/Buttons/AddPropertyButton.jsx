@@ -22,10 +22,10 @@ export default function AddPropertyButton({ id }) {
       children = children[index].children;
     }
     let type = childMap[parentType];
-    type = type[Object.keys(type)[0]].name;
     children.push({
       id: id + '.' + childId,
-      type: type,
+      type: type[Object.keys(type)[0]].name,
+      typeof: type[Object.keys(type)[0]].type,
       input: '',
       hasChildren: false,
       children: [],

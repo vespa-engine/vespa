@@ -1,10 +1,17 @@
 import { QueryInputContext } from '../Contexts/QueryInputContext';
-import React, { useContext } from 'react';
+import React, { useCallback, useContext, useState } from 'react';
 import SimpleDropDownForm from './SimpleDropDownForm';
 
 export default function QueryDropdownForm({ choices, id, child = false }) {
-  const { inputs, setInputs, levelZeroParameters, childMap } =
-    useContext(QueryInputContext);
+  const {
+    inputs,
+    setInputs,
+    levelZeroParameters,
+    childMap,
+    selectedItems,
+    setSelectedItems,
+  } = useContext(QueryInputContext);
+  const [choice, setChoice] = useState();
 
   /**
    * Update the state of inputs to reflect the method chosen from the dropdown.
@@ -33,20 +40,28 @@ export default function QueryDropdownForm({ choices, id, child = false }) {
       children[index].type = newType;
       children[index].hasChildren = childChoices[newType].hasChildren;
       children[index].children = [];
+      children[index].typeof = childChoices[newType].type;
+      setSelectedItems([...selectedItems, newType]);
     } else {
       newInputs[index].type = newType;
       let hasChildren = levelZeroParameters[newType].hasChildren;
       newInputs[index].hasChildren = hasChildren;
       newInputs[index].children = [];
+      newInputs[index].typeof = levelZeroParameters[newType].type;
+      setSelectedItems([...selectedItems, newType]);
     }
     setInputs(newInputs);
+    setChoice(newType);
   };
+
+  //TODO: do not display options that have been chosen
 
   return (
     <SimpleDropDownForm
       id={id}
       onChange={updateType}
       choices={choices}
+      value={choice}
     ></SimpleDropDownForm>
   );
 }

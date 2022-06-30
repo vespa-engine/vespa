@@ -17,6 +17,7 @@ export default function AddQueryInput() {
       {
         id: `${id + 1}`,
         type: 'yql',
+        typeof: 'String',
         input: '',
         hasChildren: false,
         children: [],
@@ -32,6 +33,7 @@ export default function AddQueryInput() {
       tooltip="Add row"
       height="0"
       width="0"
+      image={null}
     >
       +
     </OverlayImageButton>

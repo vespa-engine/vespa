@@ -28,7 +28,6 @@ export default function QueryInputChild({ id }) {
     children = traversedChildren.children;
     index = children.findIndex((element) => element.id === iterId);
     children[index].input = e.target.value;
-    console.log(children[index]);
     setInputs(newInputs);
   };
 

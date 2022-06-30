@@ -125,22 +125,33 @@ export const QueryInputProvider = (prop) => {
     },
   };
 
-  const firstChoice =
-    levelZeroParameters[Object.keys(levelZeroParameters)[0]].name;
+  const firstChoice = levelZeroParameters[Object.keys(levelZeroParameters)[0]];
 
   const [inputs, setInputs] = useState([
     {
       id: '1',
-      type: firstChoice,
+      type: firstChoice.name,
+      typeof: firstChoice.type,
       input: '',
       hasChildren: false,
       children: [],
     },
   ]);
 
+  const [selectedItems, setSelectedItems] = useState([]);
+
   return (
     <QueryInputContext.Provider
-      value={{ inputs, setInputs, id, setId, levelZeroParameters, childMap }}
+      value={{
+        inputs,
+        setInputs,
+        id,
+        setId,
+        levelZeroParameters,
+        childMap,
+        selectedItems,
+        setSelectedItems,
+      }}
     >
       {prop.children}
     </QueryInputContext.Provider>

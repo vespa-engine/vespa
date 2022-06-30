@@ -25,9 +25,9 @@ export function QueryBuilder() {
           <TextBox className={'intro-long'}>
             Select the method for sending a request and construct a query.
           </TextBox>
-          <SendQuery />
-          <br />
           <QueryInputProvider>
+            <SendQuery />
+            <br />
             <div id="request">
               <QueryInput />
             </div>

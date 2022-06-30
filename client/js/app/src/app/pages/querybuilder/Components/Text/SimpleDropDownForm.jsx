@@ -1,18 +1,24 @@
-import { useSetState } from '@mantine/hooks';
-import React, { useEffect } from 'react';
-import { useState } from 'react';
+import React, { useContext, useEffect } from 'react';
+import { QueryInputContext } from '../Contexts/QueryInputContext';
 
 export default function SimpleDropDownForm({
   choices,
   id,
   className = 'input',
   onChange,
+  value,
 }) {
-  SimpleDropDownForm.defaultProps = {
-    onChange: handleChange,
-  };
+  const { selectedItems } = useContext(QueryInputContext);
 
-  const { choice, setChoice } = useState(choices[0]);
+  //FIXME: using the filtered list to render options results in dropdown not changing the displayed selection to what was actually selected.
+  let filtered = Object.keys(choices).filter(
+    (choice) => !selectedItems.includes(choice)
+  );
+  useEffect(() => {
+    filtered = Object.keys(choices).filter(
+      (choice) => !selectedItems.includes(choice)
+    );
+  }, [selectedItems]);
 
   const options = Object.keys(choices).map((choice) => {
     return (
@@ -22,13 +28,9 @@ export default function SimpleDropDownForm({
     );
   });
 
-  function handleChange(e) {
-    setChoice((choice) => (choice = e.target.value));
-  }
-
   return (
     <form id={id}>
-      <select className={className} id={id} value={choice} onChange={onChange}>
+      <select className={className} id={id} value={value} onChange={onChange}>
         {options}
       </select>
     </form>

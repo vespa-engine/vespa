@@ -8,7 +8,6 @@ export default function Info({
   height = 15,
   width = 15,
 }) {
-  //TODO: Make popver reflect tooltip for selected query type
   const popover = (
     <Popover id={`inf${id}`}>
       <Popover.Header as="h3">Popover right</Popover.Header>
