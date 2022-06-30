@@ -141,8 +141,8 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public AthenzAccessToken getAccessToken(AthenzDomain domain) {
-        return this.getAccessTokenImpl(List.of(new AthenzResourceName(domain, "domain")));
+    public AthenzAccessToken getAccessToken(AthenzDomain domain,  List<AthenzIdentity> proxyPrincipals) {
+        return this.getAccessTokenImpl(List.of(new AthenzResourceName(domain, "domain")), proxyPrincipals);
     }
 
     @Override
@@ -150,16 +150,22 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
         List<AthenzResourceName> athenzResourceNames = athenzRole.stream()
                 .map(AthenzRole::toResourceName)
                 .collect(toList());
-        return this.getAccessTokenImpl(athenzResourceNames);
+        return this.getAccessTokenImpl(athenzResourceNames, List.of());
     }
 
-    private AthenzAccessToken getAccessTokenImpl(List<AthenzResourceName> resources) {
+    private AthenzAccessToken getAccessTokenImpl(List<AthenzResourceName> resources, List<AthenzIdentity> proxyPrincipals) {
         URI uri = ztsUrl.resolve("oauth2/token");
         RequestBuilder requestBuilder = RequestBuilder.post(uri)
                 .addHeader("Content-Type", "application/x-www-form-urlencoded")
                 .addParameter("grant_type", "client_credentials")
                 .addParameter("scope", resources.stream().map(AthenzResourceName::toResourceNameString).collect(Collectors.joining(" ")));
-
+        if (proxyPrincipals.size()>0) {
+            String proxyPrincipalString = proxyPrincipals.stream()
+                    .map(AthenzIdentity::spiffeUri)
+                    .map(URI::toString)
+                    .collect(Collectors.joining(","));
+            requestBuilder.addParameter("proxy_principal_spiffe_uris", proxyPrincipalString);
+        }
         HttpUriRequest request = requestBuilder.build();
         return execute(request, response -> {
             AccessTokenResponseEntity accessTokenResponseEntity = readEntity(response, AccessTokenResponseEntity.class);

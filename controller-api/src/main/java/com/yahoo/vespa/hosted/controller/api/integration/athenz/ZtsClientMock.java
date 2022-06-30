@@ -75,7 +75,7 @@ public class ZtsClientMock implements ZtsClient {
     }
 
     @Override
-    public AthenzAccessToken getAccessToken(AthenzDomain domain) {
+    public AthenzAccessToken getAccessToken(AthenzDomain domain, List<AthenzIdentity> proxyPrincipals) {
         throw new UnsupportedOperationException();
     }
 
