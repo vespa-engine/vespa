@@ -227,8 +227,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void addApplicationStatusHandler() {
         Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
-                new ComponentModel(BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings(
-                        APPLICATION_STATUS_HANDLER_CLASS, null), null));
+                new ComponentModel(BundleInstantiationSpecification.getFromStrings(
+                        APPLICATION_STATUS_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
         statusHandler.addServerBindings(SystemBindingPattern.fromHttpPath("/ApplicationStatus"));
         addComponent(statusHandler);
     }
@@ -302,7 +302,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         // Cannot use the class object for ProcessingHandler, because its superclass is not accessible
         ProcessingHandler<?> processingHandler = new ProcessingHandler<>(
                 processingChains,
-                "com.yahoo.processing.handler.ProcessingHandler");
+                "com.yahoo.processing.handler.ProcessingHandler",
+                 null);
 
         for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);
