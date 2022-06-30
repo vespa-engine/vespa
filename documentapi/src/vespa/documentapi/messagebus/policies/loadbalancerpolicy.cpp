@@ -60,7 +60,7 @@ LoadBalancerPolicy::merge(mbus::RoutingContext& context) {
     bool busy = false;
     for (uint32_t i = 0; i < reply->getNumErrors(); i++) {
         if (reply->getError(i).getCode() == mbus::ErrorCode::SESSION_BUSY) {
-            string lastSpec = _loadBalancer->getNodeInfo()[target].lastSpec;
+            string lastSpec = _loadBalancer->getLastSpec(target);
 
             if (reply->getError(i).getMessage().find(lastSpec) == string::npos) {
                 LOG(debug, "Received busy with message %s, doesn't contain target %s so not updating weight.", reply->getError(i).getMessage().c_str(), lastSpec.c_str());

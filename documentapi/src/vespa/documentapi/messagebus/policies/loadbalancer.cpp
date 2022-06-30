@@ -5,12 +5,14 @@
 namespace documentapi {
 
 LoadBalancer::LoadBalancer(const string& cluster, const string& session)
-    : _cluster(cluster),
+    : _mutex(),
+      _nodeInfo(),
+      _cluster(cluster),
       _session(session),
       _position(0)
 {}
 
-LoadBalancer::~LoadBalancer() {}
+LoadBalancer::~LoadBalancer() = default;
 
 uint32_t
 LoadBalancer::getIndex(const string& name) const
@@ -20,9 +22,26 @@ LoadBalancer::getIndex(const string& name) const
     return atoi(idx.c_str());
 }
 
+string
+LoadBalancer::getLastSpec(size_t target) const {
+    lock_guard guard(_mutex);
+    return _nodeInfo[target].lastSpec;
+}
+
+double
+LoadBalancer::getWeight(size_t target) const {
+    lock_guard guard(_mutex);
+    return _nodeInfo[target].weight;
+}
+
 std::pair<string, int>
-LoadBalancer::getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices)
-{
+LoadBalancer::getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices) {
+    lock_guard guard(_mutex);
+    return getRecipient(guard, choices);
+}
+
+std::pair<string, int>
+LoadBalancer::getRecipient(const lock_guard & guard, const slobrok::api::IMirrorAPI::SpecList& choices) {
     std::pair<string, int> retVal("", -1);
 
     if (choices.size() == 0) {
@@ -54,7 +73,7 @@ LoadBalancer::getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices)
 
     if (retVal.second == -1) {
         _position -= weightSum;
-        return getRecipient(choices);
+        return getRecipient(guard, choices);
     } else {
         _position += 1.0;
     }
@@ -63,7 +82,7 @@ LoadBalancer::getRecipient(const slobrok::api::IMirrorAPI::SpecList& choices)
 }
 
 void
-LoadBalancer::normalizeWeights() {
+LoadBalancer::normalizeWeights(const lock_guard &) {
     double lowest = -1.0;
 
     for (uint32_t i = 0; i < _nodeInfo.size(); i++) {
@@ -88,10 +107,11 @@ LoadBalancer::normalizeWeights() {
 void
 LoadBalancer::received(uint32_t nodeIndex, bool busy) {
     if (busy) {
+        lock_guard guard(_mutex);
         NodeInfo& info = _nodeInfo[nodeIndex];
 
         info.weight = info.weight - 0.01;
-        normalizeWeights();
+        normalizeWeights(guard);
     }
 }
 
