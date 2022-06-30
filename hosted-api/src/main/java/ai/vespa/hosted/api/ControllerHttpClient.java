@@ -179,10 +179,21 @@ public abstract class ControllerHttpClient {
     }
 
     /** Returns the application package of the given id. */
+    // TODO(mpolden): Remove after all callers have switched to the method below
     public HttpResponse<byte[]> applicationPackage(ApplicationId id) {
-        return send(request(HttpRequest.newBuilder(applicationPackagePath(id))
-                                       .timeout(Duration.ofMinutes(2)),
-                            GET));
+        return applicationPackage(id, false);
+    }
+
+    /**
+     * Returns the latest submitted application package of the given id. If latestDeployed is true, return the latest
+     * package that has been deployed to a production zone.
+     */
+    public HttpResponse<byte[]> applicationPackage(ApplicationId id, boolean latestDeployed) {
+        URI url = applicationPackagePath(id);
+        if (latestDeployed) {
+            url = withQuery(url, "build", "latestDeployed");
+        }
+        return send(request(HttpRequest.newBuilder(url).timeout(Duration.ofMinutes(2)), GET));
     }
 
     /** Returns the tenants in this system. */
