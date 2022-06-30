@@ -2,14 +2,14 @@
 
 #include "simpletermdata.h"
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 SimpleTermData::SimpleTermData()
     : _weight(0),
       _numTerms(0),
       _termIndex(0),
       _uniqueId(0),
+      _query_tensor_name(),
       _fields()
 {
 }
@@ -18,6 +18,7 @@ SimpleTermData::SimpleTermData(const ITermData &rhs)
     : _weight(rhs.getWeight()),
       _numTerms(rhs.getPhraseLength()),
       _uniqueId(rhs.getUniqueId()),
+      _query_tensor_name(rhs.query_tensor_name()),
       _fields()
 {
     for (size_t i(0), m(rhs.numFields()); i < m; ++i) {
@@ -25,5 +26,6 @@ SimpleTermData::SimpleTermData(const ITermData &rhs)
     }
 }
 
-} // namespace fef
-} // namespace search
+SimpleTermData::~SimpleTermData() = default;
+
+}

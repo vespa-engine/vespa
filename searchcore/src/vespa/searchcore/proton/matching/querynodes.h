@@ -23,7 +23,7 @@ class ViewResolver;
 class ProtonTermData : public search::fef::ITermData
 {
 public:
-    typedef search::queryeval::FieldSpec FieldSpec;
+    using FieldSpec = search::queryeval::FieldSpec;
 
     struct FieldEntry final : search::fef::SimpleTermFieldData {
         vespalib::string field_name;
@@ -67,6 +67,7 @@ public:
     void setDocumentFrequency(uint32_t estHits, uint32_t numDocs);
 
     // ITermData interface
+    std::optional<vespalib::string> query_tensor_name() const override { return std::nullopt; }
     size_t numFields() const override final { return _fields.size(); }
     const FieldEntry &field(size_t i) const override final { return _fields[i]; }
     const FieldEntry *lookupField(uint32_t fieldId) const override final;
@@ -106,66 +107,72 @@ struct ProtonTerm final : public ProtonTermBase<Base> {
 template <typename Base>
 ProtonTerm<Base>::~ProtonTerm() = default;
 
-typedef search::query::SimpleAnd         ProtonAnd;
-typedef search::query::SimpleAndNot      ProtonAndNot;
-typedef search::query::SimpleNear        ProtonNear;
-typedef search::query::SimpleONear       ProtonONear;
-typedef search::query::SimpleOr          ProtonOr;
-typedef search::query::SimpleRank        ProtonRank;
-typedef search::query::SimpleWeakAnd     ProtonWeakAnd;
-typedef search::query::SimpleSameElement ProtonSameElement;
-typedef search::query::SimpleTrue        ProtonTrue;
-typedef search::query::SimpleFalse       ProtonFalse;
+using ProtonAnd =         search::query::SimpleAnd;
+using ProtonAndNot =      search::query::SimpleAndNot;
+using ProtonNear =        search::query::SimpleNear;
+using ProtonONear =       search::query::SimpleONear;
+using ProtonOr =          search::query::SimpleOr;
+using ProtonRank =        search::query::SimpleRank;
+using ProtonWeakAnd =     search::query::SimpleWeakAnd;
+using ProtonSameElement = search::query::SimpleSameElement;
+using ProtonTrue =        search::query::SimpleTrue;
+using ProtonFalse =       search::query::SimpleFalse;
 
 struct ProtonEquiv final : public ProtonTermBase<search::query::Equiv> {
     search::fef::MatchDataLayout children_mdl;
     using ProtonTermBase::ProtonTermBase;
 };
 
-typedef ProtonTerm<search::query::LocationTerm>    ProtonLocationTerm;
-typedef ProtonTerm<search::query::NumberTerm>      ProtonNumberTerm;
-typedef ProtonTerm<search::query::Phrase>          ProtonPhrase;
+struct ProtonNearestNeighborTerm : public ProtonTermBase<search::query::NearestNeighborTerm> {
+    using ProtonTermBase::ProtonTermBase;
+    std::optional<vespalib::string> query_tensor_name() const override {
+        return ProtonTermBase::NearestNeighborTerm::get_query_tensor_name();
+    }
+};
 
-typedef ProtonTerm<search::query::PrefixTerm>      ProtonPrefixTerm;
-typedef ProtonTerm<search::query::RangeTerm>       ProtonRangeTerm;
-typedef ProtonTerm<search::query::StringTerm>      ProtonStringTerm;
-typedef ProtonTerm<search::query::SubstringTerm>   ProtonSubstringTerm;
-typedef ProtonTerm<search::query::SuffixTerm>      ProtonSuffixTerm;
-typedef ProtonTerm<search::query::WeightedSetTerm> ProtonWeightedSetTerm;
-typedef ProtonTerm<search::query::DotProduct>      ProtonDotProduct;
-typedef ProtonTerm<search::query::WandTerm>        ProtonWandTerm;
-typedef ProtonTerm<search::query::PredicateQuery>  ProtonPredicateQuery;
-typedef ProtonTerm<search::query::RegExpTerm>      ProtonRegExpTerm;
-typedef ProtonTerm<search::query::NearestNeighborTerm> ProtonNearestNeighborTerm;
-typedef ProtonTerm<search::query::FuzzyTerm>       ProtonFuzzyTerm;
+using ProtonLocationTerm = ProtonTerm<search::query::LocationTerm>;
+using ProtonNumberTerm =   ProtonTerm<search::query::NumberTerm>;
+using ProtonPhrase =       ProtonTerm<search::query::Phrase>;
+
+using ProtonPrefixTerm =      ProtonTerm<search::query::PrefixTerm>;
+using ProtonRangeTerm =       ProtonTerm<search::query::RangeTerm>;
+using ProtonStringTerm =      ProtonTerm<search::query::StringTerm>;
+using ProtonSubstringTerm =   ProtonTerm<search::query::SubstringTerm>;
+using ProtonSuffixTerm =      ProtonTerm<search::query::SuffixTerm>;
+using ProtonWeightedSetTerm = ProtonTerm<search::query::WeightedSetTerm>;
+using ProtonDotProduct =      ProtonTerm<search::query::DotProduct>;
+using ProtonWandTerm =        ProtonTerm<search::query::WandTerm>;
+using ProtonPredicateQuery =  ProtonTerm<search::query::PredicateQuery>;
+using ProtonRegExpTerm =      ProtonTerm<search::query::RegExpTerm>;
+using ProtonFuzzyTerm =       ProtonTerm<search::query::FuzzyTerm>;
 
 struct ProtonNodeTypes {
-    typedef ProtonAnd             And;
-    typedef ProtonAndNot          AndNot;
-    typedef ProtonEquiv           Equiv;
-    typedef ProtonLocationTerm    LocationTerm;
-    typedef ProtonNear            Near;
-    typedef ProtonNumberTerm      NumberTerm;
-    typedef ProtonONear           ONear;
-    typedef ProtonOr              Or;
-    typedef ProtonPhrase          Phrase;
-    typedef ProtonSameElement     SameElement;
-    typedef ProtonPrefixTerm      PrefixTerm;
-    typedef ProtonRangeTerm       RangeTerm;
-    typedef ProtonRank            Rank;
-    typedef ProtonStringTerm      StringTerm;
-    typedef ProtonSubstringTerm   SubstringTerm;
-    typedef ProtonSuffixTerm      SuffixTerm;
-    typedef ProtonWeakAnd         WeakAnd;
-    typedef ProtonWeightedSetTerm WeightedSetTerm;
-    typedef ProtonDotProduct      DotProduct;
-    typedef ProtonWandTerm        WandTerm;
-    typedef ProtonPredicateQuery  PredicateQuery;
-    typedef ProtonRegExpTerm      RegExpTerm;
-    typedef ProtonNearestNeighborTerm NearestNeighborTerm;
-    typedef ProtonTrue            TrueQueryNode;
-    typedef ProtonFalse           FalseQueryNode;
-    typedef ProtonFuzzyTerm       FuzzyTerm;
+    using And =                 ProtonAnd;
+    using AndNot =              ProtonAndNot;
+    using Equiv =               ProtonEquiv;
+    using LocationTerm =        ProtonLocationTerm;
+    using Near =                ProtonNear;
+    using NumberTerm =          ProtonNumberTerm;
+    using ONear =               ProtonONear;
+    using Or =                  ProtonOr;
+    using Phrase =              ProtonPhrase;
+    using SameElement =         ProtonSameElement;
+    using PrefixTerm =          ProtonPrefixTerm;
+    using RangeTerm =           ProtonRangeTerm;
+    using Rank =                ProtonRank;
+    using StringTerm =          ProtonStringTerm;
+    using SubstringTerm =       ProtonSubstringTerm;
+    using SuffixTerm =          ProtonSuffixTerm;
+    using WeakAnd =             ProtonWeakAnd;
+    using WeightedSetTerm =     ProtonWeightedSetTerm;
+    using DotProduct =          ProtonDotProduct;
+    using WandTerm =            ProtonWandTerm;
+    using PredicateQuery =      ProtonPredicateQuery;
+    using RegExpTerm =          ProtonRegExpTerm;
+    using NearestNeighborTerm = ProtonNearestNeighborTerm;
+    using TrueQueryNode =       ProtonTrue;
+    using FalseQueryNode =      ProtonFalse;
+    using FuzzyTerm =           ProtonFuzzyTerm;
 };
 
 }

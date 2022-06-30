@@ -4,7 +4,9 @@
 
 #include "itermfielddata.h"
 #include <vespa/searchlib/query/weight.h>
+#include <vespa/vespalib/stllike/string.h>
 #include <cstddef>
+#include <optional>
 
 namespace search::fef {
 
@@ -33,6 +35,11 @@ public:
      * @return unique id or 0
      **/
     virtual uint32_t getUniqueId() const = 0;
+
+    /**
+     * Returns the name of a query tensor this term is referencing, if set.
+     */
+    virtual std::optional<vespalib::string> query_tensor_name() const = 0;
 
     /**
      * Get number of fields searched

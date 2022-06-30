@@ -22,6 +22,7 @@ private:
     uint32_t        _numTerms;
     uint32_t        _termIndex;
     uint32_t        _uniqueId;
+    std::optional<vespalib::string> _query_tensor_name;
 
     std::vector<SimpleTermFieldData> _fields;
 
@@ -36,45 +37,24 @@ public:
      **/
     SimpleTermData(const ITermData &rhs);
 
+    ~SimpleTermData();
+
     //----------- ITermData implementation ------------------------------------
 
-    /**
-     * Returns the term weight.
-     **/
     query::Weight getWeight() const override { return _weight; }
 
-    /**
-     * Returns the number of terms represented by this term data object.
-     **/
     uint32_t getPhraseLength() const override { return _numTerms; }
 
-    /**
-     * Obtain the unique id of this term. 0 means not set.
-     *
-     * @return unique id or 0
-     **/
     uint32_t getUniqueId() const override { return _uniqueId; }
 
-    /**
-     * Get number of fields searched
-     **/
+    std::optional<vespalib::string> query_tensor_name() const override { return _query_tensor_name; }
+
     size_t numFields() const override { return _fields.size(); }
 
-    /**
-     * Direct access to data for individual fields
-     * @param i local index, must have: 0 <= i < numFields()
-     */
     const ITermFieldData &field(size_t i) const override {
         return _fields[i];
     }
 
-    /**
-     * Obtain information about a specific field that may be searched
-     * by this term. If the requested field is not searched by this
-     * term, NULL will be returned.
-     *
-     * @return term field data, or NULL if not found
-     **/
     const ITermFieldData *lookupField(uint32_t fieldId) const override {
         for (size_t fieldIdx(0), m(numFields()); fieldIdx < m; ++fieldIdx) {
             const ITermFieldData &tfd = field(fieldIdx);
@@ -122,6 +102,11 @@ public:
      **/
     SimpleTermData &setUniqueId(uint32_t id) {
         _uniqueId = id;
+        return *this;
+    }
+
+    SimpleTermData &set_query_tensor_name(const vespalib::string &name) {
+        _query_tensor_name = name;
         return *this;
     }
 
