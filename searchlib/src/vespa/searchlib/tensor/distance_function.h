@@ -23,7 +23,7 @@ public:
 
     DistanceFunction(vespalib::eval::CellType expected) : _expect_cell_type(expected) {}
 
-    virtual ~DistanceFunction() {}
+    virtual ~DistanceFunction() = default;
 
     // input (query) vectors must be converted to this cell type:
     vespalib::eval::CellType expected_cell_type() const {

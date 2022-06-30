@@ -2,7 +2,6 @@
 
 #include "distance_calculator.h"
 #include "distance_function_factory.h"
-#include "i_tensor_attribute.h"
 #include "nearest_neighbor_index.h"
 #include <vespa/eval/eval/fast_value.h>
 
@@ -86,13 +85,6 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
 }
 
 DistanceCalculator::~DistanceCalculator() = default;
-
-double
-DistanceCalculator::calc_with_limit(uint32_t docid, double limit) const
-{
-    auto rhs = _attr_tensor.extract_cells_ref(docid);
-    return _dist_fun->calc_with_limit(_query_tensor_cells, rhs, limit);
-}
 
 }
 

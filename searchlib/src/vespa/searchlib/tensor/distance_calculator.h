@@ -1,15 +1,12 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/eval/eval/typed_cells.h>
-#include <memory>
+#include "distance_function.h"
+#include "i_tensor_attribute.h"
 
 namespace vespalib::eval { struct Value; }
 
 namespace search::tensor {
-
-class DistanceFunction;
-class ITensorAttribute;
 
 /**
  * Class used to calculate the distance between two n-dimensional vectors,
@@ -43,7 +40,9 @@ public:
     const vespalib::eval::Value& query_tensor() const { return *_query_tensor; }
     const DistanceFunction& function() const { return *_dist_fun; }
 
-    double calc_with_limit(uint32_t docid, double limit) const;
+    double calc_with_limit(uint32_t docid, double limit) const {
+        return _dist_fun->calc_with_limit(_query_tensor_cells, _attr_tensor.extract_cells_ref(docid), limit);
+    }
 };
 
 }
