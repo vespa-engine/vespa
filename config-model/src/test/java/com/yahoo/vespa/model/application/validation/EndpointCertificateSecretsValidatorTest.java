@@ -44,11 +44,11 @@ public class EndpointCertificateSecretsValidatorTest {
 
     @Test
     public void missing_certificate_fails_validation() throws Exception {
-        DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(EndpointCertificateSecrets.MISSING));
+        DeployState deployState = deployState(servicesXml(), deploymentXml(), Optional.of(EndpointCertificateSecrets.missing(1)));
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
 
         exceptionRule.expect(CertificateNotReadyException.class);
-        exceptionRule.expectMessage("TLS enabled, but could not yet retrieve certificate for application default:default:default");
+        exceptionRule.expectMessage("TLS enabled, but could not yet retrieve certificate version 1 for application default:default:default");
 
         new EndpointCertificateSecretsValidator().validate(model, deployState);
     }

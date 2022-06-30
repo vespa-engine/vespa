@@ -446,7 +446,7 @@ public class ApplicationController {
     }
 
     /** Deploys an application package for an existing application instance. */
-    public ActivateResult deploy(JobId job, boolean deploySourceVersions) {
+    public ActivateResult deploy(JobId job, boolean deploySourceVersions, Consumer<String> deployLogger) {
         if (job.application().instance().isTester())
             throw new IllegalArgumentException("'" + job.application() + "' is a tester application!");
 
@@ -479,6 +479,7 @@ public class ApplicationController {
                     applicationPackage = applicationPackage.withTrustedCertificate(run.testerCertificate().get());
 
                 endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone, applicationPackage.deploymentSpec());
+
                 containerEndpoints = controller.routing().of(deployment).prepare(application);
 
             } // Release application lock while doing the deployment, which is a lengthy task.
@@ -486,6 +487,8 @@ public class ApplicationController {
             // Carry out deployment without holding the application lock.
             ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints,
                                            endpointCertificateMetadata, run.isDryRun());
+
+            endpointCertificateMetadata.ifPresent(e -> deployLogger.accept("Using CA signed certificate version %s".formatted(e.version())));
 
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
