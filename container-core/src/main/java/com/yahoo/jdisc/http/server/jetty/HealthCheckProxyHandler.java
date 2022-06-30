@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -53,7 +53,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     private static final String HEALTH_CHECK_PATH = "/status.html";
 
-    private final Executor executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("health-check-proxy-client-"));
+    private final ExecutorService executor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("health-check-proxy-client-"));
     private final Map<Integer, ProxyTarget> portToProxyTargetMapping;
 
     HealthCheckProxyHandler(List<JDiscServerConnector> connectors) {
@@ -127,6 +127,10 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     @Override
     protected void doStop() throws Exception {
+        executor.shutdown();
+        if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+            log.warning("Failed to shutdown executor in time");
+        }
         for (ProxyTarget target : portToProxyTargetMapping.values()) {
             target.close();
         }
