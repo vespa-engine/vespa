@@ -71,16 +71,16 @@ PolicyConfiguredCertificateVerifier::~PolicyConfiguredCertificateVerifier() = de
 
 VerificationResult PolicyConfiguredCertificateVerifier::verify(const PeerCredentials& peer_creds) const {
     if (_authorized_peers.allows_all_authenticated()) {
-        return VerificationResult::make_authorized_for_all_roles();
+        return VerificationResult::make_authorized_with_all_capabilities();
     }
-    AssumedRolesBuilder roles_builder;
+    CapabilitySet caps;
     for (const auto& policy : _authorized_peers.peer_policies()) {
         if (matches_all_policy_requirements(peer_creds, policy)) {
-            roles_builder.add_union(policy.assumed_roles());
+            caps.add_all(policy.granted_capabilities());
         }
     }
-    if (!roles_builder.empty()) {
-        return VerificationResult::make_authorized_for_roles(roles_builder.build_with_move());
+    if (!caps.empty()) {
+        return VerificationResult::make_authorized_with_capabilities(std::move(caps));
     } else {
         return VerificationResult::make_not_authorized();
     }

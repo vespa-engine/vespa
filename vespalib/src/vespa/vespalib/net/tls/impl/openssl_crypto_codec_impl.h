@@ -4,8 +4,8 @@
 #include <vespa/vespalib/crypto/openssl_typedefs.h>
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/net/socket_spec.h>
-#include <vespa/vespalib/net/tls/assumed_roles.h>
 #include <vespa/vespalib/net/tls/crypto_codec.h>
+#include <vespa/vespalib/net/tls/capability_set.h>
 #include <vespa/vespalib/net/tls/peer_credentials.h>
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <memory>
@@ -58,7 +58,7 @@ class OpenSslCryptoCodecImpl : public CryptoCodec {
     std::optional<DeferredHandshakeParams> _deferred_handshake_params;
     std::optional<HandshakeResult>         _deferred_handshake_result;
     PeerCredentials _peer_credentials;
-    AssumedRoles    _assumed_roles;
+    CapabilitySet   _granted_capabilities;
 public:
     ~OpenSslCryptoCodecImpl() override;
 
@@ -103,8 +103,8 @@ public:
         return _peer_credentials;
     }
 
-    [[nodiscard]] const AssumedRoles& assumed_roles() const noexcept override {
-        return _assumed_roles;
+    [[nodiscard]] CapabilitySet granted_capabilities() const noexcept override {
+        return _granted_capabilities;
     }
 
     const SocketAddress& peer_address() const noexcept { return _peer_address; }
@@ -120,8 +120,8 @@ public:
     void set_peer_credentials(PeerCredentials peer_credentials) {
         _peer_credentials = std::move(peer_credentials);
     }
-    void set_assumed_roles(AssumedRoles assumed_roles) {
-        _assumed_roles = std::move(assumed_roles);
+    void set_granted_capabilities(CapabilitySet granted_capabilities) {
+        _granted_capabilities = granted_capabilities;
     }
 private:
     OpenSslCryptoCodecImpl(std::shared_ptr<OpenSslTlsContextImpl> ctx,

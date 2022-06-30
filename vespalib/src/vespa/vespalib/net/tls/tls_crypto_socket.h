@@ -7,7 +7,7 @@
 namespace vespalib {
 
 struct TlsCryptoSocket : public CryptoSocket {
-    ~TlsCryptoSocket();
+    ~TlsCryptoSocket() override;
     virtual void inject_read_data(const char *buf, size_t len) = 0;
 };
 

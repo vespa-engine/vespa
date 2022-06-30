@@ -101,6 +101,7 @@ vespa_define_module(
     src/tests/net/socket_spec
     src/tests/net/sync_crypto_socket
     src/tests/net/tls/auto_reloading_tls_crypto_engine
+    src/tests/net/tls/capabilities
     src/tests/net/tls/direct_buffer_bio
     src/tests/net/tls/openssl_impl
     src/tests/net/tls/policy_checking_certificate_verifier

@@ -14,7 +14,8 @@ FRT_Method::FRT_Method(const char * name, const char * paramSpec, const char * r
       _returnSpec(returnSpec),
       _method(method),
       _handler(handler),
-      _doc()
+      _doc(),
+      _access_filter()
 {
 }
 
@@ -124,6 +125,7 @@ FRT_ReflectionBuilder::Flush()
     }
 
     _method->SetDocumentation(_values);
+    _method->SetRequestAccessFilter(std::move(_access_filter)); // May be nullptr
     _method = nullptr;
     _req->Reset();
 }
@@ -142,7 +144,8 @@ FRT_ReflectionBuilder::FRT_ReflectionBuilder(FRT_Supervisor *supervisor)
       _arg_name(nullptr),
       _arg_desc(nullptr),
       _ret_name(nullptr),
-      _ret_desc(nullptr)
+      _ret_desc(nullptr),
+      _access_filter()
 {
 }
 
@@ -183,6 +186,7 @@ FRT_ReflectionBuilder::DefineMethod(const char    *name,
     _arg_desc = _values->AddStringArray(_argCnt);
     _ret_name = _values->AddStringArray(_retCnt);
     _ret_desc = _values->AddStringArray(_retCnt);
+    _access_filter.reset();
 }
 
 
@@ -223,4 +227,13 @@ FRT_ReflectionBuilder::ReturnDesc(const char *name, const char *desc)
     _values->SetString(&_ret_name[_curRet], name);
     _values->SetString(&_ret_desc[_curRet], desc);
     _curRet++;
+}
+
+void
+FRT_ReflectionBuilder::RequestAccessFilter(std::unique_ptr<FRT_RequestAccessFilter> access_filter)
+{
+    if (_method == nullptr) {
+        return;
+    }
+    _access_filter = std::move(access_filter);
 }

@@ -9,6 +9,7 @@ endif()
 vespa_add_library(vespalib_vespalib_net OBJECT
     SOURCES
     async_resolver.cpp
+    connection_auth_context.cpp
     crypto_engine.cpp
     crypto_socket.cpp
     selector.cpp

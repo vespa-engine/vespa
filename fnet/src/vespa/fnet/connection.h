@@ -18,6 +18,8 @@ class FNET_IPacketStreamer;
 class FNET_IServerAdapter;
 class FNET_IPacketHandler;
 
+namespace vespalib::net { class ConnectionAuthContext; }
+
 /**
  * Interface implemented by objects that want to perform connection
  * cleanup. Use the SetCleanupHandler method to register with a
@@ -96,7 +98,7 @@ private:
     using ResolveHandlerSP = std::shared_ptr<ResolveHandler>;
     FNET_IPacketStreamer    *_streamer;        // custom packet streamer
     FNET_IServerAdapter     *_serverAdapter;   // only on server side
-    vespalib::CryptoSocket::UP _socket;          // socket for this conn
+    vespalib::CryptoSocket::UP _socket;        // socket for this conn
     ResolveHandlerSP         _resolve_handler; // async resolve callback
     FNET_Context             _context;         // connection context
     std::atomic<State>       _state;           // connection state. May be polled outside lock
@@ -114,6 +116,8 @@ private:
     FNET_Channel            *_callbackTarget;  // target of current callback
 
     FNET_IConnectionCleanupHandler *_cleanup;  // cleanup handler
+
+    std::unique_ptr<vespalib::net::ConnectionAuthContext> _auth_context;
 
     static std::atomic<uint64_t> _num_connections; // total number of connections
 
@@ -277,7 +281,7 @@ public:
     /**
      * Destructor.
      **/
-    ~FNET_Connection();
+    ~FNET_Connection() override;
 
 
     /**
@@ -502,6 +506,12 @@ public:
      * @return Returns the size of this connection's input buffer.
      */
     uint32_t getInputBufferSize() const { return _input.GetBufSize(); }
+
+    /**
+     * Returns the connection's auth context. Must only be called _after_ the
+     * handshake phase has completed.
+     */
+    const vespalib::net::ConnectionAuthContext& auth_context() const noexcept;
 
     /**
      * @return the total number of connection objects

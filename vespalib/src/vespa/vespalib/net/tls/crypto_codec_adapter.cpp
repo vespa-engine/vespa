@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "crypto_codec_adapter.h"
+#include <vespa/vespalib/net/connection_auth_context.h>
 #include <assert.h>
 
 namespace vespalib::net::tls {
@@ -206,6 +207,12 @@ CryptoCodecAdapter::drop_empty_buffers()
 {
     _input.drop_if_empty();
     _output.drop_if_empty();
+}
+
+std::unique_ptr<net::ConnectionAuthContext>
+CryptoCodecAdapter::make_auth_context()
+{
+    return std::make_unique<net::ConnectionAuthContext>(_codec->peer_credentials(), _codec->granted_capabilities());
 }
 
 } // namespace vespalib::net::tls

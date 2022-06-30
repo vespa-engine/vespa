@@ -488,7 +488,7 @@ bool OpenSslTlsContextImpl::verify_trusted_certificate(::X509_STORE_CTX* store_c
         // Store away credentials and role set for later use by requests that arrive over this connection.
         // TODO encapsulate as const shared_ptr to immutable object to better facilitate sharing?
         codec_impl.set_peer_credentials(std::move(creds));
-        codec_impl.set_assumed_roles(authz_result.steal_assumed_roles());
+        codec_impl.set_granted_capabilities(authz_result.granted_capabilities());
     } catch (std::exception& e) {
         LOGBT(error, codec_impl.peer_address().ip_address(),
               "Got exception during certificate verification callback for peer '%s': %s",

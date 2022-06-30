@@ -123,13 +123,14 @@ PeerPolicy::PeerPolicy() = default;
 
 PeerPolicy::PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials)
     : _required_peer_credentials(std::move(required_peer_credentials)),
-      _assumed_roles(AssumedRoles::make_wildcard_role())
-{}
+      _granted_capabilities(CapabilitySet::make_with_all_capabilities())
+{
+}
 
 PeerPolicy::PeerPolicy(std::vector<RequiredPeerCredential> required_peer_credentials,
-                       AssumedRoles assumed_roles)
+                       CapabilitySet granted_capabilities)
     : _required_peer_credentials(std::move(required_peer_credentials)),
-      _assumed_roles(std::move(assumed_roles))
+      _granted_capabilities(granted_capabilities)
 {}
 
 PeerPolicy::~PeerPolicy() = default;
@@ -170,7 +171,7 @@ std::ostream& operator<<(std::ostream& os, const RequiredPeerCredential& cred) {
 std::ostream& operator<<(std::ostream& os, const PeerPolicy& policy) {
     os << "PeerPolicy(";
     print_joined(os, policy.required_peer_credentials(), ", ");
-    os << ")";
+    os << ", " << policy.granted_capabilities().to_string() << ")";
     return os;
 }
 
