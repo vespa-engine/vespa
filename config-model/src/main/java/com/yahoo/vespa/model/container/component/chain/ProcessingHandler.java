@@ -20,9 +20,16 @@ public class ProcessingHandler<CHAINS extends Chains<?>>
     protected final CHAINS chains;
 
     public ProcessingHandler(CHAINS chains, String handlerClass) {
-        super(new ComponentModel(BundleInstantiationSpecification.getInternalProcessingSpecificationFromStrings(handlerClass, null), null));
-        this.chains = chains;
+        this(chains, BundleInstantiationSpecification.getInternalProcessingSpecificationFromStrings(handlerClass, null));
+    }
 
+    public ProcessingHandler(CHAINS chains, String handlerClass, String bundle) {
+        this(chains, BundleInstantiationSpecification.getFromStrings(handlerClass, null, bundle));
+    }
+
+    private ProcessingHandler(CHAINS chains, BundleInstantiationSpecification spec) {
+        super(new ComponentModel(spec, null));
+        this.chains = chains;
     }
 
     @Override

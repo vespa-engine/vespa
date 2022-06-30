@@ -302,7 +302,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         // Cannot use the class object for ProcessingHandler, because its superclass is not accessible
         ProcessingHandler<?> processingHandler = new ProcessingHandler<>(
                 processingChains,
-                "com.yahoo.processing.handler.ProcessingHandler");
+                "com.yahoo.processing.handler.ProcessingHandler",
+                 null);
 
         for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);
