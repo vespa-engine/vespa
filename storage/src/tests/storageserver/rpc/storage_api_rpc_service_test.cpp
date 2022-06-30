@@ -196,10 +196,6 @@ public:
         return _messages.pop_first_message();
     }
 
-    bool target_supports_direct_rpc(const api::StorageMessageAddress& addr) const noexcept {
-        return _service->target_supports_direct_rpc(addr);
-    }
-
     void send_raw_request_and_expect_error(StorageApiNode& node,
                                            FRT_RPCRequest* req,
                                            const vespalib::string& expected_msg) {
@@ -219,16 +215,6 @@ StorageApiNode::~StorageApiNode() {
     // the RPC service that may receive callbacks from it.
     _shared_rpc_resources->shutdown();
 }
-
-struct NodeWithoutStorageApiService : RpcNode {
-    NodeWithoutStorageApiService(uint16_t node_index, bool is_distributor, const mbus::Slobrok& slobrok)
-        : RpcNode(node_index, is_distributor, slobrok)
-    {
-        _shared_rpc_resources->start_server_and_register_slobrok(_slobrok_id);
-        // Explicitly wait until we are visible in Slobrok. Just waiting for mirror readiness is not enough.
-        wait_until_visible_in_slobrok(_slobrok_id);
-    }
-};
 
 } // anonymous namespace
 
@@ -355,28 +341,6 @@ TEST_F(StorageApiRpcServiceTest, response_trace_only_propagated_if_trace_level_s
     });
     auto trace_str = recv_reply->getTrace().toString();
     EXPECT_THAT(trace_str, Not(HasSubstr("Doing cool things")));
-}
-
-TEST_F(StorageApiRpcServiceTest, rpc_method_not_found_toggles_rpc_as_not_supported) {
-    NodeWithoutStorageApiService dummy_node(10, false, _slobrok);
-    _node_0->wait_until_visible_in_slobrok(to_slobrok_id(dummy_node.node_address()));
-
-    // Initially we assume targets are on a new enough version to understand storage API RPCs.
-    EXPECT_TRUE(_node_0->target_supports_direct_rpc(dummy_node.node_address()));
-    EXPECT_TRUE(_node_0->target_supports_direct_rpc(_node_1->node_address()));
-
-    // Send to an endpoint exposing RPC but not the Storage API server method.
-    // It will bounce back immediately with an FRT "no such method" error.
-    auto cmd = _node_0->create_dummy_put_command();
-    cmd->setAddress(dummy_node.node_address());
-    _node_0->send_request(cmd);
-    auto bounced_msg = _node_0->wait_and_receive_single_message();
-    ASSERT_TRUE(bounced_msg);
-
-    // For now (and for the sake of simplicity), fall back to assuming no targets
-    // support direct storage API RPC.
-    EXPECT_FALSE(_node_0->target_supports_direct_rpc(dummy_node.node_address()));
-    EXPECT_FALSE(_node_0->target_supports_direct_rpc(_node_1->node_address()));
 }
 
 TEST_F(StorageApiRpcServiceTest, malformed_request_header_returns_rpc_error) {

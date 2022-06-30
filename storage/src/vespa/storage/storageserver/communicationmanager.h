@@ -55,12 +55,10 @@ class RPCRequestWrapper;
 class StorageTransportContext : public api::TransportContext {
 public:
     explicit StorageTransportContext(std::unique_ptr<documentapi::DocumentMessage> msg);
-    explicit StorageTransportContext(std::unique_ptr<mbusprot::StorageCommand> msg);
     explicit StorageTransportContext(std::unique_ptr<RPCRequestWrapper> request);
     ~StorageTransportContext() override;
 
     std::unique_ptr<documentapi::DocumentMessage> _docAPIMsg;
-    std::unique_ptr<mbusprot::StorageCommand>     _storageProtocolMsg;
     std::unique_ptr<RPCRequestWrapper>            _request;
 };
 
