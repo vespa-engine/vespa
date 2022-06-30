@@ -41,7 +41,7 @@ bool CapabilitySet::resolve_and_add(const string& set_or_cap_name) noexcept {
         _capability_mask |= cap_set->_capability_mask;
         return true;
     } else if (auto cap = Capability::find_capability(set_or_cap_name)) {
-        _capability_mask |= cap->id_as_bit_set();
+        _capability_mask |= cap_as_bit_set(*cap);
         return true;
     }
     return false;
@@ -77,7 +77,7 @@ CapabilitySet CapabilitySet::config_server() noexcept {
 }
 
 CapabilitySet CapabilitySet::make_with_all_capabilities() noexcept {
-    CapabilityBitSet bit_set;
+    BitSet bit_set;
     bit_set.flip(); // All cap bits set
     return CapabilitySet(bit_set);
 }

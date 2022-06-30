@@ -7,12 +7,6 @@ using namespace vespalib;
 using namespace vespalib::net::tls;
 using namespace std::string_view_literals;
 
-TEST("Capability bit positions are stable across calls") {
-    auto cap1 = Capability::content_storage_api();
-    auto cap2 = Capability::content_storage_api();
-    EXPECT_EQUAL(cap1.id_bit_pos(), cap2.id_bit_pos());
-}
-
 TEST("Capability instances are equality comparable") {
     auto cap1 = Capability::content_document_api();
     auto cap2 = Capability::content_document_api();
@@ -20,6 +14,27 @@ TEST("Capability instances are equality comparable") {
     EXPECT_EQUAL(cap1, cap2);
     EXPECT_EQUAL(cap2, cap1);
     EXPECT_NOT_EQUAL(cap1, cap3);
+}
+
+TEST("CapabilitySet instances are equality comparable") {
+    const auto cap1 = Capability::content_document_api();
+    const auto cap2 = Capability::content_search_api();
+
+    const auto all_caps = CapabilitySet::make_with_all_capabilities();
+    const auto set_12_a = CapabilitySet::of({cap1, cap2});
+    const auto set_12_b = CapabilitySet::of({cap1, cap2});
+    const auto set_1  = CapabilitySet::of({cap1});
+    const auto empty  = CapabilitySet::make_empty();
+
+    EXPECT_EQUAL(all_caps, all_caps);
+    EXPECT_EQUAL(empty, empty);
+    EXPECT_EQUAL(set_12_a, set_12_b);
+    EXPECT_EQUAL(set_12_b, set_12_a);
+
+    EXPECT_NOT_EQUAL(all_caps, empty);
+    EXPECT_NOT_EQUAL(set_12_a, set_1);
+    EXPECT_NOT_EQUAL(set_12_a, all_caps);
+    EXPECT_NOT_EQUAL(set_1, empty);
 }
 
 TEST("Can get underlying name of all Capability instances") {
@@ -37,14 +52,31 @@ TEST("Capability instances can be stringified") {
     EXPECT_EQUAL(Capability::content_storage_api().to_string(), "Capability(vespa.content.storage_api)");
 }
 
+namespace {
+
+void check_capability_mapping(const std::string& name, Capability expected) {
+    auto cap = Capability::find_capability(name);
+    ASSERT_TRUE(cap.has_value());
+    EXPECT_EQUAL(*cap, expected);
+}
+
+void check_capability_set_mapping(const std::string& name, CapabilitySet expected) {
+    auto caps = CapabilitySet::find_capability_set(name);
+    ASSERT_TRUE(caps.has_value());
+    EXPECT_EQUAL(*caps, expected);
+}
+
+}
+
 TEST("All known capabilities can be looked up by name") {
-    EXPECT_TRUE(Capability::find_capability("vespa.content.storage_api").has_value());
-    EXPECT_TRUE(Capability::find_capability("vespa.content.document_api").has_value());
-    EXPECT_TRUE(Capability::find_capability("vespa.content.search_api").has_value());
-    EXPECT_TRUE(Capability::find_capability("vespa.content.cluster_controller.internal_state_api").has_value());
-    EXPECT_TRUE(Capability::find_capability("vespa.slobrok.api").has_value());
-    EXPECT_TRUE(Capability::find_capability("vespa.content.status_pages").has_value());
-    EXPECT_TRUE(Capability::find_capability("vespa.content.metrics_api").has_value());
+    check_capability_mapping("vespa.content.storage_api",  Capability::content_storage_api());
+    check_capability_mapping("vespa.content.document_api", Capability::content_document_api());
+    check_capability_mapping("vespa.content.search_api",   Capability::content_search_api());
+    check_capability_mapping("vespa.slobrok.api",          Capability::slobrok_api());
+    check_capability_mapping("vespa.content.status_pages", Capability::content_status_pages());
+    check_capability_mapping("vespa.content.metrics_api",  Capability::content_metrics_api());
+    check_capability_mapping("vespa.content.cluster_controller.internal_state_api",
+                             Capability::content_cluster_controller_internal_state_api());
 }
 
 TEST("Unknown capability name returns nullopt") {
@@ -57,11 +89,11 @@ TEST("CapabilitySet instances can be stringified") {
 }
 
 TEST("All known capability sets can be looked up by name") {
-    EXPECT_TRUE(CapabilitySet::find_capability_set("vespa.content_node").has_value());
-    EXPECT_TRUE(CapabilitySet::find_capability_set("vespa.container_node").has_value());
-    EXPECT_TRUE(CapabilitySet::find_capability_set("vespa.telemetry").has_value());
-    EXPECT_TRUE(CapabilitySet::find_capability_set("vespa.cluster_controller_node").has_value());
-    EXPECT_TRUE(CapabilitySet::find_capability_set("vespa.config_server").has_value());
+    check_capability_set_mapping("vespa.content_node",            CapabilitySet::content_node());
+    check_capability_set_mapping("vespa.container_node",          CapabilitySet::container_node());
+    check_capability_set_mapping("vespa.telemetry",               CapabilitySet::telemetry());
+    check_capability_set_mapping("vespa.cluster_controller_node", CapabilitySet::cluster_controller_node());
+    check_capability_set_mapping("vespa.config_server",           CapabilitySet::config_server());
 }
 
 TEST("Unknown capability set name returns nullopt") {
@@ -96,6 +128,18 @@ TEST("Resolving an unknown capability set returns false and does not add anythin
     EXPECT_TRUE(caps.empty());
 }
 
+TEST("Resolving multiple capabilities/sets adds union of capabilities") {
+    CapabilitySet caps;
+    EXPECT_TRUE(caps.resolve_and_add("vespa.content_node"));   // CapabilitySet
+    EXPECT_TRUE(caps.resolve_and_add("vespa.container_node")); // ditto
+    EXPECT_EQUAL(caps, CapabilitySet::of({Capability::content_storage_api(), Capability::content_document_api(),
+                                          Capability::slobrok_api(), Capability::content_search_api()}));
+    EXPECT_TRUE(caps.resolve_and_add("vespa.content.metrics_api")); // Capability (single)
+    EXPECT_EQUAL(caps, CapabilitySet::of({Capability::content_storage_api(), Capability::content_document_api(),
+                                          Capability::slobrok_api(), Capability::content_search_api(),
+                                          Capability::content_metrics_api()}));
+}
+
 TEST("Default-constructed CapabilitySet has no capabilities") {
     CapabilitySet caps;
     EXPECT_EQUAL(caps.count(), 0u);
@@ -105,7 +149,7 @@ TEST("Default-constructed CapabilitySet has no capabilities") {
 
 TEST("CapabilitySet can be created with all capabilities") {
     auto caps = CapabilitySet::make_with_all_capabilities();
-    EXPECT_EQUAL(caps.count(), max_capability_bit_count());
+    EXPECT_EQUAL(caps.count(), CapabilitySet::max_count());
     EXPECT_TRUE(caps.contains(Capability::content_storage_api()));
     EXPECT_TRUE(caps.contains(Capability::content_metrics_api()));
     // ... we just assume the rest are present as well.

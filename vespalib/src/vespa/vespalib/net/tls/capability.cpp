@@ -12,7 +12,7 @@ namespace {
 using namespace std::string_view_literals;
 
 // Important: must match 1-1 with CapabilityId values!
-constexpr std::array<std::string_view, max_capability_bit_count()> capability_names = {
+constexpr std::array<std::string_view, Capability::max_value_count()> capability_names = {
     "vespa.content.storage_api"sv,
     "vespa.content.document_api"sv,
     "vespa.content.search_api"sv,
@@ -25,7 +25,7 @@ constexpr std::array<std::string_view, max_capability_bit_count()> capability_na
 } // anon ns
 
 std::string_view Capability::name() const noexcept {
-    return capability_names[id_bit_pos()];
+    return capability_names[id_as_idx()];
 }
 
 string Capability::to_string() const {

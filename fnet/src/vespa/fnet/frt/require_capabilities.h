@@ -9,10 +9,10 @@
  * context that contains, at minimum, a given set of capabilities. If one or more
  * required capabilities are missing, the request is denied.
  */
-class FRT_RequireCapability final : public FRT_RequestAccessFilter {
+class FRT_RequireCapabilities final : public FRT_RequestAccessFilter {
     vespalib::net::tls::CapabilitySet _required_capabilities;
 public:
-    explicit constexpr FRT_RequireCapability(vespalib::net::tls::CapabilitySet required_capabilities) noexcept
+    explicit constexpr FRT_RequireCapabilities(vespalib::net::tls::CapabilitySet required_capabilities) noexcept
         : _required_capabilities(required_capabilities)
     {
     }

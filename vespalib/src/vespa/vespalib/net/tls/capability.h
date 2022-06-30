@@ -12,27 +12,6 @@ namespace vespalib { class asciistream; }
 
 namespace vespalib::net::tls {
 
-// Each ID value corresponds to a unique single-bit position.
-// These values shall never be exposed outside the running process, i.e. they
-// must be possible to change arbitrarily internally across versions.
-enum class CapabilityId : uint32_t {
-    ContentStorageApi = 0, // Must start at zero
-    ContentDocumentApi,
-    ContentSearchApi,
-    ContentClusterControllerInternalStateApi,
-    SlobrokApi,
-    ContentStatusPages,
-    ContentMetricsApi,
-    // When adding a capability ID to the end, max_capability_bit_count() MUST be updated
-};
-
-constexpr size_t max_capability_bit_count() noexcept {
-    // This must refer to the highest possible CapabilityId enum value.
-    return static_cast<size_t>(CapabilityId::ContentMetricsApi) + 1;
-}
-
-using CapabilityBitSet = std::bitset<max_capability_bit_count()>;
-
 /**
  * A capability represents the ability to access a distinct service or API
  * plane in Vespa (such as the Document API).
@@ -41,20 +20,40 @@ using CapabilityBitSet = std::bitset<max_capability_bit_count()>;
  */
 class Capability {
 private:
-    CapabilityId _cap_id;
+    // Each ID value corresponds to a unique single-bit position.
+    // These values shall never be exposed outside the running process, i.e. they
+    // must be possible to change arbitrarily internally across versions.
+    enum class Id : uint32_t {
+        ContentStorageApi = 0, // Must start at zero
+        ContentDocumentApi,
+        ContentSearchApi,
+        ContentClusterControllerInternalStateApi,
+        SlobrokApi,
+        ContentStatusPages,
+        ContentMetricsApi,
+        // When adding a capability ID to the end, max_value_count() MUST be updated
+    };
+public:
+    constexpr static size_t max_value_count() noexcept {
+        // This must refer to the highest possible CapabilityId enum value.
+        return static_cast<size_t>(Id::ContentMetricsApi) + 1;
+    }
+private:
+    Id _cap_id;
 
-    constexpr explicit Capability(CapabilityId cap_id) noexcept : _cap_id(cap_id) {}
+    friend class CapabilitySet; // CapabilitySet needs to know the raw IDs for bit set bookkeeping
+
+    constexpr Id id() const noexcept { return _cap_id; }
+    constexpr uint32_t id_as_idx() const noexcept { return static_cast<uint32_t>(_cap_id); }
+
+    constexpr explicit Capability(Id cap_id) noexcept : _cap_id(cap_id) {}
+
+    constexpr static Capability of(Id id) noexcept {
+        return Capability(id);
+    }
+
 public:
     Capability() = delete; // Only valid capabilities can be created.
-
-    constexpr CapabilityId id() const noexcept { return _cap_id; }
-
-    constexpr uint32_t id_bit_pos() const noexcept { return static_cast<uint32_t>(_cap_id); }
-
-    constexpr CapabilityBitSet id_as_bit_set() const noexcept {
-        static_assert(max_capability_bit_count() <= 32); // Must fit into uint32_t bitmask
-        return {uint32_t(1) << id_bit_pos()};
-    }
 
     constexpr bool operator==(const Capability& rhs) const noexcept {
         return (_cap_id == rhs._cap_id);
@@ -67,38 +66,34 @@ public:
     std::string_view name() const noexcept;
     string to_string() const;
 
-    constexpr static Capability of(CapabilityId id) noexcept {
-        return Capability(id);
-    }
-
     static std::optional<Capability> find_capability(const string& cap_name) noexcept;
 
     constexpr static Capability content_storage_api() noexcept {
-        return Capability(CapabilityId::ContentStorageApi);
+        return Capability(Id::ContentStorageApi);
     }
 
     constexpr static Capability content_document_api() noexcept {
-        return Capability(CapabilityId::ContentDocumentApi);
+        return Capability(Id::ContentDocumentApi);
     }
 
     constexpr static Capability content_search_api() noexcept {
-        return Capability(CapabilityId::ContentSearchApi);
+        return Capability(Id::ContentSearchApi);
     }
 
     constexpr static Capability content_cluster_controller_internal_state_api() noexcept {
-        return Capability(CapabilityId::ContentClusterControllerInternalStateApi);
+        return Capability(Id::ContentClusterControllerInternalStateApi);
     }
 
     constexpr static Capability slobrok_api() noexcept {
-        return Capability(CapabilityId::SlobrokApi);
+        return Capability(Id::SlobrokApi);
     }
 
     constexpr static Capability content_status_pages() noexcept {
-        return Capability(CapabilityId::ContentStatusPages);
+        return Capability(Id::ContentStatusPages);
     }
 
     constexpr static Capability content_metrics_api() noexcept {
-        return Capability(CapabilityId::ContentMetricsApi);
+        return Capability(Id::ContentMetricsApi);
     }
 
 };

@@ -23,9 +23,19 @@ namespace vespalib::net::tls {
  * CapabilitySet instances are intended to be very cheap to pass and store by value.
  */
 class CapabilitySet {
-    CapabilityBitSet _capability_mask;
+    using BitSet = std::bitset<Capability::max_value_count()>;
+    BitSet _capability_mask;
 
-    explicit constexpr CapabilitySet(CapabilityBitSet capabilities) noexcept
+    constexpr static uint32_t cap_as_bit_pos(const Capability& cap) noexcept {
+        return cap.id_as_idx();
+    }
+
+    constexpr static BitSet cap_as_bit_set(const Capability& cap) noexcept {
+        static_assert(Capability::max_value_count() <= 32); // Must fit into uint32_t bitmask
+        return {uint32_t(1) << cap_as_bit_pos(cap)};
+    }
+
+    explicit constexpr CapabilitySet(BitSet capabilities) noexcept
         : _capability_mask(capabilities)
     {}
 public:
@@ -44,16 +54,19 @@ public:
     size_t count() const noexcept {
         return _capability_mask.count();
     }
+    constexpr static size_t max_count() noexcept {
+        return Capability::max_value_count();
+    }
 
     [[nodiscard]] constexpr bool contains(Capability cap) const noexcept {
-        return _capability_mask[cap.id_bit_pos()];
+        return _capability_mask[cap_as_bit_pos(cap)];
     }
     [[nodiscard]] bool contains_all(CapabilitySet caps) const noexcept {
         return ((_capability_mask & caps._capability_mask) == caps._capability_mask);
     }
 
     void add(const Capability& cap) noexcept {
-        _capability_mask |= cap.id_as_bit_set();
+        _capability_mask |= cap_as_bit_set(cap);
     }
     void add_all(const CapabilitySet& cap_set) noexcept {
         _capability_mask |= cap_set._capability_mask;
@@ -63,7 +76,7 @@ public:
     void for_each_capability(Func f) const noexcept(noexcept(f(Capability::content_storage_api()))) {
         for (size_t i = 0; i < _capability_mask.size(); ++i) {
             if (_capability_mask[i]) {
-                f(Capability::of(static_cast<CapabilityId>(i)));
+                f(Capability::of(static_cast<Capability::Id>(i)));
             }
         }
     }
@@ -83,7 +96,7 @@ public:
     static CapabilitySet of(std::initializer_list<Capability> caps) noexcept {
         CapabilitySet set;
         for (const auto& cap : caps) {
-            set._capability_mask |= cap.id_as_bit_set();
+            set._capability_mask |= cap_as_bit_set(cap);
         }
         return set;
     }
