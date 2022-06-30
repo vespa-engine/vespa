@@ -468,7 +468,9 @@ DocsumFilter::getMappedDocsum(uint32_t id)
     uint32_t buflen;
     bool ok = _packer.GetDocsumBlob(&buf, &buflen);
     if (ok) {
-        return DocsumStoreValue(buf, buflen);
+        const auto* storage_doc = dynamic_cast<const StorageDocument *>(&doc);
+        const document::Document *doc_doc = (storage_doc != nullptr && storage_doc->valid()) ? &storage_doc->docDoc() : nullptr;
+        return DocsumStoreValue(buf, buflen, doc_doc);
     } else {
         return DocsumStoreValue(nullptr, 0);
     }
