@@ -470,8 +470,13 @@ public class XML {
             // Disable include directives. If enabled this allows inclusion of any resource, such as file:/// and
             // http:///, and these are read even if the document eventually fails to parse
             factory.setXIncludeAware(false);
-            // Prevent XXE
+            // Prevent XXE by disabling DOCTYPE declarations
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            // Disable any kind of external entities. These likely cannot be exploited when doctype is disallowed, but
+            // it's better to leave them disabled in any case. See
+            // https://owasp.org/www-community/vulnerabilities/XML_External_Entity_(XXE)_Processing
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             return factory.newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             throw new RuntimeException("Could not create an XML builder", e);
