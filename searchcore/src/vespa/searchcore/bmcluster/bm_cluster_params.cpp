@@ -27,7 +27,6 @@ BmClusterParams::BmClusterParams()
       _rpc_events_before_wakeup(1), // Same default as in stor-communicationmanager.def
       _rpc_network_threads(1),      // Same default as previous in stor-communicationmanager.def
       _rpc_targets_per_node(1),     // Same default as in stor-communicationmanager.def
-      _skip_communicationmanager_thread(false), // Same default as in stor-communicationmanager.def
       _skip_get_spi_bucket_info(false),
       _use_async_message_handling_on_schedule(false),
       _use_document_api(false),

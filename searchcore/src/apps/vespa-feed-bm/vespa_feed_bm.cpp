@@ -21,14 +21,11 @@
 #include <vespa/searchcore/bmcluster/spi_bm_feed_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <getopt.h>
 #include <filesystem>
 #include <iostream>
-#include <thread>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-feed-bm");
@@ -229,7 +226,6 @@ App::usage()
         "[--rpc-events-before-wakeup events]\n"
         "[--rpc-network-threads threads]\n"
         "[--rpc-targets-per-node targets]\n"
-        "[--skip-communicationmanager-thread]\n"
         "[--skip-get-spi-bucket-info]\n"
         "[--update-passes update-passes]\n"
         "[--use-async-message-handling]\n"
@@ -261,7 +257,6 @@ App::get_options(int argc, char **argv)
         { "rpc-events-before-wakeup", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
         { "rpc-targets-per-node", 1, nullptr, 0 },
-        { "skip-communicationmanager-thread", 0, nullptr, 0 },
         { "skip-get-spi-bucket-info", 0, nullptr, 0 },
         { "update-passes", 1, nullptr, 0 },
         { "use-async-message-handling", 0, nullptr, 0 },
@@ -288,7 +283,6 @@ App::get_options(int argc, char **argv)
         LONGOPT_RPC_EVENTS_BEFORE_WAKEUP,
         LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_RPC_TARGETS_PER_NODE,
-        LONGOPT_SKIP_COMMUNICATIONMANAGER_THREAD,
         LONGOPT_SKIP_GET_SPI_BUCKET_INFO,
         LONGOPT_UPDATE_PASSES,
         LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
@@ -354,9 +348,6 @@ App::get_options(int argc, char **argv)
                 break;
             case LONGOPT_RPC_TARGETS_PER_NODE:
                 _bm_params.set_rpc_targets_per_node(atoi(optarg));
-                break;
-            case LONGOPT_SKIP_COMMUNICATIONMANAGER_THREAD:
-                _bm_params.set_skip_communicationmanager_thread(true);
                 break;
             case LONGOPT_SKIP_GET_SPI_BUCKET_INFO:
                 _bm_params.set_skip_get_spi_bucket_info(true);
