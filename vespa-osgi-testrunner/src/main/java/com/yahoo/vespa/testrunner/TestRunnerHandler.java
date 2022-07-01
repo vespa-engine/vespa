@@ -14,6 +14,7 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.testrunner.TestReport.ContainerNode;
 import com.yahoo.vespa.testrunner.TestReport.FailureNode;
+import com.yahoo.vespa.testrunner.TestReport.NamedNode;
 import com.yahoo.vespa.testrunner.TestReport.Node;
 import com.yahoo.vespa.testrunner.TestReport.OutputNode;
 import com.yahoo.vespa.testrunner.TestReport.TestNode;
@@ -127,11 +128,11 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
             recordObject.setLong("id", record.getSequenceNumber());
             recordObject.setLong("at", record.getMillis());
             recordObject.setString("type", typeOf(record.getLevel()));
-            String message = record.getMessage();
+            String message = record.getMessage() == null ? "" : record.getMessage();
             if (record.getThrown() != null) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                 record.getThrown().printStackTrace(new PrintStream(buffer));
-                message += "\n" + buffer;
+                message += (message.isEmpty() ? "" : "\n") + buffer;
             }
             recordObject.setString("message", message);
         });
@@ -176,14 +177,13 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         }
         if (node instanceof OutputNode)
             for (LogRecord record : ((OutputNode) node).log())
-                outputArray.addString(formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage());
+                if (record.getMessage() != null)
+                    outputArray.addString(formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage());
     }
 
     static void toSlime(Cursor nodeObject, Node node) {
-        if (node instanceof ContainerNode) toSlime(nodeObject, (ContainerNode) node);
-        if (node instanceof TestNode) toSlime(nodeObject, (TestNode) node);
+        if (node instanceof NamedNode) toSlime(nodeObject, (NamedNode) node);
         if (node instanceof OutputNode) toSlime(nodeObject, (OutputNode) node);
-        if (node instanceof FailureNode) toSlime(nodeObject, (FailureNode) node);
 
         if ( ! node.children().isEmpty()) {
             Cursor childrenArray = nodeObject.setArray("children");
@@ -192,16 +192,9 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         }
     }
 
-    static void toSlime(Cursor nodeObject, ContainerNode node) {
-        nodeObject.setString("type", "container");
-        nodeObject.setString("name", node.name());
-        nodeObject.setString("status", node.status().name());
-        nodeObject.setLong("start", node.start().toEpochMilli());
-        nodeObject.setLong("duration", node.duration().toMillis());
-    }
-
-    static void toSlime(Cursor nodeObject, TestNode node) {
-        nodeObject.setString("type", "test");
+    static void toSlime(Cursor nodeObject, NamedNode node) {
+        String type = node instanceof FailureNode ? "failure" : node instanceof TestNode ? "test" : "container";
+        nodeObject.setString("type", type);
         nodeObject.setString("name", node.name());
         nodeObject.setString("status", node.status().name());
         nodeObject.setLong("start", node.start().toEpochMilli());
@@ -213,17 +206,12 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         Cursor childrenArray = nodeObject.setArray("children");
         for (LogRecord record : node.log()) {
             Cursor recordObject = childrenArray.addObject();
-            recordObject.setString("message", (record.getLoggerName() == null ? "" : record.getLoggerName() + ": ") + record.getMessage());
+            recordObject.setString("message", (record.getLoggerName() == null ? "" : record.getLoggerName() + ": ") +
+                                              (record.getMessage() != null ? record.getMessage() : "") +
+                                              (record.getThrown() != null ? (record.getMessage() != null ? "\n" : "") + traceToString(record.getThrown()) : ""));
             recordObject.setLong("at", record.getInstant().toEpochMilli());
             recordObject.setString("level", typeOf(record.getLevel()));
-            if (record.getThrown() != null) recordObject.setString("trace", traceToString(record.getThrown()));
         }
-    }
-
-    static void toSlime(Cursor nodeObject, FailureNode node) {
-        nodeObject.setString("type", "failure");
-        nodeObject.setString("status", node.status().name());
-        nodeObject.setString("trace", traceToString(node.thrown()));
     }
 
     private static String traceToString(Throwable thrown) {

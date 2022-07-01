@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static java.util.Arrays.copyOf;
@@ -52,7 +53,7 @@ public class TestReport {
         if (thrown instanceof OutOfMemoryError) throw (Error) thrown;
         TestReport failed = new TestReport(clock, suite);
         failed.complete();
-        failed.root().children.add(new FailureNode(failed.root(), thrown, suite));
+        failed.root().children.add(new FailureNode(failed.root(), clock.instant(), thrown, suite));
         return failed;
     }
 
@@ -126,7 +127,7 @@ public class TestReport {
         synchronized (monitor) {
             Status status = Status.successful;
             if (thrown != null) {
-                FailureNode failure = new FailureNode(current, thrown, suite);
+                FailureNode failure = new FailureNode(current, clock.instant(), thrown, suite);
                 current.children.add(failure);
                 status = failure.status();
             }
@@ -271,22 +272,35 @@ public class TestReport {
 
     }
 
-    public static class FailureNode extends Node {
+    public static class FailureNode extends NamedNode {
 
         private final Throwable thrown;
         private final Suite suite;
 
-        public FailureNode(NamedNode parent, Throwable thrown, Suite suite) {
-            super(parent);
-            this.thrown = thrown;
+        public FailureNode(NamedNode parent, Instant now, Throwable thrown, Suite suite) {
+            super(parent, null, thrown.toString(), now);
             trimStackTraces(thrown, JunitRunner.class.getName());
+            this.thrown = thrown;
             this.suite = suite;
+
+            LogRecord record = new LogRecord(levelOf(status()), null);
+            record.setThrown(thrown);
+            record.setInstant(now);
+            OutputNode child = new OutputNode(this);
+            child.log.add(record);
+            children.add(child);
         }
 
         public Throwable thrown() {
             return thrown;
         }
 
+        @Override
+        public Duration duration() {
+            return Duration.ZERO;
+        }
+
+        @Override
         public Status status() {
             return suite == Suite.PRODUCTION_TEST && thrown instanceof InconclusiveTestException
                    ? Status.inconclusive
@@ -305,6 +319,10 @@ public class TestReport {
         failed,
         error;
 
+    }
+
+    static Level levelOf(Status status) {
+        return status.compareTo(Status.failed) >= 0 ? Level.SEVERE : status.compareTo(Status.skipped) >= 0 ? Level.WARNING : Level.INFO;
     }
 
     /**

@@ -58,8 +58,22 @@
                   },
                   {
                     "type": "failure",
+                    "name": "java.lang.NoClassDefFoundError",
                     "status": "error",
-                    "trace": "java.lang.NoClassDefFoundError\n\tat com.yahoo.vespa.test.samples.SampleTest.error(SampleTest.java:87)\n"
+                    "start": 0,
+                    "duration": 0,
+                    "children": [
+                      {
+                        "type": "output",
+                        "children": [
+                          {
+                            "message": "java.lang.NoClassDefFoundError\n\tat com.yahoo.vespa.test.samples.SampleTest.error(SampleTest.java:87)\n",
+                            "at": 0,
+                            "level": "error"
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               },
@@ -87,8 +101,22 @@
                   },
                   {
                     "type": "failure",
+                    "name": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>",
                     "status": "failed",
-                    "trace": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n"
+                    "start": 0,
+                    "duration": 0,
+                    "children": [
+                      {
+                        "type": "output",
+                        "children": [
+                          {
+                            "message": "org.opentest4j.AssertionFailedError: baz ==> expected: <foo> but was: <bar>\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:55)\n\tat org.junit.jupiter.api.AssertionUtils.failNotEqual(AssertionUtils.java:62)\n\tat org.junit.jupiter.api.AssertEquals.assertEquals(AssertEquals.java:182)\n\tat org.junit.jupiter.api.Assertions.assertEquals(Assertions.java:1152)\n\tat com.yahoo.vespa.test.samples.SampleTest.failing(SampleTest.java:81)\n",
+                            "at": 0,
+                            "level": "error"
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               },
@@ -123,8 +151,22 @@
                   },
                   {
                     "type": "failure",
+                    "name": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive",
                     "status": "inconclusive",
-                    "trace": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:93)\n"
+                    "start": 0,
+                    "duration": 0,
+                    "children": [
+                      {
+                        "type": "output",
+                        "children": [
+                          {
+                            "message": "ai.vespa.hosted.cd.InconclusiveTestException: the cat is both dead _and_ alive\n\tat com.yahoo.vespa.test.samples.SampleTest.inconclusive(SampleTest.java:93)\n",
+                            "at": 0,
+                            "level": "warning"
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               },
@@ -154,10 +196,9 @@
                         "level": "info"
                       },
                       {
-                        "message": "com.yahoo.vespa.test.samples.SampleTest: Oh no",
+                        "message": "com.yahoo.vespa.test.samples.SampleTest: Oh no\njava.lang.IllegalArgumentException: error\n\tat com.yahoo.vespa.test.samples.SampleTest.successful(SampleTest.java:75)\nCaused by: java.lang.RuntimeException: wrapped\n\t... 1 more\n",
                         "at": 0,
-                        "level": "warning",
-                        "trace": "java.lang.IllegalArgumentException: error\n\tat com.yahoo.vespa.test.samples.SampleTest.successful(SampleTest.java:75)\nCaused by: java.lang.RuntimeException: wrapped\n\t... 1 more\n"
+                        "level": "warning"
                       }
                     ]
                   }
@@ -215,8 +256,22 @@
                         "children": [
                           {
                             "type": "failure",
+                            "name": "org.opentest4j.AssertionFailedError: no charm",
                             "status": "failed",
-                            "trace": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n"
+                            "start": 0,
+                            "duration": 0,
+                            "children": [
+                              {
+                                "type": "output",
+                                "children": [
+                                  {
+                                    "message": "org.opentest4j.AssertionFailedError: no charm\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:39)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:134)\n\tat com.yahoo.vespa.test.samples.SampleTest$Inner.lambda$others$1(SampleTest.java:105)\n",
+                                    "at": 0,
+                                    "level": "error"
+                                  }
+                                ]
+                              }
+                            ]
                           }
                         ]
                       }
@@ -286,15 +341,43 @@
                 "children": [
                   {
                     "type": "failure",
+                    "name": "org.opentest4j.AssertionFailedError",
                     "status": "failed",
-                    "trace": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:35)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:19)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:16)\n"
+                    "start": 0,
+                    "duration": 0,
+                    "children": [
+                      {
+                        "type": "output",
+                        "children": [
+                          {
+                            "message": "org.opentest4j.AssertionFailedError\n\tat org.junit.jupiter.api.AssertionUtils.fail(AssertionUtils.java:35)\n\tat org.junit.jupiter.api.Assertions.fail(Assertions.java:115)\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.test(FailingTestAndBothAftersTest.java:19)\n\tSuppressed: java.lang.RuntimeException\n\t\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.moreFail(FailingTestAndBothAftersTest.java:16)\n",
+                            "at": 0,
+                            "level": "error"
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               },
               {
                 "type": "failure",
+                "name": "java.lang.RuntimeException",
                 "status": "error",
-                "trace": "java.lang.RuntimeException\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.fail(FailingTestAndBothAftersTest.java:13)\n"
+                "start": 0,
+                "duration": 0,
+                "children": [
+                  {
+                    "type": "output",
+                    "children": [
+                      {
+                        "message": "java.lang.RuntimeException\n\tat com.yahoo.vespa.test.samples.FailingTestAndBothAftersTest.fail(FailingTestAndBothAftersTest.java:13)\n",
+                        "at": 0,
+                        "level": "error"
+                      }
+                    ]
+                  }
+                ]
               }
             ]
           },
@@ -307,8 +390,22 @@
             "children": [
               {
                 "type": "failure",
+                "name": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).",
                 "status": "error",
-                "trace": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).\n"
+                "start": 0,
+                "duration": 0,
+                "children": [
+                  {
+                    "type": "output",
+                    "children": [
+                      {
+                        "message": "org.junit.platform.commons.JUnitException: @BeforeAll method 'void com.yahoo.vespa.test.samples.WrongBeforeAllTest.wrong()' must be static unless the test class is annotated with @TestInstance(Lifecycle.PER_CLASS).\n",
+                        "at": 0,
+                        "level": "error"
+                      }
+                    ]
+                  }
+                ]
               },
               {
                 "type": "test",
@@ -342,8 +439,22 @@
                 "children": [
                   {
                     "type": "failure",
+                    "name": "java.lang.NullPointerException",
                     "status": "error",
-                    "trace": "java.lang.NullPointerException\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n"
+                    "start": 0,
+                    "duration": 0,
+                    "children": [
+                      {
+                        "type": "output",
+                        "children": [
+                          {
+                            "message": "java.lang.NullPointerException\n\tat com.yahoo.vespa.test.samples.FailingExtensionTest$FailingExtension.<init>(FailingExtensionTest.java:19)\n",
+                            "at": 0,
+                            "level": "error"
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }
@@ -353,8 +464,22 @@
       },
       {
         "type": "failure",
+        "name": "java.lang.ClassNotFoundException: School's out all summer!",
         "status": "error",
-        "trace": "java.lang.ClassNotFoundException: School's out all summer!\n"
+        "start": 12000,
+        "duration": 0,
+        "children": [
+          {
+            "type": "output",
+            "children": [
+              {
+                "message": "java.lang.ClassNotFoundException: School's out all summer!\n",
+                "at": 12000,
+                "level": "error"
+              }
+            ]
+          }
+        ]
       }
     ]
   },
