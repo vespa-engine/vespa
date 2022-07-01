@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import SimpleButton from './Components/Buttons/SimpleButton';
 import QueryInput from './Components/Text/QueryInput';
 import TextBox from './Components/Text/TextBox';
@@ -7,7 +7,10 @@ import OverlayImageButton from './Components/Buttons/OverlayImageButton';
 import AddQueryInput from './Components/Buttons/AddQueryInputButton';
 import { QueryInputProvider } from './Components/Contexts/QueryInputContext';
 import SendQuery from './Components/Text/SendQuery';
-import { ResponseProvider } from './Components/Contexts/ResponseContext';
+import {
+  ResponseContext,
+  ResponseProvider,
+} from './Components/Contexts/ResponseContext';
 import ResponseBox from './Components/Text/ResponseBox';
 
 import pasteImage from './assets/img/paste.svg';
@@ -15,12 +18,12 @@ import copyImage from './assets/img/copy.svg';
 
 import '../../styles/agency.css';
 import '../../styles/vespa.css';
+import ShowQueryButton from './Components/Buttons/ShowQueryButton';
+import { QueryProvider } from './Components/Contexts/QueryContext';
 
 //import 'bootstrap/dist/css/bootstrap.min.css'; //TODO: Find out how to get this css
 
 export function QueryBuilder() {
-  const messageMethodArray = ['POST', 'GET'];
-
   return (
     <>
       <header>
@@ -30,26 +33,27 @@ export function QueryBuilder() {
             Select the method for sending a request and construct a query.
           </TextBox>
           <ResponseProvider>
-            <QueryInputProvider>
-              <SendQuery />
+            <QueryProvider>
+              <QueryInputProvider>
+                <SendQuery />
+                <br />
+                <div id="request">
+                  <QueryInput />
+                </div>
+                <br />
+                <AddQueryInput />
+              </QueryInputProvider>
               <br />
-              <div id="request">
-                <QueryInput />
-              </div>
-              <br />
-              <AddQueryInput />
-            </QueryInputProvider>
-            <br />
-            <ImageButton
-              id="pasteJSON"
-              className="pasteJSON"
-              showImage={true}
-              image={pasteImage}
-              style={{ marginTop: '-2px', marginRight: '3px' }}
-            >
-              Paste JSON
-            </ImageButton>
-            <SimpleButton className="showJSON">Show query JSON</SimpleButton>
+              <ImageButton
+                id="pasteJSON"
+                className="pasteJSON"
+                image={pasteImage}
+                style={{ marginTop: '-2px', marginRight: '3px' }}
+              >
+                Paste JSON
+              </ImageButton>
+              <ShowQueryButton />
+            </QueryProvider>
             <TextBox className="response">Response</TextBox>
             <ResponseBox />
           </ResponseProvider>

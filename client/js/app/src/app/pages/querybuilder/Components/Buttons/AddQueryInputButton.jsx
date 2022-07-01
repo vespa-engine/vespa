@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
-import OverlayImageButton from '../Buttons/OverlayImageButton';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
+import Tooltip from 'react-bootstrap/Tooltip';
 
 export default function AddQueryInput() {
   const { inputs, setInputs, id, setId } = useContext(QueryInputContext);
@@ -26,16 +27,22 @@ export default function AddQueryInput() {
   };
 
   return (
-    <OverlayImageButton
-      onClick={updateInputs}
-      className="addRow"
-      id="addRow"
-      tooltip="Add row"
-      height="0"
-      width="0"
-      image={null}
+    <OverlayTrigger
+      placement="right"
+      delay={{ show: 250, hide: 400 }}
+      overlay={<Tooltip id="button-tooltip">Add row</Tooltip>}
     >
-      +
-    </OverlayImageButton>
+      <span>
+        <button
+          id="addRow"
+          className="addRow"
+          height="0"
+          width="0"
+          onClick={updateInputs}
+        >
+          +
+        </button>
+      </span>
+    </OverlayTrigger>
   );
 }

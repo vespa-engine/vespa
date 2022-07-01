@@ -1,16 +1,24 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import SimpleDropDownForm from './SimpleDropDownForm';
 import SimpleButton from '../Buttons/SimpleButton';
 import SimpleForm from './SimpleForm';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 import { ResponseContext } from '../Contexts/ResponseContext';
+import { QueryContext } from '../Contexts/QueryContext';
 
 export default function SendQuery() {
   const { inputs } = useContext(QueryInputContext);
-  const { response, setResponse } = useContext(ResponseContext);
+  const { setResponse } = useContext(ResponseContext);
+  const { showQuery, setQuery } = useContext(QueryContext);
+
   const messageMethods = { post: { name: 'POST' }, get: { name: 'GET' } };
   const [method, setMethod] = useState(messageMethods.post.name);
   const [url, setUrl] = useState('http://localhost:8080/search/');
+
+  useEffect(() => {
+    const query = buildJSON(inputs, {});
+    setQuery(JSON.stringify(query, undefined, 4));
+  }, [showQuery]);
 
   const updateMethod = (e) => {
     e.preventDefault();
@@ -31,7 +39,7 @@ export default function SendQuery() {
     });
     if (responses.ok) {
       let result = await responses.json();
-      let resultObject = JSON.stringify(result);
+      let resultObject = JSON.stringify(result, undefined, 4);
       setResponse(resultObject);
     }
   }
