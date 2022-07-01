@@ -207,7 +207,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLED_HORIZON_DASHBOARD = defineFeatureFlag(
             "enabled-horizon-dashboard", false,
-            List.of("olaa"), "2021-09-13", "2022-07-01",
+            List.of("olaa"), "2021-09-13", "2022-10-01",
             "Enable Horizon dashboard",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL
