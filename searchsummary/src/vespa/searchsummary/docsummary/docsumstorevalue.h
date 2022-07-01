@@ -23,6 +23,7 @@ private:
     // Note: This is temporary until the docsummary framework is simplified,
     //       and the docsum blob concept is removed.
     std::unique_ptr<document::Document> _document;
+    const document::Document*           _document_ptr;
 
 public:
     DocsumStoreValue(const DocsumStoreValue&) = delete;
@@ -49,6 +50,15 @@ public:
      * @param document_ document instance used to generate the docsum blob
      **/
     DocsumStoreValue(const char *pt_, uint32_t len_, std::unique_ptr<document::Document> document_);
+
+    /**
+     * Construct object encapsulating the given location and size.
+     *
+     * @param pt_ docsum location
+     * @param len_ docsum size
+     * @param document_ptr document instance used to generate the docsum blob. Note: external ownership.
+     **/
+    DocsumStoreValue(const char *pt_, uint32_t len_, const document::Document* document_ptr);
 
     ~DocsumStoreValue();
 
@@ -77,7 +87,7 @@ public:
      **/
     bool valid() const { return (_value.first != 0) && (_value.second >= sizeof(uint32_t)); }
 
-    const document::Document* get_document() const { return _document.get(); }
+    const document::Document* get_document() const { return _document_ptr; }
 };
 
 }
