@@ -28,11 +28,8 @@ CheckUndefinedValueVisitor::visit(const document::BoolFieldValue&)
 }
 
 void
-CheckUndefinedValueVisitor::visit(const document::ByteFieldValue& value)
+CheckUndefinedValueVisitor::visit(const document::ByteFieldValue&)
 {
-    if (isUndefined(value.getValue())) {
-        _is_undefined = true;
-    }
 }
 
 void
@@ -57,19 +54,13 @@ CheckUndefinedValueVisitor::visit(const document::FloatFieldValue& value)
 }
 
 void
-CheckUndefinedValueVisitor::visit(const document::IntFieldValue& value)
+CheckUndefinedValueVisitor::visit(const document::IntFieldValue&)
 {
-    if (isUndefined(value.getValue())) {
-        _is_undefined = true;
-    }
 }
 
 void
-CheckUndefinedValueVisitor::visit(const document::LongFieldValue& value)
+CheckUndefinedValueVisitor::visit(const document::LongFieldValue&)
 {
-    if (isUndefined(value.getValue())) {
-        _is_undefined = true;
-    }
 }
 
 void
@@ -91,11 +82,8 @@ CheckUndefinedValueVisitor::visit(const document::RawFieldValue&)
 }
 
 void
-CheckUndefinedValueVisitor::visit(const document::ShortFieldValue& value)
+CheckUndefinedValueVisitor::visit(const document::ShortFieldValue&)
 {
-    if (isUndefined(value.getValue())) {
-        _is_undefined = true;
-    }
 }
 
 void
