@@ -110,7 +110,7 @@ class TestReportGeneratingListener implements TestExecutionListener {
                     ? report.abort(testIdentifier)
                     : report.complete(testIdentifier, testExecutionResult.getThrowable().orElse(null));
         Status status = node.status();
-        Level level = status.compareTo(Status.failed) >= 0 ? SEVERE : status.compareTo(Status.skipped) >= 0 ? WARNING : INFO;
+        Level level = TestReport.levelOf(status);
 
         if (testIdentifier.isContainer()) {
             if (testIdentifier.getParentIdObject().isPresent()) {
