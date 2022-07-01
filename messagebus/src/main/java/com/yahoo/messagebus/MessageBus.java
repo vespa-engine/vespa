@@ -14,6 +14,7 @@ import com.yahoo.messagebus.routing.RoutingPolicy;
 import com.yahoo.messagebus.routing.RoutingSpec;
 import com.yahoo.messagebus.routing.RoutingTable;
 import com.yahoo.messagebus.routing.RoutingTableSpec;
+import com.yahoo.protect.Process;
 import com.yahoo.text.Utf8Array;
 import com.yahoo.text.Utf8String;
 
@@ -148,8 +149,10 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
         // Attach and start network.
         this.net = net;
         net.attach(this);
-        if ( ! net.net().waitUntilReady(120))
+        if ( ! net.net().waitUntilReady(120)) {
+            Process.dumpThreads();
             throw new IllegalStateException("Network failed to become ready in time.");
+        }
 
         // Start messenger.
         msn = new Messenger();
