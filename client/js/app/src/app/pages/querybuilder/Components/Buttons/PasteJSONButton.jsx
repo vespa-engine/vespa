@@ -8,6 +8,8 @@ export default function PasteJSONButton() {
     useContext(QueryInputContext);
   const [paste, setPaste] = useState(false);
 
+  //TODO: fix that the second-level dropdowns do not get set properly when pasting a JSON query
+
   const handleClick = (e) => {
     //alert('Button is non-functional');
     setPaste(true);
@@ -25,7 +27,7 @@ export default function PasteJSONButton() {
   const convertPastedJSON = (pastedData) => {
     try {
       var json = JSON.parse(pastedData);
-      const newInputs = buildFromJSON(json, id + 1);
+      const newInputs = buildFromJSON(json, 3);
       setInputs(newInputs);
     } catch (error) {
       console.log(error);
@@ -63,9 +65,10 @@ export default function PasteJSONButton() {
         newInput['hasChildren'] = false;
         newInput['children'] = [];
       }
-      setId(id + 1);
+      id += 1;
       newInputs.push(newInput);
     }
+    setId(id);
     return newInputs;
   };
 

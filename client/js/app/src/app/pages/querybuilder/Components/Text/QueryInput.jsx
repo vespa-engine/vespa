@@ -37,7 +37,11 @@ export default function QueryInput() {
   const inputList = inputs.map((value) => {
     return (
       <div key={value.id + value.typeof} id={value.id} className="queryinput">
-        <QueryDropdownForm choices={levelZeroParameters} id={value.id} />
+        <QueryDropdownForm
+          choices={levelZeroParameters}
+          id={value.id}
+          initial={value.type}
+        />
         {value.hasChildren ? (
           <>
             <AddPropertyButton id={value.id} />
@@ -49,6 +53,7 @@ export default function QueryInput() {
             size="30"
             onChange={updateInput}
             placeholder={setPlaceholder(value.id)}
+            initial={value.input}
           />
         )}
         <OverlayTrigger

@@ -7,6 +7,7 @@ export default function SimpleDropDownForm({
   className = 'input',
   onChange,
   value,
+  initial,
 }) {
   const { selectedItems } = useContext(QueryInputContext);
 
@@ -30,7 +31,12 @@ export default function SimpleDropDownForm({
 
   return (
     <form id={id}>
-      <select className={className} id={id} value={value} onChange={onChange}>
+      <select
+        className={className}
+        id={id}
+        defaultValue={initial}
+        onChange={onChange}
+      >
         {options}
       </select>
     </form>

@@ -2,7 +2,12 @@ import { QueryInputContext } from '../Contexts/QueryInputContext';
 import React, { useCallback, useContext, useState } from 'react';
 import SimpleDropDownForm from './SimpleDropDownForm';
 
-export default function QueryDropdownForm({ choices, id, child = false }) {
+export default function QueryDropdownForm({
+  choices,
+  id,
+  child = false,
+  initial,
+}) {
   const {
     inputs,
     setInputs,
@@ -62,6 +67,7 @@ export default function QueryDropdownForm({ choices, id, child = false }) {
       onChange={updateType}
       choices={choices}
       value={choice}
+      initial={initial}
     ></SimpleDropDownForm>
   );
 }

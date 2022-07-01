@@ -94,10 +94,12 @@ export default function QueryInputChild({ id }) {
   const inputList = childArray.map((child) => {
     return (
       <div key={child.id} id={child.id}>
+        {child.id == '4.1' && console.log(child.type)}
         <QueryDropdownForm
           choices={childMap[currentTypes]}
           id={child.id}
           child={true}
+          inital={child.type}
         />
         {child.hasChildren ? (
           <>
@@ -109,6 +111,7 @@ export default function QueryInputChild({ id }) {
             size="30"
             onChange={updateInput}
             placeholder={setPlaceHolder(child.id)}
+            inital={child.input}
           />
         )}
         <OverlayTrigger
@@ -150,6 +153,7 @@ function Child({ child, type, onChange, placeholder, removeRow }) {
           choices={childMap[type]}
           id={child.id}
           child={true}
+          initial={child.type}
         />
         {child.hasChildren ? (
           <>
@@ -161,6 +165,7 @@ function Child({ child, type, onChange, placeholder, removeRow }) {
             size="30"
             onChange={onChange}
             placeholder={placeholder(child.id)}
+            initial={child.input}
           />
         )}
         <OverlayTrigger
