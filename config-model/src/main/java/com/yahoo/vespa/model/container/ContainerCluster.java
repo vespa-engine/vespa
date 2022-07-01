@@ -29,8 +29,8 @@ import com.yahoo.metrics.simple.runtime.MetricProperties;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.semantics.SemanticRulesConfig;
 import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.search.config.SchemaInfoConfig;
 import com.yahoo.search.pagetemplates.PageTemplatesConfig;
 import com.yahoo.search.query.profile.config.QueryProfilesConfig;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -64,12 +64,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Parent class for all container cluster types.
@@ -140,7 +140,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
 
-    private final Set<Path> platformBundles = new LinkedHashSet<>();
+    private final Set<Path> platformBundles = new TreeSet<>(); // Ensure stable ordering
 
     private final ComponentGroup<Component<?, ?>> componentGroup;
     private final boolean isHostedVespa;

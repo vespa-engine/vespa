@@ -49,7 +49,7 @@ public class ClusterControllerContainer extends Container implements
     private static final int DEFAULT_NETTY_NUM_DIRECT_ARENAS = 1; // Reduced from nettys default of 2*cores
     private static final int DEFAULT_NETTY_NUM_HEAP_ARENAS = 1; // Reduced from nettys default of 2*cores
 
-    private final Set<String> bundles = new TreeSet<>();
+    private final Set<String> bundles = new TreeSet<>(); // Ensure stable ordering
 
     public ClusterControllerContainer(AbstractConfigProducer<?> parent,
                                       int index,
