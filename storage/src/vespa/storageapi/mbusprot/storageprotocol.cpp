@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/document/util/stringutil.h>
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <cassert>
 #include <sstream>
 
 #include <vespa/log/bufferedlogger.h>
@@ -16,11 +17,7 @@ namespace storage::mbusprot {
 mbus::string StorageProtocol::NAME = "StorageProtocol";
 
 StorageProtocol::StorageProtocol(const std::shared_ptr<const document::DocumentTypeRepo> repo)
-    : _serializer5_0(repo),
-      _serializer5_1(repo),
-      _serializer5_2(repo),
-      _serializer6_0(repo),
-      _serializer7_0(repo)
+    : _serializer7_0(repo)
 {
 }
 
@@ -33,20 +30,7 @@ StorageProtocol::createPolicy(const mbus::string&, const mbus::string&) const
 }
 
 namespace {
-    vespalib::Version version7_0(7, 41, 19);
-    vespalib::Version version6_0(6, 240, 0);
-    vespalib::Version version5_2(5, 93, 30);
-    vespalib::Version version5_1(5, 1, 0);
-    vespalib::Version version5_0(5, 0, 12);
-    vespalib::Version version5_0beta(4, 3, 0);
-}
-
-
-static bool
-suppressEncodeWarning(const api::StorageMessage *msg)
-{
-    const auto *req = dynamic_cast<const api::RequestBucketInfoCommand *>(msg);
-    return ((req != nullptr) && (req->getBucketSpace() != document::FixedBucketSpaces::default_space()));
+vespalib::Version version7_0(7, 41, 19);
 }
 
 static mbus::Blob
@@ -82,46 +66,23 @@ StorageProtocol::encode(const vespalib::Version& version,
     const StorageMessage & message(dynamic_cast<const StorageMessage &>(routable));
 
     try {
-        if (message.getInternalMessage().get() == 0) {
-            throw vespalib::IllegalArgumentException(
-                "Given storage message wrapper does not contain a "
-                "storage message.",
-                VESPA_STRLOC);
-        }
-
-        if (version < version5_1) {
-            if (version < version5_0beta) {
-                LOGBP(warning,
-                      "No support for using messagebus for version %s."
-                      "Minimum version is %s. Thus we cannot serialize %s.",
-                      version.toString().c_str(),
-                      version5_0beta.toString().c_str(),
-                      message.getInternalMessage()->toString().c_str());
-
-                return mbus::Blob(0);
-            } else {
-                return encodeMessage(_serializer5_0, routable, message, version5_0, version);
-            }
-        } else if (version < version5_2) {
-            return encodeMessage(_serializer5_1, routable, message, version5_1, version);
-        } else {
-            if (version < version6_0) {
-                return encodeMessage(_serializer5_2, routable, message, version5_2, version);
-            } else if (version < version7_0) {
-                return encodeMessage(_serializer6_0, routable, message, version6_0, version);
-            } else {
-                return encodeMessage(_serializer7_0, routable, message, version7_0, version);
-            }
-        }
-
-    } catch (std::exception & e) {
-        if (!(version < version6_0 &&
-              suppressEncodeWarning(message.getInternalMessage().get()))) {
-            LOGBP(warning, "Failed to encode %s storage protocol message %s: %s",
+        assert(message.getInternalMessage());
+        if (version < version7_0) {
+            LOGBP(error,
+                  "Cannot encode message on version %s."
+                  "Minimum version is %s. Cannot serialize %s.",
                   version.toString().c_str(),
-                  message.getInternalMessage()->toString().c_str(),
-                  e.what());
+                  version7_0.toString().c_str(),
+                  message.getInternalMessage()->toString().c_str());
+
+            return mbus::Blob(0);
         }
+        return encodeMessage(_serializer7_0, routable, message, version7_0, version);
+    } catch (std::exception & e) {
+        LOGBP(warning, "Failed to encode %s storage protocol message %s: %s",
+              version.toString().c_str(),
+              message.getInternalMessage()->toString().c_str(),
+              e.what());
     }
 
     return mbus::Blob(0);
@@ -168,27 +129,14 @@ StorageProtocol::decode(const vespalib::Version & version,
             static_cast<api::MessageType::Id>(SerializationHelper::getInt(buf)));
 
         StorageMessage::UP message;
-        if (version < version5_1) {
-            if (version < version5_0beta) {
-                LOGBP(error,
-                      "No support for using messagebus for version %s."
-                      "Minimum version is %s.",
-                      version.toString().c_str(),
-                      version5_0beta.toString().c_str());
-            } else {
-                return decodeMessage(_serializer5_0, data, type, version5_0, version);
-            }
-        } else if (version < version5_2) {
-            return decodeMessage(_serializer5_1, data, type, version5_1, version);
-        } else {
-            if (version < version6_0) {
-                return decodeMessage(_serializer5_2, data, type, version5_2, version);
-            } else if (version < version7_0) {
-                return decodeMessage(_serializer6_0, data, type, version6_0, version);
-            } else {
-                return decodeMessage(_serializer7_0, data, type, version7_0, version);
-            }
+        if (version < version7_0) {
+            LOGBP(error,
+                  "Cannot decode message on version %s. Minimum version is %s.",
+                  version.toString().c_str(),
+                  version7_0.toString().c_str());
+            return mbus::Routable::UP();
         }
+        return decodeMessage(_serializer7_0, data, type, version7_0, version);
     } catch (std::exception & e) {
         std::ostringstream ost;
         ost << "Failed to decode " << version.toString() << " messagebus "
@@ -196,7 +144,6 @@ StorageProtocol::decode(const vespalib::Version & version,
         document::StringUtil::printAsHex(ost, data.data(), data.size());
         LOGBP(warning, "%s", ost.str().c_str());
     }
-
     return mbus::Routable::UP();
 }
 

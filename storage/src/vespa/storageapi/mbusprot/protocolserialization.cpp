@@ -1,15 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "protocolserialization4_2.h"
+#include "protocolserialization7.h"
 #include "serializationhelper.h"
 #include "storagecommand.h"
 #include "storagereply.h"
 #include <vespa/storageapi/message/bucketsplitting.h>
-#include <vespa/storageapi/message/visitor.h>
+#include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/storageapi/message/visitor.h>
 #include <vespa/vespalib/util/exceptions.h>
-
 
 #include <sstream>
 
