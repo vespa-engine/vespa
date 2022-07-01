@@ -384,18 +384,12 @@ public class UserApiHandler extends ThreadedHttpRequestHandler {
     }
 
     private static Collection<TenantRole> filterTenantRoles(Role role) {
-        if (!(role instanceof TenantRole))
-            return Set.of();
-
-        TenantRole tenantRole = (TenantRole) role;
-        if (tenantRole.definition() == RoleDefinition.administrator
-                || tenantRole.definition() == RoleDefinition.developer
-                || tenantRole.definition() == RoleDefinition.reader)
-            return Set.of(tenantRole);
-
-        if (tenantRole.definition() == RoleDefinition.athenzTenantAdmin)
-            return Roles.tenantRoles(tenantRole.tenant());
-
+        if (role instanceof TenantRole tenantRole) {
+            switch (tenantRole.definition()) {
+                case administrator, developer, reader, hostedDeveloper: return Set.of(tenantRole);
+                case athenzTenantAdmin: return Roles.tenantRoles(tenantRole.tenant());
+            }
+        }
         return Set.of();
     }
 
