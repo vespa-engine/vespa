@@ -37,8 +37,7 @@ StorageApiRpcService::StorageApiRpcService(MessageDispatcher& message_dispatcher
       _message_codec_provider(message_codec_provider),
       _params(params),
       _target_resolver(std::make_unique<CachingRpcTargetResolver>(_rpc_resources.slobrok_mirror(), _rpc_resources.target_factory(),
-                                                                  params.num_rpc_targets_per_node)),
-      _direct_rpc_supported(true)
+                                                                  params.num_rpc_targets_per_node))
 {
     register_server_methods(rpc_resources);
 }
@@ -312,8 +311,8 @@ void StorageApiRpcService::handle_request_done_rpc_error(FRT_RPCRequest& req,
     auto& cmd = *req_ctx._originator_cmd;
     api::ReturnCode error;
     if (req.GetErrorCode() == FRTE_RPC_NO_SUCH_METHOD) {
-        mark_peer_without_direct_rpc_support(*cmd.getAddress());
-        error = api::ReturnCode(api::ReturnCode::NOT_CONNECTED, "Direct Storage RPC protocol not supported");
+        error = api::ReturnCode(api::ReturnCode::NOT_CONNECTED, "Legacy MessageBus StorageAPI transport is no longer supported. "
+                                                                "Old nodes must be upgraded to a newer Vespa version.");
     } else {
         error = map_frt_error_to_storage_api_error(req, req_ctx);
     }
@@ -376,22 +375,6 @@ StorageApiRpcService::make_no_address_for_service_error(const api::StorageMessag
             CachingRpcTargetResolver::address_to_slobrok_id(addr).c_str(),
             _rpc_resources.hostname().c_str());
     return api::ReturnCode(error_code, std::move(error_msg));
-}
-
-void StorageApiRpcService::mark_peer_without_direct_rpc_support(const api::StorageMessageAddress& addr) {
-    bool expected = true;
-    if (_direct_rpc_supported.compare_exchange_strong(expected, false, std::memory_order_relaxed)) {
-        LOG(info, "Node %s does not support direct Storage API RPC; falling back "
-                  "to legacy MessageBus protocol. Not logging this for any further nodes",
-            addr.toString().c_str());
-    }
-}
-
-bool StorageApiRpcService::target_supports_direct_rpc(
-        [[maybe_unused]] const api::StorageMessageAddress& addr) const noexcept {
-    // Stale reads isn't an issue here, since the worst case is just receiving
-    // a few more "no such method" errors.
-    return _direct_rpc_supported.load(std::memory_order_relaxed);
 }
 
 bool

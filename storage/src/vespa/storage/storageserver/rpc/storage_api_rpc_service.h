@@ -47,7 +47,6 @@ private:
     MessageCodecProvider& _message_codec_provider;
     const Params          _params;
     std::unique_ptr<CachingRpcTargetResolver> _target_resolver;
-    std::atomic<bool>     _direct_rpc_supported;
 public:
     StorageApiRpcService(MessageDispatcher& message_dispatcher,
                          SharedRpcResources& rpc_resources,
@@ -55,7 +54,6 @@ public:
                          const Params& params);
     ~StorageApiRpcService() override;
 
-    [[nodiscard]] bool target_supports_direct_rpc(const api::StorageMessageAddress& addr) const noexcept;
     // Bypasses resolver cache and returns whether local Slobrok mirror has at least 1 spec for the given address.
     [[nodiscard]] bool address_visible_in_slobrok_uncached(const api::StorageMessageAddress& addr) const noexcept;
 
@@ -91,8 +89,6 @@ private:
 
     api::ReturnCode map_frt_error_to_storage_api_error(FRT_RPCRequest& req, const RpcRequestContext& req_ctx);
     api::ReturnCode make_no_address_for_service_error(const api::StorageMessageAddress& addr) const;
-
-    void mark_peer_without_direct_rpc_support(const api::StorageMessageAddress& addr);
 };
 
 } // rpc
