@@ -114,7 +114,7 @@ public class Upgrader extends ControllerMaintainer {
             // Prefer the newest target for each instance.
             remaining = remaining.not().matching(eligible.asList()::contains)
                                  .not().hasCompleted(Change.of(version));
-            for (ApplicationId id : outdated.and(eligible.not().upgrading()).not().changingRevision())
+            for (ApplicationId id : outdated.and(eligible.not().upgrading()))
                 targets.put(id, version);
         }
 
@@ -123,6 +123,7 @@ public class Upgrader extends ControllerMaintainer {
             log.log(Level.INFO, "Triggering upgrade to " + targets.get(id) + " for " + id);
             if (failingRevision.contains(id))
                 controller().applications().deploymentTrigger().cancelChange(id, ChangesToCancel.APPLICATION);
+
             controller().applications().deploymentTrigger().triggerChange(id, Change.of(targets.get(id)));
         }
     }

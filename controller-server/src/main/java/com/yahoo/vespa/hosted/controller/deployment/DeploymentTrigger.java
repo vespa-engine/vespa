@@ -448,6 +448,10 @@ public class DeploymentTrigger {
 
     private boolean acceptNewRevision(DeploymentStatus status, InstanceName instance, RevisionId revision) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
+        if ( ! status.jobs().failingApplicationChange()
+                     .firstFailing().endedNoLaterThan(clock.instant().minus(Duration.ofDays(5)))
+                     .firstFailing().on(revision)
+                     .isEmpty()) return false; // Don't deploy a broken revision.
         boolean isChangingRevision = status.application().require(instance).change().revision().isPresent();
         DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
         Predicate<RevisionId> revisionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next

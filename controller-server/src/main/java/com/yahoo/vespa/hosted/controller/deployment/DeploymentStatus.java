@@ -518,6 +518,7 @@ public class DeploymentStatus {
         boolean revisionReadyFirst = revisionReadyAt.get().isBefore(platformReadyAt.get());
         boolean failingUpgradeOnlyTests = ! jobs().type(systemTest(job.type()), stagingTest(job.type()))
                                                   .failingHardOn(Versions.from(change.withoutApplication(), application, deploymentFor(job), systemVersion))
+                                                  .matching(testJob -> ! testJob.isSuccess())
                                                   .isEmpty();
         switch (rollout) {
             case separate:      // Let whichever change rolled out first, keep rolling first, unless upgrade alone is failing.
