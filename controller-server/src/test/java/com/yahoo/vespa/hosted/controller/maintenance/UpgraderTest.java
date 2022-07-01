@@ -1030,12 +1030,11 @@ public class UpgraderTest {
 
         // Revision gets a second change when upgrade fixes the failing job.
         tester.clock().advance(Duration.ofDays(12)); // Time for retries.
-        app.runJob(systemTest).jobAborted(stagingTest).runJob(stagingTest);
+        app.runJob(systemTest).jobAborted(stagingTest).runJob(stagingTest).runJob(productionUsCentral1);
         tester.upgrader().run();
         tester.outstandingChangeDeployer().run();
 
         assertEquals(Change.of(version1).with(revision1.get()), app.instance().change());
-        app.runJob(productionUsCentral1); // Upgrade rolls.
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1); // Revision rolls.
         app.runJob(productionUsEast3).runJob(productionUsWest1); // Upgrade completes.
         app.runJob(productionUsEast3).runJob(productionUsWest1); // Revision completes.
