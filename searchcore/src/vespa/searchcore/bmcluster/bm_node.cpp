@@ -333,7 +333,6 @@ struct StorageConfigSet
         }
         stor_communicationmanager.mbusport = mbus_port;
         stor_communicationmanager.rpcport = rpc_port;
-        stor_communicationmanager.skipThread = params.get_skip_communicationmanager_thread();
 
         stor_status.httpport = status_port;
         make_bucketspaces_config(bucketspaces);

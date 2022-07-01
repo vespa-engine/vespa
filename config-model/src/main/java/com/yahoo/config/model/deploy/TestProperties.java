@@ -101,9 +101,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return responseNumThreads; }
-    @Override public boolean skipCommunicationManagerThread() { return false; }
-    @Override public boolean skipMbusRequestThread() { return false; }
-    @Override public boolean skipMbusReplyThread() { return false; }
     @Override public Quota quota() { return quota; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
@@ -386,12 +383,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof ConfigServerSpec) {
-                ConfigServerSpec other = (ConfigServerSpec)o;
+            if (o instanceof ConfigServerSpec rhsSpec) {
 
-                return hostName.equals(other.getHostName()) &&
-                        configServerPort == other.getConfigServerPort() &&
-                        zooKeeperPort == other.getZooKeeperPort();
+                return hostName.equals(rhsSpec.getHostName()) &&
+                        configServerPort == rhsSpec.getConfigServerPort() &&
+                        zooKeeperPort == rhsSpec.getZooKeeperPort();
             } else {
                 return false;
             }

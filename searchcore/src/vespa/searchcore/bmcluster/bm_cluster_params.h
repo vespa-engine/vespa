@@ -34,7 +34,6 @@ class BmClusterParams
     uint32_t _rpc_events_before_wakeup;
     uint32_t _rpc_network_threads;
     uint32_t _rpc_targets_per_node;
-    bool     _skip_communicationmanager_thread;
     bool     _skip_get_spi_bucket_info;
     bool     _use_async_message_handling_on_schedule;
     bool     _use_document_api;
@@ -64,7 +63,6 @@ public:
     uint32_t get_rpc_events_before_wakeup() const { return _rpc_events_before_wakeup; }
     uint32_t get_rpc_network_threads() const { return _rpc_network_threads; }
     uint32_t get_rpc_targets_per_node() const { return _rpc_targets_per_node; }
-    bool get_skip_communicationmanager_thread() const { return _skip_communicationmanager_thread; }
     bool get_skip_get_spi_bucket_info() const { return _skip_get_spi_bucket_info; }
     bool get_use_async_message_handling_on_schedule() const { return _use_async_message_handling_on_schedule; }
     bool get_use_document_api() const { return _use_document_api; }
@@ -93,7 +91,6 @@ public:
     void set_rpc_events_before_wakeup(uint32_t value) { _rpc_events_before_wakeup = value; }
     void set_rpc_network_threads(uint32_t threads_in) { _rpc_network_threads = threads_in; }
     void set_rpc_targets_per_node(uint32_t targets_in) { _rpc_targets_per_node = targets_in; }
-    void set_skip_communicationmanager_thread(bool value) { _skip_communicationmanager_thread = value; }
     void set_skip_get_spi_bucket_info(bool value) { _skip_get_spi_bucket_info = value; }
     void set_use_async_message_handling_on_schedule(bool value) { _use_async_message_handling_on_schedule = value; }
     void set_use_document_api(bool value) { _use_document_api = value; }

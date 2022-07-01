@@ -105,9 +105,6 @@ public class StorageClusterTest {
         assertTrue(config.mbus().dispatch_on_decode());
         assertEquals(4, config.mbus().num_threads());
         assertEquals(StorCommunicationmanagerConfig.Mbus.Optimize_for.LATENCY, config.mbus().optimize_for());
-        assertFalse(config.skip_thread());
-        assertFalse(config.mbus().skip_request_thread());
-        assertFalse(config.mbus().skip_reply_thread());
     }
 
     @Test
@@ -146,10 +143,6 @@ public class StorageClusterTest {
         var builder = new StorFilestorConfig.Builder();
         producer.getConfig(builder);
         return new StorFilestorConfig(builder);
-    }
-
-    private StorFilestorConfig filestorConfigFromProperties(TestProperties properties) {
-        return filestorConfigFromProducer(parse(cluster("foo", ""), properties));
     }
 
     @Test

@@ -23,7 +23,6 @@
 #include <vespa/searchcore/bmcluster/spi_bm_feed_handler.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -31,7 +30,6 @@
 #include <filesystem>
 #include <iostream>
 #include <thread>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-redistribute-bm");
@@ -491,7 +489,6 @@ App::usage()
         "[--rpc-network-threads threads]\n"
         "[--rpc-targets-per-node targets]\n"
         "[--response-threads threads]\n"
-        "[--skip-communicationmanager-thread]\n"
         "[--use-async-message-handling]\n"
         "[--use-feed-settle]" << std::endl;
 }
@@ -526,7 +523,6 @@ App::get_options(int argc, char **argv)
         { "rpc-events-before-wakeup", 1, nullptr, 0 },
         { "rpc-network-threads", 1, nullptr, 0 },
         { "rpc-targets-per-node", 1, nullptr, 0 },
-        { "skip-communicationmanager-thread", 0, nullptr, 0 },
         { "use-async-message-handling", 0, nullptr, 0 },
         { "use-feed-settle", 0, nullptr, 0 },
         { nullptr, 0, nullptr, 0 }
@@ -556,7 +552,6 @@ App::get_options(int argc, char **argv)
         LONGOPT_RPC_EVENTS_BEFORE_WAKEUP,
         LONGOPT_RPC_NETWORK_THREADS,
         LONGOPT_RPC_TARGETS_PER_NODE,
-        LONGOPT_SKIP_COMMUNICATIONMANAGER_THREAD,
         LONGOPT_USE_ASYNC_MESSAGE_HANDLING,
         LONGOPT_USE_FEED_SETTLE
     };
@@ -642,9 +637,6 @@ App::get_options(int argc, char **argv)
                 break;
             case LONGOPT_RPC_TARGETS_PER_NODE:
                 _bm_params.set_rpc_targets_per_node(atoi(optarg));
-                break;
-            case LONGOPT_SKIP_COMMUNICATIONMANAGER_THREAD:
-                _bm_params.set_skip_communicationmanager_thread(true);
                 break;
             case LONGOPT_USE_ASYNC_MESSAGE_HANDLING:
                 _bm_params.set_use_async_message_handling_on_schedule(true);
