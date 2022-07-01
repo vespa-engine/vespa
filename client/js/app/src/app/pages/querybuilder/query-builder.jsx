@@ -13,13 +13,13 @@ import {
 } from './Components/Contexts/ResponseContext';
 import ResponseBox from './Components/Text/ResponseBox';
 
-import pasteImage from './assets/img/paste.svg';
 import copyImage from './assets/img/copy.svg';
 
 import '../../styles/agency.css';
 import '../../styles/vespa.css';
 import ShowQueryButton from './Components/Buttons/ShowQueryButton';
 import { QueryProvider } from './Components/Contexts/QueryContext';
+import PasteJSONButton from './Components/Buttons/PasteJSONButton';
 
 //import 'bootstrap/dist/css/bootstrap.min.css'; //TODO: Find out how to get this css
 
@@ -42,16 +42,9 @@ export function QueryBuilder() {
                 </div>
                 <br />
                 <AddQueryInput />
+                <br />
+                <PasteJSONButton />
               </QueryInputProvider>
-              <br />
-              <ImageButton
-                id="pasteJSON"
-                className="pasteJSON"
-                image={pasteImage}
-                style={{ marginTop: '-2px', marginRight: '3px' }}
-              >
-                Paste JSON
-              </ImageButton>
               <ShowQueryButton />
             </QueryProvider>
             <TextBox className="response">Response</TextBox>
@@ -63,6 +56,9 @@ export function QueryBuilder() {
             height="30"
             width="30"
             tooltip="Copy"
+            onClick={() => {
+              alert('Button is non-functional');
+            }}
           >
             Copy
           </OverlayImageButton>

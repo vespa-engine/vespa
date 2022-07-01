@@ -28,8 +28,7 @@ export default function QueryInput() {
   const setPlaceholder = (id) => {
     try {
       const index = inputs.findIndex((element) => element.id === id);
-      const key = inputs[index].type;
-      return levelZeroParameters[key].type;
+      return inputs[index].typeof;
     } catch (error) {
       console.log(error);
     }

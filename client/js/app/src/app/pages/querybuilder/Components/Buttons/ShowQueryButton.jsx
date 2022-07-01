@@ -4,7 +4,6 @@ import SimpleButton from './SimpleButton';
 
 export default function ShowQueryButton() {
   const { query, showQuery, setShowQuery } = useContext(QueryContext);
-  //console.log(showQuery);
 
   const handleClick = () => {
     setShowQuery(!showQuery);
