@@ -100,21 +100,37 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         ProxyTarget proxyTarget = portToProxyTargetMapping.get(localPort);
         if (proxyTarget != null) {
             AsyncContext asyncContext = servletRequest.startAsync();
-            asyncContext.setTimeout(proxyTarget.timeout.plusSeconds(1).toMillis()); // add additional time for response sending
-            asyncContext.addListener(new AsyncListener() {
-                @Override public void onComplete(AsyncEvent event) {}
-                @Override public void onError(AsyncEvent event) {}
-                @Override public void onStartAsync(AsyncEvent event) {}
-                @Override
-                public void onTimeout(AsyncEvent event) {
-                    log.log(Level.FINE, event.getThrowable(), () -> "Original request timeout");
-                    servletResponse.setStatus(HttpServletResponse.SC_GATEWAY_TIMEOUT);
-                    asyncContext.complete();
-                }
-            });
             ServletOutputStream out = servletResponse.getOutputStream();
             if (servletRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
-                executor.execute(new ProxyRequestTask(asyncContext, proxyTarget, servletResponse, out));
+                ProxyRequestTask task = new ProxyRequestTask(asyncContext, proxyTarget, servletResponse, out);
+                asyncContext.setTimeout(proxyTarget.timeout.plusSeconds(1).toMillis()); // add additional time for response sending
+                asyncContext.addListener(new AsyncListener() {
+                    @Override public void onStartAsync(AsyncEvent event) {}
+                    @Override public void onComplete(AsyncEvent event) {}
+
+                    @Override
+                    public void onError(AsyncEvent event) {
+                        log.log(Level.FINE, event.getThrowable(), () -> "AsyncListener.onError()");
+                        synchronized (task.monitor) {
+                            if (task.state == ProxyRequestTask.State.DONE) return;
+                            task.state = ProxyRequestTask.State.DONE;
+                            servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                            asyncContext.complete();
+                        }
+                    }
+
+                    @Override
+                    public void onTimeout(AsyncEvent event) {
+                        log.log(Level.FINE, event.getThrowable(), () -> "AsyncListener.onTimeout()");
+                        synchronized (task.monitor) {
+                            if (task.state == ProxyRequestTask.State.DONE) return;
+                            task.state = ProxyRequestTask.State.DONE;
+                            servletResponse.setStatus(HttpServletResponse.SC_GATEWAY_TIMEOUT);
+                            asyncContext.complete();
+                        }
+                    }
+                });
+                executor.execute(task);
             } else {
                 servletResponse.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 asyncContext.complete();
@@ -139,10 +155,14 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     private static class ProxyRequestTask implements Runnable {
 
+        enum State { INITIALIZED, DONE }
+
+        final Object monitor = new Object();
         final AsyncContext asyncContext;
         final ProxyTarget target;
         final HttpServletResponse servletResponse;
         final ServletOutputStream output;
+        State state = State.INITIALIZED;
 
         ProxyRequestTask(AsyncContext asyncContext, ProxyTarget target, HttpServletResponse servletResponse, ServletOutputStream output) {
             this.asyncContext = asyncContext;
@@ -153,27 +173,38 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
         @Override
         public void run() {
+            synchronized (monitor) { if (state == State.DONE) return; }
             StatusResponse statusResponse = target.requestStatusHtml();
-            servletResponse.setStatus(statusResponse.statusCode);
-            if (statusResponse.contentType != null) {
-                servletResponse.setHeader("Content-Type", statusResponse.contentType);
-            }
-            servletResponse.setHeader("Vespa-Health-Check-Proxy-Target", Integer.toString(target.port));
+            synchronized (monitor) { if (state == State.DONE) return; }
             output.setWriteListener(new WriteListener() {
                 @Override
                 public void onWritePossible() throws IOException {
                     if (output.isReady()) {
-                        if (statusResponse.content != null) {
-                            output.write(statusResponse.content);
+                        synchronized (monitor) {
+                            if (state == State.DONE) return;
+                            servletResponse.setStatus(statusResponse.statusCode);
+                            if (statusResponse.contentType != null) {
+                                servletResponse.setHeader("Content-Type", statusResponse.contentType);
+                            }
+                            servletResponse.setHeader("Vespa-Health-Check-Proxy-Target", Integer.toString(target.port));
+                            if (statusResponse.content != null) {
+                                output.write(statusResponse.content);
+                            }
+                            state = State.DONE;
+                            asyncContext.complete();
                         }
-                        asyncContext.complete();
                     }
                 }
 
                 @Override
                 public void onError(Throwable t) {
                     log.log(Level.FINE, t, () -> "Failed to write status response: " + t.getMessage());
-                    asyncContext.complete();
+                    synchronized (monitor) {
+                        if (state == State.DONE) return;
+                        state = State.DONE;
+                        servletResponse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                        asyncContext.complete();
+                    }
                 }
             });
         }
