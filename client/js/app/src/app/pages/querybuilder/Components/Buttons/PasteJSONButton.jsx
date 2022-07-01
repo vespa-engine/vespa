@@ -9,9 +9,9 @@ export default function PasteJSONButton() {
   const [paste, setPaste] = useState(false);
 
   const handleClick = (e) => {
-    alert('Button is non-functional');
-    // setPaste(true);
-    // window.addEventListener('paste', handlePaste)
+    //alert('Button is non-functional');
+    setPaste(true);
+    window.addEventListener('paste', handlePaste);
   };
 
   const handlePaste = (e) => {
@@ -25,35 +25,45 @@ export default function PasteJSONButton() {
   const convertPastedJSON = (pastedData) => {
     try {
       var json = JSON.parse(pastedData);
-      setId(1);
-      const newInputs = buildFromJSON(json, id);
+      const newInputs = buildFromJSON(json, id + 1);
       setInputs(newInputs);
     } catch (error) {
+      console.log(error);
       alert('Could not parse JSON, with error-message: \n\n' + error.message);
     }
   };
 
-  const buildFromJSON = (json, id) => {
+  const buildFromJSON = (json, id, parentTypeof) => {
     let newInputs = [];
     let keys = Object.keys(json);
     for (let i = 0; i < keys.length; i++) {
       let childId = 1;
-      let newInput = { id: id, type: keys[i] };
-      if (json[keys[i]] === Object) {
+      let newInput = { id: `${id}`, type: keys[i] };
+      if (typeof json[keys[i]] === 'object') {
         newInput['typeof'] = 'Parent';
         newInput['input'] = '';
         newInput['hasChildren'] = true;
         let tempId = id + '.' + childId;
         childId += 1;
-        newInput['children'] = buildFromJSON(json[keys[i]], tempId);
+        let type;
+        if (id.length > 1) {
+          type = parentTypeof + '_' + keys[i];
+        } else {
+          type = keys[i];
+        }
+        newInput['children'] = buildFromJSON(json[keys[i]], tempId, type);
       } else {
-        newInput['typeof'] = levelZeroParameters[keys[i]].type;
+        if (id.length > 1) {
+          const choices = childMap[parentTypeof];
+          newInput['typeof'] = choices[keys[i]].type;
+        } else {
+          newInput['typeof'] = levelZeroParameters[keys[i]].type;
+        }
         newInput['input'] = json[keys[i]];
         newInput['hasChildren'] = false;
         newInput['children'] = [];
       }
       setId(id + 1);
-      console.log(newInput);
       newInputs.push(newInput);
     }
     return newInputs;

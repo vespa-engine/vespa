@@ -36,7 +36,7 @@ export default function QueryInput() {
 
   const inputList = inputs.map((value) => {
     return (
-      <div key={value.id} id={value.id} className="queryinput">
+      <div key={value.id + value.typeof} id={value.id} className="queryinput">
         <QueryDropdownForm choices={levelZeroParameters} id={value.id} />
         {value.hasChildren ? (
           <>
