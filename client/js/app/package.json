@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "react": "^18",
+    "react-bootstrap": "^2.4.0",
     "react-dom": "^18"
   },
   "devDependencies": {
