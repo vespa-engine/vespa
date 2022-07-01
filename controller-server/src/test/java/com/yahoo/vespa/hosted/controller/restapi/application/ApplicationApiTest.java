@@ -705,6 +705,16 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               "{\"json\":\"thank you very much\"}");
 
+        // GET application package which has been deployed to production
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/package", GET)
+                                      .properties(Map.of("build", "latestDeployed"))
+                                      .userIdentity(HOSTED_VESPA_OPERATOR),
+                              (response) -> {
+                                  assertEquals("attachment; filename=\"tenant1.application1-build1.zip\"", response.getHeaders().getFirst("Content-Disposition"));
+                                  assertArrayEquals(applicationPackageInstance1.zippedContent(), response.getBody());
+                              },
+                              200);
+
         // DELETE application with active deployments fails
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/instance1", DELETE)
                                       .userIdentity(USER_ID)
