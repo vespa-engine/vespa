@@ -3,11 +3,14 @@ import SimpleDropDownForm from './SimpleDropDownForm';
 import SimpleButton from '../Buttons/SimpleButton';
 import SimpleForm from './SimpleForm';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
+import { ResponseContext } from '../Contexts/ResponseContext';
 
 export default function SendQuery() {
   const { inputs } = useContext(QueryInputContext);
+  const { response, setResponse } = useContext(ResponseContext);
   const messageMethods = { post: { name: 'POST' }, get: { name: 'GET' } };
   const [method, setMethod] = useState(messageMethods.post.name);
+  const [url, setUrl] = useState('http://localhost:8080/search/');
 
   const updateMethod = (e) => {
     e.preventDefault();
@@ -15,15 +18,22 @@ export default function SendQuery() {
     setMethod(newMethod);
   };
 
-  //TODO: Handle sending the query
   function handleClick() {
     const json = buildJSON(inputs, {});
     send(json);
-    console.log(json);
   }
 
-  function send(json) {
-    console.log('Sending JSON');
+  async function send(json) {
+    let responses = await fetch(url, {
+      method: method,
+      headers: { 'Content-Type': 'application/json;charset=utf-8' },
+      body: JSON.stringify(json),
+    });
+    if (responses.ok) {
+      let result = await responses.json();
+      let resultObject = JSON.stringify(result);
+      setResponse(resultObject);
+    }
   }
 
   function buildJSON(inputs, json) {
@@ -62,6 +72,11 @@ export default function SendQuery() {
     }
   }
 
+  const updateUrl = (e) => {
+    const newUrl = e.target.value;
+    setUrl(newUrl);
+  };
+
   return (
     <>
       <SimpleDropDownForm
@@ -73,8 +88,9 @@ export default function SendQuery() {
       <SimpleForm
         id="url"
         className="textbox"
-        initial="http://localhost:8080/search/"
+        initial={url}
         size="30"
+        onChange={updateUrl}
       />
       <SimpleButton id="send" className="button" onClick={handleClick}>
         Send
