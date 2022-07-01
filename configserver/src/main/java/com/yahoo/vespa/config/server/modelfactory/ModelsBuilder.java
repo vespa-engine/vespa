@@ -130,7 +130,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             }
             catch (RuntimeException e) {
                 if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion, wantedNodeVespaVersion, allocatedHosts)) {
-                    log.log(Level.INFO, applicationId + ": Skipping major version " + majorVersion, e);
+                    log.log(Level.FINE, applicationId + ": Skipping major version " + majorVersion, e);
                 }
                 else {
                     if (e instanceof IllegalArgumentException) {
