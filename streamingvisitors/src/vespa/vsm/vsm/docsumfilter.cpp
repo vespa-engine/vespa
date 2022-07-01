@@ -2,6 +2,7 @@
 
 #include "docsumfilter.h"
 #include "slimefieldwriter.h"
+#include <vespa/searchsummary/docsummary/check_undefined_value_visitor.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
@@ -320,12 +321,19 @@ DocsumFilter::writeSlimeField(const DocsumFieldSpec & fieldSpec,
             LOG(debug, "writeSlimeField: About to write field '%d' as Slime: field value = '%s'",
                 fieldId.getId(), fv->toString().c_str());
             SlimeFieldWriter writer;
+            CheckUndefinedValueVisitor check_undefined;
             if (! fieldSpec.hasIdentityMapping()) {
                 writer.setInputFields(fieldSpec.getInputFields());
+            } else {
+                fv->accept(check_undefined);
             }
-            writer.convert(*fv);
-            const vespalib::stringref out = writer.out();
-            packer.AddLongString(out.data(), out.size());
+            if (!check_undefined.is_undefined()) {
+                writer.convert(*fv);
+                const vespalib::stringref out = writer.out();
+                packer.AddLongString(out.data(), out.size());
+            } else {
+                packer.AddEmpty();
+            }
         } else {
             LOG(debug, "writeSlimeField: Field value not set for field '%d'", fieldId.getId());
             packer.AddEmpty();
@@ -451,7 +459,13 @@ DocsumFilter::getMappedDocsum(uint32_t id)
                 const DocsumFieldSpec::FieldIdentifier & fieldId = it->getInputFields()[0];
                 const document::FieldValue * field = doc.getField(fieldId.getId());
                 if (field != nullptr) {
-                    writeField(*field, fieldId.getPath(), type, _packer);
+                    CheckUndefinedValueVisitor check_undefined;
+                    field->accept(check_undefined);
+                    if (!check_undefined.is_undefined()) {
+                        writeField(*field, fieldId.getPath(), type, _packer);
+                    } else {
+                        writeEmpty(type, _packer); // void input
+                    }
                 } else {
                     writeEmpty(type, _packer); // void input
                 }
