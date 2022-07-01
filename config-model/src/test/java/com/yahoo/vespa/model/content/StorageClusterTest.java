@@ -104,7 +104,7 @@ public class StorageClusterTest {
         assertTrue(config.mbus().dispatch_on_encode());
         assertTrue(config.mbus().dispatch_on_decode());
         assertEquals(4, config.mbus().num_threads());
-        assertEquals(StorCommunicationmanagerConfig.Mbus.Optimize_for.LATENCY, config.mbus().optimize_for());
+        assertEquals(1, config.mbus().num_network_threads());
     }
 
     @Test
@@ -139,10 +139,38 @@ public class StorageClusterTest {
         return new StorServerConfig(builder);
     }
 
+    private StorCommunicationmanagerConfig communicationmanagerConfigFromProperties(TestProperties properties) {
+        StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
+        parse(cluster("foofighters", ""), properties).getChildren().values().iterator().next().getConfig(builder);
+        return new StorCommunicationmanagerConfig(builder);
+    }
+
     private StorFilestorConfig filestorConfigFromProducer(StorFilestorConfig.Producer producer) {
         var builder = new StorFilestorConfig.Builder();
         producer.getConfig(builder);
         return new StorFilestorConfig(builder);
+    }
+
+    @Test
+    public void verifyDefaultMbusConfig() {
+        var confg = communicationmanagerConfigFromProperties(new TestProperties());
+        assertTrue(confg.mbus().dispatch_on_decode());
+        assertTrue(confg.mbus().dispatch_on_encode());
+        assertEquals(4, confg.mbus().num_threads());
+        assertEquals(1, confg.mbus().num_network_threads());
+    }
+
+    @Test
+    public void verifyDefaultMbusConfigControl() {
+        var confg = communicationmanagerConfigFromProperties(new TestProperties()
+                .setMbusDispatchOnDecode(false)
+                .setMbusDispatchOnEncode(false)
+                .setMbusThreads(3)
+                .setMbusNetworkThreads(7));
+        assertFalse(confg.mbus().dispatch_on_decode());
+        assertFalse(confg.mbus().dispatch_on_encode());
+        assertEquals(3, confg.mbus().num_threads());
+        assertEquals(7, confg.mbus().num_network_threads());
     }
 
     @Test
