@@ -128,11 +128,11 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
             recordObject.setLong("id", record.getSequenceNumber());
             recordObject.setLong("at", record.getMillis());
             recordObject.setString("type", typeOf(record.getLevel()));
-            String message = record.getMessage();
+            String message = record.getMessage() == null ? "" : record.getMessage();
             if (record.getThrown() != null) {
                 ByteArrayOutputStream buffer = new ByteArrayOutputStream();
                 record.getThrown().printStackTrace(new PrintStream(buffer));
-                message += "\n" + buffer;
+                message += (message.isEmpty() ? "" : "\n") + buffer;
             }
             recordObject.setString("message", message);
         });
