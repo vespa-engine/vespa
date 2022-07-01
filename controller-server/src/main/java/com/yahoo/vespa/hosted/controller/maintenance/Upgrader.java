@@ -5,17 +5,19 @@ import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec.UpgradePolicy;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion.Confidence;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Random;
+import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -58,18 +61,22 @@ public class Upgrader extends ControllerMaintainer {
         cancelBrokenUpgrades(versionStatus);
 
         OptionalInt targetMajorVersion = targetMajorVersion();
-        InstanceList instances = instances(versionStatus);
+        DeploymentStatusList deploymentStatuses = deploymentStatuses(versionStatus);
         for (UpgradePolicy policy : UpgradePolicy.values())
-            updateTargets(versionStatus, instances, policy, targetMajorVersion);
+            updateTargets(versionStatus, deploymentStatuses, policy, targetMajorVersion);
 
         return 1.0;
     }
 
+    private DeploymentStatusList deploymentStatuses(VersionStatus versionStatus) {
+        return controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())
+                                                                       .withProjectId(),
+                                                               versionStatus);
+    }
+
     /** Returns a list of all production application instances, except those which are pinned, which we should not manipulate here. */
-    private InstanceList instances(VersionStatus versionStatus) {
-        return InstanceList.from(controller().jobController().deploymentStatuses(ApplicationList.from(controller().applications().readable())
-                                                                                                .withProjectId(),
-                                                                                 versionStatus))
+    private InstanceList instances(DeploymentStatusList deploymentStatuses) {
+        return InstanceList.from(deploymentStatuses)
                            .withDeclaredJobs()
                            .shuffle(random)
                            .byIncreasingDeployedVersion()
@@ -78,7 +85,7 @@ public class Upgrader extends ControllerMaintainer {
 
     private void cancelBrokenUpgrades(VersionStatus versionStatus) {
         // Cancel upgrades to broken targets (let other ongoing upgrades complete to avoid starvation)
-        InstanceList instances = instances(controller().readVersionStatus());
+        InstanceList instances = instances(deploymentStatuses(controller().readVersionStatus()));
         for (VespaVersion version : versionStatus.versions()) {
             if (version.confidence() == Confidence.broken)
                 cancelUpgradesOf(instances.upgradingTo(version.versionNumber()).not().with(UpgradePolicy.canary),
@@ -86,8 +93,12 @@ public class Upgrader extends ControllerMaintainer {
         }
     }
 
-    private void updateTargets(VersionStatus versionStatus, InstanceList instances, UpgradePolicy policy, OptionalInt targetMajorVersion) {
+    private void updateTargets(VersionStatus versionStatus, DeploymentStatusList deploymentStatuses, UpgradePolicy policy, OptionalInt targetMajorVersion) {
+        InstanceList instances = instances(deploymentStatuses);
         InstanceList remaining = instances.with(policy);
+        Instant failureThreshold = controller().clock().instant().minus(Duration.ofDays(5));
+        Set<ApplicationId> failingRevision = InstanceList.from(deploymentStatuses.failingApplicationChangeSince(failureThreshold)).asSet();
+
         List<Version> targetAndNewer = new ArrayList<>();
         UnaryOperator<InstanceList> cancellationCriterion = policy == UpgradePolicy.canary ? i -> i.not().upgradingTo(targetAndNewer)
                                                                                            : i -> i.failing()
@@ -110,6 +121,8 @@ public class Upgrader extends ControllerMaintainer {
         int numberToUpgrade = policy == UpgradePolicy.canary ? instances.size() : numberOfApplicationsToUpgrade();
         for (ApplicationId id : instances.matching(targets.keySet()::contains).first(numberToUpgrade)) {
             log.log(Level.INFO, "Triggering upgrade to " + targets.get(id) + " for " + id);
+            if (failingRevision.contains(id))
+                controller().applications().deploymentTrigger().cancelChange(id, ChangesToCancel.APPLICATION);
             controller().applications().deploymentTrigger().triggerChange(id, Change.of(targets.get(id)));
         }
     }
