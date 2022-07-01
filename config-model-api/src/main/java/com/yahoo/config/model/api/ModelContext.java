@@ -80,6 +80,10 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipCommunicationManagerThread() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusRequestThread() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusReplyThread() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean mbusDispatchOnDecode() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean mbusDispatchOnEncode() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusNetworkThreads() { return 1; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusThreads() { return 4; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }

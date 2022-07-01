@@ -293,6 +293,7 @@ public class DistributorTest {
         assertTrue(config.mbus().dispatch_on_encode());
         assertTrue(config.mbus().dispatch_on_decode());
         assertEquals(4, config.mbus().num_threads());
+        assertEquals(1, config.mbus().num_network_threads());
     }
 
     private StorDistributormanagerConfig clusterXmlToConfig(String xml) {

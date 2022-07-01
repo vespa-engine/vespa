@@ -78,6 +78,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean enableBitVectors = false;
     private boolean loadCodeAsHugePages = false;
     private boolean sharedStringRepoNoReclaim = false;
+    private boolean mbus_dispatch_on_decode = true;
+    private boolean mbus_dispatch_on_encode = true;
+    private int mbus_threads = 4;
+    private int mbus_network_threads = 1;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -133,6 +137,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
     @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
     @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
+    @Override public boolean mbusDispatchOnDecode() { return mbus_dispatch_on_decode; }
+    @Override public boolean mbusDispatchOnEncode() { return mbus_dispatch_on_encode; }
+    @Override public int mbusNetworkThreads() { return mbus_network_threads; }
+    @Override public int mbusThreads() { return mbus_threads; }
+
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -358,6 +367,24 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
+    public TestProperties setMbusDispatchOnDecode(boolean value) {
+        this.mbus_dispatch_on_decode = value;
+        return this;
+    }
+    public TestProperties setMbusDispatchOnEncode(boolean value) {
+        this.mbus_dispatch_on_encode = value;
+        return this;
+    }
+
+    public TestProperties setMbusThreads(int value) {
+        this.mbus_threads = value;
+        return this;
+    }
+
+    public TestProperties setMbusNetworkThreads(int value) {
+        this.mbus_network_threads = value;
+        return this;
+    }
     public TestProperties setAdminClusterNodeResourcesArchitecture(Architecture architecture) {
         this.adminClusterNodeResourcesArchitecture = architecture;
         return this;

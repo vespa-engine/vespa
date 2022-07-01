@@ -211,6 +211,10 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableProxyProtocolMixedMode;
         private final boolean sharedStringRepoNoReclaim;
         private final String logFileCompressionAlgorithm;
+        private final boolean mbus_dispatch_on_decode;
+        private final boolean mbus_dispatch_on_encode;
+        private final int mbus_threads;
+        private final int mbus_network_threads;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -224,6 +228,10 @@ public class ModelContextImpl implements ModelContext {
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, version, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, version, Flags.FEED_CONCURRENCY);
             this.feedNiceness = flagValue(source, appId, version, Flags.FEED_NICENESS);
+            this.mbus_dispatch_on_decode = flagValue(source, appId, version, Flags.MBUS_DISPATCH_ON_DECODE);
+            this.mbus_dispatch_on_encode = flagValue(source, appId, version, Flags.MBUS_DISPATCH_ON_ENCODE);
+            this.mbus_threads = flagValue(source, appId, version, Flags.MBUS_NUM_THREADS);
+            this.mbus_network_threads = flagValue(source, appId, version, Flags.MBUS_NUM_NETWORK_THREADS);
             this.allowedAthenzProxyIdentities = flagValue(source, appId, version, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, version, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
             this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, version, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
@@ -271,6 +279,10 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public double feedNiceness() { return feedNiceness; }
+        @Override public boolean mbusDispatchOnDecode() { return mbus_dispatch_on_decode; }
+        @Override public boolean mbusDispatchOnEncode() { return mbus_dispatch_on_encode; }
+        @Override public int mbusNetworkThreads() { return mbus_network_threads; }
+        @Override public int mbusThreads() { return mbus_threads; }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
