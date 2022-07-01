@@ -42,8 +42,6 @@ mbus.num_network_threads int default=1 restart
 ## Any value below 1 will be 1.
 mbus.num_threads int default=4 restart
 
-mbus.optimize_for enum {LATENCY, THROUGHPUT, ADAPTIVE} default = LATENCY
-
 ## Enable to use above thread pool for encoding replies
 ## False will use network(fnet) thread
 mbus.dispatch_on_encode bool default=true restart
