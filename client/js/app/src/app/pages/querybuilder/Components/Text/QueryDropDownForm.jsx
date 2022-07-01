@@ -33,6 +33,8 @@ export default function QueryDropdownForm({
       let parentTypes = newInputs[index].type;
       let children = newInputs[index].children;
       let childChoices = childMap[parentTypes];
+      //TODO: try to rafactor this loop into a separate function that can be
+      //used everywhere in the code similar loops are used
       for (let i = 3; i < id.length; i += 2) {
         currentId = id.substring(0, i);
         index = children.findIndex((element) => element.id === currentId);

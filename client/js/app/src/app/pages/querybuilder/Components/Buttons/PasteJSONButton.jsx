@@ -10,7 +10,7 @@ export default function PasteJSONButton() {
 
   //TODO: fix that the second-level dropdowns do not get set properly when pasting a JSON query
 
-  const handleClick = (e) => {
+  const handleClick = () => {
     //alert('Button is non-functional');
     setPaste(true);
     window.addEventListener('paste', handlePaste);
@@ -18,6 +18,9 @@ export default function PasteJSONButton() {
 
   const handlePaste = (e) => {
     setPaste(false);
+    // Stop data actually being pasted into div
+    e.stopPropagation();
+    e.preventDefault();
     const pastedData = e.clipboardData.getData('text');
     alert('Converting JSON: \n\n ' + pastedData);
     window.removeEventListener('paste', handlePaste);
@@ -27,7 +30,7 @@ export default function PasteJSONButton() {
   const convertPastedJSON = (pastedData) => {
     try {
       var json = JSON.parse(pastedData);
-      const newInputs = buildFromJSON(json, 3);
+      const newInputs = buildFromJSON(json, 2);
       setInputs(newInputs);
     } catch (error) {
       console.log(error);
@@ -41,14 +44,17 @@ export default function PasteJSONButton() {
     for (let i = 0; i < keys.length; i++) {
       let childId = 1;
       let newInput = { id: `${id}`, type: keys[i] };
+      //If the value for the key is a child object
       if (typeof json[keys[i]] === 'object') {
         newInput['typeof'] = 'Parent';
         newInput['input'] = '';
         newInput['hasChildren'] = true;
+        // Construct the id of the correct pattern
         let tempId = id + '.' + childId;
         childId += 1;
         let type;
         if (id.length > 1) {
+          //Used to get the correct value from childMap
           type = parentTypeof + '_' + keys[i];
         } else {
           type = keys[i];
@@ -78,7 +84,7 @@ export default function PasteJSONButton() {
         id="pasteJSON"
         className="pasteJSON"
         image={pasteImage}
-        style={{ marginTop: '-2px', marginRight: '3px' }}
+        //style={{ marginTop: '-2px', marginRight: '3px' }}
         onClick={handleClick}
       >
         {paste ? 'Press CMD + V' : 'Paste JSON'}

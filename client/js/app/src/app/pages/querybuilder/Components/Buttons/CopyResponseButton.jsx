@@ -19,8 +19,6 @@ export default function CopyResponseButton() {
       width="30"
       tooltip="Copy"
       onClick={handleCopy}
-    >
-      Copy
-    </OverlayImageButton>
+    />
   );
 }
