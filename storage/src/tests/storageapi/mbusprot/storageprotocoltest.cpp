@@ -112,8 +112,7 @@ std::string version_as_gtest_string(TestParamInfo<vespalib::Version> info) {
 }
 
 VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(MultiVersionTest, StorageProtocolTest,
-                                     Values(vespalib::Version(6, 240, 0),
-                                            vespalib::Version(7, 41, 19)),
+                                     Values(vespalib::Version(7, 41, 19)),
                                      version_as_gtest_string);
 
 namespace {
@@ -301,10 +300,6 @@ TEST_P(StorageProtocolTest, get_internal_read_consistency_is_strong_by_default) 
 }
 
 TEST_P(StorageProtocolTest, can_set_internal_read_consistency_on_get_commands) {
-    // Only supported on protocol version 7+. Will default to Strong on older versions, which is what we want.
-    if (GetParam().getMajor() < 7) {
-        return;
-    }
     auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar,vekterli", 123);
     cmd->set_internal_read_consistency(InternalReadConsistency::Weak);
     auto cmd2 = copyCommand(cmd);
@@ -316,10 +311,6 @@ TEST_P(StorageProtocolTest, can_set_internal_read_consistency_on_get_commands) {
 }
 
 TEST_P(StorageProtocolTest, tombstones_propagated_for_gets) {
-    // Only supported on protocol version 7+.
-    if (GetParam().getMajor() < 7) {
-        return;
-    }
     auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
     auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, true);
     set_dummy_bucket_info_reply_fields(*reply);
@@ -330,23 +321,6 @@ TEST_P(StorageProtocolTest, tombstones_propagated_for_gets) {
     EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
     EXPECT_EQ(Timestamp(100), reply2->getLastModifiedTimestamp()); // In this case, the tombstone timestamp.
     EXPECT_TRUE(reply2->is_tombstone());
-}
-
-// TODO remove this once pre-protobuf serialization is removed
-TEST_P(StorageProtocolTest, old_serialization_format_treats_tombstone_get_replies_as_not_found) {
-    if (GetParam().getMajor() >= 7) {
-        return;
-    }
-    auto cmd = std::make_shared<GetCommand>(_bucket, _testDocId, "foo,bar", 123);
-    auto reply = std::make_shared<GetReply>(*cmd, std::shared_ptr<Document>(), 100, false, true);
-    set_dummy_bucket_info_reply_fields(*reply);
-    auto reply2 = copyReply(reply);
-
-    EXPECT_TRUE(reply2->getDocument().get() == nullptr);
-    EXPECT_EQ(_testDoc->getId(), reply2->getDocumentId());
-    EXPECT_EQ(Timestamp(123), reply2->getBeforeTimestamp());
-    EXPECT_EQ(Timestamp(0), reply2->getLastModifiedTimestamp());
-    EXPECT_FALSE(reply2->is_tombstone()); // Protocol version doesn't understand explicit tombstones.
 }
 
 TEST_P(StorageProtocolTest, remove) {
@@ -486,11 +460,7 @@ TEST_P(StorageProtocolTest, merge_bucket) {
     EXPECT_EQ(Timestamp(1234), cmd2->getMaxTimestamp());
     EXPECT_EQ(uint32_t(567), cmd2->getClusterStateVersion());
     EXPECT_EQ(chain, cmd2->getChain());
-    if (GetParam().getMajor() >= 7) {
-        EXPECT_EQ(cmd2->use_unordered_forwarding(), cmd->use_unordered_forwarding());
-    } else {
-        EXPECT_FALSE(cmd2->use_unordered_forwarding());
-    }
+    EXPECT_EQ(cmd2->use_unordered_forwarding(), cmd->use_unordered_forwarding());
 
     auto reply = std::make_shared<MergeBucketReply>(*cmd);
     auto reply2 = copyReply(reply);
@@ -569,18 +539,10 @@ TEST_P(StorageProtocolTest, remove_location) {
     uint32_t n_docs_removed = 12345;
     auto reply = std::make_shared<RemoveLocationReply>(*cmd2, n_docs_removed);
     auto reply2 = copyReply(reply);
-    if (GetParam().getMajor() == 7) {
-        // Statistics are only available for protobuf-enabled version.
-        EXPECT_EQ(n_docs_removed, reply2->documents_removed());
-    } else {
-        EXPECT_EQ(0, reply2->documents_removed());
-    }
+    EXPECT_EQ(n_docs_removed, reply2->documents_removed());
 }
 
 TEST_P(StorageProtocolTest, stat_bucket) {
-    if (GetParam().getMajor() < 7) {
-        return; // Only available for protobuf-backed protocol version.
-    }
     auto cmd = std::make_shared<StatBucketCommand>(_bucket, "id.group == 'mygroup'");
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ("id.group == 'mygroup'", cmd2->getDocumentSelection());
@@ -823,11 +785,7 @@ TEST_P(StorageProtocolTest, serialized_size_is_used_to_set_approx_size_of_storag
 
     auto cmd2 = copyCommand(cmd);
     auto version = GetParam();
-    if (version.getMajor() == 7) { // Protobuf-based encoding
-        EXPECT_EQ(158u, cmd2->getApproxByteSize());
-    } else { // Legacy encoding
-        EXPECT_EQ(181u, cmd2->getApproxByteSize());
-    }
+    EXPECT_EQ(158u, cmd2->getApproxByteSize());
 }
 
 TEST_P(StorageProtocolTest, track_memory_footprint_for_some_messages) {

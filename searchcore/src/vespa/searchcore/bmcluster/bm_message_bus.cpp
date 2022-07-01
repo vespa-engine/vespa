@@ -10,7 +10,6 @@
 #include <vespa/messagebus/ireplyhandler.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
 #include <vespa/documentapi/messagebus/messages/documentmessage.h>
-#include <vespa/storageapi/mbusprot/storageprotocol.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
@@ -21,7 +20,6 @@ using documentapi::DocumentProtocol;
 using mbus::RPCMessageBus;
 using mbus::Reply;
 using mbus::SourceSession;
-using storage::mbusprot::StorageProtocol;
 using storage::mbusprot::StorageReply;
 
 namespace search::bmcluster {
@@ -97,15 +95,7 @@ BmMessageBus::ReplyHandler::handleReply(std::unique_ptr<Reply> reply)
             failed = true; // empty reply or error
         } else {
             auto protocol = reply->getProtocol();
-            if (protocol == DocumentProtocol::NAME) {
-            } else if (protocol == StorageProtocol::NAME) {
-                auto sreply = dynamic_cast<storage::mbusprot::StorageReply *>(reply.get());
-                if (sreply != nullptr) {
-                    check_error(*sreply->getReply());
-                } else {
-                    failed = true; // unexpected message type
-                }
-            } else {
+            if (protocol != DocumentProtocol::NAME) {
                 failed = true; // unexpected protocol
             }
         }
@@ -139,7 +129,6 @@ BmMessageBus::BmMessageBus(const config::ConfigUri& config_uri,
     mbus::RPCNetworkParams params(config_uri);
     mbus::ProtocolSet protocol_set;
     protocol_set.add(std::make_shared<DocumentProtocol>(document_type_repo));
-    protocol_set.add(std::make_shared<StorageProtocol>(document_type_repo));
     params.setIdentity(mbus::Identity("vespa-bm-client"));
     _message_bus = std::make_unique<mbus::RPCMessageBus>(
             protocol_set,

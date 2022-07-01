@@ -169,10 +169,6 @@ CommunicationManager::handleReply(std::unique_ptr<mbus::Reply> reply)
                 sar->setTrace(reply->steal_trace());
                 receiveStorageReply(sar);
             }
-        } else if (protocolName == mbusprot::StorageProtocol::NAME) {
-            mbusprot::StorageReply* sr(static_cast<mbusprot::StorageReply*>(reply.get()));
-            sr->getReply()->setTrace(reply->steal_trace());
-            receiveStorageReply(sr->getReply());
         } else {
             LOGBM(warning, "Received unsupported reply type %d for protocol '%s'.",
                   reply->getType(), reply->getProtocol().c_str());

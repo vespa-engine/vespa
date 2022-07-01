@@ -23,11 +23,6 @@ vespa_add_library(storageapi_mbusprot OBJECT
     storagereply.cpp
     protocolserialization.cpp
     storageprotocol.cpp
-    protocolserialization4_2.cpp
-    protocolserialization5_0.cpp
-    protocolserialization5_1.cpp
-    protocolserialization5_2.cpp
-    protocolserialization6_0.cpp
     protocolserialization7.cpp
     ${storageapi_PROTOBUF_SRCS}
     DEPENDS
