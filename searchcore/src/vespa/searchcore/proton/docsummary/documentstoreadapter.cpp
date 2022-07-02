@@ -101,6 +101,10 @@ void
 DocumentStoreAdapter::convertFromSearchDoc(Document &doc, uint32_t docId)
 {
     for (size_t i = 0; i < _resultClass->GetNumEntries(); ++i) {
+        if (i != _resultPacker.get_entry_idx()) {
+            // Entry is not present in docsum blob
+            continue;
+        }
         const ResConfigEntry * entry = _resultClass->GetEntry(i);
         const vespalib::string fieldName(entry->_bindname);
         bool markup = _markupFields.find(fieldName) != _markupFields.end();

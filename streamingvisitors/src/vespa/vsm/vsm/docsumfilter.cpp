@@ -449,7 +449,12 @@ DocsumFilter::getMappedDocsum(uint32_t id)
     const Document & doc = _docsumCache->getDocSum(id);
 
     _packer.Init(resClass->GetClassID());
-    for (FieldSpecList::iterator it(_fields.begin()), end = _fields.end(); it != end; ++it) {
+    uint32_t entry_idx = 0;
+    for (FieldSpecList::iterator it(_fields.begin()), end = _fields.end(); it != end; ++it, ++entry_idx) {
+        if (entry_idx != _packer.get_entry_idx()) {
+            // Entry is not present in docsum blob
+            continue;
+        }
         ResType type = it->getResultType();
         if (type == RES_JSONSTRING) {
             // this really means 'structured data'

@@ -99,6 +99,12 @@ GeneralResult::unpack(const char *buf, const size_t buflen)
     for (uint32_t i = 0; rc && i < _entrycnt; i++) {
         const ResConfigEntry *entry = _resClass->GetEntry(i);
 
+        _entries[i]._not_present = entry->_not_present;
+        if (entry->_not_present) {
+            // Entry is not present in docsum blob
+            _entries[i]._type = entry->_type;
+            continue;
+        }
         switch (entry->_type) {
 
         case RES_INT: {

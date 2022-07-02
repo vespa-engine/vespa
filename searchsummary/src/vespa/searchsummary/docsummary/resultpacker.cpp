@@ -19,6 +19,14 @@ ResultPacker::WarnType(ResType type) const
         GetResTypeName(_cfgEntry->_type));
 }
 
+void
+ResultPacker::skip_entries_not_present()
+{
+    while (_cfgEntry != nullptr && _cfgEntry->_not_present) {
+        _cfgEntry = _resClass->GetEntry(++_entryIdx);
+    }
+}
+
 bool ResultPacker::CheckEntry(ResType type)
 {
     if (_error)
@@ -32,6 +40,7 @@ bool ResultPacker::CheckEntry(ResType type)
             WarnType(type);
         }
         _cfgEntry = _resClass->GetEntry(++_entryIdx);
+        skip_entries_not_present();
     } else {
         SetFormatError(type);
     }
@@ -88,6 +97,7 @@ ResultPacker::Init(uint32_t classID)
         uint32_t id = _resClass->GetClassID();
         _buf.append(&id, sizeof(id));
         _cfgEntry = _resClass->GetEntry(_entryIdx);
+        skip_entries_not_present();
         _error = false;
     } else {
         _cfgEntry = nullptr;

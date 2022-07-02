@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/util/stringenum.h>
+#include <bitset>
 
 namespace search::docsummary {
 
@@ -32,6 +33,24 @@ enum ResType {
     RES_FEATUREDATA
 };
 
+/*
+ * Class containing the set of result types not stored in docsum blobs.
+ * This is used for gradual migration towards elimination of docsum blobs.
+ */
+class DocsumBlobEntryFilter {
+    std::bitset<14> _skip_types;
+
+public:
+    DocsumBlobEntryFilter()
+        : _skip_types()
+    {
+    }
+    bool skip(ResType type) const noexcept { return _skip_types.test(type); }
+    DocsumBlobEntryFilter &add_skip(ResType type) {
+        _skip_types.set(type);
+        return *this;
+    }
+};
 
 /**
  * This struct describes a single docsum field (name and type). A
@@ -41,6 +60,7 @@ enum ResType {
  **/
 struct ResConfigEntry {
     ResType          _type;
+    bool             _not_present; // Entry not present in docsum blob when _not_present is set
     vespalib::string _bindname;
     int              _enumValue;
 };
@@ -57,6 +77,7 @@ struct ResConfigEntry {
 struct ResEntry
 {
     ResType _type;
+    bool    _not_present; // Entry not present in docsum blob when _not_present is set
     union {
         uint32_t _intval;
         uint32_t _stringlen;
@@ -113,6 +134,7 @@ private:
     // Whether or not summary features should be omitted when filling this summary class.
     // As default, summary features are always included.
     bool                       _omit_summary_features;
+    DocsumBlobEntryFilter      _docsum_blob_entry_filter;
 
 public:
     typedef std::unique_ptr<ResultClass> UP;
@@ -125,7 +147,7 @@ public:
      * @param id the numeric id of this result class.
      * @param fieldEnum shared object used to enumerate field names.
      **/
-    ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum);
+    ResultClass(const char *name, uint32_t id, util::StringEnum & fieldEnum, const DocsumBlobEntryFilter& docsum_blob_entry_filter);
 
     /**
      * Destructor. Delete internal structures.
@@ -216,7 +238,7 @@ public:
      * GeneralResult::GetEntry(string) method; no need to call it
      * directly.
      *
-     * @return field index or -1 if not found.
+     * @return field index or -1 if not found or _not_present is set.
      **/
     int GetIndexFromName(const char* name) const;
 
@@ -233,11 +255,15 @@ public:
      * call it directly. NOTE3: You need to call the CreateEnumMap
      * method before calling this one.
      *
-     * @return field index or -1 if not found.
+     * @return field index or -1 if not found or _not_present is set.
      **/
     int GetIndexFromEnumValue(uint32_t value) const
     {
-        return (value < _enumMap.size()) ? _enumMap[value] : -1;
+        if (value >= _enumMap.size()) {
+            return -1;
+        }
+        int idx = _enumMap[value];
+        return ((idx < 0) || _entries[idx]._not_present) ? -1 : idx;
     }
 
 
