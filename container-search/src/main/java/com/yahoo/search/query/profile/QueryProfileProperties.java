@@ -300,13 +300,7 @@ public class QueryProfileProperties extends Properties {
         if (zoneInfo == ZoneInfo.defaultInfo()) return context;
         if (context == null || context.isEmpty()) return zoneContext;
         if (context == zoneContext) return context;
-        if (context.containsKey(ENVIRONMENT) && context.containsKey(REGION) && context.containsKey(INSTANCE)) return context;
-
-        Map<String, String> contextWithZoneInfo = new HashMap<>(context);
-        contextWithZoneInfo.putIfAbsent(ENVIRONMENT, zoneInfo.zone().environment().name());
-        contextWithZoneInfo.putIfAbsent(REGION, zoneInfo.zone().region());
-        contextWithZoneInfo.putIfAbsent(INSTANCE, zoneInfo.application().instance());
-        return Collections.unmodifiableMap(contextWithZoneInfo);
+        return new ChainedMap(context, zoneContext);
     }
 
     private boolean reachableTypesAreComplete(CompoundName prefix, CompiledQueryProfile profile, StringBuilder firstMissingName, Map<String,String> context) {
