@@ -23,7 +23,17 @@ class ChainedMap<K, V> implements Map<K, V> {
 
     @Override
     public int size() {
-        return keySet().size();
+        return (primary.size() >= secondary.size())
+                ? countUnique(primary, secondary)
+                : countUnique(secondary, primary);
+    }
+
+    private int countUnique(Map<K, V> large, Map<K,V> small) {
+        int size = large.size();
+        for (K key : small.keySet()) {
+            if ( ! large.containsKey(key)) size++;
+        }
+        return size;
     }
 
     @Override
