@@ -4,6 +4,7 @@ package com.yahoo.search.query.profile;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -49,5 +50,17 @@ public class ChainedMapTestCase {
         Map<String, String> ab_a = new ChainedMap<>(ab, a);
         assertEquals("a_2", ab_a.get("a"));
         assertEquals("b_2", ab_a.get("b"));
+    }
+
+    @Test
+    public void testKeySet() {
+        assertTrue(new ChainedMap<String, String>(Map.of(), Map.of()).keySet().isEmpty());
+        Map<String, String> a = Map.of("a", "a_1");
+        Map<String, String> b = Map.of("b", "b_1");
+        Map<String, String> ab = Map.of("a", "a_2", "b", "b_2");
+        assertEquals(Set.of("a"), new ChainedMap<>(a, Map.of()).keySet());
+        assertEquals(Set.of("a"), new ChainedMap<>(Map.of(), a).keySet());
+        assertEquals(Set.of("a", "b"), new ChainedMap<>(a, b).keySet());
+        assertEquals(Set.of("a", "b"), new ChainedMap<>(ab, b).keySet());
     }
 }
