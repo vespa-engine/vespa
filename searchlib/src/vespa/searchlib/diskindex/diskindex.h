@@ -31,7 +31,7 @@ public:
         index::PostingListCounts         counts;
         uint64_t                         bitOffset;
         typedef std::unique_ptr<LookupResult> UP;
-        LookupResult();
+        LookupResult() noexcept;
         bool valid() const { return counts._numDocs > 0; }
         void swap(LookupResult & rhs) {
             std::swap(indexId , rhs.indexId);

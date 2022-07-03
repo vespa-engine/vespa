@@ -87,7 +87,7 @@ struct Tag
 
     Tag(vespalib::stringref k);
     Tag(vespalib::stringref k, vespalib::stringref v);
-    Tag(const Tag &);
+    Tag(const Tag &) noexcept;
     Tag & operator = (const Tag &);
     Tag(Tag &&) = default;
     Tag & operator = (Tag &&) = default;

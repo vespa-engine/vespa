@@ -80,7 +80,7 @@ private:
         enum class State { IDLE, WAITING, ACTIVE };
         State state;
         ArrayQueue<TaggedTask> queue;
-        Strand();
+        Strand() noexcept;
         ~Strand();
     };
 

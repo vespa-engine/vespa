@@ -12,8 +12,8 @@ namespace search::features {
  */
 class TedCell {
 public:
-    TedCell();
-    TedCell(feature_t cost, uint32_t numDel, uint32_t numIns, uint32_t numSub);
+    TedCell() noexcept;
+    TedCell(feature_t cost, uint32_t numDel, uint32_t numIns, uint32_t numSub) noexcept;
 
     feature_t cost;   // The cost at this point.
     uint32_t  numDel; // The number of deletions to get here.

@@ -48,11 +48,11 @@ struct IndirectContext {
     static constexpr size_t values_size = 65536;
     uint64_t _values[values_size];
 
-    IndirectContext();
+    IndirectContext() noexcept;
     uint64_t* calc_value_ptr(uint64_t idx) { return &_values[(idx & (values_size - 1))]; }
 };
 
-IndirectContext::IndirectContext()
+IndirectContext::IndirectContext() noexcept
     : _value_ptr(nullptr),
       _pad(),
       _values()

@@ -27,7 +27,7 @@ void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b)
     a.swap(b);
 }
 
-DiskIndex::LookupResult::LookupResult()
+DiskIndex::LookupResult::LookupResult() noexcept
     : indexId(0u),
       wordNum(0),
       counts(),

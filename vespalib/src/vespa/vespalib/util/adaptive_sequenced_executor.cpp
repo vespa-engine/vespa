@@ -6,7 +6,7 @@ namespace vespalib {
 
 //-----------------------------------------------------------------------------
 
-AdaptiveSequencedExecutor::Strand::Strand()
+AdaptiveSequencedExecutor::Strand::Strand() noexcept
     : state(State::IDLE),
       queue()
 {

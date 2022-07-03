@@ -52,7 +52,7 @@ Tag::Tag(vespalib::stringref k, vespalib::stringref v)
       _value(NameRepo::tagValueId(v))
 { }
 
-Tag::Tag(const Tag &) = default;
+Tag::Tag(const Tag &) noexcept = default;
 Tag & Tag::operator = (const Tag &) = default;
 Tag::~Tag() {}
 
