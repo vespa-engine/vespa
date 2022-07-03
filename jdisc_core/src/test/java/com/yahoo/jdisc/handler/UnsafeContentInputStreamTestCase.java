@@ -50,6 +50,11 @@ public class UnsafeContentInputStreamTestCase {
         stream.read(buf);
         assertEquals("ello Wor", Utf8.toString(buf));
         stream.reset();
+        stream.mark(8);
+        buf = new byte[8];
+        stream.read(buf);
+        assertEquals("ello Wor", Utf8.toString(buf));
+        stream.reset();
         stream.mark(5);
         buf = new byte [9];
         stream.read(buf);
