@@ -71,7 +71,7 @@ public class UnsafeContentInputStream extends InputStream {
             read += toRead;
         }
         if (marked != null) {
-            if (readSinceMarked + len < marked.length) {
+            if (readSinceMarked + len <= marked.length) {
                 for (int i=0; i < len; i++) {
                     marked[readSinceMarked++] = buf[off+i];
                 }
