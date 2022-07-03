@@ -220,7 +220,7 @@ public:
         ++raw_reports;
     }
     std::vector<vespalib::string> make_keys() const override {
-        return {fmt("raw:%zu", get_hash(_lines))};
+        return {fmt("raw:%" PRIu64, get_hash(_lines))};
     }
     void merge(const Report &) override { ++_count; }
     size_t count() const override { return _count; }
@@ -277,7 +277,7 @@ public:
     std::vector<vespalib::string> make_keys() const override {
         std::vector<vespalib::string> result;
         for (const auto &node: _nodes) {
-            result.push_back(fmt("race:%zu", node.trace.hash()));
+            result.push_back(fmt("race:%" PRIu64, node.trace.hash()));
         }
         return result;
     }
