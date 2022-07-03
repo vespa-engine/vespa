@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#include <csignal>
 #include <unistd.h>
 #include <fcntl.h>
 
