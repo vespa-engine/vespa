@@ -17,14 +17,14 @@ namespace search::features {
 //---------------------------------------------------------------------------------------------------------------------
 // TedCell
 //---------------------------------------------------------------------------------------------------------------------
-TedCell::TedCell() :
+TedCell::TedCell() noexcept :
     cost(util::FEATURE_MAX),
     numDel(0),
     numIns(0),
     numSub(0)
 {}
 
-TedCell::TedCell(feature_t argCost, uint32_t argNumDel, uint32_t argNumIns, uint32_t argNumSub) :
+TedCell::TedCell(feature_t argCost, uint32_t argNumDel, uint32_t argNumIns, uint32_t argNumSub) noexcept :
     cost(argCost),
     numDel(argNumDel),
     numIns(argNumIns),

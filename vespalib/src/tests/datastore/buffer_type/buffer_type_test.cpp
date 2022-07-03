@@ -27,7 +27,7 @@ struct Setup {
           _allocGrowFactor(0.5),
           _resizing(false)
     {}
-    Setup(const Setup& rhs);
+    Setup(const Setup& rhs) noexcept;
     Setup &minArrays(uint32_t value) { _minArrays = value; return *this; }
     Setup &used(size_t value) { _usedElems = value; return *this; }
     Setup &needed(size_t value) { _neededElems = value; return *this; }
@@ -36,7 +36,7 @@ struct Setup {
     Setup &resizing(bool value) { _resizing = value; return *this; }
 };
 
-Setup::Setup(const Setup& rhs)
+Setup::Setup(const Setup& rhs) noexcept
     : _minArrays(rhs._minArrays),
       _usedElems(rhs._usedElems.load(std::memory_order_relaxed)),
       _neededElems(rhs._neededElems),
