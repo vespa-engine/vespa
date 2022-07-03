@@ -46,3 +46,6 @@ vespa_add_library(document_select OBJECT
 
 #TODO Remove once we have a recently new flex compiler. At least 2.5.38/39 or 2.6
 set_source_files_properties(${FLEX_DocSelLexer_OUTPUTS} PROPERTIES COMPILE_FLAGS -Wno-register)
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  set_source_files_properties(${BISON_DocSelParser_OUTPUTS} PROPERTIES COMPILE_FLAGS -Wno-noexcept)
+endif()
