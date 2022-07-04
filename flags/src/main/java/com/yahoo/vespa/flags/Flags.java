@@ -411,6 +411,13 @@ public class Flags {
             "Takes effect on first host admin resume",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
+            "separate-metric-check-config", false,
+            List.of("olaa"), "2022-07-04", "2022-09-01",
+            "Determines whether one metrics config check should be written per Vespa node",
+            "Takes effect on next tick",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
