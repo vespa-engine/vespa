@@ -73,6 +73,15 @@ public interface IPAddresses {
                         addresses));
     }
 
+    /** Returns the hostname of given inetAddress */
+    default String getHostname(InetAddress inetAddress) {
+        String hostname = inetAddress.getHostName();
+        if (hostname.equals(inetAddress.getHostAddress())) {
+            throw new IllegalArgumentException("Could not find hostname for address " + inetAddress.getHostAddress());
+        }
+        return hostname;
+    }
+
     /**
      * Get the IPv4 address for the host if any.
      *
