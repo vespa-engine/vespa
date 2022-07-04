@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.deployment;
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.InstanceName;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RevisionId;
@@ -72,6 +71,14 @@ public class JobList extends AbstractFilteringList<JobStatus, JobList> {
     /** Returns the subset of jobs which must be failing due to an application change */
     public JobList failingApplicationChange() {
         return matching(JobList::failingApplicationChange);
+    }
+
+    /** Returns the subset of jobs which are failing because of an application change, and have been since the threshold, on the given revision. */
+    public JobList failingWithBrokenRevisionSince(RevisionId broken, Instant threshold) {
+        return failingApplicationChange().matching(job -> job.runs().values().stream()
+                                                             .anyMatch(run ->    run.versions().targetRevision().equals(broken)
+                                                                              && run.hasFailed()
+                                                                              && run.start().isBefore(threshold)));
     }
 
     /** Returns the subset of jobs which are failing with the given run status. */

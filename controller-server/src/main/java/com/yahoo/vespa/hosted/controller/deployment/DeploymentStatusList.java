@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.collections.AbstractFilteringList;
 import com.yahoo.component.Version;
+import com.yahoo.vespa.hosted.controller.application.Change;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -36,8 +37,10 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
 
     /** Returns the subset of applications which have been failing an application change since the given instant */
     public DeploymentStatusList failingApplicationChangeSince(Instant threshold) {
-        return matching(status -> status.instanceJobs().values().stream()
-                                        .anyMatch(jobs -> failingApplicationChangeSince(jobs, threshold)));
+        return matching(status -> status.instanceJobs().entrySet().stream()
+                                        .anyMatch(jobs -> failingApplicationChangeSince(jobs.getValue(),
+                                                                                        status.application().require(jobs.getKey().instance()).change(),
+                                                                                        threshold)));
     }
 
     private static boolean failingUpgradeToVersionSince(JobList jobs, Version version, Instant threshold) {
@@ -47,10 +50,8 @@ public class DeploymentStatusList extends AbstractFilteringList<DeploymentStatus
                      .isEmpty();
     }
 
-    private static boolean failingApplicationChangeSince(JobList jobs, Instant threshold) {
-        return ! jobs.failingApplicationChange()
-                     .firstFailing().endedNoLaterThan(threshold)
-                     .isEmpty();
+    private static boolean failingApplicationChangeSince(JobList jobs, Change change, Instant threshold) {
+        return change.revision().map(revision -> ! jobs.failingWithBrokenRevisionSince(revision, threshold).isEmpty()).orElse(false);
     }
 
 }

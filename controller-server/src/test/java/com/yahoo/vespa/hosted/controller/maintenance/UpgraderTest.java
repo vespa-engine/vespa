@@ -1013,6 +1013,14 @@ public class UpgraderTest {
         tester.upgrader().run();
         assertEquals(Change.of(revision1.get()), app.instance().change());
 
+        // Broken revision is replaced by a new attempt, which also fails, and cancellation is not yet triggered.
+        tester.clock().advance(DeploymentTrigger.maxFailingRevisionTime.plusSeconds(1));
+        app.submit();
+        Optional<RevisionId> revision2 = app.lastSubmission();
+        app.failDeployment(systemTest);
+        tester.upgrader().run();
+        assertEquals(Change.of(revision2.get()), app.instance().change());
+
         // Broken revision is cancelled, and new version targeted, after some time.
         tester.clock().advance(DeploymentTrigger.maxFailingRevisionTime.plusSeconds(1));
         tester.upgrader().run();
@@ -1035,7 +1043,7 @@ public class UpgraderTest {
         tester.upgrader().run();
         tester.outstandingChangeDeployer().run();
 
-        assertEquals(Change.of(version1).with(revision1.get()), app.instance().change());
+        assertEquals(Change.of(version1).with(revision2.get()), app.instance().change());
         app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1); // Revision rolls.
         app.runJob(productionUsEast3).runJob(productionUsWest1); // Upgrade completes.
         app.runJob(productionUsEast3).runJob(productionUsWest1); // Revision completes.
