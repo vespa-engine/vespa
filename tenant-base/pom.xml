@@ -39,6 +39,7 @@
         <test-framework.version>${vespaversion}</test-framework.version>
         <target_jdk_version>17</target_jdk_version>
         <maven-compiler-plugin.version>3.10.1</maven-compiler-plugin.version>
+        <maven-dependency-plugin.version>3.3.0</maven-dependency-plugin.version>
         <maven-surefire-plugin.version>2.22.2</maven-surefire-plugin.version>
         <junit.version>5.8.1</junit.version> <!-- Keep in sync with hosted-tenant-base and tenant-cd until all direct use is removed -->
         <endpoint>https://api.vespa-external.aws.oath.cloud:4443</endpoint>
@@ -310,6 +311,12 @@
         <finalName>${project.artifactId}</finalName>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-dependency-plugin</artifactId>
+                    <version>${maven-dependency-plugin.version}</version>
+                </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
