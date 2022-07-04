@@ -4,3 +4,5 @@ namespace=container.jdisc.state
 
 # The name of the application that is reporting metrics.
 application string
+# Optional hostname to add as dimension
+hostname string default=""
