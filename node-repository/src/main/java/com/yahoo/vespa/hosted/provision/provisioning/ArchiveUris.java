@@ -7,11 +7,11 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
-
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
@@ -63,7 +63,7 @@ public class ArchiveUris {
                         }));
     }
 
-    /** Set the docker image for nodes of given type */
+    /** Set (or remove, if archiveURI is empty) archive URI to use for given tenant */
     public void setArchiveUri(TenantName tenant, Optional<String> archiveUri) {
         try (Lock lock = db.lockArchiveUris()) {
             Map<TenantName, String> archiveUris = new TreeMap<>(db.readArchiveUris());
@@ -73,7 +73,8 @@ public class ArchiveUris {
                                                                       () -> archiveUris.remove(tenant));
             db.writeArchiveUris(archiveUris);
             this.archiveUris.invalidate(); // Throw away current cache
-            log.info("Set archive URI for " + tenant + " to " + archiveUri.orElse(null));
+            log.log(Level.FINE, () -> archiveUri.map(s -> "Set archive URI for " + tenant + " to " + s)
+                                                .orElseGet(() -> "Remove archive URI for " + tenant));
         }
     }
 
