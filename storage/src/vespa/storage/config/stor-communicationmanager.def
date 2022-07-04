@@ -42,6 +42,9 @@ mbus.num_network_threads int default=1 restart
 ## Any value below 1 will be 1.
 mbus.num_threads int default=4 restart
 
+## The number of events in the queue of a network (FNET) thread before it is woken up.
+mbus.events_before_wakeup int default=1 restart
+
 ## Enable to use above thread pool for encoding replies
 ## False will use network(fnet) thread
 mbus.dispatch_on_encode bool default=true restart

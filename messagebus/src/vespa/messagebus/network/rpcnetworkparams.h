@@ -22,11 +22,10 @@ private:
     uint32_t          _numThreads;
     uint32_t          _numNetworkThreads;
     uint32_t          _numRpcTargets;
+    uint32_t          _events_before_wakeup;
     bool              _tcpNoDelay;
     bool              _dispatchOnEncode;
     bool              _dispatchOnDecode;
-    bool              _skip_request_thread;
-    bool              _skip_reply_thread;
     double            _connectionExpireSecs;
     CompressionConfig _compressionConfig;
 
@@ -164,38 +163,12 @@ public:
     }
 
     /**
-     * Sets the maximum input buffer size allowed for the underlying FNET connection. Using the value 0 means that there
-     * is no limit; the connection will not free any allocated memory until it is cleaned up. This might potentially
-     * save alot of allocation time.
-     *
-     * @param maxInputBufferSize The maximum number of bytes.
-     * @return This, to allow chaining.
-     */
-    RPCNetworkParams &setMaxInputBufferSize(uint32_t maxInputBufferSize) {
-        _maxInputBufferSize = maxInputBufferSize;
-        return *this;
-    }
-
-    /**
      * Returns the maximum output buffer size allowed for the underlying FNET connection.
      *
      * @return The maximum number of bytes.
      */
     uint32_t getMaxOutputBufferSize() const {
         return _maxOutputBufferSize;
-    }
-
-    /**
-     * Sets the maximum output buffer size allowed for the underlying FNET connection. Using the value 0 means that there
-     * is no limit; the connection will not free any allocated memory until it is cleaned up. This might potentially
-     * save alot of allocation time.
-     *
-     * @param maxOutputBufferSize The maximum number of bytes.
-     * @return This, to allow chaining.
-     */
-    RPCNetworkParams &setMaxOutputBufferSize(uint32_t maxOutputBufferSize) {
-        _maxOutputBufferSize = maxOutputBufferSize;
-        return *this;
     }
 
     RPCNetworkParams &setCompressionConfig(CompressionConfig compressionConfig) {
@@ -218,6 +191,12 @@ public:
     }
 
     bool getDispatchOnEncode() const { return _dispatchOnEncode; }
+
+    RPCNetworkParams &events_before_wakeup(uint32_t value) {
+        _events_before_wakeup = value;
+        return *this;
+    }
+    uint32_t events_before_wakeup() const { return _events_before_wakeup; }
 };
 
 }

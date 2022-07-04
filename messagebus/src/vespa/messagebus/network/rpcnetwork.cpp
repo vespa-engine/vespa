@@ -84,7 +84,8 @@ toFNETConfig(const RPCNetworkParams & params) {
     return fnet::TransportConfig(params.getNumNetworkThreads())
               .maxInputBufferSize(params.getMaxInputBufferSize())
               .maxOutputBufferSize(params.getMaxOutputBufferSize())
-              .tcpNoDelay(params.getTcpNoDelay());
+              .tcpNoDelay(params.getTcpNoDelay())
+              .events_before_wakeup(params.events_before_wakeup());
 }
 
 }
