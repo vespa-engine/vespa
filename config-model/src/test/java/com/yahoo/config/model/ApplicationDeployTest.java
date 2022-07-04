@@ -227,8 +227,7 @@ public class ApplicationDeployTest {
         String appPkg = TESTDIR + "app1";
         IOUtils.copyDirectory(new File(appPkg), tmp);
         ApplicationId applicationId = ApplicationId.from("tenant1", "application1", "instance1");
-        DeployData deployData = new DeployData("foo",
-                                               "bar",
+        DeployData deployData = new DeployData("bar",
                                                applicationId,
                                                13L,
                                                false,
@@ -238,7 +237,6 @@ public class ApplicationDeployTest {
         app.writeMetaData();
         FilesApplicationPackage newApp = FilesApplicationPackage.fromFileWithDeployData(tmp, deployData);
         ApplicationMetaData meta = newApp.getMetaData();
-        assertEquals("foo", meta.getDeployedByUser());
         assertEquals("bar", meta.getDeployPath());
         assertEquals(applicationId, meta.getApplicationId());
         assertEquals(13L, (long)meta.getDeployTimestamp());

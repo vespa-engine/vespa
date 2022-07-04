@@ -10,9 +10,6 @@ import com.yahoo.config.provision.ApplicationId;
  */
 public class DeployData {
 
-    /** Which user deployed */
-    private final String deployedByUser;
-
     private final ApplicationId applicationId;
 
     /** The absolute path to the directory holding the application */
@@ -28,14 +25,23 @@ public class DeployData {
     private final long generation;
     private final long currentlyActiveGeneration;
 
-    public DeployData(String deployedByUser,
+    // TODO: Remove when oldest version in use is 8.13
+    public DeployData(String ignored,
                       String deployedFromDir,
                       ApplicationId applicationId,
                       Long deployTimestamp,
                       boolean internalRedeploy,
                       Long generation,
                       long currentlyActiveGeneration) {
-        this.deployedByUser = deployedByUser;
+        this(deployedFromDir, applicationId, deployTimestamp, internalRedeploy, generation, currentlyActiveGeneration);
+    }
+
+    public DeployData(String deployedFromDir,
+                      ApplicationId applicationId,
+                      Long deployTimestamp,
+                      boolean internalRedeploy,
+                      Long generation,
+                      long currentlyActiveGeneration) {
         this.deployedFromDir = deployedFromDir;
         this.applicationId = applicationId;
         this.deployTimestamp = deployTimestamp;
@@ -43,8 +49,6 @@ public class DeployData {
         this.generation = generation;
         this.currentlyActiveGeneration = currentlyActiveGeneration;
     }
-
-    public String getDeployedByUser() { return deployedByUser; }
 
     public String getDeployedFromDir() { return deployedFromDir; }
 

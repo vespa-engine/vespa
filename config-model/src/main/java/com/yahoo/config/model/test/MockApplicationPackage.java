@@ -46,7 +46,6 @@ import java.util.stream.Collectors;
  */
 public class MockApplicationPackage implements ApplicationPackage {
 
-    public static final String DEPLOYED_BY_USER = "user";
     public static final String APPLICATION_NAME = "application";
     public static final long APPLICATION_GENERATION = 1L;
     public static final String MUSIC_SCHEMA = createSchema("music", "foo");
@@ -80,8 +79,7 @@ public class MockApplicationPackage implements ApplicationPackage {
         this.failOnValidateXml = failOnValidateXml;
         queryProfileRegistry = new QueryProfileXMLReader().read(asNamedReaderList(queryProfileType),
                                                                 asNamedReaderList(queryProfile));
-        applicationMetaData = new ApplicationMetaData(DEPLOYED_BY_USER,
-                                                      "dir",
+        applicationMetaData = new ApplicationMetaData("dir",
                                                       0L,
                                                       false,
                                                       ApplicationId.from(TenantName.defaultName(),

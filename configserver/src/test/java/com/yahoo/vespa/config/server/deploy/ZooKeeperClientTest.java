@@ -57,8 +57,7 @@ public class ZooKeeperClientTest {
         zk = new MockCurator();
         ZooKeeperClient zkc = new ZooKeeperClient(zk, new BaseDeployLogger(), appPath);
         ApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(new File("src/test/apps/zkfeed"),
-                                                                                new DeployData("foo",
-                                                                                               "/bar/baz",
+                                                                                new DeployData("/bar/baz",
                                                                                                ApplicationId.from("default", "appName", "default"),
                                                                                                1345L,
                                                                                                true,
@@ -121,7 +120,6 @@ public class ZooKeeperClientTest {
                 Utf8.toString(zk.getData(appPath.append(META_ZK_PATH)).get()));
         assertTrue(metaData.getChecksum().length() > 0);
         assertTrue(metaData.isInternalRedeploy());
-        assertEquals("foo", metaData.getDeployedByUser());
         assertEquals("/bar/baz", metaData.getDeployPath());
         assertEquals(1345, metaData.getDeployTimestamp().longValue());
         assertEquals(3, metaData.getGeneration().longValue());

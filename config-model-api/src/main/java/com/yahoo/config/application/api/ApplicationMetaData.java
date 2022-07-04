@@ -17,7 +17,6 @@ import java.io.IOException;
  */
 public class ApplicationMetaData {
 
-    private final String deployedByUser;
     private final String deployedFromDir;
     private final long deployTimestamp;
     private final boolean internalRedeploy;
@@ -26,9 +25,15 @@ public class ApplicationMetaData {
     private final long generation;
     private final long previousActiveGeneration;
 
-    public ApplicationMetaData(String deployedByUser, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
+    public ApplicationMetaData(String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
                                ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
-        this.deployedByUser = deployedByUser;
+        this("unknown", deployedFromDir, deployTimestamp, internalRedeploy, applicationId, checksum, generation, previousActiveGeneration);
+    }
+
+    @Deprecated
+    // TODO: Remove in Vespa 9
+    public ApplicationMetaData(String ignored, String deployedFromDir, Long deployTimestamp, boolean internalRedeploy,
+                               ApplicationId applicationId, String checksum, Long generation, long previousActiveGeneration) {
         this.deployedFromDir = deployedFromDir;
         this.deployTimestamp = deployTimestamp;
         this.internalRedeploy = internalRedeploy;
@@ -40,13 +45,11 @@ public class ApplicationMetaData {
 
     /**
      * Gets the user who deployed the application.
-     * Will return null if a problem occurred while getting metadata
      *
      * @return user name for the user who ran "deploy-application"
      */
-    public String getDeployedByUser() {
-        return deployedByUser;
-    }
+    @Deprecated // TODO: Remove in Vespa 9
+    public String getDeployedByUser() { return "unknown"; }
 
     /**
      * Gets the directory where the application was deployed from.
@@ -86,8 +89,7 @@ public class ApplicationMetaData {
 
     @Override
     public String toString() {
-        return deployedByUser + ", " + deployedFromDir + ", " + deployTimestamp + ", " + generation + ", " +
-               checksum + ", " + previousActiveGeneration;
+        return deployedFromDir + ", " + deployTimestamp + ", " + generation + ", " + checksum + ", " + previousActiveGeneration;
     }
 
     public static ApplicationMetaData fromJsonString(String jsonString) {
@@ -97,8 +99,7 @@ public class ApplicationMetaData {
             Inspector deploy = root.field("deploy");
             Inspector app = root.field("application");
 
-            return new ApplicationMetaData(deploy.field("user").asString(),
-                                           deploy.field("from").asString(),
+            return new ApplicationMetaData(deploy.field("from").asString(),
                                            deploy.field("timestamp").asLong(),
                                            booleanField("internalRedeploy", false, deploy),
                                            ApplicationId.fromSerializedForm(app.field("id").asString()),
@@ -114,7 +115,6 @@ public class ApplicationMetaData {
         Slime slime = new Slime();
         Cursor meta = slime.setObject();
         Cursor deploy = meta.setObject("deploy");
-        deploy.setString("user", deployedByUser);
         deploy.setString("from", deployedFromDir);
         deploy.setLong("timestamp", deployTimestamp);
         deploy.setBool("internalRedeploy", internalRedeploy);
