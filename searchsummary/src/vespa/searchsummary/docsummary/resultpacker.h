@@ -36,6 +36,7 @@ private:
     void WarnType(ResType type) const;
     void SetFormatError(ResType type);
 
+    void skip_entries_not_present();
     bool CheckEntry(ResType type);
 
 public:
@@ -249,6 +250,11 @@ public:
      **/
     bool GetDocsumBlob(const char **buf, uint32_t *buflen);
 
+    /*
+     * Get index of next entry to add. Used by proton::DocumentStoreAdapter
+     * and vsm::DocsumFilter to track entries to skip.
+     */
+    uint32_t get_entry_idx() const noexcept { return _entryIdx; }
 };
 
 }

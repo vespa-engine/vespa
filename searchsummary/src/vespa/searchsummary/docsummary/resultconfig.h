@@ -37,6 +37,7 @@ private:
     search::util::StringEnum    _fieldEnum;
     IdMap                       _classLookup;
     NameMap                     _nameLookup; // name -> class id
+    DocsumBlobEntryFilter       _docsum_blob_entry_filter;
 
     void Clean();
     void Init();
@@ -79,6 +80,7 @@ public:
      * NOTE: This method simply calls the Init method.
      **/
     ResultConfig();
+    ResultConfig(const DocsumBlobEntryFilter& docsum_blob_entry_filter);
 
     /**
      * Destructor. Delete all internal structures. NOTE: This method

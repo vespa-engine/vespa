@@ -9,6 +9,7 @@
 LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::ResConfigEntry;
+using search::docsummary::DocsumBlobEntryFilter;
 using search::docsummary::KeywordExtractor;
 using search::MatchingElements;
 using config::ConfigSnapshot;
@@ -135,7 +136,8 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     LOG(debug, "configureVsmSummary(): outputclass='%s'", vsmSummary->outputclass.c_str()); // UlfC: debugging
 
     // init result config
-    std::unique_ptr<ResultConfig> resCfg(new ResultConfig());
+    DocsumBlobEntryFilter docsum_blob_entry_filter;
+    std::unique_ptr<ResultConfig> resCfg(new ResultConfig(docsum_blob_entry_filter));
     if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str())) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
     }
