@@ -55,9 +55,10 @@ loadBalancerAddress string default=""
 athenzDnsSuffix string default=""
 ztsUrl string default=""
 
-# Maintainers
+# Maintenance settings
 maintainerIntervalMinutes int default=30
 keepUnusedFileReferencesMinutes int default=300
+keepSessionsWithUnknownStatusHours int default=48
 
 # Bootstrapping
 # How long bootstrapping can take before giving up (in seconds)

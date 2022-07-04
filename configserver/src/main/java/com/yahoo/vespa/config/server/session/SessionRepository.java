@@ -575,32 +575,31 @@ public class SessionRepository {
     // ---------------- Common stuff ----------------------------------------------------------------
 
     public void deleteExpiredSessions(Map<ApplicationId, Long> activeSessions) {
-        log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
+        log.log(Level.FINE, () -> "Deleting expired local sessions for tenant '" + tenantName + "'");
         Set<LocalSession> toDelete = new HashSet<>();
         Set<Long> newSessions = findNewSessionsInFileSystem();
         try {
             for (LocalSession candidate : getLocalSessionsFromFileSystem()) {
                 // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
                 // we don't want to touch any of them)
-                if (newSessions.contains(candidate.getSessionId())) {
-                    log.log(Level.FINE, () -> "Skipping expiring newly created session " + candidate.getSessionId());
+                if (newSessions.contains(candidate.getSessionId()))
                     continue;
-                }
 
                 Instant createTime = candidate.getCreateTime();
-                log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
+                log.log(Level.FINE, () -> "Candidate local session for deletion: " + candidate.getSessionId() +
+                        ", created: " + createTime + ", state " + candidate.getStatus() + ", can be deleted: " + canBeDeleted(candidate));
 
-                if (hasExpired(candidate) && canBeDeleted(candidate)) {
+                if (hasExpired(createTime) && canBeDeleted(candidate)) {
                     toDelete.add(candidate);
                 } else if (createTime.plus(Duration.ofDays(1)).isBefore(clock.instant())) {
-                    //  Sessions with state ACTIVATE, but which are not actually active
                     Optional<ApplicationId> applicationId = candidate.getOptionalApplicationId();
                     if (applicationId.isEmpty()) continue;
+
                     Long activeSession = activeSessions.get(applicationId.get());
                     if (activeSession == null || activeSession != candidate.getSessionId()) {
                         toDelete.add(candidate);
-                        log.log(Level.INFO, "Deleted inactive session " + candidate.getSessionId() + " created " +
-                                            createTime + " for '" + applicationId + "'");
+                        log.log(Level.FINE, () -> "Will delete inactive session " + candidate.getSessionId() + " created " +
+                                createTime + " for '" + applicationId + "'");
                     }
                 }
             }
@@ -614,21 +613,22 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Done purging old sessions");
     }
 
-    private boolean hasExpired(LocalSession candidate) {
-        return candidate.getCreateTime().plus(sessionLifetime).isBefore(clock.instant());
+    private boolean hasExpired(Instant created) {
+        return created.plus(sessionLifetime).isBefore(clock.instant());
     }
 
     // Sessions with state other than UNKNOWN or ACTIVATE or old sessions in UNKNOWN state
     private boolean canBeDeleted(LocalSession candidate) {
-        return ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(candidate.getStatus())
-                || oldSessionDirWithNonExistingSession(candidate);
+        return ( ! List.of(Session.Status.UNKNOWN, Session.Status.ACTIVATE).contains(candidate.getStatus()))
+                || oldSessionDirWithUnknownStatus(candidate);
     }
 
-    private boolean oldSessionDirWithNonExistingSession(LocalSession session) {
+    private boolean oldSessionDirWithUnknownStatus(LocalSession session) {
+        Duration expiryTime = Duration.ofHours(configserverConfig.keepSessionsWithUnknownStatusHours());
         File sessionDir = tenantFileSystemDirs.getUserApplicationDir(session.getSessionId());
         return sessionDir.exists()
                 && session.getStatus() == Session.Status.UNKNOWN
-                && created(sessionDir).plus(Duration.ofDays(30)).isBefore(clock.instant());
+                && created(sessionDir).plus(expiryTime).isBefore(clock.instant());
     }
 
     private Set<Long> findNewSessionsInFileSystem() {
