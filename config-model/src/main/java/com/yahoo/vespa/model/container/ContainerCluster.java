@@ -105,7 +105,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     /**
      * URI prefix used for internal, usually programmatic, APIs. URIs using this
-     * prefix should never considered available for direct use by customers, and
+     * prefix should never be considered available for direct use by customers, and
      * normal compatibility concerns only applies to libraries using the URIs in
      * question, not contents served from the URIs themselves.
      */
@@ -414,6 +414,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void getConfig(DocumentmanagerConfig.Builder builder) {
         if (containerDocproc != null && containerDocproc.isCompressDocuments())
             builder.enablecompression(true);
+        if (containerDocumentApi != null)
+            builder.ignoreundefinedfields(containerDocumentApi.ignoreUndefinedFields());
     }
 
     @Override

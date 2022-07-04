@@ -25,21 +25,22 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleUpdate
 import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class MapReader {
+
     public static final String MAP_KEY = "key";
     public static final String MAP_VALUE = "value";
     public static final String UPDATE_ELEMENT = "element";
     public static final String UPDATE_MATCH = "match";
 
-    public static void fillMap(TokenBuffer buffer, MapFieldValue parent) {
+    public static void fillMap(TokenBuffer buffer, MapFieldValue parent, boolean ignoreUndefinedFields) {
         if (buffer.currentToken() == JsonToken.START_ARRAY) {
-            MapReader.fillMapFromArray(buffer, parent);
+            MapReader.fillMapFromArray(buffer, parent, ignoreUndefinedFields);
         } else {
-            MapReader.fillMapFromObject(buffer, parent);
+            MapReader.fillMapFromObject(buffer, parent, ignoreUndefinedFields);
         }
     }
 
     @SuppressWarnings({ "rawtypes", "cast", "unchecked" })
-    public static void fillMapFromArray(TokenBuffer buffer, MapFieldValue parent) {
+    public static void fillMapFromArray(TokenBuffer buffer, MapFieldValue parent, boolean ignoreUndefinedFields) {
         JsonToken token = buffer.currentToken();
         int initNesting = buffer.nesting();
         expectArrayStart(token);
@@ -53,9 +54,9 @@ public class MapReader {
             token = buffer.next();
             for (int i = 0; i < 2; ++i) {
                 if (MAP_KEY.equals(buffer.currentName())) {
-                    key = readSingleValue(buffer, keyType);
+                    key = readSingleValue(buffer, keyType, ignoreUndefinedFields);
                 } else if (MAP_VALUE.equals(buffer.currentName())) {
-                    value = readSingleValue(buffer, valueType);
+                    value = readSingleValue(buffer, valueType, ignoreUndefinedFields);
                 }
                 token = buffer.next();
             }
@@ -68,7 +69,7 @@ public class MapReader {
     }
 
     @SuppressWarnings({ "rawtypes", "cast", "unchecked" })
-    public static void fillMapFromObject(TokenBuffer buffer, MapFieldValue parent) {
+    public static void fillMapFromObject(TokenBuffer buffer, MapFieldValue parent, boolean ignoreUndefinedFields) {
         JsonToken token = buffer.currentToken();
         int initNesting = buffer.nesting();
         expectObjectStart(token);
@@ -77,7 +78,7 @@ public class MapReader {
         DataType valueType = parent.getDataType().getValueType();
         while (buffer.nesting() >= initNesting) {
             FieldValue key = readAtomic(buffer.currentName(), keyType);
-            FieldValue value = readSingleValue(buffer, valueType);
+            FieldValue value = readSingleValue(buffer, valueType, ignoreUndefinedFields);
 
             Preconditions.checkState(key != null && value != null, "Missing key or value for map entry.");
             parent.put(key, value);
@@ -87,7 +88,11 @@ public class MapReader {
     }
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static ValueUpdate createMapUpdate(TokenBuffer buffer, DataType currentLevel, FieldValue keyParent, FieldValue topLevelKey) {
+    public static ValueUpdate createMapUpdate(TokenBuffer buffer,
+                                              DataType currentLevel,
+                                              FieldValue keyParent,
+                                              FieldValue topLevelKey,
+                                              boolean ignoreUndefinedFields) {
         TokenBuffer.Token element = buffer.prefetchScalar(UPDATE_ELEMENT);
         if (UPDATE_ELEMENT.equals(buffer.currentName())) {
             buffer.next();
@@ -102,24 +107,24 @@ public class MapReader {
         if (!UPDATE_MATCH.equals(buffer.currentName())) {
             // we have reached an action...
             if (topLevelKey == null) {
-                return ValueUpdate.createMap(key, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName()));
+                return ValueUpdate.createMap(key, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName(), ignoreUndefinedFields));
             } else {
-                return ValueUpdate.createMap(topLevelKey, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName()));
+                return ValueUpdate.createMap(topLevelKey, readSingleUpdate(buffer, valueTypeForMapUpdate(currentLevel), buffer.currentName(), ignoreUndefinedFields));
             }
         } else {
             // next level of matching
             if (topLevelKey == null) {
-                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, key);
+                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, key, ignoreUndefinedFields);
             } else {
-                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, topLevelKey);
+                return createMapUpdate(buffer, valueTypeForMapUpdate(currentLevel), key, topLevelKey, ignoreUndefinedFields);
             }
         }
     }
 
     @SuppressWarnings("rawtypes")
-    public static ValueUpdate createMapUpdate(TokenBuffer buffer, Field field) {
+    public static ValueUpdate createMapUpdate(TokenBuffer buffer, Field field, boolean ignoreUndefinedFields) {
         buffer.next();
-        MapValueUpdate m = (MapValueUpdate) MapReader.createMapUpdate(buffer, field.getDataType(), null, null);
+        MapValueUpdate m = (MapValueUpdate) MapReader.createMapUpdate(buffer, field.getDataType(), null, null, ignoreUndefinedFields);
         buffer.next();
         // must generate the field value in parallell with the actual
         return m;

@@ -2,7 +2,6 @@
 package com.yahoo.document;
 
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.document.annotation.AnnotationType;
 import com.yahoo.document.annotation.AnnotationTypeRegistry;
 import com.yahoo.document.annotation.AnnotationTypes;
@@ -21,12 +20,11 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Logger;
 
 /**
  * The DocumentTypeManager keeps track of the document types registered in
  * the Vespa common repository.
- * <p>
+ *
  * The DocumentTypeManager is also responsible for registering a FieldValue
  * factory for each data type a field can have. The Document object
  * uses this factory to serialize and deserialize the various datatypes.
@@ -37,9 +35,6 @@ import java.util.logging.Logger;
  * @author Thomas Gundersen
  */
 public class DocumentTypeManager {
-
-    private final static Logger log = Logger.getLogger(DocumentTypeManager.class.getName());
-
 
     // *Configured data types* (not built-in/primitive) indexed by their id
     //
@@ -54,6 +49,7 @@ public class DocumentTypeManager {
     private Map<Integer, DataType> dataTypes = new LinkedHashMap<>();
     private Map<DataTypeName, DocumentType> documentTypes = new LinkedHashMap<>();
     private AnnotationTypeRegistry annotationTypeRegistry = new AnnotationTypeRegistry();
+    private boolean ignoreUndefinedFields = false;
 
     public DocumentTypeManager() {
         registerDefaultDataTypes();
@@ -103,22 +99,12 @@ public class DocumentTypeManager {
         }
     }
 
-    boolean hasDataTypeInternal(String name) {
-        if (name.startsWith("tensor(")) return true; // built-in dynamic: Always present
-        for (DataType type : dataTypes.values()) {
-            if (type.getName().equalsIgnoreCase(name)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     /**
      * For internal use only, avoid whenever possible.
      * Use constants and factories in DataType instead.
      * For structs, use getStructType() in DocumentType.
      * For annotation payloads, use getDataType() in AnnotationType.
-     **/
+     */
     DataType getDataTypeInternal(String name) {
         if (name.startsWith("tensor(")) // built-in dynamic
             return new TensorDataType(TensorType.fromSpec(name));
@@ -149,6 +135,13 @@ public class DocumentTypeManager {
         }
         return foundTypes.get(0);
     }
+
+    /**
+     * Returns true if we should ignore attempts to set a field not defined in the document type,
+     * rather than (by default) throwing an exception.
+     */
+    public boolean getIgnoreUndefinedFields() { return ignoreUndefinedFields; }
+    public void setIgnoreUndefinedFields(boolean ignoreUndefinedFields) { this.ignoreUndefinedFields = ignoreUndefinedFields; }
 
     /**
      * Return a data type instance

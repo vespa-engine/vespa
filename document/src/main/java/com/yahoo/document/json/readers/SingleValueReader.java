@@ -41,25 +41,25 @@ public class SingleValueReader {
         arithmeticExpressionPattern = Pattern.compile("^\\$\\w+\\s*([" + validSigns + "])\\s*(\\d+(.\\d+)?)$");
     }
 
-    public static FieldValue readSingleValue(TokenBuffer buffer, DataType expectedType) {
+    public static FieldValue readSingleValue(TokenBuffer buffer, DataType expectedType, boolean ignoreUndefinedFields) {
         if (buffer.currentToken().isScalarValue()) {
             return readAtomic(buffer.currentText(), expectedType);
         } else {
             FieldValue fieldValue = expectedType.createFieldValue();
-            CompositeReader.populateComposite(buffer, fieldValue);
+            CompositeReader.populateComposite(buffer, fieldValue, ignoreUndefinedFields);
             return fieldValue;
         }
     }
 
     @SuppressWarnings("rawtypes")
-    public static ValueUpdate readSingleUpdate(TokenBuffer buffer, DataType expectedType, String action) {
+    public static ValueUpdate readSingleUpdate(TokenBuffer buffer, DataType expectedType, String action, boolean ignoreUndefinedFields) {
         ValueUpdate update;
 
         switch (action) {
             case UPDATE_ASSIGN:
                 update = (buffer.currentToken() == JsonToken.VALUE_NULL)
                         ? ValueUpdate.createClear()
-                        : ValueUpdate.createAssign(readSingleValue(buffer, expectedType));
+                        : ValueUpdate.createAssign(readSingleValue(buffer, expectedType, ignoreUndefinedFields));
                 break;
             // double is silly, but it's what is used internally anyway
             case UPDATE_INCREMENT:

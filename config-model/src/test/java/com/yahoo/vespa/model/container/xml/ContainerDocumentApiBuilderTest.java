@@ -5,7 +5,9 @@ import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
@@ -63,7 +65,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     @Test
-    public void requireThatHandlersAreSetup() {
+    public void test_handler_setup() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
                 "  <document-api />",
@@ -83,6 +85,20 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
         assertTrue(handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings()
                 .contains(SystemBindingPattern.fromHttpPath("/reserved-for-internal-use/feedapi")));
         assertEquals(2, handlerMap.get("com.yahoo.vespa.http.server.FeedHandler").getServerBindings().size());
+    }
+
+    @Test
+    public void nonexisting_fields_can_be_ignored() {
+        Element elem = DomBuilderTest.parse(
+                "<container id='cluster1' version='1.0'>",
+                "  <document-api ignore-undefined-fields='true' />",
+                nodesXml,
+                "</container>");
+        ContainerModel model = createModel(root, elem).get(0);
+
+        var documentManager = new DocumentmanagerConfig.Builder();
+        model.getCluster().getConfig(documentManager);
+        assertTrue(documentManager.build().ignoreundefinedfields());
     }
 
     @Test

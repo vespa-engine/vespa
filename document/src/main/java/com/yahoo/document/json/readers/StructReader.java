@@ -12,31 +12,31 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class StructReader {
 
-    public static void fillStruct(TokenBuffer buffer, StructuredFieldValue parent) {
+    public static void fillStruct(TokenBuffer buffer, StructuredFieldValue parent, boolean ignoreUndefinedFields) {
         // do note the order of initializing initNesting and token is relevant for empty docs
         int initNesting = buffer.nesting();
         buffer.next();
 
         while (buffer.nesting() >= initNesting) {
-            Field f = getField(buffer, parent);
+            Field field = getField(buffer, parent, ignoreUndefinedFields);
             try {
-                // skip fields set to null
-                if (buffer.currentToken() != JsonToken.VALUE_NULL) {
-                    FieldValue v = readSingleValue(buffer, f.getDataType());
-                    parent.setFieldValue(f, v);
+                if (field != null && buffer.currentToken() != JsonToken.VALUE_NULL) {
+                    FieldValue v = readSingleValue(buffer, field.getDataType(), ignoreUndefinedFields);
+                    parent.setFieldValue(field, v);
                 }
                 buffer.next();
             } catch (IllegalArgumentException e) {
-                throw new JsonReaderException(f, e);
+                throw new JsonReaderException(field, e);
             }
         }
     }
 
-    public static Field getField(TokenBuffer buffer, StructuredFieldValue parent) {
+    private static Field getField(TokenBuffer buffer, StructuredFieldValue parent, boolean ignoreUndefinedFields) {
         Field field = parent.getField(buffer.currentName());
-        if (field == null) {
+        if (field == null && ! ignoreUndefinedFields) {
             throw new IllegalArgumentException("No field '" + buffer.currentName() + "' in the structure of type '" +
-                    parent.getDataType().getDataTypeName() + "', which has the fields:" + parent.getDataType().getFields());
+                                               parent.getDataType().getDataTypeName() +
+                                               "', which has the fields: " + parent.getDataType().getFields());
         }
         return field;
     }

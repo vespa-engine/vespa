@@ -208,7 +208,7 @@
       "public bridge synthetic int compareTo(java.lang.Object)"
     ],
     "fields": [
-      "public static int classId",
+      "public static final int classId",
       "public static final com.yahoo.document.NumericDataType NONE",
       "public static final com.yahoo.document.NumericDataType INT",
       "public static final com.yahoo.document.NumericDataType FLOAT",
@@ -485,6 +485,8 @@
       "public void <init>()",
       "public void <init>(com.yahoo.document.config.DocumentmanagerConfig)",
       "public static com.yahoo.document.DocumentTypeManager fromFile(java.lang.String)",
+      "public boolean getIgnoreUndefinedFields()",
+      "public void setIgnoreUndefinedFields(boolean)",
       "public void register(com.yahoo.document.DataType)",
       "public com.yahoo.document.DocumentType registerDocumentType(com.yahoo.document.DocumentType)",
       "public com.yahoo.document.DocumentType getDocumentType(com.yahoo.document.DataTypeName)",

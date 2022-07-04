@@ -18,9 +18,8 @@ public class DocumentApiOptionsBuilder {
 
     private static final Logger log = Logger.getLogger(DocumentApiOptionsBuilder.class.getName());
 
-
-    public static ContainerDocumentApi.Options build(Element spec) {
-        return new ContainerDocumentApi.Options(getBindings(spec), threadpoolOptions(spec, "http-client-api"));
+    public static ContainerDocumentApi.HandlerOptions build(Element spec) {
+        return new ContainerDocumentApi.HandlerOptions(getBindings(spec), threadpoolOptions(spec, "http-client-api"));
     }
 
     private static ContainerThreadpool.UserOptions threadpoolOptions(Element spec, String elementName) {
