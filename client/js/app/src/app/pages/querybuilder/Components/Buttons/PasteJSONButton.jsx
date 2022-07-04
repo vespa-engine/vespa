@@ -4,14 +4,13 @@ import pasteImage from '../../assets/img/paste.svg';
 import { QueryInputContext } from '../Contexts/QueryInputContext';
 
 export default function PasteJSONButton() {
-  const { inputs, setInputs, id, setId, levelZeroParameters, childMap } =
+  const { setInputs, setId, levelZeroParameters, childMap } =
     useContext(QueryInputContext);
   const [paste, setPaste] = useState(false);
 
   //TODO: fix that the second-level dropdowns do not get set properly when pasting a JSON query
 
   const handleClick = () => {
-    //alert('Button is non-functional');
     setPaste(true);
     window.addEventListener('paste', handlePaste);
   };
