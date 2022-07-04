@@ -2,6 +2,9 @@
 
 #include "signalhandler.h"
 #include "backtrace.h"
+#ifdef __APPLE__
+#define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
+#endif
 #include <boost/stacktrace/safe_dump_to.hpp> // Header-only dependency
 #include <boost/stacktrace/frame.hpp>
 #include <array>
