@@ -270,13 +270,6 @@ public class Flags {
                 "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag FAIL_DEPLOYMENT_WITH_INVALID_JVM_OPTIONS = defineFeatureFlag(
-            "fail-deployment-with-invalid-jvm-options", true,
-            List.of("hmusum"), "2021-12-20", "2022-08-01",
-            "Whether to fail deployments with invalid JVM options in services.xml",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_SERVER_OCSP_STAPLING = defineFeatureFlag(
             "enable-server-ocsp-stapling", false,
             List.of("bjorncs"), "2021-12-17", "2022-09-01",
@@ -394,13 +387,6 @@ public class Flags {
             "file-distribution-compression-algorithm", "gzip",
             List.of("hmusum"), "2022-05-24", "2022-07-24",
             "Which algorithm to use for compressing file references when distributing files. Valid values: none, gzip",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag FILE_DISTRIBUTION_COMPRESS_SINGLE_FILES = defineFeatureFlag(
-            "file-distribution-compress-single-files", false,
-            List.of("hmusum"), "2022-05-24", "2022-07-24",
-            "Whether to compress a file references that is a single file (directories are compressed by default).",
             "Takes effect immediately",
             APPLICATION_ID);
 
