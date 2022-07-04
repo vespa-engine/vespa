@@ -735,9 +735,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         else if (nodesElement.hasAttribute("of")) {// hosted node spec referencing a content cluster
             // TODO: Remove support for combined clusters in Vespa 9
             List<ApplicationContainer> containers = createNodesFromContentServiceReference(cluster, nodesElement, context);
-            log.log(WARNING, "Declaring combined cluster with <nodes of=\"...\"> is deprecated without " +
-                             "replacement, and the feature will be removed in Vespa 9. Use separate container and " +
-                             "content clusters instead");
+            log.logApplicationPackage(WARNING, "Declaring combined cluster with <nodes of=\"...\"> is deprecated without " +
+                                               "replacement, and the feature will be removed in Vespa 9. Use separate container and " +
+                                               "content clusters instead");
             return containers;
         } else if (nodesElement.hasAttribute("count")) // regular, hosted node spec
             return createNodesFromNodeCount(cluster, containerElement, nodesElement, context);
