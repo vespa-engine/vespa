@@ -390,6 +390,13 @@ public class Flags {
             "Takes effect immediately",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag FIX_IPV6_GATEWAY = defineFeatureFlag(
+            "fix-ipv6-gateway", false,
+            List.of("mpolden"), "2022-07-04", "2022-09-01",
+            "Fix a misconfigured IPv6 gateway automatically",
+            "Takes effect on first host admin resume",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
