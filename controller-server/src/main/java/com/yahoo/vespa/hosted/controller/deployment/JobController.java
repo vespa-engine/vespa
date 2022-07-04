@@ -408,11 +408,6 @@ public class JobController {
         locked(id, run -> run.with(status, step));
     }
 
-    /** Invoked when starting the step */
-    public void setStartTimestamp(RunId id, Instant timestamp, LockedStep step) {
-        locked(id, run -> run.with(timestamp, step));
-    }
-
     /**
      * Changes the status of the given run to inactive, and stores it as a historic run.
      * Throws TimeoutException if some step in this job is still being run.
@@ -774,7 +769,8 @@ public class JobController {
     public void locked(RunId id, UnaryOperator<Run> modifications) {
         try (Mutex __ = curator.lock(id.application(), id.type())) {
             active(id).ifPresent(run -> {
-                curator.writeLastRun(modifications.apply(run));
+                Run modified = modifications.apply(run);
+                if (modified != null) curator.writeLastRun(modified);
             });
         }
     }
