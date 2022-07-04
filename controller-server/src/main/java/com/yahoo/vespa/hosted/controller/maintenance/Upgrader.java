@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.InstanceList;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatusList;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
@@ -96,7 +97,7 @@ public class Upgrader extends ControllerMaintainer {
     private void updateTargets(VersionStatus versionStatus, DeploymentStatusList deploymentStatuses, UpgradePolicy policy, OptionalInt targetMajorVersion) {
         InstanceList instances = instances(deploymentStatuses);
         InstanceList remaining = instances.with(policy);
-        Instant failureThreshold = controller().clock().instant().minus(Duration.ofDays(5));
+        Instant failureThreshold = controller().clock().instant().minus(DeploymentTrigger.maxFailingRevisionTime);
         Set<ApplicationId> failingRevision = InstanceList.from(deploymentStatuses.failingApplicationChangeSince(failureThreshold)).asSet();
 
         List<Version> targetAndNewer = new ArrayList<>();

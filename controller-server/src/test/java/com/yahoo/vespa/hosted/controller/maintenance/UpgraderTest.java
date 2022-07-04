@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
@@ -1013,7 +1014,7 @@ public class UpgraderTest {
         assertEquals(Change.of(revision1.get()), app.instance().change());
 
         // Broken revision is cancelled, and new version targeted, after some time.
-        tester.clock().advance(Duration.ofDays(6));
+        tester.clock().advance(DeploymentTrigger.maxFailingRevisionTime.plusSeconds(1));
         tester.upgrader().run();
         assertEquals(Change.of(version1), app.instance().change());
 
