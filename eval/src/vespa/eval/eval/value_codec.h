@@ -13,7 +13,7 @@ namespace vespalib::eval {
 
 VESPA_DEFINE_EXCEPTION(DecodeValueException, Exception);
 
-class ValueBuilderFactory;
+struct ValueBuilderFactory;
 
 /**
  * encode a value (which must support the new APIs) to binary format
