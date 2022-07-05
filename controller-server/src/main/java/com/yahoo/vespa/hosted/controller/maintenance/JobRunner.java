@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.deployment.InternalStepRunner;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
-import com.yahoo.vespa.hosted.controller.deployment.StepInfo;
 import com.yahoo.vespa.hosted.controller.deployment.StepRunner;
 
 import java.time.Duration;
@@ -75,18 +74,26 @@ public class JobRunner extends ControllerMaintainer {
         }
     }
 
-    /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. Public for testing. */
     public void advance(Run run) {
-        if (   ! run.hasFailed()
-            &&   controller().clock().instant().isAfter(run.sleepUntil().orElse(run.start()).plus(jobTimeout)))
-            executors.execute(() -> {
-                jobs.abort(run.id(), "job timeout of " + jobTimeout + " reached");
-                advance(jobs.run(run.id()));
-            });
-        else if (run.readySteps().isEmpty())
-            executors.execute(() -> finish(run.id()));
-        else if (run.hasFailed() || run.sleepUntil().map(sleepUntil -> ! sleepUntil.isAfter(controller().clock().instant())).orElse(true))
-            run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
+        advance(run.id());
+    }
+
+    /** Advances each of the ready steps for the given run, or marks it as finished, and stashes it. Public for testing. */
+    public void advance(RunId id) {
+        jobs.locked(id, run -> {
+            if (   ! run.hasFailed()
+                &&   controller().clock().instant().isAfter(run.sleepUntil().orElse(run.start()).plus(jobTimeout)))
+                executors.execute(() -> {
+                    jobs.abort(run.id(), "job timeout of " + jobTimeout + " reached");
+                    advance(run.id());
+                });
+            else if (run.readySteps().isEmpty())
+                executors.execute(() -> finish(run.id()));
+            else if (run.hasFailed() || run.sleepUntil().map(sleepUntil -> ! sleepUntil.isAfter(controller().clock().instant())).orElse(true))
+                run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
+
+            return null;
+        });
     }
 
     private void finish(RunId id) {
@@ -108,23 +115,24 @@ public class JobRunner extends ControllerMaintainer {
         try {
             AtomicBoolean changed = new AtomicBoolean(false);
             jobs.locked(id.application(), id.type(), step, lockedStep -> {
-                jobs.locked(id, run -> run); // Memory visibility.
-                jobs.active(id).ifPresent(run -> { // The run may have become inactive, so we bail out.
+                jobs.locked(id, run -> {
                     if ( ! run.readySteps().contains(step)) {
                         changed.set(true);
-                        return; // Someone may have updated the run status, making this step obsolete, so we bail out.
+                        return run; // Someone may have updated the run status, making this step obsolete, so we bail out.
                     }
 
-                    StepInfo stepInfo = run.stepInfo(lockedStep.get()).orElseThrow();
-                    if (stepInfo.startTime().isEmpty()) {
-                        jobs.setStartTimestamp(run.id(), controller().clock().instant(), lockedStep);
-                    }
+                    if (run.stepInfo(lockedStep.get()).orElseThrow().startTime().isEmpty())
+                        run = run.with(controller().clock().instant(), lockedStep);
 
-                    runner.run(lockedStep, run.id()).ifPresent(status -> {
-                        jobs.update(run.id(), status, lockedStep);
+                    return run;
+                });
+
+                if ( ! changed.get()) {
+                    runner.run(lockedStep, id).ifPresent(status -> {
+                        jobs.update(id, status, lockedStep);
                         changed.set(true);
                     });
-                });
+                }
             });
             if (changed.get())
                 jobs.active(id).ifPresent(this::advance);
