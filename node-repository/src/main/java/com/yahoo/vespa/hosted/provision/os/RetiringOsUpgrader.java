@@ -38,6 +38,7 @@ public class RetiringOsUpgrader implements OsUpgrader {
         Instant now = nodeRepository.clock().instant();
         NodeList candidates = candidates(now, target, allNodes);
         candidates.not().deprovisioning()
+                  .matching(node -> shouldUpgrade(node, nodeRepository.clock().instant()))
                   .byIncreasingOsVersion()
                   .first(1)
                   .forEach(node -> deprovision(node, target.version(), now));

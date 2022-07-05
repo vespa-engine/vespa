@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.node;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -48,6 +49,12 @@ public class History {
         for (Event event : events)
             builder.put(event.type(), event);
         return builder.build();
+    }
+
+    /** Returns the age of this node as best as we can determine: The time since the first event registered for it */
+    public Duration age(Instant now) {
+        Instant oldestEventTime = events.values().stream().map(event -> event.at()).sorted().findFirst().orElse(now);
+        return Duration.between(oldestEventTime, now);
     }
 
     /** Returns the last event of given type, if it is present in this history */

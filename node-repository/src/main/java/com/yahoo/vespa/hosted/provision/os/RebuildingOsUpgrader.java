@@ -76,6 +76,7 @@ public class RebuildingOsUpgrader implements OsUpgrader {
         NodeList candidates = hostsOfTargetType.state(Node.State.active)
                                                .not().rebuilding()
                                                .osVersionIsBefore(target.version())
+                                               .matching(node -> shouldUpgrade(node, nodeRepository.clock().instant()))
                                                .byIncreasingOsVersion();
         for (Node host : candidates) {
             if (hostsToRebuild.size() == rebuildLimit) break;

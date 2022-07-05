@@ -41,6 +41,7 @@ public class DelegatingOsUpgrader implements OsUpgrader {
         int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(target.version()).size());
         NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
                                              .osVersionIsBefore(target.version())
+                                             .matching(node -> shouldUpgrade(node, nodeRepository.clock().instant()))
                                              .byIncreasingOsVersion()
                                              .first(numberToUpgrade);
         if (nodesToUpgrade.size() == 0) return;
