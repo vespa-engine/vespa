@@ -233,7 +233,7 @@ WarmupIndexCollection::WarmupRequestContext::WarmupRequestContext(const vespalib
 {}
 WarmupIndexCollection::WarmupRequestContext::~WarmupRequestContext() = default;
 
-std::unique_ptr<vespalib::eval::Value>
+const vespalib::eval::Value*
 WarmupIndexCollection::WarmupRequestContext::get_query_tensor(const vespalib::string&) const {
     return {};
 }

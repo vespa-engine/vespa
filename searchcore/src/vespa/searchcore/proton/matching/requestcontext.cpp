@@ -4,9 +4,9 @@
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/iqueryenvironment.h>
+#include <vespa/searchlib/fef/query_value.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
@@ -20,11 +20,13 @@ namespace proton {
 using search::attribute::IAttributeVector;
 
 RequestContext::RequestContext(const Doom & doom, IAttributeContext & attributeContext,
-                               const search::fef::Properties& rank_properties,
+                               const search::fef::IQueryEnvironment& query_env,
+                               search::fef::IObjectStore& shared_store,
                                const search::attribute::AttributeBlueprintParams& attribute_blueprint_params)
     : _doom(doom),
       _attributeContext(attributeContext),
-      _rank_properties(rank_properties),
+      _query_env(query_env),
+      _shared_store(shared_store),
       _attribute_blueprint_params(attribute_blueprint_params)
 {
 }
@@ -47,22 +49,18 @@ RequestContext::asyncForAttribute(const vespalib::string &name, std::unique_ptr<
     _attributeContext.asyncForAttribute(name, std::move(func));
 }
 
-vespalib::eval::Value::UP
+const vespalib::eval::Value*
 RequestContext::get_query_tensor(const vespalib::string& tensor_name) const
 {
-    auto property = _rank_properties.lookup(tensor_name);
-    if (property.found() && !property.get().empty()) {
-        const vespalib::string& value = property.get();
-        vespalib::nbostream stream(value.data(), value.size());
-        try {
-            return decode_value(stream, FastValueBuilderFactory::get());
-        } catch (vespalib::eval::DecodeValueException& ex) {
-            Issue::report("Query tensor '%s' could not be deserialized: %s",
-                          tensor_name.c_str(), ex.getMessage().c_str());
-            return {};
-        }
+    try {
+        auto value = search::fef::QueryValue::from_config(tensor_name, _query_env.getIndexEnvironment());
+        value.prepare_shared_state(_query_env, _shared_store);
+        return value.lookup_value(_shared_store);
+    } catch (const search::fef::InvalidValueTypeException& ex) {
+        Issue::report("Invalid type '%s' for query tensor '%s'",
+                      ex.getMessage().c_str(), tensor_name.c_str());
+        return nullptr;
     }
-    return {};
 }
 
 const search::attribute::AttributeBlueprintParams&

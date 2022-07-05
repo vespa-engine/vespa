@@ -25,7 +25,7 @@ private:
 
 public:
     DistanceCalculator(const tensor::ITensorAttribute& attr_tensor,
-                       std::unique_ptr<vespalib::eval::Value> query_tensor_in);
+                       const vespalib::eval::Value& query_tensor_in);
 
     /**
      * Only used by unit tests where ownership of query tensor and distance function is handled outside.

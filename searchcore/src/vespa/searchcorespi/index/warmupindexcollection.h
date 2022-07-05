@@ -82,7 +82,7 @@ private:
         const vespalib::Doom & getDoom() const override { return _doom; }
         const IAttributeVector *getAttribute(const vespalib::string &) const override { return nullptr; }
         const IAttributeVector *getAttributeStableEnum(const vespalib::string &) const override { return nullptr; }
-        std::unique_ptr<vespalib::eval::Value> get_query_tensor(const vespalib::string&) const override;
+        const vespalib::eval::Value* get_query_tensor(const vespalib::string&) const override;
         const AttributeBlueprintParams& get_attribute_blueprint_params() const override { return _params; }
     private:
         const vespalib::Doom _doom;

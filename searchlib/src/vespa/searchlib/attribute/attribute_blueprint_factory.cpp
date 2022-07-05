@@ -769,8 +769,8 @@ public:
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not a dense tensor of order 1",
                                                              ta_type.to_spec().c_str()));
         }
-        auto query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
-        if (query_tensor.get() == nullptr) {
+        const auto* query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
+        if (query_tensor == nullptr) {
             return fail_nearest_neighbor_term(n, "Query tensor was not found in request context");
         }
         const auto & qt_type = query_tensor->type();
@@ -787,7 +787,7 @@ public:
                                                              ta_type.to_spec().c_str()));
         }
         setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *tensor_attr,
-                                                                        std::move(query_tensor),
+                                                                        *query_tensor,
                                                                         n.get_target_num_hits(),
                                                                         n.get_allow_approximate(),
                                                                         n.get_explore_additional_hits(),
