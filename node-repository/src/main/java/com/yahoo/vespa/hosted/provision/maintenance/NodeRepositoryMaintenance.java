@@ -124,7 +124,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
         DefaultTimes(Zone zone, Deployer deployer) {
-            autoscalingInterval = Duration.ofMinutes(15);
+            autoscalingInterval = Duration.ofMinutes(5);
             dynamicProvisionerInterval = Duration.ofMinutes(3);
             failedExpirerInterval = Duration.ofMinutes(10);
             failGrace = Duration.ofMinutes(30);
