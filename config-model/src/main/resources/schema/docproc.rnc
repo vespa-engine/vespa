@@ -22,7 +22,6 @@ DocProcV3 = attribute version { "3.0" },
    GenericConfig*
 )
 
-# TODO Here we need a thorough cleaning
 DocprocClusterAttributes =   attribute compressdocuments { xsd:boolean }? &
   attribute numnodesperclient { xsd:positiveInteger }? &
   attribute preferlocalnode { xsd:boolean }? &
@@ -33,7 +32,6 @@ DocprocClusterAttributes =   attribute compressdocuments { xsd:boolean }? &
   attribute documentexpansionfactor { xsd:double { minExclusive = "0.0" } }? &
   attribute containercorememory { xsd:nonNegativeInteger }?
 
-# TODO Here we need a thorough cleaning
 ClusterV3 = element cluster {
   attribute name { xsd:NCName } &
   DocprocClusterAttributes? &

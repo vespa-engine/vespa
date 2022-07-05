@@ -35,7 +35,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     private Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
 
     public ContainerDocproc(ContainerCluster cluster, DocprocChains chains) {
-        this(cluster, chains, new Options( null, null, null, null, null, null));
+        this(cluster, chains, new Options(false, null, null, null, null, null, null));
     }
 
     public ContainerDocproc(ContainerCluster cluster, DocprocChains chains, Options options) {
@@ -60,6 +60,10 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
         }
     }
 
+    public boolean isCompressDocuments() {
+        return options.compressDocuments;
+    }
+
     public boolean isPreferLocalNode() {
         return preferLocalNode;
     }
@@ -71,6 +75,8 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     @Override
     public void getConfig(ContainerMbusConfig.Builder builder) {
         builder.maxpendingcount(getMaxMessagesInQueue());
+        if (getMaxQueueMbSize() != null)
+            builder.maxpendingsize(getMaxQueueMbSize());  //yes, this shall be set in megabytes.
     }
 
     private int getMaxMessagesInQueue() {
@@ -131,6 +137,8 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     }
 
     public static class Options {
+        // Whether or not to compress documents after processing them.
+        public final boolean compressDocuments;
 
         public final Integer maxMessagesInQueue;
         public final Integer maxQueueMbSize;
@@ -140,7 +148,8 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
         public final Double documentExpansionFactor;
         public final Integer containerCoreMemory;
 
-        public Options(Integer maxMessagesInQueue, Integer maxQueueMbSize, Integer maxQueueTimeMs, Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
+        public Options(boolean compressDocuments, Integer maxMessagesInQueue, Integer maxQueueMbSize, Integer maxQueueTimeMs, Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
+            this.compressDocuments = compressDocuments;
             this.maxMessagesInQueue = maxMessagesInQueue;
             this.maxQueueMbSize = maxQueueMbSize;
             this.maxQueueTimeMs = maxQueueTimeMs;

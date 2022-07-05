@@ -1,12 +1,14 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.docproc.DocprocConfig;
 import com.yahoo.config.docproc.SchemamappingConfig;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostPorts;
 import com.yahoo.vespa.model.container.ApplicationContainer;
@@ -36,10 +38,12 @@ import static org.junit.Assert.assertTrue;
 public class DocprocBuilderTest extends DomBuilderTest {
 
     private ApplicationContainerCluster cluster;
+    private DocumentmanagerConfig documentmanagerConfig;
     private ContainerMbusConfig containerMbusConfig;
     private ComponentsConfig componentsConfig;
     private ChainsConfig chainsConfig;
     private SchemamappingConfig schemamappingConfig;
+    private DocprocConfig docprocConfig;
     private QrStartConfig qrStartConfig;
 
     @Before
@@ -54,8 +58,10 @@ public class DocprocBuilderTest extends DomBuilderTest {
         chainsConfig = root.getConfig(ChainsConfig.class,
                 cluster.getConfigId() + "/component/com.yahoo.docproc.jdisc.DocumentProcessingHandler");
 
+        documentmanagerConfig = root.getConfig(DocumentmanagerConfig.class, cluster.getConfigId());
         schemamappingConfig = root.getConfig(SchemamappingConfig.class, cluster.getContainers().get(0).getConfigId());
         qrStartConfig = root.getConfig(QrStartConfig.class, cluster.getConfigId());
+        docprocConfig = root.getConfig(DocprocConfig.class, cluster.getConfigId());
     }
 
     private Element servicesXml() {
@@ -64,7 +70,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
                 "  <nodes>",
                 "    <node hostalias='mockhost' baseport='1500' />",
                 "  </nodes>",
-                "  <document-processing preferlocalnode='true' numnodesperclient='2' maxqueuebytesize='100m' maxmessagesinqueue='300' maxqueuewait='200'>",
+                "  <document-processing compressdocuments='true' preferlocalnode='true' numnodesperclient='2' maxqueuebytesize='100m' maxmessagesinqueue='300' maxqueuewait='200'>",
                 "    <documentprocessor id='docproc1' class='com.yahoo.Docproc1' bundle='docproc1bundle'/>",
                 "    <chain id='chein'>",
                 "      <documentprocessor id='docproc2'/>",
@@ -77,6 +83,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     @Test
     public void testDocprocCluster() {
         assertEquals("banan", cluster.getName());
+        assertTrue(cluster.getDocproc().isCompressDocuments());
         //assertTrue(cluster.getContainerDocproc().isPreferLocalNode());
         //assertEquals(2, cluster.getContainerDocproc().getNumNodesPerClient());
         List<ApplicationContainer> services = cluster.getContainers();
@@ -98,9 +105,16 @@ public class DocprocBuilderTest extends DomBuilderTest {
     }
 
     @Test
+    public void testDocumentManagerConfig() {
+        assertTrue(documentmanagerConfig.enablecompression());
+    }
+
+    @Test
     public void testContainerMbusConfig() {
+        assertTrue(containerMbusConfig.enabled());
         assertTrue(containerMbusConfig.port() >= HostPorts.BASE_PORT);
         assertEquals(300, containerMbusConfig.maxpendingcount());
+        assertEquals(100, containerMbusConfig.maxpendingsize());
     }
 
     @Test

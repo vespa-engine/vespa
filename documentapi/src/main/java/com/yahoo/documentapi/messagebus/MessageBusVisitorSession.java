@@ -230,6 +230,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
         @Override
         public Sender createSender(ReplyHandler replyHandler, VisitorParameters visitorParameters) {
+            messageBus.setMaxPendingCount(0);
             SourceSessionParams sessionParams = createSourceSessionParams(visitorParameters);
             return new MessageBusSender(messageBus.createSourceSession(replyHandler, sessionParams));
         }
@@ -307,7 +308,7 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     private static final Logger log = Logger.getLogger(MessageBusVisitorSession.class.getName());
 
-    private static final AtomicLong sessionCounter = new AtomicLong(0);
+    private static AtomicLong sessionCounter = new AtomicLong(0);
     private static long getNextSessionId() {
         return sessionCounter.incrementAndGet();
     }
@@ -335,7 +336,7 @@ public class MessageBusVisitorSession implements VisitorSession {
     private boolean done = false;
     private boolean destroying = false; // For testing and sanity checking
     private final Object completionMonitor = new Object();
-    private final Trace trace;
+    private Trace trace;
     /**
      * We keep our own track of pending messages since the sender's pending
      * count cannot be relied on in an async task execution context. This
