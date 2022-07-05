@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
+#include <ostream>
 
 LOG_SETUP(".document.datatype.document");
 
