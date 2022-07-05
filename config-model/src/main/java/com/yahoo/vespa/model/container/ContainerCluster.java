@@ -412,8 +412,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(DocumentmanagerConfig.Builder builder) {
-        if (containerDocproc != null && containerDocproc.isCompressDocuments())
-            builder.enablecompression(true);
         if (containerDocumentApi != null)
             builder.ignoreundefinedfields(containerDocumentApi.ignoreUndefinedFields());
     }
@@ -539,9 +537,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     @Override
     public void getConfig(IlscriptsConfig.Builder builder) {
-        List<SearchCluster> searchClusters = new ArrayList<>();
-        searchClusters.addAll(Content.getSearchClusters(getRoot().configModelRepo()));
-        for (SearchCluster searchCluster : searchClusters) {
+        for (SearchCluster searchCluster : Content.getSearchClusters(getRoot().configModelRepo())) {
             searchCluster.getConfig(builder);
         }
     }
@@ -612,8 +608,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void setJvmGCOptions(String opts) { this.jvmGCOptions = opts; }
 
     public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
-
-    public String getEnvironmentVars() { return environmentVars; }
 
     public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 

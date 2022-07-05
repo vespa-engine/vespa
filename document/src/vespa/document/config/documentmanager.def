@@ -5,9 +5,6 @@ namespace=document.config
 ## Whether attempts to set an undefined field should be ignored rather than causing an error
 ignoreundefinedfields bool default=false
 
-## Whether to enable compression in this process.
-enablecompression bool default=false
-
 ## Prefer "Vespa 8" format for the "position" type
 usev8geopositions bool default=false
 
