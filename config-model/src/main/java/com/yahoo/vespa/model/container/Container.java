@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
@@ -145,6 +146,19 @@ public abstract class Container extends AbstractService implements
 
     public Http getHttp() {
         return (parent instanceof ContainerCluster) ? ((ContainerCluster<?>) parent).getHttp() : null;
+    }
+
+    public JettyHttpServer getDefaultHttpServer() {
+        return defaultHttpServer;
+    }
+
+    public JettyHttpServer getHttpServer() {
+        Http http = getHttp();
+        if (http == null) {
+            return defaultHttpServer;
+        } else {
+            return http.getHttpServer().orElse(null);
+        }
     }
 
     /** Returns the index of this node. The index of a given node is stable through changes with best effort. */
@@ -367,7 +381,7 @@ public abstract class Container extends AbstractService implements
 
     @Override
     public void getConfig(ContainerMbusConfig.Builder builder) {
-        builder.port(getMessagingPort());
+        builder.enabled(messageBusEnabled()).port(getMessagingPort());
     }
 
     @Override
