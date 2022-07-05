@@ -7,7 +7,6 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
-import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
@@ -35,13 +34,9 @@ import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
-import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.net.HostName;
-import com.yahoo.path.Path;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.VespaModel;
@@ -51,20 +46,14 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
-import com.yahoo.vespa.model.container.http.ConnectorFactory;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
-import org.hamcrest.Matchers;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.StringReader;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -82,7 +71,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
@@ -102,9 +90,6 @@ import static org.junit.Assert.fail;
  * @author gjoranv
  */
 public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
-
-    @Rule
-    public TemporaryFolder applicationFolder = new TemporaryFolder();
 
     @Test
     public void model_evaluation_bundles_are_deployed() {
@@ -556,6 +541,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(50.0, qr.shutdown().timeout(), 0.00000000000001);
         assertFalse(qr.shutdown().dumpHeapOnTimeout());
     }
+
     private QrConfig getQrConfig(ModelContext.Properties properties) throws IOException, SAXException {
         String servicesXml =
                 "<services>" +
@@ -686,86 +672,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void missing_security_clients_pem_fails_in_public() {
-        Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
-
-        try {
-            DeployState state = new DeployState.Builder()
-                    .properties(
-                        new TestProperties()
-                                .setHostedVespa(true)
-                                .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
-                    .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
-                    .build();
-            createModel(root, state, null, clusterElem);
-        } catch (RuntimeException e) {
-            assertEquals("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/en/security-model#data-plane",
-                         e.getMessage());
-            return;
-        }
-        fail();
-    }
-
-    @Test
-    public void security_clients_pem_is_picked_up() {
-        var applicationPackage = new MockApplicationPackage.Builder()
-                .withRoot(applicationFolder.getRoot())
-                .build();
-
-        applicationPackage.getFile(Path.fromString("security")).createDirectory();
-        applicationPackage.getFile(Path.fromString("security/clients.pem")).writeFile(new StringReader("I am a very nice certificate"));
-
-        var deployState = DeployState.createTestState(applicationPackage);
-
-        Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
-
-        createModel(root, deployState, null, clusterElem);
-        assertEquals(Optional.of("I am a very nice certificate"), getContainerCluster("container").getTlsClientAuthority());
-    }
-
-    @Test
-    public void operator_certificates_are_joined_with_clients_pem() {
-        var applicationPackage = new MockApplicationPackage.Builder()
-                .withRoot(applicationFolder.getRoot())
-                .build();
-
-        var applicationTrustCert = X509CertificateUtils.toPem(
-                X509CertificateUtils.createSelfSigned("CN=application", Duration.ofDays(1)).certificate());
-        var operatorCert = X509CertificateUtils.createSelfSigned("CN=operator", Duration.ofDays(1)).certificate();
-
-        applicationPackage.getFile(Path.fromString("security")).createDirectory();
-        applicationPackage.getFile(Path.fromString("security/clients.pem")).writeFile(new StringReader(applicationTrustCert));
-
-        var deployState = new DeployState.Builder().properties(
-                new TestProperties()
-                        .setOperatorCertificates(List.of(operatorCert))
-                        .setHostedVespa(true)
-                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
-                .zone(new Zone(SystemName.PublicCd, Environment.dev, RegionName.defaultName()))
-                .applicationPackage(applicationPackage)
-                .build();
-
-        Element clusterElem = DomBuilderTest.parse("<container version='1.0' />");
-
-        createModel(root, deployState, null, clusterElem);
-
-        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
-        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
-        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
-
-        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
-        tlsPort.getConfig(builder);
-
-        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
-        var caCerts = X509CertificateUtils.certificateListFromPem(connectorConfig.ssl().caCertificate());
-        assertEquals(2, caCerts.size());
-        List<String> certnames = caCerts.stream()
-                .map(cert -> cert.getSubjectX500Principal().getName())
-                .collect(Collectors.toList());
-        assertThat(certnames, containsInAnyOrder("CN=operator", "CN=application"));
-    }
-
-    @Test
     public void environment_vars_are_honoured() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
@@ -813,102 +719,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         verifyAvailableprocessors(true, null,0);
         verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(9).build()), 9);
         verifyAvailableprocessors(true, new Flavor(new FlavorsConfig.Flavor.Builder().name("test-flavor").minCpuCores(1).build()), 2);
-    }
-
-    @Test
-    public void requireThatProvidingEndpointCertificateSecretsOpensPort4443() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                nodesXml,
-                "</container>" );
-
-        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))).build();
-        createModel(root, state, null, clusterElem);
-        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
-
-        // Verify that there are two connectors
-        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
-        assertEquals(2, connectorFactories.size());
-        List<Integer> ports = connectorFactories.stream()
-                .map(ConnectorFactory::getListenPort)
-                .collect(Collectors.toList());
-        assertThat(ports, Matchers.containsInAnyOrder(8080, 4443));
-
-        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
-
-        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
-        tlsPort.getConfig(builder);
-
-
-        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
-        assertTrue(connectorConfig.ssl().enabled());
-        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH, connectorConfig.ssl().clientAuth());
-        assertEquals("CERT", connectorConfig.ssl().certificate());
-        assertEquals("KEY", connectorConfig.ssl().privateKey());
-        assertEquals(4443, connectorConfig.listenPort());
-
-        assertEquals("Connector must use Athenz truststore in a non-public system.",
-                "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem",
-                connectorConfig.ssl().caCertificateFile());
-        assertTrue(connectorConfig.ssl().caCertificate().isEmpty());
-    }
-
-    @Test
-    public void requireThatClientAuthenticationIsEnforced() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                nodesXml,
-                "   <http><filtering>" +
-                "      <access-control domain=\"vespa\" tls-handshake-client-auth=\"need\"/>" +
-                "   </filtering></http>" +
-                "</container>" );
-
-        DeployState state = new DeployState.Builder().properties(
-                new TestProperties()
-                        .setHostedVespa(true)
-                        .setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY"))))
-                .build();
-        createModel(root, state, null, clusterElem);
-        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
-
-        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
-        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
-
-        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
-        tlsPort.getConfig(builder);
-
-        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
-        assertTrue(connectorConfig.ssl().enabled());
-        assertEquals(ConnectorConfig.Ssl.ClientAuth.Enum.NEED_AUTH, connectorConfig.ssl().clientAuth());
-        assertEquals("CERT", connectorConfig.ssl().certificate());
-        assertEquals("KEY", connectorConfig.ssl().privateKey());
-        assertEquals(4443, connectorConfig.listenPort());
-
-        assertEquals("Connector must use Athenz truststore in a non-public system.",
-                "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem",
-                connectorConfig.ssl().caCertificateFile());
-        assertTrue(connectorConfig.ssl().caCertificate().isEmpty());
-    }
-
-    @Test
-    public void require_allowed_ciphers() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                nodesXml,
-                "</container>" );
-
-        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true).setEndpointCertificateSecrets(Optional.of(new EndpointCertificateSecrets("CERT", "KEY")))).build();
-        createModel(root, state, null, clusterElem);
-        ApplicationContainer container = (ApplicationContainer)root.getProducer("container/container.0");
-
-        List<ConnectorFactory> connectorFactories = container.getHttp().getHttpServer().get().getConnectorFactories();
-        ConnectorFactory tlsPort = connectorFactories.stream().filter(connectorFactory -> connectorFactory.getListenPort() == 4443).findFirst().orElseThrow();
-        ConnectorConfig.Builder builder = new ConnectorConfig.Builder();
-        tlsPort.getConfig(builder);
-
-        ConnectorConfig connectorConfig = new ConnectorConfig(builder);
-
-        assertThat(connectorConfig.ssl().enabledCipherSuites(), containsInAnyOrder(TlsContext.ALLOWED_CIPHER_SUITES.toArray()));
     }
 
     @Test
