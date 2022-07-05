@@ -7,7 +7,7 @@
 
 namespace vespalib::eval {
 
-class ValueBuilderFactory;
+struct ValueBuilderFactory;
 
 /**
  * A ConstantValueFactory that will load constant tensor values from
