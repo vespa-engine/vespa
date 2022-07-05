@@ -107,7 +107,7 @@ public class ApplicationBuilder {
         this(MockApplicationPackage.createEmpty(), new MockFileRegistry(), new BaseDeployLogger(), properties, rankProfileRegistry, queryProfileRegistry);
     }
 
-    /** normal constructor */
+    /** Regular constructor */
     public ApplicationBuilder(ApplicationPackage app,
                               FileRegistry fileRegistry,
                               DeployLogger deployLogger,

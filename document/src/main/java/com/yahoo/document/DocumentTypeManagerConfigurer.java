@@ -60,9 +60,8 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
 
     /** One-shot configuration; should be called on a newly constructed manager */
     static void configureNewManager(DocumentmanagerConfig config, DocumentTypeManager manager) {
-        if (config == null) {
-            return;
-        }
+        if (config == null) return;
+        manager.setIgnoreUndefinedFields(config.ignoreundefinedfields());
         new Apply(config, manager);
         if (config.datatype().size() == 0 && config.annotationtype().size() == 0) {
             new ApplyNewDoctypeConfig(config, manager);
@@ -328,6 +327,7 @@ public class DocumentTypeManagerConfigurer implements ConfigSubscriber.SingleSub
         public ApplyNewDoctypeConfig(DocumentmanagerConfig config, DocumentTypeManager manager) {
             this.manager = manager;
             this.usev8geopositions = config.usev8geopositions();
+
             apply(config);
         }
 

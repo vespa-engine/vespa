@@ -19,10 +19,10 @@ import static com.yahoo.document.json.readers.WeightedSetReader.fillWeightedSet;
 
 public class CompositeReader {
 
-    // TODO createComposite is extremely similar to add/remove, refactor
+    // TODO: reateComposite is extremely similar to add/remove, refactor
     // yes, this suppresswarnings ugliness is by intention, the code relies on the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes" })
-    public static void populateComposite(TokenBuffer buffer, FieldValue fieldValue) {
+    public static void populateComposite(TokenBuffer buffer, FieldValue fieldValue, boolean ignoreUndefinedFields) {
         JsonToken token = buffer.currentToken();
         if ((token != JsonToken.START_OBJECT) && (token != JsonToken.START_ARRAY)) {
             throw new IllegalArgumentException("Expected '[' or '{'. Got '" + token + "'.");
@@ -32,14 +32,14 @@ public class CompositeReader {
             if (fieldValue instanceof WeightedSet) {
                 fillWeightedSet(buffer, valueType, (WeightedSet) fieldValue);
             } else {
-                fillArray(buffer, (CollectionFieldValue) fieldValue, valueType);
+                fillArray(buffer, (CollectionFieldValue) fieldValue, valueType, ignoreUndefinedFields);
             }
         } else if (fieldValue instanceof MapFieldValue) {
-            MapReader.fillMap(buffer, (MapFieldValue) fieldValue);
+            MapReader.fillMap(buffer, (MapFieldValue) fieldValue, ignoreUndefinedFields);
         } else if (PositionDataType.INSTANCE.equals(fieldValue.getDataType())) {
             GeoPositionReader.fillGeoPosition(buffer, fieldValue);
         } else if (fieldValue instanceof StructuredFieldValue) {
-            StructReader.fillStruct(buffer, (StructuredFieldValue) fieldValue);
+            StructReader.fillStruct(buffer, (StructuredFieldValue) fieldValue, ignoreUndefinedFields);
         } else if (fieldValue instanceof TensorFieldValue) {
             TensorReader.fillTensor(buffer, (TensorFieldValue) fieldValue);
         } else {

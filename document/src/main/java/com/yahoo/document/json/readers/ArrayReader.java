@@ -15,22 +15,23 @@ import static com.yahoo.document.json.readers.SingleValueReader.readSingleValue;
 
 public class ArrayReader {
 
-    public static void fillArrayUpdate(TokenBuffer buffer, int initNesting, DataType valueType, List<FieldValue> arrayContents) {
+    public static void fillArrayUpdate(TokenBuffer buffer, int initNesting, DataType valueType,
+                                       List<FieldValue> arrayContents, boolean ignoreUndefinedFields) {
         while (buffer.nesting() >= initNesting) {
             Preconditions.checkArgument(buffer.currentToken() != JsonToken.VALUE_NULL, "Illegal null value for array entry");
-            arrayContents.add(readSingleValue(buffer, valueType));
+            arrayContents.add(readSingleValue(buffer, valueType, ignoreUndefinedFields));
             buffer.next();
         }
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static void fillArray(TokenBuffer buffer, CollectionFieldValue parent, DataType valueType) {
+    public static void fillArray(TokenBuffer buffer, CollectionFieldValue parent, DataType valueType, boolean ignoreUndefinedFields) {
         int initNesting = buffer.nesting();
         expectArrayStart(buffer.currentToken());
         buffer.next();
         while (buffer.nesting() >= initNesting) {
             Preconditions.checkArgument(buffer.currentToken() != JsonToken.VALUE_NULL, "Illegal null value for array entry");
-            parent.add(readSingleValue(buffer, valueType));
+            parent.add(readSingleValue(buffer, valueType, ignoreUndefinedFields));
             buffer.next();
         }
     }

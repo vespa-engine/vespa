@@ -56,18 +56,21 @@ public abstract class ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
     }
 
-    public static void createModel(MockRoot root, DeployState deployState, VespaModel vespaModel, Element... containerElems) {
+    public static List<ContainerModel> createModel(MockRoot root, DeployState deployState, VespaModel vespaModel, Element... containerElems) {
+        List<ContainerModel> containerModels = new ArrayList<>();
         for (Element containerElem : containerElems) {
             ContainerModel model = new ContainerModelBuilder(false, ContainerModelBuilder.Networking.enable)
                                            .build(deployState, vespaModel, null, root, containerElem);
             ContainerCluster<?> cluster = model.getCluster();
             generateDefaultSearchChains(cluster);
+            containerModels.add(model);
         }
         root.freezeModelTopology();
+        return containerModels;
     }
 
-    public static void createModel(MockRoot root, Element... containerElems) {
-        createModel(root, DeployState.createTestState(), null, containerElems);
+    public static List<ContainerModel> createModel(MockRoot root, Element... containerElems) {
+        return createModel(root, DeployState.createTestState(), null, containerElems);
     }
 
     public static void createModel(MockRoot root, DeployLogger testLogger, Element... containerElems) {

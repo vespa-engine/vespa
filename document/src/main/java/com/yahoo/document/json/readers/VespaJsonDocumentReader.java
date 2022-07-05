@@ -44,6 +44,12 @@ public class VespaJsonDocumentReader {
     private static final String UPDATE_REMOVE = "remove";
     private static final String UPDATE_ADD = "add";
 
+    private final boolean ignoreUndefinedFields;
+
+    public VespaJsonDocumentReader(boolean ignoreUndefinedFields) {
+        this.ignoreUndefinedFields = ignoreUndefinedFields;
+    }
+
     public DocumentOperation createDocumentOperation(DocumentType documentType, DocumentParseInfo documentParseInfo) {
         final DocumentOperation documentOperation;
         try {
@@ -82,7 +88,7 @@ public class VespaJsonDocumentReader {
         try {
             if (buffer.isEmpty()) // no "fields" map
                 throw new IllegalArgumentException(put + " is missing a 'fields' map");
-            populateComposite(buffer, put.getDocument());
+            populateComposite(buffer, put.getDocument(), ignoreUndefinedFields);
         } catch (JsonReaderException e) {
             throw JsonReaderException.addDocId(e, put.getId());
         }
@@ -129,25 +135,25 @@ public class VespaJsonDocumentReader {
                     if (isTensorField(field)) {
                         fieldUpdate.addValueUpdate(createTensorRemoveUpdate(buffer, field));
                     } else {
-                        createRemoves(buffer, field, fieldUpdate);
+                        createRemoves(buffer, field, fieldUpdate, ignoreUndefinedFields);
                     }
                     break;
                 case UPDATE_ADD:
                     if (isTensorField(field)) {
                         fieldUpdate.addValueUpdate(createTensorAddUpdate(buffer, field));
                     } else {
-                        createAdds(buffer, field, fieldUpdate);
+                        createAdds(buffer, field, fieldUpdate, ignoreUndefinedFields);
                     }
                     break;
                 case UPDATE_MATCH:
-                    fieldUpdate.addValueUpdate(createMapUpdate(buffer, field));
+                    fieldUpdate.addValueUpdate(createMapUpdate(buffer, field, ignoreUndefinedFields));
                     break;
                 case UPDATE_MODIFY:
                     fieldUpdate.addValueUpdate(createModifyUpdate(buffer, field));
                     break;
                 default:
                     String action = buffer.currentName();
-                    fieldUpdate.addValueUpdate(readSingleUpdate(buffer, field.getDataType(), action));
+                    fieldUpdate.addValueUpdate(readSingleUpdate(buffer, field.getDataType(), action, ignoreUndefinedFields));
             }
             buffer.next();
         }
@@ -183,14 +189,16 @@ public class VespaJsonDocumentReader {
 
     private AssignFieldPathUpdate readAssignFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
         AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
-        FieldValue fv = SingleValueReader.readSingleValue(buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        FieldValue fv = SingleValueReader.readSingleValue(buffer, fieldPathUpdate.getFieldPath().getResultingDataType(),
+                                                          ignoreUndefinedFields);
         fieldPathUpdate.setNewValue(fv);
         return fieldPathUpdate;
     }
 
     private AddFieldPathUpdate readAddFieldPathUpdate(DocumentType documentType, String fieldPath, TokenBuffer buffer) {
         AddFieldPathUpdate fieldPathUpdate = new AddFieldPathUpdate(documentType, fieldPath);
-        FieldValue fv = SingleValueReader.readSingleValue(buffer, fieldPathUpdate.getFieldPath().getResultingDataType());
+        FieldValue fv = SingleValueReader.readSingleValue(buffer, fieldPathUpdate.getFieldPath().getResultingDataType(),
+                                                          ignoreUndefinedFields);
         fieldPathUpdate.setNewValues((Array) fv);
         return fieldPathUpdate;
     }
@@ -200,8 +208,8 @@ public class VespaJsonDocumentReader {
         return new RemoveFieldPathUpdate(documentType, fieldPath);
     }
 
-    private AssignFieldPathUpdate readArithmeticFieldPathUpdate(
-            DocumentType documentType, String fieldPath, TokenBuffer buffer, String fieldPathOperation) {
+    private AssignFieldPathUpdate readArithmeticFieldPathUpdate(DocumentType documentType, String fieldPath,
+                                                                TokenBuffer buffer, String fieldPathOperation) {
         AssignFieldPathUpdate fieldPathUpdate = new AssignFieldPathUpdate(documentType, fieldPath);
         String arithmeticSign = SingleValueReader.UPDATE_OPERATION_TO_ARITHMETIC_SIGN.get(fieldPathOperation);
         double value = Double.valueOf(buffer.currentText());
@@ -217,7 +225,7 @@ public class VespaJsonDocumentReader {
 
     private static void verifyEndState(TokenBuffer buffer, JsonToken expectedFinalToken) {
         Preconditions.checkState(buffer.currentToken() == expectedFinalToken,
-                "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.currentToken());
+                                 "Expected end of JSON struct (%s), got %s", expectedFinalToken, buffer.currentToken());
         Preconditions.checkState(buffer.nesting() == 0, "Nesting not zero at end of operation");
         Preconditions.checkState(buffer.next() == null, "Dangling data at end of operation");
         Preconditions.checkState(buffer.size() == 0, "Dangling data at end of operation");

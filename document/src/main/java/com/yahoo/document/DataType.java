@@ -34,7 +34,7 @@ import java.util.List;
 public abstract class DataType extends Identifiable implements Comparable<DataType> {
 
     // The global class identifier shared with C++.
-    public static int classId = registerClass(Ids.document + 50, DataType.class);
+    public static final int classId = registerClass(Ids.document + 50, DataType.class);
 
     // NOTE: These types are also defined in
     // document/src/vespa/document/datatype/datatype.h

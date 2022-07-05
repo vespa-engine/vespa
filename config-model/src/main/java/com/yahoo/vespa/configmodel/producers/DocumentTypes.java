@@ -33,6 +33,7 @@ import java.util.Set;
  * @author baldersheim
  */
 public class DocumentTypes {
+
     private boolean useV8GeoPositions = false;
 
     public DocumentTypes useV8GeoPositions(boolean value) {

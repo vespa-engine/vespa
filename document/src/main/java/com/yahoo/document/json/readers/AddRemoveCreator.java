@@ -21,22 +21,22 @@ public class AddRemoveCreator {
 
     // yes, this suppresswarnings ugliness is by intention, the code relies on
     // the contracts in the builders
-    @SuppressWarnings({ "cast", "rawtypes", "unchecked" })
-    public static void createAdds(TokenBuffer buffer, Field field, FieldUpdate update) {
-        createAddsOrRemoves(buffer, field, update, false);
+    @SuppressWarnings("cast")
+    public static void createAdds(TokenBuffer buffer, Field field, FieldUpdate update, boolean ignoreUndefinedFields) {
+        createAddsOrRemoves(buffer, field, update, false, ignoreUndefinedFields);
+    }
+
+    // yes, this suppresswarnings ugliness is by intention, the code relies on
+    // the contracts in the builders
+    @SuppressWarnings("cast")
+    public static void createRemoves(TokenBuffer buffer, Field field, FieldUpdate update, boolean ignoreUndefinedFields) {
+        createAddsOrRemoves(buffer, field, update, true, ignoreUndefinedFields);
     }
 
     // yes, this suppresswarnings ugliness is by intention, the code relies on
     // the contracts in the builders
     @SuppressWarnings({ "cast", "rawtypes", "unchecked" })
-    public static void createRemoves(TokenBuffer buffer, Field field, FieldUpdate update) {
-        createAddsOrRemoves(buffer, field, update, true);
-    }
-
-    // yes, this suppresswarnings ugliness is by intention, the code relies on
-    // the contracts in the builders
-    @SuppressWarnings({ "cast", "rawtypes", "unchecked" })
-    private static void createAddsOrRemoves(TokenBuffer buffer, Field field, FieldUpdate update, boolean isRemove) {
+    private static void createAddsOrRemoves(TokenBuffer buffer, Field field, FieldUpdate update, boolean isRemove, boolean ignoreUndefinedFields) {
         FieldValue container = field.getDataType().createFieldValue();
         FieldUpdate singleUpdate;
         int initNesting = buffer.nesting();
@@ -45,10 +45,9 @@ public class AddRemoveCreator {
         if (container instanceof CollectionFieldValue) {
             buffer.next();
             DataType valueType = ((CollectionFieldValue) container).getDataType().getNestedType();
-            if (container instanceof WeightedSet) {
+            if (container instanceof WeightedSet weightedSet) {
                 // these are objects with string keys (which are the nested
                 // types) and values which are the weight
-                WeightedSet weightedSet = (WeightedSet) container;
                 fillWeightedSetUpdate(buffer, initNesting, valueType, weightedSet);
                 if (isRemove) {
                     singleUpdate = FieldUpdate.createRemoveAll(field, weightedSet);
@@ -58,7 +57,7 @@ public class AddRemoveCreator {
                 }
             } else {
                 List<FieldValue> arrayContents = new ArrayList<>();
-                ArrayReader.fillArrayUpdate(buffer, initNesting, valueType, arrayContents);
+                ArrayReader.fillArrayUpdate(buffer, initNesting, valueType, arrayContents, ignoreUndefinedFields);
                 if (buffer.currentToken() != JsonToken.END_ARRAY) {
                     throw new IllegalArgumentException("Expected END_ARRAY. Got '" + buffer.currentToken() + "'.");
                 }

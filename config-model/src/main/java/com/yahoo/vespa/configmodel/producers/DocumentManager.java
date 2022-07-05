@@ -36,14 +36,13 @@ public class DocumentManager {
 
     private boolean useV8GeoPositions = false;
 
-    public DocumentManager useV8GeoPositions(boolean value) {
-        this.useV8GeoPositions = value;
+    public DocumentManager useV8GeoPositions(boolean useV8GeoPositions) {
+        this.useV8GeoPositions = useV8GeoPositions;
         return this;
     }
 
     public DocumentmanagerConfig.Builder produce(DocumentModel model,
-                                                 DocumentmanagerConfig.Builder documentConfigBuilder)
-    {
+                                                 DocumentmanagerConfig.Builder documentConfigBuilder) {
         return produceDocTypes(model, documentConfigBuilder);
     }   
 
@@ -75,6 +74,7 @@ public class DocumentManager {
     }
 
     static private class IdxMap {
+
         private final Map<Integer, Boolean> doneMap = new HashMap<>();
         private final Map<String, Integer> map = new HashMap<>();
         private final DataTypeRecognizer recognizer = new DataTypeRecognizer();

@@ -26,7 +26,7 @@ public class IntermediateCollection {
     private final DeployLogger deployLogger;
     private final ModelContext.Properties modelProperties;
 
-    private Map<String, ParsedSchema> parsedSchemas = new LinkedHashMap<>();
+    private final Map<String, ParsedSchema> parsedSchemas = new LinkedHashMap<>();
 
     IntermediateCollection() {
         this.deployLogger = new BaseDeployLogger();

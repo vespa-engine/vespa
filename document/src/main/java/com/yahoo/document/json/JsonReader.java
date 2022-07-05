@@ -71,7 +71,7 @@ public class JsonReader {
             throw new IllegalArgumentException(e);
         }
         documentParseInfo.operationType = operationType;
-        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader();
+        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
         DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
                 getDocumentTypeFromString(documentParseInfo.documentId.getDocType(), typeManager), documentParseInfo);
         operation.setCondition(TestAndSetCondition.fromConditionString(documentParseInfo.condition));
@@ -103,7 +103,7 @@ public class JsonReader {
             state = END_OF_FEED;
             return null;
         }
-        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader();
+        VespaJsonDocumentReader vespaJsonDocumentReader = new VespaJsonDocumentReader(typeManager.getIgnoreUndefinedFields());
         DocumentOperation operation = vespaJsonDocumentReader.createDocumentOperation(
                 getDocumentTypeFromString(documentParseInfo.get().documentId.getDocType(), typeManager),
                 documentParseInfo.get());

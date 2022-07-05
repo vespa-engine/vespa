@@ -22,23 +22,26 @@ public class ContainerDocumentApi {
 
     public static final String DOCUMENT_V1_PREFIX = "/document/v1";
 
-    public ContainerDocumentApi(ContainerCluster<?> cluster, Options options) {
-        addRestApiHandler(cluster, options);
-        addFeedHandler(cluster, options);
+    private final boolean ignoreUndefinedFields;
+
+    public ContainerDocumentApi(ContainerCluster<?> cluster, HandlerOptions handlerOptions, boolean ignoreUndefinedFields) {
+        this.ignoreUndefinedFields = ignoreUndefinedFields;
+        addRestApiHandler(cluster, handlerOptions);
+        addFeedHandler(cluster, handlerOptions);
     }
 
-    private static void addFeedHandler(ContainerCluster<?> cluster, Options options) {
+    private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
-        var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, options);
+        var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, handlerOptions);
         cluster.addComponent(handler);
-        var executor = new Threadpool("feedapi-handler", cluster, options.feedApiThreadpoolOptions);
+        var executor = new Threadpool("feedapi-handler", handlerOptions.feedApiThreadpoolOptions);
         handler.inject(executor);
         handler.addComponent(executor);
     }
 
 
-    private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
-        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", DOCUMENT_V1_PREFIX + "/*", options);
+    private static void addRestApiHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions) {
+        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", DOCUMENT_V1_PREFIX + "/*", handlerOptions);
         cluster.addComponent(handler);
 
         // We need to include a dummy implementation of the previous restapi handler (using the same class name).
@@ -47,17 +50,19 @@ public class ContainerDocumentApi {
         cluster.addComponent(oldHandlerDummy);
     }
 
+    public boolean ignoreUndefinedFields() { return ignoreUndefinedFields; }
+
     private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(
             String componentId,
             String bindingSuffix,
-            Options options) {
+            HandlerOptions handlerOptions) {
         Handler<AbstractConfigProducer<?>> handler = handlerComponentSpecification(componentId);
-        if (options.bindings.isEmpty()) {
+        if (handlerOptions.bindings.isEmpty()) {
             handler.addServerBindings(
                     SystemBindingPattern.fromHttpPath(bindingSuffix),
                     SystemBindingPattern.fromHttpPath(bindingSuffix + '/'));
         } else {
-            for (String rootBinding : options.bindings) {
+            for (String rootBinding : handlerOptions.bindings) {
                 String pathWithoutLeadingSlash = bindingSuffix.substring(1);
                 handler.addServerBindings(
                         UserBindingPattern.fromPattern(rootBinding + pathWithoutLeadingSlash),
@@ -72,11 +77,12 @@ public class ContainerDocumentApi {
                 BundleInstantiationSpecification.getFromStrings(className, null, "vespaclient-container-plugin"), ""));
     }
 
-    public static final class Options {
+    public static final class HandlerOptions {
+
         private final Collection<String> bindings;
         private final ContainerThreadpool.UserOptions feedApiThreadpoolOptions;
 
-        public Options(Collection<String> bindings, ContainerThreadpool.UserOptions feedApiThreadpoolOptions) {
+        public HandlerOptions(Collection<String> bindings, ContainerThreadpool.UserOptions feedApiThreadpoolOptions) {
             this.bindings = Collections.unmodifiableCollection(bindings);
             this.feedApiThreadpoolOptions = feedApiThreadpoolOptions;
         }
@@ -84,13 +90,8 @@ public class ContainerDocumentApi {
 
     private static class Threadpool extends ContainerThreadpool {
 
-        private final ContainerCluster<?> cluster;
-
-        Threadpool(String name,
-                   ContainerCluster<?> cluster,
-                   ContainerThreadpool.UserOptions threadpoolOptions) {
+        Threadpool(String name, ContainerThreadpool.UserOptions threadpoolOptions) {
             super(name, threadpoolOptions);
-            this.cluster = cluster;
         }
 
         @Override
