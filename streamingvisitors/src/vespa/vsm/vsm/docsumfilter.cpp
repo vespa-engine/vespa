@@ -456,7 +456,7 @@ DocsumFilter::writeEmpty(ResType type, ResultPacker & packer)
         packer.AddShort(std::numeric_limits<int16_t>::min());
         break;
     case RES_BYTE:
-        packer.AddByte(0); // byte fields are unsigned so we have no 'notdefined' value.
+        packer.AddByte(std::numeric_limits<int8_t>::min());
         break;
     case RES_FLOAT:
         packer.AddFloat(std::numeric_limits<float>::quiet_NaN());
