@@ -8,7 +8,6 @@ import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
-import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -20,7 +19,6 @@ import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
@@ -32,7 +30,6 @@ import com.yahoo.container.handler.VipStatusHandler;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
-import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
@@ -44,7 +41,6 @@ import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
-import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
@@ -56,7 +52,6 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -574,104 +569,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
-    public void secret_store_can_be_set_up() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <secret-store type='oath-ckms'>",
-                "    <group name='group1' environment='env1'/>",
-                "  </secret-store>",
-                "</container>");
-        createModel(root, clusterElem);
-        SecretStore secretStore = getContainerCluster("container").getSecretStore().get();
-        assertEquals("group1", secretStore.getGroups().get(0).name);
-        assertEquals("env1", secretStore.getGroups().get(0).environment);
-    }
-
-    @Test
-    public void cloud_secret_store_requires_configured_secret_store() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <secret-store type='cloud'>",
-                "    <store id='store'>",
-                "      <aws-parameter-store account='store1' region='eu-north-1'/>",
-                "    </store>",
-                "  </secret-store>",
-                "</container>");
-        try {
-            DeployState state = new DeployState.Builder()
-                    .properties(new TestProperties().setHostedVespa(true))
-                    .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
-                    .build();
-            createModel(root, state, null, clusterElem);
-            fail("secret store not defined");
-        } catch (RuntimeException e) {
-            assertEquals("No configured secret store named store1", e.getMessage());
-        }
-    }
-
-
-    @Test
-    public void cloud_secret_store_can_be_set_up() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <secret-store type='cloud'>",
-                "    <store id='store'>",
-                "      <aws-parameter-store account='store1' region='eu-north-1'/>",
-                "    </store>",
-                "  </secret-store>",
-                "</container>");
-
-        DeployState state = new DeployState.Builder()
-                .properties(
-                        new TestProperties()
-                                .setHostedVespa(true)
-                                .setTenantSecretStores(List.of(new TenantSecretStore("store1", "1234", "role", Optional.of("externalid")))))
-                .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
-                .build();
-        createModel(root, state, null, clusterElem);
-
-        ApplicationContainerCluster container = getContainerCluster("container");
-        assertComponentConfigured(container, "com.yahoo.jdisc.cloud.aws.AwsParameterStore");
-        CloudSecretStore secretStore = (CloudSecretStore) container.getComponentsMap().get(ComponentId.fromString("com.yahoo.jdisc.cloud.aws.AwsParameterStore"));
-
-
-        SecretStoreConfig.Builder configBuilder = new SecretStoreConfig.Builder();
-        secretStore.getConfig(configBuilder);
-        SecretStoreConfig secretStoreConfig = configBuilder.build();
-
-        assertEquals(1, secretStoreConfig.awsParameterStores().size());
-        assertEquals("store1", secretStoreConfig.awsParameterStores().get(0).name());
-    }
-
-    @Test
-    public void cloud_secret_store_fails_to_set_up_in_non_public_zone() {
-        try {
-            Element clusterElem = DomBuilderTest.parse(
-                    "<container version='1.0'>",
-                    "  <secret-store type='cloud'>",
-                    "    <store id='store'>",
-                    "      <aws-parameter-store account='store1' region='eu-north-1'/>",
-                    "    </store>",
-                    "  </secret-store>",
-                    "</container>");
-
-            DeployState state = new DeployState.Builder()
-                    .properties(
-                            new TestProperties()
-                                    .setHostedVespa(true)
-                                    .setTenantSecretStores(List.of(new TenantSecretStore("store1", "1234", "role", Optional.of("externalid")))))
-                    .zone(new Zone(SystemName.main, Environment.prod, RegionName.defaultName()))
-                    .build();
-            createModel(root, state, null, clusterElem);
-        } catch (RuntimeException e) {
-            assertEquals("Cloud secret store is not supported in non-public system, see the documentation",
-                         e.getMessage());
-            return;
-        }
-        fail();
-    }
-
-    @Test
     public void environment_vars_are_honoured() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
@@ -803,11 +700,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                      logger.msgs.get(0).getSecond());
         assertEquals("Element 'region' contains attribute 'active' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
                      logger.msgs.get(1).getSecond());
-    }
-
-    private void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
-        Component<?, ?> component = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
-        assertNotNull(component);
     }
 
     private void assertComponentConfigured(ApplicationContainer container, String id) {
