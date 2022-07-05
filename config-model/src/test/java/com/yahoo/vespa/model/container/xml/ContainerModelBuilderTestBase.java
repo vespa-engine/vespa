@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 
+import static org.junit.Assert.assertNotNull;
+
 /**
  * Utility functions for testing the ContainerModelBuilder. Note that XML validation will
  * not be done when using this class
@@ -50,6 +52,11 @@ public abstract class ContainerModelBuilderTestBase {
             "  </nodes>";
 
     protected MockRoot root;
+
+    @Before
+    public void prepareTest() {
+        root = new MockRoot("root");
+    }
 
     protected void createBasicContainerModel() {
         Element clusterElem = DomBuilderTest.parse("<container id='default' version='1.0' />");
@@ -83,11 +90,6 @@ public abstract class ContainerModelBuilderTestBase {
             search.initializeSearchChains(Collections.emptyMap());
     }
 
-    @Before
-    public void prepareTest() {
-        root = new MockRoot("root");
-    }
-
     protected ComponentsConfig componentsConfig() {
         return root.getConfig(ComponentsConfig.class, "default");
     }
@@ -107,6 +109,11 @@ public abstract class ContainerModelBuilderTestBase {
     public Component<?, ?> getContainerComponent(String clusterId, String componentId) {
         return getContainerCluster(clusterId).getComponentsMap().get(
                 ComponentId.fromString(componentId));
+    }
+
+    void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
+        Component<?, ?> component = cluster.getComponentsMap().get(ComponentId.fromString(componentId));
+        assertNotNull(component);
     }
 
 }
