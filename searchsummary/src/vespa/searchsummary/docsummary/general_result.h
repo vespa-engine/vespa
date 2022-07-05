@@ -46,6 +46,8 @@ public:
             return false;
         }
     }
+
+    const IDocsumStoreDocument *get_document() const noexcept { return _document; }
 };
 
 }

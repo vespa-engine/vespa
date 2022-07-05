@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumwriter.h"
-#include "check_undefined_value_visitor.h"
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
+#include "i_docsum_store_document.h"
 #include "summaryfieldconverter.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
@@ -19,22 +19,6 @@ using namespace vespalib::slime::convenience;
 using vespalib::Issue;
 
 namespace search::docsummary {
-
-namespace {
-
-void insert_document_field(const vespalib::string& field_name, const GeneralResult& gres, Inserter &inserter)
-{
-    auto input_field_value = gres.get_field_value(field_name);
-    if (input_field_value) {
-        CheckUndefinedValueVisitor check_undefined;
-        input_field_value->accept(check_undefined);
-        if (!check_undefined.is_undefined()) {
-            SummaryFieldConverter::insert_summary_field(false, *input_field_value, inserter);
-        }
-    }
-}
-
-}
 
 uint32_t
 IDocsumWriter::slime2RawBuf(const Slime & slime, RawBuf & buf)
@@ -116,7 +100,10 @@ static void convertEntry(const ResConfigEntry *resCfg,
     LOG_ASSERT(resCfg != nullptr);
     if (entry == nullptr || entry->_not_present) {
         // Entry is not present in docsum blob
-        insert_document_field(resCfg->_bindname, gres, inserter);
+        const auto* document = gres.get_document();
+        if (document != nullptr) {
+            document->insert_summary_field(resCfg->_bindname, inserter);
+        }
         return;
     }
 
@@ -220,7 +207,10 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
                         LOG_ASSERT(entry != nullptr);
                         convertEntry(outCfg, entry, gres, inserter, slime);
                     } else {
-                        insert_document_field(outCfg->_bindname, gres, inserter);
+                        const auto* document = gres.get_document();
+                        if (document != nullptr) {
+                            document->insert_summary_field(outCfg->_bindname, inserter);
+                        }
                     }
                 }
             }

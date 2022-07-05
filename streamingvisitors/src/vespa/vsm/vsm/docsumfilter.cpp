@@ -134,6 +134,7 @@ public:
     DocsumStoreVsmDocument(const document::Document* document);
     ~DocsumStoreVsmDocument() override;
     std::unique_ptr<document::FieldValue> get_field_value(const vespalib::string& field_name) const override;
+    void insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const override;
 };
 
 DocsumStoreVsmDocument::DocsumStoreVsmDocument(const document::Document* document)
@@ -156,6 +157,19 @@ DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) cons
         }
     }
     return {};
+}
+
+void
+DocsumStoreVsmDocument::insert_summary_field(const vespalib::string& field_name, vespalib::slime::Inserter& inserter) const
+{
+    auto field_value = get_field_value(field_name);
+    if (field_value) {
+        CheckUndefinedValueVisitor check_undefined;
+        field_value->accept(check_undefined);
+        if (!check_undefined.is_undefined()) {
+            SummaryFieldConverter::insert_summary_field(false, *field_value, inserter);
+        }
+    }
 }
 
 }
