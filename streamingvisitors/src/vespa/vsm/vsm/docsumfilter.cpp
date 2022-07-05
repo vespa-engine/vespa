@@ -3,6 +3,7 @@
 #include "docsumfilter.h"
 #include "slimefieldwriter.h"
 #include <vespa/searchsummary/docsummary/check_undefined_value_visitor.h>
+#include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/summaryfieldconverter.h>
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/fieldvalue/iteratorhandler.h>
@@ -118,6 +119,46 @@ public:
 
 
 namespace vsm {
+
+namespace {
+
+/**
+ * Class providing access to a document retrieved from an IDocsumStore
+ * (vsm::DocsumFilter). VSM specific transforms might be applied when
+ * accessing some fields.
+ **/
+class DocsumStoreVsmDocument : public IDocsumStoreDocument
+{
+    const document::Document* _document;
+public:
+    DocsumStoreVsmDocument(const document::Document* document);
+    ~DocsumStoreVsmDocument() override;
+    std::unique_ptr<document::FieldValue> get_field_value(const vespalib::string& field_name) const override;
+};
+
+DocsumStoreVsmDocument::DocsumStoreVsmDocument(const document::Document* document)
+    : _document(document)
+{
+}
+
+DocsumStoreVsmDocument::~DocsumStoreVsmDocument() = default;
+
+std::unique_ptr<document::FieldValue>
+DocsumStoreVsmDocument::get_field_value(const vespalib::string& field_name) const
+{
+    if (_document != nullptr) {
+        const document::Field & field = _document->getField(field_name);
+        auto value(field.getDataType().createFieldValue());
+        if (value) {
+            if (_document->getValue(field, *value)) {
+                return value;
+            }
+        }
+    }
+    return {};
+}
+
+}
 
 FieldPath
 copyPathButFirst(const FieldPath & rhs) {
@@ -489,7 +530,7 @@ DocsumFilter::getMappedDocsum(uint32_t id)
     if (ok) {
         const auto* storage_doc = dynamic_cast<const StorageDocument *>(&doc);
         const document::Document *doc_doc = (storage_doc != nullptr && storage_doc->valid()) ? &storage_doc->docDoc() : nullptr;
-        return DocsumStoreValue(buf, buflen, doc_doc);
+        return DocsumStoreValue(buf, buflen, std::make_unique<DocsumStoreVsmDocument>(doc_doc));
     } else {
         return DocsumStoreValue(nullptr, 0);
     }

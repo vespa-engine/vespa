@@ -5,9 +5,9 @@
 #include <memory>
 #include <utility>
 
-namespace document { class Document; }
-
 namespace search::docsummary {
+
+class IDocsumStoreDocument;
 
 /**
  * Simple wrapper class containing the location and size of a docsum
@@ -19,11 +19,11 @@ class DocsumStoreValue
 {
 private:
     std::pair<const char *, uint32_t> _value;
-    // The document instance that was used to generate the docsum blob.
+    // An interface for accessing the document instance that was used
+    // to generate the docsum blob.
     // Note: This is temporary until the docsummary framework is simplified,
     //       and the docsum blob concept is removed.
-    std::unique_ptr<document::Document> _document;
-    const document::Document*           _document_ptr;
+    std::unique_ptr<IDocsumStoreDocument> _document;
 
 public:
     DocsumStoreValue(const DocsumStoreValue&) = delete;
@@ -47,18 +47,9 @@ public:
      *
      * @param pt_ docsum location
      * @param len_ docsum size
-     * @param document_ document instance used to generate the docsum blob
+     * @param document docsum store document instance
      **/
-    DocsumStoreValue(const char *pt_, uint32_t len_, std::unique_ptr<document::Document> document_);
-
-    /**
-     * Construct object encapsulating the given location and size.
-     *
-     * @param pt_ docsum location
-     * @param len_ docsum size
-     * @param document_ptr document instance used to generate the docsum blob. Note: external ownership.
-     **/
-    DocsumStoreValue(const char *pt_, uint32_t len_, const document::Document* document_ptr);
+    DocsumStoreValue(const char *pt_, uint32_t len_, std::unique_ptr<IDocsumStoreDocument> document);
 
     ~DocsumStoreValue();
 
@@ -87,7 +78,7 @@ public:
      **/
     bool valid() const { return (_value.first != 0) && (_value.second >= sizeof(uint32_t)); }
 
-    const document::Document* get_document() const { return _document_ptr; }
+    const IDocsumStoreDocument* get_document() const { return _document.get(); }
 };
 
 }

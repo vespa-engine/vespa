@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "general_result.h"
+#include "i_docsum_store_document.h"
 #include "resultconfig.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/datatype/datatype.h>
@@ -73,15 +74,9 @@ std::unique_ptr<document::FieldValue>
 GeneralResult::get_field_value(const vespalib::string& field_name) const
 {
     if (_document != nullptr) {
-        const document::Field & field = _document->getField(field_name);
-        auto value(field.getDataType().createFieldValue());
-        if (value) {
-            if (_document->getValue(field, *value)) {
-                return value;
-            }
-        }
+        return _document->get_field_value(field_name);
     }
-    return std::unique_ptr<document::FieldValue>();
+    return {};
 }
 
 bool
