@@ -22,10 +22,6 @@ transport_events_before_wakeup int default=1
 # Dynamic throttling is used, and works better than anything else.
 maxpendingcount int default=2048
 
-enabled bool default=false
-#maxpendingsize is set in megabytes!
-maxpendingsize int default=100
-
 #The amount of input data that the service can process concurrently
 maxConcurrentFactor double default=0.2 range=[0.0-1.0]
 
