@@ -358,6 +358,8 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Remote sessions for tenant " + tenantName + ": " + remoteSessionsFromZooKeeper);
 
         int deleted = 0;
+        // Avoid deleting too many in one run
+        int deleteMax = (int) Math.min(1000, Math.max(10, remoteSessionsFromZooKeeper.size() * 0.01));
         for (long sessionId : remoteSessionsFromZooKeeper) {
             Session session = remoteSessionCache.get(sessionId);
             if (session == null) {
@@ -370,8 +372,7 @@ public class SessionRepository {
                 deleteRemoteSessionFromZooKeeper(session);
                 deleted++;
             }
-            // Avoid deleting too many in one run
-            if (deleted >= 2)
+            if (deleted >= deleteMax)
                 break;
         }
         return deleted;
