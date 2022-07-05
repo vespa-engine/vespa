@@ -50,7 +50,7 @@ private:
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                              const tensor::ITensorAttribute& attr_tensor,
-                             std::unique_ptr<vespalib::eval::Value> query_tensor,
+                             const vespalib::eval::Value& query_tensor,
                              uint32_t target_hits, bool approximate, uint32_t explore_additional_hits,
                              double distance_threshold,
                              double global_filter_lower_limit,

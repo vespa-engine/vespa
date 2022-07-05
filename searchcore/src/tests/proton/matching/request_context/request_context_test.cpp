@@ -5,7 +5,8 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchcore/proton/matching/requestcontext.h>
 #include <vespa/searchlib/attribute/attribute_blueprint_params.h>
-#include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/fef/test/indexenvironment.h>
+#include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/vespalib/util/testclock.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -14,11 +15,14 @@ using search::attribute::AttributeBlueprintParams;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeFunctor;
 using search::attribute::IAttributeVector;
-using search::fef::Properties;
+using search::fef::test::IndexEnvironment;
+using search::fef::test::QueryEnvironment;
 using vespalib::eval::SimpleValue;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
+
 using namespace proton;
+using namespace search::fef::indexproperties;
 
 class MyAttributeContext : public search::attribute::IAttributeContext {
 public:
@@ -33,14 +37,15 @@ private:
     vespalib::TestClock    _clock;
     vespalib::Doom         _doom;
     MyAttributeContext     _attr_ctx;
-    Properties             _props;
+    IndexEnvironment       _index_env;
+    QueryEnvironment       _query_env;
     RequestContext         _request_ctx;
     Value::UP              _query_tensor;
 
     void insert_tensor_in_properties(const vespalib::string& tensor_name, const Value& tensor_value) {
         vespalib::nbostream stream;
         encode_value(tensor_value, stream);
-        _props.add(tensor_name, vespalib::stringref(stream.data(), stream.size()));
+        _query_env.getProperties().add(tensor_name, vespalib::stringref(stream.data(), stream.size()));
     }
 
 public:
@@ -48,18 +53,20 @@ public:
         : _clock(),
           _doom(_clock.clock(), vespalib::steady_time(), vespalib::steady_time(), false),
           _attr_ctx(),
-          _props(),
-          _request_ctx(_doom, _attr_ctx, _props, AttributeBlueprintParams()),
+          _index_env(),
+          _query_env(&_index_env),
+          _request_ctx(_doom, _attr_ctx, _query_env, _query_env.getObjectStore(), AttributeBlueprintParams()),
           _query_tensor(SimpleValue::from_spec(TensorSpec("tensor(x[2])")
                                                .add({{"x", 0}}, 3).add({{"x", 1}}, 5)))
     {
+        type::QueryFeature::set(_index_env.getProperties(), "my_tensor", "tensor(x[2])");
         insert_tensor_in_properties("my_tensor", *_query_tensor);
-        _props.add("my_string", "foo bar");
+        _query_env.getProperties().add("my_string", "foo bar");
     }
     TensorSpec expected_query_tensor() const {
         return spec_from_value(*_query_tensor);
     }
-    Value::UP get_query_tensor(const vespalib::string& tensor_name) const {
+    const Value* get_query_tensor(const vespalib::string& tensor_name) const {
         return _request_ctx.get_query_tensor(tensor_name);
     }
 };

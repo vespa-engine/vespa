@@ -94,10 +94,10 @@ private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     QueryLimiter                    & _queryLimiter;
     search::attribute::AttributeBlueprintParams _global_filter_params;
-    RequestContext                    _requestContext;
     Query                             _query;
     MaybeMatchPhaseLimiter::UP        _match_limiter;
     QueryEnvironment                  _queryEnv;
+    RequestContext                    _requestContext;
     search::fef::MatchDataLayout      _mdl;
     const search::fef::RankSetup    & _rankSetup;
     const search::fef::Properties   & _featureOverrides;

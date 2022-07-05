@@ -35,7 +35,7 @@ to_string(NearestNeighborBlueprint::Algorithm algorithm)
 
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
                                                    const tensor::ITensorAttribute& attr_tensor,
-                                                   std::unique_ptr<Value> query_tensor,
+                                                   const Value& query_tensor,
                                                    uint32_t target_hits,
                                                    bool approximate,
                                                    uint32_t explore_additional_hits,
@@ -44,7 +44,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
                                                    double global_filter_upper_limit)
     : ComplexLeafBlueprint(field),
       _attr_tensor(attr_tensor),
-      _distance_calc(_attr_tensor, std::move(query_tensor)),
+      _distance_calc(_attr_tensor, query_tensor),
       _query_tensor(_distance_calc.query_tensor()),
       _target_hits(target_hits),
       _adjusted_target_hits(target_hits),

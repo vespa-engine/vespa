@@ -1044,8 +1044,13 @@ TEST_F("Nearest neighbor index type is added to attribute file header", DenseTen
 
 template <typename ParentT>
 class NearestNeighborBlueprintFixtureBase : public ParentT {
+private:
+    std::unique_ptr<Value> _query_tensor;
+
 public:
-    NearestNeighborBlueprintFixtureBase() {
+    NearestNeighborBlueprintFixtureBase()
+        : _query_tensor()
+    {
         this->set_tensor(1, vec_2d(1, 1));
         this->set_tensor(2, vec_2d(2, 2));
         this->set_tensor(3, vec_2d(3, 3));
@@ -1058,8 +1063,9 @@ public:
         this->set_tensor(10, vec_2d(0, 0));
     }
 
-    std::unique_ptr<Value> createDenseTensor(const TensorSpec &spec) {
-        return SimpleValue::from_spec(spec);
+    const Value& create_query_tensor(const TensorSpec& spec) {
+        _query_tensor = SimpleValue::from_spec(spec);
+        return *_query_tensor;
     }
 
     std::unique_ptr<NearestNeighborBlueprint> make_blueprint(bool approximate = true, double global_filter_lower_limit = 0.05) {
@@ -1067,7 +1073,7 @@ public:
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
             this->as_dense_tensor(),
-            createDenseTensor(vec_2d(17, 42)),
+            create_query_tensor(vec_2d(17, 42)),
             3, approximate, 5,
             100100.25,
             global_filter_lower_limit, 1.0);
