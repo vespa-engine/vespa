@@ -15,6 +15,7 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
+#include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
@@ -132,7 +133,7 @@ public:
         const char* buf;
         uint32_t buf_len;
         assert(_packer.GetDocsumBlob(&buf, &buf_len));
-        return DocsumStoreValue(buf, buf_len, std::move(doc));
+        return DocsumStoreValue(buf, buf_len, std::make_unique<DocsumStoreDocument>(std::move(doc)));
     }
 };
 

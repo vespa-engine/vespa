@@ -6,11 +6,12 @@
 #include "docsumstorevalue.h"
 
 namespace document {
-class Document;
 class FieldValue;
 }
 
 namespace search::docsummary {
+
+class DocsumStoreDocument;
 
 class GeneralResult
 {
@@ -21,7 +22,7 @@ private:
     const ResultClass      *_resClass;
     uint32_t                _entrycnt;
     ResEntry               *_entries;
-    const document::Document* _document;
+    const IDocsumStoreDocument* _document;
 
     void AllocEntries();
     void FreeEntries();
