@@ -340,7 +340,10 @@ public class ApplicationController {
         Version oldestInstalledPlatform = oldestInstalledPlatform(id);
 
         // Target platforms are all versions not older than the oldest installed platform, unless forcing a major version change.
-        Predicate<Version> isTargetPlatform = targetMajor.isEmpty() || targetMajor.getAsInt() == oldestInstalledPlatform.getMajor()
+        // Only major version specified in deployment spec is enough to force a downgrade, while all sources may force an upgrade.
+        Predicate<Version> isTargetPlatform =    targetMajor.isEmpty()
+                                              || targetMajor.getAsInt() == oldestInstalledPlatform.getMajor()
+                                              || wantedMajor.isEmpty() && targetMajor.getAsInt() <= oldestInstalledPlatform.getMajor()
                                               ? version -> ! version.isBefore(oldestInstalledPlatform)
                                               : version -> targetMajor.getAsInt() == version.getMajor();
         Set<Version> platformVersions = versionStatus.versions().stream()
