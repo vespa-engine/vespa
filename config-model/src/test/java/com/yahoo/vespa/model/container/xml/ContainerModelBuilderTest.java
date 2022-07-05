@@ -80,11 +80,11 @@ import static com.yahoo.vespa.model.container.ContainerCluster.ROOT_HANDLER_BIND
 import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -993,39 +993,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                      logger.msgs.get(0).getSecond());
         assertEquals("Element 'region' contains attribute 'active' deprecated since major version 7. See https://cloud.vespa.ai/en/reference/routing#deprecated-syntax",
                      logger.msgs.get(1).getSecond());
-    }
-
-    @Test
-    public void logs_accesslog_not_overidable_in_hosted() {
-        String containerService = joinLines("<container id='foo' version='1.0'>",
-                "  <accesslog type='json' fileNamePattern='logs/vespa/qrs/access.%Y%m%d%H%M%S' symlinkName='json_access' />",
-                "  <nodes count=\"2\">",
-                "  </nodes>",
-                "</container>");
-
-        String deploymentXml = joinLines("<deployment version='1.0'>",
-                "  <prod>",
-                "    <region>us-east-1</region>",
-                "  </prod>",
-                "</deployment>");
-
-        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
-                .withServices(containerService)
-                .withDeploymentSpec(deploymentXml)
-                .build();
-
-        TestLogger logger = new TestLogger();
-        DeployState deployState = new DeployState.Builder()
-                .applicationPackage(applicationPackage)
-                .zone(new Zone(Environment.prod, RegionName.from("us-east-1")))
-                .properties(new TestProperties().setHostedVespa(true))
-                .deployLogger(logger)
-                .build();
-        createModel(root, deployState, null, DomBuilderTest.parse(containerService));
-        assertFalse(logger.msgs.isEmpty());
-        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
-        assertEquals("Applications are not allowed to override the 'accesslog' element",
-                logger.msgs.get(0).getSecond());
     }
 
     private void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {

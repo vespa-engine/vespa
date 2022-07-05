@@ -2,7 +2,14 @@
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
+import com.yahoo.config.model.deploy.DeployState;
+import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.test.MockApplicationPackage;
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.AccessLogConfig;
 import com.yahoo.container.logging.ConnectionLogConfig;
 import com.yahoo.container.logging.FileConnectionLog;
@@ -13,8 +20,12 @@ import com.yahoo.vespa.model.container.component.Component;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
+import java.util.logging.Level;
+
+import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.text.StringUtilities.quote;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
@@ -132,4 +143,38 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         Component<?, ?> fileConnectionLogComponent = getContainerComponent("default", FileConnectionLog.class.getName());
         assertNull(fileConnectionLogComponent);
     }
+
+    @Test
+    public void hosted_applications_get_a_log_warning_when_overriding_accesslog() {
+        String containerService = joinLines("<container id='foo' version='1.0'>",
+                                            "  <accesslog type='json' fileNamePattern='logs/vespa/qrs/access.%Y%m%d%H%M%S' symlinkName='json_access' />",
+                                            "  <nodes count=\"2\">",
+                                            "  </nodes>",
+                                            "</container>");
+
+        String deploymentXml = joinLines("<deployment version='1.0'>",
+                                         "  <prod>",
+                                         "    <region>us-east-1</region>",
+                                         "  </prod>",
+                                         "</deployment>");
+
+        ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
+                .withServices(containerService)
+                .withDeploymentSpec(deploymentXml)
+                .build();
+
+        TestLogger logger = new TestLogger();
+        DeployState deployState = new DeployState.Builder()
+                .applicationPackage(applicationPackage)
+                .zone(new Zone(Environment.prod, RegionName.from("us-east-1")))
+                .properties(new TestProperties().setHostedVespa(true))
+                .deployLogger(logger)
+                .build();
+        createModel(root, deployState, null, DomBuilderTest.parse(containerService));
+        assertFalse(logger.msgs.isEmpty());
+        assertEquals(Level.WARNING, logger.msgs.get(0).getFirst());
+        assertEquals("Applications are not allowed to override the 'accesslog' element",
+                     logger.msgs.get(0).getSecond());
+    }
+
 }
