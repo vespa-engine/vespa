@@ -18,8 +18,10 @@ public class DefParser {
     public static final String DEFAULT_PACKAGE_PREFIX = "com.yahoo.";
 
     static final Pattern commentPattern = Pattern.compile("^\\s*#+\\s*(.*?)\\s*$");
+
     // TODO: Version is ignored, remove in Vespa 9
     public static final Pattern versionPattern = Pattern.compile("^(version\\s*=\\s*)([0-9][0-9-]*)$");
+
     // Namespace/package must start with a letter, since Java (Java language Spec, section  3.8) and C++ identifiers cannot start with a digit
     public static final Pattern namespacePattern = getNamespacePattern("namespace");
     public static final Pattern packagePattern = getNamespacePattern("package");
@@ -32,7 +34,7 @@ public class DefParser {
     private final String name;
     private InnerCNode root = null;
     private NormalizedDefinition normalizedDefinition = null;
-
+    private boolean systemErrEnabled = false;
 
 	private String comment = "";
 
@@ -52,6 +54,10 @@ public class DefParser {
         } else {
             reader = new BufferedReader(defReader);
         }
+    }
+
+    void enableSystemErr() {
+        systemErrEnabled = true;
     }
 
     // If name contains namespace, return just name
@@ -127,7 +133,7 @@ public class DefParser {
         }
         Matcher versionMatch = versionPattern.matcher(line);
         if (versionMatch.matches()) {
-            System.err.println("Warning: In config definition '" + name + "': version is deprecated and ignored, please remove, support will be removed in Vespa 9");
+            printSystemErr("Warning: In config definition '" + name + "': version is deprecated and ignored, please remove, support will be removed in Vespa 9");
             return;
         }
         Matcher namespaceMatcher = namespacePattern.matcher(line);
@@ -222,7 +228,11 @@ public class DefParser {
 
     }
 
-    class DefParserException extends Exception {
+    private void printSystemErr(String s) {
+        if (systemErrEnabled) System.err.println(s);
+    }
+
+    static class DefParserException extends Exception {
         DefParserException(String s, Throwable cause) {
             super(s, cause);
         }

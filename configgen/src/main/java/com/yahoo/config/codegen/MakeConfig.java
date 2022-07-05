@@ -30,9 +30,12 @@ public class MakeConfig {
         for (File specFile : properties.specFiles) {
             String name = specFile.getName();
             if (name.endsWith(".def")) name = name.substring(0, name.length() - 4);
+
             DefParser parser = new DefParser(name, new FileReader(specFile));
+            parser.enableSystemErr();
             InnerCNode configRoot = parser.getTree();
             checkNamespaceAndPacakge(name, configRoot, isCpp(properties));
+
             if (configRoot != null) {
                 MakeConfig mc = new MakeConfig(configRoot, parser.getNormalizedDefinition(), properties);
                 mc.buildClasses();
