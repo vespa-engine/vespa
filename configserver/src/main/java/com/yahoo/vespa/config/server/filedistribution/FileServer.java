@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -36,6 +37,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 
 public class FileServer {
@@ -114,17 +118,14 @@ public class FileServer {
 
     FileDirectory getRootDir() { return root; }
 
-    void startFileServing(FileReference fileReference, Receiver target) {
-        if (root.getFile(fileReference).exists())
-            serveFile(fileReference, target);
-    }
+    void startFileServing(FileReference reference, Receiver target, Set<CompressionType> acceptedCompressionTypes) {
+        if ( ! root.getFile(reference).exists()) return;
 
-    private void serveFile(FileReference reference, Receiver target) {
         File file = root.getFile(reference);
         log.log(Level.FINE, () -> "Start serving " + reference + " with file '" + file.getAbsolutePath() + "'");
         FileReferenceData fileData = EmptyFileReferenceData.empty(reference, file.getName());
         try {
-            fileData = readFileReferenceData(reference);
+            fileData = readFileReferenceData(reference, acceptedCompressionTypes);
             target.receive(fileData, new ReplayStatus(0, "OK"));
             log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + file.getAbsolutePath() + "'");
         } catch (IOException e) {
@@ -138,19 +139,23 @@ public class FileServer {
         }
     }
 
-    private FileReferenceData readFileReferenceData(FileReference reference) throws IOException {
+    private FileReferenceData readFileReferenceData(FileReference reference, Set<CompressionType> acceptedCompressionTypes) throws IOException {
         File file = root.getFile(reference);
 
         if (file.isDirectory()) {
             Path tempFile = Files.createTempFile("filereferencedata", reference.value());
-            File compressedFile = new FileReferenceCompressor(compressed).compress(file.getParentFile(), tempFile.toFile());
+            CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
+            File compressedFile = new FileReferenceCompressor(compressed, compressionType).compress(file.getParentFile(), tempFile.toFile());
             return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile);
         } else {
             return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
         }
     }
 
-    public void serveFile(FileReference fileReference, boolean downloadFromOtherSourceIfNotFound, Request request, Receiver receiver) {
+    public void serveFile(FileReference fileReference,
+                          boolean downloadFromOtherSourceIfNotFound,
+                          Set<CompressionType> acceptedCompressionTypes,
+                          Request request, Receiver receiver) {
         if (executor instanceof ThreadPoolExecutor)
             log.log(Level.FINE, () -> "Active threads: " + ((ThreadPoolExecutor) executor).getActiveCount());
 
@@ -158,7 +163,7 @@ public class FileServer {
         Instant deadline = Instant.now().plus(timeout);
         String client = request.target().toString();
         executor.execute(() -> {
-            var result = serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, client, receiver, deadline);
+            var result = serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, client, receiver, deadline, acceptedCompressionTypes);
             request.returnValues()
                    .add(new Int32Value(result.getCode()))
                    .add(new StringValue(result.getDescription()));
@@ -170,7 +175,8 @@ public class FileServer {
                                                 boolean downloadFromOtherSourceIfNotFound,
                                                 String client,
                                                 Receiver receiver,
-                                                Instant deadline) {
+                                                Instant deadline,
+                                                Set<CompressionType> acceptedCompressionTypes) {
         if (Instant.now().isAfter(deadline)) {
             log.log(Level.INFO, () -> "Deadline exceeded for request for file reference '" + fileReference + "' from " + client);
             return FileApiErrorCodes.TIMEOUT;
@@ -180,13 +186,18 @@ public class FileServer {
         try {
             var fileReferenceDownload = new FileReferenceDownload(fileReference, client, downloadFromOtherSourceIfNotFound);
             fileExists = hasFileDownloadIfNeeded(fileReferenceDownload);
-            if (fileExists) startFileServing(fileReference, receiver);
+            if (fileExists) startFileServing(fileReference, receiver, acceptedCompressionTypes);
         } catch (IllegalArgumentException e) {
             fileExists = false;
             log.warning("Failed serving file reference '" + fileReference + "', request from " + client + " failed with: " + e.getMessage());
         }
 
         return (fileExists ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND);
+    }
+
+    // TODO: Use lz4 for testing only, add zstd when we have support for (de)compressing zstd input and output streams
+    private CompressionType chooseCompressionType(Set<CompressionType> acceptedCompressionTypes) {
+        return acceptedCompressionTypes.contains(lz4) ? lz4 : gzip;
     }
 
     boolean hasFileDownloadIfNeeded(FileReferenceDownload fileReferenceDownload) {

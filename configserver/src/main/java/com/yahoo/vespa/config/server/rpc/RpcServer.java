@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.rpc;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -44,13 +44,14 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
-
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +63,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 
 /**
  * An RPC server class that handles the config protocol RPC method "getConfigV3".
@@ -221,7 +225,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         getSupervisor().addMethod(new Method("printStatistics", "", "s", this::printStatistics)
                                   .methodDesc("printStatistics")
                                   .returnDesc(0, "statistics", "Statistics for server"));
-        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si", "is", this::serveFile));
+        getSupervisor().addMethod(new Method("filedistribution.serveFile", "si*", "is", this::serveFile));
         getSupervisor().addMethod(new Method("filedistribution.setFileReferencesToDownload", "S", "i", this::setFileReferencesToDownload)
                                      .methodDesc("set which file references to download")
                                      .paramDesc(0, "file references", "file reference to download")
@@ -566,10 +570,18 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         rpcAuthorizer.authorizeFileRequest(request)
                 .thenRun(() -> { // okay to do in authorizer thread as serveFile is async
                     FileServer.Receiver receiver = new ChunkedFileReceiver(request.target());
-                    fileServer.serveFile(new FileReference(request.parameters().get(0).asString()),
-                                         request.parameters().get(1).asInt32() == 0,
-                                         request,
-                                         receiver);
+
+                    FileReference reference = new FileReference(request.parameters().get(0).asString());
+                    boolean downloadFromOtherSourceIfNotFound = request.parameters().get(1).asInt32() == 0;
+                    Set<FileReferenceData.CompressionType> acceptedCompressionTypes = Set.of(CompressionType.gzip);
+                    // Newer clients specify accepted compression types in request
+                    if (request.parameters().size() > 2)
+                        acceptedCompressionTypes = Arrays.stream(request.parameters().get(2).asStringArray())
+                                                         .map(CompressionType::valueOf)
+                                                         .collect(Collectors.toSet());
+                    log.log(Level.FINE, "acceptedCompressionTypes=" + acceptedCompressionTypes);
+
+                    fileServer.serveFile(reference, downloadFromOtherSourceIfNotFound, acceptedCompressionTypes, request, receiver);
                 });
     }
 

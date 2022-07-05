@@ -16,7 +16,11 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.file;
 import static org.junit.Assert.assertEquals;
 
 public class FileReceiverTest {
@@ -58,9 +62,17 @@ public class FileReceiverTest {
         writerB.close();
 
         File tempFile = temporaryFolder.newFile();
-        File file = new FileReferenceCompressor(compressed).compress(dirWithFiles, tempFile);
-        transferCompressedData(new FileReference("ref"), "a", IOUtils.readFileBytes(file));
+        File file = new FileReferenceCompressor(compressed, gzip).compress(dirWithFiles, tempFile);
+        transferCompressedData(gzip, new FileReference("ref"), "a", IOUtils.readFileBytes(file));
         File downloadDir = new File(root, "ref");
+        assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
+        assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
+
+        tempFile = temporaryFolder.newFile();
+        FileReferenceCompressor compressor = new FileReferenceCompressor(compressed, lz4);
+        file = compressor.compress(dirWithFiles, tempFile);
+        transferCompressedData(lz4, new FileReference("ref"), "a", IOUtils.readFileBytes(file));
+        downloadDir = new File(root, "ref");
         assertEquals("1", IOUtils.readFile(new File(downloadDir, "a")));
         assertEquals("2", IOUtils.readFile(new File(downloadDir, "b")));
     }
@@ -68,8 +80,7 @@ public class FileReceiverTest {
     private void transferPartsAndAssert(FileReference ref, String fileName, String all, int numParts) throws IOException {
         byte [] allContent = Utf8.toBytes(all);
 
-        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref,
-                FileReferenceData.Type.file, fileName, allContent.length);
+        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref, file, gzip, fileName, allContent.length);
         int partSize = (allContent.length+(numParts-1))/numParts;
         ByteBuffer bb = ByteBuffer.wrap(allContent);
         for (int i = 0, pos = 0; i < numParts; i++) {
@@ -87,8 +98,8 @@ public class FileReceiverTest {
         assertEquals(all, Utf8.toString(allReadBytes));
     }
 
-    private void transferCompressedData(FileReference ref, String fileName, byte[] data) {
-        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref, compressed, fileName, data.length);
+    private void transferCompressedData(CompressionType compressionType, FileReference ref, String fileName, byte[] data) {
+        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref, compressed, compressionType, fileName, data.length);
         session.addPart(0, data);
         session.close(hasher.hash(ByteBuffer.wrap(data), 0));
     }

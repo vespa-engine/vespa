@@ -2,6 +2,8 @@
 package com.yahoo.vespa.filedistribution;
 
 import com.google.common.io.ByteStreams;
+import net.jpountz.lz4.LZ4BlockInputStream;
+import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.ArchiveOutputStream;
@@ -35,9 +37,11 @@ public class FileReferenceCompressor {
     private static final int recurseDepth = 100;
 
     private final FileReferenceData.Type type;
+    private final FileReferenceData.CompressionType compressionType;
 
-    public FileReferenceCompressor(FileReferenceData.Type type) {
+    public FileReferenceCompressor(FileReferenceData.Type type, FileReferenceData.CompressionType compressionType) {
         this.type = Objects.requireNonNull(type, "Type cannot be null");
+        this.compressionType = Objects.requireNonNull(compressionType, "Compression type cannot be null");
     }
 
     public File compress(File baseDir, List<File> inputFiles, File outputFile) throws IOException {
@@ -114,9 +118,17 @@ public class FileReferenceCompressor {
     }
 
     private OutputStream compressedOutputStream(File outputFile) throws IOException {
+        log.log(Level.FINE, () -> "Compressing with type " + type + " and compression type " + compressionType);
         switch (type) {
             case compressed:
-                return new GZIPOutputStream(new FileOutputStream(outputFile));
+                switch (compressionType) {
+                    case gzip:
+                        return new GZIPOutputStream(new FileOutputStream(outputFile));
+                    case lz4:
+                        return new LZ4BlockOutputStream(new FileOutputStream(outputFile));
+                    default:
+                        throw new RuntimeException("Unknown compression type " + compressionType);
+                }
             case file:
                 return new FileOutputStream(outputFile);
             default:
@@ -125,9 +137,17 @@ public class FileReferenceCompressor {
     }
 
     private InputStream decompressedInputStream(File inputFile) throws IOException {
+        log.log(Level.FINE, () -> "Decompressing with type " + type + " and compression type " + compressionType);
         switch (type) {
             case compressed:
-                return new GZIPInputStream(new FileInputStream(inputFile));
+                switch (compressionType) {
+                    case gzip:
+                        return new GZIPInputStream(new FileInputStream(inputFile));
+                    case lz4:
+                        return new LZ4BlockInputStream(new FileInputStream(inputFile));
+                    default:
+                        throw new RuntimeException("Unknown compression type " + compressionType);
+                }
             case file:
                 return new FileInputStream(inputFile);
             default:
