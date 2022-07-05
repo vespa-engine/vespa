@@ -14,7 +14,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import static org.junit.Assert.assertEquals;
@@ -55,6 +54,7 @@ public class ChokeTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testMaxCount() {
         int max = 10;
         dstServer.mb.setMaxPendingCount(max);
@@ -103,6 +103,7 @@ public class ChokeTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testMaxSize() {
         int size = createMessage("msg").getApproxSize();
         int max = size * 10;
