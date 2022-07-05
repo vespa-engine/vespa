@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
+#include <ostream>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".document.datatype.struct");
