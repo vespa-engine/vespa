@@ -23,6 +23,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 
 /**
  * When asking for a file reference, this handles RPC callbacks from config server with file data and metadata.
@@ -48,7 +49,8 @@ public class FileReceiver {
         private final StreamingXXHash64 hasher;
         private final int sessionId;
         private final FileReference reference;
-        private final FileReferenceData.Type fileType;
+        private final Type fileType;
+        private final CompressionType compressionType;
         private final String fileName;
         private final long fileSize;
         private long currentFileSize;
@@ -58,13 +60,18 @@ public class FileReceiver {
         private final File tmpDir;
         private final File inprogressFile;
 
-        Session(File downloadDirectory, int sessionId, FileReference reference,
-                FileReferenceData.Type fileType, String fileName, long fileSize)
-        {
+        Session(File downloadDirectory,
+                int sessionId,
+                FileReference reference,
+                Type fileType,
+                FileReferenceData.CompressionType compressionType,
+                String fileName,
+                long fileSize) {
             this.hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
             this.sessionId = sessionId;
             this.reference = reference;
             this.fileType = fileType;
+            this.compressionType = compressionType;
             this.fileName = fileName;
             this.fileSize = fileSize;
             currentFileSize = 0;
@@ -122,7 +129,7 @@ public class FileReceiver {
                     moveFileToDestination(inprogressFile, file);
                 } else {
                     decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
-                    new FileReferenceCompressor(fileType).decompress(inprogressFile, decompressedDir);
+                    new FileReferenceCompressor(fileType, compressionType).decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 }
             } catch (IOException e) {
@@ -161,11 +168,12 @@ public class FileReceiver {
     // receiveFile after getting a serveFile method call). handler needs to implement receiveFile* methods
     private List<Method> receiveFileMethod() {
         List<Method> methods = new ArrayList<>();
-        methods.add(new Method(RECEIVE_META_METHOD, "sssl", "ii", this::receiveFileMeta)
+        methods.add(new Method(RECEIVE_META_METHOD, "sssl*", "ii", this::receiveFileMeta)
                 .paramDesc(0, "filereference", "file reference to download")
                 .paramDesc(1, "filename", "filename")
                 .paramDesc(2, "type", "'file' or 'compressed'")
                 .paramDesc(3, "filelength", "length in bytes of file")
+                .paramDesc(3, "compressionType", "compression type: gzip, lz4, zstd")
                 .returnDesc(0, "ret", "0 if success, 1 otherwise")
                 .returnDesc(1, "session-id", "Session id to be used for this transfer"));
         methods.add(new Method(RECEIVE_PART_METHOD, "siix", "i", this::receiveFilePart)
@@ -220,8 +228,11 @@ public class FileReceiver {
         log.log(Level.FINE, () -> "Received method call '" + req.methodName() + "' with parameters : " + req.parameters());
         FileReference reference = new FileReference(req.parameters().get(0).asString());
         String fileName = req.parameters().get(1).asString();
-        String type = req.parameters().get(2).asString();
+        Type type = FileReferenceData.Type.valueOf(req.parameters().get(2).asString());
         long fileSize = req.parameters().get(3).asInt64();
+        CompressionType compressionType = (req.parameters().size() > 4)
+                ? CompressionType.valueOf(req.parameters().get(4).asString())
+                : CompressionType.gzip; // fallback/legacy compression type
         int sessionId = nextSessionId.getAndIncrement();
         int retval = 0;
         synchronized (sessions) {
@@ -231,7 +242,7 @@ public class FileReceiver {
             } else {
                 try {
                     sessions.put(sessionId, new Session(downloadDirectory, sessionId, reference,
-                                                        FileReferenceData.Type.valueOf(type),fileName, fileSize));
+                                                        type, compressionType, fileName, fileSize));
                 } catch (Exception e) {
                     retval = 1;
                 }

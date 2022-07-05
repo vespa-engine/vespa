@@ -14,15 +14,17 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -75,8 +77,13 @@ public class FileServerTest {
         File dir = getFileServerRootDir();
         IOUtils.writeFile(dir + "/12y/f1", "dummy-data", true);
         CompletableFuture<byte []> content = new CompletableFuture<>();
-        fileServer.startFileServing(new FileReference("12y"), new FileReceiver(content));
+        fileServer.startFileServing(new FileReference("12y"), new FileReceiver(content), Set.of(gzip));
         assertEquals(new String(content.get()), "dummy-data");
+
+        IOUtils.writeFile(dir + "/12z/f1", "dummy-data-2", true);
+        content = new CompletableFuture<>();
+        fileServer.startFileServing(new FileReference("12z"), new FileReceiver(content), Set.of(gzip, lz4));
+        assertEquals(new String(content.get()), "dummy-data-2");
     }
 
     @Test

@@ -32,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import static com.yahoo.jrt.ErrorCode.CONNECTION;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -148,7 +149,7 @@ public class FileDownloaderTest {
             File barFile = new File(subdir, "really-long-filename-over-100-bytes-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
             IOUtils.writeFile(barFile, "bar", false);
 
-            File tarFile = new FileReferenceCompressor(compressed).compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
+            File tarFile = new FileReferenceCompressor(compressed, gzip).compress(tempPath.toFile(), Arrays.asList(fooFile, barFile), new File(tempPath.toFile(), filename));
             byte[] tarredContent = IOUtils.readFileBytes(tarFile);
             receiveFile(fileReference, filename, compressed, tarredContent);
             Optional<File> downloadedFile = getFile(fileReference);
@@ -291,7 +292,7 @@ public class FileDownloaderTest {
                              FileReferenceData.Type type, byte[] content) {
         XXHash64 hasher = XXHashFactory.fastestInstance().hash64();
         FileReceiver.Session session =
-                new FileReceiver.Session(downloadDir, 1, fileReference, type, filename, content.length);
+                new FileReceiver.Session(downloadDir, 1, fileReference, type, gzip, filename, content.length);
         session.addPart(0, content);
         File file = session.close(hasher.hash(ByteBuffer.wrap(content), 0));
         fileDownloader.downloads().completedDownloading(fileReference, file);
