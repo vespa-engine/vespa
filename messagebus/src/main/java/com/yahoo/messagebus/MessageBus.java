@@ -470,6 +470,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @return The resender.
      */
+    @Deprecated // Remove on 9
     public Resender getResender() {
         return resender;
     }
@@ -480,6 +481,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @return The pending count.
      */
+    @Deprecated // Package private on 9
     public synchronized int getPendingCount() {
         return pendingCount;
     }
@@ -490,6 +492,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @return The pending size.
      */
+    @Deprecated // Package private on 9
     public synchronized int getPendingSize() {
         return pendingSize;
     }
@@ -500,6 +503,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @param maxCount The max count.
      */
+    @Deprecated // Remove on 9
     public void setMaxPendingCount(int maxCount) {
         maxPendingCount = maxCount;
     }
@@ -508,6 +512,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * Gets maximum number of messages that can be received without being
      * replied to yet.
      */
+    @Deprecated // Remove on 9
     public int getMaxPendingCount() {
         return maxPendingCount;
     }
@@ -518,6 +523,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      *
      * @param maxSize The max size.
      */
+    @Deprecated // Remove on 9
     public void setMaxPendingSize(int maxSize) {
         maxPendingSize = maxSize;
     }
@@ -526,6 +532,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
      * Gets maximum combined size of messages that can be received without
      * being replied to yet.
      */
+    @Deprecated // Remove on 9
     public int getMaxPendingSize() {
         return maxPendingSize;
     }

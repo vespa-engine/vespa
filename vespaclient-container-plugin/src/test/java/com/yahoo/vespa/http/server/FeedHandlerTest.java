@@ -25,7 +25,7 @@ public class FeedHandlerTest {
         FeedHandler handler = new FeedHandler(
                 new RejectingContainerThreadpool(),
                 new CollectingMetric(),
-                new DocumentTypeManager(new DocumentmanagerConfig.Builder().enablecompression(true).build()),
+                new DocumentTypeManager(new DocumentmanagerConfig.Builder().build()),
                 null /* session cache */,
                 MetricReceiver.nullImplementation);
         var responseHandler = new RequestHandlerTestDriver.MockResponseHandler();
