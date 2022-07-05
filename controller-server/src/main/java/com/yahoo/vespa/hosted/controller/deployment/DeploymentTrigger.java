@@ -61,6 +61,7 @@ import static java.util.stream.Collectors.toMap;
 public class DeploymentTrigger {
 
     public static final Duration maxPause = Duration.ofDays(3);
+    public static final Duration maxFailingRevisionTime = Duration.ofDays(5);
     private final static Logger log = Logger.getLogger(DeploymentTrigger.class.getName());
 
     private final Controller controller;
@@ -448,6 +449,8 @@ public class DeploymentTrigger {
 
     private boolean acceptNewRevision(DeploymentStatus status, InstanceName instance, RevisionId revision) {
         if (status.application().deploymentSpec().instance(instance).isEmpty()) return false; // Unknown instance.
+        if ( ! status.jobs().failingWithBrokenRevisionSince(revision, clock.instant().minus(maxFailingRevisionTime))
+                     .isEmpty()) return false; // Don't deploy a broken revision.
         boolean isChangingRevision = status.application().require(instance).change().revision().isPresent();
         DeploymentInstanceSpec spec = status.application().deploymentSpec().requireInstance(instance);
         Predicate<RevisionId> revisionFilter = spec.revisionTarget() == DeploymentSpec.RevisionTarget.next

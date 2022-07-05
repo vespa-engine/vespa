@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.pro
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
+import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.APPLICATION;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PIN;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static org.junit.Assert.assertEquals;
@@ -995,6 +997,60 @@ public class UpgraderTest {
     }
 
     @Test
+    public void testSettingFailingRevisionAside() {
+        DeploymentContext app = tester.newDeploymentContext().submit().deploy();
+
+        // New revision fails.
+        app.submit();
+        Optional<RevisionId> revision1 = app.lastSubmission();
+        app.failDeployment(systemTest);
+
+        // New version is not targeted.
+        Version version1 = new Version("7");
+        tester.controllerTester().upgradeSystem(version1);
+        assertEquals(Change.of(revision1.get()), app.instance().change());
+
+        tester.upgrader().run();
+        assertEquals(Change.of(revision1.get()), app.instance().change());
+
+        // Broken revision is replaced by a new attempt, which also fails, and cancellation is not yet triggered.
+        tester.clock().advance(DeploymentTrigger.maxFailingRevisionTime.plusSeconds(1));
+        app.submit();
+        Optional<RevisionId> revision2 = app.lastSubmission();
+        app.failDeployment(systemTest);
+        tester.upgrader().run();
+        assertEquals(Change.of(revision2.get()), app.instance().change());
+
+        // Broken revision is cancelled, and new version targeted, after some time.
+        tester.clock().advance(DeploymentTrigger.maxFailingRevisionTime.plusSeconds(1));
+        tester.upgrader().run();
+        assertEquals(Change.of(version1), app.instance().change());
+
+        // Broken revision is not targeted again.
+        app.triggerJobs();
+        tester.upgrader().run();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(version1), app.instance().change());
+
+        app.failDeployment(systemTest);
+        tester.upgrader().run();
+        tester.outstandingChangeDeployer().run();
+        assertEquals(Change.of(version1), app.instance().change());
+
+        // Revision gets a second change when upgrade fixes the failing job.
+        tester.clock().advance(Duration.ofDays(12)); // Time for retries.
+        app.runJob(systemTest).jobAborted(stagingTest).runJob(stagingTest).runJob(productionUsCentral1);
+        tester.upgrader().run();
+        tester.outstandingChangeDeployer().run();
+
+        assertEquals(Change.of(version1).with(revision2.get()), app.instance().change());
+        app.runJob(systemTest).runJob(stagingTest).runJob(productionUsCentral1); // Revision rolls.
+        app.runJob(productionUsEast3).runJob(productionUsWest1); // Upgrade completes.
+        app.runJob(productionUsEast3).runJob(productionUsWest1); // Revision completes.
+        assertEquals(Change.empty(), app.instance().change());
+    }
+
+    @Test
     public void testsEachUpgradeCombinationWithFailingDeployments() {
         Version v1 = Version.fromString("6.1");
         tester.controllerTester().upgradeSystem(v1);
@@ -1085,7 +1141,7 @@ public class UpgraderTest {
                                   default2.instanceId(), default2);
 
         // Throttle upgrades per run
-        ((ManualClock) tester.controller().clock()).setInstant(Instant.ofEpochMilli(1589787109000L)); // Fixed random seed
+        ((ManualClock) tester.controller().clock()).setInstant(Instant.ofEpochMilli(1589787107000L)); // Fixed random seed
         Upgrader upgrader = new Upgrader(tester.controller(), Duration.ofMinutes(10));
         upgrader.setUpgradesPerMinute(0.1);
 
