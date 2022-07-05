@@ -92,7 +92,7 @@ public class JobRunner extends ControllerMaintainer {
             else if (run.hasFailed() || run.sleepUntil().map(sleepUntil -> ! sleepUntil.isAfter(controller().clock().instant())).orElse(true))
                 run.readySteps().forEach(step -> executors.execute(() -> advance(run.id(), step)));
 
-            return run;
+            return null;
         });
     }
 
