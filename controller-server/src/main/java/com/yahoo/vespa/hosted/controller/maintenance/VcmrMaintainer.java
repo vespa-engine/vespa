@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
@@ -46,26 +47,28 @@ public class VcmrMaintainer extends ControllerMaintainer {
     private static final Logger LOG = Logger.getLogger(VcmrMaintainer.class.getName());
     private static final int DAYS_TO_RETIRE = 2;
     private static final Duration ALLOWED_POSTPONEMENT_TIME = Duration.ofDays(7);
+    protected static final String TRACKED_CMRS_METRIC = "cmr.tracked";
 
     private final CuratorDb curator;
     private final NodeRepository nodeRepository;
     private final ChangeRequestClient changeRequestClient;
     private final SystemName system;
+    private final Metric metric;
 
-    public VcmrMaintainer(Controller controller, Duration interval) {
+    public VcmrMaintainer(Controller controller, Duration interval, Metric metric) {
         super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.curator = controller.curator();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
         this.changeRequestClient = controller.serviceRegistry().changeRequestClient();
         this.system = controller.system();
+        this.metric = metric;
     }
 
     @Override
     protected double maintain() {
         var changeRequests = curator.readChangeRequests()
                 .stream()
-                .filter(shouldUpdate())
-                .collect(Collectors.toList());
+                .filter(shouldUpdate()).toList();
 
         var nodesByZone = nodesByZone();
 
@@ -86,6 +89,7 @@ public class VcmrMaintainer extends ControllerMaintainer {
                         });
             }
         });
+        updateMetrics();
         return 1.0;
     }
 
@@ -355,6 +359,15 @@ public class VcmrMaintainer extends ControllerMaintainer {
             if (time.getDayOfWeek().getValue() < 6) days++;
         }
         return time;
+    }
+
+    private void updateMetrics() {
+        curator.readChangeRequests()
+                .stream()
+                .collect(Collectors.groupingBy(VespaChangeRequest::getStatus))
+                .forEach((status, cmrs) ->
+                        metric.set(TRACKED_CMRS_METRIC, cmrs.size(), metric.createContext(Map.of("status", status.name())))
+                );
     }
 
 }

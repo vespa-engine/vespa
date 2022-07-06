@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction.State;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VcmrReport;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest.Status;
+import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +26,7 @@ import java.time.ZonedDateTime;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 
+import static com.yahoo.vespa.hosted.controller.maintenance.VcmrMaintainer.TRACKED_CMRS_METRIC;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -37,6 +39,7 @@ public class VcmrMaintainerTest {
     private ControllerTester tester;
     private VcmrMaintainer maintainer;
     private NodeRepositoryMock nodeRepo;
+    private MetricsMock metrics;
     private final ZoneId zoneId = ZoneId.from("prod.us-east-3");
     private final ZoneId zone2 = ZoneId.from("prod.us-west-1");
     private final HostName host1 = HostName.of("host1");
@@ -47,7 +50,8 @@ public class VcmrMaintainerTest {
     @Before
     public void setup() {
         tester = new ControllerTester();
-        maintainer = new VcmrMaintainer(tester.controller(), Duration.ofMinutes(1));
+        metrics = new MetricsMock();
+        maintainer = new VcmrMaintainer(tester.controller(), Duration.ofMinutes(1), metrics);
         nodeRepo = tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
     }
 
@@ -244,6 +248,7 @@ public class VcmrMaintainerTest {
 
         assertEquals(State.OUT_OF_SYNC, action.getState());
         assertEquals(Status.OUT_OF_SYNC, writtenChangeRequest.getStatus());
+        assertEquals(1, metrics.getMetric(context -> "OUT_OF_SYNC".equals(context.get("status")), TRACKED_CMRS_METRIC).get());
     }
 
     @Test
