@@ -528,7 +528,9 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             request.parameters().add(new StringValue(fileData.filename()));
             request.parameters().add(new StringValue(fileData.type().name()));
             request.parameters().add(new Int64Value(fileData.size()));
-            request.parameters().add(new StringValue(fileData.compressionType().name()));
+            // Only add paramter if not gzip, this is default and old clients will not handle the extra parameter
+            if (fileData.compressionType() != CompressionType.gzip)
+                request.parameters().add(new StringValue(fileData.compressionType().name()));
             return request;
         }
 

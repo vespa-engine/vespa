@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static com.yahoo.vespa.config.server.rpc.RpcServer.ChunkedFileReceiver.createMetaRequest;
@@ -104,7 +105,15 @@ public class RpcServerTest {
     @Test
     public void testFileReceiverMetaRequest() throws IOException {
         File file = temporaryFolder.newFile();
-        Request request = createMetaRequest(new LazyFileReferenceData(new FileReference("foo"), "fileA", compressed, file, lz4));
+        Request request = createMetaRequest(new LazyFileReferenceData(new FileReference("foo"), "fileA", compressed, file, gzip));
+        assertEquals(4, request.parameters().size());
+        assertEquals("foo", request.parameters().get(0).asString());
+        assertEquals("fileA", request.parameters().get(1).asString());
+        assertEquals("compressed", request.parameters().get(2).asString());
+        assertEquals(0, request.parameters().get(3).asInt64());
+
+        request = createMetaRequest(new LazyFileReferenceData(new FileReference("foo"), "fileA", compressed, file, lz4));
+        assertEquals(5, request.parameters().size());
         assertEquals("foo", request.parameters().get(0).asString());
         assertEquals("fileA", request.parameters().get(1).asString());
         assertEquals("compressed", request.parameters().get(2).asString());
