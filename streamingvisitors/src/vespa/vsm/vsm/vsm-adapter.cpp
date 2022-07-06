@@ -137,6 +137,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
 
     // init result config
     DocsumBlobEntryFilter docsum_blob_entry_filter;
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT);
     std::unique_ptr<ResultConfig> resCfg(new ResultConfig(docsum_blob_entry_filter));
     if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str())) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
