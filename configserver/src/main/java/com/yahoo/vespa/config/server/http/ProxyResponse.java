@@ -40,7 +40,7 @@ class ProxyResponse extends HttpResponse {
 
     @Override
     public long maxPendingBytes() {
-        return 1 << 25; // 15MB
+        return 1 << 25; // 32MB
     }
 
 }
