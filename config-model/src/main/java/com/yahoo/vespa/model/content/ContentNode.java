@@ -25,7 +25,7 @@ public abstract class ContentNode extends AbstractService
     private final boolean dispatch_on_decode;
     private final int mbus_threads;
     private final int mbus_network_threads;
-    private final int mbus_cpp_rpc_targets;
+    private final int mbus_rpc_targets;
     private final int mbus_events_before_wakeup;
     private final int rpc_num_targets;
     private final int rpc_events_before_wakeup;
@@ -38,7 +38,7 @@ public abstract class ContentNode extends AbstractService
         dispatch_on_encode = featureFlags.mbusDispatchOnEncode();
         mbus_threads = featureFlags.mbusThreads();
         mbus_network_threads = featureFlags.mbusNetworkThreads();
-        mbus_cpp_rpc_targets = featureFlags.mbusCppRpcNumTargets();
+        mbus_rpc_targets = featureFlags.mbusCppRpcNumTargets();
         mbus_events_before_wakeup = featureFlags.mbusCppEventsBeforeWakeup();
         rpc_num_targets = featureFlags.rpcNumTargets();
         rpc_events_before_wakeup = featureFlags.rpcEventsBeforeWakeup();
@@ -89,7 +89,7 @@ public abstract class ContentNode extends AbstractService
         builder.mbus.dispatch_on_encode(dispatch_on_encode);
         builder.mbus.num_threads(mbus_threads);
         builder.mbus.num_network_threads(mbus_network_threads);
-        builder.mbus.num_rpc_targets(mbus_cpp_rpc_targets);
+        builder.mbus.num_rpc_targets(mbus_rpc_targets);
         builder.mbus.events_before_wakeup(mbus_events_before_wakeup);
         builder.rpc.num_targets_per_node(rpc_num_targets);
         builder.rpc.events_before_wakeup(rpc_events_before_wakeup);
