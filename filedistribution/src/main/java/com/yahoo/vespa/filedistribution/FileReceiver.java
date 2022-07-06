@@ -129,7 +129,6 @@ public class FileReceiver {
                     moveFileToDestination(inprogressFile, file);
                 } else {
                     decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
-                    log.log(Level.FINE, () -> "compression type to use=" + compressionType);
                     new FileReferenceCompressor(fileType, compressionType).decompress(inprogressFile, decompressedDir);
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 }

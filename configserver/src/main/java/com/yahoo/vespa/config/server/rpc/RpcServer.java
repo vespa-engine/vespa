@@ -491,7 +491,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             sendParts(session, fileData);
             sendEof(session, fileData, status);
         }
-
         private void sendParts(int session, FileReferenceData fileData) {
             ByteBuffer bb = ByteBuffer.allocate(0x100000);
             for (int partId = 0, read = fileData.nextContent(bb); read >= 0; partId++, read = fileData.nextContent(bb)) {
@@ -505,9 +504,12 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                 bb.clear();
             }
         }
-
         private int sendMeta(FileReferenceData fileData) {
-            Request request = createMetaRequest(fileData);
+            Request request = new Request(FileReceiver.RECEIVE_META_METHOD);
+            request.parameters().add(new StringValue(fileData.fileReference().value()));
+            request.parameters().add(new StringValue(fileData.filename()));
+            request.parameters().add(new StringValue(fileData.type().name()));
+            request.parameters().add(new Int64Value(fileData.size()));
             invokeRpcIfValidConnection(request);
             if (request.isError()) {
                 log.warning("Failed delivering meta for reference '" + fileData.fileReference().value() + "' with file '" + fileData.filename() + "' to " +
@@ -520,18 +522,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                 return request.returnValues().get(1).asInt32();
             }
         }
-
-        // non-private for testing
-        static Request createMetaRequest(FileReferenceData fileData) {
-            Request request = new Request(FileReceiver.RECEIVE_META_METHOD);
-            request.parameters().add(new StringValue(fileData.fileReference().value()));
-            request.parameters().add(new StringValue(fileData.filename()));
-            request.parameters().add(new StringValue(fileData.type().name()));
-            request.parameters().add(new Int64Value(fileData.size()));
-            request.parameters().add(new StringValue(fileData.compressionType().name()));
-            return request;
-        }
-
         private void sendPart(int session, FileReference ref, int partId, byte [] buf) {
             Request request = new Request(FileReceiver.RECEIVE_PART_METHOD);
             request.parameters().add(new StringValue(ref.value()));
@@ -548,7 +538,6 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                 }
             }
         }
-
         private void sendEof(int session, FileReferenceData fileData, FileServer.ReplayStatus status) {
             Request request = new Request(FileReceiver.RECEIVE_EOF_METHOD);
             request.parameters().add(new StringValue(fileData.fileReference().value()));

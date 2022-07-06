@@ -12,7 +12,7 @@ public class EmptyFileReferenceData extends FileReferenceData {
     private int contentRead = 0;
 
     private EmptyFileReferenceData(FileReference fileReference, String filename, Type type, byte[] content, long xxhash) {
-        super(fileReference, filename, type, CompressionType.gzip);
+        super(fileReference, filename, type);
         this.content = content;
         this.xxhash = xxhash;
     }
