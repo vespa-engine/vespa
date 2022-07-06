@@ -53,7 +53,7 @@ case $SHOULD_BUILD in
 esac
 
 if [[ $SHOULD_BUILD == systemtest ]]; then
-  dnf module enable -y ruby:2.7
+  dnf module enable -y ruby:3.0
   dnf install -y \
       gcc-toolset-11-annobin \
       gcc-toolset-11-annobin-plugin-gcc \
@@ -64,11 +64,16 @@ if [[ $SHOULD_BUILD == systemtest ]]; then
       ruby \
       ruby-devel \
       rubygems-devel \
-      rubygem-net-telnet \
+      rubygem-bigdecimal \
+      rubygem-builder \
+      rubygem-concurrent-ruby \
+      rubygem-parallel \
+      rubygem-rexml \
+      rubygem-test-unit \
       zstd
 
   source /opt/rh/gcc-toolset-11/enable
-  gem install libxml-ruby gnuplot distribution test-unit builder concurrent-ruby bigdecimal ffi parallel
+  gem install ffi libxml-ruby
   
   cd $HOME
   git clone https://github.com/vespa-engine/system-test
