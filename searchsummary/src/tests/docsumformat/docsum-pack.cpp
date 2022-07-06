@@ -113,7 +113,7 @@ MyApp::Equal(GeneralResult *a, GeneralResult *b)
 void
 MyApp::TestIntValue(uint32_t line, GeneralResult *gres, const char *field, uint32_t value)
 {
-    ResEntry *entry = (gres != nullptr) ? gres->GetEntry(field) : nullptr;
+    ResEntry *entry = (gres != nullptr) ? gres->GetPresentEntry(field) : nullptr;
 
     bool rc = (entry != nullptr &&
                entry->_type == RES_INT &&
@@ -125,7 +125,7 @@ MyApp::TestIntValue(uint32_t line, GeneralResult *gres, const char *field, uint3
 void
 MyApp::TestDoubleValue(uint32_t line, GeneralResult *gres, const char *field, double value)
 {
-    ResEntry *entry = (gres != nullptr) ? gres->GetEntry(field) : nullptr;
+    ResEntry *entry = (gres != nullptr) ? gres->GetPresentEntry(field) : nullptr;
 
     bool rc = (entry != nullptr &&
                entry->_type == RES_DOUBLE &&
@@ -137,7 +137,7 @@ MyApp::TestDoubleValue(uint32_t line, GeneralResult *gres, const char *field, do
 void
 MyApp::TestInt64Value(uint32_t line, GeneralResult *gres, const char *field, uint64_t value)
 {
-    ResEntry *entry = (gres != nullptr) ? gres->GetEntry(field) : nullptr;
+    ResEntry *entry = (gres != nullptr) ? gres->GetPresentEntry(field) : nullptr;
 
     bool rc = (entry != nullptr &&
                entry->_type == RES_INT64 &&
@@ -150,7 +150,7 @@ MyApp::TestInt64Value(uint32_t line, GeneralResult *gres, const char *field, uin
 void
 MyApp::TestStringValue(uint32_t line, GeneralResult *gres, const char *field, const char *value)
 {
-    ResEntry *entry = (gres != nullptr) ? gres->GetEntry(field) : nullptr;
+    ResEntry *entry = (gres != nullptr) ? gres->GetPresentEntry(field) : nullptr;
 
     bool rc = (entry != nullptr &&
                entry->_type == RES_STRING &&
@@ -168,7 +168,7 @@ MyApp::TestStringValue(uint32_t line, GeneralResult *gres, const char *field, co
 void
 MyApp::TestDataValue(uint32_t line, GeneralResult *gres, const char *field, const char *value)
 {
-    ResEntry *entry = (gres != nullptr) ? gres->GetEntry(field) : nullptr;
+    ResEntry *entry = (gres != nullptr) ? gres->GetPresentEntry(field) : nullptr;
 
     bool rc = (entry != nullptr &&
                entry->_type == RES_DATA &&

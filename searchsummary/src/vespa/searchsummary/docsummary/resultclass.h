@@ -238,7 +238,7 @@ public:
      * GeneralResult::GetEntry(string) method; no need to call it
      * directly.
      *
-     * @return field index or -1 if not found or _not_present is set.
+     * @return field index or -1 if not found
      **/
     int GetIndexFromName(const char* name) const;
 
@@ -255,15 +255,11 @@ public:
      * call it directly. NOTE3: You need to call the CreateEnumMap
      * method before calling this one.
      *
-     * @return field index or -1 if not found or _not_present is set.
+     * @return field index or -1 if not found
      **/
     int GetIndexFromEnumValue(uint32_t value) const
     {
-        if (value >= _enumMap.size()) {
-            return -1;
-        }
-        int idx = _enumMap[value];
-        return ((idx < 0) || _entries[idx]._not_present) ? -1 : idx;
+        return (value < _enumMap.size()) ? _enumMap[value] : -1;
     }
 
 

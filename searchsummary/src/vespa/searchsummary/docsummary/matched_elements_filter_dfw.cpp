@@ -93,7 +93,7 @@ filter_matching_elements_in_input_field_while_converting_to_slime(const FieldVal
 bool
 resolve_input_field_as_slime(GeneralResult& result, int entry_idx, Slime& input_field_as_slime)
 {
-    ResEntry* entry = result.GetEntry(entry_idx);
+    ResEntry* entry = result.GetPresentEntry(entry_idx);
     if (entry != nullptr) {
         decode_input_field_to_slime(*entry, input_field_as_slime);
         return true;

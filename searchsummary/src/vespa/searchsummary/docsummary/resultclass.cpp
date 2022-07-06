@@ -26,11 +26,7 @@ int
 ResultClass::GetIndexFromName(const char* name) const
 {
     NameIdMap::const_iterator found(_nameMap.find(name));
-    if (found == _nameMap.end()) {
-        return -1;
-    }
-    int idx = found->second;
-    return _entries[idx]._not_present ? -1 : idx;
+    return (found != _nameMap.end()) ? found->second : -1;
 }
 
 bool
