@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Random;
 import java.util.Set;
@@ -182,7 +181,7 @@ public class Upgrader extends ControllerMaintainer {
     }
 
     /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
-    public void setTargetMajorVersion(Optional<Integer> targetMajorVersion) {
+    public void setTargetMajorVersion(OptionalInt targetMajorVersion) {
         controller().applications().setTargetMajorVersion(targetMajorVersion);
     }
 

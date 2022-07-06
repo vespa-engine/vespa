@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.pkg.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
@@ -27,6 +28,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -218,7 +220,7 @@ public class VersionStatusTest {
         tester.upgrader().maintain();
 
         // Setup applications - all running on version0
-        ApplicationPackage canaryPolicy = applicationPackage("canary");
+        ApplicationPackage canaryPolicy = applicationPackage("canary", 7);
         var canary0 = tester.newDeploymentContext("tenant1", "canary0", "default")
                             .submit(canaryPolicy)
                             .deploy();
@@ -231,7 +233,7 @@ public class VersionStatusTest {
 
         ApplicationPackage defaultPolicy = applicationPackage("default");
         var default0 = tester.newDeploymentContext("tenant1", "default0", "default")
-                             .submit(defaultPolicy)
+                             .submit(applicationPackage("default", 7))
                              .deploy();
         var default1 = tester.newDeploymentContext("tenant1", "default1", "default")
                              .submit(defaultPolicy)
@@ -379,6 +381,28 @@ public class VersionStatusTest {
         assertTrue(versions.get(0).isReleased());
         assertFalse(versions.get(1).isReleased()); // tesst quirk: maven repo lost during controller recreation; useful to test status though
         assertTrue(versions.get(2).isReleased());
+
+        // A new major version is released and all canaries upgrade
+        Version version4 = new Version("7.1");
+        tester.controller().applications().setTargetMajorVersion(OptionalInt.of(version3.getMajor())); // Previous remains the default
+        tester.controllerTester().upgradeSystem(version4);
+        tester.upgrader().maintain();
+        tester.triggerJobs();
+        canary0.deployPlatform(version4);
+        canary1.deployPlatform(version4);
+        canary2.deployPlatform(version4);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.normal, confidence(tester.controller(), version4));
+
+        // The single application allowing this major upgrades and confidence becomes 'high'
+        tester.upgrader().maintain();
+        tester.triggerJobs();
+        assertEquals(Change.of(version4), default0.instance().change());
+        default0.jobAborted(systemTest)
+                .jobAborted(stagingTest)
+                .deployPlatform(version4);
+        tester.controllerTester().computeVersionStatus();
+        assertEquals(Confidence.high, confidence(tester.controller(), version4));
     }
 
     @Test
@@ -687,6 +711,14 @@ public class VersionStatusTest {
                          .orElseThrow(() -> new IllegalArgumentException("Expected to find version: " + version));
     }
 
+    private static ApplicationPackage applicationPackage(String upgradePolicy, int majorVersion) {
+        return new ApplicationPackageBuilder().upgradePolicy(upgradePolicy)
+                                              .region("us-west-1")
+                                              .region("us-east-3")
+                                              .majorVersion(majorVersion)
+                                              .build();
+    }
+
     private static final ApplicationPackage canaryApplicationPackage =
             new ApplicationPackageBuilder().upgradePolicy("canary")
                                            .region("us-west-1")
@@ -707,12 +739,12 @@ public class VersionStatusTest {
 
     /** Returns empty prebuilt applications for efficiency */
     private ApplicationPackage applicationPackage(String upgradePolicy) {
-        switch (upgradePolicy) {
-            case "canary" : return canaryApplicationPackage;
-            case "default" : return defaultApplicationPackage;
-            case "conservative" : return conservativeApplicationPackage;
-            default : throw new IllegalArgumentException("No upgrade policy '" + upgradePolicy + "'");
-        }
+        return switch (upgradePolicy) {
+            case "canary" -> canaryApplicationPackage;
+            case "default" -> defaultApplicationPackage;
+            case "conservative" -> conservativeApplicationPackage;
+            default -> throw new IllegalArgumentException("No upgrade policy '" + upgradePolicy + "'");
+        };
     }
 
 }

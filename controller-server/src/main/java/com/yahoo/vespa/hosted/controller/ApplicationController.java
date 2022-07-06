@@ -237,7 +237,7 @@ public class ApplicationController {
     }
 
     /** Sets the default target major version. Set to empty to determine target version normally (by confidence) */
-    public void setTargetMajorVersion(Optional<Integer> targetMajorVersion) {
+    public void setTargetMajorVersion(OptionalInt targetMajorVersion) {
         curator.writeTargetMajorVersion(targetMajorVersion);
     }
 
