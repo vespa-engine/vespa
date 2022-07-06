@@ -356,8 +356,6 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         params.setNumNetworkThreads(std::max(1, config->mbus.numNetworkThreads));
         params.setNumRpcTargets(std::max(1, config->mbus.numRpcTargets));
         params.events_before_wakeup(std::max(1, config->mbus.eventsBeforeWakeup));
-        params.setDispatchOnDecode(config->mbus.dispatchOnDecode);
-        params.setDispatchOnEncode(config->mbus.dispatchOnEncode);
         params.setTcpNoDelay(config->mbus.tcpNoDelay);
 
         params.setIdentity(mbus::Identity(_component.getIdentity()));
