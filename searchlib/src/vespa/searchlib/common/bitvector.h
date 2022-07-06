@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/atomic.h>
 #include <vespa/fastos/types.h>
+#include <algorithm>
 
 namespace vespalib {
     class nbostream;
