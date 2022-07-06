@@ -4,12 +4,17 @@
 #include "distance_function_factory.h"
 #include "nearest_neighbor_index.h"
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
+using vespalib::IllegalArgumentException;
 using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TypedCells;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
+using vespalib::make_string;
 
 namespace {
 
@@ -41,6 +46,13 @@ struct ConvertCellsSelector
         return vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(from, to, new_type, old_value);
     }
 };
+
+bool
+is_compatible(const vespalib::eval::ValueType& lhs,
+              const vespalib::eval::ValueType& rhs)
+{
+    return (lhs.dimensions() == rhs.dimensions());
+}
 
 }
 
@@ -85,6 +97,41 @@ DistanceCalculator::DistanceCalculator(const tensor::ITensorAttribute& attr_tens
 }
 
 DistanceCalculator::~DistanceCalculator() = default;
+
+namespace {
+
+
+
+}
+
+std::unique_ptr<DistanceCalculator>
+DistanceCalculator::make_with_validation(const search::attribute::IAttributeVector& attr,
+                                         const vespalib::eval::Value& query_tensor_in)
+{
+    const ITensorAttribute* attr_tensor = attr.asTensorAttribute();
+    if (attr_tensor == nullptr) {
+        throw IllegalArgumentException("Attribute is not a tensor");
+    }
+    const auto& at_type = attr_tensor->getTensorType();
+    if ((!at_type.is_dense()) || (at_type.dimensions().size() != 1)) {
+        throw IllegalArgumentException(make_string("Attribute tensor type (%s) is not a dense tensor of order 1",
+                                                   at_type.to_spec().c_str()));
+    }
+    const auto& qt_type = query_tensor_in.type();
+    if (!qt_type.is_dense()) {
+        throw IllegalArgumentException(make_string("Query tensor type (%s) is not a dense tensor",
+                                                   qt_type.to_spec().c_str()));
+    }
+    if (!is_compatible(at_type, qt_type)) {
+        throw IllegalArgumentException(make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
+                                                   at_type.to_spec().c_str(), qt_type.to_spec().c_str()));
+    }
+    if (!attr_tensor->supports_extract_cells_ref()) {
+        throw IllegalArgumentException(make_string("Attribute tensor does not support access to tensor data (type=%s)",
+                                                   at_type.to_spec().c_str()));
+    }
+    return std::make_unique<DistanceCalculator>(*attr_tensor, query_tensor_in);
+}
 
 }
 

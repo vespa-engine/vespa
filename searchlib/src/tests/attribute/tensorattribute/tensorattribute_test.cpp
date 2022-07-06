@@ -46,8 +46,8 @@ using search::queryeval::NearestNeighborBlueprint;
 using search::tensor::DefaultNearestNeighborIndexFactory;
 using search::tensor::DenseTensorAttribute;
 using search::tensor::DirectTensorAttribute;
+using search::tensor::DistanceCalculator;
 using search::tensor::DocVectorAccess;
-using search::tensor::SerializedFastValueAttribute;
 using search::tensor::HnswIndex;
 using search::tensor::HnswNode;
 using search::tensor::NearestNeighborIndex;
@@ -55,13 +55,14 @@ using search::tensor::NearestNeighborIndexFactory;
 using search::tensor::NearestNeighborIndexLoader;
 using search::tensor::NearestNeighborIndexSaver;
 using search::tensor::PrepareResult;
+using search::tensor::SerializedFastValueAttribute;
 using search::tensor::TensorAttribute;
 using vespalib::datastore::CompactionStrategy;
-using vespalib::eval::TensorSpec;
 using vespalib::eval::CellType;
-using vespalib::eval::ValueType;
-using vespalib::eval::Value;
 using vespalib::eval::SimpleValue;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 
 using DoubleVector = std::vector<double>;
 using generation_t = vespalib::GenerationHandler::generation_t;
@@ -1072,8 +1073,8 @@ public:
         search::queryeval::FieldSpec field("foo", 0, 0);
         auto bp = std::make_unique<NearestNeighborBlueprint>(
             field,
-            this->as_dense_tensor(),
-            create_query_tensor(vec_2d(17, 42)),
+            std::make_unique<DistanceCalculator>(this->as_dense_tensor(),
+                                                 create_query_tensor(vec_2d(17, 42))),
             3, approximate, 5,
             100100.25,
             global_filter_lower_limit, 1.0);

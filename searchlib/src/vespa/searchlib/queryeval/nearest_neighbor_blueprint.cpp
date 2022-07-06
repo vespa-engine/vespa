@@ -34,8 +34,7 @@ to_string(NearestNeighborBlueprint::Algorithm algorithm)
 } // namespace <unnamed>
 
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
-                                                   const tensor::ITensorAttribute& attr_tensor,
-                                                   const Value& query_tensor,
+                                                   std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                                                    uint32_t target_hits,
                                                    bool approximate,
                                                    uint32_t explore_additional_hits,
@@ -43,9 +42,9 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
                                                    double global_filter_lower_limit,
                                                    double global_filter_upper_limit)
     : ComplexLeafBlueprint(field),
-      _attr_tensor(attr_tensor),
-      _distance_calc(_attr_tensor, query_tensor),
-      _query_tensor(_distance_calc.query_tensor()),
+      _distance_calc(std::move(distance_calc)),
+      _attr_tensor(_distance_calc->attribute_tensor()),
+      _query_tensor(_distance_calc->query_tensor()),
       _target_hits(target_hits),
       _adjusted_target_hits(target_hits),
       _approximate(approximate),
@@ -62,7 +61,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _global_filter_hit_ratio()
 {
     if (distance_threshold < std::numeric_limits<double>::max()) {
-        _distance_threshold = _distance_calc.function().convert_threshold(distance_threshold);
+        _distance_threshold = _distance_calc->function().convert_threshold(distance_threshold);
         _distance_heap.set_distance_threshold(_distance_threshold);
     }
     uint32_t est_hits = _attr_tensor.get_num_docs();
@@ -127,11 +126,11 @@ NearestNeighborBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
     switch (_algorithm) {
     case Algorithm::INDEX_TOP_K_WITH_FILTER:
     case Algorithm::INDEX_TOP_K:
-        return NnsIndexIterator::create(tfmd, _found_hits, _distance_calc.function());
+        return NnsIndexIterator::create(tfmd, _found_hits, _distance_calc->function());
     default:
         ;
     }
-    return NearestNeighborIterator::create(strict, tfmd, _distance_calc,
+    return NearestNeighborIterator::create(strict, tfmd, *_distance_calc,
                                            _distance_heap, _global_filter->filter());
 }
 

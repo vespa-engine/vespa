@@ -599,13 +599,6 @@ bool check_valid_diversity_attr(const IAttributeVector *attr) {
     return (attr->hasEnum() || attr->isIntegerType() || attr->isFloatingPointType());
 }
 
-bool
-is_compatible_for_nearest_neighbor(const vespalib::eval::ValueType& lhs,
-                                   const vespalib::eval::ValueType& rhs)
-{
-    return (lhs.dimensions() == rhs.dimensions());
-}
-
 //-----------------------------------------------------------------------------
 
 
@@ -760,40 +753,24 @@ public:
         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
     }
     void visit(query::NearestNeighborTerm &n) override {
-        const ITensorAttribute *tensor_attr = _attr.asTensorAttribute();
-        if (tensor_attr == nullptr) {
-            return fail_nearest_neighbor_term(n, "Attribute is not a tensor");
-        }
-        const auto & ta_type = tensor_attr->getTensorType();
-        if ((! ta_type.is_dense()) || (ta_type.dimensions().size() != 1)) {
-            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not a dense tensor of order 1",
-                                                             ta_type.to_spec().c_str()));
-        }
         const auto* query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
         if (query_tensor == nullptr) {
             return fail_nearest_neighbor_term(n, "Query tensor was not found in request context");
         }
-        const auto & qt_type = query_tensor->type();
-        if (! qt_type.is_dense()) {
-            return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
-                                                             qt_type.to_spec().c_str()));
+        try {
+            auto calc = tensor::DistanceCalculator::make_with_validation(_attr, *query_tensor);
+            setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field,
+                                                                            std::move(calc),
+                                                                            n.get_target_num_hits(),
+                                                                            n.get_allow_approximate(),
+                                                                            n.get_explore_additional_hits(),
+                                                                            n.get_distance_threshold(),
+                                                                            getRequestContext().get_attribute_blueprint_params().global_filter_lower_limit,
+                                                                            getRequestContext().get_attribute_blueprint_params().global_filter_upper_limit));
+        } catch (const vespalib::IllegalArgumentException& ex) {
+            return fail_nearest_neighbor_term(n, ex.getMessage());
+
         }
-        if (!is_compatible_for_nearest_neighbor(ta_type, qt_type)) {
-            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
-                                                             ta_type.to_spec().c_str(), qt_type.to_spec().c_str()));
-        }
-        if (tensor_attr->supports_extract_cells_ref() == false) {
-            return fail_nearest_neighbor_term(n, make_string("Attribute does not support access to tensor data (type=%s)",
-                                                             ta_type.to_spec().c_str()));
-        }
-        setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *tensor_attr,
-                                                                        *query_tensor,
-                                                                        n.get_target_num_hits(),
-                                                                        n.get_allow_approximate(),
-                                                                        n.get_explore_additional_hits(),
-                                                                        n.get_distance_threshold(),
-                                                                        getRequestContext().get_attribute_blueprint_params().global_filter_lower_limit,
-                                                                        getRequestContext().get_attribute_blueprint_params().global_filter_upper_limit));
     }
 
     void visit(query::FuzzyTerm &n) override { visitTerm(n); }
