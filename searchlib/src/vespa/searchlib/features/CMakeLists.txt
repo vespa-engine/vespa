@@ -12,7 +12,7 @@ vespa_add_library(searchlib_features OBJECT
     debug_wait.cpp
     dense_tensor_attribute_executor.cpp
     direct_tensor_attribute_executor.cpp
-    great_circle_distance_feature.cpp
+    distance_calculator_bundle.cpp
     distancefeature.cpp
     distancetopathfeature.cpp
     documenttestutils.cpp
@@ -29,6 +29,7 @@ vespa_add_library(searchlib_features OBJECT
     foreachfeature.cpp
     freshnessfeature.cpp
     global_sequence_feature.cpp
+    great_circle_distance_feature.cpp
     internal_max_reduce_prod_join_feature.cpp
     item_raw_score_feature.cpp
     jarowinklerdistancefeature.cpp
