@@ -41,7 +41,6 @@ import com.yahoo.search.searchchain.ExecutionFactory;
 import com.yahoo.search.searchchain.SearchChainRegistry;
 import com.yahoo.search.statistics.ElapsedTime;
 import com.yahoo.slime.Inspector;
-import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.yolean.Exceptions;
 import com.yahoo.yolean.trace.TraceNode;
 
