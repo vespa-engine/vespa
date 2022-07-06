@@ -215,6 +215,12 @@ public class ModelContextImpl implements ModelContext {
         private final boolean mbus_dispatch_on_encode;
         private final int mbus_threads;
         private final int mbus_network_threads;
+        private int mbus_java_num_targets;
+        private int mbus_java_events_before_wakeup;
+        private int mbus_cpp_num_targets;
+        private int mbus_cpp_events_before_wakeup;
+        private int rpc_num_targets;
+        private int rpc_events_before_wakeup;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = flagValue(source, appId, version, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -266,6 +272,12 @@ public class ModelContextImpl implements ModelContext {
             this.enableProxyProtocolMixedMode = flagValue(source, appId, version, Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE);
             this.sharedStringRepoNoReclaim = flagValue(source, appId, version, Flags.SHARED_STRING_REPO_NO_RECLAIM);
             this.logFileCompressionAlgorithm = flagValue(source, appId, version, Flags.LOG_FILE_COMPRESSION_ALGORITHM);
+            this.mbus_java_num_targets = flagValue(source, appId, version, Flags.MBUS_JAVA_NUM_TARGETS);
+            this.mbus_java_events_before_wakeup = flagValue(source, appId, version, Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP);
+            this.mbus_cpp_num_targets = flagValue(source, appId, version, Flags.MBUS_CPP_NUM_TARGETS);
+            this.mbus_cpp_events_before_wakeup = flagValue(source, appId, version, Flags.MBUS_CPP_EVENTS_BEFORE_WAKEUP);
+            this.rpc_num_targets = flagValue(source, appId, version, Flags.RPC_NUM_TARGETS);
+            this.rpc_events_before_wakeup = flagValue(source, appId, version, Flags.RPC_EVENTS_BEFORE_WAKEUP);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -318,6 +330,12 @@ public class ModelContextImpl implements ModelContext {
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }
         @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
+        @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
+        @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
+        @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
+        @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
+        @Override public int rpcNumTargets() { return rpc_num_targets; }
+        @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
         @Override public String logFileCompressionAlgorithm(String defVal) {
             var fflag = this.logFileCompressionAlgorithm;
             if (fflag != null && ! fflag.equals("")) {

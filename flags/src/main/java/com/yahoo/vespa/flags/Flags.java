@@ -143,6 +143,43 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
+            "mbus-java-num-targets", 1,
+            List.of("baldersheim"), "2022-07-05", "2023-01-01",
+            "Number of rpc targets per service",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
+            "mbus-cpp-num-targets", 1,
+            List.of("baldersheim"), "2022-07-05", "2023-01-01",
+            "Number of rpc targets per service",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
+            "rpc-num-targets", 1,
+            List.of("baldersheim"), "2022-07-05", "2023-01-01",
+            "Number of rpc targets per content node",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
+            "mbus-java-events-before-wakeup", 1,
+            List.of("baldersheim"), "2022-07-05", "2023-01-01",
+            "Number write events before waking up transport thread",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
+            "mbus-cpp-events-before-wakeup", 1,
+            List.of("baldersheim"), "2022-07-05", "2023-01-01",
+            "Number write events before waking up transport thread",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+    public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
+            "rpc-events-before-wakeup", 1,
+            List.of("baldersheim"), "2022-07-05", "2023-01-01",
+            "Number write events before waking up transport thread",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundIntFlag MBUS_NUM_THREADS = defineIntFlag(
             "mbus-num-threads", 4,
             List.of("baldersheim"), "2022-07-01", "2023-01-01",

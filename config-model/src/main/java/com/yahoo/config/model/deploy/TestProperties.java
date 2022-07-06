@@ -80,6 +80,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean sharedStringRepoNoReclaim = false;
     private boolean mbus_dispatch_on_decode = true;
     private boolean mbus_dispatch_on_encode = true;
+    private int mbus_java_num_targets = 1;
+    private int mbus_java_events_before_wakeup = 1;
+    private int mbus_cpp_num_targets = 1;
+    private int mbus_cpp_events_before_wakeup = 1;
+    private int rpc_num_targets = 1;
+    private int rpc_events_before_wakeup = 1;
     private int mbus_threads = 4;
     private int mbus_network_threads = 1;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
@@ -141,6 +147,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean mbusDispatchOnEncode() { return mbus_dispatch_on_encode; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
     @Override public int mbusThreads() { return mbus_threads; }
+    @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
+    @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
+    @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
+    @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
+    @Override public int rpcNumTargets() { return rpc_num_targets; }
+    @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
 
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
@@ -385,6 +397,31 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         this.mbus_network_threads = value;
         return this;
     }
+    public TestProperties setMbusJavaRpcNumTargets(int value) {
+        this.mbus_java_num_targets = value;
+        return this;
+    }
+    public TestProperties setMbusJavaEventsBeforeWakeup(int value) {
+        this.mbus_java_events_before_wakeup = value;
+        return this;
+    }
+    public TestProperties setMbusCppEventsBeforeWakeup(int value) {
+        this.mbus_cpp_events_before_wakeup = value;
+        return this;
+    }
+    public TestProperties setMbusCppRpcNumTargets(int value) {
+        this.mbus_cpp_num_targets = value;
+        return this;
+    }
+    public TestProperties setRpcNumTargets(int value) {
+        this.rpc_num_targets = value;
+        return this;
+    }
+    public TestProperties setRpcEventsBeforeWakeup(int value) {
+        this.rpc_events_before_wakeup = value;
+        return this;
+    }
+
     public TestProperties setAdminClusterNodeResourcesArchitecture(Architecture architecture) {
         this.adminClusterNodeResourcesArchitecture = architecture;
         return this;
