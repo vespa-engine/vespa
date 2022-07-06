@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "docsumfieldwriter.h"
-#include "check_undefined_value_visitor.h"
+#include "i_docsum_store_document.h"
 #include "idocsumenvironment.h"
 #include "docsumstate.h"
 #include "summaryfieldconverter.h"
@@ -90,16 +90,11 @@ CopyDFW::insertField(uint32_t /*docid*/, GeneralResult *gres, GetDocsumsState *,
     ResEntry *entry = gres->GetEntry(idx);
 
     if (entry == nullptr) {
-        auto input_field_value = gres->get_field_value(_input_field_name);
-        if (input_field_value) {
-            CheckUndefinedValueVisitor check_undefined;
-            input_field_value->accept(check_undefined);
-            if (!check_undefined.is_undefined()) {
-                SummaryFieldConverter::insert_summary_field(false, *input_field_value, target);
-            }
+        const auto* document = gres->get_document();
+        if (document != nullptr) {
+            document->insert_summary_field(_input_field_name, target);
         }
-    } else if (IsRuntimeCompatible(entry->_type, type))
-    {
+    } else if (IsRuntimeCompatible(entry->_type, type)) {
         switch (type) {
         case RES_INT: {
             uint32_t val32 = entry->_intval;
