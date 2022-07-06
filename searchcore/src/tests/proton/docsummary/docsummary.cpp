@@ -322,8 +322,8 @@ assertString(const std::string & exp, const std::string & fieldName,
              DocumentStoreAdapter &dsa, uint32_t id)
 {
     GeneralResultPtr res = getResult(dsa, id);
-    return EXPECT_EQUAL(exp, std::string(res->GetEntry(fieldName.c_str())->_stringval,
-                                         res->GetEntry(fieldName.c_str())->_stringlen));
+    return EXPECT_EQUAL(exp, std::string(res->GetPresentEntry(fieldName.c_str())->_stringval,
+                                         res->GetPresentEntry(fieldName.c_str())->_stringlen));
 }
 
 void
@@ -392,24 +392,24 @@ TEST_F("requireThatAdapterHandlesAllFieldTypes", Fixture)
                              bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class0"),
                              f.getMarkupFields());
     GeneralResultPtr res = getResult(dsa, 0);
-    EXPECT_EQUAL(255u,        res->GetEntry("a")->_intval);
-    EXPECT_EQUAL(32767u,      res->GetEntry("b")->_intval);
-    EXPECT_EQUAL(2147483647u, res->GetEntry("c")->_intval);
-    EXPECT_EQUAL(2147483648u, res->GetEntry("d")->_int64val);
-    EXPECT_APPROX(1234.56,    res->GetEntry("e")->_doubleval, 10e-5);
-    EXPECT_APPROX(9876.54,    res->GetEntry("f")->_doubleval, 10e-5);
-    EXPECT_EQUAL("foo",       std::string(res->GetEntry("g")->_stringval,
-                                          res->GetEntry("g")->_stringlen));
-    EXPECT_EQUAL("bar",       std::string(res->GetEntry("h")->_stringval,
-                                          res->GetEntry("h")->_stringlen));
-    EXPECT_EQUAL("baz",       std::string(res->GetEntry("i")->_dataval,
-                                          res->GetEntry("i")->_datalen));
-    EXPECT_EQUAL("qux",       std::string(res->GetEntry("j")->_dataval,
-                                          res->GetEntry("j")->_datalen));
-    EXPECT_EQUAL("<foo>",     std::string(res->GetEntry("k")->_stringval,
-                                          res->GetEntry("k")->_stringlen));
-    EXPECT_EQUAL("{foo:10}",  std::string(res->GetEntry("l")->_stringval,
-                                          res->GetEntry("l")->_stringlen));
+    EXPECT_EQUAL(255u,        res->GetPresentEntry("a")->_intval);
+    EXPECT_EQUAL(32767u,      res->GetPresentEntry("b")->_intval);
+    EXPECT_EQUAL(2147483647u, res->GetPresentEntry("c")->_intval);
+    EXPECT_EQUAL(2147483648u, res->GetPresentEntry("d")->_int64val);
+    EXPECT_APPROX(1234.56,    res->GetPresentEntry("e")->_doubleval, 10e-5);
+    EXPECT_APPROX(9876.54,    res->GetPresentEntry("f")->_doubleval, 10e-5);
+    EXPECT_EQUAL("foo",       std::string(res->GetPresentEntry("g")->_stringval,
+                                          res->GetPresentEntry("g")->_stringlen));
+    EXPECT_EQUAL("bar",       std::string(res->GetPresentEntry("h")->_stringval,
+                                          res->GetPresentEntry("h")->_stringlen));
+    EXPECT_EQUAL("baz",       std::string(res->GetPresentEntry("i")->_dataval,
+                                          res->GetPresentEntry("i")->_datalen));
+    EXPECT_EQUAL("qux",       std::string(res->GetPresentEntry("j")->_dataval,
+                                          res->GetPresentEntry("j")->_datalen));
+    EXPECT_EQUAL("<foo>",     std::string(res->GetPresentEntry("k")->_stringval,
+                                          res->GetPresentEntry("k")->_stringlen));
+    EXPECT_EQUAL("{foo:10}",  std::string(res->GetPresentEntry("l")->_stringval,
+                                          res->GetPresentEntry("l")->_stringlen));
 }
 
 TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
@@ -433,11 +433,11 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
                              f.getMarkupFields());
     { // doc 0
         GeneralResultPtr res = getResult(dsa, 0);
-        EXPECT_EQUAL(1000u, res->GetEntry("a")->_intval);
+        EXPECT_EQUAL(1000u, res->GetPresentEntry("a")->_intval);
     }
     { // doc 1
         GeneralResultPtr res = getResult(dsa, 1);
-        EXPECT_EQUAL(2000u, res->GetEntry("a")->_intval);
+        EXPECT_EQUAL(2000u, res->GetPresentEntry("a")->_intval);
     }
     { // doc 2
         DocsumStoreValue docsum = dsa.getMappedDocsum(2);
@@ -445,7 +445,7 @@ TEST_F("requireThatAdapterHandlesMultipleDocuments", Fixture)
     }
     { // doc 0 (again)
         GeneralResultPtr res = getResult(dsa, 0);
-        EXPECT_EQUAL(1000u, res->GetEntry("a")->_intval);
+        EXPECT_EQUAL(1000u, res->GetPresentEntry("a")->_intval);
     }
     EXPECT_EQUAL(0u, bc._str.lastSyncToken());
     uint64_t flushToken = bc._str.initFlush(bc._serialNum - 1);
@@ -466,8 +466,8 @@ TEST_F("requireThatAdapterHandlesDocumentIdField", Fixture)
                              bc.createFieldCacheRepo(f.getResultConfig())->getFieldCache("class4"),
                              f.getMarkupFields());
     GeneralResultPtr res = getResult(dsa, 0);
-    EXPECT_EQUAL("id:ns:searchdocument::0", std::string(res->GetEntry("documentid")->_stringval,
-                                                        res->GetEntry("documentid")->_stringlen));
+    EXPECT_EQUAL("id:ns:searchdocument::0", std::string(res->GetPresentEntry("documentid")->_stringval,
+                                                        res->GetPresentEntry("documentid")->_stringlen));
 }
 
 GlobalId gid1 = DocumentId("id:ns:searchdocument::1").getGlobalId(); // lid 1
@@ -960,14 +960,14 @@ TEST_F("requireThatUrisAreUsed", Fixture)
     GeneralResultPtr res = getResult(dsa, 1);
     {
         vespalib::Slime slime;
-        decode(res->GetEntry("uriarray"), slime);
+        decode(res->GetPresentEntry("uriarray"), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
         EXPECT_EQUAL("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
-        decode(res->GetEntry("uriwset"), slime);
+        decode(res->GetPresentEntry("uriwset"), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(4L, slime.get()[0]["weight"].asLong());
         EXPECT_EQUAL(7L, slime.get()[1]["weight"].asLong());
@@ -1089,14 +1089,14 @@ TEST_F("requireThatRawFieldsWorks", Fixture)
     GeneralResultPtr res = getResult(dsa, 1);
     {
         vespalib::Slime slime;
-        decode(res->GetEntry("araw"), slime);
+        decode(res->GetPresentEntry("araw"), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(vespalib::Base64::encode(raw1a0), b64encode(slime.get()[0]));
         EXPECT_EQUAL(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
     }
     {
         vespalib::Slime slime;
-        decode(res->GetEntry("wraw"), slime);
+        decode(res->GetPresentEntry("wraw"), slime);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQUAL(46L, slime.get()[0]["weight"].asLong());
         EXPECT_EQUAL(45L, slime.get()[1]["weight"].asLong());

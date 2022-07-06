@@ -201,7 +201,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
                 } else {
                     int inIdx = rci.inputClass->GetIndexFromEnumValue(outCfg->_enumValue);
                     const ResConfigEntry *inCfg = rci.inputClass->GetEntry(inIdx);
-                    if (inCfg != nullptr && inCfg->_type == outCfg->_type) {
+                    if (inCfg != nullptr && inCfg->_type == outCfg->_type && !inCfg->_not_present) {
                         // copy field
                         const ResEntry *entry = gres.GetEntry(inIdx);
                         LOG_ASSERT(entry != nullptr);
@@ -302,10 +302,10 @@ DynamicDocsumWriter::Override(const char *fieldName, IDocsumFieldWriter *writer)
         ++_numFieldWriterStates;
     }
 
-    for (auto & entry : *_resultConfig) {
+    for (auto & result_class : *_resultConfig) {
 
-        if (entry.GetIndexFromEnumValue(fieldEnumValue) >= 0) {
-            ResultClass::DynamicInfo *info = entry.getDynamicInfo();
+        if (result_class.GetIndexFromEnumValue(fieldEnumValue) >= 0) {
+            ResultClass::DynamicInfo *info = result_class.getDynamicInfo();
             info->_overrideCnt++;
             if (writer->IsGenerated())
                 info->_generateCnt++;

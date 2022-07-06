@@ -31,7 +31,7 @@ TextExtractorDFW::insertField(uint32_t, GeneralResult *gres, GetDocsumsState *, 
                               vespalib::slime::Inserter &target)
 {
     vespalib::string extracted;
-    ResEntry * entry = gres->GetEntryFromEnumValue(_inputFieldEnum);
+    ResEntry * entry = gres->GetPresentEntryFromEnumValue(_inputFieldEnum);
     if (entry != nullptr) {
         const char * buf = nullptr;
         uint32_t buflen = 0;

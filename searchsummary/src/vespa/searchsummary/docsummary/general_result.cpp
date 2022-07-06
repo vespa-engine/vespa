@@ -49,25 +49,17 @@ GeneralResult::~GeneralResult()
 }
 
 ResEntry *
-GeneralResult::GetEntry(uint32_t idx)
-{
-    return (idx < _entrycnt) ? &_entries[idx] : nullptr;
-}
-
-ResEntry *
-GeneralResult::GetEntry(const char *name)
+GeneralResult::GetPresentEntry(const char *name)
 {
     int idx = _resClass->GetIndexFromName(name);
-
-    return (idx >= 0 && (uint32_t)idx < _entrycnt) ? &_entries[idx] : nullptr;
+    return GetPresentEntry(idx);
 }
 
-
 ResEntry *
-GeneralResult::GetEntryFromEnumValue(uint32_t value)
+GeneralResult::GetPresentEntryFromEnumValue(uint32_t value)
 {
     int idx = _resClass->GetIndexFromEnumValue(value);
-    return (idx >= 0 && (uint32_t)idx < _entrycnt) ? &_entries[idx] : nullptr;
+    return GetPresentEntry(idx);
 }
 
 std::unique_ptr<document::FieldValue>

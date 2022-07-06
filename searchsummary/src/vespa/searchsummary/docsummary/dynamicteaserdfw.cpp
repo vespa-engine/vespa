@@ -332,7 +332,7 @@ JuniperTeaserDFW::Init(
         const ResConfigEntry *entry =
             it->GetEntry(it->GetIndexFromEnumValue(_inputFieldEnumValue));
 
-        if (entry != nullptr &&
+        if (entry != nullptr && !entry->_not_present &&
             !IsRuntimeCompatible(entry->_type, RES_STRING) &&
             !IsRuntimeCompatible(entry->_type, RES_DATA))
         {
@@ -347,7 +347,7 @@ JuniperTeaserDFW::Init(
 vespalib::stringref
 DynamicTeaserDFW::getJuniperInput(GeneralResult *gres) {
     int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
-    ResEntry *entry = gres->GetEntry(idx);
+    ResEntry *entry = gres->GetPresentEntry(idx);
     if (entry != nullptr) {
         const char *buf;
         uint32_t    buflen;
