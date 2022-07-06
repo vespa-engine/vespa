@@ -24,8 +24,6 @@ private:
     uint32_t          _numRpcTargets;
     uint32_t          _events_before_wakeup;
     bool              _tcpNoDelay;
-    bool              _dispatchOnEncode;
-    bool              _dispatchOnDecode;
     double            _connectionExpireSecs;
     CompressionConfig _compressionConfig;
 
@@ -176,21 +174,6 @@ public:
         return *this;
     }
     CompressionConfig getCompressionConfig() const { return _compressionConfig; }
-
-
-    RPCNetworkParams &setDispatchOnDecode(bool dispatchOnDecode) {
-        _dispatchOnDecode = dispatchOnDecode;
-        return *this;
-    }
-
-    bool getDispatchOnDecode() const { return _dispatchOnDecode; }
-
-    RPCNetworkParams &setDispatchOnEncode(bool dispatchOnEncode) {
-        _dispatchOnEncode = dispatchOnEncode;
-        return *this;
-    }
-
-    bool getDispatchOnEncode() const { return _dispatchOnEncode; }
 
     RPCNetworkParams &events_before_wakeup(uint32_t value) {
         _events_before_wakeup = value;

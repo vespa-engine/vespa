@@ -220,14 +220,7 @@ RPCSend::decode(vespalib::stringref protocolName, const vespalib::Version & vers
 void
 RPCSend::handleReply(Reply::UP reply)
 {
-    if (!_net->allowDispatchForEncode()) {
-        doHandleReply(std::move(reply));
-    } else {
-        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, reply = std::move(reply)]() mutable {
-            doHandleReply(std::move(reply));
-        }));
-        assert (!rejected);
-    }
+    doHandleReply(std::move(reply));
 }
 
 void
@@ -256,15 +249,7 @@ void
 RPCSend::invoke(FRT_RPCRequest *req)
 {
     req->Detach();
-
-    if (!_net->allowDispatchForDecode()) {
-        doRequest(req);
-    } else {
-        auto rejected = _net->getExecutor().execute(makeLambdaTask([this, req]() {
-            doRequest(req);
-        }));
-        assert (!rejected);
-    }
+    doRequest(req);
 }
 
 void

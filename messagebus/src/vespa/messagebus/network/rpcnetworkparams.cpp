@@ -20,8 +20,6 @@ RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :
     _numRpcTargets(1),
     _events_before_wakeup(1),
     _tcpNoDelay(true),
-    _dispatchOnEncode(true),
-    _dispatchOnDecode(false),
     _connectionExpireSecs(600),
     _compressionConfig(CompressionConfig::LZ4, 6, 90, 1024)
 { }

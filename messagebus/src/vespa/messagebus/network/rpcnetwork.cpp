@@ -17,7 +17,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
 #include <thread>
 
@@ -136,12 +135,9 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs(), params.getNumRpcTargets())),
     _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
     _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 64_Ki)),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),
-    _compressionConfig(params.getCompressionConfig()),
-    _allowDispatchForEncode(params.getDispatchOnEncode()),
-    _allowDispatchForDecode(params.getDispatchOnDecode())
+    _compressionConfig(params.getCompressionConfig())
 {
 }
 
@@ -413,7 +409,6 @@ void
 RPCNetwork::sync()
 {
     SyncTask task(_scheduler);
-    _executor->sync();
     task.await();
 }
 
@@ -424,7 +419,6 @@ RPCNetwork::shutdown()
     _scheduler.Kill(_targetPoolTask.get());
     _transport->ShutDown(true);
     _threadPool->Close();
-    _executor->shutdown().sync();
 }
 
 void
