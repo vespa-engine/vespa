@@ -1,10 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.deployment;
 
-import com.yahoo.slime.SlimeUtils;
-
-import java.nio.charset.StandardCharsets;
-
 /**
  * @author mortent
  */
@@ -21,7 +17,6 @@ public class TestReport {
     }
 
     public static TestReport fromJson(String report) {
-        SlimeUtils.jsonToSlimeOrThrow(report.getBytes(StandardCharsets.UTF_8)); // Verify structure.
         return new TestReport(report);
     }
 
