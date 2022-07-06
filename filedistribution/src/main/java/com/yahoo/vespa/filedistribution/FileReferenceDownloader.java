@@ -5,14 +5,16 @@ import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.FileReference;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
+import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.vespa.config.Connection;
 import com.yahoo.vespa.config.ConnectionPool;
-
 import java.io.File;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -20,8 +22,10 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+
 /**
- * Downloads file reference using rpc requests to config server and keeps track of files being downloaded
+ * Downloads file reference from config server and keeps track of files being downloaded
  *
  * @author hmusum
  */
@@ -38,12 +42,14 @@ public class FileReferenceDownloader {
     private final Duration sleepBetweenRetries;
     private final Duration rpcTimeout;
     private final File downloadDirectory;
+    private final Set<CompressionType> acceptedCompressionTypes;
 
     FileReferenceDownloader(ConnectionPool connectionPool,
                             Downloads downloads,
                             Duration timeout,
                             Duration sleepBetweenRetries,
-                            File downloadDirectory) {
+                            File downloadDirectory,
+                            Set<CompressionType> acceptedCompressionTypes) {
         this.connectionPool = connectionPool;
         this.downloads = downloads;
         this.downloadTimeout = timeout;
@@ -51,6 +57,7 @@ public class FileReferenceDownloader {
         this.downloadDirectory = downloadDirectory;
         String timeoutString = System.getenv("VESPA_CONFIGPROXY_FILEDOWNLOAD_RPC_TIMEOUT");
         this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
+        this.acceptedCompressionTypes = requireNonEmpty(acceptedCompressionTypes);
     }
 
     private void waitUntilDownloadStarted(FileReferenceDownload fileReferenceDownload) {
@@ -132,6 +139,9 @@ public class FileReferenceDownloader {
         Request request = new Request("filedistribution.serveFile");
         request.parameters().add(new StringValue(fileReferenceDownload.fileReference().value()));
         request.parameters().add(new Int32Value(fileReferenceDownload.downloadFromOtherSourceIfNotFound() ? 0 : 1));
+        String[] temp = new String[acceptedCompressionTypes.size()];
+        acceptedCompressionTypes.stream().map(Enum::name).toList().toArray(temp);
+        request.parameters().add(new StringArray(temp));
         return request;
     }
 
@@ -158,6 +168,11 @@ public class FileReferenceDownloader {
         } catch (InterruptedException e) {
             Thread.interrupted(); // Ignore and continue shutdown.
         }
+    }
+
+    private static Set<CompressionType> requireNonEmpty(Set<CompressionType> s) {
+        if (Objects.requireNonNull(s).isEmpty()) throw new IllegalArgumentException("set must be non-empty");
+        return s;
     }
 
 }

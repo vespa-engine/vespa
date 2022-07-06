@@ -21,6 +21,8 @@ import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.yolean.Exceptions;
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -35,11 +38,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
-import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 
 public class FileServer {
@@ -52,6 +55,7 @@ public class FileServer {
     private final FileDirectory root;
     private final ExecutorService executor;
     private final FileDownloader downloader;
+    private final List<CompressionType> compressionTypes; // compression types to use, in preferred order
 
     // TODO: Move to filedistribution module, so that it can be used by both clients and servers
     private enum FileApiErrorCodes {
@@ -86,21 +90,24 @@ public class FileServer {
 
     @SuppressWarnings("WeakerAccess") // Created by dependency injection
     @Inject
-    public FileServer(ConfigserverConfig configserverConfig) {
+    public FileServer(ConfigserverConfig configserverConfig, FlagSource flagSource) {
         this(new File(Defaults.getDefaults().underVespaHome(configserverConfig.fileReferencesDir())),
-             createFileDownloader(getOtherConfigServersInCluster(configserverConfig)));
+             createFileDownloader(getOtherConfigServersInCluster(configserverConfig),
+                                  compressionTypes(Flags.FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES.bindTo(flagSource).value())),
+             compressionTypesAsList(Flags.FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE.bindTo(flagSource).value()));
     }
 
     // For testing only
     public FileServer(File rootDir) {
-        this(rootDir, createFileDownloader(List.of()));
+        this(rootDir, createFileDownloader(List.of(), Set.of(gzip)), List.of(gzip));
     }
 
-    public FileServer(File rootDir, FileDownloader fileDownloader) {
+    FileServer(File rootDir, FileDownloader fileDownloader, List<CompressionType> compressionTypes) {
         this.downloader = fileDownloader;
         this.root = new FileDirectory(rootDir);
         this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
                                                      new DaemonThreadFactory("file-server-"));
+        this.compressionTypes = compressionTypes;
     }
 
     boolean hasFile(String fileReference) {
@@ -145,6 +152,7 @@ public class FileServer {
         if (file.isDirectory()) {
             Path tempFile = Files.createTempFile("filereferencedata", reference.value());
             CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
+            log.log(Level.FINE, () -> "accepted compression types=" + acceptedCompressionTypes + ", compression type to use=" + compressionType);
             File compressedFile = new FileReferenceCompressor(compressed, compressionType).compress(file.getParentFile(), tempFile.toFile());
             return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile);
         } else {
@@ -195,9 +203,14 @@ public class FileServer {
         return (fileExists ? FileApiErrorCodes.OK : FileApiErrorCodes.NOT_FOUND);
     }
 
-    // TODO: Use lz4 for testing only, add zstd when we have support for (de)compressing zstd input and output streams
+    /* Choose the first compression type (list is in preferred order) that matches an accepted compression type, or fail */
     private CompressionType chooseCompressionType(Set<CompressionType> acceptedCompressionTypes) {
-        return acceptedCompressionTypes.contains(lz4) ? lz4 : gzip;
+        for (CompressionType compressionType : compressionTypes) {
+            if (acceptedCompressionTypes.contains(compressionType))
+                return compressionType;
+        }
+        throw new RuntimeException("Could not find a compression type that can be used. Accepted compression types: " +
+                                           acceptedCompressionTypes + ", compression types server can use: " + compressionTypes);
     }
 
     boolean hasFileDownloadIfNeeded(FileReferenceDownload fileReferenceDownload) {
@@ -228,14 +241,27 @@ public class FileServer {
         executor.shutdown();
     }
 
-    private static FileDownloader createFileDownloader(List<String> configServers) {
+    private static FileDownloader createFileDownloader(List<String> configServers, Set<CompressionType> acceptedCompressionTypes) {
         Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
 
         return new FileDownloader(configServers.isEmpty()
                                           ? FileDownloader.emptyConnectionPool()
                                           : createConnectionPool(configServers, supervisor),
                                   supervisor,
-                                  timeout);
+                                  timeout,
+                                  acceptedCompressionTypes);
+    }
+
+    private static LinkedHashSet<CompressionType> compressionTypes(List<String> compressionTypes) {
+        return compressionTypes.stream()
+                               .map(CompressionType::valueOf)
+                               .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    private static List<CompressionType> compressionTypesAsList(List<String> compressionTypes) {
+        return compressionTypes.stream()
+                               .map(CompressionType::valueOf)
+                               .collect(Collectors.toList());
     }
 
     private static ConnectionPool createConnectionPool(List<String> configServers, Supervisor supervisor) {
