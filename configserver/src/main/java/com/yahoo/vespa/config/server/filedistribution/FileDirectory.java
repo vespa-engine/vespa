@@ -141,7 +141,7 @@ public class FileDirectory  {
             File destination = new File(tempDestinationDir.toFile(), source.getName());
             if (!destinationDir.exists()) {
                 destinationDir.mkdir();
-                log.log(Level.FINE, () -> "file reference ' " + reference.value() + "', source: " + source.getAbsolutePath() );
+                log.log(Level.FINE, () -> "file reference '" + reference.value() + "', source: " + source.getAbsolutePath() );
                 if (source.isDirectory()) {
                     log.log(Level.FINE, () -> "Copying source " + source.getAbsolutePath() + " to " + destination.getAbsolutePath());
                     IOUtils.copyDirectory(source, destination, -1);

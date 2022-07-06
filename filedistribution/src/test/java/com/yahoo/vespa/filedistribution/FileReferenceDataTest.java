@@ -7,12 +7,15 @@ import com.yahoo.text.Utf8;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -27,7 +30,7 @@ public class FileReferenceDataTest {
         String content = "blob";
         File tempFile = writeTempFile(content);
         FileReferenceData fileReferenceData =
-                new LazyTemporaryStorageFileReferenceData(new FileReference("ref"), "foo", FileReferenceData.Type.compressed, tempFile);
+                new LazyTemporaryStorageFileReferenceData(new FileReference("ref"), "foo", compressed, tempFile, gzip);
         ByteBuffer byteBuffer = ByteBuffer.allocate(100);
         assertEquals(4, fileReferenceData.nextContent(byteBuffer));
         assertEquals(content, Utf8.toString(Arrays.copyOfRange(byteBuffer.array(), 0, 4)));
@@ -44,7 +47,7 @@ public class FileReferenceDataTest {
         String content = "blobbblubbblabb";
         File file = writeTempFile(content);
         FileReferenceData fileReferenceData =
-                new LazyFileReferenceData(new FileReference("ref"), "foo", FileReferenceData.Type.compressed, file);
+                new LazyFileReferenceData(new FileReference("ref"), "foo", Type.compressed, file, CompressionType.gzip);
         ByteBuffer byteBuffer = ByteBuffer.allocate(10);
         assertEquals(10, fileReferenceData.nextContent(byteBuffer));
         assertEquals(content.substring(0,10), Utf8.toString(Arrays.copyOfRange(byteBuffer.array(), 0, 10)));
