@@ -89,6 +89,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
+    private final int transport_events_before_wakeup;
+    private final int transport_connections_per_target;
 
     private Integer memoryPercentage = null;
 
@@ -115,6 +117,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         addMetricsHandlers();
         addTestrunnerComponentsIfTester(deployState);
         addPlatformBundlesForApplicationCluster();
+        transport_connections_per_target = deployState.featureFlags().mbusJavaRpcNumTargets();
+        transport_events_before_wakeup = deployState.featureFlags().mbusJavaEventsBeforeWakeup();
     }
 
     private void addPlatformBundlesForApplicationCluster() {
@@ -269,6 +273,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         }
         if (getDocproc() != null)
             getDocproc().getConfig(builder);
+        builder.transport_events_before_wakeup(transport_events_before_wakeup);
+        builder.numconnectionspertarget(transport_connections_per_target);
     }
 
     @Override

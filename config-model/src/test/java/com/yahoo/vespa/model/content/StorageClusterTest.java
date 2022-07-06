@@ -158,6 +158,10 @@ public class StorageClusterTest {
         assertTrue(confg.mbus().dispatch_on_encode());
         assertEquals(4, confg.mbus().num_threads());
         assertEquals(1, confg.mbus().num_network_threads());
+        assertEquals(1, confg.mbus().num_rpc_targets());
+        assertEquals(1, confg.mbus().events_before_wakeup());
+        assertEquals(1, confg.rpc().num_targets_per_node());
+        assertEquals(1, confg.rpc().events_before_wakeup());
     }
 
     @Test
@@ -166,11 +170,19 @@ public class StorageClusterTest {
                 .setMbusDispatchOnDecode(false)
                 .setMbusDispatchOnEncode(false)
                 .setMbusThreads(3)
-                .setMbusNetworkThreads(7));
+                .setMbusNetworkThreads(7)
+                .setRpcNumTargets(11)
+                .setRpcEventsBeforeWakeup(12)
+                .setMbusCppRpcNumTargets(8)
+                .setMbusCppEventsBeforeWakeup(9));
         assertFalse(confg.mbus().dispatch_on_decode());
         assertFalse(confg.mbus().dispatch_on_encode());
         assertEquals(3, confg.mbus().num_threads());
         assertEquals(7, confg.mbus().num_network_threads());
+        assertEquals(8, confg.mbus().num_rpc_targets());
+        assertEquals(9, confg.mbus().events_before_wakeup());
+        assertEquals(11, confg.rpc().num_targets_per_node());
+        assertEquals(12, confg.rpc().events_before_wakeup());
     }
 
     @Test
