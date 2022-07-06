@@ -18,11 +18,13 @@ public abstract class FileReferenceData {
     private final FileReference fileReference;
     private final String filename;
     private final Type type;
+    private final CompressionType compressionType;
 
-    public FileReferenceData(FileReference fileReference, String filename, Type type) {
+    public FileReferenceData(FileReference fileReference, String filename, Type type, CompressionType compressionType) {
         this.fileReference = fileReference;
         this.filename = filename;
         this.type = type;
+        this.compressionType = compressionType;
     }
 
     public FileReference fileReference() {return fileReference;}
@@ -30,6 +32,8 @@ public abstract class FileReferenceData {
     public String filename() {return filename;}
 
     public Type type() {return type;}
+
+    public CompressionType compressionType() { return compressionType;}
 
     public ByteBuffer content() {
         ByteBuffer bb = ByteBuffer.allocate((int)size());
