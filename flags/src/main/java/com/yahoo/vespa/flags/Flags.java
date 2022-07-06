@@ -390,6 +390,20 @@ public class Flags {
             "Takes effect immediately",
             APPLICATION_ID);
 
+    public static final UnboundListFlag<String> FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES = defineListFlag(
+            "file-distribution-accepted-compression-types", List.of("gzip"), String.class,
+            List.of("hmusum"), "2022-07-05", "2022-09-05",
+            "´List of accepted compression types used when asking for a file reference. Valid values: gzip, lz4",
+            "Takes effect on restart of service",
+            APPLICATION_ID);
+
+    public static final UnboundListFlag<String> FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE = defineListFlag(
+            "file-distribution-compression-types-to-use", List.of("gzip"), String.class,
+            List.of("hmusum"), "2022-07-05", "2022-09-05",
+            "List of compression types to use (in preferred order), matched with accepted compression types when serving file references. Valid values: gzip, lz4",
+            "Takes effect on restart of service",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_YUM_PROXY_V2 = defineFeatureFlag(
             "use-yumproxy-v2", false,
             List.of("tokle"), "2022-05-05", "2022-09-01",
