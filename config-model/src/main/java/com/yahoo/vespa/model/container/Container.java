@@ -147,6 +147,11 @@ public abstract class Container extends AbstractService implements
         return (parent instanceof ContainerCluster) ? ((ContainerCluster<?>) parent).getHttp() : null;
     }
 
+    @SuppressWarnings("unused") // used by amenders
+    public JettyHttpServer getDefaultHttpServer() {
+        return defaultHttpServer;
+    }
+
     /** Returns the index of this node. The index of a given node is stable through changes with best effort. */
     public final int index() { return index; }
 
