@@ -101,8 +101,11 @@ healthCheckProxy.enable        bool    default=false
 # Which port to proxy
 healthCheckProxy.port          int     default=8080
 
-# Low-level timeout for proxy client (socket connect, socket read, connection pool). Aggregate timeout will be longer.
+# Low-level timeout for proxy client (socket connect, socket read, connection pool).
 healthCheckProxy.clientTimeout double  default=1.0
+
+# Servlet async request timeout. Must be larger than 'clientTimeout' to cover cost of queueing and response handling.
+healthCheckProxy.handlerTimeout double  default=1.5
 
 # Expiry for cached health response
 healthCheckProxy.cacheExpiry double  default=1.0

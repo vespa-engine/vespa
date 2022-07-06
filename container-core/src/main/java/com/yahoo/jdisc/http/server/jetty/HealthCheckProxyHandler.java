@@ -66,8 +66,10 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             ConnectorConfig.HealthCheckProxy proxyConfig = connector.connectorConfig().healthCheckProxy();
             if (proxyConfig.enable()) {
                 Duration targetTimeout = Duration.ofMillis((int) (proxyConfig.clientTimeout() * 1000));
+                Duration handlerTimeout = Duration.ofMillis((int) (proxyConfig.handlerTimeout() * 1000));
                 Duration cacheExpiry = Duration.ofMillis((int) (proxyConfig.cacheExpiry() * 1000));
-                ProxyTarget target = createProxyTarget(proxyConfig.port(), targetTimeout, cacheExpiry, connectors);
+                ProxyTarget target = createProxyTarget(
+                        proxyConfig.port(), targetTimeout, handlerTimeout, cacheExpiry, connectors);
                 mapping.put(connector.listenPort(), target);
                 log.info(String.format("Port %1$d is configured as a health check proxy for port %2$d. " +
                                                "HTTP requests to '%3$s' on %1$d are proxied as HTTPS to %2$d.",
@@ -77,8 +79,8 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         return mapping;
     }
 
-    private static ProxyTarget createProxyTarget(int targetPort, Duration targetTimeout, Duration cacheExpiry,
-                                                 List<JDiscServerConnector> connectors) {
+    private static ProxyTarget createProxyTarget(int targetPort, Duration clientTimeout, Duration handlerTimeout,
+                                                 Duration cacheExpiry, List<JDiscServerConnector> connectors) {
         JDiscServerConnector targetConnector = connectors.stream()
                 .filter(connector -> connector.listenPort() == targetPort)
                 .findAny()
@@ -91,7 +93,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
                         .orElseThrow(() -> new IllegalArgumentException("Health check proxy can only target https port"));
         ConnectorConfig.ProxyProtocol proxyProtocolCfg = targetConnector.connectorConfig().proxyProtocol();
         boolean proxyProtocol = proxyProtocolCfg.enabled() && !proxyProtocolCfg.mixedMode();
-        return new ProxyTarget(targetPort, targetTimeout, cacheExpiry, sslContextFactory, proxyProtocol);
+        return new ProxyTarget(targetPort, clientTimeout,handlerTimeout, cacheExpiry, sslContextFactory, proxyProtocol);
     }
 
     @Override
@@ -103,7 +105,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             ServletOutputStream out = servletResponse.getOutputStream();
             if (servletRequest.getRequestURI().equals(HEALTH_CHECK_PATH)) {
                 ProxyRequestTask task = new ProxyRequestTask(asyncContext, proxyTarget, servletResponse, out);
-                asyncContext.setTimeout(proxyTarget.timeout.plusSeconds(1).toMillis()); // add additional time for response sending
+                asyncContext.setTimeout(proxyTarget.handlerTimeout.toMillis());
                 asyncContext.addListener(new AsyncListener() {
                     @Override public void onStartAsync(AsyncEvent event) {}
                     @Override public void onComplete(AsyncEvent event) {}
@@ -212,20 +214,22 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     private static class ProxyTarget implements AutoCloseable {
         final int port;
-        final Duration timeout;
+        final Duration clientTimeout;
+        final Duration handlerTimeout;
         final Duration cacheExpiry;
         final SslContextFactory.Server serverSsl;
         final boolean proxyProtocol;
         volatile HttpClient client;
         volatile StatusResponse lastResponse;
 
-        ProxyTarget(int port, Duration timeout, Duration cacheExpiry, SslContextFactory.Server serverSsl,
-                    boolean proxyProtocol) {
+        ProxyTarget(int port, Duration clientTimeout, Duration handlerTimeout, Duration cacheExpiry,
+                    SslContextFactory.Server serverSsl, boolean proxyProtocol) {
             this.port = port;
-            this.timeout = timeout;
+            this.clientTimeout = clientTimeout;
             this.cacheExpiry = cacheExpiry;
             this.serverSsl = serverSsl;
             this.proxyProtocol = proxyProtocol;
+            this.handlerTimeout = handlerTimeout;
         }
 
         StatusResponse requestStatusHtml() {
@@ -239,8 +243,8 @@ class HealthCheckProxyHandler extends HandlerWrapper {
         private StatusResponse getStatusResponse() {
             try {
                 var request = client().newRequest("https://localhost:" + port + HEALTH_CHECK_PATH);
-                request.timeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
-                request.idleTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS);
+                request.timeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                request.idleTimeout(clientTimeout.toMillis(), TimeUnit.MILLISECONDS);
                 if (proxyProtocol) {
                     request.tag(new ProxyProtocolClientConnectionFactory.V1.Tag());
                 }
@@ -265,7 +269,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
             if (client == null) {
                 synchronized (this) {
                     if (client == null) {
-                        int timeoutMillis = (int) timeout.toMillis();
+                        int timeoutMillis = (int) clientTimeout.toMillis();
                         SslContextFactory.Client clientSsl = new SslContextFactory.Client();
                         clientSsl.setHostnameVerifier((__, ___) -> true);
                         clientSsl.setSslContext(getSslContext(serverSsl));
