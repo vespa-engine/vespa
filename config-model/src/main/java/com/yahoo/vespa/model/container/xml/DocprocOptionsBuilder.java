@@ -10,7 +10,6 @@ import org.w3c.dom.Element;
 public class DocprocOptionsBuilder {
     public static ContainerDocproc.Options build(Element spec) {
         return new ContainerDocproc.Options(
-                getCompression(spec),
                 getMaxMessagesInQueue(spec),
                 getSizeInMegabytes(spec.getAttribute("maxqueuebytesize")),
                 getTime(spec.getAttribute("maxqueuewait")),
@@ -23,10 +22,6 @@ public class DocprocOptionsBuilder {
         return integer == null || integer.trim().isEmpty() ?
                 null:
                 Integer.parseInt(integer);
-    }
-
-    private static boolean getCompression(Element spec) {
-        return (spec.hasAttribute("compressdocuments") && spec.getAttribute("compressdocuments").equals("true"));
     }
 
     private static Double getFactor(String factor) {
