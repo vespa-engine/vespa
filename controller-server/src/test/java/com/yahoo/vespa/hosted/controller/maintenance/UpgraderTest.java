@@ -36,7 +36,6 @@ import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.pro
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.stagingTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentContext.systemTest;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.ALL;
-import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.APPLICATION;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PIN;
 import static com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToCancel.PLATFORM;
 import static org.junit.Assert.assertEquals;
@@ -746,7 +745,7 @@ public class UpgraderTest {
         var default1 = tester.newDeploymentContext("tenant1", "default1", "default").submit(DeploymentContext.applicationPackage()).deploy();
 
         // New major version is released, but we don't want to upgrade to it yet
-        tester.upgrader().setTargetMajorVersion(Optional.of(6));
+        tester.upgrader().setTargetMajorVersion(OptionalInt.of(6));
         version = Version.fromString("7.0");
         tester.controllerTester().upgradeSystem(version);
         assertEquals(version, tester.controller().readVersionStatus().systemVersion().get().versionNumber());
@@ -771,7 +770,7 @@ public class UpgraderTest {
         assertEquals(0, tester.jobs().active().size());
 
         // Now we want to upgrade the latest application
-        tester.upgrader().setTargetMajorVersion(Optional.empty());
+        tester.upgrader().setTargetMajorVersion(OptionalInt.empty());
         tester.upgrader().maintain();
         tester.triggerJobs();
         assertEquals(2, tester.jobs().active().size());
@@ -959,7 +958,7 @@ public class UpgraderTest {
         tester.controllerTester().upgradeSystem(version0);
 
         // Apps target 6 by default
-        tester.upgrader().setTargetMajorVersion(Optional.of(6));
+        tester.upgrader().setTargetMajorVersion(OptionalInt.of(6));
 
         // All applications deploy on current version
         var app1 = createAndDeploy("app1", "default");

@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -41,6 +41,7 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
@@ -53,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
@@ -271,9 +273,9 @@ public class CuratorDb {
         return read(targetMajorVersionPath(), ByteBuffer::wrap).map(ByteBuffer::getInt);
     }
 
-    public void writeTargetMajorVersion(Optional<Integer> targetMajorVersion) {
+    public void writeTargetMajorVersion(OptionalInt targetMajorVersion) {
         if (targetMajorVersion.isPresent())
-            curator.set(targetMajorVersionPath(), ByteBuffer.allocate(Integer.BYTES).putInt(targetMajorVersion.get()).array());
+            curator.set(targetMajorVersionPath(), ByteBuffer.allocate(Integer.BYTES).putInt(targetMajorVersion.getAsInt()).array());
         else
             curator.delete(targetMajorVersionPath());
     }
