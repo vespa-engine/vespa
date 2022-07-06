@@ -22,7 +22,7 @@ import java.util.Map;
  * @author baldersheim
  */
 class Json2SingleLevelMap {
-    private static final ObjectMapper jsonMapper = new ObjectMapper();
+    private static final ObjectMapper jsonMapper = new ObjectMapper().configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     private final byte [] buf;
     private final JsonParser parser;
     Json2SingleLevelMap(InputStream data) {

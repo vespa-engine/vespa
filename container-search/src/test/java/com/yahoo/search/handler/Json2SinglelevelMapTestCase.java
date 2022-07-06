@@ -29,4 +29,10 @@ public class Json2SinglelevelMapTestCase {
         assertEquals("null", m.get("n"));
         assertEquals("[0.786, 0.193]", m.get("a"));
     }
+    @Test
+    public void testThatWeAllowSingleQuotes() {
+        Map<String, String> m = new Json2SingleLevelMap(new ByteArrayInputStream("{'yql':'text'}".getBytes(StandardCharsets.UTF_8))).parse();
+        assertTrue(m.containsKey("yql"));
+        assertEquals("text", m.get("yql"));
+    }
 }
