@@ -18,7 +18,7 @@ public class FileReferenceDownload {
     private final boolean downloadFromOtherSourceIfNotFound;
     private final String client;
 
-    public FileReferenceDownload(FileReference fileReference,  String client) {
+    public FileReferenceDownload(FileReference fileReference, String client) {
         this(fileReference, client, true);
     }
 

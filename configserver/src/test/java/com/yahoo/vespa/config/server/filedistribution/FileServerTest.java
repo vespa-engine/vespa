@@ -8,8 +8,10 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
 import com.yahoo.net.HostName;
 import com.yahoo.vespa.filedistribution.FileDownloader;
+import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,7 +41,7 @@ public class FileServerTest {
     @Before
     public void setup() throws IOException {
         File rootDir = new File(temporaryFolder.newFolder("fileserver-root").getAbsolutePath());
-        fileServer = new FileServer(rootDir, new MockFileDownloader(rootDir));
+        fileServer = new FileServer(rootDir, new MockFileDownloader(rootDir), List.of(gzip, lz4));
     }
 
     @Test
@@ -79,11 +81,25 @@ public class FileServerTest {
         CompletableFuture<byte []> content = new CompletableFuture<>();
         fileServer.startFileServing(new FileReference("12y"), new FileReceiver(content), Set.of(gzip));
         assertEquals(new String(content.get()), "dummy-data");
+    }
 
-        IOUtils.writeFile(dir + "/12z/f1", "dummy-data-2", true);
-        content = new CompletableFuture<>();
-        fileServer.startFileServing(new FileReference("12z"), new FileReceiver(content), Set.of(gzip, lz4));
-        assertEquals(new String(content.get()), "dummy-data-2");
+    @Test
+    public void requireThatWeCanReplayDirWithLz4() throws IOException, InterruptedException, ExecutionException {
+        File rootDir = new File(temporaryFolder.newFolder("fileserver-root-3").getAbsolutePath());
+        fileServer = new FileServer(rootDir, new MockFileDownloader(rootDir), List.of(lz4, gzip)); // prefer lz4
+        File dir = getFileServerRootDir();
+        IOUtils.writeFile(dir + "/subdir/12z/f1", "dummy-data-2", true);
+        CompletableFuture<byte []> content = new CompletableFuture<>();
+        fileServer.startFileServing(new FileReference("subdir"), new FileReceiver(content), Set.of(gzip, lz4));
+
+        // Decompress with lz4 and check contents
+        var compressor = new FileReferenceCompressor(FileReferenceData.Type.compressed, lz4);
+        File downloadedFileCompressed = new File(dir + "/downloaded-file-compressed");
+        IOUtils.writeFile(downloadedFileCompressed, content.get());
+        File downloadedFileUncompressed = new File(dir + "/downloaded-file-uncompressed");
+        compressor.decompress(downloadedFileCompressed, downloadedFileUncompressed);
+        assertTrue(downloadedFileUncompressed.isDirectory());
+        assertEquals("dummy-data-2", IOUtils.readFile(new File(downloadedFileUncompressed, "12z/f1")));
     }
 
     @Test
@@ -124,7 +140,7 @@ public class FileServerTest {
     private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
         configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
-        return new FileServer(new ConfigserverConfig(configBuilder));
+        return new FileServer(new ConfigserverConfig(configBuilder), new InMemoryFlagSource());
     }
 
     private static class FileReceiver implements FileServer.Receiver {
@@ -149,7 +165,8 @@ public class FileServerTest {
                   new Supervisor(new Transport("mock")).setDropEmptyBuffers(true),
                   downloadDirectory,
                   Duration.ofMillis(100),
-                  Duration.ofMillis(100));
+                  Duration.ofMillis(100),
+                  Set.of(gzip));
         }
 
     }
