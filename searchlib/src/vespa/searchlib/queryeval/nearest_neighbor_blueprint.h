@@ -28,8 +28,8 @@ public:
         INDEX_TOP_K_WITH_FILTER
     };
 private:
+    std::unique_ptr<search::tensor::DistanceCalculator> _distance_calc;
     const tensor::ITensorAttribute& _attr_tensor;
-    search::tensor::DistanceCalculator _distance_calc;
     const vespalib::eval::Value& _query_tensor;
     uint32_t _target_hits;
     uint32_t _adjusted_target_hits;
@@ -49,8 +49,7 @@ private:
     void perform_top_k(const search::tensor::NearestNeighborIndex* nns_index);
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
-                             const tensor::ITensorAttribute& attr_tensor,
-                             const vespalib::eval::Value& query_tensor,
+                             std::unique_ptr<search::tensor::DistanceCalculator> distance_calc,
                              uint32_t target_hits, bool approximate, uint32_t explore_additional_hits,
                              double distance_threshold,
                              double global_filter_lower_limit,
