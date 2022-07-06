@@ -118,9 +118,9 @@ public class FileReferenceCompressor {
     }
 
     private OutputStream compressedOutputStream(File outputFile) throws IOException {
+        log.log(Level.FINE, () -> "Compressing with type " + type + " and compression type " + compressionType);
         switch (type) {
             case compressed:
-                log.log(Level.FINE, () -> "Compressing with compression type " + compressionType);
                 switch (compressionType) {
                     case gzip:
                         return new GZIPOutputStream(new FileOutputStream(outputFile));
@@ -137,9 +137,9 @@ public class FileReferenceCompressor {
     }
 
     private InputStream decompressedInputStream(File inputFile) throws IOException {
+        log.log(Level.FINE, () -> "Decompressing with type " + type + " and compression type " + compressionType);
         switch (type) {
             case compressed:
-                log.log(Level.FINE, () -> "Decompressing with compression type " + compressionType);
                 switch (compressionType) {
                     case gzip:
                         return new GZIPInputStream(new FileInputStream(inputFile));
