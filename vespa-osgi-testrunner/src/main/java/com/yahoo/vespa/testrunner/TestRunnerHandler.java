@@ -129,7 +129,7 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
                                     typeOf(record.getLevel()),
                                     message).getBytes(UTF_8));
         }
-        out.write(']');
+        out.write("]}".getBytes(UTF_8));
     }
 
     public static String typeOf(Level level) {
