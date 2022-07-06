@@ -12,8 +12,8 @@ import java.nio.file.Files;
  */
 public class LazyTemporaryStorageFileReferenceData extends LazyFileReferenceData {
 
-    public LazyTemporaryStorageFileReferenceData(FileReference fileReference, String filename, Type type, File file) throws IOException {
-        super(fileReference, filename, type, file);
+    public LazyTemporaryStorageFileReferenceData(FileReference fileReference, String filename, Type type, File file, CompressionType compressionType) throws IOException {
+        super(fileReference, filename, type, file, compressionType);
     }
 
     public void close() {
