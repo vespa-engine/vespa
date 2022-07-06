@@ -68,7 +68,7 @@ if [[ $SHOULD_BUILD == systemtest ]]; then
       zstd
 
   source /opt/rh/gcc-toolset-11/enable
-  gem install libxml-ruby gnuplot distribution test-unit builder concurrent-ruby bigdecimal ffi parallel
+  gem install libxml-ruby gnuplot distribution test-unit builder concurrent-ruby bigdecimal addressable ffi parallel
   
   cd $HOME
   git clone https://github.com/vespa-engine/system-test
