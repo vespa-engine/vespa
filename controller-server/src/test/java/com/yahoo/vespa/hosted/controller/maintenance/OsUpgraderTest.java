@@ -158,15 +158,15 @@ public class OsUpgraderTest {
         // First zone upgrades
         osUpgrader.maintain();
         for (var nodeType : nodeTypes) {
-            assertEquals("Dev zone gets a zero budget", Duration.ZERO, upgradeBudget(zone1, nodeType, version));
+            assertEquals(Duration.ofHours(4), upgradeBudget(zone1, nodeType, version));
             completeUpgrade(version, nodeType, zone1);
         }
 
         // Next set of zones upgrade
         osUpgrader.maintain();
-        for (var zone : List.of(zone2, zone3)) {
+        for (var zone : List.of(zone1, zone2, zone3)) {
             for (var nodeType : nodeTypes) {
-                assertEquals("Parallel prod zones share the budget of a single zone", Duration.ofHours(6),
+                assertEquals("Parallel prod zones share the budget of a single zone", Duration.ofHours(4),
                              upgradeBudget(zone, nodeType, version));
                 completeUpgrade(version, nodeType, zone);
             }
@@ -175,7 +175,7 @@ public class OsUpgraderTest {
         // Last zone upgrades
         osUpgrader.maintain();
         for (var nodeType : nodeTypes) {
-            assertEquals(nodeType + " in last prod zone gets the budget of a single zone", Duration.ofHours(6),
+            assertEquals(nodeType + " in last prod zone gets the budget of a single zone", Duration.ofHours(4),
                          upgradeBudget(zone4, nodeType, version));
             completeUpgrade(version, nodeType, zone4);
         }

@@ -98,9 +98,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     /** Returns whether to spend upgrade budget on given zone */
     private boolean spendBudgetOn(ZoneApi zone) {
-        if (!zone.getEnvironment().isProduction()) return false;
-        if (controller().zoneRegistry().systemZone().getVirtualId().equals(zone.getVirtualId())) return false; // Controller zone
-        return true;
+        return !controller().zoneRegistry().systemZone().getVirtualId().equals(zone.getVirtualId()); // Do not spend budget on controller zone
     }
 
     /** Returns whether node is in a state where it can be upgraded */
