@@ -4,7 +4,7 @@
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/common/matching_elements.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
+#include <vespa/searchsummary/docsummary/docsum_field_writer.h>
 #include <vespa/searchsummary/docsummary/positionsdfw.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>

@@ -1,7 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "docsumstate.h"
 #include "matched_elements_filter_dfw.h"
+#include "docsumstate.h"
+#include "general_result.h"
 #include "struct_fields_resolver.h"
 #include "summaryfieldconverter.h"
 #include <vespa/document/fieldvalue/document.h>
@@ -40,21 +41,21 @@ MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_fiel
 {
 }
 
-std::unique_ptr<IDocsumFieldWriter>
+std::unique_ptr<DocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name, uint32_t input_field_enum,
                                  std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(matching_elems_fields));
 }
 
-std::unique_ptr<IDocsumFieldWriter>
+std::unique_ptr<DocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name, uint32_t input_field_enum,
                                  search::attribute::IAttributeContext& attr_ctx,
                                  std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     StructFieldsResolver resolver(input_field_name, attr_ctx, false);
     if (resolver.has_error()) {
-        return std::unique_ptr<IDocsumFieldWriter>();
+        return std::unique_ptr<DocsumFieldWriter>();
     }
     resolver.apply_to(*matching_elems_fields);
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name, input_field_enum, std::move(matching_elems_fields));

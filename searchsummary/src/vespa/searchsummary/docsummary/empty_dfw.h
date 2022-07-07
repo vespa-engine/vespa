@@ -6,18 +6,12 @@
 
 namespace search::docsummary {
 
-class IDocsumEnvironment;
-
-class RankFeaturesDFW : public SimpleDFW
+class EmptyDFW : public SimpleDFW
 {
-private:
-    IDocsumEnvironment * _env;
-
 public:
-    RankFeaturesDFW(IDocsumEnvironment * env);
-    RankFeaturesDFW(const RankFeaturesDFW &) = delete;
-    RankFeaturesDFW & operator=(const RankFeaturesDFW &) = delete;
-    ~RankFeaturesDFW() override;
+    EmptyDFW();
+    ~EmptyDFW() override;
+
     bool IsGenerated() const override { return true; }
     void insertField(uint32_t docid, GetDocsumsState *state, ResType type, vespalib::slime::Inserter &target) override;
 };

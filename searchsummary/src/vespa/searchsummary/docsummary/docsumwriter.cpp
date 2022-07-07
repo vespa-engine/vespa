@@ -168,7 +168,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *resCfg = rci.outputClass->GetEntry(i);
-            IDocsumFieldWriter *writer = _overrideTable[resCfg->_enumValue];
+            DocsumFieldWriter *writer = _overrideTable[resCfg->_enumValue];
             if (! writer->isDefaultValue(docid, state)) {
                 const Memory field_name(resCfg->_bindname.data(), resCfg->_bindname.size());
                 ObjectInserter inserter(docsum, field_name);
@@ -188,7 +188,7 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.outputClass->GetNumEntries(); ++i) {
             const ResConfigEntry *outCfg = rci.outputClass->GetEntry(i);
-            IDocsumFieldWriter *writer = _overrideTable[outCfg->_enumValue];
+            DocsumFieldWriter *writer = _overrideTable[outCfg->_enumValue];
             const Memory field_name(outCfg->_bindname.data(), outCfg->_bindname.size());
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
@@ -230,7 +230,7 @@ DynamicDocsumWriter::DynamicDocsumWriter( ResultConfig *config, KeywordExtractor
 {
     LOG_ASSERT(config != nullptr);
     _classInfoTable = new ResultClass::DynamicInfo[_numClasses];
-    _overrideTable  = new IDocsumFieldWriter*[_numEnumValues];
+    _overrideTable  = new DocsumFieldWriter*[_numEnumValues];
 
     uint32_t i = 0;
     for (ResultConfig::iterator it(config->begin()), mt(config->end()); it != mt; it++, i++) {
@@ -279,7 +279,7 @@ DynamicDocsumWriter::SetDefaultOutputClass(uint32_t classID)
 
 
 bool
-DynamicDocsumWriter::Override(const char *fieldName, IDocsumFieldWriter *writer)
+DynamicDocsumWriter::Override(const char *fieldName, DocsumFieldWriter *writer)
 {
     uint32_t fieldEnumValue = _resultConfig->GetFieldNameEnum().Lookup(fieldName);
 
@@ -324,7 +324,7 @@ DynamicDocsumWriter::InitState(IAttributeManager & attrMan, GetDocsumsState *sta
     state->_attributes.resize(_numEnumValues);
     state->_fieldWriterStates.resize(_numFieldWriterStates);
     for (size_t i(0); i < state->_attributes.size(); i++) {
-        const IDocsumFieldWriter *fw = _overrideTable[i];
+        const DocsumFieldWriter *fw = _overrideTable[i];
         if (fw) {
             const vespalib::string & attributeName = fw->getAttributeName();
             if (!attributeName.empty()) {

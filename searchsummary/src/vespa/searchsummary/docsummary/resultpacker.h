@@ -2,9 +2,14 @@
 
 #pragma once
 
-#include "resultconfig.h"
+#include "res_type_utils.h"
+#include "resultclass.h"
+#include <vespa/searchlib/util/rawbuf.h>
 
 namespace search::docsummary {
+
+class ResultConfig;
+
 /**
  * An Object of this class may be used to create docsum blobs. A
  * single blob is created by first indicating what result class the
@@ -27,11 +32,8 @@ private:
     const ResConfigEntry *_cfgEntry;  // current field of current blob
     bool                  _error;     // error flag for current blob
 
-    static const char *GetResTypeName(ResType type)
-    { return ResultConfig::GetResTypeName(type); }
-
-    static bool IsBinaryCompatible(ResType a, ResType b)
-    { return ResultConfig::IsBinaryCompatible(a, b); }
+    static const char *GetResTypeName(ResType type) { return ResTypeUtils::GetResTypeName(type); }
+    static bool IsBinaryCompatible(ResType a, ResType b) { return ResTypeUtils::IsBinaryCompatible(a, b); }
 
     void WarnType(ResType type) const;
     void SetFormatError(ResType type);

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "attribute_combiner_dfw.h"
+#include <vector>
 
 namespace search::attribute { class IAttributeContext; }
 

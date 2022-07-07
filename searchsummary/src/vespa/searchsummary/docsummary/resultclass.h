@@ -2,55 +2,13 @@
 
 #pragma once
 
+#include "docsum_blob_entry_filter.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchlib/util/stringenum.h>
-#include <bitset>
 
 namespace search::docsummary {
-
-/**
- * This enumeration contains values denoting the different types of
- * docsum fields. NOTE: The internal implementation depends on RES_INT
- * having the value 0. All types < RES_STRING must be fixed size and
- * all types > RES_STRING must be variable size.
- **/
-enum ResType {
-    RES_INT = 0,
-    RES_SHORT,
-    RES_BOOL,
-    RES_BYTE,
-    RES_FLOAT,
-    RES_DOUBLE,
-    RES_INT64,
-    RES_STRING,
-    RES_DATA,
-    RES_LONG_STRING,
-    RES_LONG_DATA,
-    RES_JSONSTRING,
-    RES_TENSOR,
-    RES_FEATUREDATA
-};
-
-/*
- * Class containing the set of result types not stored in docsum blobs.
- * This is used for gradual migration towards elimination of docsum blobs.
- */
-class DocsumBlobEntryFilter {
-    std::bitset<14> _skip_types;
-
-public:
-    DocsumBlobEntryFilter()
-        : _skip_types()
-    {
-    }
-    bool skip(ResType type) const noexcept { return _skip_types.test(type); }
-    DocsumBlobEntryFilter &add_skip(ResType type) {
-        _skip_types.set(type);
-        return *this;
-    }
-};
 
 /**
  * This struct describes a single docsum field (name and type). A

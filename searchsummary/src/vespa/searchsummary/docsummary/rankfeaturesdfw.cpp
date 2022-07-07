@@ -3,6 +3,7 @@
 #include "rankfeaturesdfw.h"
 #include "docsumstate.h"
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
 namespace search::docsummary {
 

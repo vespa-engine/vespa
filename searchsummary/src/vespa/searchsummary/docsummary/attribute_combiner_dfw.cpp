@@ -18,7 +18,7 @@ namespace search::docsummary {
 
 AttributeCombinerDFW::AttributeCombinerDFW(const vespalib::string &fieldName, bool filter_elements,
                                            std::shared_ptr<MatchingElementsFields> matching_elems_fields)
-    : ISimpleDFW(),
+    : SimpleDFW(),
       _stateIndex(0),
       _filter_elements(filter_elements),
       _fieldName(fieldName),
@@ -41,13 +41,13 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
     return true;
 }
 
-std::unique_ptr<IDocsumFieldWriter>
+std::unique_ptr<DocsumFieldWriter>
 AttributeCombinerDFW::create(const vespalib::string &fieldName, IAttributeContext &attrCtx, bool filter_elements,
                              std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     StructFieldsResolver structFields(fieldName, attrCtx, true);
     if (structFields.has_error()) {
-        return std::unique_ptr<IDocsumFieldWriter>();
+        return std::unique_ptr<DocsumFieldWriter>();
     } else if (structFields.is_map_of_struct()) {
         return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(matching_elems_fields));
     }

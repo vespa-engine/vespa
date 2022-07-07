@@ -7,12 +7,14 @@
 #include "resultconfig.h"
 #include "docsumstore.h"
 #include "keywordextractor.h"
-#include "docsumfieldwriter.h"
+#include "docsum_field_writer.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/fastlib/text/unicodeutil.h>
 #include <vespa/fastlib/text/wordfolder.h>
 
-using search::IAttributeManager;
+namespace search { class IAttributeManager; }
+
+namespace vespalib { class Slime; }
 
 namespace search::docsummary {
 
@@ -36,7 +38,7 @@ public:
     };
 
     virtual ~IDocsumWriter() {}
-    virtual void InitState(IAttributeManager & attrMan, GetDocsumsState *state) = 0;
+    virtual void InitState(search::IAttributeManager & attrMan, GetDocsumsState *state) = 0;
     virtual uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
                                  IDocsumStore *docinfos, search::RawBuf *target) = 0;
     virtual void insertDocsum(const ResolveClassInfo & rci, uint32_t docid, GetDocsumsState *state,
@@ -58,7 +60,7 @@ private:
     uint32_t             _numEnumValues;
     uint32_t             _numFieldWriterStates;
     ResultClass::DynamicInfo *_classInfoTable;
-    IDocsumFieldWriter **_overrideTable;
+    DocsumFieldWriter**  _overrideTable;
 
     void resolveInputClass(ResolveClassInfo &rci, uint32_t id) const;
 
@@ -73,8 +75,8 @@ public:
     ResultConfig *GetResultConfig() { return _resultConfig; }
 
     bool SetDefaultOutputClass(uint32_t classID);
-    bool Override(const char *fieldName, IDocsumFieldWriter *writer);
-    void InitState(IAttributeManager & attrMan, GetDocsumsState *state) override;
+    bool Override(const char *fieldName, DocsumFieldWriter *writer);
+    void InitState(search::IAttributeManager & attrMan, GetDocsumsState *state) override;
     uint32_t WriteDocsum(uint32_t docid, GetDocsumsState *state,
                          IDocsumStore *docinfos, search::RawBuf *target) override;
 

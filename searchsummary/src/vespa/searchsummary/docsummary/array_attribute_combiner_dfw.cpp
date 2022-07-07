@@ -9,6 +9,7 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/util/stash.h>
 #include <algorithm>
 #include <cassert>

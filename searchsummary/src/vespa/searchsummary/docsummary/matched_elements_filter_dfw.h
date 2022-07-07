@@ -2,7 +2,11 @@
 
 #pragma once
 
-#include "docsumfieldwriter.h"
+#include "docsum_field_writer.h"
+#include <memory>
+#include <vector>
+
+namespace search { class MatchingElementsFields; }
 
 namespace search::attribute { class IAttributeContext; }
 
@@ -13,7 +17,7 @@ namespace search::docsummary {
  * (array of primitive, weighted set of primitive, map of primitives, map of struct, array of struct)
  * that is retrieved from the document store.
  */
-class MatchedElementsFilterDFW : public IDocsumFieldWriter {
+class MatchedElementsFilterDFW : public DocsumFieldWriter {
 private:
     std::string _input_field_name;
     uint32_t _input_field_enum;
@@ -24,11 +28,11 @@ private:
 public:
     MatchedElementsFilterDFW(const std::string& input_field_name, uint32_t input_field_enum,
                              std::shared_ptr<MatchingElementsFields> matching_elems_fields);
-    static std::unique_ptr<IDocsumFieldWriter> create(const std::string& input_field_name, uint32_t input_field_enum,
-                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields);
-    static std::unique_ptr<IDocsumFieldWriter> create(const std::string& input_field_name, uint32_t input_field_enum,
-                                                      search::attribute::IAttributeContext& attr_ctx,
-                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields);
+    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name, uint32_t input_field_enum,
+                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields);
+    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name, uint32_t input_field_enum,
+                                                     search::attribute::IAttributeContext& attr_ctx,
+                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields);
     ~MatchedElementsFilterDFW();
     bool IsGenerated() const override { return false; }
     void insertField(uint32_t docid, GeneralResult* result, GetDocsumsState *state,

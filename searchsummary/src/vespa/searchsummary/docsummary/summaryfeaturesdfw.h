@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "docsumfieldwriter.h"
+#include "simple_dfw.h"
 
 namespace search::docsummary {
 
 class IDocsumEnvironment;
 
-class SummaryFeaturesDFW : public ISimpleDFW
+class SummaryFeaturesDFW : public SimpleDFW
 {
 private:
     IDocsumEnvironment * _env;
