@@ -352,7 +352,6 @@ void CommunicationManager::configure(std::unique_ptr<CommunicationManagerConfig>
         LOG(debug, "setting up slobrok config from id: '%s", _configUri.getConfigId().c_str());
         mbus::RPCNetworkParams params(_configUri);
         params.setConnectionExpireSecs(config->mbus.rpctargetcache.ttl);
-        params.setNumThreads(std::max(1, config->mbus.numThreads));
         params.setNumNetworkThreads(std::max(1, config->mbus.numNetworkThreads));
         params.setNumRpcTargets(std::max(1, config->mbus.numRpcTargets));
         params.events_before_wakeup(std::max(1, config->mbus.eventsBeforeWakeup));

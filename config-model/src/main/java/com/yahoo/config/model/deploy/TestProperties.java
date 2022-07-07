@@ -78,15 +78,12 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean enableBitVectors = false;
     private boolean loadCodeAsHugePages = false;
     private boolean sharedStringRepoNoReclaim = false;
-    private boolean mbus_dispatch_on_decode = true;
-    private boolean mbus_dispatch_on_encode = true;
     private int mbus_java_num_targets = 1;
     private int mbus_java_events_before_wakeup = 1;
     private int mbus_cpp_num_targets = 1;
     private int mbus_cpp_events_before_wakeup = 1;
     private int rpc_num_targets = 1;
     private int rpc_events_before_wakeup = 1;
-    private int mbus_threads = 4;
     private int mbus_network_threads = 1;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
@@ -143,10 +140,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Architecture adminClusterArchitecture() { return adminClusterNodeResourcesArchitecture; }
     @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
     @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
-    @Override public boolean mbusDispatchOnDecode() { return mbus_dispatch_on_decode; }
-    @Override public boolean mbusDispatchOnEncode() { return mbus_dispatch_on_encode; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
-    @Override public int mbusThreads() { return mbus_threads; }
     @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
     @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
     @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
@@ -376,20 +370,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEnableBitVectors(boolean value) {
         this.enableBitVectors = value;
-        return this;
-    }
-
-    public TestProperties setMbusDispatchOnDecode(boolean value) {
-        this.mbus_dispatch_on_decode = value;
-        return this;
-    }
-    public TestProperties setMbusDispatchOnEncode(boolean value) {
-        this.mbus_dispatch_on_encode = value;
-        return this;
-    }
-
-    public TestProperties setMbusThreads(int value) {
-        this.mbus_threads = value;
         return this;
     }
 
