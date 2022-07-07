@@ -106,11 +106,11 @@ PersistenceProviderWrapper::putAsync(const spi::Bucket& bucket, spi::Timestamp t
 }
 
 void
-PersistenceProviderWrapper::removeAsync(const spi::Bucket& bucket,  std::vector<TimeStampAndDocumentId> ids,
+PersistenceProviderWrapper::removeAsync(const spi::Bucket& bucket,  std::vector<spi::IdAndTimestamp> ids,
                                         spi::OperationComplete::UP onComplete)
 {
-    for (const TimeStampAndDocumentId & stampedId : ids) {
-        LOG_SPI("remove(" << bucket << ", " << stampedId.first << ", " << stampedId.second << ")");
+    for (const auto & stampedId : ids) {
+        LOG_SPI("remove(" << bucket << ", " << stampedId.timestamp << ", " << stampedId.id << ")");
     }
     CHECK_ERROR_ASYNC(spi::RemoveResult, FAIL_REMOVE, onComplete);
     _spi.removeAsync(bucket, std::move(ids), std::move(onComplete));

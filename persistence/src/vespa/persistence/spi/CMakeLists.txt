@@ -10,6 +10,7 @@ vespa_add_library(persistence_spi OBJECT
     context.cpp
     docentry.cpp
     exceptions.cpp
+    id_and_timestamp.cpp
     persistenceprovider.cpp
     read_consistency.cpp
     resource_usage.cpp

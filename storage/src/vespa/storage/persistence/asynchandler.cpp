@@ -114,13 +114,13 @@ bucketStatesAreSemanticallyEqual(const api::BucketInfo& a, const api::BucketInfo
 
 class UnrevertableRemoveEntryProcessor : public BucketProcessor::EntryProcessor {
 public:
-    using DocumentIdsAndTimeStamps = std::vector<std::pair<spi::Timestamp, spi::DocumentId>>;
+    using DocumentIdsAndTimeStamps = std::vector<spi::IdAndTimestamp>;
     UnrevertableRemoveEntryProcessor(DocumentIdsAndTimeStamps & to_remove)
         : _to_remove(to_remove)
     {}
 
     void process(spi::DocEntry& entry) override {
-        _to_remove.emplace_back(entry.getTimestamp(), *entry.getDocumentId());
+        _to_remove.emplace_back(*entry.getDocumentId(), entry.getTimestamp());
     }
 private:
     DocumentIdsAndTimeStamps & _to_remove;

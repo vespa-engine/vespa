@@ -10,8 +10,8 @@ void
 AbstractPersistenceProvider::removeIfFoundAsync(const Bucket& b, Timestamp timestamp,
                                                 const DocumentId& id, OperationComplete::UP onComplete)
 {
-    std::vector<TimeStampAndDocumentId> ids;
-    ids.emplace_back(timestamp, id);
+    std::vector<IdAndTimestamp> ids;
+    ids.emplace_back(id, timestamp);
     removeAsync(b, std::move(ids), std::move(onComplete));
 }
 

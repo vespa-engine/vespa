@@ -44,8 +44,8 @@ RemoveResult
 PersistenceProvider::remove(const Bucket& bucket, Timestamp timestamp, const DocumentId & docId) {
     auto catcher = std::make_unique<CatchResult>();
     auto future = catcher->future_result();
-    std::vector<TimeStampAndDocumentId> ids;
-    ids.emplace_back(timestamp, docId);
+    std::vector<IdAndTimestamp> ids;
+    ids.emplace_back(docId, timestamp);
     removeAsync(bucket, std::move(ids), std::move(catcher));
     return dynamic_cast<const RemoveResult &>(*future.get());
 }
