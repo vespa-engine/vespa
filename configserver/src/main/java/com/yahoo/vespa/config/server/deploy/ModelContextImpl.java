@@ -197,7 +197,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
         private final List<String> ignoredHttpUserAgents;
-        private final boolean enableServerOcspStapling;
         private final String mergeThrottlingPolicy;
         private final double persistenceThrottlingWsDecrementFactor;
         private final double persistenceThrottlingWsBackoff;
@@ -258,7 +257,6 @@ public class ModelContextImpl implements ModelContext {
             this.useV8GeoPositions = flagValue(source, appId, version, Flags.USE_V8_GEO_POSITIONS);
             this.maxCompactBuffers = flagValue(source, appId, version, Flags.MAX_COMPACT_BUFFERS);
             this.ignoredHttpUserAgents = flagValue(source, appId, version, PermanentFlags.IGNORED_HTTP_USER_AGENTS);
-            this.enableServerOcspStapling = flagValue(source, appId, version, Flags.ENABLE_SERVER_OCSP_STAPLING);
             this.mergeThrottlingPolicy = flagValue(source, appId, version, Flags.MERGE_THROTTLING_POLICY);
             this.persistenceThrottlingWsDecrementFactor = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_DECREMENT_FACTOR);
             this.persistenceThrottlingWsBackoff = flagValue(source, appId, version, Flags.PERSISTENCE_THROTTLING_WS_BACKOFF);
@@ -317,7 +315,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
-        @Override public boolean enableServerOcspStapling() { return enableServerOcspStapling; }
         @Override public String mergeThrottlingPolicy() { return mergeThrottlingPolicy; }
         @Override public double persistenceThrottlingWsDecrementFactor() { return persistenceThrottlingWsDecrementFactor; }
         @Override public double persistenceThrottlingWsBackoff() { return persistenceThrottlingWsBackoff; }
