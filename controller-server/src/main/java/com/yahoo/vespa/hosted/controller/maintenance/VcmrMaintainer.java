@@ -362,12 +362,14 @@ public class VcmrMaintainer extends ControllerMaintainer {
     }
 
     private void updateMetrics() {
-        curator.readChangeRequests()
+        var cmrsByStatus = curator.readChangeRequests()
                 .stream()
-                .collect(Collectors.groupingBy(VespaChangeRequest::getStatus))
-                .forEach((status, cmrs) ->
-                        metric.set(TRACKED_CMRS_METRIC, cmrs.size(), metric.createContext(Map.of("status", status.name())))
-                );
+                .collect(Collectors.groupingBy(VespaChangeRequest::getStatus));
+
+        for (var status : Status.values()) {
+            var count = cmrsByStatus.getOrDefault(status, List.of()).size();
+            metric.set(TRACKED_CMRS_METRIC, count, metric.createContext(Map.of("status", status.name())));
+        }
     }
 
 }

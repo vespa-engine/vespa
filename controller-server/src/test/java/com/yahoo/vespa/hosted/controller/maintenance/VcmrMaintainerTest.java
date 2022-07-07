@@ -249,6 +249,7 @@ public class VcmrMaintainerTest {
         assertEquals(State.OUT_OF_SYNC, action.getState());
         assertEquals(Status.OUT_OF_SYNC, writtenChangeRequest.getStatus());
         assertEquals(1, metrics.getMetric(context -> "OUT_OF_SYNC".equals(context.get("status")), TRACKED_CMRS_METRIC).get());
+        assertEquals(0, metrics.getMetric(context -> "REQUIRES_OPERATOR_ACTION".equals(context.get("status")), TRACKED_CMRS_METRIC).get());
     }
 
     @Test
