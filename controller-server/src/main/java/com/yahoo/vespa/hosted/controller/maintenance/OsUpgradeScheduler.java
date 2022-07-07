@@ -84,14 +84,11 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     /** OS release based on a tag */
-    private static class TaggedRelease implements Release {
+    private record TaggedRelease(SystemName system, ArtifactRepository artifactRepository) implements Release {
 
-        private final SystemName system;
-        private final ArtifactRepository artifactRepository;
-
-        private TaggedRelease(SystemName system, ArtifactRepository artifactRepository) {
-            this.system = Objects.requireNonNull(system);
-            this.artifactRepository = Objects.requireNonNull(artifactRepository);
+        public TaggedRelease {
+            Objects.requireNonNull(system);
+            Objects.requireNonNull(artifactRepository);
         }
 
         @Override
@@ -119,7 +116,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     /** OS release based on calendar-versioning */
-    private static class CalendarVersionedRelease implements Release {
+    private record CalendarVersionedRelease(SystemName system) implements Release {
 
         /** The time to wait before scheduling upgrade to next version */
         private static final Duration SCHEDULING_INTERVAL = Duration.ofDays(45);
@@ -134,10 +131,8 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
         private static final DateTimeFormatter CALENDAR_VERSION_PATTERN = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-        private final SystemName system;
-
-        public CalendarVersionedRelease(SystemName system) {
-            this.system = Objects.requireNonNull(system);
+        public CalendarVersionedRelease {
+            Objects.requireNonNull(system);
         }
 
         @Override
