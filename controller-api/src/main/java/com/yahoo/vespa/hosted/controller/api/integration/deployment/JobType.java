@@ -161,7 +161,7 @@ public final class JobType implements Comparable<JobType> {
 
     /** A serialized form of this: {@code &lt;environment&gt;.&lt;region&gt;[.test]}; the inverse of {@link #ofSerialized(String)} */
     public String serialized() {
-        return zone.environment().value() + "." + zone.region().value() + (isProductionTest ? ".test" : "");
+        return zone().value() + (isProductionTest ? ".test" : "");
     }
 
     public String jobName() {
