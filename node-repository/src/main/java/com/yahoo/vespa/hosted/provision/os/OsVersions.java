@@ -84,7 +84,7 @@ public class OsVersions {
             Version target = Optional.ofNullable(change.targets().get(nodeType))
                                      .map(OsVersionTarget::version)
                                      .orElse(Version.emptyVersion);
-            chooseUpgrader(nodeType, target).disableUpgrade(nodeType);
+            chooseUpgrader(nodeType, Optional.of(target)).disableUpgrade(nodeType);
             return change.withoutTarget(nodeType);
         });
     }
@@ -120,7 +120,7 @@ public class OsVersions {
         try (Lock lock = db.lockOsVersionChange()) {
             OsVersionTarget target = readChange().targets().get(nodeType);
             if (target == null) return; // No target set for this type
-            OsUpgrader upgrader = chooseUpgrader(nodeType, target.version());
+            OsUpgrader upgrader = chooseUpgrader(nodeType, Optional.of(target.version()));
             if (resume) {
                 upgrader.upgradeTo(target);
             } else {
@@ -129,17 +129,23 @@ public class OsVersions {
         }
     }
 
+    /** Returns whether node can be upgraded now */
+    public boolean canUpgrade(Node node) {
+        return chooseUpgrader(node.type(), Optional.empty()).canUpgradeAt(nodeRepository.clock().instant(), node);
+    }
+
     /** Returns the upgrader to use when upgrading given node type to target */
-    private OsUpgrader chooseUpgrader(NodeType nodeType, Version target) {
+    private OsUpgrader chooseUpgrader(NodeType nodeType, Optional<Version> target) {
         if (reprovisionToUpgradeOs) {
             return new RetiringOsUpgrader(nodeRepository);
         }
         // Require rebuild if we have any nodes of this type on a major version lower than target
-        boolean rebuildRequired = nodeRepository.nodes().list(Node.State.active).nodeType(nodeType).stream()
+        boolean rebuildRequired = target.isPresent() &&
+                                  nodeRepository.nodes().list(Node.State.active).nodeType(nodeType).stream()
                                                 .map(Node::status)
                                                 .map(Status::osVersion)
                                                 .anyMatch(osVersion -> osVersion.current().isPresent() &&
-                                                                       osVersion.current().get().getMajor() < target.getMajor());
+                                                                       osVersion.current().get().getMajor() < target.get().getMajor());
         if (rebuildRequired) {
             return new RebuildingOsUpgrader(nodeRepository);
         }
