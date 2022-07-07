@@ -228,10 +228,9 @@ public class DeploymentTrigger {
         Instance instance = application.require(applicationId.instance());
         JobId job = new JobId(instance.id(), jobType);
         JobStatus jobStatus = jobs.jobStatus(new JobId(applicationId, jobType));
-        Versions versions = jobStatus.lastTriggered()
-                                     .orElseThrow(() -> new IllegalArgumentException(job + " has never been triggered"))
-                                     .versions();
-        trigger(deploymentJob(instance, versions, jobType, jobStatus, clock.instant()), reason);
+        Run last = jobStatus.lastTriggered()
+                            .orElseThrow(() -> new IllegalArgumentException(job + " has never been triggered"));
+        trigger(deploymentJob(instance, last.versions(), last.id().type(), jobStatus.isNodeAllocationFailure(), clock.instant()), reason);
         return job;
     }
 
@@ -259,7 +258,12 @@ public class DeploymentTrigger {
                                                                 .collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         jobs.forEach((jobId, versionsList) -> {
-            trigger(deploymentJob(application.require(job.application().instance()), versionsList.get(0).versions(), jobId.type(), status.jobs().get(jobId).get(), clock.instant()), reason);
+            trigger(deploymentJob(application.require(job.application().instance()),
+                                  versionsList.get(0).versions(),
+                                  jobId.type(),
+                                  status.jobs().get(jobId).get().isNodeAllocationFailure(),
+                                  clock.instant()),
+                    reason);
         });
         return List.copyOf(jobs.keySet());
     }
@@ -388,7 +392,7 @@ public class DeploymentTrigger {
                 jobs.add(deploymentJob(status.application().require(jobId.application().instance()),
                                        job.versions(),
                                        job.type(),
-                                       status.instanceJobs(jobId.application().instance()).get(jobId.type()),
+                                       status.instanceJobs(jobId.application().instance()).get(jobId.type()).isNodeAllocationFailure(),
                                        job.readyAt().get()));
         });
         return Collections.unmodifiableList(jobs);
@@ -475,8 +479,8 @@ public class DeploymentTrigger {
 
     // ---------- Version and job helpers ----------
 
-    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, JobStatus jobStatus, Instant availableSince) {
-        return new Job(instance, versions, jobType, availableSince, jobStatus.isNodeAllocationFailure(), instance.change().revision().isPresent());
+    private Job deploymentJob(Instance instance, Versions versions, JobType jobType, boolean isNodeAllocationFailure, Instant availableSince) {
+        return new Job(instance, versions, jobType, availableSince, isNodeAllocationFailure, instance.change().revision().isPresent());
     }
 
     // ---------- Data containers ----------
