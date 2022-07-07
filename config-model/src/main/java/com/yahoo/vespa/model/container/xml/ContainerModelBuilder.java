@@ -205,6 +205,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         addServerProviders(deployState, spec, cluster);
 
+        if (!standaloneBuilder) cluster.addAllPlatformBundles();
+
         // Must be added after nodes:
         addDeploymentSpecConfig(cluster, context, deployState.getDeployLogger());
         addZooKeeper(cluster, spec);
@@ -595,6 +597,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Element processingElement = XML.getChild(spec, "processing");
         if (processingElement == null) return;
 
+        cluster.addSearchAndDocprocBundles();
         addIncludes(processingElement);
         cluster.setProcessingChains(new DomProcessingBuilder(null).build(deployState, cluster, processingElement),
                                     serverBindings(processingElement, ProcessingChains.defaultBindings).toArray(BindingPattern[]::new));

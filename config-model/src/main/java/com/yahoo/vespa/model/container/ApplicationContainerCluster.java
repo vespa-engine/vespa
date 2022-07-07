@@ -78,7 +78,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     public static final int heapSizePercentageOfTotalNodeMemory = 70;
     public static final int heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster = 18;
 
-
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
 
     private final Set<String> previousHosts;
@@ -116,16 +115,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
         addMetricsHandlers();
         addTestrunnerComponentsIfTester(deployState);
-        addPlatformBundlesForApplicationCluster();
         transport_connections_per_target = deployState.featureFlags().mbusJavaRpcNumTargets();
         transport_events_before_wakeup = deployState.featureFlags().mbusJavaEventsBeforeWakeup();
-    }
-
-    private void addPlatformBundlesForApplicationCluster() {
-        Set<String> bundles = Set.of(
-                "container-search-and-docproc", "container-search-gui", "docprocs",
-                "linguistics-components", "vespaclient-container-plugin");
-        bundles.forEach(b -> addPlatformBundle(PlatformBundles.absoluteBundlePath(b)));
     }
 
     @Override

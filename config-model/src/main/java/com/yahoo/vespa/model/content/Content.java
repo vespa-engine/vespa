@@ -298,6 +298,7 @@ public class Content extends ConfigModel {
             content.ownedIndexingCluster = Optional.of(indexingCluster);
 
             indexingCluster.addDefaultHandlersWithVip();
+            indexingCluster.addAllPlatformBundles();
             addDocproc(indexingCluster);
 
             List<ApplicationContainer> nodes = new ArrayList<>();

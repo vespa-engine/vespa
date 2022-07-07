@@ -59,6 +59,7 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, searchAndDocprocBundle));
         owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class.getName(), searchAndDocprocBundle));
         owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class.getName(), searchAndDocprocBundle));
+        cluster.addSearchAndDocprocBundles();
     }
 
     public void connectSearchClusters(Map<String, SearchCluster> searchClusters) {
