@@ -456,7 +456,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag FIX_IPV6_GATEWAY = defineFeatureFlag(
-            "fix-ipv6-gateway", false,
+            "fix-ipv6-gateway", true,
             List.of("mpolden"), "2022-07-04", "2022-09-01",
             "Fix a misconfigured IPv6 gateway automatically",
             "Takes effect on first host admin resume",
