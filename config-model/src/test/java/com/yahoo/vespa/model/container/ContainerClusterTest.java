@@ -162,15 +162,15 @@ public class ContainerClusterTest {
         addContainer(root, cluster, "c1", "host-c1");
         assertEquals(1, cluster.getContainers().size());
         ApplicationContainer container = cluster.getContainers().get(0);
-        verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmOptions());
+        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, ""), container.getJvmOptions());
         container.setJvmOptions("initial");
-        verifyJvmArgs(isHosted, hasDocProc, "initial", container.getJvmOptions());
+        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, "initial"), container.getJvmOptions());
         container.prependJvmOptions("ignored");
-        verifyJvmArgs(isHosted, hasDocProc, "ignored initial", container.getJvmOptions());
+        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, "ignored initial"), container.getJvmOptions());
         container.appendJvmOptions("override");
-        verifyJvmArgs(isHosted, hasDocProc, "ignored initial override", container.getJvmOptions());
+        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, "ignored initial override"), container.getJvmOptions());
         container.setJvmOptions(null);
-        verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmOptions());
+        verifyJvmArgs(isHosted, hasDocProc, expectedJvmArgs(isHosted, ""), container.getJvmOptions());
     }
 
     @Test
@@ -508,6 +508,15 @@ public class ContainerClusterTest {
         ClusterInfoConfig.Builder builder = new ClusterInfoConfig.Builder();
         cluster.getConfig(builder);
         return new ClusterInfoConfig(builder);
+    }
+
+    private static String expectedJvmArgs(boolean isHosted, String extra) {
+        if (!isHosted) return extra;
+        return "-Djdk.tls.server.enableStatusRequestExtension=true " +
+                "-Djdk.tls.stapling.responseTimeout=2000 " +
+                "-Djdk.tls.stapling.cacheSize=256 " +
+                "-Djdk.tls.stapling.cacheLifetime=3600" +
+                (extra.isEmpty() ? "" : " " + extra);
     }
 
 }
