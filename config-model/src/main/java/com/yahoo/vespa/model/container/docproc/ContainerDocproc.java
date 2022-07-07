@@ -27,29 +27,29 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     public final Options options;
 
     // Whether or not to prefer sending to a local node.
-    private boolean preferLocalNode = false;
+    private final boolean preferLocalNode = false;
 
     // The number of nodes to use per client.
-    private int numNodesPerClient = 0;
+    private final int numNodesPerClient = 0;
 
-    private Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
+    private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
 
-    public ContainerDocproc(ContainerCluster cluster, DocprocChains chains) {
+    public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains) {
         this(cluster, chains, new Options( null, null, null, null, null, null));
     }
 
-    public ContainerDocproc(ContainerCluster cluster, DocprocChains chains, Options options) {
+    public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options) {
         this(cluster, chains, options, true);
     }
 
     private void addSource(
-            final ContainerCluster cluster, final String name, final SessionConfig.Type.Enum type) {
+            final ContainerCluster<?> cluster, final String name, final SessionConfig.Type.Enum type) {
         final MbusClient mbusClient = new MbusClient(name, type);
         mbusClient.addClientBindings(SystemBindingPattern.fromPattern("mbus://*/" + mbusClient.getSessionName()));
         cluster.addComponent(mbusClient);
     }
 
-    public ContainerDocproc(ContainerCluster cluster, DocprocChains chains, Options options, boolean addSourceClientProvider) {
+    public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options, boolean addSourceClientProvider) {
         super(chains);
         assert (options != null) : "Null Options for " + this + " under cluster " + cluster.getName();
         this.options = options;
@@ -58,6 +58,7 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
             addSource(cluster, "source", SessionConfig.Type.SOURCE);
             addSource(cluster, MbusRequestContext.internalNoThrottledSource, SessionConfig.Type.INTERNAL);
         }
+        cluster.addSearchAndDocprocBundles();
     }
 
     public boolean isPreferLocalNode() {

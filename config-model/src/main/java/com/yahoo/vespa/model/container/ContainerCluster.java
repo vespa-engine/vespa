@@ -70,6 +70,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Parent class for all container cluster types.
@@ -125,6 +127,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final BindingPattern ROOT_HANDLER_BINDING = SystemBindingPattern.fromHttpPath(ROOT_HANDLER_PATH);
 
     public static final BindingPattern VIP_HANDLER_BINDING = SystemBindingPattern.fromHttpPath("/status.html");
+
+    public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = Stream.of(
+                    PlatformBundles.searchAndDocprocBundle, "container-search-gui", "docprocs", "linguistics-components")
+            .map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
 
     private final String name;
 
@@ -387,6 +393,18 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         Collections.sort(allComponents);
         return Collections.unmodifiableCollection(allComponents);
     }
+
+    /*
+    Add all search/docproc/feed related platform bundles.
+    This is only required for configured containers as the platform bundle set is not allowed to change between config generations.
+    For standalone container platform bundles can be added on features enabled as an update of application package requires restart.
+    */
+    public void addAllPlatformBundles() {
+        ContainerDocumentApi.addVespaClientContainerBundle(this);
+        addSearchAndDocprocBundles();
+    }
+
+    public void addSearchAndDocprocBundles() { SEARCH_AND_DOCPROC_BUNDLES.forEach(this::addPlatformBundle); }
 
     private void recursivelyFindAllComponents(Collection<Component<?, ?>> allComponents, AbstractConfigProducer<?> current) {
         for (AbstractConfigProducer<?> child: current.getChildren().values()) {

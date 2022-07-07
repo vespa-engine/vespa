@@ -7,10 +7,12 @@ import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -21,6 +23,8 @@ import java.util.Collections;
 public class ContainerDocumentApi {
 
     public static final String DOCUMENT_V1_PREFIX = "/document/v1";
+    public static final Path VESPACLIENT_CONTAINER_BUNDLE =
+            PlatformBundles.absoluteBundlePath("vespaclient-container-plugin");
 
     private final boolean ignoreUndefinedFields;
 
@@ -28,6 +32,11 @@ public class ContainerDocumentApi {
         this.ignoreUndefinedFields = ignoreUndefinedFields;
         addRestApiHandler(cluster, handlerOptions);
         addFeedHandler(cluster, handlerOptions);
+        addVespaClientContainerBundle(cluster);
+    }
+
+    public static void addVespaClientContainerBundle(ContainerCluster<?> c) {
+        c.addPlatformBundle(VESPACLIENT_CONTAINER_BUNDLE);
     }
 
     private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions) {
