@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
@@ -134,14 +133,6 @@ class TestRunnerHandlerTest {
             response.render(out);
             assertEquals("", out.toString(UTF_8));
         }
-    }
-
-    /* Creates a LogRecord that has a known instant and sequence number to get predictable serialization results. */
-    private static LogRecord logRecord(String logMessage) {
-        LogRecord logRecord = new LogRecord(Level.INFO, logMessage);
-        logRecord.setInstant(testInstant);
-        logRecord.setSequenceNumber(0);
-        return logRecord;
     }
 
     private static class MockRunner implements TestRunner {
