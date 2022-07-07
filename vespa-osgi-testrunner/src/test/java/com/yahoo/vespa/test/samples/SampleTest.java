@@ -71,7 +71,7 @@ public class SampleTest {
     @Test
     void successful() {
         log.log(new Level("html", INFO.intValue()) { }, "<body />");
-        log.log(INFO, "Very informative");
+        log.log(INFO, "Very informative: \"\\n\": \n");
         log.log(WARNING, "Oh no", new IllegalArgumentException("error", new RuntimeException("wrapped")));
     }
 

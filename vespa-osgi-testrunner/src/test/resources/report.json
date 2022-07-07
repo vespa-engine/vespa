@@ -191,7 +191,7 @@
                         "level": "info"
                       },
                       {
-                        "message": "com.yahoo.vespa.test.samples.SampleTest: Very informative",
+                        "message": "com.yahoo.vespa.test.samples.SampleTest: Very informative: \"\\n\": \n",
                         "at": 0,
                         "level": "info"
                       },
@@ -546,7 +546,7 @@
     "00:00:00.000 I'm here with Erwin today; Erwin, what can you tell us about your cat?",
     "00:00:00.000 spam",
     "00:00:00.000 <body />",
-    "00:00:00.000 Very informative",
+    "00:00:00.000 Very informative: \"\\n\": \n",
     "00:00:00.000 Oh no",
     "00:00:00.000 spam",
     "00:00:00.000 Catch me if you can!",

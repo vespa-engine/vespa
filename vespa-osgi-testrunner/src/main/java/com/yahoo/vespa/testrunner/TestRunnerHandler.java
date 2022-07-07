@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.testrunner;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.jdisc.EmptyResponse;
@@ -40,6 +42,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 public class TestRunnerHandler extends ThreadedHttpRequestHandler {
 
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
+    private static final JsonFactory factory = new JsonFactory();
 
     private final TestRunner testRunner;
 
@@ -109,9 +112,10 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         return path.substring(lastSlash + 1);
     }
 
-    static void render(OutputStream out, Collection<LogRecord> log) throws IOException {
-        out.write("{\"logRecords\":[".getBytes(UTF_8));
-        boolean first = true;
+    private static void render(OutputStream out, Collection<LogRecord> log) throws IOException {
+        var json = factory.createGenerator(out);
+        json.writeStartObject();
+        json.writeArrayFieldStart("logRecords");
         for (LogRecord record : log) {
             String message = record.getMessage() == null ? "" : record.getMessage();
             if (record.getThrown() != null) {
@@ -119,20 +123,19 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
                 record.getThrown().printStackTrace(new PrintStream(buffer));
                 message += (message.isEmpty() ? "" : "\n") + buffer;
             }
-
-            if (first) first = false;
-            else out.write(',');
-            out.write("""
-                      {"id":%d,"at":%d,"type":"%s","message":"%s"}
-                      """.formatted(record.getSequenceNumber(),
-                                    record.getMillis(),
-                                    typeOf(record.getLevel()),
-                                    message).getBytes(UTF_8));
+            json.writeStartObject();
+            json.writeNumberField("id", record.getSequenceNumber());
+            json.writeNumberField("at", record.getMillis());
+            json.writeStringField("type", typeOf(record.getLevel()));
+            json.writeStringField("message", message);
+            json.writeEndObject();
         }
-        out.write("]}".getBytes(UTF_8));
+        json.writeEndArray();
+        json.writeEndObject();
+        json.close();
     }
 
-    public static String typeOf(Level level) {
+    private static String typeOf(Level level) {
         return    level.getName().equals("html") ? "html"
                 : level.intValue() < Level.INFO.intValue() ? "debug"
                 : level.intValue() < Level.WARNING.intValue() ? "info"
@@ -140,116 +143,105 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
                 : "error";
     }
 
-    static void render(OutputStream out, TestReport report) throws IOException {
-        out.write('{');
+    private static void render(OutputStream out, TestReport report) throws IOException {
+        JsonGenerator json = factory.createGenerator(out);
+        json.writeStartObject();
 
-        out.write("\"report\":".getBytes(UTF_8));
-        render(out, (Node) report.root());
-
-        // TODO jonmv: remove
-        out.write(",\"summary\":{".getBytes(UTF_8));
-
-        renderSummary(out, report);
-
-        out.write(",\"failures\":[".getBytes(UTF_8));
-        renderFailures(out, report.root(), true);
-        out.write("]".getBytes(UTF_8));
-
-        out.write("}".getBytes(UTF_8));
+        json.writeFieldName("report");
+        render(json, (Node) report.root());
 
         // TODO jonmv: remove
-        out.write(",\"output\":[".getBytes(UTF_8));
-        renderOutput(out, report.root(), true);
-        out.write("]".getBytes(UTF_8));
+        json.writeObjectFieldStart("summary");
 
-        out.write('}');
+        renderSummary(json, report);
+
+        json.writeArrayFieldStart("failures");
+        renderFailures(json, report.root());
+        json.writeEndArray();
+
+        json.writeEndObject();
+
+        // TODO jonmv: remove
+        json.writeArrayFieldStart("output");
+        renderOutput(json, report.root());
+        json.writeEndArray();
+
+        json.writeEndObject();
+        json.close();
     }
 
-    static void renderSummary(OutputStream out, TestReport report) throws IOException {
+    private static void renderSummary(JsonGenerator json, TestReport report) throws IOException {
         Map<TestReport.Status, Long> tally =  report.root().tally();
-        out.write("""
-                  "success":%d,"failed":%d,"ignored":%d,"aborted":%d,"inconclusive":%d
-                  """.formatted(tally.getOrDefault(TestReport.Status.successful, 0L),
-                                tally.getOrDefault(TestReport.Status.failed, 0L) + tally.getOrDefault(TestReport.Status.error, 0L),
-                                tally.getOrDefault(TestReport.Status.skipped, 0L),
-                                tally.getOrDefault(TestReport.Status.aborted, 0L),
-                                tally.getOrDefault(TestReport.Status.inconclusive, 0L)).getBytes(UTF_8));
+        json.writeNumberField("success", tally.getOrDefault(TestReport.Status.successful, 0L));
+        json.writeNumberField("failed", tally.getOrDefault(TestReport.Status.failed, 0L) + tally.getOrDefault(TestReport.Status.error, 0L));
+        json.writeNumberField("ignored", tally.getOrDefault(TestReport.Status.skipped, 0L));
+        json.writeNumberField("aborted", tally.getOrDefault(TestReport.Status.aborted, 0L));
+        json.writeNumberField("inconclusive", tally.getOrDefault(TestReport.Status.inconclusive, 0L));
     }
 
-    static boolean renderFailures(OutputStream out, Node node, boolean first) throws IOException {
+    private static void renderFailures(JsonGenerator json, Node node) throws IOException {
         if (node instanceof FailureNode) {
-            if (first) first = false;
-            else out.write(',');
-            String message = ((FailureNode) node).thrown().getMessage();
-            out.write("""
-                      {"testName":"%s","testError":%s,"exception":"%s"}
-                      """.formatted(node.parent.name(),
-                                    message == null ? null : '"' + message + '"',
-                                    ExceptionUtils.getStackTraceAsString(((FailureNode) node).thrown())).getBytes(UTF_8));
+            json.writeStartObject();
+            json.writeStringField("testName", node.parent.name());
+            json.writeStringField("testError", ((FailureNode) node).thrown().getMessage());
+            json.writeStringField("exception", ExceptionUtils.getStackTraceAsString(((FailureNode) node).thrown()));
+            json.writeEndObject();
         }
         else {
             for (Node child : node.children())
-                first = renderFailures(out, child, first);
+                renderFailures(json, child);
         }
-        return first;
     }
 
-    static boolean renderOutput(OutputStream out, Node node, boolean first) throws IOException {
+    private static void renderOutput(JsonGenerator json, Node node) throws IOException {
         if (node instanceof OutputNode) {
             for (LogRecord record : ((OutputNode) node).log())
-                if (record.getMessage() != null) {
-                    if (first) first = false;
-                    else out.write(',');
-                    out.write(('"' + formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage() + '"').getBytes(UTF_8));
-                }
+                if (record.getMessage() != null)
+                    json.writeString(formatter.format(record.getInstant().atOffset(ZoneOffset.UTC)) + " " + record.getMessage());
         }
         else {
             for (Node child : node.children())
-                first = renderOutput(out, child, first);
+                renderOutput(json, child);
         }
-        return first;
     }
 
-    static void render(OutputStream out, Node node) throws IOException {
-        out.write('{');
-        if (node instanceof NamedNode) render(out, (NamedNode) node);
-        if (node instanceof OutputNode) render(out, (OutputNode) node);
+    private static void render(JsonGenerator json, Node node) throws IOException {
+        json.writeStartObject();
+        if (node instanceof NamedNode) render(json, (NamedNode) node);
+        if (node instanceof OutputNode) render(json, (OutputNode) node);
 
         if ( ! node.children().isEmpty()) {
-            out.write(",\"children\":[".getBytes(UTF_8));
-            boolean first = true;
+            json.writeArrayFieldStart("children");
             for (Node child : node.children) {
-                if (first) first = false;
-                else out.write(',');
-                render(out, child);
+                render(json, child);
             }
-            out.write(']');
+            json.writeEndArray();
         }
-        out.write('}');
+        json.writeEndObject();
     }
 
-    static void render(OutputStream out, NamedNode node) throws IOException {
+    private static void render(JsonGenerator json, NamedNode node) throws IOException {
         String type = node instanceof FailureNode ? "failure" : node instanceof TestNode ? "test" : "container";
-        out.write("""
-                  "type":"%s","name":"%s","status":"%s","start":%d,"duration":%d
-                  """.formatted(type,node.name(), node.status().name(), node.start().toEpochMilli(), node.duration().toMillis()).getBytes(UTF_8));
+        json.writeStringField("type", type);
+        json.writeStringField("name", node.name());
+        json.writeStringField("status", node.status().name());
+        json.writeNumberField("start", node.start().toEpochMilli());
+        json.writeNumberField("duration", node.duration().toMillis());
     }
 
-    static void render(OutputStream out, OutputNode node) throws IOException {
-        out.write("\"type\":\"output\",\"children\":[".getBytes(UTF_8));
-        boolean first = true;
+    private static void render(JsonGenerator json, OutputNode node) throws IOException {
+        json.writeStringField("type", "output");
+        json.writeArrayFieldStart("children");
         for (LogRecord record : node.log()) {
-            if (first) first = false;
-            else out.write(',');
-            out.write("""
-                      {"message":"%s","at":%d,"level":"%s"}
-                      """.formatted((record.getLoggerName() == null ? "" : record.getLoggerName() + ": ") +
-                                    (record.getMessage() != null ? record.getMessage() : "") +
-                                    (record.getThrown() != null ? (record.getMessage() != null ? "\n" : "") + traceToString(record.getThrown()) : ""),
-                                    record.getInstant().toEpochMilli(),
-                                    typeOf(record.getLevel())).getBytes(UTF_8));
+            json.writeStartObject();
+            json.writeStringField("message", (record.getLoggerName() == null ? "" : record.getLoggerName() + ": ") +
+                                             (record.getMessage() != null ? record.getMessage() : "") +
+                                             (record.getThrown() != null ? (record.getMessage() != null ? "\n" : "") + traceToString(record.getThrown()) : ""));
+            json.writeNumberField("at", record.getInstant().toEpochMilli());
+            json.writeStringField("level", typeOf(record.getLevel()));
+            json.writeEndObject();
         }
-        out.write(']');
+        json.writeEndArray();
     }
 
     private static String traceToString(Throwable thrown) {
@@ -258,17 +250,17 @@ public class TestRunnerHandler extends ThreadedHttpRequestHandler {
         return buffer.toString(UTF_8);
     }
 
-    interface Renderer {
+    private interface Renderer {
 
         void render(OutputStream out) throws IOException;
 
     }
 
-    static class CustomJsonResponse extends HttpResponse {
+    private static class CustomJsonResponse extends HttpResponse {
 
         private final Renderer renderer;
 
-        CustomJsonResponse(Renderer renderer) {
+        private CustomJsonResponse(Renderer renderer) {
             super(200);
             this.renderer = renderer;
         }
