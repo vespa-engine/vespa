@@ -420,13 +420,6 @@ public class Flags {
             "Takes effect on redeployment",
             APPLICATION_ID);
 
-    public static final UnboundStringFlag FILE_DISTRIBUTION_COMPRESSION_ALGORITHM = defineStringFlag(
-            "file-distribution-compression-algorithm", "gzip",
-            List.of("hmusum"), "2022-05-24", "2022-07-24",
-            "Which algorithm to use for compressing file references when distributing files. Valid values: none, gzip",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundListFlag<String> FILE_DISTRIBUTION_ACCEPTED_COMPRESSION_TYPES = defineListFlag(
             "file-distribution-accepted-compression-types", List.of("gzip"), String.class,
             List.of("hmusum"), "2022-07-05", "2022-09-05",
