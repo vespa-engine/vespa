@@ -96,6 +96,7 @@ public class StemmingSearcherTestCase {
                    "WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow");
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testEmptyIndexInfo() {
         String indexInfoConfigID = "file:src/test/java/com/yahoo/prelude/querytransform/test/emptyindexinfo.cfg";

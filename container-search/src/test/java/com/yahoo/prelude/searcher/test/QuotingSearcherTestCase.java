@@ -4,21 +4,18 @@ package com.yahoo.prelude.searcher.test;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.prelude.searcher.QrQuotetableConfig;
-import com.yahoo.search.rendering.RendererRegistry;
-import com.yahoo.search.result.Hit;
-import com.yahoo.search.result.Relevance;
-import com.yahoo.search.Query;
-import com.yahoo.search.Result;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.HitField;
-import com.yahoo.search.Searcher;
+import com.yahoo.prelude.searcher.QrQuotetableConfig;
 import com.yahoo.prelude.searcher.QuotingSearcher;
+import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.Searcher;
+import com.yahoo.search.result.Hit;
+import com.yahoo.search.result.Relevance;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -34,6 +31,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class QuotingSearcherTestCase {
 
+    @SuppressWarnings("deprecation")
     public static QuotingSearcher createQuotingSearcher(String configId) {
         QrQuotetableConfig config = new ConfigGetter<>(QrQuotetableConfig.class).getConfig(configId);
         return new QuotingSearcher(new ComponentId("QuotingSearcher"), config);
