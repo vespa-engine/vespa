@@ -84,7 +84,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int mbus_cpp_events_before_wakeup = 1;
     private int rpc_num_targets = 1;
     private int rpc_events_before_wakeup = 1;
-    private int mbus_threads = 4;
     private int mbus_network_threads = 1;
     private Architecture adminClusterNodeResourcesArchitecture = Architecture.getDefault();
 
@@ -142,7 +141,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
     @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
-    @Override public int mbusThreads() { return mbus_threads; }
     @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
     @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
     @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
@@ -372,11 +370,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEnableBitVectors(boolean value) {
         this.enableBitVectors = value;
-        return this;
-    }
-
-    public TestProperties setMbusThreads(int value) {
-        this.mbus_threads = value;
         return this;
     }
 

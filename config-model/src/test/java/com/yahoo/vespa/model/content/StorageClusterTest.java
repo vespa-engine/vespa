@@ -101,9 +101,6 @@ public class StorageClusterTest {
         StorCommunicationmanagerConfig.Builder builder = new StorCommunicationmanagerConfig.Builder();
         storage.getChildren().get("0").getConfig(builder);
         StorCommunicationmanagerConfig config = new StorCommunicationmanagerConfig(builder);
-        assertTrue(config.mbus().dispatch_on_encode());
-        assertTrue(config.mbus().dispatch_on_decode());
-        assertEquals(4, config.mbus().num_threads());
         assertEquals(1, config.mbus().num_network_threads());
     }
 
@@ -154,7 +151,6 @@ public class StorageClusterTest {
     @Test
     public void verifyDefaultMbusConfig() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties());
-        assertEquals(4, confg.mbus().num_threads());
         assertEquals(1, confg.mbus().num_network_threads());
         assertEquals(1, confg.mbus().num_rpc_targets());
         assertEquals(1, confg.mbus().events_before_wakeup());
@@ -165,13 +161,11 @@ public class StorageClusterTest {
     @Test
     public void verifyDefaultMbusConfigControl() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties()
-                .setMbusThreads(3)
                 .setMbusNetworkThreads(7)
                 .setRpcNumTargets(11)
                 .setRpcEventsBeforeWakeup(12)
                 .setMbusCppRpcNumTargets(8)
                 .setMbusCppEventsBeforeWakeup(9));
-        assertEquals(3, confg.mbus().num_threads());
         assertEquals(7, confg.mbus().num_network_threads());
         assertEquals(8, confg.mbus().num_rpc_targets());
         assertEquals(9, confg.mbus().events_before_wakeup());
