@@ -5,6 +5,7 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.LbServicesConfig;
 import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.component.Version;
+import com.yahoo.config.FileReference;
 import com.yahoo.config.SimpletypesConfig;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
@@ -27,16 +28,20 @@ import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.model.VespaModel;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.xml.sax.SAXException;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Optional;
 
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
+import static com.yahoo.vespa.config.server.rpc.RpcServer.ChunkedFileReceiver.createMetaRequest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -95,6 +100,25 @@ public class RpcServerTest {
             SentinelConfig config = new SentinelConfig(builder);
             assertEquals(0, config.service().size());
         }
+    }
+
+    @Test
+    public void testFileReceiverMetaRequest() throws IOException {
+        File file = temporaryFolder.newFile();
+        Request request = createMetaRequest(new LazyFileReferenceData(new FileReference("foo"), "fileA", compressed, file, gzip));
+        assertEquals(4, request.parameters().size());
+        assertEquals("foo", request.parameters().get(0).asString());
+        assertEquals("fileA", request.parameters().get(1).asString());
+        assertEquals("compressed", request.parameters().get(2).asString());
+        assertEquals(0, request.parameters().get(3).asInt64());
+
+        request = createMetaRequest(new LazyFileReferenceData(new FileReference("foo"), "fileA", compressed, file, lz4));
+        assertEquals(5, request.parameters().size());
+        assertEquals("foo", request.parameters().get(0).asString());
+        assertEquals("fileA", request.parameters().get(1).asString());
+        assertEquals("compressed", request.parameters().get(2).asString());
+        assertEquals(0, request.parameters().get(3).asInt64());
+        assertEquals("lz4", request.parameters().get(4).asString());
     }
 
     private JRTClientConfigRequest createSimpleRequest() {

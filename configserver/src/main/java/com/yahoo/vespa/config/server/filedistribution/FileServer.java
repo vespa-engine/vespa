@@ -44,6 +44,7 @@ import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUti
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 
 public class FileServer {
 
@@ -154,9 +155,9 @@ public class FileServer {
             CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
             log.log(Level.FINE, () -> "accepted compression types=" + acceptedCompressionTypes + ", compression type to use=" + compressionType);
             File compressedFile = new FileReferenceCompressor(compressed, compressionType).compress(file.getParentFile(), tempFile.toFile());
-            return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile);
+            return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile, compressionType);
         } else {
-            return new LazyFileReferenceData(reference, file.getName(), FileReferenceData.Type.file, file);
+            return new LazyFileReferenceData(reference, file.getName(), Type.file, file, gzip);
         }
     }
 

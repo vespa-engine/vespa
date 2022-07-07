@@ -17,8 +17,8 @@ public class LazyFileReferenceData extends FileReferenceData {
     private final ReadableByteChannel channel;
     private final StreamingXXHash64 hasher;
 
-    public LazyFileReferenceData(FileReference fileReference, String filename, Type type, File file) throws IOException {
-        super(fileReference, filename, type);
+    public LazyFileReferenceData(FileReference fileReference, String filename, Type type, File file, CompressionType compressionType) throws IOException {
+        super(fileReference, filename, type, compressionType);
         this.file = file;
         channel = Files.newByteChannel(file.toPath());
         this.hasher = XXHashFactory.fastestInstance().newStreamingHash64(0);
