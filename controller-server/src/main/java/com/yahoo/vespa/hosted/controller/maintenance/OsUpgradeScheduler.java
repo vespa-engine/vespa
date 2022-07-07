@@ -9,8 +9,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepo
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.OsRelease;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
@@ -116,18 +118,18 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     }
 
     /** OS release based on calendar-versioning */
-    private record CalendarVersionedRelease(SystemName system) implements Release {
+    record CalendarVersionedRelease(SystemName system) implements Release {
 
-        /** The time to wait before scheduling upgrade to next version */
-        private static final Duration SCHEDULING_INTERVAL = Duration.ofDays(45);
+        /** A fixed point in time which the release schedule is calculated from */
+        private static final Instant START_OF_SCHEDULE = LocalDate.of(2022, 1, 1)
+                                                                  .atStartOfDay()
+                                                                  .toInstant(ZoneOffset.UTC);
 
-        /**
-         * The interval at which new versions become available. We use this to avoid scheduling upgrades to a version
-         * that has not been released yet. Example: Version N is the latest one and target is set to N+1. If N+1 does
-         * not exist the zone will not converge until N+1 has been released and we may end up triggering multiple
-         * rounds of upgrades.
-         */
-        private static final Duration AVAILABILITY_INTERVAL = Duration.ofDays(7);
+        /** The time that should elapse between versions */
+        private static final Duration SCHEDULING_STEP = Duration.ofDays(45);
+
+        /** The day of week new releases are published */
+        private static final DayOfWeek RELEASE_DAY = DayOfWeek.MONDAY;
 
         private static final DateTimeFormatter CALENDAR_VERSION_PATTERN = DateTimeFormatter.ofPattern("yyyyMMdd");
 
@@ -137,23 +139,40 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
 
         @Override
         public Version version(OsVersionTarget currentTarget, Instant now) {
-            Instant scheduledAt = currentTarget.scheduledAt();
             Version currentVersion = currentTarget.osVersion().version();
-            if (scheduledAt.isBefore(now.minus(SCHEDULING_INTERVAL))) {
-                String calendarVersion = now.minus(AVAILABILITY_INTERVAL)
-                                            .atZone(ZoneOffset.UTC)
-                                            .format(CALENDAR_VERSION_PATTERN);
-                return new Version(currentVersion.getMajor(),
-                                   currentVersion.getMinor(),
-                                   currentVersion.getMicro(),
-                                   calendarVersion);
-            }
-            return currentVersion; // New version should not be scheduled yet
+            Version wantedVersion = asVersion(dateOfWantedVersion(now), currentVersion);
+            return wantedVersion.isAfter(currentVersion) ? wantedVersion : currentVersion;
         }
 
         @Override
         public Duration upgradeBudget() {
             return system.isCd() ? Duration.ZERO : Duration.ofDays(14);
+        }
+
+        /**
+         * Calculate the date of the wanted version relative to now. A given zone will choose the oldest release
+         * available which is not older than this date.
+         */
+        static LocalDate dateOfWantedVersion(Instant now) {
+            Instant candidate = START_OF_SCHEDULE;
+            while (!candidate.plus(SCHEDULING_STEP).isAfter(now)) {
+                candidate = candidate.plus(SCHEDULING_STEP);
+            }
+            LocalDate date = LocalDate.ofInstant(candidate, ZoneOffset.UTC);
+            return releaseDayOf(date);
+        }
+
+        private static LocalDate releaseDayOf(LocalDate date) {
+            int releaseDayDelta = RELEASE_DAY.getValue() - date.getDayOfWeek().getValue();
+            return date.plusDays(releaseDayDelta);
+        }
+
+        private static Version asVersion(LocalDate dateOfVersion, Version currentVersion) {
+            String calendarVersion = dateOfVersion.format(CALENDAR_VERSION_PATTERN);
+            return new Version(currentVersion.getMajor(),
+                               currentVersion.getMinor(),
+                               currentVersion.getMicro(),
+                               calendarVersion);
         }
 
     }
