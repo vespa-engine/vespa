@@ -44,13 +44,11 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.yolean.Exceptions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.ChildData;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
 import org.apache.zookeeper.KeeperException;
-
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -83,6 +81,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static java.nio.file.Files.readAttributes;
 
 /**
@@ -128,7 +127,6 @@ public class SessionRepository {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final int maxNodeSize;
-    private final StringFlag failDeploymentForFilesWithUnknownExtension;
 
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
@@ -172,7 +170,6 @@ public class SessionRepository {
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
         this.maxNodeSize = maxNodeSize;
-        this.failDeploymentForFilesWithUnknownExtension = Flags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION.bindTo(flagSource);
 
         loadSessions(); // Needs to be done before creating cache below
         this.directoryCache = curator.createDirectoryCache(sessionsPath.getAbsolute(), false, false, zkCacheExecutor);
@@ -684,7 +681,10 @@ public class SessionRepository {
         try {
             app.validateFileExtensions();
         } catch (IllegalArgumentException e) {
-            switch (failDeploymentForFilesWithUnknownExtension.value()) {
+            String flag = Flags.APPLICATION_FILES_WITH_UNKNOWN_EXTENSION.bindTo(flagSource)
+                                                                        .with(APPLICATION_ID, applicationId.serializedForm())
+                                                                        .value();
+            switch (flag) {
                 case "FAIL":
                     throw e;
                 case "LOG":
