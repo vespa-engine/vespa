@@ -31,6 +31,7 @@ public class FileDownloader implements AutoCloseable {
     private static final Logger log = Logger.getLogger(FileDownloader.class.getName());
     private static final Duration defaultSleepBetweenRetries = Duration.ofSeconds(5);
     public static final File defaultDownloadDirectory = new File(Defaults.getDefaults().underVespaHome("var/db/vespa/filedistribution"));
+    private static final boolean forceDownload = Boolean.parseBoolean(System.getenv("VESPA_CONFIG_PROXY_FORCE_DOWNLOAD_OF_FILE_REFERENCES"));
 
     private final ConnectionPool connectionPool;
     private final Supervisor supervisor;
@@ -65,6 +66,8 @@ public class FileDownloader implements AutoCloseable {
                                                                    sleepBetweenRetries,
                                                                    downloadDirectory,
                                                                    acceptedCompressionTypes);
+        if (forceDownload)
+            log.log(Level.INFO, "Force download of file references (download even if file reference exists on disk)");
     }
 
     public Optional<File> getFile(FileReferenceDownload fileReferenceDownload) {
@@ -103,6 +106,8 @@ public class FileDownloader implements AutoCloseable {
     }
 
     private static Optional<File> getFileFromFileSystem(FileReference fileReference, File downloadDirectory) {
+        if (forceDownload) return Optional.empty();
+
         File[] files = new File(downloadDirectory, fileReference.value()).listFiles();
         if (files == null) return Optional.empty();
         if (files.length == 0) return Optional.empty();
