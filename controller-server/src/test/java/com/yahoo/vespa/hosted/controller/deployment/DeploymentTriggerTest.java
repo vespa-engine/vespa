@@ -2153,6 +2153,7 @@ public class DeploymentTriggerTest {
         Version version2 = new Version("8");
         tester.controllerTester().flagSource().withListFlag(PermanentFlags.INCOMPATIBLE_VERSIONS.id(), List.of("8"), String.class);
 
+        // App deploys on version1.
         tester.controllerTester().upgradeSystem(version1);
         DeploymentContext app = tester.newDeploymentContext()
                                       .submit(new ApplicationPackageBuilder().region("us-east-3")
@@ -2160,10 +2161,12 @@ public class DeploymentTriggerTest {
                                                                              .build())
                                       .deploy();
 
+        // System upgrades to version2, but the app is not upgraded.
         tester.controllerTester().upgradeSystem(version2);
         tester.upgrader().run();
         assertEquals(Change.empty(), app.instance().change());
 
+        // App compiles against version2, and upgrades.
         app.submit(new ApplicationPackageBuilder().region("us-east-3")
                                                   .compileVersion(version2)
                                                   .build());
@@ -2171,6 +2174,18 @@ public class DeploymentTriggerTest {
         assertEquals(version2, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
         assertEquals(version2, app.application().revisions().get(tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
 
+
+        // App specifies version1 in deployment spec, compiles against version1, pins to version1, and then downgrades.
+        app.submit(new ApplicationPackageBuilder().region("us-east-3")
+                                                  .majorVersion(7)
+                                                  .compileVersion(version1)
+                                                  .build());
+        tester.deploymentTrigger().forceChange(app.instanceId(), app.instance().change().withPin());
+        app.deploy();
+        assertEquals(version1, tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetPlatform());
+        assertEquals(version1, app.application().revisions().get(tester.jobs().last(app.instanceId(), productionUsEast3).get().versions().targetRevision()).compileVersion().get());
+
+        // A new app, compiled against version1, is deployed on version1.
         DeploymentContext newApp = tester.newDeploymentContext("new", "app", "default")
                                          .submit(new ApplicationPackageBuilder().region("us-east-3")
                                                                                 .compileVersion(version1)
