@@ -27,13 +27,14 @@ import static org.junit.Assert.assertTrue;
 public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
 
     private static final String APPLICATION_NAME = "state-handler-test-base";
+    private static final String HOST_DIMENSION = "some-hostname";
 
     private static MetricsPacketsHandler metricsPacketsHandler;
 
     @Before
     public void setupHandler() {
         metricsPacketsHandlerConfig = new MetricsPacketsHandlerConfig(new MetricsPacketsHandlerConfig.Builder()
-                                                                              .application(APPLICATION_NAME));
+                                                                              .application(APPLICATION_NAME).hostname(HOST_DIMENSION));
         metricsPacketsHandler = new MetricsPacketsHandler(monitor, timer, snapshotProviderRegistry, metricsPacketsHandlerConfig);
         testDriver = new RequestHandlerTestDriver(metricsPacketsHandler);
     }
@@ -138,6 +139,26 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         List<JsonNode> packets = incrementTimeAndGetJsonPackets();
         assertEquals(3, packets.size());
     }
+
+    @Test
+    public void host_dimension_only_created_if_absent() throws Exception {
+        var context1 = StateMetricContext.newInstance(Map.of("dim1", "value1", "host", "foo.bar"));
+        var context2 = StateMetricContext.newInstance(Map.of("dim2", "value2"));
+        var snapshot = new MetricSnapshot();
+        snapshot.add(context1, "counter1", 1);
+        snapshot.add(context2, "counter2", 2);
+        snapshotProvider.setSnapshot(snapshot);
+
+        var packets = incrementTimeAndGetJsonPackets();
+        assertEquals(3, packets.size());
+
+        packets.forEach(packet -> {
+            if (!packet.has(DIMENSIONS_KEY)) return;
+            var dimensions = packet.get(DIMENSIONS_KEY);
+            if (dimensions.has("dim1")) assertDimension(packet, "host", "foo.bar");
+            if (dimensions.has("dim2")) assertDimension(packet, "host", HOST_DIMENSION);
+        });
+    }
     
     private List<JsonNode> incrementTimeAndGetJsonPackets() throws Exception {
         advanceToNextSnapshot();
@@ -161,6 +182,13 @@ public class MetricsPacketsHandlerTest extends StateHandlerTestBase {
         JsonNode counterMetrics = metricsPacket.get(METRICS_KEY);
         assertTrue(counterMetrics.has(metricName));
         assertEquals(expected, counterMetrics.get(metricName).asLong());
+    }
+
+    private void assertDimension(JsonNode metricsPacket, String dimensionName, String expectedDimensionValue) {
+        assertTrue(metricsPacket.has(DIMENSIONS_KEY));
+        var dimensions = metricsPacket.get(DIMENSIONS_KEY);
+        assertTrue(dimensions.has(dimensionName));
+        assertEquals(expectedDimensionValue, dimensions.get(dimensionName).asText());
     }
 
     private void createSnapshotWithCountMetric(String name, Number value, MetricDimensions context) {

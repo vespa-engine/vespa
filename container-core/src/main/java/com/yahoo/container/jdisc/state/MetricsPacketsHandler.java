@@ -22,9 +22,9 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static com.yahoo.container.jdisc.state.JsonUtil.sanitizeDouble;
@@ -61,6 +61,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     private final Timer timer;
     private final SnapshotProvider snapshotProvider;
     private final String applicationName;
+    private final String hostDimension;
 
     @Inject
     public MetricsPacketsHandler(StateMonitor monitor,
@@ -71,6 +72,7 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
         this.timer = timer;
         snapshotProvider = getSnapshotProviderOrThrow(snapshotProviders);
         applicationName = config.application();
+        hostDimension = config.hostname();
     }
 
 
@@ -173,16 +175,16 @@ public class MetricsPacketsHandler extends AbstractRequestHandler {
     }
 
     private void addDimensions(MetricDimensions metricDimensions, ObjectNode packet) {
-        if (metricDimensions == null) return;
+        if (metricDimensions == null && hostDimension.isEmpty()) return;
 
-        Iterator<Map.Entry<String, String>> dimensionsIterator = metricDimensions.iterator();
-        if (dimensionsIterator.hasNext()) {
-            ObjectNode jsonDim = jsonMapper.createObjectNode();
-            packet.set(DIMENSIONS_KEY, jsonDim);
-            for (Map.Entry<String, String> dimensionEntry : metricDimensions) {
-                jsonDim.put(dimensionEntry.getKey(), dimensionEntry.getValue());
-            }
+        ObjectNode jsonDim = jsonMapper.createObjectNode();
+        packet.set(DIMENSIONS_KEY, jsonDim);
+        Iterable<Map.Entry<String, String>> dimensionIterator = metricDimensions == null ? Set.of() : metricDimensions;
+        for (Map.Entry<String, String> dimensionEntry : dimensionIterator) {
+            jsonDim.put(dimensionEntry.getKey(), dimensionEntry.getValue());
         }
+        if (!hostDimension.isEmpty() && !jsonDim.has("host"))
+            jsonDim.put("host", hostDimension);
     }
 
     private void addMetrics(MetricSet metricSet, ObjectNode packet) {
