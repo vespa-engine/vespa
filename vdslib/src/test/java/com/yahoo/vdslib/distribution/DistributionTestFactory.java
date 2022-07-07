@@ -108,6 +108,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private static StorDistributionConfig.Builder deserializeConfig(String s) {
         return new StorDistributionConfig.Builder(
                 new ConfigGetter<>(StorDistributionConfig.class).getConfig("raw:" + s));

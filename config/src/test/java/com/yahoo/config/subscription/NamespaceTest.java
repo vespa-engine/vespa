@@ -12,6 +12,7 @@ import static org.junit.Assert.assertEquals;
 public class NamespaceTest {
 
     @Test
+    @SuppressWarnings("deprecation")
     public void verifyConfigClassWithExplicitNamespace() {
         NamespaceConfig config = new ConfigGetter<>(NamespaceConfig.class).getConfig("raw: a 0\n");
         assertEquals(0, config.a());

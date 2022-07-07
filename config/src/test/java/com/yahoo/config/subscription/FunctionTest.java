@@ -2,20 +2,16 @@
 package com.yahoo.config.subscription;
 
 import com.yahoo.foo.FunctionTestConfig;
-
 import org.junit.Before;
 import org.junit.Test;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -28,6 +24,7 @@ import static org.junit.Assert.fail;
  *
  * @author gjoranv
  */
+@SuppressWarnings("deprecation")
 public class FunctionTest {
 
     public static final String PATH = "src/test/resources/configs/function-test/";

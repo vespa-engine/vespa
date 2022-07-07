@@ -3,7 +3,6 @@ package com.yahoo.search.searchers.test;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.RawSource;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchers.ValidateMatchPhaseSearcher;
@@ -15,7 +14,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author baldersheim
@@ -24,6 +23,7 @@ public class ValidateMatchPhaseSearcherTestCase {
 
     private final ValidateMatchPhaseSearcher searcher;
 
+    @SuppressWarnings("deprecation")
     public ValidateMatchPhaseSearcherTestCase() {
         searcher = new ValidateMatchPhaseSearcher(
                 ConfigGetter.getConfig(AttributesConfig.class,

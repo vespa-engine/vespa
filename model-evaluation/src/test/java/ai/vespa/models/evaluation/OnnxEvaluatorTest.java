@@ -51,6 +51,7 @@ public class OnnxEvaluatorTest {
         assertEquals(function.evaluate(), Tensor.from("tensor<float>(d0[2],d1[1]):[0.63931,0.67574]"));
     }
 
+    @SuppressWarnings("deprecation")
     private ModelsEvaluator createModels() {
         RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId("rank-profiles.cfg"));
         RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId("ranking-constants.cfg"));

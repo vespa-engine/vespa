@@ -62,6 +62,7 @@ public class ParsingTester {
      * Returns an unfrozen version of the IndexFacts this will use.
      * This can be used to add new indexes and passing the resulting IndexFacts to the constructor of this.
      */
+    @SuppressWarnings("deprecation")
     public static IndexFacts createIndexFacts() {
         String indexInfoConfigID = "file:src/test/java/com/yahoo/prelude/query/parser/test/parseindexinfo.cfg";
         ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);

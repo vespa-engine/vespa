@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.searchers;
 
-import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
@@ -13,10 +12,9 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.YqlParser;
-import com.yahoo.vespa.config.search.AttributesConfig.Attribute;
 import com.yahoo.vespa.config.search.AttributesConfig;
+import com.yahoo.vespa.config.search.AttributesConfig.Attribute;
 import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -33,35 +31,25 @@ public class ValidateFuzzySearcherTestCase {
     List<String> attributes;
 
     public ValidateFuzzySearcherTestCase() {
-        int i = 0;
         attributes = new ArrayList<>();
-        StringBuilder attributeConfig = new StringBuilder();
+        AttributesConfig.Builder configBuilder = new AttributesConfig.Builder();
+        List<AttributesConfig.Attribute.Builder> attributesList = new ArrayList<>();
         for (Attribute.Datatype.Enum attr: Attribute.Datatype.Enum.values()) {
             for (Attribute.Collectiontype.Enum ctype: Attribute.Collectiontype.Enum.values()) {
+                AttributesConfig.Attribute.Builder attributesBuilder = new AttributesConfig.Attribute.Builder();
                 String attributeName = attr.name().toLowerCase() + "_" + ctype.name().toLowerCase();
+                attributesBuilder.name(attributeName);
+                attributesBuilder.datatype(attr);
+                attributesBuilder.collectiontype(ctype);
+                attributesList.add(attributesBuilder);
 
-                attributeConfig.append("attribute[" + i + "].name ");
-                attributeConfig.append(attributeName);
-                attributeConfig.append("\n");
-
-                attributeConfig.append("attribute[" + i + "].datatype ");
-                attributeConfig.append(attr.name());
-                attributeConfig.append("\n");
-
-                attributeConfig.append("attribute[" + i + "].collectiontype ");
-                attributeConfig.append(ctype.name());
-                attributeConfig.append("\n");
-
-                i += 1;
                 attributes.add(attributeName);
             }
         }
+        configBuilder.attribute(attributesList);
+        AttributesConfig config = configBuilder.build();
 
-        searcher = new ValidateFuzzySearcher(ConfigGetter.getConfig(
-                AttributesConfig.class,
-                "raw: " +
-                        "attribute[" + attributes.size() + "]\n" +
-                        attributeConfig));
+        searcher = new ValidateFuzzySearcher(config);
     }
 
     private String makeQuery(String attribute, String query, int maxEditDistance, int prefixLength) {

@@ -22,6 +22,7 @@ public class UnicodeTest {
      * received correctly from the server
      */
     @Test
+    @SuppressWarnings("deprecation")
     public void testUnicodeConfigReading() {
         ConfigGetter<UnicodeConfig> getter = new ConfigGetter<>(UnicodeConfig.class);
         UnicodeConfig config = getter.getConfig("file:src/test/resources/configs/unicode/unicode.cfg");

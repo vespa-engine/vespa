@@ -1,12 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.messagebus.shared;
 
+import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.jdisc.AbstractResource;
-
-import java.util.Objects;
-import java.util.logging.Level;
-
 import com.yahoo.messagebus.DestinationSessionParams;
 import com.yahoo.messagebus.IntermediateSessionParams;
 import com.yahoo.messagebus.MessageBus;
@@ -15,8 +12,8 @@ import com.yahoo.messagebus.SourceSessionParams;
 import com.yahoo.messagebus.network.Network;
 import com.yahoo.messagebus.network.rpc.RPCNetwork;
 import com.yahoo.messagebus.network.rpc.RPCNetworkParams;
-import com.yahoo.cloud.config.SlobroksConfig;
-
+import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -57,6 +54,7 @@ public class SharedMessageBus extends AbstractResource {
         return new SharedMessageBus(new MessageBus(newNetwork(netParams), mbusParams));
     }
 
+    @SuppressWarnings("deprecation")
     private static Network newNetwork(RPCNetworkParams params) {
         SlobroksConfig cfg = params.getSlobroksConfig();
         if (cfg == null) {

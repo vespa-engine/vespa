@@ -2,7 +2,6 @@
 package ai.vespa.models.evaluation;
 
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -128,6 +126,7 @@ public class ModelsEvaluatorTest {
     // TODO: Test argument-less function
     // TODO: Test with nested functions
 
+    @SuppressWarnings("deprecation")
     private ModelsEvaluator createModels() {
         RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId("rank-profiles.cfg"));
         RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId("ranking-constants.cfg"));

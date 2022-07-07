@@ -23,6 +23,7 @@ public abstract class IndexFactsFactory {
 
     }
 
+    @SuppressWarnings("deprecation")
     private static <T extends ConfigInstance> T resolveConfig(Class<T> configClass, String configId) {
         if (configId == null) return null;
         return ConfigGetter.getConfig(configClass, configId);

@@ -62,6 +62,7 @@ public class ReuseComponentsTest {
         SimpleComponent throwsException = getComponent(newGraph, SimpleComponent.class);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void require_that_component_is_not_reused_when_config_is_changed() {
         Class<ComponentTakingConfig> componentClass = ComponentTakingConfig.class;
@@ -80,6 +81,7 @@ public class ReuseComponentsTest {
         assertNotSame(instance2, instance);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void require_that_component_is_not_reused_when_injected_component_is_changed() {
         Function<String, ComponentGraph> buildGraph = config -> {
@@ -144,6 +146,7 @@ public class ReuseComponentsTest {
         assertNotSame(newSimpleComponentRegistry, oldSimpleComponentRegistry);
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void require_that_injected_component_is_reused_even_when_dependent_component_is_changed() {
         Function<String, ComponentGraph> buildGraph = config -> {

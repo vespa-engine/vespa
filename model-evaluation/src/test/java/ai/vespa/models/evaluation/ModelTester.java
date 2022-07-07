@@ -2,7 +2,6 @@
 package ai.vespa.models.evaluation;
 
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.FileSource;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
 import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
@@ -10,7 +9,6 @@ import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 import com.yahoo.vespa.config.search.core.RankingExpressionsConfig;
-
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -31,8 +29,8 @@ public class ModelTester {
 
     public Map<String, Model> models() { return models; }
 
+    @SuppressWarnings("deprecation")
     private static Map<String, Model> createModels(String path) {
-
         RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId(path, "rank-profiles.cfg"));
         RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId(path, "ranking-constants.cfg"));
         RankingExpressionsConfig expressionsConfig = ConfigGetter.getConfig(RankingExpressionsConfig.class, fileConfigId(path, "ranking-expressions.cfg"));

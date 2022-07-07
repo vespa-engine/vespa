@@ -125,6 +125,7 @@ public class IndexingProcessorTestCase {
         return lst.get(0);
     }
 
+    @SuppressWarnings("deprecation")
     private static IndexingProcessor newProcessor(String configId) {
         return new IndexingProcessor(new DocumentTypeManager(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId)),
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),

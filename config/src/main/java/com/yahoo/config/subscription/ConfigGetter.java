@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription;
 
-
 import com.yahoo.config.ConfigInstance;
 
 /**
@@ -13,7 +12,9 @@ import com.yahoo.config.ConfigInstance;
  * command-line tools.
  *
  * @author gjoranv
+ * @deprecated Use config builders where possible
  */
+@Deprecated
 public class ConfigGetter<T extends ConfigInstance> {
 
     private final Class<T> clazz;

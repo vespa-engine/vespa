@@ -21,6 +21,7 @@ import java.util.Set;
  */
 public class QueryProfileConfigurer {
 
+    @SuppressWarnings("deprecation")
     public static QueryProfileRegistry createFromConfigId(String configId) {
         return createFromConfig(ConfigGetter.getConfig(QueryProfilesConfig.class, configId));
     }
