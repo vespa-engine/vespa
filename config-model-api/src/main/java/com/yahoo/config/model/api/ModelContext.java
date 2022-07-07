@@ -80,8 +80,8 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipCommunicationManagerThread() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipMbusRequestThread() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="7.last") default boolean skipMbusReplyThread() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean mbusDispatchOnDecode() { return true; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean mbusDispatchOnEncode() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.15") default boolean mbusDispatchOnDecode() { return true; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter="8.15") default boolean mbusDispatchOnEncode() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusNetworkThreads() { return 1; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusThreads() { return 4; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusJavaRpcNumTargets() { return 1; }

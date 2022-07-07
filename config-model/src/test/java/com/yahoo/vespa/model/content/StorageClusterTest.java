@@ -154,8 +154,6 @@ public class StorageClusterTest {
     @Test
     public void verifyDefaultMbusConfig() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties());
-        assertTrue(confg.mbus().dispatch_on_decode());
-        assertTrue(confg.mbus().dispatch_on_encode());
         assertEquals(4, confg.mbus().num_threads());
         assertEquals(1, confg.mbus().num_network_threads());
         assertEquals(1, confg.mbus().num_rpc_targets());
@@ -167,16 +165,12 @@ public class StorageClusterTest {
     @Test
     public void verifyDefaultMbusConfigControl() {
         var confg = communicationmanagerConfigFromProperties(new TestProperties()
-                .setMbusDispatchOnDecode(false)
-                .setMbusDispatchOnEncode(false)
                 .setMbusThreads(3)
                 .setMbusNetworkThreads(7)
                 .setRpcNumTargets(11)
                 .setRpcEventsBeforeWakeup(12)
                 .setMbusCppRpcNumTargets(8)
                 .setMbusCppEventsBeforeWakeup(9));
-        assertFalse(confg.mbus().dispatch_on_decode());
-        assertFalse(confg.mbus().dispatch_on_encode());
         assertEquals(3, confg.mbus().num_threads());
         assertEquals(7, confg.mbus().num_network_threads());
         assertEquals(8, confg.mbus().num_rpc_targets());
