@@ -20,6 +20,7 @@ public class ClusterList {
         this.contentClusters = List.copyOf(contentClusters);
     }
 
+    @SuppressWarnings("deprecation")
     public ClusterList(String configId) {
         this(new ConfigGetter<>(ClusterListConfig.class).getConfig(configId));
     }

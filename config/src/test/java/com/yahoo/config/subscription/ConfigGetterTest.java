@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @author gjoranv
  */
+@SuppressWarnings("deprecation")
 public class ConfigGetterTest {
     private final ConfigSourceSet sourceSet = new ConfigSourceSet("config-getter-test");
 

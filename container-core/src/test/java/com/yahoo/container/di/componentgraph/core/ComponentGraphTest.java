@@ -50,6 +50,7 @@ public class ComponentGraphTest {
             super();
         }
 
+        @SuppressWarnings("deprecation")
         public <T extends ConfigInstance> ConfigMap add(Class<T> clazz, String configId) {
             ConfigKey<T> key = new ConfigKey<>(clazz, configId);
             put(key, ConfigGetter.getConfig(key.getConfigClass(), key.getConfigId()));

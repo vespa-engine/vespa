@@ -40,6 +40,7 @@ public class QueryRewriteSearcherTestUtils {
      *
      * @param configPath path for the searcher config
      */
+    @SuppressWarnings("deprecation")
     public static RewritesConfig createConfigObj(String configPath) {
         return new ConfigGetter<>(RewritesConfig.class).getConfig(configPath);
     }

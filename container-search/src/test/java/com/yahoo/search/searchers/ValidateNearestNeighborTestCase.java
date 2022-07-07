@@ -2,27 +2,21 @@
 package com.yahoo.search.searchers;
 
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.FileSource;
-import com.yahoo.config.subscription.RawSource;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.search.Query;
+import com.yahoo.search.Result;
+import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
-import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.Result;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.yql.YqlParser;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.config.search.AttributesConfig;
-
-import com.yahoo.vespa.config.search.RankProfilesConfig;
 import org.junit.Test;
-
-import java.io.File;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -34,6 +28,7 @@ public class ValidateNearestNeighborTestCase {
 
     ValidateNearestNeighborSearcher searcher;
 
+    @SuppressWarnings("deprecation")
     public ValidateNearestNeighborTestCase() {
         searcher = new ValidateNearestNeighborSearcher(
                 ConfigGetter.getConfig(AttributesConfig.class,

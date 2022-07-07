@@ -257,6 +257,7 @@ public class ModelsEvaluationHandlerTest {
         handler.assertResponse(url, properties, 200, expected);
     }
 
+    @SuppressWarnings("deprecation")
     static private ModelsEvaluator createModels() {
         RankProfilesConfig config = ConfigGetter.getConfig(RankProfilesConfig.class, fileConfigId("rank-profiles.cfg"));
         RankingConstantsConfig constantsConfig = ConfigGetter.getConfig(RankingConstantsConfig.class, fileConfigId("ranking-constants.cfg"));

@@ -2,24 +2,23 @@
 package com.yahoo.prelude.searcher.test;
 
 import com.yahoo.component.chain.Chain;
-import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.search.Searcher;
-import com.yahoo.search.rendering.RendererRegistry;
-import com.yahoo.search.searchchain.Execution;
-import com.yahoo.vespa.config.search.AttributesConfig;
-import com.yahoo.search.config.ClusterConfig;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.prelude.searcher.ValidateSortingSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
+import com.yahoo.search.Searcher;
+import com.yahoo.search.config.ClusterConfig;
+import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.test.QueryTestCase;
+import com.yahoo.vespa.config.search.AttributesConfig;
 import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * Check sorting validation behaves OK.
@@ -30,6 +29,7 @@ public class ValidateSortingSearcherTestCase {
 
     private final ValidateSortingSearcher searcher;
 
+    @SuppressWarnings("deprecation")
     public ValidateSortingSearcherTestCase() {
         QrSearchersConfig.Builder qrsCfg = new QrSearchersConfig.Builder();
         qrsCfg.searchcluster(new QrSearchersConfig.Searchcluster.Builder().name("giraffes"));

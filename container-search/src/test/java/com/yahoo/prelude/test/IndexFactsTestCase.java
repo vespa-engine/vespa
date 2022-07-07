@@ -1,6 +1,17 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.test;
 
+import com.google.common.collect.ImmutableList;
+import com.yahoo.config.subscription.ConfigGetter;
+import com.yahoo.language.process.StemMode;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.search.Query;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.search.searchchain.Execution;
+import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -8,32 +19,11 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
-
-import com.google.common.collect.ImmutableList;
-import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.container.QrSearchersConfig;
-import com.yahoo.search.config.IndexInfoConfig;
-import com.yahoo.search.config.IndexInfoConfig.Indexinfo;
-import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Alias;
-import com.yahoo.search.config.IndexInfoConfig.Indexinfo.Command;
-import com.yahoo.language.process.StemMode;
-import com.yahoo.prelude.Index;
-import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.IndexModel;
-import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.search.Query;
-import com.yahoo.search.searchchain.Execution;
-import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Tests using synthetic index names for IndexFacts class.
@@ -45,6 +35,7 @@ public class IndexFactsTestCase {
 
     private static final String INDEXFACTS_TESTING = "file:src/test/java/com/yahoo/prelude/test/indexfactstesting.cfg";
 
+    @SuppressWarnings("deprecation")
     private IndexFacts createIndexFacts() {
         ConfigGetter<IndexInfoConfig> getter = new ConfigGetter<>(IndexInfoConfig.class);
         IndexInfoConfig config = getter.getConfig(INDEXFACTS_TESTING);
