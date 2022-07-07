@@ -522,9 +522,9 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
                                                                        _clock, _env._metrics.merge_handler_metrics.put_latency);
         _spi.putAsync(bucket, timestamp, std::move(doc), std::move(complete));
     } else {
-        std::vector<spi::PersistenceProvider::TimeStampAndDocumentId> ids;
-        ids.emplace_back(timestamp, e._docName);
-        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), ids[0].second,
+        std::vector<spi::IdAndTimestamp> ids;
+        ids.emplace_back(document::DocumentId(e._docName), timestamp);
+        auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), ids[0].id,
                                                                        std::move(throttle_token), "remove",
                                                                        _clock, _env._metrics.merge_handler_metrics.remove_latency);
         _spi.removeAsync(bucket, std::move(ids), std::move(complete));

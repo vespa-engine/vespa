@@ -4,6 +4,7 @@
 #include "bucket.h"
 #include "bucketinfo.h"
 #include "context.h"
+#include "id_and_timestamp.h"
 #include "result.h"
 #include "selection.h"
 #include "clusterstate.h"
@@ -170,7 +171,7 @@ struct PersistenceProvider
      * @param timestamp The timestamp for the new bucket entry.
      * @param id The ID to remove
      */
-    virtual void removeAsync(const Bucket&, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP) = 0;
+    virtual void removeAsync(const Bucket&, std::vector<IdAndTimestamp> ids, OperationComplete::UP) = 0;
 
     /**
      * @see remove()

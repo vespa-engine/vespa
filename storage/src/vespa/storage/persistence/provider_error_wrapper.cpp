@@ -152,7 +152,7 @@ ProviderErrorWrapper::putAsync(const spi::Bucket &bucket, spi::Timestamp ts, spi
 }
 
 void
-ProviderErrorWrapper::removeAsync(const spi::Bucket &bucket, std::vector<TimeStampAndDocumentId> ids,
+ProviderErrorWrapper::removeAsync(const spi::Bucket &bucket, std::vector<spi::IdAndTimestamp> ids,
                                   spi::OperationComplete::UP onComplete)
 {
     onComplete->addResultHandler(this);

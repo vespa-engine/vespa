@@ -370,21 +370,21 @@ PersistenceEngine::putAsync(const Bucket &bucket, Timestamp ts, storage::spi::Do
 }
 
 void
-PersistenceEngine::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP onComplete)
+PersistenceEngine::removeAsync(const Bucket& b, std::vector<storage::spi::IdAndTimestamp> ids, OperationComplete::UP onComplete)
 {
     if (ids.size() == 1) {
-        removeAsyncSingle(b, ids[0].first, ids[0].second, std::move(onComplete));
+        removeAsyncSingle(b, ids[0].timestamp, ids[0].id, std::move(onComplete));
     } else {
         removeAsyncMulti(b, std::move(ids), std::move(onComplete));
     }
 }
 
 void
-PersistenceEngine::removeAsyncMulti(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP onComplete) {
+PersistenceEngine::removeAsyncMulti(const Bucket& b, std::vector<storage::spi::IdAndTimestamp> ids, OperationComplete::UP onComplete) {
     ReadGuard rguard(_rwMutex);
     //TODO Group per document type/handler and handle in one go.
-    for (const TimeStampAndDocumentId & stampedId : ids) {
-        const document::DocumentId & id = stampedId.second;
+    for (const auto & stampedId : ids) {
+        const document::DocumentId & id = stampedId.id;
         if (!id.hasDocType()) {
             return onComplete->onComplete(
                     std::make_unique<RemoveResult>(Result::ErrorType::PERMANENT_ERROR,
@@ -399,11 +399,11 @@ PersistenceEngine::removeAsyncMulti(const Bucket& b, std::vector<TimeStampAndDoc
         }
     }
     auto transportContext = std::make_shared<AsyncRemoveTransportContext>(ids.size(), std::move(onComplete));
-    for (const TimeStampAndDocumentId & stampedId : ids) {
-        const document::DocumentId & id = stampedId.second;
+    for (const auto & stampedId : ids) {
+        const document::DocumentId & id = stampedId.id;
         DocTypeName docType(id.getDocType());
         IPersistenceHandler *handler = getHandler(rguard, b.getBucketSpace(), docType);
-        handler->handleRemove(feedtoken::make(transportContext), b, stampedId.first, id);
+        handler->handleRemove(feedtoken::make(transportContext), b, stampedId.timestamp, id);
     }
 }
 

@@ -765,11 +765,11 @@ TEST_F(ConformanceTest, testRemoveMulti)
         docs.push_back(testDocMan.createRandomDocumentAtLocation(0x01, i));
     }
 
-    std::vector<PersistenceProvider::TimeStampAndDocumentId> ids;
+    std::vector<spi::IdAndTimestamp> ids;
     for (size_t i(0); i < docs.size(); i++) {
         spi->put(bucket1, Timestamp(i), docs[i]);
         if (i & 0x1) {
-            ids.emplace_back(Timestamp(i), docs[i]->getId());
+            ids.emplace_back(docs[i]->getId(), Timestamp(i));
         }
     }
 

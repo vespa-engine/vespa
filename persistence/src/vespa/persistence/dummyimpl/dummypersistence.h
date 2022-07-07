@@ -160,7 +160,7 @@ public:
     BucketInfoResult getBucketInfo(const Bucket&) const override;
     GetResult get(const Bucket&, const document::FieldSet&, const DocumentId&, Context&) const override;
     void putAsync(const Bucket&, Timestamp, DocumentSP, OperationComplete::UP) override;
-    void removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP) override;
+    void removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> ids, OperationComplete::UP) override;
     void updateAsync(const Bucket&, Timestamp, DocumentUpdateSP, OperationComplete::UP) override;
 
     CreateIteratorResult

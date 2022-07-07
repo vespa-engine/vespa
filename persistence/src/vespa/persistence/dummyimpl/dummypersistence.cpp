@@ -476,16 +476,16 @@ DummyPersistence::updateAsync(const Bucket& bucket, Timestamp ts, DocumentUpdate
 }
 
 void
-DummyPersistence::removeAsync(const Bucket& b, std::vector<TimeStampAndDocumentId> ids, OperationComplete::UP onComplete)
+DummyPersistence::removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> ids, OperationComplete::UP onComplete)
 {
     DUMMYPERSISTENCE_VERIFY_INITIALIZED;
     assert(b.getBucketSpace() == FixedBucketSpaces::default_space());
     BucketContentGuard::UP bc(acquireBucketWithLock(b));
 
     uint32_t numRemoves(0);
-    for (const TimeStampAndDocumentId & stampedId : ids) {
-        const DocumentId & id = stampedId.second;
-        Timestamp t = stampedId.first;
+    for (const spi::IdAndTimestamp & stampedId : ids) {
+        const DocumentId & id = stampedId.id;
+        Timestamp t = stampedId.timestamp;
         LOG(debug, "remove(%s, %" PRIu64 ", %s)", b.toString().c_str(), uint64_t(t), id.toString().c_str());
 
         while (!bc) {

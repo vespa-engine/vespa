@@ -106,7 +106,7 @@ public:
     spi::BucketIdListResult listBuckets(BucketSpace bucketSpace) const override;
     spi::BucketInfoResult getBucketInfo(const spi::Bucket&) const override;
     void putAsync(const spi::Bucket&, spi::Timestamp, spi::DocumentSP, spi::OperationComplete::UP) override;
-    void removeAsync(const spi::Bucket&, std::vector<TimeStampAndDocumentId> ids, spi::OperationComplete::UP) override;
+    void removeAsync(const spi::Bucket&, std::vector<spi::IdAndTimestamp> ids, spi::OperationComplete::UP) override;
     void removeIfFoundAsync(const spi::Bucket&, spi::Timestamp, const spi::DocumentId&, spi::OperationComplete::UP) override;
     void updateAsync(const spi::Bucket&, spi::Timestamp, spi::DocumentUpdateSP, spi::OperationComplete::UP) override;
     spi::GetResult get(const spi::Bucket&, const document::FieldSet&, const spi::DocumentId&, spi::Context&) const override;
