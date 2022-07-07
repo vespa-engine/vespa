@@ -19,7 +19,6 @@ private:
     int               _listenPort;
     uint32_t          _maxInputBufferSize;
     uint32_t          _maxOutputBufferSize;
-    uint32_t          _numThreads;
     uint32_t          _numNetworkThreads;
     uint32_t          _numRpcTargets;
     uint32_t          _events_before_wakeup;
@@ -110,19 +109,6 @@ public:
         _listenPort = listenPort;
         return *this;
     }
-
-    /**
-     * Sets number of threads for the thread pool.
-     *
-     * @param numThreads number of threads for thread pool
-     * @return This, to allow chaining.
-     */
-    RPCNetworkParams &setNumThreads(uint32_t numThreads) {
-        _numThreads = numThreads;
-        return *this;
-    }
-
-    uint32_t getNumThreads() const { return _numThreads; }
 
     RPCNetworkParams &setTcpNoDelay(bool tcpNoDelay) {
         _tcpNoDelay = tcpNoDelay;

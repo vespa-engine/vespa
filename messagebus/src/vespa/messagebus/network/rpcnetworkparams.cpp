@@ -15,7 +15,6 @@ RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :
     _listenPort(0),
     _maxInputBufferSize(256_Ki),
     _maxOutputBufferSize(256_Ki),
-    _numThreads(4),
     _numNetworkThreads(1),
     _numRpcTargets(1),
     _events_before_wakeup(1),
