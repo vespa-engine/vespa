@@ -37,13 +37,13 @@ public:
 };
 
 ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, uint32_t fieldId)
-  : _bundle(env, fieldId),
+  : _bundle(env, fieldId, "distance"),
     _md(nullptr)
 {
 }
 
 ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const vespalib::string &label)
-  : _bundle(env, label),
+  : _bundle(env, label, "distance"),
     _md(nullptr)
 {
 }
@@ -231,6 +231,17 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
         LOG(error, "field '%s' must be an attribute for rank feature %s\n", arg.c_str(), getName().c_str());
     }
     return false;
+}
+
+void
+DistanceBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const
+{
+    if (_use_nns_tensor) {
+        DistanceCalculatorBundle::prepare_shared_state(env, store, _attr_id, "distance");
+    }
+    if (_use_item_label) {
+        DistanceCalculatorBundle::prepare_shared_state(env, store, _arg_string, "distance");
+    }
 }
 
 FeatureExecutor &

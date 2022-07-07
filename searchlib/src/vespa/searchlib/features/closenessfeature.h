@@ -45,6 +45,7 @@ public:
         return fef::ParameterDescriptions().desc().string().desc().string().string();
     }
     bool setup(const fef::IIndexEnvironment & env, const fef::ParameterList & params) override;
+    void prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const override;
     fef::FeatureExecutor &createExecutor(const fef::IQueryEnvironment &env, vespalib::Stash &stash) const override;
 };
 
