@@ -142,6 +142,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
+    private final ContainerThreadpool defaultHandlerThreadpool = new Handler.DefaultHandlerThreadpool();
 
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
@@ -181,6 +182,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addCommonVespaBundles();
         addSimpleComponent(AccessLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
+        addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
@@ -247,6 +249,15 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public final void addComponent(Component<?, ?> component) {
         componentGroup.addComponent(component);
+        if (component instanceof Handler<?> handler) {
+            ensureHandlerHasThreadpool(handler);
+        }
+    }
+
+    private void ensureHandlerHasThreadpool(Handler<?> handler) {
+        if (! handler.hasCustomThreadPool) {
+            handler.inject(defaultHandlerThreadpool);
+        }
     }
 
     public final void addSimpleComponent(String idSpec, String classSpec, String bundleSpec) {
@@ -306,10 +317,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.processingChains = processingChains;
 
         // Cannot use the class object for ProcessingHandler, because its superclass is not accessible
-        ProcessingHandler<?> processingHandler = new ProcessingHandler<>(
-                processingChains,
-                "com.yahoo.processing.handler.ProcessingHandler",
-                 null);
+        ProcessingHandler<?> processingHandler = new ProcessingHandler<>(processingChains,
+                                                                         "com.yahoo.processing.handler.ProcessingHandler");
 
         for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);

@@ -50,7 +50,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         this(executor, metric, false);
     }
 
-    // TODO: move Inject annotation here!
+    // TODO: deprecate this and the Context class. The context component set up in the model does not get a dedicated thread pool.
     public ThreadedHttpRequestHandler(Context context) {
         this(context.executor, context.metric);
     }
