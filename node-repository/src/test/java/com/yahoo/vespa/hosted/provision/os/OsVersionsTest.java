@@ -65,13 +65,6 @@ public class OsVersionsTest {
         // Resume upgrade
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList allHosts = hostNodes.get();
-        assertFalse("No upgrades of new hosts", allHosts.except(hostOnLaterVersion).stream()
-                                                        .anyMatch(node -> node.status().osVersion().wanted().isPresent()));
-
-        // Resume upgrade after sufficient time
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
-        versions.resumeUpgradeOf(NodeType.host, true);
-        allHosts = hostNodes.get();
         assertTrue("Wanted version is set", allHosts.except(hostOnLaterVersion).stream()
                                                     .allMatch(node -> node.status().osVersion().wanted().isPresent()));
         assertTrue("Wanted version is not set for host on later version",
@@ -105,8 +98,6 @@ public class OsVersionsTest {
         var versions = new OsVersions(tester.nodeRepository(), false, maxActiveUpgrades);
         provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().state(Node.State.active).hosts();
-
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
 
         // 5 nodes have no version. The other 15 are spread across different versions
         var hostNodesList = hostNodes.get().asList();
@@ -153,7 +144,6 @@ public class OsVersionsTest {
         var versions = new OsVersions(tester.nodeRepository());
         provisionInfraApplication(10);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().hosts();
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
 
         // Some nodes are targeting an older version
         var version1 = Version.fromString("7.1");
@@ -182,7 +172,7 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .hosts()
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
+        tester.clock().advance(RetiringOsUpgrader.GRACE_PERIOD.plusDays(1));
 
         // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
@@ -244,7 +234,7 @@ public class OsVersionsTest {
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .nodeType(NodeType.confighost)
                                                    .not().state(Node.State.deprovisioned);
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
+        tester.clock().advance(RetiringOsUpgrader.GRACE_PERIOD.plusDays(1));
 
         // Target is set with zero budget and upgrade started
         var version1 = Version.fromString("7.1");
@@ -267,7 +257,6 @@ public class OsVersionsTest {
         int hostCount = 10;
         provisionInfraApplication(hostCount + 1);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
 
         // All hosts upgrade to first version. Upgrades are delegated
         var version0 = Version.fromString("7.0");
@@ -315,7 +304,6 @@ public class OsVersionsTest {
         assertEquals(0, hostNodes.get().rebuilding().size());
 
         // Next version is within same major. Upgrade mechanism switches to delegated
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
         var version2 = Version.fromString("8.1");
         versions.setTarget(NodeType.host, version2, Duration.ZERO, false);
         versions.resumeUpgradeOf(NodeType.host, true);
@@ -345,8 +333,6 @@ public class OsVersionsTest {
         provisionInfraApplication(hostCount, ApplicationId.from("hosted-vespa", "confighost", "default"), NodeType.confighost);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host,
                                                                                          NodeType.confighost);
-
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
 
         // All hosts upgrade to first version. Upgrades are delegated
         var version0 = Version.fromString("7.0");
@@ -382,7 +368,6 @@ public class OsVersionsTest {
         deployApplication(app1);
         deployApplication(app2);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
 
         // All hosts are on initial version
         var version0 = Version.fromString("7.0");
@@ -456,7 +441,6 @@ public class OsVersionsTest {
         var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
         provisionInfraApplication(hostCount, infraApplication, NodeType.proxyhost);
         Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.proxyhost);
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
 
         // All hosts are on initial version
         var version0 = Version.fromString("7.0");

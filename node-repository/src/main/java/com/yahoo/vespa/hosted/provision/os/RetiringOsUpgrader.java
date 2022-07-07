@@ -26,6 +26,9 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RetiringOsUpgrader.class.getName());
 
+    /** The duration this leaves new nodes alone before scheduling any upgrade */
+    static final Duration GRACE_PERIOD = Duration.ofDays(30);
+
     protected final NodeRepository nodeRepository;
 
     public RetiringOsUpgrader(NodeRepository nodeRepository) {
@@ -33,20 +36,25 @@ public class RetiringOsUpgrader implements OsUpgrader {
     }
 
     @Override
-    public final void upgradeTo(OsVersionTarget target) {
+    public void upgradeTo(OsVersionTarget target) {
         NodeList allNodes = nodeRepository.nodes().list();
         Instant now = nodeRepository.clock().instant();
         NodeList candidates = candidates(now, target, allNodes);
         candidates.not().deprovisioning()
-                  .matching(node -> shouldUpgrade(node, nodeRepository.clock().instant()))
+                  .matching(node -> canUpgradeAt(now, node))
                   .byIncreasingOsVersion()
                   .first(1)
                   .forEach(node -> deprovision(node, target.version(), now));
     }
 
     @Override
-    public final void disableUpgrade(NodeType type) {
+    public void disableUpgrade(NodeType type) {
         // No action needed in this implementation.
+    }
+
+    @Override
+    public boolean canUpgradeAt(Instant instant, Node node) {
+        return node.history().age(instant).compareTo(GRACE_PERIOD) > 0;
     }
 
     /** Returns nodes that are candidates for upgrade */

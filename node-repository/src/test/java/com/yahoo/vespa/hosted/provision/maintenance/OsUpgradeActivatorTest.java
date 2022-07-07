@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Status;
-import com.yahoo.vespa.hosted.provision.os.OsUpgrader;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
@@ -49,8 +48,6 @@ public class OsUpgradeActivatorTest {
 
         var allNodes = new ArrayList<>(configHostNodes);
         allNodes.addAll(tenantHostNodes);
-
-        tester.clock().advance(OsUpgrader.gracePeriod.plusDays(1));
 
         // All nodes are on initial version
         assertEquals(version0, minWantedVersion(allNodes));

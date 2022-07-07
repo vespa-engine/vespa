@@ -6,17 +6,11 @@ import com.yahoo.application.container.handler.Response;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.test.ManualClock;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.OsUpgradeActivator;
 import com.yahoo.vespa.hosted.provision.maintenance.TestMetric;
-import com.yahoo.vespa.hosted.provision.node.Agent;
-import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.os.OsUpgrader;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
 import org.junit.After;
@@ -776,17 +770,7 @@ public class NodesV2ApiTest {
                                    Request.Method.PATCH),
                        "{\"message\":\"Set osVersion to 7.5.2, upgradeBudget to PT0S for nodes of type host\"}");
 
-        var nodeRepository = (NodeRepository)tester.container().components().getComponent(MockNodeRepository.class.getName());
-
-        // Age nodes to pass OS upgrade grace period for new nodes
-        for (Node node : nodeRepository.nodes().list()) {
-            try (NodeMutex lockedNode = nodeRepository.nodes().lockAndGet(node).orElseThrow()) {
-                Node agedNode = node.with(node.history().with(new History.Event(History.Event.Type.provisioned,
-                                                                                Agent.system,
-                                                                                nodeRepository.clock().instant().minus(OsUpgrader.gracePeriod.plusDays(1)))));
-                nodeRepository.nodes().write(agedNode, lockedNode);
-            }
-        }
+        var nodeRepository = (NodeRepository) tester.container().components().getComponent(MockNodeRepository.class.getName());
 
         // Activate target
         var osUpgradeActivator = new OsUpgradeActivator(nodeRepository, Duration.ofDays(1), new TestMetric());

@@ -47,7 +47,7 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     public void upgradeTo(OsVersionTarget target) {
         NodeList allNodes = nodeRepository.nodes().list();
         Instant now = nodeRepository.clock().instant();
-        rebuildableHosts(target, allNodes).forEach(host -> rebuild(host, target.version(), now));
+        rebuildableHosts(target, allNodes, now).forEach(host -> rebuild(host, target.version(), now));
     }
 
     @Override
@@ -62,7 +62,7 @@ public class RebuildingOsUpgrader implements OsUpgrader {
         return Math.max(0, limit - hostsOfType.rebuilding().size());
     }
 
-    private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes) {
+    private List<Node> rebuildableHosts(OsVersionTarget target, NodeList allNodes, Instant now) {
         NodeList hostsOfTargetType = allNodes.nodeType(target.nodeType());
         int rebuildLimit = rebuildLimit(target.nodeType(), hostsOfTargetType);
 
@@ -76,7 +76,7 @@ public class RebuildingOsUpgrader implements OsUpgrader {
         NodeList candidates = hostsOfTargetType.state(Node.State.active)
                                                .not().rebuilding()
                                                .osVersionIsBefore(target.version())
-                                               .matching(node -> shouldUpgrade(node, nodeRepository.clock().instant()))
+                                               .matching(node -> canUpgradeAt(now, node))
                                                .byIncreasingOsVersion();
         for (Node host : candidates) {
             if (hostsToRebuild.size() == rebuildLimit) break;

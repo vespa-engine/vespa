@@ -38,6 +38,11 @@
   "down": false,
   "history": [
     {
+      "event": "provisioned",
+      "at": 123,
+      "agent": "system"
+    },
+    {
       "event": "readied",
       "at": 123,
       "agent": "system"
@@ -51,19 +56,9 @@
       "event": "activated",
       "at": 123,
       "agent": "application"
-    },
-    {
-      "event": "provisioned",
-      "at": -2678399877,
-      "agent": "system"
     }
   ],
   "log": [
-    {
-      "event": "provisioned",
-      "at": -2678399877,
-      "agent": "system"
-    },
     {
       "event": "provisioned",
       "at": 123,
