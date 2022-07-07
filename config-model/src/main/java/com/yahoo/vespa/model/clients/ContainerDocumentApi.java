@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.clients;
 
 import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -41,31 +40,31 @@ public class ContainerDocumentApi {
 
     private static void addFeedHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions) {
         String bindingSuffix = ContainerCluster.RESERVED_URI_PREFIX + "/feedapi";
-        var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler", bindingSuffix, handlerOptions);
-        cluster.addComponent(handler);
         var executor = new Threadpool("feedapi-handler", handlerOptions.feedApiThreadpoolOptions);
-        handler.inject(executor);
-        handler.addComponent(executor);
+        var handler = newVespaClientHandler("com.yahoo.vespa.http.server.FeedHandler",
+                                            bindingSuffix, handlerOptions, executor);
+        cluster.addComponent(handler);
     }
 
 
     private static void addRestApiHandler(ContainerCluster<?> cluster, HandlerOptions handlerOptions) {
-        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", DOCUMENT_V1_PREFIX + "/*", handlerOptions);
+        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler",
+                                            DOCUMENT_V1_PREFIX + "/*", handlerOptions, null);
         cluster.addComponent(handler);
 
         // We need to include a dummy implementation of the previous restapi handler (using the same class name).
         // The internal legacy test framework requires that the name of the old handler is listed in /ApplicationStatus.
-        var oldHandlerDummy = handlerComponentSpecification("com.yahoo.document.restapi.resource.RestApi");
+        var oldHandlerDummy = createHandler("com.yahoo.document.restapi.resource.RestApi", null);
         cluster.addComponent(oldHandlerDummy);
     }
 
     public boolean ignoreUndefinedFields() { return ignoreUndefinedFields; }
 
-    private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(
-            String componentId,
-            String bindingSuffix,
-            HandlerOptions handlerOptions) {
-        Handler<AbstractConfigProducer<?>> handler = handlerComponentSpecification(componentId);
+    private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(String componentId,
+                                                                            String bindingSuffix,
+                                                                            HandlerOptions handlerOptions,
+                                                                            Threadpool executor) {
+        Handler<AbstractConfigProducer<?>> handler = createHandler(componentId, executor);
         if (handlerOptions.bindings.isEmpty()) {
             handler.addServerBindings(
                     SystemBindingPattern.fromHttpPath(bindingSuffix),
@@ -81,9 +80,9 @@ public class ContainerDocumentApi {
         return handler;
     }
 
-    private static Handler<AbstractConfigProducer<?>> handlerComponentSpecification(String className) {
-        return new Handler<>(new ComponentModel(
-                BundleInstantiationSpecification.getFromStrings(className, null, "vespaclient-container-plugin"), ""));
+    private static Handler<AbstractConfigProducer<?>> createHandler(String className, Threadpool executor) {
+        return new Handler<>(new ComponentModel(className, null, "vespaclient-container-plugin"),
+                             executor);
     }
 
     public static final class HandlerOptions {
@@ -104,12 +103,10 @@ public class ContainerDocumentApi {
         }
 
         @Override
-        public void getConfig(ContainerThreadpoolConfig.Builder builder) {
-            super.getConfig(builder);
-
-            // User options overrides below configuration
-            if (hasUserOptions()) return;
-            builder.maxThreads(-4).minThreads(-4).queueSize(500);
+        protected void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder) {
+            builder.maxThreads(-4)
+                    .minThreads(-4)
+                    .queueSize(500);
         }
     }
 

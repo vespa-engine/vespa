@@ -17,7 +17,7 @@ import java.util.Optional;
  *
  * @author bjorncs
  */
-public class ContainerThreadpool extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
+public abstract class ContainerThreadpool extends SimpleComponent implements ContainerThreadpoolConfig.Producer {
 
     private final String name;
     private final UserOptions userOptions;
@@ -32,8 +32,13 @@ public class ContainerThreadpool extends SimpleComponent implements ContainerThr
         this.userOptions = userOptions;
     }
 
+    // Must be implemented by subclasses to set values that may be overridden by user options.
+    protected abstract void setDefaultConfigValues(ContainerThreadpoolConfig.Builder builder);
+
     @Override
     public void getConfig(ContainerThreadpoolConfig.Builder builder) {
+        setDefaultConfigValues(builder);
+
         builder.name(this.name);
         if (userOptions != null) {
             builder.maxThreads(userOptions.maxThreads);
@@ -41,9 +46,6 @@ public class ContainerThreadpool extends SimpleComponent implements ContainerThr
             builder.queueSize(userOptions.queueSize);
         }
     }
-
-    protected Optional<UserOptions> userOptions() { return Optional.ofNullable(userOptions); }
-    protected boolean hasUserOptions() { return userOptions().isPresent(); }
 
     public static class UserOptions {
         private final int maxThreads;
