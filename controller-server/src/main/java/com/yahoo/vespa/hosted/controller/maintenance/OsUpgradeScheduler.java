@@ -126,7 +126,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
                                                                   .toInstant(ZoneOffset.UTC);
 
         /** The time that should elapse between versions */
-        private static final Duration SCHEDULING_STEP = Duration.ofDays(45);
+        private static final Duration SCHEDULING_STEP = Duration.ofDays(60);
 
         /** The day of week new releases are published */
         private static final DayOfWeek RELEASE_DAY = DayOfWeek.MONDAY;
