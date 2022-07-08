@@ -287,7 +287,7 @@ public class ContentCluster extends AbstractConfigProducer<AbstractConfigProduce
             if (context.properties().hostedVespa()) {
                 clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState, clusterName);
             }
-            else if (admin.multitenant()) { // system tests: Put on logserver
+            else if (admin.multiTenant()) { // system tests: Put on logserver
                 if (admin.getClusterControllers() == null) {
                     // TODO: logserver == null only obtains in unit tests, disallow it
                     List<HostResource> host = admin.getLogserver() == null ? List.of() : List.of(admin.getLogserver().getHostResource());
