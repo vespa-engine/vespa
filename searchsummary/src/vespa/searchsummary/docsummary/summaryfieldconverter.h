@@ -25,7 +25,7 @@ public:
                                                               const document::FieldValue& value,
                                                               const std::vector<uint32_t>& matching_elems);
 
-    static void insert_summary_field(bool markup, const document::FieldValue& value, vespalib::slime::Inserter& inserter);
+    static void insert_summary_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter);
 };
 
 }
