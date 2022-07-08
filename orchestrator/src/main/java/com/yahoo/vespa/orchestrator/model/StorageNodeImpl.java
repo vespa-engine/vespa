@@ -41,7 +41,17 @@ public class StorageNodeImpl implements StorageNode {
     }
 
     @Override
-    public void setNodeState(OrchestratorContext context, ClusterControllerNodeState wantedNodeState)
+    public void setStorageNodeState(OrchestratorContext context, ClusterControllerNodeState wantedNodeState)
+            throws HostStateChangeDeniedException {
+        setNodeState(context, wantedNodeState, ContentService.STORAGE_NODE, false);
+    }
+
+    @Override
+    public void forceDistributorState(OrchestratorContext context, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException {
+        setNodeState(context, wantedState, ContentService.DISTRIBUTOR, true);
+    }
+
+    public void setNodeState(OrchestratorContext context, ClusterControllerNodeState wantedNodeState, ContentService contentService, boolean force)
             throws HostStateChangeDeniedException {
         // The "cluster name" used by the Cluster Controller IS the cluster ID.
         String clusterId = this.clusterId.s();
@@ -52,17 +62,18 @@ public class StorageNodeImpl implements StorageNode {
                 clusterControllers,
                 clusterId);
 
-        ConfigId configId = storageService.configId();
-        int nodeIndex = VespaModelUtil.getStorageNodeIndex(configId);
+        int nodeIndex = VespaModelUtil.getStorageNodeIndex(storageService.configId());
 
-        logger.log(Level.FINE, () -> "Setting cluster controller state for " +
-                "application " + applicationInstance.reference().asString() +
-                ", host " + hostName() +
-                ", cluster name " + clusterId +
-                ", node index " + nodeIndex +
-                ", node state " + wantedNodeState);
+        logger.log(Level.FINE, () -> (force ? "Force" : "Safe") +
+                                     " setting cluster controller state for " +
+                                     "application " + applicationInstance.reference().asString() +
+                                     ", host " + hostName() +
+                                     ", cluster name " + clusterId +
+                                     ", service " + contentService.nameInClusterController() +
+                                     ", node index " + nodeIndex +
+                                     ", node state " + wantedNodeState);
 
-        client.setNodeState(context, storageService.hostName(), nodeIndex, wantedNodeState);
+        client.setNodeState(context, storageService.hostName(), nodeIndex, wantedNodeState, contentService, force);
     }
 
     @Override

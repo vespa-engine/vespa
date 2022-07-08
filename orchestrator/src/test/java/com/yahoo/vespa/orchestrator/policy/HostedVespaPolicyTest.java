@@ -87,8 +87,8 @@ public class HostedVespaPolicyTest {
         order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi3);
 
         order.verify(applicationApi).getNoRemarksStorageNodesInGroupInClusterOrder();
-        order.verify(storageNode1).setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
-        order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
+        order.verify(storageNode1).setStorageNodeState(context, ClusterControllerNodeState.MAINTENANCE);
+        order.verify(storageNode3).setStorageNodeState(context, ClusterControllerNodeState.MAINTENANCE);
 
         order.verify(applicationApi).getNodesInGroupWithStatus(HostStatus.NO_REMARKS);
         order.verify(applicationApi).setHostState(context, hostName1, HostStatus.ALLOWED_TO_BE_DOWN);
@@ -140,8 +140,8 @@ public class HostedVespaPolicyTest {
         order.verify(clusterPolicy).verifyGroupGoingDownPermanentlyIsFine(clusterApi3);
 
         order.verify(applicationApi).getStorageNodesInGroupInClusterOrder();
-        order.verify(storageNode1).setNodeState(probeContext, ClusterControllerNodeState.DOWN);
-        order.verify(storageNode3).setNodeState(probeContext, ClusterControllerNodeState.DOWN);
+        order.verify(storageNode1).setStorageNodeState(probeContext, ClusterControllerNodeState.DOWN);
+        order.verify(storageNode3).setStorageNodeState(probeContext, ClusterControllerNodeState.DOWN);
 
         order.verify(applicationApi).getNodesInGroupWith(any());
         order.verify(applicationApi).setHostState(context, hostName1, HostStatus.PERMANENTLY_DOWN);
@@ -193,8 +193,8 @@ public class HostedVespaPolicyTest {
         order.verify(clusterPolicy).verifyGroupGoingDownPermanentlyIsFine(clusterApi3);
 
         order.verify(applicationApi).getStorageNodesInGroupInClusterOrder();
-        order.verify(storageNode1).setNodeState(probeContext, ClusterControllerNodeState.DOWN);
-        order.verify(storageNode3).setNodeState(probeContext, ClusterControllerNodeState.DOWN);
+        order.verify(storageNode1).setStorageNodeState(probeContext, ClusterControllerNodeState.DOWN);
+        order.verify(storageNode3).setStorageNodeState(probeContext, ClusterControllerNodeState.DOWN);
 
         order.verify(applicationApi).getNodesInGroupWith(any());
         order.verify(applicationApi).setHostState(context, hostName1, HostStatus.PERMANENTLY_DOWN);

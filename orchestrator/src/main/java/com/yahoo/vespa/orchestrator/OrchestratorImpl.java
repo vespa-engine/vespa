@@ -19,6 +19,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
+import com.yahoo.vespa.orchestrator.model.ContentService;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
@@ -426,7 +427,7 @@ public class OrchestratorImpl implements Orchestrator {
                 ClusterControllerClient client = clusterControllerClientFactory.createClient(clusterControllers, cluster.clusterId().s());
                 for (ServiceInstance service : cluster.serviceInstances()) {
                     try {
-                        if ( ! client.trySetNodeState(context, service.hostName(), VespaModelUtil.getStorageNodeIndex(service.configId()), MAINTENANCE))
+                        if ( ! client.trySetNodeState(context, service.hostName(), VespaModelUtil.getStorageNodeIndex(service.configId()), MAINTENANCE, ContentService.STORAGE_NODE, false))
                             return false;
                     }
                     catch (Exception e) {

@@ -8,5 +8,6 @@ import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 
 public interface StorageNode extends Comparable<StorageNode> {
     HostName hostName();
-    void setNodeState(OrchestratorContext context, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
+    void setStorageNodeState(OrchestratorContext context, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
+    void forceDistributorState(OrchestratorContext context, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
 }
