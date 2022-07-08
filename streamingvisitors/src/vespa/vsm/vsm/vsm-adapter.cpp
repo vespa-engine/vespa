@@ -138,6 +138,12 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     // init result config
     DocsumBlobEntryFilter docsum_blob_entry_filter;
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_SHORT);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_BOOL);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_BYTE);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_FLOAT);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_DOUBLE);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT64);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_TENSOR);
     std::unique_ptr<ResultConfig> resCfg(new ResultConfig(docsum_blob_entry_filter));
     if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str())) {
