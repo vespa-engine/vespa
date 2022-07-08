@@ -3,6 +3,10 @@ package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
@@ -30,13 +34,16 @@ public class HostedVespaPolicy implements Policy {
     private final HostedVespaClusterPolicy clusterPolicy;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final ApplicationApiFactory applicationApiFactory;
+    private final BooleanFlag keepStorageNodeUp;
 
     public HostedVespaPolicy(HostedVespaClusterPolicy clusterPolicy,
                              ClusterControllerClientFactory clusterControllerClientFactory,
-                             ApplicationApiFactory applicationApiFactory) {
+                             ApplicationApiFactory applicationApiFactory,
+                             FlagSource flagSource) {
         this.clusterPolicy = clusterPolicy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.applicationApiFactory = applicationApiFactory;
+        this.keepStorageNodeUp = Flags.KEEP_STORAGE_NODE_UP.bindTo(flagSource);
     }
 
     @Override
@@ -94,10 +101,13 @@ public class HostedVespaPolicy implements Policy {
             clusterPolicy.verifyGroupGoingDownPermanentlyIsFine(cluster);
         }
 
-        // Ask Cluster Controller to set storage nodes to DOWN.
-        // These storage nodes are guaranteed to be NO_REMARKS
+        // Get permission from the Cluster Controller to remove the content nodes.
+        boolean keepStorageNodeUp = this.keepStorageNodeUp.with(FetchVector.Dimension.APPLICATION_ID,
+                                                                applicationApi.applicationId().serializedForm())
+                                                          .value();
         for (StorageNode storageNode : applicationApi.getStorageNodesInGroupInClusterOrder()) {
-            storageNode.setNodeState(context, ClusterControllerNodeState.DOWN);
+            storageNode.setNodeState(keepStorageNodeUp ? context.createSubcontextForSingleAppOp(true) : context,
+                                     ClusterControllerNodeState.DOWN);
         }
 
         // Ensure all nodes in the group are marked as permanently down

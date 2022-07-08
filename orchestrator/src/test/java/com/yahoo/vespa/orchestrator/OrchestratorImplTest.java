@@ -104,7 +104,8 @@ public class OrchestratorImplTest {
         clustercontroller = new ClusterControllerClientFactoryMock();
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
                                                                   clustercontroller,
-                                                                  applicationApiFactory),
+                                                                  applicationApiFactory,
+                                                                  flagSource),
                                             clustercontroller,
                                             statusService,
                                             new DummyServiceMonitor(),
@@ -450,7 +451,8 @@ public class OrchestratorImplTest {
 
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
                                                                   clusterControllerClientFactory,
-                                                                  applicationApiFactory),
+                                                                  applicationApiFactory,
+                                                                  flagSource),
                                             clusterControllerClientFactory,
                                             statusService,
                                             serviceMonitor,
@@ -509,7 +511,8 @@ public class OrchestratorImplTest {
 
         orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
                                                                   clusterControllerClientFactory,
-                                                                  applicationApiFactory),
+                                                                  applicationApiFactory,
+                                                                  flagSource),
                                             clusterControllerClientFactory,
                                             statusService,
                                             serviceMonitor,
