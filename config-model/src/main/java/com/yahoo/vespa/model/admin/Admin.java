@@ -79,19 +79,19 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
     private final FileDistributionConfigProducer fileDistribution;
-    private final boolean multiTenant;
+    private final boolean multitenant;
 
     public Admin(AbstractConfigProducer<?> parent,
                  Monitoring monitoring,
                  Metrics metrics,
-                 boolean multiTenant,
+                 boolean multitenant,
                  boolean isHostedVespa,
                  ApplicationType applicationType) {
         super(parent, "admin");
         this.isHostedVespa = isHostedVespa;
         this.monitoring = monitoring;
         this.metrics = metrics;
-        this.multiTenant = multiTenant;
+        this.multitenant = multitenant;
         this.fileDistribution = new FileDistributionConfigProducer(parent);
         this.applicationType = applicationType;
     }
@@ -149,7 +149,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     public void setClusterControllers(ClusterControllerContainerCluster clusterControllers, DeployState deployState) {
         this.clusterControllers = clusterControllers;
         if (isHostedVespa) {
-            // Prefer to put slobroks on the admin cluster running cluster controllers to avoid unnecessary
+            // Prefer to put Slobroks on the admin cluster running cluster controllers to avoid unnecessary
             // movement of the slobroks when there are changes to the content cluster nodes
             removeSlobroks();
             addSlobroks(createSlobroksOn(clusterControllers, deployState));
@@ -250,9 +250,9 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
             boolean actuallyAdd = true;
             var membership = host.spec().membership();
             if (membership.isPresent()) {
-                var clusterType = membership.get().cluster().type();
+                var clustertype = membership.get().cluster().type();
                 // XXX should skip only if this.isHostedVespa is true?
-                if (clusterType == ClusterSpec.Type.admin) {
+                if (clustertype == ClusterSpec.Type.admin) {
                     actuallyAdd = logForwarderIncludeAdmin;
                 }
             }
@@ -263,7 +263,8 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     }
 
     private void addConfigSentinel(DeployState deployState, HostResource host,
-                                   ApplicationId applicationId, Zone zone, ModelContext.FeatureFlags featureFlags) {
+                                   ApplicationId applicationId, Zone zone, ModelContext.FeatureFlags featureFlags)
+    {
         ConfigSentinel configSentinel = new ConfigSentinel(host.getHost(), applicationId, zone, featureFlags);
         addAndInitializeService(deployState, host, configSentinel);
         host.getHost().setConfigSentinel(configSentinel);
@@ -319,7 +320,9 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         return slobs;
     }
 
-    public boolean multiTenant() { return multiTenant; }
+    public boolean multitenant() {
+        return multitenant;
+    }
 
     public ApplicationType getApplicationType() { return applicationType; }
 
