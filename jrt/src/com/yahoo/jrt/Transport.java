@@ -79,11 +79,7 @@ public class Transport {
     // Only for testing
     public Transport() { this("default"); }
 
-    /**
-     * Select a random transport thread
-     *
-     * @return a random transport thread
-     */
+    /** Selects and returns a random transport thread. */
     public TransportThread selectThread() {
         return threads.get(rnd.nextInt(threads.size()));
     }

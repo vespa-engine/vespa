@@ -1,8 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt.slobrok.api;
 
-
-import com.yahoo.jrt.ErrorCode;
 import com.yahoo.jrt.Int32Value;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.RequestWaiter;
@@ -50,8 +48,7 @@ public class Mirror implements IMirror {
     private Request req = null;
 
     /**
-     * Create a new MirrorAPI using the given Supervisor and slobrok
-     * connect specs.
+     * Create a new MirrorAPI using the given Supervisor and slobrok connect specs.
      *
      * @param orb the Supervisor to use
      * @param slobroks slobrok connect spec list
