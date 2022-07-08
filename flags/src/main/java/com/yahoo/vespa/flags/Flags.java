@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -43,6 +44,15 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
 public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
+
+    public static final UnboundBooleanFlag MAIN_CHAIN_GRAPH = defineFeatureFlag(
+            "main-chain-graph", false,
+            List.of("hakonhall"), "2022-07-06", "2022-09-05",
+            "Whether to run all tasks in the main task chain up to the one failing to converge (false), or " +
+            "run all tasks in the main task chain whose dependencies have converged (true).  And when suspending, " +
+            "whether to run the tasks in sequence (false) or in reverse sequence (true).",
+            "On first tick of the main chain after (re)start of host admin.",
+            ZONE_ID, NODE_TYPE, HOSTNAME);
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
