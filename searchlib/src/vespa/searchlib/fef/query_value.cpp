@@ -161,6 +161,8 @@ QueryValue::QueryValue(const vespalib::string& key, const vespalib::eval::ValueT
 {
 }
 
+QueryValue::~QueryValue() = default;
+
 QueryValue
 QueryValue::from_config(const vespalib::string& key, const IIndexEnvironment& env)
 {

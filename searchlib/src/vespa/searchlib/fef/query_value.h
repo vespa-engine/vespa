@@ -59,6 +59,7 @@ private:
 public:
     QueryValue();
     QueryValue(const vespalib::string& key, const vespalib::eval::ValueType& type);
+    ~QueryValue();
 
     /**
      * Create a QueryValue using properties from the given index environment to extract the value type.

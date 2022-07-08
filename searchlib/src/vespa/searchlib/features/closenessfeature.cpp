@@ -5,6 +5,7 @@
 #include "utils.h"
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
@@ -29,13 +30,13 @@ public:
 };
 
 ConvertRawScoreToCloseness::ConvertRawScoreToCloseness(const fef::IQueryEnvironment &env, uint32_t fieldId)
-  : _bundle(env, fieldId),
+  : _bundle(env, fieldId, "closeness"),
     _md(nullptr)
 {
 }
 
 ConvertRawScoreToCloseness::ConvertRawScoreToCloseness(const fef::IQueryEnvironment &env, const vespalib::string &label)
-  : _bundle(env, label),
+  : _bundle(env, label, "closeness"),
     _md(nullptr)
 {
 }
@@ -49,6 +50,9 @@ ConvertRawScoreToCloseness::execute(uint32_t docId)
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->getDocId() == docId) {
             feature_t converted = tfmd->getRawScore();
+            max_closeness = std::max(max_closeness, converted);
+        } else if (elem.calc) {
+            feature_t converted = elem.calc->calc_raw_score(docId);
             max_closeness = std::max(max_closeness, converted);
         }
     }
@@ -185,14 +189,25 @@ ClosenessBlueprint::createInstance() const
     return std::make_unique<ClosenessBlueprint>();
 }
 
+void
+ClosenessBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const
+{
+    if (_use_nns_tensor) {
+        DistanceCalculatorBundle::prepare_shared_state(env, store, _attr_id, "closeness");
+    }
+    if (_use_item_label) {
+        DistanceCalculatorBundle::prepare_shared_state(env, store, _arg_string, "closeness");
+    }
+}
+
 FeatureExecutor &
 ClosenessBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    if (_use_item_label) {
-        return stash.create<ConvertRawScoreToCloseness>(env, _arg_string);
-    }
     if (_use_nns_tensor) {
         return stash.create<ConvertRawScoreToCloseness>(env, _attr_id);
+    }
+    if (_use_item_label) {
+        return stash.create<ConvertRawScoreToCloseness>(env, _arg_string);
     }
     assert(_use_geo_pos);
     return stash.create<ClosenessExecutor>(_maxDistance, _scaleDistance);
