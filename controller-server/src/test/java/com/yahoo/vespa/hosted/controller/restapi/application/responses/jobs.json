@@ -9,6 +9,7 @@
           "start": 1600000000000,
           "end": 1600000000000,
           "status": "success",
+          "reason": "triggered by user.myuser",
           "versions": {
             "targetPlatform": "6.1.0",
             "targetApplication": {
