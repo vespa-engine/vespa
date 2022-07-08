@@ -115,6 +115,7 @@ class JobControllerApiHandlerHelper {
         Run run = jobController.run(runId);
         detailsObject.setBool("active", ! run.hasEnded());
         detailsObject.setString("status", nameOf(run.status()));
+        run.reason().ifPresent(reason -> detailsObject.setString("reason", reason));
         try {
             jobController.updateTestLog(runId);
             jobController.updateVespaLog(runId);
@@ -421,6 +422,7 @@ class JobControllerApiHandlerHelper {
             runObject.setLong("start", run.start().toEpochMilli());
             run.end().ifPresent(end -> runObject.setLong("end", end.toEpochMilli()));
             runObject.setString("status", run.status().name());
+            run.reason().ifPresent(reason -> runObject.setString("reason", reason));
             toSlime(runObject.setObject("versions"), run.versions(), application);
             Cursor runStepsArray = runObject.setArray("steps");
             run.steps().forEach((step, info) -> {
