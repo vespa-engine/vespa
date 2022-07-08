@@ -33,9 +33,9 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
     private final Collection<ContainerModel> containerModels;
     private final ConfigModelContext context;
 
-    public DomAdminV4Builder(ConfigModelContext context, boolean multitenant, List<ConfigServerSpec> configServerSpecs,
+    public DomAdminV4Builder(ConfigModelContext context, boolean multiTenant, List<ConfigServerSpec> configServerSpecs,
                              Collection<ContainerModel> containerModels) {
-        super(context.getApplicationType(), multitenant, configServerSpecs);
+        super(context.getApplicationType(), multiTenant, configServerSpecs);
         this.containerModels = containerModels;
         this.context = context;
     }
@@ -131,7 +131,7 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
      * The list returns the same nodes on each invocation given the same available nodes.
      *
      * @param count the desired number of nodes. More nodes may be returned to ensure a smooth transition
-     *        on topology changes, and less nodes may be returned if fewer are available
+     *        on topology changes, and fewer nodes may be returned if fewer are available
      * @param minHostsPerContainerCluster the desired number of hosts per cluster
      */
     private List<HostResource> pickContainerHostsForSlobrok(int count, int minHostsPerContainerCluster) {

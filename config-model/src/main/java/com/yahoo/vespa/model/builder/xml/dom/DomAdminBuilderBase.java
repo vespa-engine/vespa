@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
@@ -20,7 +19,6 @@ import com.yahoo.vespa.model.admin.monitoring.builder.Metrics;
 import com.yahoo.vespa.model.admin.monitoring.builder.PredefinedMetricSets;
 import com.yahoo.vespa.model.admin.monitoring.builder.xml.MetricsBuilder;
 import org.w3c.dom.Element;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -35,13 +33,11 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     private final ApplicationType applicationType;
     protected final List<ConfigServerSpec> configServerSpecs;
-    protected final boolean multitenant;
+    protected final boolean multiTenant;
 
-    DomAdminBuilderBase(ApplicationType applicationType,
-                        boolean multitenant,
-                        List<ConfigServerSpec> configServerSpecs) {
+    DomAdminBuilderBase(ApplicationType applicationType, boolean multiTenant, List<ConfigServerSpec> configServerSpecs) {
         this.applicationType = applicationType;
-        this.multitenant = multitenant;
+        this.multiTenant = multiTenant;
         this.configServerSpecs = configServerSpecs;
     }
 
@@ -65,7 +61,7 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
         Monitoring monitoring = getMonitoring(XML.getChild(adminElement,"monitoring"), deployState.isHosted());
         Metrics metrics = new MetricsBuilder(applicationType, PredefinedMetricSets.get())
                                   .buildMetrics(XML.getChild(adminElement, "metrics"));
-        Admin admin = new Admin(parent, monitoring, metrics, multitenant, deployState.isHosted(), applicationType);
+        Admin admin = new Admin(parent, monitoring, metrics, multiTenant, deployState.isHosted(), applicationType);
         doBuildAdmin(deployState, admin, adminElement);
         new ModelConfigProvider(admin);
 

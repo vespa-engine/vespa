@@ -2,7 +2,7 @@
 package com.yahoo.vespa.model.builder.xml.dom;
 
 import com.yahoo.cloud.config.log.LogdConfig;
-import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
@@ -16,13 +16,12 @@ import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Element;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author hmusum
@@ -34,16 +33,6 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     @Before
     public void prepareTest() {
         root = new MockRoot("root");
-    }
-
-    // Supported for backwards compatibility
-    private Element servicesConfigserver() {
-        return XML.getDocument(
-                        "<admin version=\"2.0\">" +
-                        "  <configserver hostalias=\"mockhost\"/>" +
-                        "  <adminserver hostalias=\"mockhost\"/>" +
-                        "</admin>").getDocumentElement();
-
     }
 
     private Element servicesOverride() {
@@ -131,19 +120,10 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     }
 
     /**
-     * Tests that configserver works (deprecated, but allowed in admin 2.0)
-     */
-    @Test
-    public void adminWithConfigserverElement() {
-        Admin admin = buildAdmin(servicesConfigserver());
-        assertEquals(1, admin.getConfigservers().size());
-    }
-
-    /**
      * Tests that configservers/configserver works
      */
     @Test
-    public void adminWithConfigserversElement() {
+    public void adminWithConfigServersElement() {
         Admin admin = buildAdmin(servicesConfigservers());
         assertEquals(1, admin.getConfigservers().size());
     }
@@ -202,13 +182,12 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
     }
 
     private Admin buildAdmin(Element xml) {
-        return buildAdmin(xml, false, new ArrayList<>());
+        return buildAdmin(xml, false, List.of());
     }
 
-    private Admin buildAdmin(Element xml, boolean multitenant, List<ConfigServerSpec> configServerSpecs) {
+    private Admin buildAdmin(Element xml, boolean multitenant, List<ConfigServerSpec> configServers) {
         DeployState deployState = DeployState.createTestState();
-        final DomAdminV2Builder domAdminBuilder =
-                new DomAdminV2Builder(ConfigModelContext.ApplicationType.DEFAULT, multitenant, configServerSpecs);
+        DomAdminV2Builder domAdminBuilder = new DomAdminV2Builder(ApplicationType.DEFAULT, multitenant, configServers);
         Admin admin = domAdminBuilder.build(deployState, root, xml);
         admin.addPerHostServices(root.hostSystem().getHosts(), deployState);
         return admin;
