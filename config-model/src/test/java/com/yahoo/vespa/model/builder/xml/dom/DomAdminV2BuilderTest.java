@@ -22,6 +22,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author hmusum
@@ -119,6 +120,27 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         }
     }
 
+    @Test
+    public void standaloneServicesWithClusterControllersShouldFailInHosted() {
+        Element services =
+                XML.getDocument("""
+                                        <admin version="2.0">
+                                          <adminserver hostalias="mockhost" />
+                                          <cluster-controllers>
+                                            <cluster-controller hostalias="node0"/>
+                                            <cluster-controller hostalias="node1"/>
+                                          </cluster-controllers>
+                                        </admin>""")
+                   .getDocumentElement();
+        try {
+            buildAdmin(services, true, true, List.of());
+            fail("Should have failed");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cluster controllers cannot be specified in hosted Vespa, please remove <cluster-controllers> element",
+                         e.getMessage());
+        }
+    }
+
     /**
      * Tests that configservers/configserver works
      */
@@ -185,9 +207,14 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         return buildAdmin(xml, false, List.of());
     }
 
-    private Admin buildAdmin(Element xml, boolean multitenant, List<ConfigServerSpec> configServers) {
-        DeployState deployState = DeployState.createTestState();
-        DomAdminV2Builder domAdminBuilder = new DomAdminV2Builder(ApplicationType.DEFAULT, multitenant, configServers);
+    private Admin buildAdmin(Element xml, boolean multiTenant, List<ConfigServerSpec> configServerSpecs) {
+        return buildAdmin(xml, multiTenant, false, configServerSpecs);
+    }
+
+    private Admin buildAdmin(Element xml, boolean multiTenant, boolean hosted, List<ConfigServerSpec> configServerSpecs) {
+        DeployState deployState = new DeployState.Builder().properties(new TestProperties().setMultitenant(multiTenant).setHostedVespa(hosted)).build();
+        final DomAdminV2Builder domAdminBuilder =
+                new DomAdminV2Builder(ApplicationType.DEFAULT, multiTenant, configServerSpecs);
         Admin admin = domAdminBuilder.build(deployState, root, xml);
         admin.addPerHostServices(root.hostSystem().getHosts(), deployState);
         return admin;

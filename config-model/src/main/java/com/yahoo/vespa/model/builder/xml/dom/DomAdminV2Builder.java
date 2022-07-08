@@ -40,8 +40,12 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         admin.setLogserver(parseLogserver(deployState, admin, adminE));
         admin.addConfigservers(parseConfigServers(deployState, admin, adminE));
         admin.addSlobroks(getSlobroks(deployState, admin, XML.getChild(adminE, "slobroks")));
-        if ( ! admin.multiTenant())
+        if (admin.multiTenant()) {
+            if (deployState.isHosted() && XML.getChild(adminE, "cluster-controllers") != null)
+                throw new IllegalArgumentException("Cluster controllers cannot be specified in hosted Vespa, please remove <cluster-controllers> element");
+        } else {
             admin.setClusterControllers(addConfiguredClusterControllers(deployState, admin, adminE), deployState);
+        }
         addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin);
     }
 
