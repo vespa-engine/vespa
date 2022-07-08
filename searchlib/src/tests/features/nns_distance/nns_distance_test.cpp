@@ -2,105 +2,23 @@
 
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/features/setup.h>
-#include <vespa/searchlib/fef/test/indexenvironment.h>
-#include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/fef/test/labels.h>
 #include <vespa/searchlib/features/distancefeature.h>
-#include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
+#include <vespa/searchlib/test/features/distance_closeness_fixture.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using search::feature_t;
-using namespace search::fef;
-using namespace search::fef::test;
+using namespace search::features::test;
 using namespace search::features;
-using CollectionType = FieldInfo::CollectionType;
-using DataType = FieldInfo::DataType;
+using namespace search::fef::test;
+using namespace search::fef;
 
-const vespalib::string labelFeatureName("distance(label,label)");
+const vespalib::string labelFeatureName("distance(label,nns)");
 const vespalib::string fieldFeatureName("distance(bar)");
 
-struct BlueprintFactoryFixture {
-    BlueprintFactory factory;
-    BlueprintFactoryFixture() : factory()
-    {
-        setup_search_features(factory);
-    }
-};
-
-struct IndexFixture {
-    IndexEnvironment indexEnv;
-    IndexFixture() : indexEnv()
-    {
-        IndexEnvironmentBuilder builder(indexEnv);
-        builder.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "foo");
-        builder.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "bar");
-    }
-};
-
-struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const vespalib::string &) override {
-        TEST_ERROR("no features should be dumped");
-    }
-    FeatureDumpFixture() : IDumpFeatureVisitor() {}
-    ~FeatureDumpFixture() override;
-};
-
-FeatureDumpFixture::~FeatureDumpFixture() = default;
-
-struct RankFixture : BlueprintFactoryFixture, IndexFixture {
-    QueryEnvironment         queryEnv;
-    RankSetup                rankSetup;
-    MatchDataLayout          mdl;
-    MatchData::UP            match_data;
-    RankProgram::UP          rankProgram;
-    std::vector<TermFieldHandle> fooHandles;
-    std::vector<TermFieldHandle> barHandles;
-    RankFixture(size_t fooCnt, size_t barCnt, const Labels &labels, const vespalib::string &featureName)
-        : queryEnv(&indexEnv), rankSetup(factory, indexEnv),
-          mdl(), match_data(), rankProgram(), fooHandles(), barHandles()
-    {
-        for (size_t i = 0; i < fooCnt; ++i) {
-            uint32_t fieldId = indexEnv.getFieldByName("foo")->id();
-            fooHandles.push_back(mdl.allocTermField(fieldId));
-            SimpleTermData term;
-            term.setUniqueId(i + 1);
-            term.addField(fieldId).setHandle(fooHandles.back());
-            queryEnv.getTerms().push_back(term);
-        }
-        for (size_t i = 0; i < barCnt; ++i) { 
-            uint32_t fieldId = indexEnv.getFieldByName("bar")->id();
-            barHandles.push_back(mdl.allocTermField(fieldId));
-            SimpleTermData term;
-            term.setUniqueId(fooCnt + i + 1);
-            term.addField(fieldId).setHandle(barHandles.back());
-            queryEnv.getTerms().push_back(term);
-        }
-        labels.inject(queryEnv.getProperties());
-        rankSetup.setFirstPhaseRank(featureName);
-        rankSetup.setIgnoreDefaultRankFeatures(true);
-        ASSERT_TRUE(rankSetup.compile());
-        match_data = mdl.createMatchData();
-        rankProgram = rankSetup.create_first_phase_program();
-        rankProgram->setup(*match_data, queryEnv);
-    }
-    feature_t getScore(uint32_t docId) {
-        return Utils::getScoreFeature(*rankProgram, docId);
-    }
-    void setScore(TermFieldHandle handle, uint32_t docId, feature_t score) {
-        match_data->resolveTermField(handle)->setRawScore(docId, score);
-    }
-    void setFooScore(uint32_t i, uint32_t docId, feature_t distance) {
-        ASSERT_LESS(i, fooHandles.size());
-        setScore(fooHandles[i], docId, 1.0/(1.0+distance));
-    }
-    void setBarScore(uint32_t i, uint32_t docId, feature_t distance) {
-        ASSERT_LESS(i, barHandles.size());
-        setScore(barHandles[i], docId, 1.0/(1.0+distance));
-    }
-};
+using RankFixture = DistanceClosenessFixture;
 
 TEST_F("require that blueprint can be created from factory", BlueprintFactoryFixture) {
     Blueprint::SP bp = f.factory.createBlueprint("distance");
@@ -108,17 +26,17 @@ TEST_F("require that blueprint can be created from factory", BlueprintFactoryFix
     EXPECT_TRUE(dynamic_cast<DistanceBlueprint*>(bp.get()) != 0);
 }
 
-TEST_FFF("require that no features are dumped", DistanceBlueprint, IndexFixture, FeatureDumpFixture) {
+TEST_FFF("require that no features are dumped", DistanceBlueprint, IndexEnvironmentFixture, FeatureDumpFixture) {
     f1.visitDumpFeatures(f2.indexEnv, f3);
 }
 
-TEST_FF("require that setup can be done on random label", DistanceBlueprint, IndexFixture) {
+TEST_FF("require that setup can be done on random label", DistanceBlueprint, IndexEnvironmentFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(label,random_label)", f1.getBaseName().c_str()));
     EXPECT_TRUE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"label", "random_label"}));
 }
 
-TEST_FF("require that setup with unknown field fails", DistanceBlueprint, IndexFixture) {
+TEST_FF("require that setup with unknown field fails", DistanceBlueprint, IndexEnvironmentFixture) {
     DummyDependencyHandler deps(f1);
     f1.setName(vespalib::make_string("%s(field,random_fieldname)", f1.getBaseName().c_str()));
     EXPECT_FALSE(static_cast<Blueprint&>(f1).setup(f2.indexEnv, std::vector<vespalib::string>{"field", "random_fieldname"}));
@@ -132,7 +50,7 @@ TEST_FF("require that unrelated label gives max-double distance", SingleLabel("u
     EXPECT_EQUAL(std::numeric_limits<feature_t>::max(), f2.getScore(10));
 }
 
-TEST_FF("require that labeled item raw score can be obtained", SingleLabel("label", 1), RankFixture(2, 2, f1, labelFeatureName)) {
+TEST_FF("require that labeled item raw score can be obtained", SingleLabel("nns", 1), RankFixture(2, 2, f1, labelFeatureName)) {
     f2.setFooScore(0, 10, 5.0);
     EXPECT_EQUAL(5.0, f2.getScore(10));
 }
@@ -142,7 +60,7 @@ TEST_FF("require that field raw score can be obtained", NoLabel(), RankFixture(2
     EXPECT_EQUAL(5.0, f2.getScore(10));
 }
 
-TEST_FF("require that other raw scores are ignored", SingleLabel("label", 2), RankFixture(2, 2, f1, labelFeatureName)) {
+TEST_FF("require that other raw scores are ignored", SingleLabel("nns", 2), RankFixture(2, 2, f1, labelFeatureName)) {
     f2.setFooScore(0, 10, 1.0);
     f2.setFooScore(1, 10, 2.0);
     f2.setBarScore(0, 10, 5.0);
@@ -158,7 +76,7 @@ TEST_FF("require that the correct raw score is used", NoLabel(), RankFixture(2, 
     EXPECT_EQUAL(7.0, f2.getScore(10));
 }
 
-TEST_FF("require that stale data is ignored", SingleLabel("label", 2), RankFixture(2, 2, f1, labelFeatureName)) {
+TEST_FF("require that stale data is ignored", SingleLabel("nns", 2), RankFixture(2, 2, f1, labelFeatureName)) {
     f2.setFooScore(0, 10, 1.0);
     f2.setFooScore(1, 5, 2.0);
     EXPECT_EQUAL(std::numeric_limits<feature_t>::max(), f2.getScore(10));
