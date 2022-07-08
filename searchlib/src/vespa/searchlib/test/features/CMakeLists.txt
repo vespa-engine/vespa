@@ -3,4 +3,5 @@ vespa_add_library(searchlib_searchlib_test_features
     SOURCES
     distance_closeness_fixture.cpp
     DEPENDS
+    searchlib
 )
