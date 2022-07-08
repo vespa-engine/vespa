@@ -49,7 +49,7 @@ public class BufferedLogStore {
     }
 
     /** Appends to the log of the given, active run, reassigning IDs as counted here, and converting to Vespa log levels. */
-    public void append(ApplicationId id, JobType type, Step step, List<LogEntry> entries) {
+    public void append(ApplicationId id, JobType type, Step step, List<LogEntry> entries, boolean forceLog) {
         if (entries.isEmpty())
             return;
 
@@ -58,7 +58,7 @@ public class BufferedLogStore {
         long lastEntryId = buffer.readLastLogEntryId(id, type).orElse(-1L);
         long lastChunkId = buffer.getLogChunkIds(id, type).max().orElse(0);
         long numberOfChunks = Math.max(1, buffer.getLogChunkIds(id, type).count());
-        if (numberOfChunks > maxLogSize / chunkSize)
+        if (numberOfChunks > maxLogSize / chunkSize && ! forceLog)
             return; // Max size exceeded — store no more.
 
         byte[] emptyChunk = "[]".getBytes();
@@ -72,8 +72,12 @@ public class BufferedLogStore {
                 buffer.writeLastLogEntryId(id, type, lastEntryId);
                 buffer.writeLog(id, type, lastChunkId, logSerializer.toJson(log));
                 lastChunkId = lastEntryId + 1;
-                if (++numberOfChunks > maxLogSize / chunkSize) {
-                    log = Map.of(step, List.of(new LogEntry(++lastEntryId, entry.at(), LogEntry.Type.warning, "Max log size of " + (maxLogSize >> 20) + "Mb exceeded; further entries are discarded.")));
+                if (++numberOfChunks > maxLogSize / chunkSize && ! forceLog) {
+                    log = Map.of(step, List.of(new LogEntry(++lastEntryId,
+                                                            entry.at(),
+                                                            LogEntry.Type.warning,
+                                                            "Max log size of " + (maxLogSize >> 20) +
+                                                            "Mb exceeded; further user entries are discarded.")));
                     break;
                 }
                 log = new HashMap<>();

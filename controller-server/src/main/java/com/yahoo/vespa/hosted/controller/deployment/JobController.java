@@ -158,7 +158,7 @@ public class JobController {
     /** Stores the given log entries for the given run and step. */
     public void log(RunId id, Step step, List<LogEntry> entries) {
         locked(id, __ -> {
-            logs.append(id.application(), id.type(), step, entries);
+            logs.append(id.application(), id.type(), step, entries, true);
             return __;
         });
     }
@@ -211,7 +211,7 @@ public class JobController {
             if (log.isEmpty())
                 return run;
 
-            logs.append(id.application(), id.type(), Step.copyVespaLogs, log);
+            logs.append(id.application(), id.type(), Step.copyVespaLogs, log, false);
             return run.with(log.get(log.size() - 1).at());
         });
     }
@@ -230,7 +230,7 @@ public class JobController {
             if (entries.isEmpty())
                 return run;
 
-            logs.append(id.application(), id.type(), step.get(), entries);
+            logs.append(id.application(), id.type(), step.get(), entries, false);
             return run.with(entries.stream().mapToLong(LogEntry::id).max().getAsLong());
         });
     }

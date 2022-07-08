@@ -50,19 +50,19 @@ public class BufferedLogStoreTest {
         assertEquals(Optional.empty(), logs.readFinished(id, -1));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), -1));
 
-        logs.append(id.application(), id.type(), Step.deployReal, List.of(entry));
+        logs.append(id.application(), id.type(), Step.deployReal, List.of(entry), false);
         assertEquals(List.of(entry0),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 0));
 
-        logs.append(id.application(), id.type(), Step.deployReal, List.of(entry));
+        logs.append(id.application(), id.type(), Step.deployReal, List.of(entry), false);
         assertEquals(List.of(entry0, entry1),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
         assertEquals(List.of(entry1),
                      logs.readActive(id.application(), id.type(), 0).get(Step.deployReal));
         assertEquals(RunLog.empty(), logs.readActive(id.application(), id.type(), 1));
 
-        logs.append(id.application(), id.type(), Step.deployReal, List.of(entry, entry, entry));
+        logs.append(id.application(), id.type(), Step.deployReal, List.of(entry, entry, entry), false);
         assertEquals(List.of(entry0, entry1, entry2, entry3, entry4),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
         assertEquals(List.of(entry1, entry2, entry3, entry4),
@@ -105,17 +105,28 @@ public class BufferedLogStoreTest {
         logged.remove(logged.size() - 1);
         logged.remove(logged.size() - 1);
         logged.remove(logged.size() - 1);
-        logged.add(new LogEntry(2 * maxChunks, entry.at(), LogEntry.Type.warning, "Max log size of " + ((chunkSize * maxChunks) >> 20) + "Mb exceeded; further entries are discarded."));
+        logged.add(new LogEntry(2 * maxChunks, entry.at(), LogEntry.Type.warning, "Max log size of " + ((chunkSize * maxChunks) >> 20) + "Mb exceeded; further user entries are discarded."));
 
-        logs.append(id.application(), id.type(), Step.deployReal, monsterLog);
+        logs.append(id.application(), id.type(), Step.deployReal, monsterLog, false);
         assertEquals(logged.size(),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal).size());
         assertEquals(logged,
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
 
+        // An additional, forced entry is appended.
+        LogEntry forced = new LogEntry(logged.size(), entry.at(), entry.type(), entry.message());
+        logs.append(id.application(), id.type(), Step.deployReal, List.of(forced), true);
+        logged.add(forced);
+        assertEquals(logged.size(),
+                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal).size());
+        assertEquals(logged,
+                     logs.readActive(id.application(), id.type(), -1).get(Step.deployReal));
+        logged.remove(logged.size() - 1);
+
+        // Flushing the buffer clears it again, and makes it ready for reuse.
         logs.flush(id);
         for (int i = 0; i < 2 * maxChunks + 3; i++)
-            logs.append(id.application(), id.type(), Step.deployReal, List.of(entry));
+            logs.append(id.application(), id.type(), Step.deployReal, List.of(entry), false);
         assertEquals(logged.size(),
                      logs.readActive(id.application(), id.type(), -1).get(Step.deployReal).size());
         assertEquals(logged,
