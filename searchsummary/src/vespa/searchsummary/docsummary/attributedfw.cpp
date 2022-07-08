@@ -2,6 +2,7 @@
 
 #include "attributedfw.h"
 #include "docsumwriter.h"
+#include "docsumstate.h"
 #include "docsum_field_writer_state.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
@@ -36,6 +37,24 @@ namespace search::docsummary {
 AttrDFW::AttrDFW(const vespalib::string & attrName) :
     _attrName(attrName)
 {
+}
+
+const attribute::IAttributeVector&
+AttrDFW::get_attribute(const GetDocsumsState& s) const
+{
+    return *s.getAttribute(getIndex());
+}
+
+const vespalib::string &
+AttrDFW::getAttributeName() const
+{
+    return _attrName;
+}
+
+bool
+AttrDFW::IsGenerated() const
+{
+    return true;
 }
 
 namespace {
@@ -333,7 +352,7 @@ MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState *state, ResType, vespa
     field_writer_state->insertField(docid, target);
 }
 
-std::unique_ptr<IDocsumFieldWriter>
+std::unique_ptr<DocsumFieldWriter>
 create_multi_writer(const IAttributeVector& attr, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     auto type = attr.getBasicType();
@@ -355,7 +374,7 @@ create_multi_writer(const IAttributeVector& attr, bool filter_elements, std::sha
 
 }
 
-std::unique_ptr<IDocsumFieldWriter>
+std::unique_ptr<DocsumFieldWriter>
 AttributeDFWFactory::create(IAttributeManager& attr_mgr,
                             const vespalib::string& attr_name,
                             bool filter_elements,
@@ -365,7 +384,7 @@ AttributeDFWFactory::create(IAttributeManager& attr_mgr,
     const auto* attr = ctx->getAttribute(attr_name);
     if (attr == nullptr) {
         Issue::report("No valid attribute vector found: '%s'", attr_name.c_str());
-        return std::unique_ptr<IDocsumFieldWriter>();
+        return std::unique_ptr<DocsumFieldWriter>();
     }
     if (attr->hasMultiValue()) {
         return create_multi_writer(*attr, filter_elements, std::move(matching_elems_fields));

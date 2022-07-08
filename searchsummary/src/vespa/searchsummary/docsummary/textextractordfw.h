@@ -2,14 +2,16 @@
 
 #pragma once
 
-#include "docsumfieldwriter.h"
+#include "docsum_field_writer.h"
 
 namespace search::docsummary {
+
+class ResultConfig;
 
 /**
  * This is the docsum field writer used to extract the original text from a disk summary on the juniper format.
  **/
-class TextExtractorDFW : public IDocsumFieldWriter
+class TextExtractorDFW : public DocsumFieldWriter
 {
 private:
     TextExtractorDFW(const TextExtractorDFW &);
@@ -19,7 +21,7 @@ private:
 
 public:
     TextExtractorDFW();
-    ~TextExtractorDFW() {}
+    ~TextExtractorDFW() override = default;
     bool init(const vespalib::string & fieldName, const vespalib::string & inputField, const ResultConfig & config);
     bool IsGenerated() const override { return false; }
     void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,

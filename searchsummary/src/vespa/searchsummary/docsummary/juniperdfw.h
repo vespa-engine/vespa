@@ -4,14 +4,14 @@
 
 #include "general_result.h"
 #include "resultconfig.h"
-#include "docsumfieldwriter.h"
+#include "docsum_field_writer.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/juniper/rpinterface.h>
 
 namespace search::docsummary {
 
-class JuniperDFW : public IDocsumFieldWriter
+class JuniperDFW : public DocsumFieldWriter
 {
 public:
     virtual bool Init(
@@ -21,7 +21,7 @@ public:
             const char *inputField);
 protected:
     JuniperDFW(juniper::Juniper * juniper);
-    virtual ~JuniperDFW();
+    ~JuniperDFW() override;
 
     uint32_t                         _inputFieldEnumValue;
     std::unique_ptr<juniper::Config> _juniperConfig;

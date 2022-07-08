@@ -1,8 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "textextractordfw.h"
-#include "tokenizer.h"
 #include "docsumstate.h"
+#include "general_result.h"
+#include "tokenizer.h"
+#include "resultconfig.h"
+#include <vespa/vespalib/data/slime/inserter.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.textextractordfw");

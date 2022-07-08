@@ -16,7 +16,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::docsummary::AttributeDFWFactory;
 using search::docsummary::GetDocsumsState;
-using search::docsummary::IDocsumFieldWriter;
+using search::docsummary::DocsumFieldWriter;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
 using search::docsummary::test::SlimeValue;
@@ -26,7 +26,7 @@ using ElementVector = std::vector<uint32_t>;
 class AttributeDFWTest : public ::testing::Test {
 protected:
     MockAttributeManager _attrs;
-    std::unique_ptr<IDocsumFieldWriter> _writer;
+    std::unique_ptr<DocsumFieldWriter> _writer;
     MockStateCallback _callback;
     GetDocsumsState _state;
     std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;

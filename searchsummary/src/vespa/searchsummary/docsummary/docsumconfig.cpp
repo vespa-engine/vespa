@@ -1,8 +1,10 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "attribute_combiner_dfw.h"
 #include "docsumconfig.h"
+#include "attribute_combiner_dfw.h"
+#include "copy_dfw.h"
 #include "docsumwriter.h"
+#include "empty_dfw.h"
 #include "geoposdfw.h"
 #include "idocsumenvironment.h"
 #include "juniperdfw.h"
@@ -10,6 +12,7 @@
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
 #include "textextractordfw.h"
+#include "summaryfeaturesdfw.h"
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -24,12 +27,12 @@ DynamicDocsumConfig::getResultConfig() const {
     return *_writer->GetResultConfig();
 }
 
-IDocsumFieldWriter::UP
+std::unique_ptr<DocsumFieldWriter>
 DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & overrideName, const string & argument, bool & rc, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     const ResultConfig & resultConfig = getResultConfig();
     rc = false;
-    IDocsumFieldWriter::UP fieldWriter;
+    std::unique_ptr<DocsumFieldWriter> fieldWriter;
     if (overrideName == "dynamicteaser") {
         if ( ! argument.empty() ) {
             const char *langFieldName = "something unused";
@@ -127,7 +130,7 @@ DynamicDocsumConfig::configure(const vespa::config::search::SummarymapConfig &cf
     for (size_t i = 0; i < cfg.override.size(); ++i) {
         const vespa::config::search::SummarymapConfig::Override & o = cfg.override[i];
         bool rc(false);
-        IDocsumFieldWriter::UP fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, matching_elems_fields);
+        std::unique_ptr<DocsumFieldWriter> fieldWriter = createFieldWriter(o.field, o.command, o.arguments, rc, matching_elems_fields);
         if (rc && fieldWriter) {
             rc = _writer->Override(o.field.c_str(), fieldWriter.release()); // OBJECT HAND-OVER
         }

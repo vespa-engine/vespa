@@ -5,7 +5,7 @@
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
-#include <vespa/searchsummary/docsummary/docsumfieldwriter.h>
+#include <vespa/searchsummary/docsummary/docsum_field_writer.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
 #include <vespa/searchsummary/docsummary/attribute_combiner_dfw.h>
@@ -24,7 +24,7 @@ using search::docsummary::AttributeCombinerDFW;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumEnvironment;
-using search::docsummary::IDocsumFieldWriter;
+using search::docsummary::DocsumFieldWriter;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
 using search::docsummary::test::SlimeValue;
@@ -34,7 +34,7 @@ namespace {
 struct AttributeCombinerTest : public ::testing::Test
 {
     MockAttributeManager                attrs;
-    std::unique_ptr<IDocsumFieldWriter> writer;
+    std::unique_ptr<DocsumFieldWriter>  writer;
     MockStateCallback                   callback;
     GetDocsumsState                     state;
     std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;

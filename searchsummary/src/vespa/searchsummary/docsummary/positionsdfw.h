@@ -45,7 +45,7 @@ public:
     void insertField(uint32_t docid, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;
 
-    static UP create(const char *attribute_name, IAttributeManager *index_man);
+    static std::unique_ptr<DocsumFieldWriter> create(const char *attribute_name, IAttributeManager *index_man);
 
 };
 

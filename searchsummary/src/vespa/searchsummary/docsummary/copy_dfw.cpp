@@ -1,50 +1,15 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "docsumfieldwriter.h"
+#include "copy_dfw.h"
+#include "general_result.h"
 #include "i_docsum_store_document.h"
-#include "idocsumenvironment.h"
-#include "docsumstate.h"
-#include "summaryfieldconverter.h"
-#include <vespa/searchlib/common/documentlocations.h>
-#include <vespa/searchlib/common/location.h>
-#include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include "resultconfig.h"
 #include <vespa/vespalib/data/slime/slime.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".searchlib.docsummary.docsumfieldwriter");
+LOG_SETUP(".searchlib.docsummary.copy_dfw");
 
 namespace search::docsummary {
-
-using search::attribute::IAttributeContext;
-using search::attribute::IAttributeVector;
-using search::attribute::BasicType;
-using search::common::Location;
-
-//--------------------------------------------------------------------------
-
-const vespalib::string IDocsumFieldWriter::_empty("");
-
-bool
-IDocsumFieldWriter::setFieldWriterStateIndex(uint32_t)
-{
-    return false; // Don't need any field writer state by default
-}
-
-//--------------------------------------------------------------------------
-
-EmptyDFW::EmptyDFW() = default;
-
-EmptyDFW::~EmptyDFW() = default;
-
-void
-EmptyDFW::insertField(uint32_t, GetDocsumsState *, ResType, vespalib::slime::Inserter &target)
-{
-    // insert explicitly-empty field?
-    // target.insertNix();
-    (void)target;
-}
-
-//--------------------------------------------------------------------------
 
 CopyDFW::CopyDFW()
     : _inputFieldEnumValue(static_cast<uint32_t>(-1)),

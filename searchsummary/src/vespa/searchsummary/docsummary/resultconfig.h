@@ -2,13 +2,14 @@
 
 #pragma once
 
-#include "resultclass.h"
-#include "general_result.h"
+#include "docsum_blob_entry_filter.h"
+#include "res_type_utils.h"
 #include <vespa/config-summary.h>
-#include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/searchlib/util/stringenum.h>
 
 namespace search::docsummary {
+
+class ResultClass;
 
 /**
  * This class represents the overall result configuration. A result
@@ -31,7 +32,7 @@ private:
     ResultConfig& operator=(const ResultConfig &);
 
     typedef vespalib::hash_map<vespalib::string, uint32_t> NameMap;
-    typedef vespalib::hash_map<uint32_t, ResultClass::UP> IdMap;
+    typedef vespalib::hash_map<uint32_t, std::unique_ptr<ResultClass>> IdMap;
     uint32_t                    _defaultSummaryId;
     bool                        _useV8geoPositions;
     search::util::StringEnum    _fieldEnum;
@@ -95,85 +96,9 @@ public:
     static uint32_t NoClassID() { return static_cast<uint32_t>(-1); }
 
 
-    /**
-     * Determine if a result field type is of variable size.
-     *
-     * @return true for variable size field types, false for fixed
-     * size field types
-     **/
-    static bool IsVariableSize(ResType t) { return (t >= RES_STRING); }
-
-
-    /**
-     * Determine if a pair of result field types are binary
-     * compatible. A pair of types are binary compatible if the packed
-     * representation is identical.
-     *
-     * @return true if the given types are binary compatible.
-     * @param a enum value of a result field type.
-     * @param b enum value of a result field type.
-     **/
-    static bool IsBinaryCompatible(ResType a, ResType b)
-    {
-        if (a == b) {
-            return true;
-        }
-        switch (a) {
-        case RES_BYTE:
-        case RES_BOOL:
-            return (b == RES_BYTE || b == RES_BOOL);
-        case RES_STRING:
-        case RES_DATA:
-            return (b == RES_STRING || b == RES_DATA);
-        case RES_LONG_STRING:
-        case RES_LONG_DATA:
-        case RES_FEATUREDATA:
-        case RES_JSONSTRING:
-            return (b == RES_LONG_STRING || b == RES_LONG_DATA ||
-                    b == RES_FEATUREDATA || b == RES_JSONSTRING);
-        default:
-            return false;
-        }
-        return false;
-    }
-
-
-    /**
-     * Determine if a pair of result field types are runtime
-     * compatible. A pair of types are runtime compatible if the
-     * unpacked (@ref ResEntry) representation is identical.
-     *
-     * @return true if the given types are runtime compatible.
-     * @param a enum value of a result field type.
-     * @param b enum value of a result field type.
-     **/
-    static bool IsRuntimeCompatible(ResType a, ResType b)
-    {
-        switch (a) {
-        case RES_INT:
-        case RES_SHORT:
-        case RES_BYTE:
-        case RES_BOOL:
-            return (b == RES_INT || b == RES_SHORT || b == RES_BYTE || b == RES_BOOL);
-        case RES_FLOAT:
-        case RES_DOUBLE:
-            return (b == RES_FLOAT || b == RES_DOUBLE);
-        case RES_INT64:
-            return b == RES_INT64;
-        case RES_STRING:
-        case RES_LONG_STRING:
-        case RES_JSONSTRING:
-            return (b == RES_STRING || b == RES_LONG_STRING || b == RES_JSONSTRING);
-        case RES_DATA:
-        case RES_LONG_DATA:
-            return (b == RES_DATA || b == RES_LONG_DATA);
-        case RES_TENSOR:
-            return (b == RES_TENSOR);
-        case RES_FEATUREDATA:
-            return (b == RES_FEATUREDATA);
-        }
-        return false;
-    }
+    static bool IsVariableSize(ResType t) { return ResTypeUtils::IsVariableSize(t); }
+    static bool IsBinaryCompatible(ResType a, ResType b) { return ResTypeUtils::IsBinaryCompatible(a, b); }
+    static bool IsRuntimeCompatible(ResType a, ResType b) { return ResTypeUtils::IsRuntimeCompatible(a, b); }
 
     // whether last config seen wanted useV8geoPositions = true
     static bool wantedV8geoPositions();
@@ -182,7 +107,7 @@ public:
      * @return the name of the given result field type.
      * @param resType enum value of a result field type.
      **/
-    static const char *GetResTypeName(ResType type);
+    static const char *GetResTypeName(ResType type) { return ResTypeUtils::GetResTypeName(type); }
 
     /**
      * Discard the current configuration and start over. After this

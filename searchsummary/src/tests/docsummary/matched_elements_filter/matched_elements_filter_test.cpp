@@ -16,8 +16,10 @@
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
+#include <vespa/searchsummary/docsummary/docsumstorevalue.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
+#include <vespa/searchsummary/docsummary/general_result.h>
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
@@ -215,7 +217,7 @@ public:
     {
     }
     ~MatchedElementsFilterTest();
-    std::unique_ptr<IDocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
+    std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
         int input_field_enum = _doc_store.get_config().GetFieldNameEnum().Lookup(input_field_name.c_str());
         return MatchedElementsFilterDFW::create(input_field_name, input_field_enum,
                                                 _attr_ctx, _fields);
