@@ -41,6 +41,7 @@ public class Node {
     private final Version wantedVersion;
     private final Version currentOsVersion;
     private final Version wantedOsVersion;
+    private final boolean deferOsUpgrade;
     private final DockerImage currentDockerImage;
     private final DockerImage wantedDockerImage;
     private final ServiceState serviceState;
@@ -76,7 +77,7 @@ public class Node {
 
     private Node(String id, HostName hostname, Optional<HostName> parentHostname, State state, NodeType type,
                  NodeResources resources, Optional<ApplicationId> owner, Version currentVersion, Version wantedVersion,
-                 Version currentOsVersion, Version wantedOsVersion, Optional<Instant> currentFirmwareCheck,
+                 Version currentOsVersion, Version wantedOsVersion, boolean deferOsUpgrade, Optional<Instant> currentFirmwareCheck,
                  Optional<Instant> wantedFirmwareCheck, ServiceState serviceState, Optional<Instant> suspendedSince,
                  long restartGeneration, long wantedRestartGeneration, long rebootGeneration,
                  long wantedRebootGeneration, int cost, int failCount, Optional<String> flavor, String clusterId,
@@ -97,6 +98,7 @@ public class Node {
         this.wantedVersion = Objects.requireNonNull(wantedVersion, "wantedVersion must be non-null");
         this.currentOsVersion = Objects.requireNonNull(currentOsVersion, "currentOsVersion must be non-null");
         this.wantedOsVersion = Objects.requireNonNull(wantedOsVersion, "wantedOsVersion must be non-null");
+        this.deferOsUpgrade = deferOsUpgrade;
         this.currentFirmwareCheck = Objects.requireNonNull(currentFirmwareCheck, "currentFirmwareCheck must be non-null");
         this.wantedFirmwareCheck = Objects.requireNonNull(wantedFirmwareCheck, "wantedFirmwareCheck must be non-null");
         this.serviceState = Objects.requireNonNull(serviceState, "serviceState must be non-null");
@@ -182,6 +184,11 @@ public class Node {
     /** The wanted OS version */
     public Version wantedOsVersion() {
         return wantedOsVersion;
+    }
+
+    /** Returns whether the node is currently deferring any OS upgrade */
+    public boolean deferOsUpgrade() {
+        return deferOsUpgrade;
     }
 
     /** The container image of this is currently running */
@@ -455,6 +462,7 @@ public class Node {
         private Version wantedVersion = Version.emptyVersion;
         private Version currentOsVersion = Version.emptyVersion;
         private Version wantedOsVersion = Version.emptyVersion;
+        private boolean deferOsUpgrade = false;
         private DockerImage currentDockerImage = DockerImage.EMPTY;
         private DockerImage wantedDockerImage = DockerImage.EMPTY;
         private Optional<Instant> currentFirmwareCheck = Optional.empty();
@@ -502,6 +510,7 @@ public class Node {
             this.wantedVersion = node.wantedVersion;
             this.currentOsVersion = node.currentOsVersion;
             this.wantedOsVersion = node.wantedOsVersion;
+            this.deferOsUpgrade = node.deferOsUpgrade;
             this.currentDockerImage = node.currentDockerImage;
             this.wantedDockerImage = node.wantedDockerImage;
             this.serviceState = node.serviceState;
@@ -596,6 +605,11 @@ public class Node {
 
         public Builder wantedOsVersion(Version wantedOsVersion) {
             this.wantedOsVersion = wantedOsVersion;
+            return this;
+        }
+
+        public Builder deferOsUpgrade(boolean deferOsUpgrade) {
+            this.deferOsUpgrade = deferOsUpgrade;
             return this;
         }
 
@@ -761,7 +775,7 @@ public class Node {
 
         public Node build() {
             return new Node(id, hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
-                            currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
+                            currentOsVersion, wantedOsVersion, deferOsUpgrade, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration,
                             wantedRebootGeneration, cost, failCount, flavor, clusterId, clusterType, group, index, retired,
                             wantToRetire, wantToDeprovision, wantToRebuild, down, reservedTo, exclusiveTo, wantedDockerImage,

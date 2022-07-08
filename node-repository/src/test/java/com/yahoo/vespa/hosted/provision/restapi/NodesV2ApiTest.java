@@ -770,8 +770,9 @@ public class NodesV2ApiTest {
                                    Request.Method.PATCH),
                        "{\"message\":\"Set osVersion to 7.5.2, upgradeBudget to PT0S for nodes of type host\"}");
 
+        var nodeRepository = (NodeRepository) tester.container().components().getComponent(MockNodeRepository.class.getName());
+
         // Activate target
-        var nodeRepository = (NodeRepository)tester.container().components().getComponent(MockNodeRepository.class.getName());
         var osUpgradeActivator = new OsUpgradeActivator(nodeRepository, Duration.ofDays(1), new TestMetric());
         osUpgradeActivator.run();
 

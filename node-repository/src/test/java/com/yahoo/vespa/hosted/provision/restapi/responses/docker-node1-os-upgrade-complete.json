@@ -30,6 +30,7 @@
   "currentRebootGeneration": 0,
   "currentOsVersion": "7.5.2",
   "wantedOsVersion": "7.5.2",
+  "deferOsUpgrade": false,
   "failCount": 0,
   "wantToRetire": false,
   "preferToRetire": false,

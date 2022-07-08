@@ -30,4 +30,5 @@ public class NodeListFilter {
     public static Predicate<Node> from(List<Node> nodes) {
         return makePredicate(nodes);
     }
+
 }

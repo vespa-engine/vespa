@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -39,8 +40,10 @@ public class DelegatingOsUpgrader implements OsUpgrader {
     public void upgradeTo(OsVersionTarget target) {
         NodeList activeNodes = nodeRepository.nodes().list(Node.State.active).nodeType(target.nodeType());
         int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(target.version()).size());
+        Instant now = nodeRepository.clock().instant();
         NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
                                              .osVersionIsBefore(target.version())
+                                             .matching(node -> canUpgradeAt(now, node))
                                              .byIncreasingOsVersion()
                                              .first(numberToUpgrade);
         if (nodesToUpgrade.size() == 0) return;

@@ -2,6 +2,9 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.hosted.provision.Node;
+
+import java.time.Instant;
 
 /**
  * Interface for an OS upgrader.
@@ -15,5 +18,10 @@ public interface OsUpgrader {
 
     /** Disable OS upgrade for all nodes of given type */
     void disableUpgrade(NodeType type);
+
+    /** Returns whether node can upgrade at given instant */
+    default boolean canUpgradeAt(Instant instant, Node node) {
+        return true;
+    }
 
 }
