@@ -53,8 +53,8 @@ public class OsUpgradeSchedulerTest {
         }
 
         // Enough days pass that the next release is triggered
-        Version version1 = Version.fromString("7.0.0.20220214");
-        tester.clock().advance(Duration.ofDays(15).plus(Duration.ofSeconds(1)));
+        Version version1 = Version.fromString("7.0.0.20220228");
+        tester.clock().advance(Duration.ofDays(30));
         scheduler.maintain();
         assertEquals("Target is unchanged because we're outside trigger period", version0,
                      tester.controller().osVersionTarget(cloud).get().osVersion().version());
@@ -118,18 +118,18 @@ public class OsUpgradeSchedulerTest {
     @Test
     public void schedule_of_calender_versioned_releases() {
         Map<String, String> tests = Map.of("2022-01-01", "2021-12-27",
-                                           "2022-02-14", "2021-12-27",
-                                           "2022-02-15", "2022-02-14",
-                                           "2022-03-31", "2022-02-14",
-                                           "2022-04-01", "2022-03-28",
-                                           "2022-05-15", "2022-03-28",
-                                           "2022-05-16", "2022-05-16",
-                                           "2022-06-29", "2022-05-16",
-                                           "2022-06-30", "2022-06-27");
-        tests.forEach((now, expected) -> {
+                                           "2022-03-01", "2021-12-27",
+                                           "2022-03-02", "2022-02-28",
+                                           "2022-04-30", "2022-02-28",
+                                           "2022-05-01", "2022-04-25",
+                                           "2022-06-29", "2022-04-25",
+                                           "2022-07-01", "2022-06-27",
+                                           "2022-08-28", "2022-06-27",
+                                           "2022-08-29", "2022-08-29");
+        tests.forEach((now, expectedVersion) -> {
             Instant instant = LocalDate.parse(now).atStartOfDay().toInstant(ZoneOffset.UTC);
             LocalDate dateOfWantedVersion = OsUpgradeScheduler.CalendarVersionedRelease.dateOfWantedVersion(instant);
-            assertEquals("scheduled wanted version at " + now, LocalDate.parse(expected), dateOfWantedVersion);
+            assertEquals("scheduled wanted version at " + now, LocalDate.parse(expectedVersion), dateOfWantedVersion);
         });
     }
 
