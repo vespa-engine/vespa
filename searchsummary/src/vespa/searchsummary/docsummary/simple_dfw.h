@@ -6,6 +6,10 @@
 
 namespace search::docsummary {
 
+/*
+ * Abstract class for writing document summaries that don't need
+ * access to a document retrieved from IDocsumStore.
+ */
 class SimpleDFW : public DocsumFieldWriter
 {
 public:

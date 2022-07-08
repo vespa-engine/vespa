@@ -6,6 +6,9 @@
 
 namespace search::docsummary {
 
+/*
+ * Class for writing empty document summaries.
+ */
 class EmptyDFW : public SimpleDFW
 {
 public:

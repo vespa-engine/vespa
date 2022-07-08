@@ -8,6 +8,9 @@ namespace search::docsummary {
 
 class ResultConfig;
 
+/*
+ * Class for writing document summaries with content from another field.
+ */
 class CopyDFW : public DocsumFieldWriter
 {
 private:
