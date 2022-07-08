@@ -5,6 +5,7 @@
 #include "utils.h"
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/properties.h>
+#include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/util/stash.h>
 
 #include <vespa/log/log.h>
@@ -49,6 +50,9 @@ ConvertRawScoreToCloseness::execute(uint32_t docId)
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->getDocId() == docId) {
             feature_t converted = tfmd->getRawScore();
+            max_closeness = std::max(max_closeness, converted);
+        } else if (elem.calc) {
+            feature_t converted = elem.calc->calc_raw_score(docId);
             max_closeness = std::max(max_closeness, converted);
         }
     }

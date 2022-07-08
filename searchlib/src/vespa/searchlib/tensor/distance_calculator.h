@@ -42,6 +42,11 @@ public:
     const vespalib::eval::Value& query_tensor() const { return *_query_tensor; }
     const DistanceFunction& function() const { return *_dist_fun; }
 
+    double calc_raw_score(uint32_t docid) const {
+        double distance = _dist_fun->calc(_query_tensor_cells, _attr_tensor.extract_cells_ref(docid));
+        return _dist_fun->to_rawscore(distance);
+    }
+
     double calc_with_limit(uint32_t docid, double limit) const {
         return _dist_fun->calc_with_limit(_query_tensor_cells, _attr_tensor.extract_cells_ref(docid), limit);
     }

@@ -7,6 +7,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
@@ -57,6 +58,10 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->getDocId() == docId) {
             feature_t invdist = tfmd->getRawScore();
+            feature_t converted = (1.0 / invdist) - 1.0;
+            min_distance = std::min(min_distance, converted);
+        } else if (elem.calc) {
+            feature_t invdist = elem.calc->calc_raw_score(docId);
             feature_t converted = (1.0 / invdist) - 1.0;
             min_distance = std::min(min_distance, converted);
         }
