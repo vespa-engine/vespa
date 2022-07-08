@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
@@ -19,6 +19,7 @@ import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
 import com.yahoo.vespa.orchestrator.model.ApplicationApi;
 import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
+import com.yahoo.vespa.orchestrator.model.ContentService;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
@@ -99,7 +100,8 @@ public class OrchestratorImpl implements Orchestrator {
     {
         this(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
                                    clusterControllerClientFactory,
-                                   applicationApiFactory),
+                                   applicationApiFactory,
+                                   flagSource),
              clusterControllerClientFactory,
              statusService,
              serviceMonitor,
@@ -425,7 +427,7 @@ public class OrchestratorImpl implements Orchestrator {
                 ClusterControllerClient client = clusterControllerClientFactory.createClient(clusterControllers, cluster.clusterId().s());
                 for (ServiceInstance service : cluster.serviceInstances()) {
                     try {
-                        if ( ! client.trySetNodeState(context, service.hostName(), VespaModelUtil.getStorageNodeIndex(service.configId()), MAINTENANCE))
+                        if ( ! client.trySetNodeState(context, service.hostName(), VespaModelUtil.getStorageNodeIndex(service.configId()), MAINTENANCE, ContentService.STORAGE_NODE, false))
                             return false;
                     }
                     catch (Exception e) {

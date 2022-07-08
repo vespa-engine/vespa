@@ -5,6 +5,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
+import com.yahoo.vespa.orchestrator.model.ContentService;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 
 /**
@@ -19,7 +20,8 @@ public interface ClusterControllerClient {
      * @throws HostStateChangeDeniedException if operation fails, or is otherwise disallowed.
      */
     boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
-                            ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
+                            ClusterControllerNodeState wantedState, ContentService contentService, boolean force)
+            throws HostStateChangeDeniedException;
 
     /**
      * Requests that a cluster controller sets the requested node to the requested state.
@@ -27,7 +29,8 @@ public interface ClusterControllerClient {
      * @throws HostStateChangeDeniedException if operation fails, or is disallowed.
      */
     void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
-                      ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException;
+                      ClusterControllerNodeState wantedState, ContentService contentService, boolean force)
+            throws HostStateChangeDeniedException;
 
     /**
      * Requests that a cluster controller sets all nodes in the cluster to the requested state.

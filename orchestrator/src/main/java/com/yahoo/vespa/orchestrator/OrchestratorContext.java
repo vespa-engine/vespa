@@ -47,7 +47,7 @@ public class OrchestratorContext implements AutoCloseable {
     /** Create an OrchestratorContext for an operation on a single application. */
     public static OrchestratorContext createContextForSingleAppOp(Clock clock) {
         return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_SINGLE_OP),
-                false, false);
+                                       false, false);
     }
 
     public static OrchestratorContext createContextForAdminOp(Clock clock) {
