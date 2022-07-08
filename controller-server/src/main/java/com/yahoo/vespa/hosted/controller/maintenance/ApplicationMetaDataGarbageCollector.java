@@ -14,14 +14,17 @@ public class ApplicationMetaDataGarbageCollector extends ControllerMaintainer {
 
     private static final Logger log = Logger.getLogger(ApplicationMetaDataGarbageCollector.class.getName());
 
+    private final Duration timeToLive;
+
     public ApplicationMetaDataGarbageCollector(Controller controller, Duration interval) {
         super(controller, interval);
+        this.timeToLive = controller.system().isCd() ? Duration.ofDays(7) : Duration.ofDays(365);
     }
 
     @Override
     protected double maintain() {
         try {
-            controller().applications().applicationStore().pruneMeta(controller().clock().instant().minus(Duration.ofDays(365)));
+            controller().applications().applicationStore().pruneMeta(controller().clock().instant().minus(timeToLive));
             return 1.0;
         }
         catch (Exception e) {
