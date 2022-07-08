@@ -168,9 +168,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             } else {
                 query.trace(message, 2);
             }
-            int failed = alreadyFailedNodes.size();
-            askedNodes += failed;
-            answeredNodes += failed;
         }
     }
 
