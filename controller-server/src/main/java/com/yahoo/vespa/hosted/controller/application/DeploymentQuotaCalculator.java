@@ -33,9 +33,6 @@ public class DeploymentQuotaCalculator {
     }
 
     public static QuotaUsage calculateQuotaUsage(com.yahoo.vespa.hosted.controller.api.integration.configserver.Application application) {
-        // the .max() resources are only specified when the user has specified a max.  to make sure we enforce quotas
-        // correctly we retrieve the maximum of .current() and .max() - otherwise we would keep adding 0s for those
-        // that are not using autoscaling.
         var quotaUsageRate = application.clusters().values().stream()
                 .filter(cluster -> ! cluster.type().equals(ClusterSpec.Type.admin))
                 .map(cluster -> largestQuotaUsage(cluster.current(), cluster.max()))
@@ -45,9 +42,7 @@ public class DeploymentQuotaCalculator {
     }
 
     private static ClusterResources largestQuotaUsage(ClusterResources a, ClusterResources b) {
-        var usageA = a.nodes() * a.nodeResources().cost();
-        var usageB = b.nodes() * b.nodeResources().cost();
-        return usageA < usageB ? b : a;
+        return a.cost() > b.cost() ? a : b;
     }
 
     /** Just get the maximum quota we are allowed to use. */
