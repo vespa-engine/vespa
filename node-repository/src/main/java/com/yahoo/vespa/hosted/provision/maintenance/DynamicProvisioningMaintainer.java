@@ -12,7 +12,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.lang.MutableInteger;
-import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.JacksonFlag;
 import com.yahoo.vespa.flags.ListFlag;
@@ -77,16 +76,14 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
-            NodeList nodes = nodeRepository().nodes().list();
-            resumeProvisioning(nodes, lock);
-            convergeToCapacity(nodes);
-        }
+        NodeList nodes = nodeRepository().nodes().list();
+        resumeProvisioning(nodes);
+        convergeToCapacity(nodes);
         return 1.0;
     }
 
     /** Resume provisioning of already provisioned hosts and their children */
-    private void resumeProvisioning(NodeList nodes, Mutex lock) {
+    private void resumeProvisioning(NodeList nodes) {
         Map<String, Set<Node>> nodesByProvisionedParentHostname =
                 nodes.nodeType(NodeType.tenant, NodeType.config, NodeType.controller)
                      .asList()
@@ -97,9 +94,11 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         nodes.state(Node.State.provisioned).nodeType(NodeType.host, NodeType.confighost, NodeType.controllerhost).forEach(host -> {
             Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
             try {
-                List<Node> updatedNodes = hostProvisioner.provision(host, children);
-                verifyDns(updatedNodes);
-                nodeRepository().nodes().write(updatedNodes, lock);
+                try (var lock = nodeRepository().nodes().lockUnallocated()) {
+                    List<Node> updatedNodes = hostProvisioner.provision(host, children);
+                    verifyDns(updatedNodes);
+                    nodeRepository().nodes().write(updatedNodes, lock);
+                }
             } catch (IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.INFO, "Could not provision " + host.hostname() + " with " + children.size() + " children, will retry in " +
                                     interval() + ": " + Exceptions.toMessageString(e));
@@ -189,17 +188,12 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     private List<Node> candidatesForRemoval(List<Node> nodes) {
         Map<String, Node> hostsByHostname = new HashMap<>(nodes.stream()
-                .filter(node -> {
-                    switch (node.type()) {
-                        case host:
-                            // TODO: Mark empty tenant hosts as wanttoretire & wanttodeprovision elsewhere, then handle as confighost here
-                            return node.state() != Node.State.parked || node.status().wantToDeprovision();
-                        case confighost:
-                        case controllerhost:
-                            return node.state() == Node.State.parked && node.status().wantToDeprovision();
-                        default:
-                            return false;
-                    }
+                .filter(node -> switch (node.type()) {
+                    case host ->
+                        // TODO: Mark empty tenant hosts as wanttoretire & wanttodeprovision elsewhere, then handle as confighost here
+                        node.state() != Node.State.parked || node.status().wantToDeprovision();
+                    case confighost, controllerhost -> node.state() == Node.State.parked && node.status().wantToDeprovision();
+                    default -> false;
                 })
                 .collect(Collectors.toMap(Node::hostname, Function.identity())));
 
