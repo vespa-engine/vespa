@@ -63,6 +63,8 @@ public class NodeRepositoryNode {
     private String currentOsVersion;
     @JsonProperty("wantedOsVersion")
     private String wantedOsVersion;
+    @JsonProperty("deferOsUpgrade")
+    private Boolean deferOsUpgrade;
     @JsonProperty("currentFirmwareCheck")
     private Long currentFirmwareCheck;
     @JsonProperty("wantedFirmwareCheck")
@@ -248,6 +250,14 @@ public class NodeRepositoryNode {
 
     public void setWantedVespaVersion(String wantedVespaVersion) {
         this.wantedVespaVersion = wantedVespaVersion;
+    }
+
+    public Boolean getDeferOsUpgrade() {
+        return deferOsUpgrade;
+    }
+
+    public void setDeferOsUpgrade(Boolean deferOsUpgrade) {
+        this.deferOsUpgrade = deferOsUpgrade;
     }
 
     public Integer getFailCount() {
@@ -441,12 +451,13 @@ public class NodeRepositoryNode {
 
     // --- end
 
+
     @Override
     public String toString() {
         return "NodeRepositoryNode{" +
                "url='" + url + '\'' +
                ", id='" + id + '\'' +
-               ", state=" + state +
+               ", state='" + state + '\'' +
                ", hostname='" + hostname + '\'' +
                ", ipAddresses=" + ipAddresses +
                ", additionalIpAddresses=" + additionalIpAddresses +
@@ -464,11 +475,12 @@ public class NodeRepositoryNode {
                ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
                ", currentOsVersion='" + currentOsVersion + '\'' +
                ", wantedOsVersion='" + wantedOsVersion + '\'' +
+               ", deferOsUpgrade=" + deferOsUpgrade +
                ", currentFirmwareCheck=" + currentFirmwareCheck +
                ", wantedFirmwareCheck=" + wantedFirmwareCheck +
                ", failCount=" + failCount +
-               ", environment=" + environment +
-               ", type=" + type +
+               ", environment='" + environment + '\'' +
+               ", type='" + type + '\'' +
                ", wantedDockerImage='" + wantedDockerImage + '\'' +
                ", currentDockerImage='" + currentDockerImage + '\'' +
                ", parentHostname='" + parentHostname + '\'' +
