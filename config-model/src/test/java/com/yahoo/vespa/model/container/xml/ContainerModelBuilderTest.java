@@ -198,10 +198,10 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     public void builtin_handlers_get_default_threadpool() {
         createBasicContainerModel();
 
-        Handler<?> h1 = getHandler("default", ApplicationStatusHandler.class.getName());
+        Handler h1 = getHandler("default", ApplicationStatusHandler.class.getName());
         assertTrue(h1.getInjectedComponentIds().contains("threadpool@default-handler-common"));
 
-        Handler<?> h2 = getHandler("default", BindingsOverviewHandler.class.getName());
+        Handler h2 = getHandler("default", BindingsOverviewHandler.class.getName());
         assertTrue(h2.getInjectedComponentIds().contains("threadpool@default-handler-common"));
     }
 

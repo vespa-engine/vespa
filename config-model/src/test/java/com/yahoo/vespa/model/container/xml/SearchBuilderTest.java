@@ -53,7 +53,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
 
         GUIHandler guiHandler = null;
-        for (Handler<?> handler : cluster.getHandlers()) {
+        for (Handler handler : cluster.getHandlers()) {
             if (handler instanceof GUIHandler) {
                 guiHandler = (GUIHandler) handler;
             }
@@ -230,7 +230,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         createModel(root, clusterElem);
 
-        Handler<?> searchHandler = getHandler("default", SearchHandler.HANDLER_CLASS);
+        Handler searchHandler = getHandler("default", SearchHandler.HANDLER_CLASS);
         assertTrue(searchHandler.getInjectedComponentIds().contains("threadpool@search-handler"));
 
         ContainerThreadpoolConfig config = root.getConfig(

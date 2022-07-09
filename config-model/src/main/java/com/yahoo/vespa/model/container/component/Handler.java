@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
@@ -20,7 +19,7 @@ import java.util.Set;
  *
  * @author gjoranv
  */
-public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<CHILD, ComponentModel> {
+public class Handler extends Component<Component<?, ?>, ComponentModel> {
 
     private final Set<BindingPattern> serverBindings = new LinkedHashSet<>();
     private final List<BindingPattern> clientBindings = new ArrayList<>();
@@ -31,22 +30,21 @@ public class Handler<CHILD extends AbstractConfigProducer<?>> extends Component<
         this(model, null);
     }
 
-    @SuppressWarnings("unchecked")
     public Handler(ComponentModel model, ContainerThreadpool threadpool) {
         super(model);
 
         // The default threadpool is always added to the cluster, so cannot be added here.
         if (threadpool != null) {
             hasCustomThreadPool = true;
-            addComponent((CHILD) threadpool);
+            addComponent(threadpool);
             inject(threadpool);
         } else {
             hasCustomThreadPool = false;
         }
     }
 
-    public static Handler<AbstractConfigProducer<?>> fromClassName(String className) {
-        return new Handler<>(new ComponentModel(className, null, null, null));
+    public static Handler fromClassName(String className) {
+        return new Handler(new ComponentModel(className, null, null, null));
     }
 
     public void addServerBindings(BindingPattern... bindings) {

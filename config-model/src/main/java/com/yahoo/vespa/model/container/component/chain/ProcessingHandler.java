@@ -4,8 +4,6 @@ package com.yahoo.vespa.model.container.component.chain;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
-import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
 import com.yahoo.vespa.model.container.component.Handler;
 
@@ -16,7 +14,7 @@ import com.yahoo.vespa.model.container.component.Handler;
  * @author gjoranv
  */
 public class ProcessingHandler<CHAINS extends Chains<?>>
-        extends Handler<AbstractConfigProducer<?>>
+        extends Handler
         implements ChainsConfig.Producer {
 
     public static final String PROCESSING_HANDLER_CLASS = "com.yahoo.processing.handler.ProcessingHandler";

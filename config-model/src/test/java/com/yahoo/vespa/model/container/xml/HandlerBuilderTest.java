@@ -96,7 +96,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
     public void custom_handler_gets_default_threadpool() {
         createClusterWithJDiscHandler();
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
-        Handler<?> handler = cluster.getHandlers().stream()
+        Handler handler = cluster.getHandlers().stream()
                 .filter(h -> h.getComponentId().toString().equals("discHandler"))
                 .findAny().orElseThrow();
 
