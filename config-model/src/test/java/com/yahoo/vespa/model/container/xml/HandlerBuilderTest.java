@@ -52,7 +52,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
                 "</container>");
 
         createModel(root, clusterElem);
-        Component<?,?> handler = getContainerComponent("default", "myHandler");
+        Component<?,?> handler = getComponent("default", "myHandler");
         assertThat(handler.getInjectedComponentIds(), hasItem("injected@myHandler"));
     }
 
@@ -67,7 +67,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
         createModel(root, clusterElem);
 
         // The handler is still set up.
-        ComponentsConfig.Components userRootHandler = getComponent(componentsConfig(), BindingsOverviewHandler.class.getName());
+        ComponentsConfig.Components userRootHandler = getComponentInConfig(componentsConfig(), BindingsOverviewHandler.class.getName());
         assertNotNull(userRootHandler);
 
         // .. but it has no bindings

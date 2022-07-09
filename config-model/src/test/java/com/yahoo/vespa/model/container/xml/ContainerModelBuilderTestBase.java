@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.ContainerSearch;
 import org.junit.Before;
 import org.w3c.dom.Element;
@@ -94,7 +95,7 @@ public abstract class ContainerModelBuilderTestBase {
         return root.getConfig(ComponentsConfig.class, "default");
     }
 
-    protected ComponentsConfig.Components getComponent(ComponentsConfig componentsConfig, String id) {
+    protected ComponentsConfig.Components getComponentInConfig(ComponentsConfig componentsConfig, String id) {
         for (ComponentsConfig.Components component : componentsConfig.components()) {
             if (component.id().equals(id))
                 return component;
@@ -106,9 +107,16 @@ public abstract class ContainerModelBuilderTestBase {
         return (ApplicationContainerCluster) root.getChildren().get(clusterId);
     }
 
-    public Component<?, ?> getContainerComponent(String clusterId, String componentId) {
+    public Component<?, ?> getComponent(String clusterId, String componentId) {
         return getContainerCluster(clusterId).getComponentsMap().get(
                 ComponentId.fromString(componentId));
+    }
+
+    public Handler<?> getHandler(String clusterId, String componentId) {
+        Component<?,?> component = getComponent(clusterId, componentId);
+        if (! (component instanceof Handler<?>))
+            throw new RuntimeException("Component is not a handler: " + componentId);
+        return (Handler<?>) component;
     }
 
     void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
