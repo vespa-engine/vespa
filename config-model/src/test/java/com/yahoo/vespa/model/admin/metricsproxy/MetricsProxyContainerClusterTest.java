@@ -70,7 +70,7 @@ public class MetricsProxyContainerClusterTest {
     @Test
     public void http_handlers_are_set_up() {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
-        Collection<Handler<?>> handlers = model.getAdmin().getMetricsProxyCluster().getHandlers();
+        Collection<Handler> handlers = model.getAdmin().getMetricsProxyCluster().getHandlers();
         Collection<ComponentSpecification> handlerClasses = handlers.stream().map(Component::getClassId).collect(toList());
 
         assertTrue(handlerClasses.contains(ComponentSpecification.fromString(MetricsV1Handler.class.getName())));

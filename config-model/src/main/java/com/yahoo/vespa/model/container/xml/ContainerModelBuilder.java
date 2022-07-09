@@ -222,7 +222,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
         if (deployState.zone().system().isPublic()) {
             BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
-            Handler<AbstractConfigProducer<?>> handler = new Handler<>(
+            Handler handler = new Handler(
                     new ComponentModel("com.yahoo.jdisc.cloud.aws.AwsParameterStoreValidationHandler", null, "jdisc-cloud-aws", null));
             handler.addServerBindings(bindingPattern);
             cluster.addComponent(handler);
@@ -897,7 +897,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
-        Handler<?> guiHandler = new GUIHandler();
+        Handler guiHandler = new GUIHandler();
         guiHandler.addServerBindings(SystemBindingPattern.fromHttpPath(GUIHandler.BINDING_PATH));
         cluster.addComponent(guiHandler);
     }

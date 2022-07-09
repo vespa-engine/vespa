@@ -118,7 +118,7 @@ public class ClusterControllerContainer extends Container implements
                          ZOOKEEPER_SERVER_BUNDLE);
     }
 
-    private void addHandler(Handler<?> h, String path) {
+    private void addHandler(Handler h, String path) {
         h.addServerBindings(SystemBindingPattern.fromHttpPath(path));
         super.addHandler(h);
     }
@@ -138,7 +138,7 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void addHandler(String id, String className, String path, ComponentSpecification bundle) {
-        addHandler(new Handler<>(createComponentModel(id, className, bundle)), path);
+        addHandler(new Handler(createComponentModel(id, className, bundle)), path);
     }
 
     private ReindexingContext reindexingContext() {

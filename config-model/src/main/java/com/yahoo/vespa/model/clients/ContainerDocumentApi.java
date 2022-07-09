@@ -1,7 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.clients;
 
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -60,11 +59,11 @@ public class ContainerDocumentApi {
 
     public boolean ignoreUndefinedFields() { return ignoreUndefinedFields; }
 
-    private static Handler<AbstractConfigProducer<?>> newVespaClientHandler(String componentId,
-                                                                            String bindingSuffix,
-                                                                            HandlerOptions handlerOptions,
-                                                                            Threadpool executor) {
-        Handler<AbstractConfigProducer<?>> handler = createHandler(componentId, executor);
+    private static Handler newVespaClientHandler(String componentId,
+                                                 String bindingSuffix,
+                                                 HandlerOptions handlerOptions,
+                                                 Threadpool executor) {
+        Handler handler = createHandler(componentId, executor);
         if (handlerOptions.bindings.isEmpty()) {
             handler.addServerBindings(
                     SystemBindingPattern.fromHttpPath(bindingSuffix),
@@ -80,8 +79,8 @@ public class ContainerDocumentApi {
         return handler;
     }
 
-    private static Handler<AbstractConfigProducer<?>> createHandler(String className, Threadpool executor) {
-        return new Handler<>(new ComponentModel(className, null, "vespaclient-container-plugin"),
+    private static Handler createHandler(String className, Threadpool executor) {
+        return new Handler(new ComponentModel(className, null, "vespaclient-container-plugin"),
                              executor);
     }
 

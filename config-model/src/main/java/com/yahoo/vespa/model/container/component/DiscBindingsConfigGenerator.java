@@ -14,16 +14,16 @@ import static java.util.stream.Collectors.toList;
  */
 public class DiscBindingsConfigGenerator {
 
-    public static Map<String, Handlers.Builder> generate(Collection<? extends Handler<?>> handlers) {
+    public static Map<String, Handlers.Builder> generate(Collection<? extends Handler> handlers) {
         Map<String, Handlers.Builder> handlerBuilders = new LinkedHashMap<>();
 
-        for (Handler<?> handler : handlers) {
+        for (Handler handler : handlers) {
             handlerBuilders.putAll(generate(handler));
         }
         return handlerBuilders;
     }
 
-    public static <T extends Handler<?>> Map<String, Handlers.Builder> generate(T handler) {
+    public static <T extends Handler> Map<String, Handlers.Builder> generate(T handler) {
         if (handler.getServerBindings().isEmpty() && handler.getClientBindings().isEmpty())
             return Collections.emptyMap();
 

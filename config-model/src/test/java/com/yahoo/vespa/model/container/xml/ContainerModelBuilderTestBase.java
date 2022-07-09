@@ -112,11 +112,11 @@ public abstract class ContainerModelBuilderTestBase {
                 ComponentId.fromString(componentId));
     }
 
-    public Handler<?> getHandler(String clusterId, String componentId) {
+    public Handler getHandler(String clusterId, String componentId) {
         Component<?,?> component = getComponent(clusterId, componentId);
-        if (! (component instanceof Handler<?>))
+        if (! (component instanceof Handler))
             throw new RuntimeException("Component is not a handler: " + componentId);
-        return (Handler<?>) component;
+        return (Handler) component;
     }
 
     void assertComponentConfigured(ApplicationContainerCluster cluster, String componentId) {
