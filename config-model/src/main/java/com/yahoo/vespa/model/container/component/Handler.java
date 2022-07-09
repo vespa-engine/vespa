@@ -17,8 +17,6 @@ import java.util.Set;
  * Models a jdisc RequestHandler (including ClientProvider).
  * RequestHandlers always have at least one server binding,
  * while ClientProviders have at least one client binding.
- * <p>
- * Note that this is also used to model vespa handlers (which do not have any bindings)
  *
  * @author gjoranv
  */
