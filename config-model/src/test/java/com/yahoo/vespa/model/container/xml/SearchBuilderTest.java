@@ -230,12 +230,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         createModel(root, clusterElem);
 
-        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
-        Handler<?> searchHandler = cluster.getHandlers().stream()
-                .filter(h -> h.getComponentId().toString().equals(SearchHandler.HANDLER_CLASS))
-                .findAny()
-                .get();
-
+        Handler<?> searchHandler = getHandler("default", SearchHandler.HANDLER_CLASS);
         assertTrue(searchHandler.getInjectedComponentIds().contains("threadpool@search-handler"));
 
         ContainerThreadpoolConfig config = root.getConfig(

@@ -21,6 +21,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
+import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
@@ -266,7 +267,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void processingHandler_is_instantiated_from_the_default_bundle() {
         createClusterWithProcessingAndSearchChains();
-        ComponentsConfig.Components config = getComponent(componentsConfig(), PROCESSING_HANDLER_CLASS);
+        ComponentsConfig.Components config = getComponentInConfig(componentsConfig(), PROCESSING_HANDLER_CLASS);
         assertEquals(PROCESSING_HANDLER_CLASS, config.bundle());
     }
 
