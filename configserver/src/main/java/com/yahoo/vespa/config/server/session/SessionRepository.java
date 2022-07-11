@@ -441,6 +441,9 @@ public class SessionRepository {
 
     void activate(RemoteSession session) {
         long sessionId = session.getSessionId();
+        // Might need to create local session first
+        createLocalSessionFromDistributedApplicationPackage(sessionId);
+
         CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
         log.log(Level.FINE, () -> session.logPre() + "Activating " + sessionId);
         applicationRepo.activateApplication(ensureApplicationLoaded(session), sessionId);
@@ -462,6 +465,9 @@ public class SessionRepository {
     }
 
     void prepareRemoteSession(RemoteSession session) {
+        // Might need to create local session first
+        createLocalSessionFromDistributedApplicationPackage(session.getSessionId());
+
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
         CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
         ensureApplicationLoaded(session);

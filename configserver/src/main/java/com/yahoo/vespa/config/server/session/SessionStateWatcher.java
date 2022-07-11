@@ -54,11 +54,9 @@ public class SessionStateWatcher {
                 sessionRepository.deactivateAndUpdateCache(session);
                 break;
             case PREPARE:
-                createLocalSession(sessionId);
                 sessionRepository.prepareRemoteSession(session);
                 break;
             case ACTIVATE:
-                createLocalSession(sessionId);
                 sessionRepository.activate(session);
                 break;
             case DEACTIVATE:
@@ -67,10 +65,6 @@ public class SessionStateWatcher {
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
         }
-    }
-
-    private void createLocalSession(long sessionId) {
-        sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
     }
 
     public long getSessionId() {
