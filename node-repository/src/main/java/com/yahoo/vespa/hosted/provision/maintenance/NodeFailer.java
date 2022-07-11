@@ -274,8 +274,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             }
         }
 
-        // In a dynamically provisioned zone the failing of the first child may require a new host to be provisioned,
-        // so failActive() may take a long time to complete, but the remaining children should be fast.
+        // In a dynamically provisioned zone the failing of an active child node takes ~10 minutes,
+        // so perhaps this should be done in parallel.
         activeChildrenToFail.forEach(this::failActive);
 
         return false;
