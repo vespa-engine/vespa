@@ -91,8 +91,10 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     public void nonexisting_fields_can_be_ignored() {
         Element elem = DomBuilderTest.parse(
                 "<container id='cluster1' version='1.0'>",
-                "  <document-api ignore-undefined-fields='true' />",
+                "  <document-api>" +
+                "    <ignore-undefined-fields>true</ignore-undefined-fields>" +
                 nodesXml,
+                "  </document-api>" +
                 "</container>");
         ContainerModel model = createModel(root, elem).get(0);
 
