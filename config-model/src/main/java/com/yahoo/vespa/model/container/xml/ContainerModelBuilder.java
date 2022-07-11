@@ -928,8 +928,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (documentApiElement == null) return null;
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
+        Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");
         return new ContainerDocumentApi(cluster, documentApiOptions,
-                                        documentApiElement.getAttribute("ignore-undefined-fields").equals("true"));
+                                        "true".equals(XML.getValue(ignoreUndefinedFields)));
     }
 
     private ContainerDocproc buildDocproc(DeployState deployState, ApplicationContainerCluster cluster, Element spec) {
