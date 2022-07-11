@@ -457,16 +457,6 @@ public class NodeFailerTest {
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
 
-        assertEquals(2, tester.deployer.redeployments);
-        assertEquals(3, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-        assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
-        assertEquals(10, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
-        assertEquals(7, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
-        assertEquals(0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
-
-        // The failing of the host is deferred to the next maintain
-        tester.runMaintainers();
-
         assertEquals(2 + 1, tester.deployer.redeployments);
         assertEquals(3, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
@@ -505,7 +495,6 @@ public class NodeFailerTest {
         tester.clock.advance(Duration.ofMinutes(90));
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        tester.runMaintainers();  // The host is failed in the 2. maintain()
 
         assertEquals(5 + 2, tester.deployer.redeployments);
         assertEquals(7, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
@@ -598,7 +587,7 @@ public class NodeFailerTest {
 
     @Test
     public void node_failing_throttle() {
-        // Throttles based on an absolute number in small zone
+        // Throttles based on a absolute number in small zone
         {
             // 10 hosts with 3 tenant nodes each, total 40 nodes
             NodeFailTester tester = NodeFailTester.withTwoApplications(10);
@@ -606,12 +595,13 @@ public class NodeFailerTest {
 
             // 3 hosts fail. 2 of them and all of their children are allowed to fail
             List<Node> failedHosts = hosts.asList().subList(0, 3);
-            failedHosts.forEach(host -> tester.serviceMonitor.setHostDown(host.hostname()));
+            failedHosts.forEach(host -> {
+                tester.serviceMonitor.setHostDown(host.hostname());
+            });
             tester.runMaintainers();
             tester.clock.advance(Duration.ofMinutes(61));
 
             tester.runMaintainers();
-            tester.runMaintainers();  // hosts are typically failed in the 2. maintain()
             assertEquals(2 + /* hosts */
                          (2 * 3) /* containers per host */,
                          tester.nodeRepository.nodes().list(Node.State.failed).size());
@@ -630,7 +620,6 @@ public class NodeFailerTest {
             // The final host and its containers are failed out
             tester.clock.advance(Duration.ofMinutes(30));
             tester.runMaintainers();
-            tester.runMaintainers();  // hosts are failed in the 2. maintain()
             assertEquals(12, tester.nodeRepository.nodes().list(Node.State.failed).size());
             assertEquals("Throttling is not indicated by the metric, as no throttled attempt is made", 0, tester.metric.values.get(NodeFailer.throttlingActiveMetric));
             assertEquals("No throttled node failures", 0, tester.metric.values.get(NodeFailer.throttledNodeFailuresMetric));
@@ -735,8 +724,7 @@ public class NodeFailerTest {
                 .map(Map.Entry::getKey)
                 .flatMap(parentHost -> Stream.of(parentHost.get()))
                 .filter(node -> ! exceptSet.contains(node))
-                .findFirst()
-                .orElseThrow();
+                .findFirst().get();
     }
 
 }
