@@ -344,10 +344,10 @@ public class SessionRepository {
     public RemoteSession createRemoteSession(long sessionId) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         RemoteSession session = new RemoteSession(tenantName, sessionId, sessionZKClient);
-        RemoteSession newSession = loadSessionIfActive(session).orElse(session);
-        remoteSessionCache.put(sessionId, newSession);
-        updateSessionStateWatcher(sessionId, newSession);
-        return newSession;
+        loadSessionIfActive(session);
+        remoteSessionCache.put(sessionId, session);
+        updateSessionStateWatcher(sessionId, session);
+        return session;
     }
 
     public int deleteExpiredRemoteSessions(Clock clock, Duration expiryTime) {
@@ -388,7 +388,7 @@ public class SessionRepository {
     }
 
     private boolean sessionHasExpired(Instant created, Duration expiryTime, Clock clock) {
-        return (created.plus(expiryTime).isBefore(clock.instant()));
+        return created.plus(expiryTime).isBefore(clock.instant());
     }
 
     private List<Long> getSessionListFromDirectoryCache(List<ChildData> children) {
@@ -449,17 +449,16 @@ public class SessionRepository {
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
-    private Optional<RemoteSession> loadSessionIfActive(RemoteSession session) {
+    private void loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             Optional<Long> activeSession = applicationRepo.activeSessionOf(applicationId);
             if (activeSession.isPresent() && activeSession.get() == session.getSessionId()) {
                 log.log(Level.FINE, () -> "Found active application for session " + session.getSessionId() + " , loading it");
                 applicationRepo.activateApplication(ensureApplicationLoaded(session), session.getSessionId());
                 log.log(Level.INFO, session.logPre() + "Application activated successfully: " + applicationId + " (generation " + session.getSessionId() + ")");
-                return Optional.ofNullable(remoteSessionCache.get(session.getSessionId()));
+                return;
             }
         }
-        return Optional.empty();
     }
 
     void prepareRemoteSession(RemoteSession session) {
