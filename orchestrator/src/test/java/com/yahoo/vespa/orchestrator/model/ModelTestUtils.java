@@ -80,9 +80,9 @@ class ModelTestUtils {
             mock(Metric.class),
             new TestTimer(),
             new DummyAntiServiceMonitor());
-    private final Orchestrator orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, Zone.defaultZone()),
-                                                                                         clusterControllerClientFactory,
-                                                                                         applicationApiFactory()),
+    private final HostedVespaClusterPolicy clusterPolicy = new HostedVespaClusterPolicy(flagSource, Zone.defaultZone());
+    private final HostedVespaPolicy policy = new HostedVespaPolicy(clusterPolicy, clusterControllerClientFactory, applicationApiFactory(), flagSource);
+    private final Orchestrator orchestrator = new OrchestratorImpl(policy,
                                                                    clusterControllerClientFactory,
                                                                    statusService,
                                                                    serviceMonitor,

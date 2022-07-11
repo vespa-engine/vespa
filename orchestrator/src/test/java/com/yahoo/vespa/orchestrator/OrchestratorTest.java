@@ -57,7 +57,8 @@ public class OrchestratorTest {
         var timer = new TestTimer();
         var clustercontroller = new ClusterControllerClientFactoryMock();
         var applicationApiFactory = new ApplicationApiFactory(3, 5, timer.toUtcClock());
-        var policy = new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone), clustercontroller, applicationApiFactory);
+        var clusterPolicy = new HostedVespaClusterPolicy(flagSource, zone);
+        var policy = new HostedVespaPolicy(clusterPolicy, clustercontroller, applicationApiFactory, flagSource);
         var zone = new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-east-1"));
         this.superModelManager = new MySuperModelProvider();
         var duperModel = new DuperModel();

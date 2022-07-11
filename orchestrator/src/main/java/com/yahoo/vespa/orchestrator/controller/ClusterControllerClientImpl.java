@@ -18,6 +18,7 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
+import com.yahoo.vespa.orchestrator.model.ContentService;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
 import com.yahoo.yolean.Exceptions;
@@ -53,14 +54,16 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
     }
 
     private boolean setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
-                              ClusterControllerNodeState wantedState, boolean throwOnFailure) {
+                                 ClusterControllerNodeState wantedState, ContentService contentService,
+                                 Condition condition, boolean throwOnFailure) {
         try {
             ClusterControllerClientTimeouts timeouts = context.getClusterControllerTimeouts();
             Inspector response = client.send(strategy(hosts), Method.POST)
-                                       .at("cluster", "v2", clusterName, "storage", Integer.toString(storageNodeIndex))
+                                       .at("cluster", "v2", clusterName, contentService.nameInClusterController(),
+                                           Integer.toString(storageNodeIndex))
                                        .deadline(timeouts.readBudget())
                                        .parameters(() -> deadline(timeouts))
-                                       .body(stateChangeRequestBytes(wantedState, Condition.SAFE, context.isProbe()))
+                                       .body(stateChangeRequestBytes(wantedState, condition, context.isProbe()))
                                        .throwing(retryOnRedirect)
                                        .read(SlimeUtils::jsonToSlime).get();
             if ( ! response.field("wasModified").asBool()) {
@@ -99,13 +102,17 @@ public class ClusterControllerClientImpl implements ClusterControllerClient {
     }
 
     @Override
-    public boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException {
-        return setNodeState(context, host, storageNodeIndex, wantedState, false);
+    public boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
+                                   ClusterControllerNodeState wantedState, ContentService contentService, boolean force)
+            throws HostStateChangeDeniedException {
+        return setNodeState(context, host, storageNodeIndex, wantedState, contentService, force ? Condition.FORCE : Condition.SAFE, false);
     }
 
     @Override
-    public void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) throws HostStateChangeDeniedException {
-        setNodeState(context, host, storageNodeIndex, wantedState, true);
+    public void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex,
+                             ClusterControllerNodeState wantedState, ContentService contentService, boolean force)
+            throws HostStateChangeDeniedException {
+        setNodeState(context, host, storageNodeIndex, wantedState, contentService, force ? Condition.FORCE : Condition.SAFE, true);
     }
 
     @Override

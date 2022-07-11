@@ -3,6 +3,10 @@ package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
@@ -30,13 +34,16 @@ public class HostedVespaPolicy implements Policy {
     private final HostedVespaClusterPolicy clusterPolicy;
     private final ClusterControllerClientFactory clusterControllerClientFactory;
     private final ApplicationApiFactory applicationApiFactory;
+    private final BooleanFlag keepStorageNodeUpFlag;
 
     public HostedVespaPolicy(HostedVespaClusterPolicy clusterPolicy,
                              ClusterControllerClientFactory clusterControllerClientFactory,
-                             ApplicationApiFactory applicationApiFactory) {
+                             ApplicationApiFactory applicationApiFactory,
+                             FlagSource flagSource) {
         this.clusterPolicy = clusterPolicy;
         this.clusterControllerClientFactory = clusterControllerClientFactory;
         this.applicationApiFactory = applicationApiFactory;
+        this.keepStorageNodeUpFlag = Flags.KEEP_STORAGE_NODE_UP.bindTo(flagSource);
     }
 
     @Override
@@ -52,7 +59,7 @@ public class HostedVespaPolicy implements Policy {
         // Ask Cluster Controller to set storage nodes in maintenance, unless the node is already allowed
         // to be down (or permanently down) in case they are guaranteed to be in maintenance already.
         for (StorageNode storageNode : application.getNoRemarksStorageNodesInGroupInClusterOrder()) {
-            storageNode.setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
+            storageNode.setStorageNodeState(context, ClusterControllerNodeState.MAINTENANCE);
         }
 
         // Ensure all nodes in the group are marked as allowed to be down
@@ -68,7 +75,7 @@ public class HostedVespaPolicy implements Policy {
             throws HostStateChangeDeniedException {
         // Always defer to Cluster Controller whether it's OK to resume storage node
         for (StorageNode storageNode : application.getSuspendedStorageNodesInGroupInReverseClusterOrder()) {
-            storageNode.setNodeState(context, ClusterControllerNodeState.UP);
+            storageNode.setStorageNodeState(context, ClusterControllerNodeState.UP);
         }
 
         // In particular, we're not modifying the state of PERMANENTLY_DOWN nodes.
@@ -94,10 +101,18 @@ public class HostedVespaPolicy implements Policy {
             clusterPolicy.verifyGroupGoingDownPermanentlyIsFine(cluster);
         }
 
-        // Ask Cluster Controller to set storage nodes to DOWN.
-        // These storage nodes are guaranteed to be NO_REMARKS
+        boolean keepStorageNodeUp = keepStorageNodeUpFlag
+                .with(FetchVector.Dimension.APPLICATION_ID, applicationApi.applicationId().serializedForm())
+                .value();
+
+        // Get permission from the Cluster Controller to remove the content nodes.
         for (StorageNode storageNode : applicationApi.getStorageNodesInGroupInClusterOrder()) {
-            storageNode.setNodeState(context, ClusterControllerNodeState.DOWN);
+            if (keepStorageNodeUp) {
+                storageNode.setStorageNodeState(context.createSubcontextForSingleAppOp(true), ClusterControllerNodeState.DOWN);
+                storageNode.forceDistributorState(context, ClusterControllerNodeState.DOWN);
+            } else {
+                storageNode.setStorageNodeState(context, ClusterControllerNodeState.DOWN);
+            }
         }
 
         // Ensure all nodes in the group are marked as permanently down

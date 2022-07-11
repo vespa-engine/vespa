@@ -74,7 +74,7 @@ findhost
 
 # END environment bootstrap section
 
-set -euo pipefail
+set -uo pipefail
 
 if (( $# != 1 )); then
   echo "Usage: $0 <service-name-or-config-id>" >&2

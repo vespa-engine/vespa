@@ -7,6 +7,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/fef/matchdata.h>
+#include <vespa/searchlib/tensor/distance_calculator.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/stash.h>
@@ -37,13 +38,13 @@ public:
 };
 
 ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, uint32_t fieldId)
-  : _bundle(env, fieldId),
+  : _bundle(env, fieldId, "distance"),
     _md(nullptr)
 {
 }
 
 ConvertRawscoreToDistance::ConvertRawscoreToDistance(const fef::IQueryEnvironment &env, const vespalib::string &label)
-  : _bundle(env, label),
+  : _bundle(env, label, "distance"),
     _md(nullptr)
 {
 }
@@ -57,6 +58,10 @@ ConvertRawscoreToDistance::execute(uint32_t docId)
         const TermFieldMatchData *tfmd = _md->resolveTermField(elem.handle);
         if (tfmd->getDocId() == docId) {
             feature_t invdist = tfmd->getRawScore();
+            feature_t converted = (1.0 / invdist) - 1.0;
+            min_distance = std::min(min_distance, converted);
+        } else if (elem.calc) {
+            feature_t invdist = elem.calc->calc_raw_score(docId);
             feature_t converted = (1.0 / invdist) - 1.0;
             min_distance = std::min(min_distance, converted);
         }
@@ -231,6 +236,17 @@ DistanceBlueprint::setup(const IIndexEnvironment & env,
         LOG(error, "field '%s' must be an attribute for rank feature %s\n", arg.c_str(), getName().c_str());
     }
     return false;
+}
+
+void
+DistanceBlueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjectStore& store) const
+{
+    if (_use_nns_tensor) {
+        DistanceCalculatorBundle::prepare_shared_state(env, store, _attr_id, "distance");
+    }
+    if (_use_item_label) {
+        DistanceCalculatorBundle::prepare_shared_state(env, store, _arg_string, "distance");
+    }
 }
 
 FeatureExecutor &

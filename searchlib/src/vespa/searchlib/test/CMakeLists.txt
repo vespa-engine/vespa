@@ -13,6 +13,7 @@ vespa_add_library(searchlib_test
     $<TARGET_OBJECTS:searchlib_test_gtest_migration>
     DEPENDS
     searchlib
+    searchlib_searchlib_test_features
     searchlib_searchlib_test_memoryindex
     GTest::GTest
 )

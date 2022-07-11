@@ -1,7 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.builder.xml.dom;
 
-import com.yahoo.config.model.ConfigModelContext.ApplicationType;
+import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -17,6 +17,7 @@ import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerC
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder.DomConfigProducerBuilder;
 import com.yahoo.vespa.model.container.Container;
 import org.w3c.dom.Element;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -31,16 +32,19 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
     private static final String ATTRIBUTE_CLUSTER_CONTROLLER_STANDALONE_ZK = "standalone-zookeeper";
 
-    public DomAdminV2Builder(ApplicationType applicationType, boolean multiTenant, List<ConfigServerSpec> configServerSpecs) {
-        super(applicationType, multiTenant, configServerSpecs);
+    public DomAdminV2Builder(ConfigModelContext.ApplicationType applicationType,
+                             boolean multitenant,
+                             List<ConfigServerSpec> configServerSpecs) {
+        super(applicationType, multitenant, configServerSpecs);
     }
 
     @Override
     protected void doBuildAdmin(DeployState deployState, Admin admin, Element adminE) {
+        List<Configserver> configservers = parseConfigservers(deployState, admin, adminE);
         admin.setLogserver(parseLogserver(deployState, admin, adminE));
-        admin.addConfigservers(parseConfigServers(deployState, admin, adminE));
+        admin.addConfigservers(configservers);
         admin.addSlobroks(getSlobroks(deployState, admin, XML.getChild(adminE, "slobroks")));
-        if (admin.multiTenant()) {
+        if (admin.multitenant()) {
             if (deployState.isHosted() && XML.getChild(adminE, "cluster-controllers") != null)
                 throw new IllegalArgumentException("Cluster controllers cannot be specified in hosted Vespa, please remove <cluster-controllers> element");
         } else {
@@ -49,25 +53,27 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         addLogForwarders(new ModelElement(adminE).child("logforwarding"), admin);
     }
 
-    private List<Configserver> parseConfigServers(DeployState deployState, Admin admin, Element adminE) {
-        List<Configserver> configServers = multiTenant
-                ? getConfigServersFromSpec(deployState, admin)
-                : getConfigServers(deployState, admin, adminE);
-
-        if (configServers.isEmpty() && !multiTenant)
-            configServers = createSingleConfigServer(deployState, admin);
-        if (configServers.size() % 2 == 0)
+    private List<Configserver> parseConfigservers(DeployState deployState, Admin admin, Element adminE) {
+        List<Configserver> configservers;
+        if (multitenant)
+            configservers = getConfigServersFromSpec(deployState, admin);
+        else
+            configservers = getConfigServers(deployState, admin, adminE);
+        if (configservers.isEmpty() && ! multitenant)
+            configservers = createSingleConfigServer(deployState, admin);
+        if (configservers.size() % 2 == 0)
             deployState.getDeployLogger().logApplicationPackage(Level.WARNING,
-                                                                "An even number (" + configServers.size() +
+                                                                "An even number (" + configservers.size() +
                                                                 ") of config servers have been configured. " +
                                                                 "This is discouraged, see doc for configuration server ");
-        return configServers;
+        return configservers;
     }
 
     private Logserver parseLogserver(DeployState deployState, Admin admin, Element adminE) {
         Element logserverE = XML.getChild(adminE, "logserver");
-        if (logserverE == null)
+        if (logserverE == null) {
             logserverE = XML.getChild(adminE, "adminserver");
+        }
         return new LogserverBuilder().build(deployState, admin, logserverE);
     }
 
@@ -80,9 +86,10 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         List<Element> controllers = XML.getChildren(controllersElements, "cluster-controller");
         if (controllers.isEmpty()) return null;
 
-        boolean standaloneZooKeeper = "true".equals(controllersElements.getAttribute(ATTRIBUTE_CLUSTER_CONTROLLER_STANDALONE_ZK)) || multiTenant;
-        if (standaloneZooKeeper)
+        boolean standaloneZooKeeper = "true".equals(controllersElements.getAttribute(ATTRIBUTE_CLUSTER_CONTROLLER_STANDALONE_ZK)) || multitenant;
+        if (standaloneZooKeeper) {
             parent = new ClusterControllerCluster(parent, "standalone", deployState);
+        }
         var cluster = new ClusterControllerContainerCluster(parent,
                                                             "cluster-controllers",
                                                             "cluster-controllers",

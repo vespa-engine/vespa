@@ -5,5 +5,6 @@ vespa_add_executable(searchlib_nns_distance_test_app TEST
     nns_distance_test.cpp
     DEPENDS
     searchlib
+    searchlib_test
 )
 vespa_add_test(NAME searchlib_nns_distance_test_app COMMAND searchlib_nns_distance_test_app)

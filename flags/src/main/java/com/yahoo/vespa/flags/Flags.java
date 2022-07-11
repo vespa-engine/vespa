@@ -15,6 +15,7 @@ import java.util.TreeMap;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -44,6 +45,15 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag MAIN_CHAIN_GRAPH = defineFeatureFlag(
+            "main-chain-graph", false,
+            List.of("hakonhall"), "2022-07-06", "2022-09-05",
+            "Whether to run all tasks in the main task chain up to the one failing to converge (false), or " +
+            "run all tasks in the main task chain whose dependencies have converged (true).  And when suspending, " +
+            "whether to run the tasks in sequence (false) or in reverse sequence (true).",
+            "On first tick of the main chain after (re)start of host admin.",
+            ZONE_ID, NODE_TYPE, HOSTNAME);
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2023-01-01",
@@ -58,6 +68,12 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag KEEP_STORAGE_NODE_UP = defineFeatureFlag(
+            "keep-storage-node-up", true,
+            List.of("hakonhall"), "2022-07-07", "2022-08-07",
+            "Whether to leave the storage node (with wanted state) UP while the node is permanently down.",
+            "Takes effect immediately for nodes transitioning to permanently down.",
+            ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,

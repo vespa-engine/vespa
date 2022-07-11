@@ -5,11 +5,10 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.DummyServiceMonitor;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
+import com.yahoo.vespa.orchestrator.model.ContentService;
 import com.yahoo.vespa.orchestrator.model.VespaModelUtil;
-import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 
 import java.util.HashMap;
 import java.util.List;
@@ -30,7 +29,7 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
         try {
             ClusterId clusterName = VespaModelUtil.getContentClusterName(appInstance, hostName);
             int storageNodeIndex = VespaModelUtil.getStorageNodeIndex(appInstance, hostName);
-            String globalMapKey = clusterName + "/" + storageNodeIndex;
+            String globalMapKey = clusterName + "/" + ContentService.STORAGE_NODE.nameInClusterController() + "/" + storageNodeIndex;
             return nodes.getOrDefault(globalMapKey, ClusterControllerNodeState.UP) == ClusterControllerNodeState.MAINTENANCE;
         } catch (Exception e) {
             //Catch all - meant to catch cases where the node is not part of a storage cluster
@@ -44,7 +43,7 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
             for (HostName host : hosts) {
                 ClusterId clusterName = VespaModelUtil.getContentClusterName(app, host);
                 int storageNodeIndex = VespaModelUtil.getStorageNodeIndex(app, host);
-                String globalMapKey = clusterName + "/" + storageNodeIndex;
+                String globalMapKey = clusterName + "/" + ContentService.STORAGE_NODE.nameInClusterController() + "/" + storageNodeIndex;
                 nodes.put(globalMapKey, ClusterControllerNodeState.UP);
             }
         }
@@ -53,12 +52,12 @@ public class ClusterControllerClientFactoryMock implements ClusterControllerClie
     @Override
     public ClusterControllerClient createClient(List<HostName> clusterControllers, String clusterName) {
         return new ClusterControllerClient() {
-            @Override public boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) {
-                nodes.put(clusterName + "/" + storageNodeIndex, wantedState);
+            @Override public boolean trySetNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState, ContentService contentService, boolean force) {
+                nodes.put(clusterName + "/" + contentService.nameInClusterController() + "/" + storageNodeIndex, wantedState);
                 return true;
             }
-            @Override public void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState) {
-                trySetNodeState(context, host, storageNodeIndex, wantedState);
+            @Override public void setNodeState(OrchestratorContext context, HostName host, int storageNodeIndex, ClusterControllerNodeState wantedState, ContentService contentService, boolean force) {
+                trySetNodeState(context, host, storageNodeIndex, wantedState, contentService, false);
             }
             @Override public void setApplicationState(OrchestratorContext context, ApplicationInstanceId applicationId, ClusterControllerNodeState wantedState) {
                 nodes.replaceAll((key, state) -> key.startsWith(clusterName + "/") ? wantedState : state);

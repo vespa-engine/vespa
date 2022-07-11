@@ -46,6 +46,7 @@ vespa_define_module(
     src/vespa/searchlib/test
     src/vespa/searchlib/test/diskindex
     src/vespa/searchlib/test/fakedata
+    src/vespa/searchlib/test/features
     src/vespa/searchlib/test/memoryindex
     src/vespa/searchlib/transactionlog
     src/vespa/searchlib/uca

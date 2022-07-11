@@ -7,13 +7,13 @@ import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
+import com.yahoo.vespa.orchestrator.model.ContentService;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 
@@ -66,7 +66,7 @@ public class ClusterControllerClientImplTest {
                         return "{ \"wasModified\": true }";
                     },
                     200);
-        client.setNodeState(context, host, 2, DOWN);
+        client.setNodeState(context, host, 2, DOWN, ContentService.STORAGE_NODE, false);
 
         clock.advance(Duration.ofSeconds(9));
         wire.expect((url, body) -> {
@@ -79,7 +79,7 @@ public class ClusterControllerClientImplTest {
                     200);
         assertEquals("Changing the state of node would violate controller-set-node-state: Failed to set state to DOWN in cluster controller: because",
                      assertThrows(HostStateChangeDeniedException.class,
-                                  () -> client.setNodeState(context, host, 1, DOWN))
+                                  () -> client.setNodeState(context, host, 1, DOWN, ContentService.STORAGE_NODE, false))
                              .getMessage());
     }
 
@@ -93,7 +93,7 @@ public class ClusterControllerClientImplTest {
                         return "{ \"wasModified\": false, \"reason\": \"no reason\" }";
                     },
                     200);
-        assertFalse(client.trySetNodeState(OrchestratorContext.createContextForBatchProbe(clock), host, 2, MAINTENANCE));
+        assertFalse(client.trySetNodeState(OrchestratorContext.createContextForBatchProbe(clock), host, 2, MAINTENANCE, ContentService.STORAGE_NODE, false));
     }
 
     @Test
@@ -134,7 +134,7 @@ public class ClusterControllerClientImplTest {
         assertEquals("Changing the state of node would violate deadline: Timeout while waiting for setNodeState(2, UP) " +
                      "against [host1, host2, host3]: Timed out after PT10S",
                      assertThrows(HostStateChangeDeniedException.class,
-                                  () -> client.setNodeState(context, host, 2, UP))
+                                  () -> client.setNodeState(context, host, 2, UP, ContentService.STORAGE_NODE, false))
                              .getMessage());
     }
 
@@ -154,7 +154,7 @@ public class ClusterControllerClientImplTest {
         assertEquals("Changing the state of node would violate controller-set-node-state: Failed setting node 2 in cluster cc to state UP: " +
                      "got status code 503 for POST http://host1:19050/cluster/v2/cc/storage/2?timeout=9.6",
                      assertThrows(HostStateChangeDeniedException.class,
-                                  () -> client.setNodeState(context, host, 2, UP))
+                                  () -> client.setNodeState(context, host, 2, UP, ContentService.STORAGE_NODE, false))
                              .getMessage());
     }
 
