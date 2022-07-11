@@ -147,7 +147,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
    }
 
     private void addMetricsHandler(String handlerClass, BindingPattern rootBinding, BindingPattern innerBinding) {
-        Handler handler = new Handler(
+        Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                 new ComponentModel(handlerClass, null, null, null));
         handler.addServerBindings(rootBinding, innerBinding);
         addComponent(handler);

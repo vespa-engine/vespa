@@ -102,7 +102,7 @@ public class ComponentGraphTest {
     }
 
     @Test
-    public void component_can_be_explicitly_injected_into_another_component() {
+    public void component_can_be_injected_into_another_component() {
         Node injectedComponent = mockComponentNode(SimpleComponent.class);
         Node targetComponent = mockComponentNode(ComponentTakingComponent.class);
         targetComponent.inject(injectedComponent);
@@ -117,22 +117,6 @@ public class ComponentGraphTest {
 
         ComponentTakingComponent instance = componentGraph.getInstance(ComponentTakingComponent.class);
         assertNotNull(instance);
-        assertSame(injectedComponent.instance.get(), instance.injectedComponent);
-    }
-
-    @Test
-    public void explicitly_injected_components_may_be_unused() {
-        Node notUsingInjected = mockComponentNode(SimpleComponent.class);
-        Node injectedComponent = mockComponentNode(SimpleComponent2.class);
-        notUsingInjected.inject(injectedComponent);
-
-        ComponentGraph componentGraph = new ComponentGraph();
-        componentGraph.add(injectedComponent);
-        componentGraph.add(notUsingInjected);
-        componentGraph.complete();
-
-        SimpleComponent instanceNotUsingInjected = componentGraph.getInstance(SimpleComponent.class);
-        assertNotNull(instanceNotUsingInjected);
     }
 
     @Test
@@ -530,7 +514,7 @@ public class ComponentGraphTest {
     }
 
     public static class ComponentTakingComponent extends AbstractComponent {
-        final SimpleComponent injectedComponent;
+        private final SimpleComponent injectedComponent;
 
         public ComponentTakingComponent(SimpleComponent injectedComponent) {
             assertNotNull(injectedComponent);

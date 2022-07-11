@@ -31,7 +31,7 @@ import static org.junit.Assert.fail;
 /**
  * @author gjoranv
  */
-public class SearchBuilderTest extends ContainerModelBuilderTestBase {
+public class ApplicationBuilderTest extends ContainerModelBuilderTestBase {
 
     private ChainsConfig chainsConfig() {
         return root.getConfig(ChainsConfig.class, "default/component/com.yahoo.search.handler.SearchHandler");
@@ -53,7 +53,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
 
         GUIHandler guiHandler = null;
-        for (Handler handler : cluster.getHandlers()) {
+        for (Handler<?> handler : cluster.getHandlers()) {
             if (handler instanceof GUIHandler) {
                 guiHandler = (GUIHandler) handler;
             }
@@ -230,7 +230,12 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         createModel(root, clusterElem);
 
-        Handler searchHandler = getHandler("default", SearchHandler.HANDLER_CLASS);
+        ApplicationContainerCluster cluster = (ApplicationContainerCluster)root.getChildren().get("default");
+        Handler<?> searchHandler = cluster.getHandlers().stream()
+                .filter(h -> h.getComponentId().toString().equals(SearchHandler.HANDLER_CLASS))
+                .findAny()
+                .get();
+
         assertTrue(searchHandler.getInjectedComponentIds().contains("threadpool@search-handler"));
 
         ContainerThreadpoolConfig config = root.getConfig(

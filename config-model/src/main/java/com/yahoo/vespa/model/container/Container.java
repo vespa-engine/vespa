@@ -76,7 +76,7 @@ public abstract class Container extends AbstractService implements
     private final boolean dumpHeapOnShutdownTimeout;
     private final double shutdownTimeoutS;
 
-    private final ComponentGroup<Handler> handlers = new ComponentGroup<>(this, "handler");
+    private final ComponentGroup<Handler<?>> handlers = new ComponentGroup<>(this, "handler");
     private final ComponentGroup<Component<?, ?>> components = new ComponentGroup<>(this, "components");
 
     private final JettyHttpServer defaultHttpServer;
@@ -113,7 +113,7 @@ public abstract class Container extends AbstractService implements
     /** True if this container is retired (slated for removal) */
     public boolean isRetired() { return retired; }
 
-    public ComponentGroup<Handler> getHandlers() {
+    public ComponentGroup<Handler<?>> getHandlers() {
         return handlers;
     }
 
@@ -129,7 +129,7 @@ public abstract class Container extends AbstractService implements
         addComponent(new SimpleComponent(new ComponentModel(idSpec, classSpec, bundleSpec)));
     }
 
-    public final void addHandler(Handler h) {
+    public final void addHandler(Handler<?> h) {
         handlers.addComponent(h);
     }
     

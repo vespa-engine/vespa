@@ -4,7 +4,7 @@ package com.yahoo.vespa.model.container.component.chain;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.vespa.model.container.ContainerThreadpool;
+import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.Handler;
 
 
@@ -14,17 +14,21 @@ import com.yahoo.vespa.model.container.component.Handler;
  * @author gjoranv
  */
 public class ProcessingHandler<CHAINS extends Chains<?>>
-        extends Handler
+        extends Handler<AbstractConfigProducer<?>>
         implements ChainsConfig.Producer {
 
     protected final CHAINS chains;
 
     public ProcessingHandler(CHAINS chains, String handlerClass) {
-        this(chains, BundleInstantiationSpecification.getInternalProcessingSpecificationFromStrings(handlerClass, null), null);
+        this(chains, BundleInstantiationSpecification.getInternalProcessingSpecificationFromStrings(handlerClass, null));
     }
 
-    public ProcessingHandler(CHAINS chains, BundleInstantiationSpecification spec, ContainerThreadpool threadpool) {
-        super(new ComponentModel(spec, null), threadpool);
+    public ProcessingHandler(CHAINS chains, String handlerClass, String bundle) {
+        this(chains, BundleInstantiationSpecification.getFromStrings(handlerClass, null, bundle));
+    }
+
+    private ProcessingHandler(CHAINS chains, BundleInstantiationSpecification spec) {
+        super(new ComponentModel(spec, null));
         this.chains = chains;
     }
 
