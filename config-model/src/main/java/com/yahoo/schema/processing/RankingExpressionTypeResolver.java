@@ -93,9 +93,9 @@ public class RankingExpressionTypeResolver extends Processor {
                     throw new IllegalArgumentException(profile + " is strict but is missing a query profile type " +
                                                        "declaration of features " + context.queryFeaturesNotDeclared());
                 else
-                    deployLogger.logApplicationPackage(Level.WARNING, "The following query features used in " + profile +
-                                                                      " are not declared in query profile " +
-                                                                      "types and will be interpreted as scalars, not tensors: " +
+                    deployLogger.logApplicationPackage(Level.WARNING, "The following query features used in " +
+                                                                      profile + " are not declared " +
+                                                                      "and will be interpreted as scalars, not tensors: " +
                                                                       context.queryFeaturesNotDeclared());
                 warnedAbout.addAll(context.queryFeaturesNotDeclared());
             }
