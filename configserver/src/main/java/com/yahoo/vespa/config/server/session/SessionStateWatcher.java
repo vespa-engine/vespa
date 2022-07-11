@@ -49,6 +49,7 @@ public class SessionStateWatcher {
             case UNKNOWN:
                 break;
             case DELETE:
+            case DEACTIVATE:
                 sessionRepository.deactivateAndUpdateCache(sessionId);
                 break;
             case PREPARE:
@@ -56,9 +57,6 @@ public class SessionStateWatcher {
                 break;
             case ACTIVATE:
                 sessionRepository.activate(sessionId);
-                break;
-            case DEACTIVATE:
-                sessionRepository.deactivateAndUpdateCache(sessionId);
                 break;
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
