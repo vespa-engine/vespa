@@ -5,6 +5,7 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -12,7 +13,7 @@ import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 
 import java.util.List;
 
-import static com.yahoo.container.bundle.BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings;
+import static com.yahoo.container.bundle.BundleInstantiationSpecification.fromSearchAndDocproc;
 
 /**
  * Component definition for {@link com.yahoo.search.handler.SearchHandler}
@@ -22,7 +23,7 @@ import static com.yahoo.container.bundle.BundleInstantiationSpecification.getInt
 class SearchHandler extends ProcessingHandler<SearchChains> {
 
     static final String HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
-    static final BundleInstantiationSpecification HANDLER_SPEC = getInternalHandlerSpecificationFromStrings(HANDLER_CLASS, null);
+    static final BundleInstantiationSpecification HANDLER_SPEC = fromSearchAndDocproc(HANDLER_CLASS);
     static final BindingPattern DEFAULT_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
 
     SearchHandler(ApplicationContainerCluster cluster,

@@ -31,7 +31,7 @@ public class DocumentFactoryBuilder {
             String concDocFactory=pkg+"."+CONCRETE_DOC_FACTORY_CLASS;
             String bundle = e.getAttribute("bundle");
             Component<AbstractConfigProducer<?>, ComponentModel> component = new Component<>(
-                    new ComponentModel(BundleInstantiationSpecification.getFromStrings(concDocFactory, concDocFactory, bundle)));
+                    new ComponentModel(BundleInstantiationSpecification.fromStrings(concDocFactory, concDocFactory, bundle)));
             if (!cluster.getComponentsMap().containsKey(component.getComponentId())) cluster.addComponent(component);
             types.put(type, concDocFactory);
         }

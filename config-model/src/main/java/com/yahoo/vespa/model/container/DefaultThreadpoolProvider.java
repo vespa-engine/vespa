@@ -19,7 +19,7 @@ class DefaultThreadpoolProvider extends SimpleComponent implements ThreadpoolCon
 
     DefaultThreadpoolProvider(ContainerCluster<?> cluster, int defaultWorkerThreads) {
         super(new ComponentModel(
-                BundleInstantiationSpecification.getFromStrings(
+                BundleInstantiationSpecification.fromStrings(
                         "default-threadpool",
                         ThreadPoolProvider.class.getName(),
                         null)));

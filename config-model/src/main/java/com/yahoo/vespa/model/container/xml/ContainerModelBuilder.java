@@ -889,7 +889,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Magic spell is needed to receive the chains config :-|
         cluster.addComponent(new ProcessingHandler<>(
                 cluster.getSearch().getChains(),
-                BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings("com.yahoo.search.searchchain.ExecutionFactory", null)));
+                BundleInstantiationSpecification.fromSearchAndDocproc("com.yahoo.search.searchchain.ExecutionFactory")));
 
         cluster.addComponent(
                 new SearchHandler(

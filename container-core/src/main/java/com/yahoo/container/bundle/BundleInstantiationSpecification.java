@@ -14,6 +14,8 @@ import com.yahoo.component.ComponentSpecification;
  */
 public final class BundleInstantiationSpecification {
 
+    public static final String CONTAINER_SEARCH_AND_DOCPROC = "container-search-and-docproc";
+
     public final ComponentId id;
     public final ComponentSpecification classId;
     public final ComponentSpecification bundle;
@@ -31,34 +33,21 @@ public final class BundleInstantiationSpecification {
         assert (classId!= null);
     }
 
-    private static final String defaultInternalBundle = "container-search-and-docproc";
-
-    private static BundleInstantiationSpecification getInternalSpecificationFromString(String idSpec, String classSpec) {
-        return new BundleInstantiationSpecification(
-                new ComponentSpecification(idSpec),
-                (classSpec == null || classSpec.isEmpty())?  null  : new ComponentSpecification(classSpec),
-                new ComponentSpecification(defaultInternalBundle));
+    /**
+     * Create spec for a component from the container-search-and-docproc bundle with the given class name as id.
+     */
+    public static BundleInstantiationSpecification fromSearchAndDocproc(String className) {
+        return fromSearchAndDocproc(new ComponentSpecification(className), null);
     }
 
-    public static BundleInstantiationSpecification getInternalSearcherSpecification(ComponentSpecification idSpec,
-                                                                                    ComponentSpecification classSpec) {
-        return new BundleInstantiationSpecification(idSpec, classSpec, new ComponentSpecification(defaultInternalBundle));
+    /**
+     * Create spec for a component from the container-search-and-docproc bundle with the given id and classId.
+     */
+    public static BundleInstantiationSpecification fromSearchAndDocproc(ComponentSpecification id, ComponentSpecification classId) {
+        return new BundleInstantiationSpecification(id, classId, new ComponentSpecification(CONTAINER_SEARCH_AND_DOCPROC));
     }
 
-    // TODO: These are the same for now because they are in the same bundle.
-    public static BundleInstantiationSpecification getInternalHandlerSpecificationFromStrings(String idSpec, String classSpec) {
-        return getInternalSpecificationFromString(idSpec, classSpec);
-    }
-
-    public static BundleInstantiationSpecification getInternalProcessingSpecificationFromStrings(String idSpec, String classSpec) {
-        return getInternalSpecificationFromString(idSpec, classSpec);
-    }
-
-    public static BundleInstantiationSpecification getInternalSearcherSpecificationFromStrings(String idSpec, String classSpec) {
-        return getInternalSpecificationFromString(idSpec, classSpec);
-    }
-
-    public static BundleInstantiationSpecification getFromStrings(String idSpec, String classSpec, String bundleSpec) {
+    public static BundleInstantiationSpecification fromStrings(String idSpec, String classSpec, String bundleSpec) {
         return new BundleInstantiationSpecification(
                 new ComponentSpecification(idSpec),
                 (classSpec == null || classSpec.isEmpty())?  null  : new ComponentSpecification(classSpec),

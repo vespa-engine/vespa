@@ -13,6 +13,6 @@ public class RpcResourcePoolComponent extends Component<RpcResourcePoolComponent
 
     private static ComponentModel toComponentModel(String clusterName) {
         String componentId = "rpcresourcepool." + clusterName;
-        return new ComponentModel(componentId, com.yahoo.search.dispatch.rpc.RpcResourcePool.class.getName(), PlatformBundles.searchAndDocprocBundle);
+        return new ComponentModel(componentId, com.yahoo.search.dispatch.rpc.RpcResourcePool.class.getName(), PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
     }
 }

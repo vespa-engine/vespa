@@ -24,7 +24,7 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
 
     public ContainerThreadpool(String name, UserOptions userOptions) {
         super(new ComponentModel(
-                BundleInstantiationSpecification.getFromStrings(
+                BundleInstantiationSpecification.fromStrings(
                         "threadpool@" + name,
                         ContainerThreadpoolImpl.class.getName(),
                         null)));

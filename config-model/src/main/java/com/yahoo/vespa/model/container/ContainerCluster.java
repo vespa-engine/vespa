@@ -131,7 +131,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public static final BindingPattern VIP_HANDLER_BINDING = SystemBindingPattern.fromHttpPath("/status.html");
 
     public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = Stream.of(
-                    PlatformBundles.searchAndDocprocBundle, "container-search-gui", "docprocs", "linguistics-components")
+                    PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE, "container-search-gui", "docprocs", "linguistics-components")
             .map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
 
     private final String name;
@@ -229,7 +229,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void addDefaultRootHandler() {
         Handler handler = new Handler(
-                new ComponentModel(BundleInstantiationSpecification.getFromStrings(
+                new ComponentModel(BundleInstantiationSpecification.fromStrings(
                         BINDINGS_OVERVIEW_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
         handler.addServerBindings(ROOT_HANDLER_BINDING);
         addComponent(handler);
@@ -237,7 +237,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void addApplicationStatusHandler() {
         Handler statusHandler = new Handler(
-                new ComponentModel(BundleInstantiationSpecification.getFromStrings(
+                new ComponentModel(BundleInstantiationSpecification.fromStrings(
                         APPLICATION_STATUS_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
         statusHandler.addServerBindings(SystemBindingPattern.fromHttpPath("/ApplicationStatus"));
         addComponent(statusHandler);
@@ -320,7 +320,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         ProcessingHandler<?> processingHandler = new ProcessingHandler<>(
                 processingChains,
-                BundleInstantiationSpecification.getFromStrings(PROCESSING_HANDLER_CLASS, null, null));
+                BundleInstantiationSpecification.fromStrings(PROCESSING_HANDLER_CLASS, null, null));
 
         for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);

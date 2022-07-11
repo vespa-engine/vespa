@@ -9,6 +9,7 @@ import com.yahoo.docproc.jdisc.observability.DocprocsStatusExtension;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
@@ -28,13 +29,10 @@ public class DocprocChains extends Chains<DocprocChain> {
         super(parent, subId);
         docprocHandler = new ProcessingHandler<>(
                 this,
-                BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings("com.yahoo.docproc.jdisc.DocumentProcessingHandler", null));
+                BundleInstantiationSpecification.fromSearchAndDocproc("com.yahoo.docproc.jdisc.DocumentProcessingHandler"));
         addComponent(docprocHandler);
-        addComponent(
-                new SimpleComponent(
-                        new ComponentModel(
-                                BundleInstantiationSpecification.getInternalProcessingSpecificationFromStrings(
-                                        DocprocsStatusExtension.class.getName(), null), null)));
+        addComponent(new SimpleComponent(
+                new ComponentModel(DocprocsStatusExtension.class.getName(), null, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE)));
 
         if (! (getParent() instanceof ApplicationContainerCluster)) {
             // All application containers already have a DocumentTypeManager,

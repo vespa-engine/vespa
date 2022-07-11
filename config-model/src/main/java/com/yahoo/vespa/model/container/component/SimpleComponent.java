@@ -17,7 +17,7 @@ public class SimpleComponent extends Component<AbstractConfigProducer<?>, Compon
     }
 
     public SimpleComponent(String className) {
-        this(new ComponentModel(BundleInstantiationSpecification.getFromStrings(className, null, null)));
+        this(new ComponentModel(BundleInstantiationSpecification.fromStrings(className, null, null)));
     }
 
 }

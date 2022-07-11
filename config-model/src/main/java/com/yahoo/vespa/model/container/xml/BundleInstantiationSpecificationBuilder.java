@@ -5,7 +5,6 @@ import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.vespa.model.container.PlatformBundles;
-import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import org.w3c.dom.Element;
 
 import java.util.Arrays;
@@ -33,7 +32,7 @@ public class BundleInstantiationSpecificationBuilder {
 
     private static BundleInstantiationSpecification setBundleForSearchAndDocprocComponents(BundleInstantiationSpecification spec) {
         if (PlatformBundles.isSearchAndDocprocClass(spec.getClassName()))
-            return spec.inBundle(PlatformBundles.searchAndDocprocBundle);
+            return spec.inBundle(PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
         else
             return spec;
     }

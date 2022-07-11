@@ -14,7 +14,7 @@ public class ComponentModelTest {
     @Test
     public void create_from_instantiation_spec() {
         ComponentModel model = new ComponentModel(
-                BundleInstantiationSpecification.getFromStrings("id", "class", "bundle"));
+                BundleInstantiationSpecification.fromStrings("id", "class", "bundle"));
         verifyBundleSpec(model);
     }
 
@@ -26,7 +26,7 @@ public class ComponentModelTest {
     @Test
     public void create_from_instantiation_spec_and_config_id() throws Exception {
         ComponentModel model = new ComponentModel(
-                BundleInstantiationSpecification.getFromStrings("id", "class", "bundle"), "configId");
+                BundleInstantiationSpecification.fromStrings("id", "class", "bundle"), "configId");
         verifyBundleSpec(model);
         assertEquals("configId", model.configId);
     }

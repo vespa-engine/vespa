@@ -24,9 +24,11 @@ public class FederationSearcherModel extends ChainedComponentModel {
     public final List<TargetSpec> targets;
     public final boolean inheritDefaultSources;
 
-    public FederationSearcherModel(ComponentSpecification componentId, Dependencies dependencies,
-                                   List<TargetSpec> targets, boolean inheritDefaultSources) {
-        super(BundleInstantiationSpecification.getInternalSearcherSpecification(componentId, federationSearcherComponentSpecification),
+    public FederationSearcherModel(ComponentSpecification componentId,
+                                   Dependencies dependencies,
+                                   List<TargetSpec> targets,
+                                   boolean inheritDefaultSources) {
+        super(BundleInstantiationSpecification.fromSearchAndDocproc(componentId, federationSearcherComponentSpecification),
               dependencies);
         this.inheritDefaultSources = inheritDefaultSources;
         this.targets = ImmutableList.copyOf(targets);

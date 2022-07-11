@@ -25,7 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.vespa.model.container.PlatformBundles.searchAndDocprocBundle;
+import static com.yahoo.vespa.model.container.PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE;
 
 /**
  * @author gjoranv
@@ -56,9 +56,9 @@ public class ContainerSearch extends ContainerSubsystem<SearchChains>
         this.owningCluster = cluster;
         this.options = options;
 
-        owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, searchAndDocprocBundle));
-        owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class.getName(), searchAndDocprocBundle));
-        owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class.getName(), searchAndDocprocBundle));
+        owningCluster.addComponent(Component.fromClassAndBundle(QUERY_PROFILE_REGISTRY_CLASS, SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(com.yahoo.search.schema.SchemaInfo.class.getName(), SEARCH_AND_DOCPROC_BUNDLE));
+        owningCluster.addComponent(Component.fromClassAndBundle(SearchStatusExtension.class.getName(), SEARCH_AND_DOCPROC_BUNDLE));
         cluster.addSearchAndDocprocBundles();
     }
 

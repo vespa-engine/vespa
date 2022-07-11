@@ -20,7 +20,7 @@ public class GUIHandler extends Handler {
     }
 
     public static BundleInstantiationSpecification bundleSpec(String className, String bundle) {
-        return BundleInstantiationSpecification.getFromStrings(className, className, bundle);
+        return BundleInstantiationSpecification.fromStrings(className, className, bundle);
     }
 
 }
