@@ -47,7 +47,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.", e.getMessage());
+            assertEquals("Deployment exceeds its quota and has been blocked! Please contact support to update your plan: Quota is $1.25, but at least $1.63 is required", e.getMessage());
         }
     }
 
@@ -58,7 +58,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.", e.getMessage());
+            assertEquals("publiccd: Deployment exceeds its quota and has been blocked! Please contact support to update your plan: Quota is $1.00, but at least $1.63 is required", e.getMessage());
         }
     }
 
@@ -69,7 +69,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("publiccd: Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.", e.getMessage());
+            assertEquals("publiccd: Deployment exceeds its quota and has been blocked! Please contact support to update your plan: Quota is $1.25, but at least $1.63 is required", e.getMessage());
 
         }
     }
@@ -82,7 +82,7 @@ public class QuotaValidatorTest {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
-            assertEquals("Please free up some capacity! This deployment's quota use is ($-.--) and reserved quota is below zero! ($--.--)",
+            assertEquals("Please free up some capacity: Quota is $--.--, but at least $-.-- is required",
                     ValidationTester.censorNumbers(e.getMessage()));
         }
     }
