@@ -1,5 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchlib/features/closenessfeature.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
@@ -14,6 +15,8 @@ using namespace search::features::test;
 using namespace search::features;
 using namespace search::fef::test;
 using namespace search::fef;
+
+using vespalib::eval::TensorSpec;
 
 const vespalib::string labelFeatureName("closeness(label,nns)");
 const vespalib::string fieldFeatureName("closeness(bar)");
@@ -74,6 +77,32 @@ TEST_FF("require that stale data is ignored", SingleLabel("nns", 2), RankFixture
     f2.setFooScore(0, 10, 1.0);
     f2.setFooScore(1, 5, 2.0);
     EXPECT_EQUAL(0, f2.getScore(10));
+}
+
+void
+expect_raw_score_calculated_on_the_fly(RankFixture& f)
+{
+    f.setBarScore(0, 8, 13.0);
+    f.set_attribute_tensor(9, TensorSpec::from_expr("tensor(x[2]):[5,11]"));
+    f.set_attribute_tensor(10, TensorSpec::from_expr("tensor(x[2]):[7,11]"));
+
+    // For docids 9 and 10 the raw score is calculated on the fly
+    // using a distance calculator over the attribute and query tensors.
+    EXPECT_EQUAL(1/(1+13.0), f.getScore(8));
+    EXPECT_EQUAL(1/(1+(5.0-3.0)), f.getScore(9));
+    EXPECT_EQUAL(1/(1+(7.0-3.0)), f.getScore(10));
+}
+
+TEST_FF("raw score is calculated on the fly (using field setup)",
+        NoLabel(), RankFixture(0, 1, f1, fieldFeatureName, "tensor(x[2]):[3,11]"))
+{
+    expect_raw_score_calculated_on_the_fly(f2);
+}
+
+TEST_FF("raw score is calculated on the fly (using label setup)",
+        SingleLabel("nns", 1), RankFixture(0, 1, f1, labelFeatureName, "tensor(x[2]):[3,11]"))
+{
+    expect_raw_score_calculated_on_the_fly(f2);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

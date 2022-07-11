@@ -13,8 +13,8 @@
 using namespace search::fef;
 using namespace search::fef::test;
 
-using CollectionType = FieldInfo::CollectionType;
-using DataType = FieldInfo::DataType;
+namespace search::tensor { class DenseTensorAttribute; }
+namespace vespalib::eval { class TensorSpec; }
 
 namespace search::features::test {
 
@@ -31,8 +31,8 @@ struct IndexEnvironmentFixture {
     IndexEnvironmentFixture() : indexEnv()
     {
         IndexEnvironmentBuilder builder(indexEnv);
-        builder.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::INT64, "foo");
-        builder.addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "bar");
+        builder.addField(FieldType::ATTRIBUTE, FieldInfo::CollectionType::SINGLE, FieldInfo::DataType::INT64, "foo");
+        builder.addField(FieldType::ATTRIBUTE, FieldInfo::CollectionType::SINGLE, FieldInfo::DataType::TENSOR, "bar");
     }
 };
 
@@ -55,7 +55,16 @@ struct DistanceClosenessFixture : BlueprintFactoryFixture, IndexEnvironmentFixtu
     RankProgram::UP          rankProgram;
     std::vector<TermFieldHandle> fooHandles;
     std::vector<TermFieldHandle> barHandles;
-    DistanceClosenessFixture(size_t fooCnt, size_t barCnt, const Labels &labels, const vespalib::string &featureName);
+    std::shared_ptr<search::tensor::DenseTensorAttribute> tensor_attr;
+    uint32_t docid_limit;
+    DistanceClosenessFixture(size_t fooCnt, size_t barCnt,
+                             const Labels &labels, const vespalib::string &featureName,
+                             const vespalib::string& query_tensor = "");
+    ~DistanceClosenessFixture();
+    void set_attribute_tensor(uint32_t docid, const vespalib::eval::TensorSpec& spec);
+    void set_query_tensor(const vespalib::string& query_tensor_name,
+                          const vespalib::string& tensor_type,
+                          const vespalib::eval::TensorSpec& spec);
     feature_t getScore(uint32_t docId) {
         return Utils::getScoreFeature(*rankProgram, docId);
     }
