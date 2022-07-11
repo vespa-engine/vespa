@@ -193,9 +193,6 @@
     <handler id="jdisc-handler">
       <binding>http://*:*/HelloWorld</binding>
       <binding>http://*:*/Status</binding>
-      <component id="injected-to-handler">
-        <config name="foo"/>
-      </component>
     </handler>
 
     <server id="server-provider">

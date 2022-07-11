@@ -9,12 +9,15 @@ import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.BindingPattern;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import com.yahoo.vespa.model.container.xml.BundleInstantiationSpecificationBuilder;
 import org.w3c.dom.Element;
 
+import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_1;
 import static com.yahoo.vespa.model.container.ApplicationContainerCluster.METRICS_V2_HANDLER_BINDING_2;
@@ -26,7 +29,7 @@ import static java.util.logging.Level.INFO;
 /**
  * @author gjoranv
  */
-public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler> {
+public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Handler<?>> {
 
     private static final Set<BindingPattern> reservedBindings =
             Set.of(METRICS_V2_HANDLER_BINDING_1,
@@ -42,8 +45,8 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
     }
 
     @Override
-    protected Handler doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element handlerElement) {
-        Handler handler = createHandler(handlerElement);
+    protected Handler<?> doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element handlerElement) {
+        Handler<? super Component<?, ?>> handler = createHandler(handlerElement);
 
         for (Element binding : XML.getChildren(handlerElement, "binding"))
             addServerBinding(handler, UserBindingPattern.fromPattern(XML.getValue(binding)), deployState.getDeployLogger());
@@ -53,18 +56,18 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         return handler;
     }
 
-    Handler createHandler(Element handlerElement) {
+    Handler<? super Component<?, ?>> createHandler(Element handlerElement) {
         BundleInstantiationSpecification bundleSpec = BundleInstantiationSpecificationBuilder.build(handlerElement);
-        return new Handler(new ComponentModel(bundleSpec));
+        return new Handler<>(new ComponentModel(bundleSpec));
     }
 
-    private void addServerBinding(Handler handler, BindingPattern binding, DeployLogger log) {
+    private void addServerBinding(Handler<? super Component<?, ?>> handler, BindingPattern binding, DeployLogger log) {
         throwIfBindingIsReserved(binding, handler);
         handler.addServerBindings(binding);
         removeExistingServerBinding(binding, handler, log);
     }
 
-    private void throwIfBindingIsReserved(BindingPattern binding, Handler newHandler) {
+    private void throwIfBindingIsReserved(BindingPattern binding, Handler<?> newHandler) {
         for (var reserved : reservedBindings) {
             if (binding.hasSamePattern(reserved)) {
                 throw new IllegalArgumentException("Binding '" + binding.patternString() + "' is a reserved Vespa binding and " +
@@ -73,7 +76,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
         }
     }
 
-    private void removeExistingServerBinding(BindingPattern binding, Handler newHandler, DeployLogger log) {
+    private void removeExistingServerBinding(BindingPattern binding, Handler<?> newHandler, DeployLogger log) {
         for (var handler : cluster.getHandlers()) {
             for (BindingPattern serverBinding : handler.getServerBindings()) {
                 if (serverBinding.hasSamePattern(binding)) {

@@ -5,6 +5,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.text.XML;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
 import org.w3c.dom.Element;
@@ -21,7 +22,7 @@ public class DomClientProviderBuilder extends DomHandlerBuilder {
 
     @Override
     protected Handler doBuild(DeployState deployState, AbstractConfigProducer parent, Element clientElement) {
-        Handler client = createHandler(clientElement);
+        Handler<? super Component<?, ?>> client = createHandler(clientElement);
 
         for (Element binding : XML.getChildren(clientElement, "binding"))
             client.addClientBindings(UserBindingPattern.fromPattern(XML.getValue(binding)));

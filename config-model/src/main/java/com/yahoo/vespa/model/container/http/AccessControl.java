@@ -51,7 +51,7 @@ public class AccessControl {
         private final String domain;
         private ClientAuthentication clientAuthentication = ClientAuthentication.need;
         private final Set<BindingPattern> excludeBindings = new LinkedHashSet<>();
-        private Collection<Handler> handlers = Collections.emptyList();
+        private Collection<Handler<?>> handlers = Collections.emptyList();
         public Builder(String domain) {
             this.domain = domain;
         }
@@ -79,12 +79,12 @@ public class AccessControl {
     public final String domain;
     public final ClientAuthentication clientAuthentication;
     private final Set<BindingPattern> excludedBindings;
-    private final Collection<Handler> handlers;
+    private final Collection<Handler<?>> handlers;
 
     private AccessControl(String domain,
                           ClientAuthentication clientAuthentication,
                           Set<BindingPattern> excludedBindings,
-                          Collection<Handler> handlers) {
+                          Collection<Handler<?>> handlers) {
         this.domain = domain;
         this.clientAuthentication = clientAuthentication;
         this.excludedBindings = Collections.unmodifiableSet(excludedBindings);
@@ -119,7 +119,7 @@ public class AccessControl {
     public Set<BindingPattern> excludedBindings() { return excludedBindings; }
 
     /** all handlers (that are known by the access control components) **/
-    public Collection<Handler> handlers() { return handlers; }
+    public Collection<Handler<?>> handlers() { return handlers; }
 
     public static boolean hasHandlerThatNeedsProtection(ApplicationContainerCluster cluster) {
         return cluster.getHandlers().stream()
@@ -135,7 +135,7 @@ public class AccessControl {
         for (BindingPattern excludedBinding : excludedBindings) {
             http.getBindings().add(createAccessControlExcludedBinding(excludedBinding));
         }
-        for (Handler handler : handlers) {
+        for (Handler<?> handler : handlers) {
             if (isExcludedHandler(handler)) {
                 for (BindingPattern binding : handler.getServerBindings()) {
                     http.getBindings().add(createAccessControlExcludedBinding(binding));
@@ -188,9 +188,9 @@ public class AccessControl {
 
     private static Chain<Filter> createChain(ComponentId id) { return new Chain<>(FilterChains.emptyChainSpec(id)); }
 
-    private static boolean isExcludedHandler(Handler handler) { return EXCLUDED_HANDLERS.contains(handler.getClassId().getName()); }
+    private static boolean isExcludedHandler(Handler<?> handler) { return EXCLUDED_HANDLERS.contains(handler.getClassId().getName()); }
 
-    private static boolean hasNonMbusBinding(Handler handler) {
+    private static boolean hasNonMbusBinding(Handler<?> handler) {
         return handler.getServerBindings().stream().anyMatch(binding -> ! binding.scheme().equals("mbus"));
     }
 

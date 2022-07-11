@@ -24,7 +24,7 @@ class UriBindingsValidator extends Validator {
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         for (ApplicationContainerCluster cluster : model.getContainerClusters().values()) {
-            for (Handler handler : cluster.getHandlers()) {
+            for (Handler<?> handler : cluster.getHandlers()) {
                 for (BindingPattern binding : handler.getServerBindings()) {
                     validateUserBinding(binding, model, deployState);
                 }
