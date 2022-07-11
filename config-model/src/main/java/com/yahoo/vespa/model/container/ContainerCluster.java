@@ -73,6 +73,8 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.PROCESSING_HANDLER_CLASS;
+
 /**
  * Parent class for all container cluster types.
  *
@@ -308,8 +310,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         // Cannot use the class object for ProcessingHandler, because its superclass is not accessible
         ProcessingHandler<?> processingHandler = new ProcessingHandler<>(
                 processingChains,
-                "com.yahoo.processing.handler.ProcessingHandler",
-                 null);
+                PROCESSING_HANDLER_CLASS,
+                null);
 
         for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);

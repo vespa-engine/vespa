@@ -17,6 +17,8 @@ public class ProcessingHandler<CHAINS extends Chains<?>>
         extends Handler<AbstractConfigProducer<?>>
         implements ChainsConfig.Producer {
 
+    public static final String PROCESSING_HANDLER_CLASS = "com.yahoo.processing.handler.ProcessingHandler";
+
     protected final CHAINS chains;
 
     public ProcessingHandler(CHAINS chains, String handlerClass) {

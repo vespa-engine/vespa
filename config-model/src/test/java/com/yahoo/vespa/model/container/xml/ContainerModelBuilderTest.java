@@ -41,6 +41,7 @@ import com.yahoo.vespa.model.container.ApplicationContainer;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
@@ -62,6 +63,7 @@ import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static com.yahoo.vespa.model.container.ContainerCluster.ROOT_HANDLER_BINDING;
 import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
+import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.PROCESSING_HANDLER_CLASS;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -324,10 +326,17 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     @Test
     public void processingHandler_gets_only_processing_chains_in_chains_config()  {
         createClusterWithProcessingAndSearchChains();
-        String processingHandlerConfigId = "default/component/com.yahoo.processing.handler.ProcessingHandler";
+        String processingHandlerConfigId = "default/component/" + PROCESSING_HANDLER_CLASS;
         String chainsConfig = getChainsConfig(processingHandlerConfigId);
         assertThat(chainsConfig, containsLineWithPattern(".*\\.id \"testProcessor@default\"$"));
         assertThat(chainsConfig, not(containsLineWithPattern(".*\\.id \"testSearcher@default\"$")));
+    }
+
+    @Test
+    public void processingHandler_is_instantiated_from_the_default_bundle() {
+        createClusterWithProcessingAndSearchChains();
+        ComponentsConfig.Components config = getComponent(componentsConfig(), PROCESSING_HANDLER_CLASS);
+        assertEquals(PROCESSING_HANDLER_CLASS, config.bundle());
     }
 
     private void createClusterWithProcessingAndSearchChains() {
