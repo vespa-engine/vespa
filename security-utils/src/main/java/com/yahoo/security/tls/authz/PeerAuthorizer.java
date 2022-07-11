@@ -6,7 +6,6 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
-import com.yahoo.security.tls.policy.Role;
 
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
@@ -36,18 +35,16 @@ public class PeerAuthorizer {
     }
 
     public AuthorizationResult authorizePeer(X509Certificate peerCertificate) {
-        Set<Role> assumedRoles = new HashSet<>();
         Set<String> matchedPolicies = new HashSet<>();
         String cn = getCommonName(peerCertificate).orElse(null);
         List<String> sans = getSubjectAlternativeNames(peerCertificate);
         log.fine(() -> String.format("Subject info from x509 certificate: CN=[%s], 'SAN=%s", cn, sans));
         for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
             if (matchesPolicy(peerPolicy, cn, sans)) {
-                assumedRoles.addAll(peerPolicy.assumedRoles());
                 matchedPolicies.add(peerPolicy.policyName());
             }
         }
-        return new AuthorizationResult(assumedRoles, matchedPolicies);
+        return new AuthorizationResult(matchedPolicies);
     }
 
     private static boolean matchesPolicy(PeerPolicy peerPolicy, String cn, List<String> sans) {

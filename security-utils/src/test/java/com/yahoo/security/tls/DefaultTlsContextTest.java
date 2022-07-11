@@ -6,7 +6,6 @@ import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
-import com.yahoo.security.tls.policy.Role;
 import org.junit.Test;
 
 import javax.net.ssl.SSLEngine;
@@ -41,7 +40,6 @@ public class DefaultTlsContextTest {
                 singleton(
                         new PeerPolicy(
                                 "dummy-policy",
-                                singleton(new Role("dummy-role")),
                                 singletonList(RequiredPeerCredential.of(RequiredPeerCredential.Field.CN, "dummy")))));
 
         DefaultTlsContext tlsContext =
