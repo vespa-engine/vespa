@@ -16,22 +16,17 @@ import java.util.logging.Level;
  * @author hmusum
  */
 public class SessionsMaintainer extends ConfigServerMaintainer {
-    private final boolean hostedVespa;
 
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FlagSource flagSource) {
         super(applicationRepository, curator, flagSource, applicationRepository.clock().instant(), interval, true);
-        this.hostedVespa = applicationRepository.configserverConfig().hostedVespa();
     }
 
     @Override
     protected double maintain() {
         applicationRepository.deleteExpiredLocalSessions();
 
-        if (hostedVespa) {
-            Duration expiryTime = Duration.ofMinutes(90);
-            int deleted = applicationRepository.deleteExpiredRemoteSessions(expiryTime);
-            log.log(Level.FINE, () -> "Deleted " + deleted + " expired remote sessions older than " + expiryTime);
-        }
+        int deleted = applicationRepository.deleteExpiredRemoteSessions(applicationRepository.clock());
+        log.log(Level.FINE, () -> "Deleted " + deleted + " expired remote sessions");
 
         return 1.0;
     }

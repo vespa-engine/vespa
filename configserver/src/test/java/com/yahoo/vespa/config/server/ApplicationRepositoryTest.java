@@ -446,7 +446,7 @@ public class ApplicationRepositoryTest {
         assertEquals(3, localSession.getSessionId());
 
         // All sessions except 3 should be removed after the call to deleteExpiredRemoteSessions
-        assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock, Duration.ofSeconds(0)));
+        assertEquals(2, tester.applicationRepository().deleteExpiredRemoteSessions(clock));
         ArrayList<Long> remoteSessions = new ArrayList<>(sessionRepository.getRemoteSessionsFromZooKeeper());
         Session remoteSession = sessionRepository.getRemoteSession(remoteSessions.get(0));
         assertEquals(3, remoteSession.getSessionId());
