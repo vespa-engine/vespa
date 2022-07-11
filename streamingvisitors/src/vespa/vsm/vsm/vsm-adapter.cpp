@@ -139,6 +139,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     DocsumBlobEntryFilter docsum_blob_entry_filter;
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_SHORT);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_BOOL);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_BYTE);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_FLOAT);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_DOUBLE);
