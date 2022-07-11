@@ -251,10 +251,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 }
             }
 
-            // A parent with children gets wantToFail to avoid getting more nodes allocated to it.
-            wantToFail(failing.node(), true, lock);
-
             if (activeChildrenToFail.isEmpty()) {
+                wantToFail(failing.node(), true, lock);
                 try {
                     deployment.get().activate();
                     return true;
@@ -300,8 +298,15 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
 
         // Always allow failing a minimum number of hosts
-        if (node.parentHostname().isEmpty() &&
-            recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
+        if (node.parentHostname().isEmpty()) {
+            Set<String> parentsOfRecentlyFailedNodes = recentlyFailedNodes.stream()
+                                                                          .map(n -> n.parentHostname().orElse(n.hostname()))
+                                                                          .collect(Collectors.toSet());
+            long potentiallyFailed = parentsOfRecentlyFailedNodes.contains(node.hostname()) ?
+                                     parentsOfRecentlyFailedNodes.size() :
+                                     parentsOfRecentlyFailedNodes.size() + 1;
+            if (potentiallyFailed <= throttlePolicy.minimumAllowedToFail) return false;
+        }
 
         // Always allow failing children of a failed host
         if (recentlyFailedNodes.parentOf(node).isPresent()) return false;
