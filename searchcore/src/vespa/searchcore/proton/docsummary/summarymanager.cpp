@@ -102,6 +102,7 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
     docsum_blob_entry_filter.add_skip(RES_DOUBLE);
     docsum_blob_entry_filter.add_skip(RES_INT64);
     docsum_blob_entry_filter.add_skip(RES_TENSOR);
+    docsum_blob_entry_filter.add_skip(RES_FEATUREDATA);
     auto resultConfig = std::make_unique<ResultConfig>(docsum_blob_entry_filter);
     if (!resultConfig->ReadConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str())) {
         std::ostringstream oss;
