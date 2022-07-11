@@ -36,16 +36,6 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         root = new MockRoot("root");
     }
 
-    // Supported for backwards compatibility
-    private Element servicesConfigserver() {
-        return XML.getDocument(
-                        "<admin version=\"2.0\">" +
-                        "  <configserver hostalias=\"mockhost\"/>" +
-                        "  <adminserver hostalias=\"mockhost\"/>" +
-                        "</admin>").getDocumentElement();
-
-    }
-
     private Element servicesOverride() {
         return XML.getDocument(
                         "<admin version=\"2.0\">" +
@@ -128,15 +118,6 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
                 assertNotEquals(configserver.getHostName(), slobrok.getHostName());
             }
         }
-    }
-
-    /**
-     * Tests that configserver works (deprecated, but allowed in admin 2.0)
-     */
-    @Test
-    public void adminWithConfigserverElement() {
-        Admin admin = buildAdmin(servicesConfigserver());
-        assertEquals(1, admin.getConfigservers().size());
     }
 
     /**
