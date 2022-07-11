@@ -26,7 +26,9 @@ public class DocprocChains extends Chains<DocprocChain> {
 
     public DocprocChains(AbstractConfigProducer<?> parent, String subId) {
         super(parent, subId);
-        docprocHandler = new ProcessingHandler<>(this, "com.yahoo.docproc.jdisc.DocumentProcessingHandler");
+        docprocHandler = new ProcessingHandler<>(
+                this,
+                BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings("com.yahoo.docproc.jdisc.DocumentProcessingHandler", null));
         addComponent(docprocHandler);
         addComponent(
                 new SimpleComponent(

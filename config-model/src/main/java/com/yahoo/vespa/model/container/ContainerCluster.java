@@ -318,7 +318,9 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         this.processingChains = processingChains;
 
-        ProcessingHandler<?> processingHandler = new ProcessingHandler<>(processingChains, PROCESSING_HANDLER_CLASS);
+        ProcessingHandler<?> processingHandler = new ProcessingHandler<>(
+                processingChains,
+                BundleInstantiationSpecification.getFromStrings(PROCESSING_HANDLER_CLASS, null, null));
 
         for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);

@@ -22,12 +22,13 @@ public class ProcessingHandler<CHAINS extends Chains<?>>
 
     protected final CHAINS chains;
 
-    public ProcessingHandler(CHAINS chains, String handlerClass) {
-        this(chains, BundleInstantiationSpecification.getInternalProcessingSpecificationFromStrings(handlerClass, null), null);
+    // Create a handler that uses the default threadpool for handlers
+    public ProcessingHandler(CHAINS chains, BundleInstantiationSpecification spec) {
+        this(chains, spec, null);
     }
 
     public ProcessingHandler(CHAINS chains, BundleInstantiationSpecification spec, ContainerThreadpool threadpool) {
-        super(new ComponentModel(spec, null), threadpool);
+        super(new ComponentModel(spec), threadpool);
         this.chains = chains;
     }
 

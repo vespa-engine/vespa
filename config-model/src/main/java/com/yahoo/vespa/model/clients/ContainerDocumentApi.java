@@ -81,7 +81,7 @@ public class ContainerDocumentApi {
 
     private static Handler createHandler(String className, Threadpool executor) {
         return new Handler(new ComponentModel(className, null, "vespaclient-container-plugin"),
-                             executor);
+                           executor);
     }
 
     public static final class HandlerOptions {

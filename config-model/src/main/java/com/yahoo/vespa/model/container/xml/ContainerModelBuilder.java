@@ -30,6 +30,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.schema.OnnxModel;
@@ -886,8 +887,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
         // Magic spell is needed to receive the chains config :-|
-        cluster.addComponent(new ProcessingHandler<>(cluster.getSearch().getChains(),
-                                                     "com.yahoo.search.searchchain.ExecutionFactory"));
+        cluster.addComponent(new ProcessingHandler<>(
+                cluster.getSearch().getChains(),
+                BundleInstantiationSpecification.getInternalHandlerSpecificationFromStrings("com.yahoo.search.searchchain.ExecutionFactory", null)));
 
         cluster.addComponent(
                 new SearchHandler(
