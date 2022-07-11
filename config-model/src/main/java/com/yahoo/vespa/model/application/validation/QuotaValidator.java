@@ -84,22 +84,21 @@ public class QuotaValidator extends Validator {
         }
     }
 
-    private void throwIfBudgetNegative(double spend, BigDecimal budget, SystemName systemName) {
+    private static void throwIfBudgetNegative(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < 0) {
-            throwBudgetException("Please free up some capacity! This deployment's quota use is ($%.2f) and reserved quota is below zero! ($%.2f)", spend, budget, systemName);
+            throw new IllegalArgumentException(quotaMessage("Please free up some capacity", systemName, spend, budget));
         }
     }
 
-    private void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
+    private static void throwIfBudgetExceeded(double spend, BigDecimal budget, SystemName systemName) {
         if (budget.doubleValue() < spend) {
-            throw new IllegalArgumentException((systemName.equals(SystemName.Public) ? "" : systemName.value() + ": ") +
-                    "Deployment would make your tenant exceed its quota and has been blocked!  Please contact support to update your plan.");
+            throw new IllegalArgumentException(quotaMessage("Deployment exceeds its quota and has been blocked! Please contact support to update your plan", systemName, spend, budget));
         }
     }
 
-    private void throwBudgetException(String formatMessage, double spend, BigDecimal budget, SystemName systemName) {
-        var message = String.format(Locale.US, formatMessage, spend, budget);
-        var messageWithSystem = (systemName.equals(SystemName.Public) ? "" : systemName.value() + ": ") + message;
-        throw new IllegalArgumentException(messageWithSystem);
+    private static String quotaMessage(String message, SystemName system, double spend, BigDecimal budget) {
+        String quotaDescription = String.format(Locale.ENGLISH, "Quota is $%.2f, but at least $%.2f is required", budget, spend);
+        return (system == SystemName.Public ? "" : system.value() + ": ") + message + ": " + quotaDescription;
     }
+
 }
