@@ -6,13 +6,12 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.jdisc.config.SessionConfig;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.vespa.model.container.component.Handler;
 
 /**
  * @author Einar M R Rosenvinge
  */
-public class MbusClient extends Handler<AbstractConfigProducer<?>> implements SessionConfig.Producer {
+public class MbusClient extends Handler implements SessionConfig.Producer {
     private static final ComponentSpecification CLASSNAME =
             ComponentSpecification.fromString("com.yahoo.container.jdisc.messagebus.MbusClientProvider");
 

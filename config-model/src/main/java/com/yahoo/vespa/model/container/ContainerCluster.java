@@ -142,6 +142,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     private ContainerDocproc containerDocproc;
     private ContainerDocumentApi containerDocumentApi;
     private SecretStore secretStore;
+    private final ContainerThreadpool defaultHandlerThreadpool = new Handler.DefaultHandlerThreadpool();
 
     private boolean rpcServerEnabled = true;
     private boolean httpServerEnabled = true;
@@ -181,6 +182,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addCommonVespaBundles();
         addSimpleComponent(AccessLog.class);
         addComponent(new DefaultThreadpoolProvider(this, defaultPoolNumThreads));
+        addComponent(defaultHandlerThreadpool);
         addSimpleComponent(com.yahoo.concurrent.classlock.ClassLocking.class);
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricConsumerProviderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.metric.MetricProvider");
@@ -217,14 +219,14 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addMetricStateHandler() {
-        Handler<AbstractConfigProducer<?>> stateHandler = new Handler<>(
+        Handler stateHandler = new Handler(
                 new ComponentModel(STATE_HANDLER_CLASS, null, null, null));
         stateHandler.addServerBindings(STATE_HANDLER_BINDING_1, STATE_HANDLER_BINDING_2);
         addComponent(stateHandler);
     }
 
     public void addDefaultRootHandler() {
-        Handler<AbstractConfigProducer<?>> handler = new Handler<>(
+        Handler handler = new Handler(
                 new ComponentModel(BundleInstantiationSpecification.getFromStrings(
                         BINDINGS_OVERVIEW_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
         handler.addServerBindings(ROOT_HANDLER_BINDING);
@@ -232,7 +234,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addApplicationStatusHandler() {
-        Handler<AbstractConfigProducer<?>> statusHandler = new Handler<>(
+        Handler statusHandler = new Handler(
                 new ComponentModel(BundleInstantiationSpecification.getFromStrings(
                         APPLICATION_STATUS_HANDLER_CLASS, null, null), null));  // null bundle, as the handler is in container-disc
         statusHandler.addServerBindings(SystemBindingPattern.fromHttpPath("/ApplicationStatus"));
@@ -240,13 +242,22 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     }
 
     public void addVipHandler() {
-        Handler<?> vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
+        Handler vipHandler = Handler.fromClassName(FileStatusHandlerComponent.CLASS);
         vipHandler.addServerBindings(VIP_HANDLER_BINDING);
         addComponent(vipHandler);
     }
 
     public final void addComponent(Component<?, ?> component) {
         componentGroup.addComponent(component);
+        if (component instanceof Handler handler) {
+            ensureHandlerHasThreadpool(handler);
+        }
+    }
+
+    private void ensureHandlerHasThreadpool(Handler handler) {
+        if (! handler.hasCustomThreadPool) {
+            handler.inject(defaultHandlerThreadpool);
+        }
     }
 
     public final void addSimpleComponent(String idSpec, String classSpec, String bundleSpec) {
@@ -306,10 +317,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.processingChains = processingChains;
 
         // Cannot use the class object for ProcessingHandler, because its superclass is not accessible
-        ProcessingHandler<?> processingHandler = new ProcessingHandler<>(
-                processingChains,
-                "com.yahoo.processing.handler.ProcessingHandler",
-                 null);
+        ProcessingHandler<?> processingHandler = new ProcessingHandler<>(processingChains,
+                                                                         "com.yahoo.processing.handler.ProcessingHandler");
 
         for (BindingPattern binding: serverBindings)
             processingHandler.addServerBindings(binding);
@@ -368,9 +377,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return containerDocproc.getChains();
     }
 
-    @SuppressWarnings("unchecked")
-    public Collection<Handler<?>> getHandlers() {
-        return (Collection<Handler<?>>)(Collection)componentGroup.getComponents(Handler.class);
+    public Collection<Handler> getHandlers() {
+        return componentGroup.getComponents(Handler.class);
     }
 
     public void setSecretStore(SecretStore secretStore) {

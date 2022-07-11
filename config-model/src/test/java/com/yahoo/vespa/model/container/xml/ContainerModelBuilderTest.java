@@ -21,7 +21,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
-import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
@@ -42,6 +41,7 @@ import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModelEvaluation;
 import com.yahoo.vespa.model.container.component.Component;
+import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.content.utils.ContentClusterUtils;
 import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithFilePkg;
@@ -60,19 +60,14 @@ import java.util.stream.Collectors;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.test.LinePatternMatcher.containsLineWithPattern;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
-import static com.yahoo.vespa.model.container.ContainerCluster.ROOT_HANDLER_BINDING;
-import static com.yahoo.vespa.model.container.ContainerCluster.STATE_HANDLER_BINDING_1;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -198,6 +193,17 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     }
 
     @Test
+    public void builtin_handlers_get_default_threadpool() {
+        createBasicContainerModel();
+
+        Handler h1 = getHandler("default", ApplicationStatusHandler.class.getName());
+        assertTrue(h1.getInjectedComponentIds().contains("threadpool@default-handler-common"));
+
+        Handler h2 = getHandler("default", BindingsOverviewHandler.class.getName());
+        assertTrue(h2.getInjectedComponentIds().contains("threadpool@default-handler-common"));
+    }
+
+    @Test
     public void verify_bindings_for_builtin_handlers() {
         createBasicContainerModel();
         JdiscBindingsConfig config = root.getConfig(JdiscBindingsConfig.class, "default/container.0");
@@ -213,68 +219,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
 
         JdiscBindingsConfig.Handlers metricsV2Handler = config.handlers(MetricsV2Handler.class.getName());
         assertThat(metricsV2Handler.serverBindings(), contains("http://*/metrics/v2", "http://*/metrics/v2/*"));
-    }
-
-    @Test
-    public void default_root_handler_binding_can_be_stolen_by_user_configured_handler() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>" +
-                        "  <handler id='userRootHandler'>" +
-                        "    <binding>" + ROOT_HANDLER_BINDING.patternString() + "</binding>" +
-                        "  </handler>" +
-                        "</container>");
-        createModel(root, clusterElem);
-
-        // The handler is still set up.
-        ComponentsConfig.Components userRootHandler = getComponent(componentsConfig(), BindingsOverviewHandler.class.getName());
-        assertNotNull(userRootHandler);
-
-        // .. but it has no bindings
-        var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
-        assertNull(discBindingsConfig.handlers(BindingsOverviewHandler.class.getName()));
-    }
-
-    @Test
-    public void reserved_binding_cannot_be_stolen_by_user_configured_handler() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>" +
-                        "  <handler id='userHandler'>" +
-                        "    <binding>" + STATE_HANDLER_BINDING_1.patternString() + "</binding>" +
-                        "  </handler>" +
-                        "</container>");
-        try {
-            createModel(root, clusterElem);
-            fail("Expected exception when stealing a reserved binding.");
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Binding 'http://*/state/v1' is a reserved Vespa binding " +
-                                                  "and cannot be used by handler: userHandler"));
-        }
-    }
-
-    @Test
-    public void handler_bindings_are_included_in_discBindings_config() {
-        createClusterWithJDiscHandler();
-        String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
-        assertThat(discBindingsConfig, containsString(".serverBindings[0] \"http://*/binding0\""));
-        assertThat(discBindingsConfig, containsString(".serverBindings[1] \"http://*/binding1\""));
-    }
-
-    @Test
-    public void handlers_are_included_in_components_config() {
-        createClusterWithJDiscHandler();
-        assertThat(componentsConfig().toString(), containsString(".id \"discHandler\""));
-    }
-
-    private void createClusterWithJDiscHandler() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>",
-                "  <handler id='discHandler'>",
-                "    <binding>http://*/binding0</binding>",
-                "    <binding>http://*/binding1</binding>",
-                "  </handler>",
-                "</container>");
-
-        createModel(root, clusterElem);
     }
 
     @Test
@@ -372,20 +316,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(2, cluster.getContainers().size());
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.0").requesttimeout(), 111);
         assertEquals(root.getConfig(QrMonitorConfig.class, "default/container.1").requesttimeout(), 222);
-    }
-
-    @Test
-    public void nested_components_are_injected_to_handlers() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>",
-                "  <handler id='myHandler'>",
-                "    <component id='injected' />",
-                "  </handler>",
-                "</container>");
-
-        createModel(root, clusterElem);
-        Component<?,?> handler = getContainerComponent("default", "myHandler");
-        assertThat(handler.getInjectedComponentIds(), hasItem("injected@myHandler"));
     }
 
     @Test

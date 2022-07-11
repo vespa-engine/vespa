@@ -63,8 +63,8 @@ public class ContainerModelEvaluation implements
         rankProfileList.getConfig(builder);
     }
 
-    public static Handler<?> getHandler() {
-        Handler<?> handler = new Handler<>(new ComponentModel(REST_HANDLER_NAME, null, EVALUATION_BUNDLE_NAME));
+    public static Handler getHandler() {
+        Handler handler = new Handler(new ComponentModel(REST_HANDLER_NAME, null, EVALUATION_BUNDLE_NAME));
         handler.addServerBindings(
                 SystemBindingPattern.fromHttpPath(REST_BINDING_PATH),
                 SystemBindingPattern.fromHttpPath(REST_BINDING_PATH + "/*"));

@@ -30,11 +30,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBase {
 
-    private Map<String, Handler<?>> getHandlers(String clusterName) {
+    private Map<String, Handler> getHandlers(String clusterName) {
         ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get(clusterName);
-        Map<String, Handler<?>> handlerMap = new HashMap<>();
-        Collection<Handler<?>> handlers = cluster.getHandlers();
-        for (Handler<?> handler : handlers) {
+        Map<String, Handler> handlerMap = new HashMap<>();
+        Collection<Handler> handlers = cluster.getHandlers();
+        for (Handler handler : handlers) {
             assertFalse(handlerMap.containsKey(handler.getComponentId().toString()));  //die on overwrites
             handlerMap.put(handler.getComponentId().toString(), handler);
         }
@@ -56,7 +56,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
     }
 
     private void verifyCustomBindings(String id) {
-        Handler<?> handler = getHandlers("cluster1").get(id);
+        Handler handler = getHandlers("cluster1").get(id);
 
         assertTrue(handler.getServerBindings().contains(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi")));
         assertTrue(handler.getServerBindings().contains(UserBindingPattern.fromHttpPath("/document-api/reserved-for-internal-use/feedapi/")));
@@ -73,7 +73,7 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
                 "</container>");
         createModel(root, elem);
 
-        Map<String, Handler<?>> handlerMap = getHandlers("cluster1");
+        Map<String, Handler> handlerMap = getHandlers("cluster1");
 
         assertNotNull(handlerMap.get("com.yahoo.container.handler.VipStatusHandler"));
         assertNotNull(handlerMap.get("com.yahoo.container.handler.observability.ApplicationStatusHandler"));
@@ -110,8 +110,8 @@ public class ContainerDocumentApiBuilderTest extends ContainerModelBuilderTestBa
                 "</container>");
         root = new MockRoot("root", new MockApplicationPackage.Builder().build());
         createModel(root, elem);
-        Map<String, Handler<?>> handlers = getHandlers("cluster1");
-        Handler<?> feedApiHandler = handlers.get("com.yahoo.vespa.http.server.FeedHandler");
+        Map<String, Handler> handlers = getHandlers("cluster1");
+        Handler feedApiHandler = handlers.get("com.yahoo.vespa.http.server.FeedHandler");
         Set<String> injectedComponentIds = feedApiHandler.getInjectedComponentIds();
         assertTrue(injectedComponentIds.contains("threadpool@feedapi-handler"));
 
