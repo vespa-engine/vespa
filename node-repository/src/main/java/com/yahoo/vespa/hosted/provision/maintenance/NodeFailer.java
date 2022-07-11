@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.status.ApplicationInstanceStatus;
@@ -19,9 +20,11 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Level;
@@ -106,26 +109,6 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             failActive(failing);
         }
 
-        // Active hosts
-        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
-        for (Node host : activeNodes.hosts().failing()) {
-            if ( ! activeNodes.childrenOf(host).isEmpty()) continue;
-            Optional<NodeMutex> locked = Optional.empty();
-            try {
-                attempts++;
-                locked = nodeRepository().nodes().lockAndGet(host);
-                if (locked.isEmpty()) continue;
-                nodeRepository().nodes().fail(List.of(locked.get().node()), Agent.NodeFailer,
-                                              "Host should be failed and have no tenant nodes");
-            }
-            catch (Exception e) {
-                failures++;
-            }
-            finally {
-                locked.ifPresent(NodeMutex::close);
-            }
-        }
-
         int throttlingActive = Math.min(1, throttledHostFailures + throttledNodeFailures);
         metric.set(throttlingActiveMetric, throttlingActive, null);
         metric.set(throttledHostFailuresMetric, throttledHostFailures, null);
@@ -152,6 +135,9 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private Collection<FailingNode> findActiveFailingNodes() {
         Set<FailingNode> failingNodes = new HashSet<>();
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
+
+        for (Node host : activeNodes.hosts().failing())
+            failingNodes.add(new FailingNode(host, "Host should be failed and have no tenant nodes"));
 
         for (Node node : activeNodes) {
             Instant graceTimeStart = clock().instant().minus(nodeRepository().nodes().suspended(node) ? suspendedDownTimeLimit : downTimeLimit);
@@ -241,42 +227,61 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             deployer.deployFromLocalActive(failing.node().allocation().get().owner(), Duration.ofMinutes(30));
         if (deployment.isEmpty()) return false;
 
-        try (Mutex lock = nodeRepository().nodes().lock(failing.node().allocation().get().owner())) {
-            // If the active node that we are trying to fail is of type host, we need to successfully fail all
-            // the children nodes running on it before we fail the host
-            boolean allTenantNodesFailedOutSuccessfully = true;
+        // If the active node that we are trying to fail is of type host, we need to successfully fail all
+        // the children nodes running on it before we fail the host.  Failing a child node in a dynamically
+        // provisioned zone may require provisioning new hosts that require the host application lock to be held,
+        // so we must release ours before failing the children.
+        List<FailingNode> activeChildrenToFail = new ArrayList<>();
+        try (NodeMutex lock = nodeRepository().nodes().lockAndGetRequired(failing.node())) {
+            // Now that we have gotten the node object under the proper lock, sanity-check it still makes sense to fail
+            if (!Objects.equals(failing.node().allocation().map(Allocation::owner), lock.node().allocation().map(Allocation::owner)))
+                return false;
+            if (lock.node().state() == Node.State.failed)
+                return true;
+            if (!Objects.equals(failing.node().state(), lock.node().state()))
+                return false;
+            failing = new FailingNode(lock.node(), failing.reason);
+
             String reasonForChildFailure = "Failing due to parent host " + failing.node().hostname() + " failure: " + failing.reason();
             for (Node failingTenantNode : nodeRepository().nodes().list().childrenOf(failing.node())) {
                 if (failingTenantNode.state() == Node.State.active) {
-                    allTenantNodesFailedOutSuccessfully &= failActive(new FailingNode(failingTenantNode, reasonForChildFailure));
-                } else {
+                    activeChildrenToFail.add(new FailingNode(failingTenantNode, reasonForChildFailure));
+                } else if (failingTenantNode.state() != Node.State.failed) {
                     nodeRepository().nodes().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
                 }
             }
 
-            if (! allTenantNodesFailedOutSuccessfully) return false;
-            wantToFail(failing.node(), true, lock);
-            try {
-                deployment.get().activate();
-                return true;
-            } catch (TransientException e) {
-                log.log(Level.INFO, "Failed to redeploy " + failing.node().allocation().get().owner() +
-                                    " with a transient error, will be retried by application maintainer: " +
-                                    Exceptions.toMessageString(e));
-                return true;
-            } catch (RuntimeException e) {
-                // Reset want to fail: We'll retry failing unless it heals in the meantime
-                nodeRepository().nodes().node(failing.node().hostname())
-                                        .ifPresent(n -> wantToFail(n, false, lock));
-                log.log(Level.WARNING, "Could not fail " + failing.node() + " for " + failing.node().allocation().get().owner() +
-                                       " for " + failing.reason() + ": " + Exceptions.toMessageString(e));
-                return false;
+            if (activeChildrenToFail.isEmpty()) {
+                wantToFail(failing.node(), true, lock);
+                try {
+                    deployment.get().activate();
+                    return true;
+                } catch (TransientException e) {
+                    log.log(Level.INFO, "Failed to redeploy " + failing.node().allocation().get().owner() +
+                                        " with a transient error, will be retried by application maintainer: " +
+                                        Exceptions.toMessageString(e));
+                    return true;
+                } catch (RuntimeException e) {
+                    // Reset want to fail: We'll retry failing unless it heals in the meantime
+                    nodeRepository().nodes().node(failing.node().hostname())
+                                    .ifPresent(n -> wantToFail(n, false, lock));
+                    log.log(Level.WARNING, "Could not fail " + failing.node() + " for " + failing.node().allocation().get().owner() +
+                                           " for " + failing.reason() + ": " + Exceptions.toMessageString(e));
+                    return false;
+                }
             }
         }
+
+        // In a dynamically provisioned zone the failing of the first child may require a new host to be provisioned,
+        // so failActive() may take a long time to complete, but the remaining children should be fast.
+        activeChildrenToFail.forEach(this::failActive);
+
+        return false;
     }
 
     private void wantToFail(Node node, boolean wantToFail, Mutex lock) {
-        nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, clock().instant()), lock);
+        if (!node.status().wantToFail())
+            nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, clock().instant()), lock);
     }
 
     /** Returns true if node failing should be throttled */
@@ -284,16 +289,24 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
         Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
         NodeList allNodes = nodeRepository().nodes().list();
-        NodeList recentlyFailedNodes = allNodes.state(Node.State.failed)
-                                               .matching(n -> n.history().hasEventAfter(History.Event.Type.failed,
-                                                                                        startOfThrottleWindow));
+        NodeList recentlyFailedNodes = allNodes
+                .matching(n -> n.status().wantToFail() ||
+                               (n.state() == Node.State.failed &&
+                                n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow)));
 
         // Allow failing any node within policy
         if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
 
         // Always allow failing a minimum number of hosts
-        if (node.parentHostname().isEmpty() &&
-            recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
+        if (node.parentHostname().isEmpty()) {
+            Set<String> parentsOfRecentlyFailedNodes = recentlyFailedNodes.stream()
+                                                                          .map(n -> n.parentHostname().orElse(n.hostname()))
+                                                                          .collect(Collectors.toSet());
+            long potentiallyFailed = parentsOfRecentlyFailedNodes.contains(node.hostname()) ?
+                                     parentsOfRecentlyFailedNodes.size() :
+                                     parentsOfRecentlyFailedNodes.size() + 1;
+            if (potentiallyFailed <= throttlePolicy.minimumAllowedToFail) return false;
+        }
 
         // Always allow failing children of a failed host
         if (recentlyFailedNodes.parentOf(node).isPresent()) return false;
