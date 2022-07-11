@@ -144,6 +144,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_DOUBLE);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT64);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_TENSOR);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_FEATUREDATA);
     std::unique_ptr<ResultConfig> resCfg(new ResultConfig(docsum_blob_entry_filter));
     if ( ! resCfg->ReadConfig(*summary.get(), _configId.c_str())) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
