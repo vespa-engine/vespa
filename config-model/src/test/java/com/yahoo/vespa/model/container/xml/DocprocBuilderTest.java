@@ -27,11 +27,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-
 /**
- * @author einarmr
+ * @author Einar M R Rosenvinge
  * @author gjoranv
- * @since 5.1.9
  */
 public class DocprocBuilderTest extends DomBuilderTest {
 
@@ -64,7 +62,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
                 "  <nodes>",
                 "    <node hostalias='mockhost' baseport='1500' />",
                 "  </nodes>",
-                "  <document-processing preferlocalnode='true' numnodesperclient='2' maxqueuebytesize='100m' maxmessagesinqueue='300' maxqueuewait='200'>",
+                "  <document-processing maxmessagesinqueue='300' maxqueuewait='200'>",
                 "    <documentprocessor id='docproc1' class='com.yahoo.Docproc1' bundle='docproc1bundle'/>",
                 "    <chain id='chein'>",
                 "      <documentprocessor id='docproc2'/>",
@@ -73,12 +71,9 @@ public class DocprocBuilderTest extends DomBuilderTest {
                 "</container>");
     }
 
-    // TODO: re-enable assertions when the appropriate attributes are handled by the builder
     @Test
     public void testDocprocCluster() {
         assertEquals("banan", cluster.getName());
-        //assertTrue(cluster.getContainerDocproc().isPreferLocalNode());
-        //assertEquals(2, cluster.getContainerDocproc().getNumNodesPerClient());
         List<ApplicationContainer> services = cluster.getContainers();
         assertEquals(1, services.size());
         ApplicationContainer service = services.get(0);

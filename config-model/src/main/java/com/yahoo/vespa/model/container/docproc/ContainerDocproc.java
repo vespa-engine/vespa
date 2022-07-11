@@ -15,35 +15,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author einarmr
+ * @author Einar M R Rosenvinge
  * @author gjoranv
  */
-public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
-        implements 
-            ContainerMbusConfig.Producer,
-            SchemamappingConfig.Producer,
-            DocprocConfig.Producer
-{
+public class ContainerDocproc extends ContainerSubsystem<DocprocChains> implements
+        ContainerMbusConfig.Producer,
+        SchemamappingConfig.Producer,
+        DocprocConfig.Producer {
+
     public final Options options;
-
-    // Whether or not to prefer sending to a local node.
-    private final boolean preferLocalNode = false;
-
-    // The number of nodes to use per client.
-    private final int numNodesPerClient = 0;
-
     private final Map<Pair<String, String>, String> fieldNameSchemaMap = new HashMap<>();
 
     public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains) {
-        this(cluster, chains, new Options( null, null, null, null, null, null));
+        this(cluster, chains, Options.empty());
     }
 
     public ContainerDocproc(ContainerCluster<?> cluster, DocprocChains chains, Options options) {
         this(cluster, chains, options, true);
     }
 
-    private void addSource(
-            final ContainerCluster<?> cluster, final String name, final SessionConfig.Type.Enum type) {
+    private void addSource(ContainerCluster<?> cluster, String name, SessionConfig.Type.Enum type) {
         final MbusClient mbusClient = new MbusClient(name, type);
         mbusClient.addClientBindings(SystemBindingPattern.fromPattern("mbus://*/" + mbusClient.getSessionName()));
         cluster.addComponent(mbusClient);
@@ -61,14 +52,6 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
         cluster.addSearchAndDocprocBundles();
     }
 
-    public boolean isPreferLocalNode() {
-        return preferLocalNode;
-    }
-
-    public int getNumNodesPerClient() {
-        return numNodesPerClient;
-    }
-
     @Override
     public void getConfig(ContainerMbusConfig.Builder builder) {
         builder.maxpendingcount(getMaxMessagesInQueue());
@@ -79,13 +62,9 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
             return options.maxMessagesInQueue;
         }
 
-        //maxmessagesinqueue has not been set for this node. let's try to give a good value anyway:
+        // maxmessagesinqueue has not been set for this node. let's try to give a good value anyway:
         return 2048 * getChains().allChains().allComponents().size();
-        //intentionally high, getMaxQueueMbSize() will probably kick in before this one!
-    }
-
-    private Integer getMaxQueueMbSize() {
-        return options.maxQueueMbSize;
+        // intentionally high, getMaxQueueMbSize() will probably kick in before this one!
     }
 
     private Integer getMaxQueueTimeMs() {
@@ -134,21 +113,22 @@ public class ContainerDocproc extends ContainerSubsystem<DocprocChains>
     public static class Options {
 
         public final Integer maxMessagesInQueue;
-        public final Integer maxQueueMbSize;
         public final Integer maxQueueTimeMs;
 
         public final Double maxConcurrentFactor;
         public final Double documentExpansionFactor;
         public final Integer containerCoreMemory;
 
-        public Options(Integer maxMessagesInQueue, Integer maxQueueMbSize, Integer maxQueueTimeMs, Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
+        public Options(Integer maxMessagesInQueue, Integer maxQueueTimeMs, Double maxConcurrentFactor, Double documentExpansionFactor, Integer containerCoreMemory) {
             this.maxMessagesInQueue = maxMessagesInQueue;
-            this.maxQueueMbSize = maxQueueMbSize;
             this.maxQueueTimeMs = maxQueueTimeMs;
             this.maxConcurrentFactor = maxConcurrentFactor;
             this.documentExpansionFactor = documentExpansionFactor;
             this.containerCoreMemory = containerCoreMemory;
         }
+
+        static Options empty() { return new Options(null, null, null, null, null); }
+
     }
 
 }

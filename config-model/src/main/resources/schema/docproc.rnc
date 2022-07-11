@@ -11,9 +11,6 @@ SchemaMapping = element map {
   }+
 }
 
-
-
-
 #Version 3 config:
 
 DocProcV3 = attribute version { "3.0" },
@@ -24,10 +21,10 @@ DocProcV3 = attribute version { "3.0" },
 
 # TODO Here we need a thorough cleaning
 DocprocClusterAttributes =   attribute compressdocuments { xsd:boolean }? &
-  attribute numnodesperclient { xsd:positiveInteger }? &
-  attribute preferlocalnode { xsd:boolean }? &
+  attribute numnodesperclient { xsd:positiveInteger }? & # TODO: Remove in Vespa 9
+  attribute preferlocalnode { xsd:boolean }? & # TODO: Remove in Vespa 9
   attribute maxmessagesinqueue { xsd:nonNegativeInteger }? &
-  attribute maxqueuebytesize { xsd:string { minLength = "1" } }? &
+  attribute maxqueuebytesize { xsd:string { minLength = "1" } }? &  # TODO: Remove in Vespa 9
   attribute maxqueuewait { xsd:positiveInteger }? &
   attribute maxconcurrentfactor { xsd:double { minExclusive = "0.0" maxExclusive = "1.0" } }? &
   attribute documentexpansionfactor { xsd:double { minExclusive = "0.0" } }? &

@@ -940,7 +940,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addIncludes(docprocElement);
         DocprocChains chains = new DomDocprocChainsBuilder(null, false).build(deployState, cluster, docprocElement);
 
-        ContainerDocproc.Options docprocOptions = DocprocOptionsBuilder.build(docprocElement);
+        ContainerDocproc.Options docprocOptions = DocprocOptionsBuilder.build(docprocElement, deployState.getDeployLogger());
         return new ContainerDocproc(cluster, chains, docprocOptions, !standaloneBuilder);
      }
 

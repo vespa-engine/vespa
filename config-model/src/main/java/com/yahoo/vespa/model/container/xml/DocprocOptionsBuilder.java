@@ -1,17 +1,18 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import org.w3c.dom.Element;
+import java.util.Set;
+import java.util.logging.Level;
 
-/**
- * Extracted from DomDocProcClusterBuilder
- */
 public class DocprocOptionsBuilder {
-    public static ContainerDocproc.Options build(Element spec) {
+    public static ContainerDocproc.Options build(Element spec, DeployLogger deployLogger) {
+        checkForDeprecatedAttributes(spec, Set.of("maxqueuebytesize", "numnodesperclient", "preferlocalnode"), deployLogger);
+
         return new ContainerDocproc.Options(
                 getMaxMessagesInQueue(spec),
-                getSizeInMegabytes(spec.getAttribute("maxqueuebytesize")),
                 getTime(spec.getAttribute("maxqueuewait")),
                 getFactor(spec.getAttribute("maxconcurrentfactor")),
                 getFactor(spec.getAttribute("documentexpansionfactor")),
@@ -19,17 +20,16 @@ public class DocprocOptionsBuilder {
     }
 
     private static Integer getInt(String integer) {
-        return integer == null || integer.trim().isEmpty() ?
-                null:
-                Integer.parseInt(integer);
+        return integer == null || integer.trim().isEmpty()
+                ? null
+                : Integer.parseInt(integer);
     }
 
     private static Double getFactor(String factor) {
-        return factor == null || factor.trim().isEmpty() ?
-                null :
-                Double.parseDouble(factor);
+        return factor == null || factor.trim().isEmpty()
+                ? null
+                : Double.parseDouble(factor);
     }
-
 
     private static Integer getMaxMessagesInQueue(Element spec) {
         // get max queue size (number of messages), if set
@@ -38,28 +38,6 @@ public class DocprocOptionsBuilder {
             maxMessagesInQueue = Integer.valueOf(spec.getAttribute("maxmessagesinqueue"));
         }
         return maxMessagesInQueue;
-    }
-
-    private static Integer getSizeInMegabytes(String size) {
-        if (size == null) {
-            return null;
-        }
-        size = size.trim();
-        if (size.isEmpty()) {
-            return null;
-        }
-
-        Integer megabyteSize;
-        if (size.endsWith("m")) {
-            size = size.substring(0, size.length() - 1);
-            megabyteSize = Integer.parseInt(size);
-        } else if (size.endsWith("g")) {
-            size = size.substring(0, size.length() - 1);
-            megabyteSize = Integer.parseInt(size) * 1024;
-        } else {
-            throw new IllegalArgumentException("Heap sizes for docproc must be set to Xm or Xg, where X is an integer specifying megabytes or gigabytes, respectively.");
-        }
-        return megabyteSize;
     }
 
     private static Integer getTime(String intStr) {
@@ -73,4 +51,13 @@ public class DocprocOptionsBuilder {
 
         return 1000 * (int)Double.parseDouble(intStr);
     }
+
+    private static void checkForDeprecatedAttributes(Element spec, Set<String> names, DeployLogger deployLogger) {
+        names.forEach(n -> {
+            if (!spec.getAttribute(n).isEmpty())
+                deployLogger.logApplicationPackage(Level.WARNING, "'" + n + "' is ignored, deprecated and will be removed in Vespa 9.");
+        });
+    }
+
+
 }
