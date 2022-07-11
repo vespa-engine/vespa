@@ -318,7 +318,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
         this.processingChains = processingChains;
 
-        // Cannot use the class object for ProcessingHandler, because its superclass is not accessible
         ProcessingHandler<?> processingHandler = new ProcessingHandler<>(processingChains, PROCESSING_HANDLER_CLASS);
 
         for (BindingPattern binding: serverBindings)

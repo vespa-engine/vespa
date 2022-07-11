@@ -17,6 +17,7 @@ public class ProcessingHandler<CHAINS extends Chains<?>>
         extends Handler
         implements ChainsConfig.Producer {
 
+    // Cannot use the class object for ProcessingHandler, because its superclass is not accessible
     public static final String PROCESSING_HANDLER_CLASS = "com.yahoo.processing.handler.ProcessingHandler";
 
     protected final CHAINS chains;
