@@ -2,7 +2,7 @@ Vespa ZooKeeper server interface
 
 Subdirectory zookeeper-server has code for the zookeeper server
 version we use by default, testing out new versions can be done by
-copying zookeeper-server dir to zookeeper-server-<version> and
+copying zookeeper-server dir to zookeeper-server-<version>,
 updating CMakeLists.txt and pom.xml in that directory and pom.xml and
 CMakeLists.txt in this directory. Selecting zookeeper server version
-is done with feature flag ZOOKEEPER_SERVER_VERSION.
+that is used runtime is done with feature flag ZOOKEEPER_SERVER_VERSION.
