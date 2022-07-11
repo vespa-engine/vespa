@@ -240,10 +240,6 @@ private:
 
     bool writePendingAfterConnect();
 
-    /**
-     * @return address spec of socket peer. Only makes sense to call on non-listening sockets.
-     */
-    vespalib::string GetPeerSpec() const;
 public:
     FNET_Connection(const FNET_Connection &) = delete;
     FNET_Connection &operator=(const FNET_Connection &) = delete;
@@ -309,6 +305,10 @@ public:
         return ((_currentID & 0x01) != (chid & 0x01));
     }
 
+    /**
+     * @return address spec of socket peer. Only makes sense to call on non-listening sockets.
+     */
+    vespalib::string GetPeerSpec() const;
 
     /**
      * Does this connection have the ability to accept incoming channels ?
