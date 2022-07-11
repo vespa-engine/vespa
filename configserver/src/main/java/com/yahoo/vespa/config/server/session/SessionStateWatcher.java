@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.config.server.session.Session.Status;
 
 /**
- * Watches one particular session (/config/v2/tenants/&lt;tenantName&gt;/sessions/&lt;n&gt;/sessionState in ZooKeeper)
+ * Watches session state for a session (/config/v2/tenants/&lt;tenantName&gt;/sessions/&lt;n&gt;/sessionState in ZooKeeper)
  * The session must be in the session repo.
  *
  * @author Vegard Havdal
@@ -24,18 +24,18 @@ public class SessionStateWatcher {
     private static final Logger log = Logger.getLogger(SessionStateWatcher.class.getName());
 
     private final Curator.FileCache fileCache;
-    private volatile RemoteSession session;
+    private final long sessionId;
     private final MetricUpdater metrics;
     private final Executor zkWatcherExecutor;
     private final SessionRepository sessionRepository;
 
     SessionStateWatcher(Curator.FileCache fileCache,
-                        RemoteSession session,
+                        long sessionId,
                         MetricUpdater metrics,
                         Executor zkWatcherExecutor,
                         SessionRepository sessionRepository) {
         this.fileCache = fileCache;
-        this.session = session;
+        this.sessionId = sessionId;
         this.metrics = metrics;
         this.fileCache.addListener(this::nodeChanged);
         this.fileCache.start();
@@ -44,37 +44,27 @@ public class SessionStateWatcher {
     }
 
     private synchronized void sessionStatusChanged(Status newStatus) {
-        long sessionId = session.getSessionId();
-
         switch (newStatus) {
             case NEW:
             case UNKNOWN:
                 break;
             case DELETE:
-                sessionRepository.deactivateAndUpdateCache(session);
+            case DEACTIVATE:
+                sessionRepository.deactivateAndUpdateCache(sessionId);
                 break;
             case PREPARE:
-                createLocalSession(sessionId);
-                sessionRepository.prepareRemoteSession(session);
+                sessionRepository.prepareRemoteSession(sessionId);
                 break;
             case ACTIVATE:
-                createLocalSession(sessionId);
-                sessionRepository.activate(session);
-                break;
-            case DEACTIVATE:
-                sessionRepository.deactivateAndUpdateCache(session);
+                sessionRepository.activate(sessionId);
                 break;
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
         }
     }
 
-    private void createLocalSession(long sessionId) {
-        sessionRepository.createLocalSessionFromDistributedApplicationPackage(sessionId);
-    }
-
     public long getSessionId() {
-        return session.getSessionId();
+        return sessionId;
     }
 
     public void close() {
@@ -93,10 +83,9 @@ public class SessionStateWatcher {
                 if (node != null) {
                     newStatus = Status.parse(Utf8.toString(node.getData()));
 
-                    String debugMessage = log.isLoggable(Level.FINE) ?
-                            session.logPre() + "Session " + session.getSessionId()
-                            + " changed status to " + newStatus.name() :
-                            null;
+                    String debugMessage = log.isLoggable(Level.FINE)
+                            ? "Session " + sessionId + " changed status to " + newStatus.name()
+                            : null;
                     if (debugMessage != null) log.fine(debugMessage);
 
                     sessionStatusChanged(newStatus);
@@ -104,15 +93,10 @@ public class SessionStateWatcher {
                     if (debugMessage != null) log.fine(debugMessage + ": Done");
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, session.logPre() + "Error handling session change to " +
-                                       newStatus.name() + " for session " + getSessionId(), e);
+                log.log(Level.WARNING, "Error handling session change to " + newStatus.name() + " for session " + getSessionId(), e);
                 metrics.incSessionChangeErrors();
             }
         });
-    }
-
-    public synchronized void updateRemoteSession(RemoteSession session) {
-        this.session = session;
     }
 
 }
