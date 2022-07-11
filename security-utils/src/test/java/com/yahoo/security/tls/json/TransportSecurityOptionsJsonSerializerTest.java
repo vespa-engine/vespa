@@ -5,7 +5,6 @@ import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
-import com.yahoo.security.tls.policy.Role;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -26,7 +25,6 @@ import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_URI;
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
-import static java.util.Collections.singleton;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -47,11 +45,11 @@ public class TransportSecurityOptionsJsonSerializerTest {
                 .withAuthorizedPeers(
                         new AuthorizedPeers(
                                 new LinkedHashSet<>(Arrays.asList(
-                                        new PeerPolicy("cfgserver", "cfgserver policy description", singleton(new Role("myrole")), Arrays.asList(
+                                        new PeerPolicy("cfgserver", "cfgserver policy description", Arrays.asList(
                                                 RequiredPeerCredential.of(CN, "mycfgserver"),
                                                 RequiredPeerCredential.of(SAN_DNS, "*.suffix.com"),
                                                 RequiredPeerCredential.of(SAN_URI, "myscheme://resource/path/"))),
-                                        new PeerPolicy("node", singleton(new Role("anotherrole")), Collections.singletonList(RequiredPeerCredential.of(CN, "hostname")))))))
+                                        new PeerPolicy("node", Collections.singletonList(RequiredPeerCredential.of(CN, "hostname")))))))
                 .build();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();

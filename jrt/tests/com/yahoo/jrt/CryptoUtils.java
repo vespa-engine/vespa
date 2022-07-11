@@ -12,7 +12,6 @@ import com.yahoo.security.tls.policy.AuthorizedPeers;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
-import com.yahoo.security.tls.policy.Role;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
@@ -42,8 +41,6 @@ class CryptoUtils {
             singleton(
                     new PeerPolicy(
                             "localhost-policy",
-                            singleton(
-                                    new Role("localhost-role")),
                             singletonList(
                                     RequiredPeerCredential.of(Field.CN, "localhost")))));
 

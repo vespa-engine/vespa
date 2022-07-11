@@ -16,14 +16,12 @@
       "must-match" : "myscheme://resource/path/"
     } ],
     "name" : "cfgserver",
-    "description" : "cfgserver policy description",
-    "roles" : [ "myrole" ]
+    "description" : "cfgserver policy description"
   }, {
     "required-credentials" : [ {
       "field" : "CN",
       "must-match" : "hostname"
     } ],
-    "name" : "node",
-    "roles" : [ "anotherrole" ]
+    "name" : "node"
   } ]
 }
