@@ -29,7 +29,9 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.w3c.dom.Element;
 
+import java.io.File;
 import java.io.StringReader;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -401,7 +403,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void security_clients_pem_is_picked_up() {
         var applicationPackage = new MockApplicationPackage.Builder()
-                .withRoot(applicationFolder.getRoot())
+                .withRoot(relativeApplicationFolder())
                 .build();
 
         applicationPackage.getFile(Path.fromString("security")).createDirectory();
@@ -418,7 +420,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     @Test
     public void operator_certificates_are_joined_with_clients_pem() {
         var applicationPackage = new MockApplicationPackage.Builder()
-                .withRoot(applicationFolder.getRoot())
+                .withRoot(relativeApplicationFolder())
                 .build();
 
         var applicationTrustCert = X509CertificateUtils.toPem(
@@ -541,6 +543,10 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
                 .filter(binding -> binding.chainId().toId().equals(filerChain))
                 .map(binding -> binding.binding().patternString())
                 .collect(Collectors.toSet());
+    }
+
+    private File relativeApplicationFolder() {
+        return Paths.get(System.getProperty("user.dir")).relativize(applicationFolder.getRoot().toPath()).toFile();
     }
 
 }

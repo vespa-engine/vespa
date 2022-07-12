@@ -69,6 +69,10 @@ public class MockApplicationPackage implements ApplicationPackage {
                                      String schemaDir,
                                      String deploymentSpec, String validationOverrides, boolean failOnValidateXml,
                                      String queryProfile, String queryProfileType) {
+        if (root.isAbsolute()) {
+            throw new IllegalArgumentException("Root must be relative");
+            // because this is later converted to a com.yahoo.path.Path, which is implicitly relative
+        }
         this.root = root;
         this.hostsS = hosts;
         this.servicesS = services;
