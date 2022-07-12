@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  *
  * @author geirst
  */
-public class ComplexAttributeFieldsValidator extends Validator {
+public class ComplexFieldsWithStructFieldAttributesValidator extends Validator {
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
@@ -39,7 +39,7 @@ public class ComplexAttributeFieldsValidator extends Validator {
     private static void validateComplexFields(String clusterName, Schema schema) {
         String unsupportedFields = schema.allFields()
                                          .filter(field -> isUnsupportedComplexField(field))
-                                         .map(ComplexAttributeFieldsValidator::toString)
+                                         .map(ComplexFieldsWithStructFieldAttributesValidator::toString)
                                          .collect(Collectors.joining(", "));
 
         if (!unsupportedFields.isEmpty()) {
