@@ -391,7 +391,7 @@ public class RankingExpressionWithOnnxTestCase {
 
         @Override
         public ApplicationFile getFile(Path file) {
-            return new MockApplicationFile(file, Path.fromString(root().toString()));
+            return new MockApplicationFile(file, root());
         }
 
         @Override

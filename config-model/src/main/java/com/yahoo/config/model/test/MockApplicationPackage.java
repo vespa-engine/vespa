@@ -1,22 +1,22 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.test;
 
+import com.yahoo.component.Version;
+import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
+import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
-import com.yahoo.config.application.api.ApplicationFile;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.io.IOUtils;
-import com.yahoo.path.Path;
 import com.yahoo.io.reader.NamedReader;
+import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
-import com.yahoo.config.application.api.ApplicationPackage;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -165,7 +165,7 @@ public class MockApplicationPackage implements ApplicationPackage {
     @Override
     public ApplicationFile getFile(Path file) {
         if (files.containsKey(file)) return files.get(file);
-        return new MockApplicationFile(file, Path.fromString(root.toString()));
+        return new MockApplicationFile(file, root);
     }
 
     @Override
@@ -288,7 +288,7 @@ public class MockApplicationPackage implements ApplicationPackage {
             Map<Path, MockApplicationFile> mockFiles = new HashMap<>();
             for (var file : files.entrySet())
                 mockFiles.put(file.getKey(), new MockApplicationFile(file.getKey(),
-                                                                     Path.fromString(root.toString()), file.getValue()));
+                                                                     root, file.getValue()));
             this.files = mockFiles;
             return this;
         }
@@ -374,8 +374,8 @@ public class MockApplicationPackage implements ApplicationPackage {
 
     public static class MockApplicationFile extends ApplicationFile {
 
-        /** The path to the application package root */
-        private final Path root;
+        /** The application package root */
+        private final File root;
 
         /** The File pointing to the actual file represented by this */
         private final File file;
@@ -383,14 +383,14 @@ public class MockApplicationPackage implements ApplicationPackage {
         /** The content of this file, or null to read it from the file system. */
         private final String content;
 
-        public MockApplicationFile(Path filePath, Path applicationPackagePath) {
-            this(filePath, applicationPackagePath, null);
+        public MockApplicationFile(Path relativeFile, File root) {
+            this(relativeFile, root, null);
         }
 
-        private MockApplicationFile(Path filePath, Path applicationPackagePath, String content) {
-            super(filePath);
-            this.root = applicationPackagePath;
-            file = applicationPackagePath.append(filePath).toFile();
+        private MockApplicationFile(Path relativeFile, File root, String content) {
+            super(relativeFile);
+            this.root = root;
+            this.file = root.toPath().resolve(relativeFile.toString()).toFile();
             this.content = content;
         }
 
@@ -491,7 +491,7 @@ public class MockApplicationPackage implements ApplicationPackage {
 
             Iterator<String> pathIterator = path.iterator();
             // Skip the path elements this shares with the root
-            for (Iterator<String> rootIterator = root.iterator(); rootIterator.hasNext(); ) {
+            for (Iterator<String> rootIterator = Path.fromString(root.toString()).iterator(); rootIterator.hasNext(); ) {
                 String rootElement = rootIterator.next();
                 String pathElement = pathIterator.next();
                 if ( ! rootElement.equals(pathElement)) throw new RuntimeException("Assumption broken");
