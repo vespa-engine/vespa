@@ -453,6 +453,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
+        root.setDouble("total-cost", stats.totalCost());
+        root.setDouble("total-allocated-cost", stats.totalAllocatedCost());
         toSlime(stats.load(), root.setObject("load"));
         toSlime(stats.activeLoad(), root.setObject("activeLoad"));
         Cursor applicationsArray = root.setArray("applications");

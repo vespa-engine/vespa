@@ -107,7 +107,7 @@ public class NodeRepositoryMock implements NodeRepository {
                                       .collect(Collectors.toList())
                         : List.of();
 
-        return new NodeRepoStats(Load.zero(), Load.zero(), applicationStats);
+        return new NodeRepoStats(0.0, 0.0, Load.zero(), Load.zero(), applicationStats);
     }
 
     @Override

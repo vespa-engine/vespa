@@ -26,15 +26,22 @@ import java.util.Set;
  */
 public class NodeRepoStats {
 
+    private final double totalCost;
+    private final double totalAllocatedCost;
     private final Load load;
     private final Load activeLoad;
     private final List<ApplicationStats> applicationStats;
 
-    private NodeRepoStats(Load load, Load activeLoad, List<ApplicationStats> applicationStats) {
+    private NodeRepoStats(double totalCost, double totalAllocatedCost, Load load, Load activeLoad, List<ApplicationStats> applicationStats) {
+        this.totalCost = totalCost;
+        this.totalAllocatedCost = totalAllocatedCost;
         this.load = load;
         this.activeLoad = activeLoad;
         this.applicationStats = List.copyOf(applicationStats);
     }
+
+    public double totalCost() { return totalCost; }
+    public double totalAllocatedCost() { return totalAllocatedCost; }
 
     /**
      * Returns the current average work-extracting utilization in this node repo over all nodes.
@@ -50,11 +57,15 @@ public class NodeRepoStats {
 
     public static NodeRepoStats computeOver(NodeRepository nodeRepository) {
         NodeList allNodes = nodeRepository.nodes().list();
-        List<NodeTimeseries> allNodeTimeseries = nodeRepository.metricsDb().getNodeTimeseries(Duration.ofHours(1), Set.of());
+        double totalCost = allNodes.hosts().stream().mapToDouble(host -> host.resources().cost()).sum();
+        double totalAllocatedCost = allNodes.not().hosts().stream()
+                                            .filter(node -> node.allocation().isPresent())
+                                            .mapToDouble(node -> node.resources().cost()).sum();
 
+        List<NodeTimeseries> allNodeTimeseries = nodeRepository.metricsDb().getNodeTimeseries(Duration.ofHours(1), Set.of());
         Pair<Load, Load> load = computeLoad(allNodes, allNodeTimeseries);
         List<ApplicationStats> applicationStats = computeApplicationStats(allNodes, allNodeTimeseries);
-        return new NodeRepoStats(load.getFirst(), load.getSecond(), applicationStats);
+        return new NodeRepoStats(totalCost, totalAllocatedCost, load.getFirst(), load.getSecond(), applicationStats);
     }
 
     private static Pair<Load, Load> computeLoad(NodeList allNodes, List<NodeTimeseries> allNodeTimeseries) {

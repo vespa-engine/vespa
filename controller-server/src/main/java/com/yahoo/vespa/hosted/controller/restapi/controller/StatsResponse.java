@@ -30,6 +30,8 @@ public class StatsResponse extends SlimeJsonResponse {
             if (stats.applicationStats().isEmpty()) continue; // skip empty zones
             Cursor zoneObject = zonesArray.addObject();
             zoneObject.setString("id", zone.toString());
+            zoneObject.setDouble("totalCost", stats.totalCost());
+            zoneObject.setDouble("totalAllocatedCost", stats.totalAllocatedCost());
             toSlime(stats.load(), zoneObject.setObject("load"));
             toSlime(stats.activeLoad(), zoneObject.setObject("activeLoad"));
             Cursor applicationsArray = zoneObject.setArray("applications");

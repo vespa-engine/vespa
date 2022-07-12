@@ -31,9 +31,13 @@ public class NodeRepoStatsTest {
     @Test
     public void testEmpty() {
         var tester = new NodeRepositoryTester();
-        assertLoad(Load.zero(), tester.nodeRepository().computeStats().load());
-        assertLoad(Load.zero(), tester.nodeRepository().computeStats().activeLoad());
-        assertTrue(tester.nodeRepository().computeStats().applicationStats().isEmpty());
+        var stats = tester.nodeRepository().computeStats();
+
+        assertEquals(0, stats.totalCost(), delta);
+        assertEquals(0, stats.totalAllocatedCost(), delta);
+        assertLoad(Load.zero(), stats.load());
+        assertLoad(Load.zero(), stats.activeLoad());
+        assertTrue(stats.applicationStats().isEmpty());
     }
 
     @Test
@@ -42,9 +46,13 @@ public class NodeRepoStatsTest {
         tester.addHost("host1", "default");
         tester.addHost("host2", "default");
         tester.addHost("host3", "small");
-        assertLoad(Load.zero(), tester.nodeRepository().computeStats().load());
-        assertLoad(Load.zero(), tester.nodeRepository().computeStats().activeLoad());
-        assertTrue(tester.nodeRepository().computeStats().applicationStats().isEmpty());
+        var stats = tester.nodeRepository().computeStats();
+
+        assertEquals(0.76, stats.totalCost(), delta);
+        assertEquals(0, stats.totalAllocatedCost(), delta);
+        assertLoad(Load.zero(), stats.load());
+        assertLoad(Load.zero(), stats.activeLoad());
+        assertTrue(stats.applicationStats().isEmpty());
     }
 
     @Test
@@ -96,6 +104,9 @@ public class NodeRepoStatsTest {
         }
 
         var stats = tester.nodeRepository().computeStats();
+
+        assertEquals(26, stats.totalCost(), delta);
+        assertEquals(8.319999999999999, stats.totalAllocatedCost(), delta);
 
         assertLoad(new Load(0.6180,0.5562,0.4944), stats.load());
         assertLoad(new Load(0.4682,0.4214,0.3745), stats.activeLoad());
