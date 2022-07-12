@@ -379,7 +379,7 @@ public class SessionRepository {
         return deleted;
     }
 
-    public void deactivateAndUpdateCache(long sessionId) {
+    public void deactivateSession(long sessionId) {
         var s = remoteSessionCache.get(sessionId);
         if (s == null) return;
 

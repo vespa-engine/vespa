@@ -50,7 +50,7 @@ public class SessionStateWatcher {
                 break;
             case DELETE:
             case DEACTIVATE:
-                sessionRepository.deactivateAndUpdateCache(sessionId);
+                sessionRepository.deactivateSession(sessionId);
                 break;
             case PREPARE:
                 sessionRepository.prepareRemoteSession(sessionId);
@@ -61,10 +61,6 @@ public class SessionStateWatcher {
             default:
                 throw new IllegalStateException("Unknown status " + newStatus);
         }
-    }
-
-    public long getSessionId() {
-        return sessionId;
     }
 
     public void close() {
@@ -85,7 +81,7 @@ public class SessionStateWatcher {
                     sessionStatusChanged(newStatus);
                 }
             } catch (Exception e) {
-                log.log(Level.WARNING, "Error handling session change to " + newStatus.name() + " for session " + getSessionId(), e);
+                log.log(Level.WARNING, "Error handling session change to " + newStatus.name() + " for session " + sessionId, e);
                 metrics.incSessionChangeErrors();
             }
         });
