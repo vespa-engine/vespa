@@ -456,7 +456,7 @@ public class RankingExpressionTypeResolverTestCase {
         builder.build(true);
         String message = logger.findMessage("The following query features");
         assertNotNull(message);
-        assertEquals("WARNING: The following query features used in rank profile 'my_rank_profile' are not declared in query profile types and " +
+        assertEquals("WARNING: The following query features used in rank profile 'my_rank_profile' are not declared and " +
                      "will be interpreted as scalars, not tensors: [query(bar), query(baz), query(foo)]",
                      message);
     }
