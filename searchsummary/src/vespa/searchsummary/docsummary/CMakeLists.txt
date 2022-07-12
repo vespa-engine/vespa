@@ -13,6 +13,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     docsumstate.cpp
     docsumstorevalue.cpp
     docsumwriter.cpp
+    document_id_dfw.cpp
     dynamicteaserdfw.cpp
     empty_dfw.cpp
     general_result.cpp
