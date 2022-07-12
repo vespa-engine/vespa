@@ -27,13 +27,11 @@ import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -213,8 +211,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
         Application application = getApplication(appId, vespaVersion);
-        log.log(Level.FINE, () -> TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant +
-                                  "' with handler for application '" + application + "'");
+        log.log(Level.FINE, () -> TenantRepository.logPre(appId) + "Resolving config");
         return application.resolveConfig(req, responseFactory);
     }
 

@@ -83,9 +83,7 @@ class GetConfigProcessor implements Runnable {
             return null;
         }
         Trace trace = request.getRequestTrace();
-        if (logDebug(trace)) {
-            debugLog(trace, "GetConfigProcessor.run() on " + localHostName);
-        }
+        debugLog(trace, "GetConfigProcessor.run() on " + localHostName);
 
         Optional<TenantName> tenant = rpcServer.resolveTenant(request, trace);
 
@@ -106,9 +104,7 @@ class GetConfigProcessor implements Runnable {
         Optional<Version> vespaVersion = rpcServer.useRequestVersion() ?
                 request.getVespaVersion().map(VespaVersion::toString).map(Version::fromString) :
                 Optional.empty();
-        if (logDebug(trace)) {
-            debugLog(trace, "Using version " + printableVespaVersion(vespaVersion));
-        }
+        debugLog(trace, "Using version " + printableVespaVersion(vespaVersion));
 
         if ( ! context.requestHandler().hasApplication(context.applicationId(), vespaVersion)) {
             handleError(request, ErrorCode.UNKNOWN_VESPA_VERSION, "Unknown Vespa version in request: " + printableVespaVersion(vespaVersion));
@@ -143,14 +139,10 @@ class GetConfigProcessor implements Runnable {
 
             // debugLog(trace, "config response before encoding:" + config.toString());
             request.addOkResponse(request.payloadFromResponse(config), config.getGeneration(), config.applyOnRestart(), config.getPayloadChecksums());
-            if (logDebug(trace)) {
-                debugLog(trace, "return response: " + request.getShortDescription());
-            }
+            debugLog(trace, "return response: " + request.getShortDescription());
             respond(request);
         } else {
-            if (logDebug(trace)) {
-                debugLog(trace, "delaying response " + request.getShortDescription());
-            }
+            debugLog(trace, "delaying response " + request.getShortDescription());
             return new Pair<>(context, config != null ? config.getGeneration() : 0);
         }
         return null;
