@@ -1,6 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.vespa.defaults.Defaults;
 
 import java.nio.file.Path;
@@ -28,7 +29,7 @@ public class PlatformBundles {
     }
 
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
-    public static final String searchAndDocprocBundle = "container-search-and-docproc";
+    public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
 
     public static Set<Path> commonVespaBundles() {
         var bundles = new LinkedHashSet<Path>();

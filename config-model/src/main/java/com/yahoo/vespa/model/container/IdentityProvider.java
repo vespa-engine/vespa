@@ -33,7 +33,7 @@ public class IdentityProvider extends SimpleComponent implements IdentityConfig.
                             URI ztsUrl,
                             String athenzDnsSuffix,
                             Zone zone) {
-        super(new ComponentModel(BundleInstantiationSpecification.getFromStrings(CLASS, CLASS, BUNDLE)));
+        super(new ComponentModel(BundleInstantiationSpecification.fromStrings(CLASS, CLASS, BUNDLE)));
         this.domain = domain;
         this.service = service;
         this.loadBalancerName = loadBalancerName;

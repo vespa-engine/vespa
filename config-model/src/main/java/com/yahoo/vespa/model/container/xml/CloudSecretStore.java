@@ -21,7 +21,7 @@ public class CloudSecretStore extends SimpleComponent implements SecretStoreConf
     private final List<StoreConfig> configList;
 
     public CloudSecretStore() {
-        super(new ComponentModel(BundleInstantiationSpecification.getFromStrings(CLASS, CLASS, BUNDLE)));
+        super(new ComponentModel(BundleInstantiationSpecification.fromStrings(CLASS, CLASS, BUNDLE)));
         configList = new ArrayList<>();
     }
 

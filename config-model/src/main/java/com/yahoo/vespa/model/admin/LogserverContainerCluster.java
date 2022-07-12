@@ -36,7 +36,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
     protected boolean messageBusEnabled() { return false; }
 
     private void addLogHandler() {
-        Handler<?> logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
+        Handler logHandler = Handler.fromClassName(ContainerCluster.LOG_HANDLER_CLASS);
         logHandler.addServerBindings(SystemBindingPattern.fromHttpPath("/logs"));
         addComponent(logHandler);
     }

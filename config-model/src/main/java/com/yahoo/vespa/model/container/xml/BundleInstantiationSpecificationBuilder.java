@@ -10,6 +10,8 @@ import org.w3c.dom.Element;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.yahoo.vespa.model.container.component.chain.ProcessingHandler.PROCESSING_HANDLER_CLASS;
+
 /**
  * This object builds a bundle instantiation spec from an XML element.
  *
@@ -30,7 +32,7 @@ public class BundleInstantiationSpecificationBuilder {
 
     private static BundleInstantiationSpecification setBundleForSearchAndDocprocComponents(BundleInstantiationSpecification spec) {
         if (PlatformBundles.isSearchAndDocprocClass(spec.getClassName()))
-            return spec.inBundle(PlatformBundles.searchAndDocprocBundle);
+            return spec.inBundle(PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
         else
             return spec;
     }
@@ -39,7 +41,7 @@ public class BundleInstantiationSpecificationBuilder {
     private static void validate(BundleInstantiationSpecification instSpec) {
         List<String> forbiddenClasses = Arrays.asList(
                 SearchHandler.HANDLER_CLASS,
-                "com.yahoo.processing.handler.ProcessingHandler");
+                PROCESSING_HANDLER_CLASS);
 
         for (String forbiddenClass: forbiddenClasses) {
             if (forbiddenClass.equals(instSpec.getClassName())) {

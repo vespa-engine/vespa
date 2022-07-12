@@ -299,7 +299,7 @@ public class Container {
     }
 
     private static BundleInstantiationSpecification bundleInstantiationSpecification(ComponentsConfig.Components config) {
-        return BundleInstantiationSpecification.getFromStrings(config.id(), config.classId(), config.bundle());
+        return BundleInstantiationSpecification.fromStrings(config.id(), config.classId(), config.bundle());
     }
 
     public static class ComponentGraphResult {

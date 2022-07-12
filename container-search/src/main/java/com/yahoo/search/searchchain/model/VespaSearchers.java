@@ -78,7 +78,7 @@ public class VespaSearchers {
         for (Class c : searchers) {
             searcherModels.add(
                     new ChainedComponentModel(
-                            BundleInstantiationSpecification.getInternalSearcherSpecificationFromStrings(c.getName(), null),
+                            BundleInstantiationSpecification.fromSearchAndDocproc(c.getName()),
                             Dependencies.emptyDependencies()));
         }
         return searcherModels;

@@ -32,7 +32,7 @@ public class DispatcherComponent extends Component<AbstractConfigProducer<?>, Co
         String dispatcherComponentId = "dispatcher." + indexedSearchCluster.getClusterName(); // used by ClusterSearcher
         return new ComponentModel(dispatcherComponentId,
                                   com.yahoo.search.dispatch.Dispatcher.class.getName(),
-                                  PlatformBundles.searchAndDocprocBundle);
+                                  PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
     }
 
     @Override

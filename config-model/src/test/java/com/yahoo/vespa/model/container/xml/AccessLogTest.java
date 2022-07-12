@@ -89,7 +89,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         assertNotNull(getVespaAccessLog("default"));
 
         { // vespa
-            Component<?, ?> accessLogComponent = getContainerComponent("default", VespaAccessLog.class.getName());
+            Component<?, ?> accessLogComponent = getComponent("default", VespaAccessLog.class.getName());
             assertNotNull(accessLogComponent);
             assertEquals(VespaAccessLog.class.getName(), accessLogComponent.getClassId().getName(), VespaAccessLog.class.getName());
             AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.VespaAccessLog");
@@ -101,7 +101,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         }
 
         { // json
-            Component<?, ?> accessLogComponent = getContainerComponent("default", JSONAccessLog.class.getName());
+            Component<?, ?> accessLogComponent = getComponent("default", JSONAccessLog.class.getName());
             assertNotNull(accessLogComponent);
             assertEquals(JSONAccessLog.class.getName(), accessLogComponent.getClassId().getName(), JSONAccessLog.class.getName());
             AccessLogConfig config = root.getConfig(AccessLogConfig.class, "default/component/com.yahoo.container.logging.JSONAccessLog");
@@ -124,7 +124,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
                 nodesXml,
                 "</container>" );
         createModel(root, clusterElem);
-        Component<?, ?> connectionLogComponent = getContainerComponent("default", FileConnectionLog.class.getName());
+        Component<?, ?> connectionLogComponent = getComponent("default", FileConnectionLog.class.getName());
         assertNotNull(connectionLogComponent);
         ConnectionLogConfig config = root.getConfig(ConnectionLogConfig.class, "default/component/com.yahoo.container.logging.FileConnectionLog");
         assertEquals("default", config.cluster());
@@ -140,7 +140,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
                 nodesXml,
                 "</container>" );
         createModel(root, clusterElem);
-        Component<?, ?> fileConnectionLogComponent = getContainerComponent("default", FileConnectionLog.class.getName());
+        Component<?, ?> fileConnectionLogComponent = getComponent("default", FileConnectionLog.class.getName());
         assertNull(fileConnectionLogComponent);
     }
 

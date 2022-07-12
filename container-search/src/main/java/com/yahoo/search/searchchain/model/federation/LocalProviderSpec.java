@@ -63,9 +63,7 @@ public class LocalProviderSpec {
         for (Class<? extends Searcher> c : searchers) {
             searcherModels.add(
                     new ChainedComponentModel(
-                            BundleInstantiationSpecification.getInternalSearcherSpecificationFromStrings(
-                                    c.getName(),
-                                    null),
+                            BundleInstantiationSpecification.fromSearchAndDocproc(c.getName()),
                             Dependencies.emptyDependencies()));
         }
 

@@ -26,7 +26,7 @@ public class ComponentModel {
     }
 
     public ComponentModel(String idSpec, String classSpec, String bundleSpec, String configId) {
-        this(BundleInstantiationSpecification.getFromStrings(idSpec, classSpec, bundleSpec), configId);
+        this(BundleInstantiationSpecification.fromStrings(idSpec, classSpec, bundleSpec), configId);
     }
 
     // For vespamodel
@@ -36,7 +36,7 @@ public class ComponentModel {
 
     // For vespamodel
     public ComponentModel(String idSpec, String classSpec, String bundleSpec) {
-        this(BundleInstantiationSpecification.getFromStrings(idSpec, classSpec, bundleSpec));
+        this(BundleInstantiationSpecification.fromStrings(idSpec, classSpec, bundleSpec));
     }
 
     public ComponentId getComponentId() {

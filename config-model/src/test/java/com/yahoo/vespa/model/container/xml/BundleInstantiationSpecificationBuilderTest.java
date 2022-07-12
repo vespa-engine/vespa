@@ -29,7 +29,7 @@ public class BundleInstantiationSpecificationBuilderTest {
     @Test
     public void bundle_is_replaced_for_internal_class() {
         String internalClass = GroupingValidator.class.getName();
-        verifyExpectedBundle(internalClass, null, PlatformBundles.searchAndDocprocBundle);
+        verifyExpectedBundle(internalClass, null, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE);
     }
 
     @Test
