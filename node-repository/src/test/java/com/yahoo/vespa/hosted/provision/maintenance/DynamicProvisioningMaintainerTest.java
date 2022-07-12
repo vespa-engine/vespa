@@ -570,6 +570,39 @@ public class DynamicProvisioningMaintainerTest {
         assertEquals(2, provisioningTester.activate(applicationId, prepared).size());
     }
 
+    @Test
+    public void deprovision_parked_node_with_allocation() {
+        var tester = new DynamicProvisioningTester();
+        tester.hostProvisioner.with(Behaviour.failProvisioning);
+        Node host4 = tester.addNode("host4", Optional.empty(), NodeType.host, Node.State.parked);
+        Node host41 = tester.addNode("host4-1", Optional.of("host4"), NodeType.tenant, Node.State.parked, DynamicProvisioningTester.tenantApp);
+        Node host42 = tester.addNode("host4-2", Optional.of("host4"), NodeType.tenant, Node.State.active, DynamicProvisioningTester.tenantApp);
+        Node host43 = tester.addNode("host4-3", Optional.of("host4"), NodeType.tenant, Node.State.failed, DynamicProvisioningTester.tenantApp);
+
+        // Host and children are marked for deprovisioning
+        tester.nodeRepository.nodes().deprovision("host4", Agent.operator, Instant.now());
+        for (var node : List.of(host4, host41, host42, host43)) {
+            assertTrue(tester.nodeRepository.nodes().node(node.hostname()).map(n -> n.status().wantToDeprovision()).get());
+        }
+
+        // Host and children remain parked because one child is still active
+        tester.maintainer.maintain();
+        for (var node : List.of(host4, host41)) {
+            assertEquals(Node.State.parked, tester.nodeRepository.nodes().node(node.hostname()).get().state());
+        }
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(host42.hostname()).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(host43.hostname()).get().state());
+
+        // Last child is parked
+        tester.nodeRepository.nodes().park(host42.hostname(), true, Agent.system, getClass().getSimpleName());
+
+        // Host and children can now be removed
+        tester.maintainer.maintain();
+        for (var node : List.of(host4, host41, host42, host43)) {
+            assertTrue(node.hostname() + " removed", tester.nodeRepository.nodes().node(node.hostname()).isEmpty());
+        }
+    }
+
     private void assertCfghost3IsActive(DynamicProvisioningTester tester) {
         assertEquals(5, tester.nodeRepository.nodes().list(Node.State.active).size());
         assertEquals(3, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.confighost).size());
