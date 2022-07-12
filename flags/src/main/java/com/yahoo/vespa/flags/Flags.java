@@ -422,13 +422,6 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID);
 
-    public static final UnboundStringFlag PROVISION_IN_EXTERNAL_ACCOUNT = defineStringFlag(
-            "provision-in-external-account", "",
-            List.of("mpolden"), "2022-05-02", "2022-09-01",
-            "The 12-digit AWS account ID where resources belonging to an application should be provisioned",
-            "Takes effect immediately",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
             "enable-proxy-protocol-mixed-mode", true,
             List.of("tokle"), "2022-05-09", "2022-09-01",
