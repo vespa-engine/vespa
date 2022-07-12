@@ -6,13 +6,11 @@ import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.di.config.ApplicationBundlesConfig;
-import com.yahoo.net.HostName;
-import com.yahoo.vespa.config.PayloadChecksum;
-import com.yahoo.vespa.config.PayloadChecksum.Type;
-import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.jrt.Request;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.ErrorCode;
+import com.yahoo.vespa.config.PayloadChecksums;
 import com.yahoo.vespa.config.UnknownConfigIdException;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
@@ -22,11 +20,13 @@ import com.yahoo.vespa.config.protocol.VespaVersion;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.UnknownConfigDefinitionException;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.config.ErrorCode.APPLICATION_NOT_LOADED;
+import static com.yahoo.vespa.config.ErrorCode.UNKNOWN_VESPA_VERSION;
 import static com.yahoo.vespa.config.protocol.SlimeConfigResponse.fromConfigPayload;
 
 /**
@@ -56,7 +56,7 @@ class GetConfigProcessor implements Runnable {
     private void respond(JRTServerConfigRequest request) {
         Request req = request.getRequest();
         if (req.isError()) {
-            Level logLevel = (req.errorCode() == ErrorCode.APPLICATION_NOT_LOADED) ? Level.FINE : Level.INFO;
+            Level logLevel = Set.of(APPLICATION_NOT_LOADED, UNKNOWN_VESPA_VERSION).contains(req.errorCode()) ? Level.FINE : Level.INFO;
             log.log(logLevel, () -> logPre + req.errorMessage());
         }
         rpcServer.respond(request);
@@ -98,9 +98,10 @@ class GetConfigProcessor implements Runnable {
 
         GetConfigContext context = rpcServer.createGetConfigContext(tenant, request, trace);
         if (context == null || ! context.requestHandler().hasApplication(context.applicationId(), Optional.empty())) {
-            handleError(request, ErrorCode.APPLICATION_NOT_LOADED, "No application exists");
+            handleError(request, APPLICATION_NOT_LOADED, "No application exists");
             return null;
         }
+        logPre = TenantRepository.logPre(context.applicationId());
 
         Optional<Version> vespaVersion = rpcServer.useRequestVersion() ?
                 request.getVespaVersion().map(VespaVersion::toString).map(Version::fromString) :
@@ -114,7 +115,6 @@ class GetConfigProcessor implements Runnable {
             return null;
         }
 
-        this.logPre = TenantRepository.logPre(context.applicationId());
         ConfigResponse config;
         try {
             config = rpcServer.resolveConfig(request, context, vespaVersion);
@@ -177,7 +177,7 @@ class GetConfigProcessor implements Runnable {
     }
 
     private static String printableVespaVersion(Optional<Version> vespaVersion) {
-        return (vespaVersion.isPresent() ? vespaVersion.get().toFullString() : "LATEST");
+        return vespaVersion.map(Version::toFullString).orElse("LATEST");
     }
 
     private void returnEmpty(JRTServerConfigRequest request) {
