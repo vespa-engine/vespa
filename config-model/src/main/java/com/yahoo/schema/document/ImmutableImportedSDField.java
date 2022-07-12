@@ -83,11 +83,6 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
-    public boolean wasConfiguredToDoIndexing() {
-        return importedField.targetField().wasConfiguredToDoIndexing();
-    }
-
-    @Override
     public DataType getDataType() {
         return importedField.targetField().getDataType();
     }
