@@ -22,6 +22,9 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
+import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
+import com.yahoo.vespa.hosted.controller.maintenance.OsUpgradeScheduler;
+import com.yahoo.vespa.hosted.controller.maintenance.OsUpgradeScheduler.Change;
 import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 import com.yahoo.yolean.Exceptions;
 
@@ -47,22 +50,24 @@ import java.util.stream.Collectors;
 public class OsApiHandler extends AuditLoggingRequestHandler {
 
     private final Controller controller;
+    private final OsUpgradeScheduler osUpgradeScheduler;
 
-    public OsApiHandler(Context ctx, Controller controller) {
+    public OsApiHandler(Context ctx, Controller controller, ControllerMaintenance controllerMaintenance) {
         super(ctx, controller.auditLogger());
         this.controller = controller;
+        this.osUpgradeScheduler = controllerMaintenance.osUpgradeScheduler();
     }
 
     @Override
     public HttpResponse auditAndHandle(HttpRequest request) {
         try {
-            switch (request.getMethod()) {
-                case GET: return get(request);
-                case POST: return post(request);
-                case DELETE: return delete(request);
-                case PATCH: return patch(request);
-                default: return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
-            }
+            return switch (request.getMethod()) {
+                case GET -> get(request);
+                case POST -> post(request);
+                case DELETE -> delete(request);
+                case PATCH -> patch(request);
+                default -> ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
+            };
         } catch (IllegalArgumentException e) {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         } catch (RuntimeException e) {
@@ -159,8 +164,16 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             currentVersionObject.setString("version", osVersion.version().toFullString());
             Optional<OsVersionTarget> target = targets.stream().filter(t -> t.osVersion().equals(osVersion)).findFirst();
             currentVersionObject.setBool("targetVersion", target.isPresent());
-            target.ifPresent(t -> currentVersionObject.setString("upgradeBudget", t.upgradeBudget().toString()));
-            target.ifPresent(t -> currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli()));
+            target.ifPresent(t -> {
+                currentVersionObject.setString("upgradeBudget", t.upgradeBudget().toString());
+                currentVersionObject.setLong("scheduledAt", t.scheduledAt().toEpochMilli());
+                Optional<Change> nextChange = osUpgradeScheduler.changeIn(t.osVersion().cloud());
+                nextChange.ifPresent(c -> {
+                    currentVersionObject.setString("nextVersion", c.version().toFullString());
+                    currentVersionObject.setLong("nextScheduledAt", c.scheduleAt().toEpochMilli());
+                });
+            });
+
             currentVersionObject.setString("cloud", osVersion.cloud().value());
             Cursor nodesArray = currentVersionObject.setArray("nodes");
             nodeVersions.forEach(nodeVersion -> {

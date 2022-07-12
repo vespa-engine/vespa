@@ -33,6 +33,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 public class ControllerMaintenance extends AbstractComponent {
 
     private final Upgrader upgrader;
+    private final OsUpgradeScheduler osUpgradeScheduler;
     private final List<Maintainer> maintainers = new CopyOnWriteArrayList<>();
 
     @Inject
@@ -40,7 +41,9 @@ public class ControllerMaintenance extends AbstractComponent {
     public ControllerMaintenance(Controller controller, Metric metric, UserManagement userManagement, AthenzClientFactory athenzClientFactory) {
         Intervals intervals = new Intervals(controller.system());
         upgrader = new Upgrader(controller, intervals.defaultInterval);
+        osUpgradeScheduler = new OsUpgradeScheduler(controller, intervals.osUpgradeScheduler);
         maintainers.add(upgrader);
+        maintainers.add(osUpgradeScheduler);
         maintainers.addAll(osUpgraders(controller, intervals.osUpgrader));
         maintainers.add(new DeploymentExpirer(controller, intervals.defaultInterval));
         maintainers.add(new DeploymentUpgrader(controller, intervals.defaultInterval));
@@ -54,7 +57,6 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new SystemUpgrader(controller, intervals.systemUpgrader));
         maintainers.add(new JobRunner(controller, intervals.jobRunner));
         maintainers.add(new OsVersionStatusUpdater(controller, intervals.osVersionStatusUpdater));
-        maintainers.add(new OsUpgradeScheduler(controller, intervals.osUpgradeScheduler));
         maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer));
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
@@ -79,6 +81,8 @@ public class ControllerMaintenance extends AbstractComponent {
     }
 
     public Upgrader upgrader() { return upgrader; }
+
+    public OsUpgradeScheduler osUpgradeScheduler() { return osUpgradeScheduler; }
 
     @Override
     public void deconstruct() {

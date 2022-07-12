@@ -104,6 +104,8 @@
       "targetVersion": true,
       "upgradeBudget": "PT24H",
       "scheduledAt": 1234,
+      "nextVersion": "8.2.1.20211227",
+      "nextScheduledAt": 7200000,
       "cloud": "cloud2",
       "nodes": [
         {
