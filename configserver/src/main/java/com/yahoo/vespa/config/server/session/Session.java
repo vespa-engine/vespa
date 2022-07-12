@@ -61,10 +61,6 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.readStatus();
     }
 
-    public SessionZooKeeperClient getSessionZooKeeperClient() {
-        return sessionZooKeeperClient;
-    }
-
     @Override
     public String toString() {
         return "Session,id=" + sessionId + ",status=" + getStatus();

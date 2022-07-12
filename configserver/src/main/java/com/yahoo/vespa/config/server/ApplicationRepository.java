@@ -797,7 +797,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
         try (var sessionLock = tenant.getApplicationRepo().lock(applicationId)) {
             Optional<Session> activeSession = getActiveSession(applicationId);
-            CompletionWaiter waiter = session.getSessionZooKeeperClient().createActiveWaiter();
+            var sessionZooKeeperClient = tenant.getSessionRepository().createSessionZooKeeperClient(session.getSessionId());
+            CompletionWaiter waiter = sessionZooKeeperClient.createActiveWaiter();
 
             transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
             if (applicationTransaction.isPresent()) {

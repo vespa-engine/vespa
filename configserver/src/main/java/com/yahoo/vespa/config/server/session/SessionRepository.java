@@ -363,10 +363,8 @@ public class SessionRepository {
         int deleteMax = (int) Math.min(1000, Math.max(10, remoteSessionsFromZooKeeper.size() * 0.01));
         for (long sessionId : remoteSessionsFromZooKeeper) {
             Session session = remoteSessionCache.get(sessionId);
-            if (session == null) {
-                log.log(Level.FINE, () -> "Remote session " + sessionId + " is null, creating a new one");
+            if (session == null)
                 session = new RemoteSession(tenantName, sessionId, createSessionZooKeeperClient(sessionId));
-            }
             if (session.getStatus() == Session.Status.ACTIVATE) continue;
             if (sessionHasExpired(session.getCreateTime(), expiryTime, clock)) {
                 log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
@@ -499,7 +497,7 @@ public class SessionRepository {
     }
 
     void confirmUpload(Session session) {
-        CompletionWaiter waiter = session.getSessionZooKeeperClient().getUploadWaiter();
+        CompletionWaiter waiter = createSessionZooKeeperClient(session.getSessionId()).getUploadWaiter();
         long sessionId = session.getSessionId();
         log.log(Level.FINE, () -> "Notifying upload waiter for session " + sessionId);
         notifyCompletion(waiter);
@@ -879,7 +877,7 @@ public class SessionRepository {
         return getSessionPath(sessionId).append(ZKApplication.SESSIONSTATE_ZK_SUBPATH);
     }
 
-    private SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
+    public SessionZooKeeperClient createSessionZooKeeperClient(long sessionId) {
         return new SessionZooKeeperClient(curator,
                                           tenantName,
                                           sessionId,
