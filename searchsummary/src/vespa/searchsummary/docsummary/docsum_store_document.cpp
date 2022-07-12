@@ -5,6 +5,7 @@
 #include "summaryfieldconverter.h"
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 
 namespace search::docsummary {
 
@@ -36,6 +37,16 @@ DocsumStoreDocument::insert_summary_field(const vespalib::string& field_name, ve
     auto field_value = get_field_value(field_name);
     if (field_value) {
         SummaryFieldConverter::insert_summary_field(*field_value, inserter);
+    }
+}
+
+void
+DocsumStoreDocument::insert_document_id(vespalib::slime::Inserter& inserter) const
+{
+    if (_document) {
+        auto id = _document->getId().toString();
+        vespalib::Memory id_view(id.data(), id.size());
+        inserter.insertString(id_view);
     }
 }
 

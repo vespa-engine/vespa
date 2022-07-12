@@ -4,6 +4,7 @@
 #include "attribute_combiner_dfw.h"
 #include "copy_dfw.h"
 #include "docsumwriter.h"
+#include "document_id_dfw.h"
 #include "empty_dfw.h"
 #include "geoposdfw.h"
 #include "idocsumenvironment.h"
@@ -113,6 +114,9 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
                                                            *attr_ctx, matching_elems_fields);
             rc = static_cast<bool>(fieldWriter);
         }
+    } else if (overrideName == "documentid") {
+        fieldWriter = std::make_unique<DocumentIdDFW>();
+        rc = true;
     } else {
         throw IllegalArgumentException("unknown override operation '" + overrideName + "' for field '" + fieldName + "'.");
     }
