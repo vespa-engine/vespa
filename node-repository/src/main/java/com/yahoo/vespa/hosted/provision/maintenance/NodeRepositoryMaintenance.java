@@ -131,7 +131,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             infrastructureProvisionInterval = Duration.ofMinutes(3);
             loadBalancerExpirerInterval = Duration.ofMinutes(5);
             metricsInterval = Duration.ofMinutes(1);
-            nodeFailerInterval = Duration.ofMinutes(15);
+            nodeFailerInterval = Duration.ofMinutes(9);
             nodeFailureStatusUpdateInterval = Duration.ofMinutes(2);
             nodeMetricsCollectionInterval = Duration.ofMinutes(1);
             expeditedChangeRedeployInterval = Duration.ofMinutes(3);
