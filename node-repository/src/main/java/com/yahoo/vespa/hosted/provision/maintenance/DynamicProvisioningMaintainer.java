@@ -216,7 +216,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     }
 
     private static boolean canDeprovision(Node node) {
-        return node.status().wantToDeprovision() && node.state() == Node.State.parked;
+        return node.status().wantToDeprovision() && (node.state() == Node.State.parked ||
+                                                     node.state() == Node.State.failed);
     }
 
     private Map<String, Node> findSharedHosts(NodeList nodeList) {
