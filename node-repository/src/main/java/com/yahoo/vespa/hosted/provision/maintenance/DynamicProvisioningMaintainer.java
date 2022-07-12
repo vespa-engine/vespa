@@ -186,24 +186,37 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 .collect(Collectors.toList());
     }
 
-    private List<Node> candidatesForRemoval(List<Node> nodes) {
-        Map<String, Node> hostsByHostname = new HashMap<>(nodes.stream()
-                .filter(node -> switch (node.type()) {
-                    case host ->
-                        // TODO: Mark empty tenant hosts as wanttoretire & wanttodeprovision elsewhere, then handle as confighost here
-                        node.state() != Node.State.parked || node.status().wantToDeprovision();
-                    case confighost, controllerhost -> node.state() == Node.State.parked && node.status().wantToDeprovision();
-                    default -> false;
-                })
-                .collect(Collectors.toMap(Node::hostname, Function.identity())));
+    private static List<Node> candidatesForRemoval(List<Node> nodes) {
+        Map<String, Node> removableHostsByHostname = new HashMap<>();
+        for (var node : nodes) {
+            if (canRemoveHost(node)) {
+                removableHostsByHostname.put(node.hostname(), node);
+            }
+        }
+        for (var node : nodes) {
+            if (node.parentHostname().isPresent() && !canRemoveNode(node)) {
+                removableHostsByHostname.remove(node.parentHostname().get());
+            }
+        }
+        return List.copyOf(removableHostsByHostname.values());
+    }
 
-        nodes.stream()
-             .filter(node -> node.allocation().isPresent() && !node.status().wantToDeprovision())
-             .flatMap(node -> node.parentHostname().stream())
-             .distinct()
-             .forEach(hostsByHostname::remove);
+    private static boolean canRemoveHost(Node host) {
+        return switch (host.type()) {
+            // TODO: Mark empty tenant hosts as wanttoretire & wanttodeprovision elsewhere, then handle as confighost here
+            case host -> host.state() != Node.State.parked || host.status().wantToDeprovision();
+            case confighost, controllerhost -> canDeprovision(host);
+            default -> false;
+        };
+    }
 
-        return List.copyOf(hostsByHostname.values());
+    private static boolean canRemoveNode(Node node) {
+        if (node.type().isHost()) throw new IllegalArgumentException("Node " + node + " is not a child");
+        return node.allocation().isEmpty() || canDeprovision(node);
+    }
+
+    private static boolean canDeprovision(Node node) {
+        return node.status().wantToDeprovision() && node.state() == Node.State.parked;
     }
 
     private Map<String, Node> findSharedHosts(NodeList nodeList) {
