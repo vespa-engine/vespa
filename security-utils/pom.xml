@@ -71,10 +71,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <release>${vespaClients.jdk.releaseVersion}</release>
-          <showDeprecation>true</showDeprecation>
-        </configuration>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
@@ -89,7 +85,10 @@
         </executions>
       </plugin>
       <plugin>
-        <!-- Build with maven-bundle-plugin to avoid depending on jdisc_core to get the correct Import-Packages -->
+        <!--
+        Build with maven-bundle-plugin to avoid depending on jdisc_core to get the correct Import-Packages
+        Jackson and BC compile scope dependencies are not embedded. Packages are instead imported through manifest.
+        -->
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
         <extensions>true</extensions>
