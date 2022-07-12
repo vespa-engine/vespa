@@ -96,6 +96,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -631,15 +632,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 .stream()
                 .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
                 .filter(fileReference -> isLastFileAccessBefore(new File(fileReferencesPath, fileReference), instant))
-                .sorted((a, b) -> {
-                    if (a.equals(b))
-                        return 0;
-                    else if (lastAccessed(new File(fileReferencesPath, a))
-                            .isBefore(lastAccessed(new File(fileReferencesPath, b))))
-                        return -1;
-                    else
-                        return 1;
-                })
+                .sorted(Comparator.comparing(a -> lastAccessed(new File(fileReferencesPath, a))))
                 .collect(Collectors.toList());
     }
 
