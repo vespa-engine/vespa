@@ -84,7 +84,7 @@ public class ZKApplication {
     }
 
     /**
-     * Retrieves a node relative to the node of the live application
+     * Retrieves a node relative to the node of the active application
      *
      * @param path a path relative to the currently active application
      * @return a Reader that can be used to get the data
@@ -129,7 +129,7 @@ public class ZKApplication {
     }
 
     /**
-     * Checks if the given node exists under path under this live app
+     * Checks if the given node exists under path under this active app
      *
      * @param path a zookeeper path
      * @return true if the node exists in the path, false otherwise

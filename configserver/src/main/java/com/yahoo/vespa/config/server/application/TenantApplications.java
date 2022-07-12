@@ -236,7 +236,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
             if (applicationSet.getApplicationGeneration() != activeSessionId)
                 return; // Application activated a new session before we got here.
 
-            setLiveApp(applicationSet);
+            setActiveApp(applicationSet);
             notifyReloadListeners(applicationSet);
         }
     }
@@ -281,7 +281,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         reloadListener.applicationRemoved(applicationId);
     }
 
-    private void setLiveApp(ApplicationSet applicationSet) {
+    private void setActiveApp(ApplicationSet applicationSet) {
         ApplicationId id = applicationSet.getId();
         Collection<String> hostsForApp = applicationSet.getAllHosts();
         hostRegistry.update(id, hostsForApp);

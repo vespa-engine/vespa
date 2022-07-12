@@ -5,7 +5,6 @@ import com.google.common.base.Joiner;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.ComponentInfo;
 import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.application.api.UnparsedConfigDefinition;
@@ -59,7 +58,7 @@ public class ZKApplicationPackage extends AbstractApplicationPackage {
     public ZKApplicationPackage(AddFileInterface fileManager, Curator curator, Path sessionPath, int maxNodeSize) {
         verifyAppPath(curator, sessionPath);
         zkApplication = new ZKApplication(curator, sessionPath, maxNodeSize);
-        metaData = readMetaDataFromLiveApp(zkApplication);
+        metaData = readMetaDataFromActiveApp(zkApplication);
         importFileRegistries(fileManager);
         allocatedHosts = importAllocatedHosts();
     }
@@ -102,13 +101,13 @@ public class ZKApplicationPackage extends AbstractApplicationPackage {
         }
     }
 
-    private ApplicationMetaData readMetaDataFromLiveApp(ZKApplication liveApp) {
+    private ApplicationMetaData readMetaDataFromActiveApp(ZKApplication activeApp) {
         Path metaPath = Path.fromString(ZKApplication.META_ZK_PATH);
-        String metaDataString = liveApp.getData(metaPath);
+        String metaDataString = activeApp.getData(metaPath);
         if (metaDataString == null || metaDataString.isEmpty()) {
             return null;
         }
-        return ApplicationMetaData.fromJsonString(liveApp.getData(metaPath));
+        return ApplicationMetaData.fromJsonString(activeApp.getData(metaPath));
     }
 
     @Override
