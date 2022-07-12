@@ -2,6 +2,8 @@
   "zones": [
     {
       "id": "prod.us-east-3",
+      "totalCost": 0.0,
+      "totalAllocatedCost": 0.0,
       "load": {
         "cpu": 0.0,
         "memory": 0.0,
@@ -27,6 +29,8 @@
     },
     {
       "id": "prod.us-west-1",
+      "totalCost": 0.0,
+      "totalAllocatedCost": 0.0,
       "load": {
         "cpu": 0.0,
         "memory": 0.0,

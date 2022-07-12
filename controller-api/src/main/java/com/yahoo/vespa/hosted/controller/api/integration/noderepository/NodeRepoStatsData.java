@@ -16,6 +16,12 @@ import java.util.stream.Collectors;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NodeRepoStatsData {
 
+    @JsonProperty("totalCost")
+    public Double totalCost;
+
+    @JsonProperty("totalAllocatedCost")
+    public Double totalAllocatedCost;
+
     @JsonProperty("load")
     public LoadData load;
 
@@ -26,7 +32,8 @@ public class NodeRepoStatsData {
     public List<ApplicationStatsData> applications;
 
     public NodeRepoStats toNodeRepoStats() {
-        return new NodeRepoStats(load.toLoad(), activeLoad.toLoad(),
+        return new NodeRepoStats(totalCost, totalAllocatedCost,
+                                 load.toLoad(), activeLoad.toLoad(),
                                  applications.stream().map(stats -> stats.toApplicationStats()).collect(Collectors.toList()));
     }
 
