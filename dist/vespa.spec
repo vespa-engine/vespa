@@ -282,13 +282,14 @@ Requires: vespa-xxhash = 0.8.0
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
 %endif
-Requires: zlib
-Requires: perf
 Requires: gdb
+Requires: hostname
+Requires: perf
 Requires: nc
 Requires: nghttp2
 Requires: net-tools
 Requires: unzip
+Requires: zlib
 Requires: zstd
 %if 0%{?el7}
 Requires: llvm7.0
