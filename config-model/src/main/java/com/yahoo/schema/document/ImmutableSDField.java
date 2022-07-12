@@ -45,14 +45,6 @@ public interface ImmutableSDField {
      */
     boolean wasConfiguredToDoAttributing();
 
-    /**
-     * Whether this field at some time was configured to do indexing.
-     *
-     * This function can typically return a different value than doesIndexing(),
-     * which uses the final state of the underlying indexing script instead.
-     */
-    boolean wasConfiguredToDoIndexing();
-
     DataType getDataType();
 
     Index getIndex(String name);

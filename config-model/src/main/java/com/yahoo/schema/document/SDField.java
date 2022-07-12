@@ -117,7 +117,6 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
     private boolean isExtraField = false;
 
     private boolean wasConfiguredToDoAttributing = false;
-    private boolean wasConfiguredToDoIndexing = false;
 
     /**
      * Creates a new field. This method is only used to create reserved fields.
@@ -382,11 +381,6 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
         return wasConfiguredToDoAttributing;
     }
 
-    @Override
-    public boolean wasConfiguredToDoIndexing() {
-        return wasConfiguredToDoIndexing;
-    }
-
     /** Parse an indexing expression which will use the simple linguistics implementation suitable for testing */
     public void parseIndexingScript(String script) {
         parseIndexingScript(script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
@@ -413,9 +407,6 @@ public class SDField extends Field implements TypedKey, ImmutableSDField {
         }
         if (!wasConfiguredToDoAttributing()) {
             wasConfiguredToDoAttributing = doesAttributing();
-        }
-        if (!wasConfiguredToDoIndexing()) {
-            wasConfiguredToDoIndexing = doesIndexing();
         }
         if (!usesStructOrMap()) {
             new ExpressionVisitor() {
