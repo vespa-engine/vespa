@@ -71,7 +71,8 @@ public class Validation {
         new SchemasDirValidator().validate(model, deployState);
         new BundleValidator().validate(model, deployState);
         new SearchDataTypeValidator().validate(model, deployState);
-        new ComplexAttributeFieldsValidator().validate(model, deployState);
+        new ComplexFieldsWithStructFieldAttributesValidator().validate(model, deployState);
+        new ComplexFieldsWithStructFieldIndexesValidator().validate(model, deployState);
         new StreamingValidator().validate(model, deployState);
         new RankSetupValidator(validationParameters.ignoreValidationErrors()).validate(model, deployState);
         new NoPrefixForIndexes().validate(model, deployState);
