@@ -23,7 +23,8 @@ public enum SummaryTransform {
     ATTRIBUTECOMBINER("attributecombiner"),
     MATCHED_ELEMENTS_FILTER("matchedelementsfilter"),
     MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter"),
-    COPY("copy");
+    COPY("copy"),
+    DOCUMENT_ID("documentid");
 
     private final String name;
 
