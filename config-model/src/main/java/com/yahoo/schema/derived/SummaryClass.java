@@ -59,7 +59,7 @@ public class SummaryClass extends Derived {
     /** MUST be called after all other fields are added */
     private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
         if (summary.getName().equals("default")) {
-            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, fields);
+            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryTransform.DOCUMENT_ID, fields);
         }
     }
 
@@ -70,10 +70,6 @@ public class SummaryClass extends Derived {
             }
             addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform(), fields);
         }
-    }
-
-    private void addField(String name, DataType type, Map<String, SummaryClassField> fields) {
-        addField(name, type, null, fields);
     }
 
     private void addField(String name, DataType type,

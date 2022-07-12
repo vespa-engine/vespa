@@ -162,23 +162,42 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         assertFalse(SummaryMap.isDynamicCommand(SummaryTransform.ATTRIBUTE.getName()));
     }
 
+    @Test
+    public void documentid_summary_field_has_corresponding_summary_transform() throws ParseException {
+        var schema = buildSchema("field foo type string { indexing: summary }",
+                joinLines("document-summary bar {",
+                        "    summary documentid type string {}",
+                        "}"));
+        assertOverride(schema, "documentid", SummaryTransform.DOCUMENT_ID.getName(), "");
+    }
+
+    @Test
+    public void documentid_summary_transform_requires_disk_access() {
+        assertFalse(SummaryTransform.DOCUMENT_ID.isInMemory());
+    }
+
     private void assertOverride(String fieldContent, String expFieldName, String expCommand) throws ParseException {
-        var summaryMap = new SummaryMap(buildSearch(fieldContent));
+        assertOverride(buildSchema(fieldContent, ""), expFieldName, expCommand, expFieldName);
+    }
+
+    private void assertOverride(Schema schema, String expFieldName, String expCommand, String expArguments) throws ParseException {
+        var summaryMap = new SummaryMap(schema);
         var cfgBuilder = new SummarymapConfig.Builder();
         summaryMap.getConfig(cfgBuilder);
         var cfg = new SummarymapConfig(cfgBuilder);
         var override = cfg.override(0);
         assertEquals(expFieldName, override.field());
         assertEquals(expCommand, override.command());
-        assertEquals(expFieldName, override.arguments());
+        assertEquals(expArguments, override.arguments());
     }
 
-    private Schema buildSearch(String field) throws ParseException {
+    private Schema buildSchema(String field, String documentSummary) throws ParseException {
         var builder = new ApplicationBuilder(new RankProfileRegistry());
         builder.addSchema(joinLines("search test {",
                                     "  document test {",
                                     field,
                                     "  }",
+                                    documentSummary,
                                     "}"));
         builder.build(true);
         return builder.getSchema();

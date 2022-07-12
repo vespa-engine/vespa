@@ -52,6 +52,7 @@ public class Processing {
                 ImplicitSummaries::new,
                 ImplicitSummaryFields::new,
                 AdjustPositionSummaryFields::new,
+                SummaryTransformForDocumentId::new,
                 SummaryConsistency::new,
                 SummaryNamesFieldCollisions::new,
                 SummaryFieldsMustHaveValidSource::new,
