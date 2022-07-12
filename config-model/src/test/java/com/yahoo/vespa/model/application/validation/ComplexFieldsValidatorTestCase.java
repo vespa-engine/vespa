@@ -22,7 +22,7 @@ import static com.yahoo.config.model.test.TestUtil.joinLines;
 /**
  * @author geirst
  */
-public class ComplexAttributeFieldsValidatorTestCase {
+public class ComplexFieldsValidatorTestCase {
 
     @SuppressWarnings("deprecation")
     @Rule
@@ -75,6 +75,30 @@ public class ComplexAttributeFieldsValidatorTestCase {
                 "The following complex fields do not support using struct field attributes: " +
                 unsupportedFields + ". " +
                 "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types";
+    }
+
+    @Test
+    public void throws_when_complex_fields_have_struct_fields_with_index() throws IOException, SAXException {
+        exceptionRule.expect(IllegalArgumentException.class);
+        exceptionRule.expectMessage("For cluster 'mycluster', schema 'test': " +
+                "The following complex fields have struct fields with 'indexing: index' which is not supported: " +
+                "topics (topics.id, topics.label). Change to 'indexing: attribute' instead");
+        createModelAndValidate(joinLines(
+                "schema test {",
+                "document test {",
+                "struct topic {",
+                "  field id type string {}",
+                "  field label type string {}",
+                "  field desc type string {}",
+                "}",
+                "field topics type array<topic> {",
+                "  indexing: summary",
+                "  struct-field id { indexing: index }",
+                "  struct-field label { indexing: index | attribute }",
+                "  struct-field desc { indexing: attribute }",
+                "}",
+                "}",
+                "}"));
     }
 
     @Test
