@@ -9,8 +9,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.Enumeration;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -107,7 +110,20 @@ public class SchemaValidators {
         boolean schemasFound = false;
         while (uris.hasMoreElements()) {
             URL u = uris.nextElement();
-            if ("bundle".equals(u.getProtocol())) {
+            // This will be the case for standalone-container
+            if ("jar".equals(u.getProtocol())) {
+                JarURLConnection jarConnection = (JarURLConnection) u.openConnection();
+                JarFile jarFile = jarConnection.getJarFile();
+                for (Enumeration<JarEntry> entries = jarFile.entries(); entries.hasMoreElements(); ) {
+                    JarEntry je = entries.nextElement();
+                    System.out.println(je.getName());
+                    if (je.getName().startsWith("schema/") && je.getName().endsWith(".rnc")) {
+                        schemasFound = true;
+                        writeContentsToFile(tmpDir, je.getName(), jarFile.getInputStream(je));
+                    }
+                }
+                jarFile.close();
+            } else if ("bundle".equals(u.getProtocol())) {
                 Bundle bundle = getBundle(schemaValidatorClass);
                 // Use schemas on disk when bundle is null (which is the case when using config-model-fat-amended.jar)
                 if (bundle == null) {
