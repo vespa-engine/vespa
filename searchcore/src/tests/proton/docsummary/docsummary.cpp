@@ -1012,7 +1012,7 @@ TEST("requireThatPositionsAreUsed")
     req.hits.push_back(DocsumRequest::Hit(gid1));
     DocsumReply::UP rep = dc._ddb->getDocsums(req);
     EXPECT_TRUE(assertSlime("{docsums:["
-                            "{docsum:{sp2:'1047758'"
+                            "{docsum:{sp2:1047758"
                             ",sp2x:{x:1002, y:1003, latlong:'N0.001003;E0.001002'}"
                             ",ap2:[1047806,1048322]"
                             ",ap2x:[{x:1006, y:1007, latlong:'N0.001007;E0.001006'},"
