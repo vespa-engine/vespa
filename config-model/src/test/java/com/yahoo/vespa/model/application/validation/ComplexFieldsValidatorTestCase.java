@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.api.ValidationParameters.CheckRouting;
@@ -16,8 +17,10 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Level;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author geirst
@@ -77,12 +80,17 @@ public class ComplexFieldsValidatorTestCase {
                 "Only supported for the following complex field types: array or map of struct with primitive types, map of primitive types";
     }
 
+    private class MyLogger implements DeployLogger {
+        public StringBuilder message = new StringBuilder();
+        @Override
+        public void log(Level level, String message) {
+            this.message.append(message);
+        }
+    }
+
     @Test
-    public void throws_when_complex_fields_have_struct_fields_with_index() throws IOException, SAXException {
-        exceptionRule.expect(IllegalArgumentException.class);
-        exceptionRule.expectMessage("For cluster 'mycluster', schema 'test': " +
-                "The following complex fields have struct fields with 'indexing: index' which is not supported: " +
-                "topics (topics.id, topics.label). Change to 'indexing: attribute' instead");
+    public void logs_warning_when_complex_fields_have_struct_fields_with_index() throws IOException, SAXException {
+        var logger = new MyLogger();
         createModelAndValidate(joinLines(
                 "schema test {",
                 "document test {",
@@ -98,7 +106,12 @@ public class ComplexFieldsValidatorTestCase {
                 "  struct-field desc { indexing: attribute }",
                 "}",
                 "}",
-                "}"));
+                "}"), logger);
+        assertThat(logger.message.toString().contains(
+                "For cluster 'mycluster', schema 'test': " +
+                      "The following complex fields have struct fields with 'indexing: index' which is not supported and has no effect: " +
+                      "topics (topics.id, topics.label). " +
+                      "Remove setting or change to 'indexing: attribute' if needed for matching."));
     }
 
     @Test
@@ -126,18 +139,26 @@ public class ComplexFieldsValidatorTestCase {
     }
 
     private static void createModelAndValidate(String schema) throws IOException, SAXException {
-        DeployState deployState = createDeployState(servicesXml(), schema);
+        createModelAndValidate(schema, null);
+    }
+
+    private static void createModelAndValidate(String schema, DeployLogger logger) throws IOException, SAXException {
+        DeployState deployState = createDeployState(servicesXml(), schema, logger);
         VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
         ValidationParameters validationParameters = new ValidationParameters(CheckRouting.FALSE);
         new Validation().validate(model, validationParameters, deployState);
     }
 
-    private static DeployState createDeployState(String servicesXml, String schema) {
+    private static DeployState createDeployState(String servicesXml, String schema, DeployLogger logger) {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .withSchemas(List.of(schema))
                 .build();
-        return new DeployState.Builder().applicationPackage(app).build();
+        var builder = new DeployState.Builder().applicationPackage(app);
+        if (logger != null) {
+            builder.deployLogger(logger);
+        }
+        return builder.build();
     }
 
     private static String servicesXml() {
