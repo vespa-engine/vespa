@@ -158,11 +158,11 @@ public class PeerAuthorizerTest {
     }
 
     private static void assertAuthorized(ConnectionAuthContext result) {
-        assertTrue(result.succeeded());
+        assertTrue(result.authorized());
     }
 
     private static void assertUnauthorized(ConnectionAuthContext result) {
-        assertFalse(result.succeeded());
+        assertFalse(result.authorized());
     }
 
     private static void assertCapabiltiesGranted(ConnectionAuthContext ctx, Set<Capability> expected) {

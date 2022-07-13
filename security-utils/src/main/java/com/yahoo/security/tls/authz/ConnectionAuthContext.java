@@ -21,7 +21,7 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
         matchedPolicies = new TreeSet<>(matchedPolicies);
     }
 
-    public boolean succeeded() { return matchedPolicies.size() > 0; }
+    public boolean authorized() { return matchedPolicies.size() > 0; }
 
     public X509Certificate peerCertificate() { return peerCertificateChain.get(0); }
 

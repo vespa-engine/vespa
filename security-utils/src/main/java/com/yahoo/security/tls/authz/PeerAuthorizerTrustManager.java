@@ -113,7 +113,7 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
             sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY, result);
         }
-        if (result.succeeded()) {
+        if (result.authorized()) {
             log.fine(() -> String.format("Verification result: %s", result));
         } else {
             String errorMessage = "Authorization failed: " + createInfoString(certChain[0], authType, isVerifyingClient);
