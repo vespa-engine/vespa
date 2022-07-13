@@ -25,7 +25,7 @@ class CheckUndefinedValueVisitor : public document::ConstFieldValueVisitor
     void visit(const document::LongFieldValue&) override;
     void visit(const document::MapFieldValue& value) override;
     void visit(const document::PredicateFieldValue&) override;
-    void visit(const document::RawFieldValue&) override;
+    void visit(const document::RawFieldValue& value) override;
     void visit(const document::ShortFieldValue&) override;
     void visit(const document::StringFieldValue& value) override;
     void visit(const document::StructFieldValue&) override;
