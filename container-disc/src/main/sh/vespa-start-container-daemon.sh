@@ -192,7 +192,6 @@ configure_cpu() {
 
 configure_numactl() {
     numactlcmd=$(get_numa_ctl_cmd)
-    log_message debug "starting ${VESPA_SERVICE_NAME} for ${VESPA_CONFIG_ID} with numactl command : $numactlcmd"
 }
 
 configure_gcopts() {
