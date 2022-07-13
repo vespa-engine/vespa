@@ -182,42 +182,24 @@ public final class DocumentProtocol implements Protocol,
         return table;
     }
 
-    private static void addContainerClusterDocprocHops(Collection<ContainerCluster<?>> containerClusters,
-                                                       RoutingTableSpec table) {
-
+    private static void addContainerClusterDocprocHops(Collection<ContainerCluster<?>> containerClusters, RoutingTableSpec table) {
         for (ContainerCluster<?> cluster: containerClusters) {
             ContainerDocproc docproc = cluster.getDocproc();
 
             if (docproc != null) {
-                String policy = policy(docproc);
-
                 for (DocprocChain chain : docproc.getChains().allChains().allComponents()) {
-                    addChainHop(table, cluster.getConfigId(), policy, chain);
+                    addChainHop(table, cluster.getConfigId(), chain);
                 }
             }
         }
     }
 
-    private static void addChainHop(RoutingTableSpec table, String configId, String policy, DocprocChain chain) {
-        final StringBuilder selector = new StringBuilder();
-        if (policy != null) {
-            selector.append(configId).append("/").append(policy).append("/").append(chain.getSessionName());
-        } else {
-            selector.append("[LoadBalancer:cluster=").append(configId)
-                    .append(";session=").append(chain.getSessionName())
-                    .append("]");
-        }
+    private static void addChainHop(RoutingTableSpec table, String configId, DocprocChain chain) {
+        StringBuilder selector = new StringBuilder();
+        selector.append("[LoadBalancer:cluster=").append(configId)
+                .append(";session=").append(chain.getSessionName())
+                .append("]");
         table.addHop(new HopSpec(chain.getServiceName(), selector.toString()));
-    }
-
-    private static String policy(ContainerDocproc docproc) {
-        if (docproc.getNumNodesPerClient() > 0) {
-            return "[SubsetService:" + docproc.getNumNodesPerClient() + "]";
-        } else if (docproc.isPreferLocalNode()) {
-            return "[LocalService]";
-        } else {
-            return null;
-        }
     }
 
     /**
@@ -228,23 +210,22 @@ public final class DocumentProtocol implements Protocol,
      * @param table   the routing table to add to
      */
     private static void addContentRouting(List<ContentCluster> content, RoutingTableSpec table) {
+        for (ContentCluster cluster : content) {
+            RouteSpec spec = new RouteSpec(cluster.getConfigId());
 
-            for (ContentCluster cluster : content) {
-                RouteSpec spec = new RouteSpec(cluster.getConfigId());
-
-                if (cluster.getSearch().hasIndexedCluster()) {
-                    table.addRoute(spec.addHop("[MessageType:" + cluster.getConfigId() + "]"));
-                    table.addRoute(new RouteSpec(getIndexedRouteName(cluster.getConfigId()))
-                                           .addHop(cluster.getSearch().getIndexed().getIndexingServiceName())
-                                           .addHop("[Content:cluster=" + cluster.getName() + "]"));
-                    table.addRoute(new RouteSpec(getDirectRouteName(cluster.getConfigId()))
-                                           .addHop("[Content:cluster=" + cluster.getName() + "]"));
-                } else {
-                    table.addRoute(spec.addHop("[Content:cluster=" + cluster.getName() + "]"));
-                }
-                table.addRoute(new RouteSpec("storage/cluster." + cluster.getName())
-                                       .addHop("route:" + cluster.getConfigId()));
+            if (cluster.getSearch().hasIndexedCluster()) {
+                table.addRoute(spec.addHop("[MessageType:" + cluster.getConfigId() + "]"));
+                table.addRoute(new RouteSpec(getIndexedRouteName(cluster.getConfigId()))
+                                       .addHop(cluster.getSearch().getIndexed().getIndexingServiceName())
+                                       .addHop("[Content:cluster=" + cluster.getName() + "]"));
+                table.addRoute(new RouteSpec(getDirectRouteName(cluster.getConfigId()))
+                                       .addHop("[Content:cluster=" + cluster.getName() + "]"));
+            } else {
+                table.addRoute(spec.addHop("[Content:cluster=" + cluster.getName() + "]"));
             }
+            table.addRoute(new RouteSpec("storage/cluster." + cluster.getName())
+                                   .addHop("route:" + cluster.getConfigId()));
+        }
     }
 
     /**
@@ -255,9 +236,8 @@ public final class DocumentProtocol implements Protocol,
      * @param table the routing table to add to
      */
     private static void addIndexingHop(List<ContentCluster> content, RoutingTableSpec table) {
-        if (content.isEmpty()) {
-            return;
-        }
+        if (content.isEmpty()) return;
+
         HopSpec hop = new HopSpec("indexing", "[DocumentRouteSelector]");
         for (ContentCluster cluster : content) {
             hop.addRecipient(cluster.getConfigId());
@@ -281,9 +261,8 @@ public final class DocumentProtocol implements Protocol,
     private static void addDefaultRoutes(List<ContentCluster> content,
                                          Collection<ContainerCluster<?>> containerClusters,
                                          RoutingTableSpec table) {
-        if (content.isEmpty() || !indexingHopExists(table)) {
-            return;
-        }
+        if (content.isEmpty() || !indexingHopExists(table)) return;
+
         RouteSpec route = new RouteSpec("default");
         String hop = getContainerClustersDocprocHop(containerClusters);
         if (hop != null) {
@@ -326,9 +305,9 @@ public final class DocumentProtocol implements Protocol,
     }
 
     private static DocprocChain getDefaultChain(ContainerDocproc docproc) {
-        return docproc == null ?
-                null:
-                docproc.getChains().allChains().getComponent("default");
+        return docproc == null
+                ? null
+                : docproc.getChains().allChains().getComponent("default");
     }
 
     /**
