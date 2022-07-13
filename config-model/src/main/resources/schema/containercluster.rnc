@@ -203,7 +203,7 @@ ProcessingInContainer = element processing {
 DocumentApi = element document-api {
    ServerBindings &
    GenericConfig* &
-   attribute ignore-undefined-fields { xsd:boolean }? &
+   element ignore-undefined-fields { xsd:boolean }? &
    element abortondocumenterror { xsd:boolean }? &
    element retryenabled { xsd:boolean }? &
    element route { text }? &
