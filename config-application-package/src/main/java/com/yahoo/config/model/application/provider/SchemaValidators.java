@@ -16,7 +16,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static java.nio.file.Files.createTempDirectory;
-import static java.nio.file.Files.deleteIfExists;
 import static org.osgi.framework.FrameworkUtil.getBundle;
 
 /**
@@ -130,6 +129,10 @@ public class SchemaValidators {
                         schemasFound = true;
                     }
                 }
+            } else if ("file".equals(u.getProtocol())) { // This will be the case for unit tests
+                File schemaPath = new File(u.getPath());
+                copySchemas(schemaPath, tmpDir);
+                schemasFound = true;
             }
         }
 
