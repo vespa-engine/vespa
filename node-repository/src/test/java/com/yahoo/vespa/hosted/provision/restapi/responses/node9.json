@@ -11,6 +11,7 @@
   "environment": "BARE_METAL",
   "rebootGeneration": 0,
   "currentRebootGeneration": 0,
+  "deferOsUpgrade": false,
   "failCount": 0,
   "wantToRetire": false,
   "preferToRetire": false,
