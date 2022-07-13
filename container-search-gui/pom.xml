@@ -16,43 +16,13 @@
     <version>8-SNAPSHOT</version>
     <dependencies>
         <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>yolean</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>jdisc_core</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-core</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>container-search-and-docproc</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>configdefinitions</artifactId>
+            <artifactId>container-dev</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
-
         <plugins>
             <!-- TODO: alternative solution. For now, don't call out during build.
             <plugin>

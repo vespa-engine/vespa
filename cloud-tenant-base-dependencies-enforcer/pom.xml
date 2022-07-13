@@ -142,7 +142,6 @@
                                         <include>com.yahoo.vespa:vespaclient-container-plugin:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vespajlib:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vespalog:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:yolean:*:jar:provided</include>
 
                                         <!-- Vespa test dependencies -->
                                         <include>com.yahoo.vespa:application:*:jar:test</include>
