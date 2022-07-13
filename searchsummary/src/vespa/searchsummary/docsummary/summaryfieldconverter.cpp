@@ -463,7 +463,7 @@ private:
     }
 
     void visit(const PredicateFieldValue &value) override {
-        vespalib::slime::inject(value.getSlime().get(), _inserter);
+        _inserter.insertString(value.toString());
     }
 
     void visit(const RawFieldValue &value) override {
