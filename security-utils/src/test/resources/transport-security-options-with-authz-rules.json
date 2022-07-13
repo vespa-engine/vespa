@@ -22,6 +22,7 @@
       "field" : "CN",
       "must-match" : "hostname"
     } ],
-    "name" : "node"
+    "name" : "node",
+    "capabilities" : [ "vespa.slobrok.api" ]
   } ]
 }

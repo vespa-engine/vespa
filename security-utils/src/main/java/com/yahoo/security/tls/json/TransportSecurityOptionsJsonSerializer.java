@@ -8,6 +8,7 @@ import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.CredentialFiel
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.Files;
 import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.RequiredCredential;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.CapabilitySet;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 
@@ -19,6 +20,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
@@ -99,7 +101,16 @@ public class TransportSecurityOptionsJsonSerializer {
         if (authorizedPeer.requiredCredentials == null) {
             throw missingFieldException("required-credentials");
         }
-        return new PeerPolicy(authorizedPeer.name, authorizedPeer.description, toRequestPeerCredentials(authorizedPeer.requiredCredentials));
+        return new PeerPolicy(authorizedPeer.name, Optional.ofNullable(authorizedPeer.description),
+                toCapabilities(authorizedPeer.capabilities), toRequestPeerCredentials(authorizedPeer.requiredCredentials));
+    }
+
+    private static CapabilitySet toCapabilities(List<String> capabilities) {
+        if (capabilities == null) return CapabilitySet.all();
+        if (capabilities.isEmpty())
+            throw new IllegalArgumentException("\"capabilities\" array must either be not present " +
+                    "(implies all capabilities) or contain at least one capability name");
+        return CapabilitySet.fromNames(capabilities);
     }
 
     private static List<RequiredPeerCredential> toRequestPeerCredentials(List<RequiredCredential> requiredCredentials) {
@@ -142,6 +153,10 @@ public class TransportSecurityOptionsJsonSerializer {
                             authorizedPeer.name = peerPolicy.policyName();
                             authorizedPeer.requiredCredentials = new ArrayList<>();
                             authorizedPeer.description = peerPolicy.description().orElse(null);
+                            CapabilitySet caps = peerPolicy.capabilities();
+                            if (!caps.hasAllCapabilities()) {
+                                authorizedPeer.capabilities = List.copyOf(caps.toCapabilityNames());
+                            }
                             for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
                                 RequiredCredential requiredCredential = new RequiredCredential();
                                 requiredCredential.field = toField(requiredPeerCredential.field());
