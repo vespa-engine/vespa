@@ -58,14 +58,14 @@ public class SuperModelRequestHandlerTest {
 
         assertNotNull(controller.getHandler());
         long gen = counter.get();
-        controller.reloadConfig(createApp(foo, 3L));
+        controller.activateConfig(createApp(foo, 3L));
         assertNotNull(controller.getHandler());
         assertEquals(gen + 1, controller.getHandler().getGeneration());
-        controller.reloadConfig(createApp(foo, 4L));
+        controller.activateConfig(createApp(foo, 4L));
         assertEquals(gen + 2, controller.getHandler().getGeneration());
         // Test that a new app is used when there already exist an application with the same id
         assertEquals(4, controller.getHandler().getSuperModel().applicationModels().get(foo).getGeneration());
-        controller.reloadConfig(createApp(bar, 2L));
+        controller.activateConfig(createApp(bar, 2L));
         assertEquals(gen + 3, controller.getHandler().getGeneration());
     }
 
@@ -76,9 +76,9 @@ public class SuperModelRequestHandlerTest {
         ApplicationId baz = applicationId("b", "baz");
 
         long gen = counter.get();
-        controller.reloadConfig(createApp(foo, 3L));
-        controller.reloadConfig(createApp(bar, 30L));
-        controller.reloadConfig(createApp(baz, 9L));
+        controller.activateConfig(createApp(foo, 3L));
+        controller.activateConfig(createApp(bar, 30L));
+        controller.activateConfig(createApp(baz, 9L));
         assertEquals(gen + 3, controller.getHandler().getGeneration());
         assertEquals(3, controller.getHandler().getSuperModel().applicationModels().size());
         assertTrue(controller.getHandler().getSuperModel().applicationModels().keySet().containsAll(List.of(foo, bar, baz)));
@@ -101,7 +101,7 @@ public class SuperModelRequestHandlerTest {
         controller = new SuperModelRequestHandler(new TestConfigDefinitionRepo(), configserverConfig, manager);
 
         long gen = counter.get();
-        controller.reloadConfig(createApp(foo, 3L));
+        controller.activateConfig(createApp(foo, 3L));
         assertEquals(masterGen + gen + 1, controller.getHandler().getGeneration());
     }
 

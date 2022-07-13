@@ -7,13 +7,13 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import java.util.Collection;
 
 /**
- * A ReloadListener is used to signal to a component that config has been
- * reloaded. It only exists because the RpcServer cannot distinguish between a
- * successful reload of a new application and a reload of the same application.
+ * A ConfigActivationListener is used to signal to a component that config has been
+ * activated. It only exists because the RpcServer cannot distinguish between a
+ * successful activation of a new application and an activation of the same application.
  * 
  * @author Ulf Lilleengen
  */
-public interface ReloadListener {
+public interface ConfigActivationListener {
 
     /**
      * Signals the listener that hosts used by a particular tenant.

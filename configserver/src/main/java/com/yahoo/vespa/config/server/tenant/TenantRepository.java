@@ -19,7 +19,7 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
@@ -115,7 +115,7 @@ public class TenantRepository {
     private final Clock clock;
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
-    private final ReloadListener reloadListener;
+    private final ConfigActivationListener configActivationListener;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
     private final Curator.DirectoryCache directoryCache;
@@ -136,7 +136,7 @@ public class TenantRepository {
                             Zone zone,
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
-                            ReloadListener reloadListener,
+                            ConfigActivationListener configActivationListener,
                             TenantListener tenantListener,
                             ZookeeperServerConfig zookeeperServerConfig) {
         this(hostRegistry,
@@ -155,7 +155,7 @@ public class TenantRepository {
              Clock.systemUTC(),
              modelFactoryRegistry,
              configDefinitionRepo,
-             reloadListener,
+             configActivationListener,
              tenantListener,
              zookeeperServerConfig);
     }
@@ -176,7 +176,7 @@ public class TenantRepository {
                             Clock clock,
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
-                            ReloadListener reloadListener,
+                            ConfigActivationListener configActivationListener,
                             TenantListener tenantListener,
                             ZookeeperServerConfig zookeeperServerConfig) {
         this.hostRegistry = hostRegistry;
@@ -196,7 +196,7 @@ public class TenantRepository {
         this.clock = clock;
         this.modelFactoryRegistry = modelFactoryRegistry;
         this.configDefinitionRepo = configDefinitionRepo;
-        this.reloadListener = reloadListener;
+        this.configActivationListener = configActivationListener;
         this.tenantListener = tenantListener;
         this.zookeeperServerConfig = zookeeperServerConfig;
         // This we should control with a feature flag.
@@ -338,7 +338,7 @@ public class TenantRepository {
                                        zkApplicationWatcherExecutor,
                                        zkCacheExecutor,
                                        metrics,
-                                       reloadListener,
+                                       configActivationListener,
                                        configserverConfig,
                                        hostRegistry,
                                        new TenantFileSystemDirs(configServerDB, tenantName),

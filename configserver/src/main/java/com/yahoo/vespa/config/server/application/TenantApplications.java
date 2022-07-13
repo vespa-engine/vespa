@@ -14,7 +14,7 @@ import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 import com.yahoo.vespa.config.server.NotFoundException;
-import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -27,13 +27,11 @@ import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
-import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.ListFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.Clock;
@@ -69,7 +67,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final Executor zkWatcherExecutor;
     private final Metrics metrics;
     private final TenantName tenant;
-    private final ReloadListener reloadListener;
+    private final ConfigActivationListener configActivationListener;
     private final ConfigResponseFactory responseFactory;
     private final HostRegistry hostRegistry;
     private final ApplicationMapper applicationMapper = new ApplicationMapper();
@@ -80,7 +78,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final ListFlag<String> incompatibleVersions;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
-                              ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
+                              ExecutorService zkCacheExecutor, Metrics metrics, ConfigActivationListener configActivationListener,
                               ConfigserverConfig configserverConfig, HostRegistry hostRegistry,
                               TenantFileSystemDirs tenantFileSystemDirs, Clock clock, FlagSource flagSource) {
         this.curator = curator;
@@ -91,7 +89,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.directoryCache.addListener(this::childEvent);
         this.directoryCache.start();
         this.metrics = metrics;
-        this.reloadListener = reloadListener;
+        this.configActivationListener = configActivationListener;
         this.responseFactory = ConfigResponseFactory.create(configserverConfig);
         this.tenantMetricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenant));
         this.hostRegistry = hostRegistry;
@@ -213,23 +211,22 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     @Override
     public ConfigResponse resolveConfig(ApplicationId appId, GetConfigRequest req, Optional<Version> vespaVersion) {
         Application application = getApplication(appId, vespaVersion);
-        log.log(Level.FINE, () -> TenantRepository.logPre(appId) + "Resolving for tenant '" + tenant +
-                                  "' with handler for application '" + application + "'");
+        log.log(Level.FINE, () -> TenantRepository.logPre(appId) + "Resolving config");
         return application.resolveConfig(req, responseFactory);
     }
 
-    private void notifyReloadListeners(ApplicationSet applicationSet) {
+    private void notifyConfigActivationListeners(ApplicationSet applicationSet) {
         if (applicationSet.getAllApplications().isEmpty()) throw new IllegalArgumentException("application set cannot be empty");
 
-        reloadListener.hostsUpdated(applicationSet.getAllApplications().get(0).toApplicationInfo().getApplicationId(),
-                                    applicationSet.getAllHosts());
-        reloadListener.configActivated(applicationSet);
+        configActivationListener.hostsUpdated(applicationSet.getAllApplications().get(0).toApplicationInfo().getApplicationId(),
+                                              applicationSet.getAllHosts());
+        configActivationListener.configActivated(applicationSet);
     }
 
     /**
      * Activates the config of the given app. Notifies listeners
      *
-     * @param applicationSet the {@link ApplicationSet} to be reloaded
+     * @param applicationSet the {@link ApplicationSet} to be activated
      */
     public void activateApplication(ApplicationSet applicationSet, long activeSessionId) {
         ApplicationId id = applicationSet.getId();
@@ -239,8 +236,8 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
             if (applicationSet.getApplicationGeneration() != activeSessionId)
                 return; // Application activated a new session before we got here.
 
-            setLiveApp(applicationSet);
-            notifyReloadListeners(applicationSet);
+            setActiveApp(applicationSet);
+            notifyConfigActivationListeners(applicationSet);
         }
     }
 
@@ -257,7 +254,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         if (hasApplication(applicationId)) {
             applicationMapper.remove(applicationId);
             hostRegistry.removeHostsForKey(applicationId);
-            reloadListenersOnRemove(applicationId);
+            configActivationListenersOnRemove(applicationId);
             tenantMetricUpdater.setApplications(applicationMapper.numApplications());
             metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
             getRemoveApplicationWaiter(applicationId).notifyCompletion();
@@ -279,12 +276,12 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         }
     }
 
-    private void reloadListenersOnRemove(ApplicationId applicationId) {
-        reloadListener.hostsUpdated(applicationId, hostRegistry.getHostsForKey(applicationId));
-        reloadListener.applicationRemoved(applicationId);
+    private void configActivationListenersOnRemove(ApplicationId applicationId) {
+        configActivationListener.hostsUpdated(applicationId, hostRegistry.getHostsForKey(applicationId));
+        configActivationListener.applicationRemoved(applicationId);
     }
 
-    private void setLiveApp(ApplicationSet applicationSet) {
+    private void setActiveApp(ApplicationSet applicationSet) {
         ApplicationId id = applicationSet.getId();
         Collection<String> hostsForApp = applicationSet.getAllHosts();
         hostRegistry.update(id, hostsForApp);
@@ -402,7 +399,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     @Override
     public void verifyHosts(ApplicationId applicationId, Collection<String> newHosts) {
         hostRegistry.verifyHosts(applicationId, newHosts);
-        reloadListener.verifyHostsAreAvailable(applicationId, newHosts);
+        configActivationListener.verifyHostsAreAvailable(applicationId, newHosts);
     }
 
     public HostValidator<ApplicationId> getHostValidator() {

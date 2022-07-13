@@ -5,12 +5,11 @@ import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
-import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.MockSecretStore;
-import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.TestConfigDefinitionRepo;
 import com.yahoo.vespa.config.server.application.TenantApplicationsTest;
 import com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory;
@@ -44,7 +43,7 @@ public class TestTenantRepository extends TenantRepository {
                                 Clock clock,
                                 ModelFactoryRegistry modelFactoryRegistry,
                                 ConfigDefinitionRepo configDefinitionRepo,
-                                ReloadListener reloadListener,
+                                ConfigActivationListener configActivationListener,
                                 TenantListener tenantListener) {
         super(hostRegistry,
               curator,
@@ -62,7 +61,7 @@ public class TestTenantRepository extends TenantRepository {
               clock,
               modelFactoryRegistry,
               configDefinitionRepo,
-              reloadListener,
+              configActivationListener,
               tenantListener,
               new ZookeeperServerConfig.Builder().myid(0).build());
     }
@@ -78,7 +77,7 @@ public class TestTenantRepository extends TenantRepository {
         HostProvisionerProvider hostProvisionerProvider = HostProvisionerProvider.empty();
         ModelFactoryRegistry modelFactoryRegistry = new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory()));
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder().build();
-        ReloadListener reloadListener = new TenantApplicationsTest.MockReloadListener();
+        ConfigActivationListener configActivationListener = new TenantApplicationsTest.MockConfigActivationListener();
         TenantListener tenantListener = new MockTenantListener();
         Zone zone = Zone.defaultZone();
 
@@ -127,8 +126,8 @@ public class TestTenantRepository extends TenantRepository {
             return this;
         }
 
-        public Builder withReloadListener(ReloadListener reloadListener) {
-            this.reloadListener = reloadListener;
+        public Builder withConfigActivationListener(ConfigActivationListener configActivationListener) {
+            this.configActivationListener = configActivationListener;
             return this;
         }
 
@@ -156,7 +155,7 @@ public class TestTenantRepository extends TenantRepository {
                                             clock,
                                             modelFactoryRegistry,
                                             configDefinitionRepo,
-                                            reloadListener,
+                                            configActivationListener,
                                             tenantListener);
         }
 
