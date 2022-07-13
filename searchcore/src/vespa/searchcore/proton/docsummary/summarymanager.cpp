@@ -101,6 +101,8 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
     docsum_blob_entry_filter.add_skip(RES_FLOAT);
     docsum_blob_entry_filter.add_skip(RES_DOUBLE);
     docsum_blob_entry_filter.add_skip(RES_INT64);
+    docsum_blob_entry_filter.add_skip(RES_DATA);
+    docsum_blob_entry_filter.add_skip(RES_LONG_DATA);
     docsum_blob_entry_filter.add_skip(RES_JSONSTRING);
     docsum_blob_entry_filter.add_skip(RES_TENSOR);
     docsum_blob_entry_filter.add_skip(RES_FEATUREDATA);
