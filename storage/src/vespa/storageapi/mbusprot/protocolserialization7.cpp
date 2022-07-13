@@ -646,30 +646,83 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeRevertReply(const SCmd& cm
 // RemoveLocation
 // -----------------------------------------------------------------
 
+namespace {
+
+void set_document_id(protobuf::DocumentId& dest, const document::DocumentId& src) {
+    *dest.mutable_id() = src.toString();
+}
+
+document::DocumentId get_document_id(const protobuf::DocumentId& src) {
+    return document::DocumentId(src.id()); // id() shall always be null terminated
+}
+
+void set_id_and_timestamp_vector(::google::protobuf::RepeatedPtrField<protobuf::IdAndTimestamp>& dest,
+                                 const std::vector<spi::IdAndTimestamp>& src)
+{
+    dest.Reserve(src.size());
+    for (const auto& src_entry : src) {
+        auto* dest_entry = dest.Add();
+        dest_entry->set_timestamp(src_entry.timestamp);
+        set_document_id(*dest_entry->mutable_id(), src_entry.id);
+    }
+}
+
+std::vector<spi::IdAndTimestamp>
+get_id_and_timestamp_vector(const ::google::protobuf::RepeatedPtrField<protobuf::IdAndTimestamp>& src)
+{
+    std::vector<spi::IdAndTimestamp> vec;
+    vec.reserve(src.size());
+    for (const auto& src_entry : src) {
+        vec.emplace_back(get_document_id(src_entry.id()), spi::Timestamp(src_entry.timestamp()));
+    }
+    return vec;
+}
+
+}
+
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationCommand& msg) const {
     encode_bucket_request<protobuf::RemoveLocationRequest>(buf, msg, [&](auto& req) {
         req.set_document_selection(msg.getDocumentSelection().data(), msg.getDocumentSelection().size());
+        if (msg.only_enumerate_docs()) {
+            req.mutable_phase_one(); // Instantiating it is enough
+        } else if (!msg.explicit_remove_set().empty()) {
+            set_id_and_timestamp_vector(*req.mutable_phase_two()->mutable_explicit_remove_set(),
+                                        msg.explicit_remove_set());
+        }
     });
 }
 
 void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RemoveLocationReply& msg) const {
     encode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, msg, [&](auto& res) {
         res.mutable_stats()->set_documents_removed(msg.documents_removed());
+        if (!msg.selection_matches().empty()) {
+            set_id_and_timestamp_vector(*res.mutable_selection_matches(), msg.selection_matches());
+        }
     });
 }
 
 api::StorageCommand::UP ProtocolSerialization7::onDecodeRemoveLocationCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::RemoveLocationRequest>(buf, [&](auto& req, auto& bucket) {
-        return std::make_unique<api::RemoveLocationCommand>(req.document_selection(), bucket);
+        auto cmd = std::make_unique<api::RemoveLocationCommand>(req.document_selection(), bucket);
+        if (req.has_phase_one()) {
+            cmd->set_only_enumerate_docs(true);
+        } else if (req.has_phase_two()) {
+            cmd->set_explicit_remove_set(get_id_and_timestamp_vector(req.phase_two().explicit_remove_set()));
+        }
+        return cmd;
     });
 }
 
 api::StorageReply::UP ProtocolSerialization7::onDecodeRemoveLocationReply(const SCmd& cmd, BBuf& buf) const {
     return decode_bucket_info_response<protobuf::RemoveLocationResponse>(buf, [&](auto& res) {
         uint32_t documents_removed = (res.has_stats() ? res.stats().documents_removed() : 0u);
-        return std::make_unique<api::RemoveLocationReply>(
+        auto reply = std::make_unique<api::RemoveLocationReply>(
                 static_cast<const api::RemoveLocationCommand&>(cmd),
                 documents_removed);
+        if (!res.selection_matches().empty()) {
+            reply->set_selection_matches(get_id_and_timestamp_vector(res.selection_matches()));
+        }
+        return reply;
     });
 }
 
@@ -1004,6 +1057,7 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::RequestBucketInfoRe
         // We mark features as available at protocol level. Only included for full bucket fetch responses.
         if (msg.full_bucket_fetch()) {
             res.mutable_supported_node_features()->set_unordered_merge_chaining(true);
+            res.mutable_supported_node_features()->set_two_phase_remove_location(true);
         }
     });
 }
@@ -1044,7 +1098,8 @@ api::StorageReply::UP ProtocolSerialization7::onDecodeRequestBucketInfoReply(con
         if (res.has_supported_node_features()) {
             const auto& src_features  = res.supported_node_features();
             auto&       dest_features = reply->supported_node_features();
-            dest_features.unordered_merge_chaining = src_features.unordered_merge_chaining();
+            dest_features.unordered_merge_chaining  = src_features.unordered_merge_chaining();
+            dest_features.two_phase_remove_location = src_features.two_phase_remove_location();
         }
         return reply;
     });

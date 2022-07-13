@@ -3,6 +3,10 @@
 
 #include "types.h"
 #include <vespa/document/base/documentid.h>
+#include <vespa/vespalib/stllike/string.h>
+#include <iosfwd>
+
+namespace vespalib { class asciistream; }
 
 namespace storage::spi {
 
@@ -27,6 +31,9 @@ struct IdAndTimestamp {
         return ((id == rhs.id) && (timestamp == rhs.timestamp));
     }
 
+    void print(vespalib::asciistream&) const;
+    vespalib::string to_string() const;
+
     struct hash {
         size_t operator()(const IdAndTimestamp& id_ts) const noexcept {
             const size_t h = document::GlobalId::hash()(id_ts.id.getGlobalId());
@@ -34,5 +41,8 @@ struct IdAndTimestamp {
         }
     };
 };
+
+vespalib::asciistream& operator<<(vespalib::asciistream&, const IdAndTimestamp&);
+std::ostream& operator<<(std::ostream&, const IdAndTimestamp&);
 
 }

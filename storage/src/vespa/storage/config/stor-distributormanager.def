@@ -299,3 +299,11 @@ use_unordered_merge_chaining bool default=true
 ## one or more nodes is in maintenance mode in the default bucket space but marked up in
 ## the global bucket space.
 inhibit_default_merges_when_global_merges_pending bool default=true
+
+## If true, garbage collection is performed in two phases (metadata gathering and deletion)
+## instead of just a single phase. Two-phase GC allows for ensuring the same set of documents
+## is deleted across all nodes and explicitly takes write locks on the distributor to prevent
+## concurrent feed ops to GC'd documents from potentially creating inconsistencies.
+## Two-phase GC is only used iff all replica content nodes support the feature AND it's enabled
+## by this config.
+enable_two_phase_garbage_collection bool default=false

@@ -106,6 +106,11 @@ public:
         return *_operation_sequencer;
     }
 
+    distributor::OperationSequencer& operation_sequencer() noexcept override {
+        assert(_operation_sequencer);
+        return *_operation_sequencer;
+    }
+
     void set_operation_sequencer(distributor::OperationSequencer& op_seq) {
         _operation_sequencer = &op_seq;
     }

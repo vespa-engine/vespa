@@ -88,9 +88,26 @@ message RevertResponse {
     BucketId   remapped_bucket_id = 2;
 }
 
+message IdAndTimestamp {
+    DocumentId id    = 1;
+    uint64 timestamp = 2;
+}
+
+message PhaseOneRemove {
+    // Currently empty; its presence is enough
+}
+
+message PhaseTwoRemove {
+    repeated IdAndTimestamp explicit_remove_set = 1;
+}
+
 message RemoveLocationRequest {
-    Bucket bucket             = 1;
-    bytes  document_selection = 2;
+    Bucket bucket                = 1;
+    bytes  document_selection    = 2;
+    oneof phased_remove {
+        PhaseOneRemove phase_one = 3;
+        PhaseTwoRemove phase_two = 4;
+    }
 }
 
 message RemoveLocationStats {
@@ -98,7 +115,8 @@ message RemoveLocationStats {
 }
 
 message RemoveLocationResponse {
-    BucketInfo bucket_info        = 1;
-    BucketId   remapped_bucket_id = 2;
-    RemoveLocationStats stats     = 3;
+    BucketInfo bucket_info                    = 1;
+    BucketId   remapped_bucket_id             = 2;
+    RemoveLocationStats stats                 = 3;
+    repeated IdAndTimestamp selection_matches = 4; // Iff reply to phase 1 remove
 }

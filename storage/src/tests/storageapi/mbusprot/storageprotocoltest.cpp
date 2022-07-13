@@ -387,11 +387,8 @@ TEST_P(StorageProtocolTest, request_bucket_info) {
         // separately until we can figure out if this is by design or not.
         EXPECT_EQ(lastMod, entries[0]._info.getLastModified());
 
-        if (GetParam().getMajor() >= 7) {
-            EXPECT_TRUE(reply2->supported_node_features().unordered_merge_chaining);
-        } else {
-            EXPECT_FALSE(reply2->supported_node_features().unordered_merge_chaining);
-        }
+        EXPECT_TRUE(reply2->supported_node_features().unordered_merge_chaining);
+        EXPECT_TRUE(reply2->supported_node_features().two_phase_remove_location);
     }
 }
 
@@ -530,16 +527,57 @@ TEST_P(StorageProtocolTest, destroy_visitor) {
     auto reply2 = copyReply(reply);
 }
 
-TEST_P(StorageProtocolTest, remove_location) {
+TEST_P(StorageProtocolTest, legacy_remove_location) {
     auto cmd = std::make_shared<RemoveLocationCommand>("id.group == \"mygroup\"", _bucket);
     auto cmd2 = copyCommand(cmd);
     EXPECT_EQ("id.group == \"mygroup\"", cmd2->getDocumentSelection());
     EXPECT_EQ(_bucket, cmd2->getBucket());
+    EXPECT_TRUE(cmd2->explicit_remove_set().empty());
+    EXPECT_FALSE(cmd2->only_enumerate_docs());
 
     uint32_t n_docs_removed = 12345;
     auto reply = std::make_shared<RemoveLocationReply>(*cmd2, n_docs_removed);
     auto reply2 = copyReply(reply);
     EXPECT_EQ(n_docs_removed, reply2->documents_removed());
+    EXPECT_TRUE(reply2->selection_matches().empty());
+}
+
+TEST_P(StorageProtocolTest, phase_1_remove_location) {
+    auto cmd = std::make_shared<RemoveLocationCommand>("id.group == \"mygroup\"", _bucket);
+    cmd->set_only_enumerate_docs(true);
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ("id.group == \"mygroup\"", cmd2->getDocumentSelection());
+    EXPECT_EQ(_bucket, cmd2->getBucket());
+    EXPECT_TRUE(cmd2->explicit_remove_set().empty());
+    EXPECT_TRUE(cmd2->only_enumerate_docs());
+
+    auto reply = std::make_shared<RemoveLocationReply>(*cmd2, 0);
+    std::vector<spi::IdAndTimestamp> docs;
+    docs.emplace_back(DocumentId("id:foo:bar::baz"), spi::Timestamp(12345));
+    docs.emplace_back(DocumentId("id:foo:bar::zoid"), spi::Timestamp(67890));
+    reply->set_selection_matches(docs);
+    auto reply2 = copyReply(reply);
+    EXPECT_EQ(0, reply2->documents_removed());
+    EXPECT_EQ(reply2->selection_matches(), docs);
+}
+
+TEST_P(StorageProtocolTest, phase_2_remove_location) {
+    auto cmd = std::make_shared<RemoveLocationCommand>("id.group == \"mygroup\"", _bucket);
+    std::vector<spi::IdAndTimestamp> docs;
+    docs.emplace_back(DocumentId("id:foo:bar::baz"), spi::Timestamp(12345));
+    docs.emplace_back(DocumentId("id:foo:bar::zoid"), spi::Timestamp(67890));
+    cmd->set_explicit_remove_set(docs);
+    auto cmd2 = copyCommand(cmd);
+    EXPECT_EQ("id.group == \"mygroup\"", cmd2->getDocumentSelection());
+    EXPECT_EQ(_bucket, cmd2->getBucket());
+    EXPECT_FALSE(cmd2->only_enumerate_docs());
+    EXPECT_EQ(cmd2->explicit_remove_set(), docs);
+
+    uint32_t n_docs_removed = 12345;
+    auto reply = std::make_shared<RemoveLocationReply>(*cmd2, n_docs_removed);
+    auto reply2 = copyReply(reply);
+    EXPECT_EQ(n_docs_removed, reply2->documents_removed());
+    EXPECT_TRUE(reply2->selection_matches().empty());
 }
 
 TEST_P(StorageProtocolTest, stat_bucket) {

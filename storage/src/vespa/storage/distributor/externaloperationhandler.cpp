@@ -63,6 +63,9 @@ public:
     const OperationSequencer& operation_sequencer() const noexcept override {
         abort(); // Never called by the messages using this component.
     }
+    OperationSequencer& operation_sequencer() noexcept override {
+        abort(); // Never called by the messages using this component.
+    }
 };
 
 ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,

@@ -110,7 +110,8 @@ message BucketAndBucketInfo {
 }
 
 message SupportedNodeFeatures {
-    bool unordered_merge_chaining = 1;
+    bool unordered_merge_chaining  = 1;
+    bool two_phase_remove_location = 2;
 }
 
 message RequestBucketInfoResponse {

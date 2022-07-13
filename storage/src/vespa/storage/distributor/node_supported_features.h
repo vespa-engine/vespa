@@ -11,11 +11,10 @@ namespace storage::distributor {
  * are initially expected to be unsupported.
  */
 struct NodeSupportedFeatures {
-    bool unordered_merge_chaining = false;
+    bool unordered_merge_chaining  = false;
+    bool two_phase_remove_location = false;
 
-    bool operator==(const NodeSupportedFeatures& rhs) const noexcept {
-        return unordered_merge_chaining == rhs.unordered_merge_chaining;
-    };
+    bool operator==(const NodeSupportedFeatures& rhs) const noexcept = default;
 };
 
 }

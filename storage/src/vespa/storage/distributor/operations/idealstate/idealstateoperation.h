@@ -179,8 +179,9 @@ public:
     /**
        Set the priority we should send messages from this operation with.
     */
-    void setPriority(api::StorageMessage::Priority priority)
-    { _priority = priority; }
+    void setPriority(api::StorageMessage::Priority priority) noexcept {
+        _priority = priority;
+    }
 
     /**
      * Returns true if we are blocked to start this operation given

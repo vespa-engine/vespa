@@ -55,6 +55,10 @@ public:
             return _sender.operation_sequencer();
         }
 
+        OperationSequencer& operation_sequencer() noexcept override {
+            return _sender.operation_sequencer();
+        }
+
     private:
         OperationOwner& _owner;
         DistributorStripeMessageSender& _sender;

@@ -340,7 +340,8 @@ PendingClusterState::update_node_supported_features_from_reply(uint16_t node, co
 {
     const auto& src_feat = reply.supported_node_features();
     NodeSupportedFeatures dest_feat;
-    dest_feat.unordered_merge_chaining = src_feat.unordered_merge_chaining;
+    dest_feat.unordered_merge_chaining  = src_feat.unordered_merge_chaining;
+    dest_feat.two_phase_remove_location = src_feat.two_phase_remove_location;
     // This will overwrite per bucket-space reply, but does not matter since it's independent of bucket space.
     _node_features.insert(std::make_pair(node, dest_feat));
 }

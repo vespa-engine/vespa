@@ -29,6 +29,7 @@ public:
                  std::shared_ptr<api::PutCommand> msg,
                  PersistenceOperationMetricSet& metric,
                  SequencingHandle sequencingHandle = SequencingHandle());
+    ~PutOperation() override;
 
     void onStart(DistributorStripeMessageSender& sender) override;
     const char* getName() const override { return "put"; };

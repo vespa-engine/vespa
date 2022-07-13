@@ -406,19 +406,34 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
 {
     tracker->setMetric(_env._metrics.removeLocation);
 
-    LOG(debug, "RemoveLocation(%s): using selection '%s'",
-        cmd.getBucketId().toString().c_str(),
-        cmd.getDocumentSelection().c_str());
-
     spi::Bucket bucket(cmd.getBucket());
-    UnrevertableRemoveEntryProcessor::DocumentIdsAndTimeStamps to_remove;
-    UnrevertableRemoveEntryProcessor processor(to_remove);
+    const bool is_legacy = (!cmd.only_enumerate_docs() && cmd.explicit_remove_set().empty());
+    std::vector<spi::IdAndTimestamp> to_remove;
 
-    {
-        auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
-        BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
-                                    std::make_shared<document::DocIdOnly>(),
-                                    processor, spi::NEWEST_DOCUMENT_ONLY, tracker->context());
+    LOG(debug, "RemoveLocation(%s): using selection '%s' (enumerate only: %s, remove set size: %zu)",
+        bucket.toString().c_str(),
+        cmd.getDocumentSelection().c_str(),
+        (cmd.only_enumerate_docs() ? "yes" : "no"),
+        cmd.explicit_remove_set().size());
+
+    if (is_legacy || cmd.only_enumerate_docs()) {
+        UnrevertableRemoveEntryProcessor processor(to_remove);
+        {
+            auto usage = vespalib::CpuUsage::use(CpuUsage::Category::READ);
+            BucketProcessor::iterateAll(_spi, bucket, cmd.getDocumentSelection(),
+                                        std::make_shared<document::DocIdOnly>(),
+                                        processor, spi::NEWEST_DOCUMENT_ONLY, tracker->context());
+        }
+        if (!is_legacy) {
+            LOG(debug, "RemoveLocation(%s): returning 1st phase results with %zu entries",
+                bucket.toString().c_str(), to_remove.size());
+            auto reply = std::make_shared<api::RemoveLocationReply>(cmd, 0); // No docs removed yet
+            reply->set_selection_matches(std::move(to_remove));
+            tracker->setReply(std::move(reply));
+            return tracker;
+        }
+    } else {
+        to_remove = cmd.steal_explicit_remove_set();
     }
 
     auto task = makeResultTask([&cmd, tracker = std::move(tracker), removed = to_remove.size()](spi::Result::UP response) {
@@ -427,6 +442,8 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
         tracker->sendReply();
     });
 
+    // In the case where a _newer_ mutation exists for a given entry in to_remove, it will be ignored
+    // (with no tombstone added) since we only preserve the newest operation for a document.
     _spi.removeAsync(bucket, std::move(to_remove),
                      std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
 

@@ -93,6 +93,10 @@ public:
         return *_operation_sequencer;
     }
 
+    OperationSequencer& operation_sequencer() noexcept override {
+        return *_operation_sequencer;
+    }
+
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
 
     /**
