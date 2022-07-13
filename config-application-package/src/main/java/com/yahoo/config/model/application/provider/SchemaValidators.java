@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 import static java.nio.file.Files.createTempDirectory;
+import static java.nio.file.Files.deleteIfExists;
 import static org.osgi.framework.FrameworkUtil.getBundle;
 
 /**
@@ -104,6 +105,7 @@ public class SchemaValidators {
 
         File tmpDir = createTempDirectory(tmpBase.toPath(), "vespa").toFile();
         log.log(Level.FINE, () -> "Will save all XML schemas for " + vespaVersion + " to " + tmpDir);
+        boolean schemasFound = false;
         while (uris.hasMoreElements()) {
             URL u = uris.nextElement();
             if ("bundle".equals(u.getProtocol())) {
@@ -118,16 +120,24 @@ public class SchemaValidators {
                         schemaPath = new File(pathPrefix);
                     }
                     log.log(Level.FINE, "Using schemas found in " + schemaPath);
+                    schemasFound = true;
                     copySchemas(schemaPath, tmpDir);
                 } else {
                     log.log(Level.FINE, () -> String.format("Saving schemas for model bundle %s:%s", bundle.getSymbolicName(), bundle.getVersion()));
                     for (Enumeration<URL> entries = bundle.findEntries("schema", "*.rnc", true); entries.hasMoreElements(); ) {
                         URL url = entries.nextElement();
                         writeContentsToFile(tmpDir, url.getFile(), url.openStream());
+                        schemasFound = true;
                     }
                 }
             }
         }
+
+        if ( ! schemasFound) {
+            IOUtils.recursiveDeleteDir(tmpDir);
+            throw new IllegalArgumentException("Could not find schemas for version " + vespaVersion);
+        }
+
         return tmpDir;
     }
 
