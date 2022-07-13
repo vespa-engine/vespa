@@ -28,7 +28,7 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Trace;
 import com.yahoo.vespa.config.server.GetConfigContext;
-import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.RequestHandler;
 import com.yahoo.vespa.config.server.SuperModelRequestHandler;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
@@ -75,7 +75,7 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
  * @author hmusum
  */
 // TODO: Split business logic out of this
-public class RpcServer implements Runnable, ReloadListener, TenantListener {
+public class RpcServer implements Runnable, ConfigActivationListener, TenantListener {
 
     static final String getConfigMethodName = "getConfigV3";
     
@@ -256,7 +256,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     /**
      * Checks all delayed responses for config changes and waits until all has been answered.
-     * This method should be called when config is reloaded in the server.
+     * This method should be called when config is activated in the server.
      */
     @Override
     public void configActivated(ApplicationSet applicationSet) {
@@ -264,19 +264,19 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         ApplicationState state = getState(applicationId);
         state.setActiveGeneration(applicationSet.getApplicationGeneration());
         reloadSuperModel(applicationSet);
-        configReloaded(applicationId);
+        configActivated(applicationId);
     }
 
     private void reloadSuperModel(ApplicationSet applicationSet) {
-        superModelRequestHandler.reloadConfig(applicationSet);
-        configReloaded(ApplicationId.global());
+        superModelRequestHandler.activateConfig(applicationSet);
+        configActivated(ApplicationId.global());
     }
 
-    void configReloaded(ApplicationId applicationId) {
+    void configActivated(ApplicationId applicationId) {
         List<DelayedConfigResponses.DelayedConfigResponse> responses = delayedConfigResponses.drainQueue(applicationId);
         String logPre = TenantRepository.logPre(applicationId);
         if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, logPre + "Start of configReload: " + responses.size() + " requests on delayed requests queue");
+            log.log(Level.FINE, logPre + "Start of configActivated: " + responses.size() + " requests on delayed requests queue");
         }
         int responsesSent = 0;
         CompletionService<Boolean> completionService = new ExecutorCompletionService<>(executorService);
@@ -307,7 +307,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
         }
 
         if (log.isLoggable(Level.FINE))
-            log.log(Level.FINE, logPre + "Finished reloading " + responsesSent + " requests");
+            log.log(Level.FINE, logPre + "Finished activating " + responsesSent + " requests");
     }
 
     private void logRequestDebug(Level level, String message, JRTServerConfigRequest request) {
@@ -330,8 +330,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
     @Override
     public void applicationRemoved(ApplicationId applicationId) {
         superModelRequestHandler.removeApplication(applicationId);
-        configReloaded(applicationId);
-        configReloaded(ApplicationId.global());
+        configActivated(applicationId);
+        configActivated(ApplicationId.global());
     }
 
     public void respond(JRTServerConfigRequest request) {

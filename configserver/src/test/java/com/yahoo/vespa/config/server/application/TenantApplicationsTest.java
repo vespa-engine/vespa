@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.component.Vtag;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
@@ -14,7 +13,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.server.ConfigServerDB;
-import com.yahoo.vespa.config.server.ReloadListener;
+import com.yahoo.vespa.config.server.ConfigActivationListener;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
@@ -51,8 +50,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import static com.yahoo.vespa.config.server.application.TenantApplications.RemoveApplicationWaiter;
@@ -195,14 +192,14 @@ public class TenantApplicationsTest {
         assertTrue("Node is compatible after upgrading", applications.compatibleWith(Optional.of(nodeVersion1), app1));
     }
 
-    public static class MockReloadListener implements ReloadListener {
-        public final AtomicInteger reloaded = new AtomicInteger(0);
+    public static class MockConfigActivationListener implements ConfigActivationListener {
+        public final AtomicInteger activated = new AtomicInteger(0);
         final AtomicInteger removed = new AtomicInteger(0);
         final Map<String, Collection<String>> tenantHosts = new LinkedHashMap<>();
 
         @Override
         public void configActivated(ApplicationSet application) {
-            reloaded.incrementAndGet();
+            activated.incrementAndGet();
         }
 
         @Override
@@ -222,7 +219,7 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        TenantApplications applications = createTenantApplications(TenantName.defaultName(), new MockCurator(), configserverConfig, new MockReloadListener(), new InMemoryFlagSource());
+        TenantApplications applications = createTenantApplications(TenantName.defaultName(), new MockCurator(), configserverConfig, new MockConfigActivationListener(), new InMemoryFlagSource());
         assertFalse(applications.hasApplication(ApplicationId.defaultId(), Optional.of(vespaVersion)));
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -250,7 +247,7 @@ public class TenantApplicationsTest {
 
     @Test
     public void testAppendIdsInNonRecursiveListing() {
-        TenantApplications applications = createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener(), new InMemoryFlagSource());
+        TenantApplications applications = createTenantApplications(tenantName, curator, configserverConfig, new MockConfigActivationListener(), new InMemoryFlagSource());
         assertEquals(applications.appendOneLevelOfId("search/music", "search/music/qrservers/default/qr.0"), "search/music/qrservers");
         assertEquals(applications.appendOneLevelOfId("search", "search/music/qrservers/default/qr.0"), "search/music");
         assertEquals(applications.appendOneLevelOfId("search/music/qrservers/default/qr.0", "search/music/qrservers/default/qr.0"), "search/music/qrservers/default/qr.0");
@@ -297,7 +294,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo(InMemoryFlagSource flagSource) {
-        return createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener(), flagSource);
+        return createTenantApplications(tenantName, curator, configserverConfig, new MockConfigActivationListener(), flagSource);
     }
 
     private static ApplicationId createApplicationId() {
@@ -328,15 +325,15 @@ public class TenantApplicationsTest {
 
     // For testing only
     private TenantApplications createTenantApplications(TenantName tenantName,
-                       Curator curator,
-                       ConfigserverConfig configserverConfig,
-                       ReloadListener reloadListener, InMemoryFlagSource flagSource) {
+                                                        Curator curator,
+                                                        ConfigserverConfig configserverConfig,
+                                                        ConfigActivationListener configActivationListener, InMemoryFlagSource flagSource) {
         return new TenantApplications(tenantName,
                                       curator,
                                       new StripedExecutor<>(new InThreadExecutorService()),
                                       new InThreadExecutorService(),
                                       Metrics.createTestMetrics(),
-                                      reloadListener,
+                                      configActivationListener,
                                       configserverConfig,
                                       new HostRegistry(),
                                       new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),

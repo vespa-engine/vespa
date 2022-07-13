@@ -6,7 +6,6 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.Version;
 import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
-import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -59,7 +58,7 @@ public class TenantRepositoryTest {
     private static final TenantName tenant3 = TenantName.from("tenant3");
 
     private TenantRepository tenantRepository;
-    private TenantApplicationsTest.MockReloadListener listener;
+    private TenantApplicationsTest.MockConfigActivationListener listener;
     private MockTenantListener tenantListener;
     private Curator curator;
     private ConfigserverConfig configserverConfig;
@@ -74,7 +73,7 @@ public class TenantRepositoryTest {
     @Before
     public void setupSessions() throws IOException {
         curator = new MockCurator();
-        listener = new TenantApplicationsTest.MockReloadListener();
+        listener = new TenantApplicationsTest.MockConfigActivationListener();
         tenantListener = new MockTenantListener();
         assertFalse(tenantListener.tenantsLoaded);
         configserverConfig = new ConfigserverConfig.Builder()
@@ -83,7 +82,7 @@ public class TenantRepositoryTest {
                 .build();
         tenantRepository = new TestTenantRepository.Builder().withConfigserverConfig(configserverConfig)
                                                              .withCurator(curator)
-                                                             .withReloadListener(listener)
+                                                             .withConfigActivationListener(listener)
                                                              .withTenantListener(tenantListener)
                                                              .build();
         assertTrue(tenantListener.tenantsLoaded);
@@ -115,7 +114,7 @@ public class TenantRepositoryTest {
                                                                                 MetricUpdater.createTestUpdater(),
                                                                                 id)),
                                             4);
-        assertEquals(1, listener.reloaded.get());
+        assertEquals(1, listener.activated.get());
     }
 
     @Test
@@ -224,7 +223,7 @@ public class TenantRepositoryTest {
                   Clock.systemUTC(),
                   new ModelFactoryRegistry(List.of(VespaModelFactory.createTestFactory())),
                   new TestConfigDefinitionRepo(),
-                  new TenantApplicationsTest.MockReloadListener(),
+                  new TenantApplicationsTest.MockConfigActivationListener(),
                   new MockTenantListener(),
                   new ZookeeperServerConfig.Builder().myid(0).build());
         }

@@ -156,9 +156,9 @@ class GetConfigProcessor implements Runnable {
         if (delayed != null) {
             rpcServer.delayResponse(request, delayed.getFirst());
             if (rpcServer.hasNewerGeneration(delayed.getFirst().applicationId(), delayed.getSecond())) {
-                // This will ensure that if the reload train left the station while I was boarding, another train will
-                // immediately be scheduled.
-                rpcServer.configReloaded(delayed.getFirst().applicationId());
+                // This will ensure that if the config activation train left the station while I was boarding,
+                // another train will immediately be scheduled.
+                rpcServer.configActivated(delayed.getFirst().applicationId());
             }
         }
     }

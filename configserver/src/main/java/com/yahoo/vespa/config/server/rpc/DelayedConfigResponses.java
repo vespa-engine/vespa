@@ -2,16 +2,14 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.TargetWatcher;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequest;
 import com.yahoo.vespa.config.server.GetConfigContext;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -40,7 +39,7 @@ public class DelayedConfigResponses {
 
     private final Map<ApplicationId, MetricUpdater> metrics = new ConcurrentHashMap<>();
     
-    /* Requests that resolve to config that has not changed are put on this queue. When reloading
+    /* Requests that resolve to config that has not changed are put on this queue. When activating
        config, all requests on this queue are reprocessed as if they were a new request */
     private final Map<ApplicationId, BlockingQueue<DelayedConfigResponse>> delayedResponses =
             new ConcurrentHashMap<>();
@@ -183,7 +182,7 @@ public class DelayedConfigResponses {
                             response.getRequest().getShortDescription());
                 }
                 // Config will be resolved in the run() method of DelayedConfigResponse,
-                // when the timer expires or config is updated/reloaded.
+                // when the timer expires or config is updated/activated.
                 response.schedule(Math.max(0, request.getTimeout()));
                 metricDelayedResponses(context.applicationId(), delayedResponsesQueue.size());
             } catch (InterruptedException e) {
