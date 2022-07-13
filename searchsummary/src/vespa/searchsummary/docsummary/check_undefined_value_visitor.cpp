@@ -77,8 +77,11 @@ CheckUndefinedValueVisitor::visit(const document::PredicateFieldValue&)
 }
 
 void
-CheckUndefinedValueVisitor::visit(const document::RawFieldValue&)
+CheckUndefinedValueVisitor::visit(const document::RawFieldValue& value)
 {
+    if (value.getValueRef().empty()) {
+        _is_undefined = true;
+    }
 }
 
 void
