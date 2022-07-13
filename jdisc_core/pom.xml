@@ -55,7 +55,6 @@
         <dependency>
             <groupId>aopalliance</groupId>
             <artifactId>aopalliance</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -65,18 +64,15 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.google.inject</groupId>
             <artifactId>guice</artifactId>
-            <scope>compile</scope>
             <classifier>no_aop</classifier> <!-- Non-AOP version required for Java 8 compatibility -->
         </dependency>
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.framework</artifactId>
-            <scope>compile</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.codehaus.mojo</groupId>
@@ -87,7 +83,6 @@
         <dependency>
             <groupId>org.apache.felix</groupId>
             <artifactId>org.apache.felix.log</artifactId>
-            <scope>compile</scope>
             <exclusions>
                 <exclusion>
                     <groupId>org.osgi</groupId>
@@ -102,40 +97,28 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jcl-over-slf4j</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>log4j-over-slf4j</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-jdk14</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>config-lib</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>yolean</artifactId>
-            <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
             <artifactId>vespajlib</artifactId>
             <version>${project.version}</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
@@ -224,7 +207,6 @@
                                 <argument>${project.build.directory}/dependency/defaults.jar</argument>
                                 <argument>${project.build.directory}/dependency/vespajlib.jar</argument>
                                 <argument>${project.build.directory}/dependency/vespalog.jar</argument>
-                                <argument>${project.build.directory}/dependency/yolean.jar</argument>
                                 <argument>${project.build.directory}/dependency/jaxb-api.jar</argument>
                                 <argument>${project.build.directory}/dependency/jaxb-core.jar</argument>
                                 <argument>${project.build.directory}/dependency/jaxb-impl.jar</argument>
