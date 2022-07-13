@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -39,30 +40,34 @@ public class HostSystem extends AbstractConfigProducer<Host> {
     private final Map<String, HostResource> hostname2host = new LinkedHashMap<>();
     private final HostProvisioner provisioner;
     private final DeployLogger deployLogger;
+    private final boolean isHosted;
 
     static {
         String checkIpProperty = System.getProperty("config_model.ip_check", "true");
         doCheckIp = ! checkIpProperty.equalsIgnoreCase("false");
     }
 
-    public HostSystem(AbstractConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger) {
+    public HostSystem(AbstractConfigProducer<?> parent, String name, HostProvisioner provisioner, DeployLogger deployLogger, boolean isHosted) {
         super(parent, name);
         this.provisioner = provisioner;
         this.deployLogger = deployLogger;
+        this.isHosted = isHosted;
     }
 
     void checkName(String hostname) {
         if (doCheckIp) {
+            // Bad DNS config in a hosted system isn't actionable by the tenant, so we log any warnings internally
+            BiConsumer<Level, String> logFunction = isHosted ? deployLogger::log : deployLogger::logApplicationPackage;
             // Give a warning if the host does not exist
             try {
                 var inetAddr = java.net.InetAddress.getByName(hostname);
                 String canonical = inetAddr.getCanonicalHostName();
                 if (!hostname.equals(canonical)) {
-                    deployLogger.logApplicationPackage(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
-                            "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
+                    logFunction.accept(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+                                                      "since it differs from its canonical hostname '" + canonical + "' (check DNS and /etc/hosts).");
                 }
             } catch (UnknownHostException e) {
-                deployLogger.logApplicationPackage(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
+                logFunction.accept(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
             }
         }
     }
