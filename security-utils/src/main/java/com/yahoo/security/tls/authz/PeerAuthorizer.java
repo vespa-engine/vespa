@@ -37,11 +37,15 @@ public class PeerAuthorizer {
         this.authorizedPeers = authorizedPeers;
     }
 
-    public ConnectionAuthContext authorizePeer(X509Certificate peerCertificate) {
+
+    public ConnectionAuthContext authorizePeer(X509Certificate cert) { return authorizePeer(List.of(cert)); }
+
+    public ConnectionAuthContext authorizePeer(List<X509Certificate> certChain) {
+        X509Certificate cert = certChain.get(0);
         SortedSet<String> matchedPolicies = new TreeSet<>();
         Set<CapabilitySet> grantedCapabilities = new HashSet<>();
-        String cn = getCommonName(peerCertificate).orElse(null);
-        List<String> sans = getSubjectAlternativeNames(peerCertificate);
+        String cn = getCommonName(cert).orElse(null);
+        List<String> sans = getSubjectAlternativeNames(cert);
         log.fine(() -> String.format("Subject info from x509 certificate: CN=[%s], 'SAN=%s", cn, sans));
         for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
             if (matchesPolicy(peerPolicy, cn, sans)) {
@@ -49,7 +53,7 @@ public class PeerAuthorizer {
                 grantedCapabilities.add(peerPolicy.capabilities());
             }
         }
-        return new ConnectionAuthContext(List.of(peerCertificate), CapabilitySet.unionOf(grantedCapabilities), matchedPolicies);
+        return new ConnectionAuthContext(certChain, CapabilitySet.unionOf(grantedCapabilities), matchedPolicies);
     }
 
     private static boolean matchesPolicy(PeerPolicy peerPolicy, String cn, List<String> sans) {

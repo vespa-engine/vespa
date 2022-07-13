@@ -64,7 +64,7 @@ public class EchoTest {
                             assertEquals(1, metrics.clientTlsConnectionsEstablished());
                         },
                         (ConnectionAuthContextAssertion) context -> {
-                            List<X509Certificate> chain = context.peerCertificate();
+                            List<X509Certificate> chain = context.peerCertificateChain();
                             assertEquals(1, chain.size());
                             assertEquals(CryptoUtils.certificate, chain.get(0));
                         }},
@@ -82,7 +82,7 @@ public class EchoTest {
                              assertEquals(1, metrics.clientTlsConnectionsEstablished());
                         },
                         (ConnectionAuthContextAssertion) context -> {
-                            List<X509Certificate> chain = context.peerCertificate();
+                            List<X509Certificate> chain = context.peerCertificateChain();
                             assertEquals(1, chain.size());
                             assertEquals(CryptoUtils.certificate, chain.get(0));
                         }}};

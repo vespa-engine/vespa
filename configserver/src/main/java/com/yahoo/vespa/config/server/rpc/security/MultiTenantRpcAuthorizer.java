@@ -173,7 +173,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
             }
             return Optional.empty(); // client choose to communicate over insecure channel
         }
-        List<X509Certificate> certChain = authCtx.get().peerCertificate();
+        List<X509Certificate> certChain = authCtx.get().peerCertificateChain();
         if (certChain.isEmpty()) {
             throw new IllegalStateException("Client authentication is not enforced!"); // clients should be required to authenticate when TLS is enabled
         }

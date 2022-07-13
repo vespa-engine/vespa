@@ -15,6 +15,7 @@ import java.net.Socket;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -55,39 +56,39 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType);
-        authorizePeer(chain[0], authType, true, null);
+        authorizePeer(chain, authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         defaultTrustManager.checkServerTrusted(chain, authType);
-        authorizePeer(chain[0], authType, false, null);
+        authorizePeer(chain, authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType, socket);
-        authorizePeer(chain[0], authType, true, null);
+        authorizePeer(chain, authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
         overrideHostnameVerificationForClient(socket);
         defaultTrustManager.checkServerTrusted(chain, authType, socket);
-        authorizePeer(chain[0], authType, false, null);
+        authorizePeer(chain, authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType, sslEngine);
-        authorizePeer(chain[0], authType, true, sslEngine);
+        authorizePeer(chain, authType, true, sslEngine);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         overrideHostnameVerificationForClient(sslEngine);
         defaultTrustManager.checkServerTrusted(chain, authType, sslEngine);
-        authorizePeer(chain[0], authType, false, sslEngine);
+        authorizePeer(chain, authType, false, sslEngine);
     }
 
     @Override
@@ -103,18 +104,19 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
                 .flatMap(session -> Optional.ofNullable((ConnectionAuthContext) session.getValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY)));
     }
 
-    private void authorizePeer(X509Certificate certificate, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
+    private void authorizePeer(X509Certificate[] certChain, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
         if (mode == AuthorizationMode.DISABLE) return;
 
-        log.fine(() -> "Verifying certificate: " + createInfoString(certificate, authType, isVerifyingClient));
-        ConnectionAuthContext result = authorizer.authorizePeer(certificate);
+
+        log.fine(() -> "Verifying certificate: " + createInfoString(certChain[0], authType, isVerifyingClient));
+        ConnectionAuthContext result = authorizer.authorizePeer(List.of(certChain));
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
             sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY, result);
         }
         if (result.succeeded()) {
             log.fine(() -> String.format("Verification result: %s", result));
         } else {
-            String errorMessage = "Authorization failed: " + createInfoString(certificate, authType, isVerifyingClient);
+            String errorMessage = "Authorization failed: " + createInfoString(certChain[0], authType, isVerifyingClient);
             log.warning(errorMessage);
             if (mode == AuthorizationMode.ENFORCE) {
                 throw new CertificateException(errorMessage);
