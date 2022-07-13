@@ -142,7 +142,6 @@
         <module>vespa-3party-bundles</module>
         <module>vespajlib</module>
         <module>vespalog</module>
-        <module>yolean</module>
         <module>zkfacade</module>
         <module>zookeeper-client-common</module>
         <module>zookeeper-command-line-client</module>
