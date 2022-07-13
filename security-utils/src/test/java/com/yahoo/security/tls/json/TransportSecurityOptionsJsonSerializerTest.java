@@ -3,6 +3,8 @@ package com.yahoo.security.tls.json;
 
 import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.Capability;
+import com.yahoo.security.tls.policy.CapabilitySet;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import org.junit.Rule;
@@ -20,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
@@ -49,7 +52,9 @@ public class TransportSecurityOptionsJsonSerializerTest {
                                                 RequiredPeerCredential.of(CN, "mycfgserver"),
                                                 RequiredPeerCredential.of(SAN_DNS, "*.suffix.com"),
                                                 RequiredPeerCredential.of(SAN_URI, "myscheme://resource/path/"))),
-                                        new PeerPolicy("node", Collections.singletonList(RequiredPeerCredential.of(CN, "hostname")))))))
+                                        new PeerPolicy("node", Optional.empty(),
+                                                CapabilitySet.from(Capability.SLOBROK__API),
+                                                Collections.singletonList(RequiredPeerCredential.of(CN, "hostname")))))))
                 .build();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();

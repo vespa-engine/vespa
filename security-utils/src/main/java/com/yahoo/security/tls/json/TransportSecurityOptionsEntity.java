@@ -36,6 +36,7 @@ class TransportSecurityOptionsEntity {
         @JsonProperty("required-credentials") List<RequiredCredential> requiredCredentials;
         @JsonProperty("name") String name;
         @JsonProperty("description") @JsonInclude(NON_NULL) String description;
+        @JsonProperty("capabilities") @JsonInclude(NON_EMPTY) List<String> capabilities;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
