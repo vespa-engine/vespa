@@ -230,7 +230,9 @@ public class VespaDomBuilder extends VespaModelBuilder {
                                                                                    deployState.getDocumentModel(),
                                                                                    deployState.getVespaVersion(),
                                                                                    deployState.getProperties().applicationId());
-            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner(), deployState.getDeployLogger()));
+            root.setHostSystem(new HostSystem(root, "hosts", deployState.getProvisioner(),
+                                              deployState.getDeployLogger(),
+                                              deployState.isHosted()));
             new Client(root);
             return root;
         }
