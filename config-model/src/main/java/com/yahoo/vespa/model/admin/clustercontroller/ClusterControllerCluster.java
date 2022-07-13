@@ -49,6 +49,7 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.clientPort(ZK_CLIENT_PORT);
         builder.juteMaxBuffer(1024 * 1024); // 1 Mb should be more than enough for cluster controller
+        builder.snapshotCount(1000);  // Use a low value, few transactions per time unit in cluster controller
         for (ClusterControllerContainer container : containerCluster.getContainers()) {
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName());
