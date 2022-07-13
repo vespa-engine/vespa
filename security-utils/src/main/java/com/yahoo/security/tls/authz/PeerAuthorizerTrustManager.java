@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 // Note: Implementation assumes that provided X509ExtendedTrustManager will throw IllegalArgumentException when chain is empty or null
 public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
 
-    public static final String HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY = "vespa.tls.authorization.result";
+    public static final String HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY = "vespa.tls.auth.ctx";
 
     private static final Logger log = Logger.getLogger(PeerAuthorizerTrustManager.class.getName());
 
@@ -98,18 +98,18 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     /**
      * Note: The authorization result is only available during handshake. The underlying handshake session is removed once handshake is complete.
      */
-    public static Optional<AuthorizationResult> getAuthorizationResult(SSLEngine sslEngine) {
+    public static Optional<ConnectionAuthContext> getAuthorizationResult(SSLEngine sslEngine) {
         return Optional.ofNullable(sslEngine.getHandshakeSession())
-                .flatMap(session -> Optional.ofNullable((AuthorizationResult) session.getValue(HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY)));
+                .flatMap(session -> Optional.ofNullable((ConnectionAuthContext) session.getValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY)));
     }
 
     private void authorizePeer(X509Certificate certificate, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
         if (mode == AuthorizationMode.DISABLE) return;
 
         log.fine(() -> "Verifying certificate: " + createInfoString(certificate, authType, isVerifyingClient));
-        AuthorizationResult result = authorizer.authorizePeer(certificate);
+        ConnectionAuthContext result = authorizer.authorizePeer(certificate);
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
-            sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY, result);
+            sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY, result);
         }
         if (result.succeeded()) {
             log.fine(() -> String.format("Verification result: %s", result));

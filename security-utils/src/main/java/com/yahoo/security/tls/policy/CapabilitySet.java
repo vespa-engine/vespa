@@ -3,10 +3,12 @@ package com.yahoo.security.tls.policy;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -56,6 +58,12 @@ public class CapabilitySet {
         return new CapabilitySet(caps);
     }
 
+    public static CapabilitySet unionOf(Collection<CapabilitySet> capSets) {
+        EnumSet<Capability> union = EnumSet.noneOf(Capability.class);
+        capSets.forEach(cs -> union.addAll(cs.caps));
+        return new CapabilitySet(union);
+    }
+
     public static CapabilitySet from(EnumSet<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
     public static CapabilitySet from(Collection<Capability> caps) { return new CapabilitySet(EnumSet.copyOf(caps)); }
     public static CapabilitySet from(Capability... caps) { return new CapabilitySet(EnumSet.copyOf(List.of(caps))); }
@@ -67,6 +75,8 @@ public class CapabilitySet {
     public SortedSet<String> toCapabilityNames() {
         return caps.stream().map(Capability::asString).collect(Collectors.toCollection(TreeSet::new));
     }
+
+    public Set<Capability> asSet() { return Collections.unmodifiableSet(caps); }
 
     @Override
     public String toString() {

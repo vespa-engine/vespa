@@ -10,9 +10,9 @@ import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.config.provision.security.NodeIdentifierException;
 import com.yahoo.config.provision.security.NodeIdentity;
 import com.yahoo.jrt.Request;
-import com.yahoo.jrt.SecurityContext;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
+import com.yahoo.security.tls.authz.ConnectionAuthContext;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.server.RequestHandler;
@@ -166,14 +166,14 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     // TODO Make peer identity mandatory once TLS mixed mode is removed
     private Optional<NodeIdentity> getPeerIdentity(Request request) {
-        Optional<SecurityContext> securityContext = request.target().getSecurityContext();
-        if (securityContext.isEmpty()) {
+        Optional<ConnectionAuthContext> authCtx = request.target().getConnectionAuthContext();
+        if (authCtx.isEmpty()) {
             if (TransportSecurityUtils.getInsecureMixedMode() == MixedMode.DISABLED) {
                 throw new IllegalStateException("Security context missing"); // security context should always be present
             }
             return Optional.empty(); // client choose to communicate over insecure channel
         }
-        List<X509Certificate> certChain = securityContext.get().peerCertificateChain();
+        List<X509Certificate> certChain = authCtx.get().peerCertificate();
         if (certChain.isEmpty()) {
             throw new IllegalStateException("Client authentication is not enforced!"); // clients should be required to authenticate when TLS is enabled
         }

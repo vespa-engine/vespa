@@ -1,6 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
+import com.yahoo.security.tls.authz.ConnectionAuthContext;
+
 import java.util.Optional;
 
 /**
@@ -69,9 +71,9 @@ public abstract class Target {
     public Exception getConnectionLostReason() { return null; }
 
     /**
-     * Returns the security context associated with this target, or empty if no connection or is insecure.
+     * Returns the connection auth context associated with this target, or empty if no connection or is insecure.
      */
-    public abstract Optional<SecurityContext> getSecurityContext();
+    public abstract Optional<ConnectionAuthContext> getConnectionAuthContext();
 
     /**
      * Check if this target represents the client side of a
