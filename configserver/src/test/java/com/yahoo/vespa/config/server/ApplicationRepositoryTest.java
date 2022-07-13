@@ -233,7 +233,6 @@ public class ApplicationRepositoryTest {
         assertEquals(originalApplicationMetaData.getApplicationId(), applicationMetaData.getApplicationId());
         assertEquals(originalApplicationMetaData.getGeneration().longValue(), applicationMetaData.getPreviousActiveGeneration());
         assertNotEquals(originalApplicationMetaData.getGeneration(), applicationMetaData.getGeneration());
-        assertEquals(originalApplicationMetaData.getDeployedByUser(), applicationMetaData.getDeployedByUser());
     }
 
     @Test

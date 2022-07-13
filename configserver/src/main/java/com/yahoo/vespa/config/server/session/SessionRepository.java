@@ -682,12 +682,8 @@ public class SessionRepository {
                                                  boolean internalRedeploy,
                                                  Optional<DeployLogger> deployLogger) {
         long deployTimestamp = System.currentTimeMillis();
-        String user = System.getenv("USER");
-        if (user == null) {
-            user = "unknown";
-        }
-        DeployData deployData = new DeployData(user, userDir.getAbsolutePath(), applicationId, deployTimestamp,
-                                               internalRedeploy, sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
+        DeployData deployData = new DeployData(userDir.getAbsolutePath(), applicationId, deployTimestamp, internalRedeploy,
+                                               sessionId, currentlyActiveSessionId.orElse(nonExistingActiveSessionId));
         FilesApplicationPackage app = FilesApplicationPackage.fromFileWithDeployData(configApplicationDir, deployData);
         try {
             app.validateFileExtensions();

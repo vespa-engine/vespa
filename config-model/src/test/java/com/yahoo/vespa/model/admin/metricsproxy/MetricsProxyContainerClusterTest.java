@@ -64,7 +64,6 @@ public class MetricsProxyContainerClusterTest {
         ApplicationMetadataConfig config = builder.build();
         assertEquals(MockApplicationPackage.APPLICATION_GENERATION, config.generation());
         assertEquals(MockApplicationPackage.APPLICATION_NAME, config.name());
-        assertEquals(MockApplicationPackage.DEPLOYED_BY_USER, config.user());
     }
 
     @Test
