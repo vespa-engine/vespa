@@ -44,7 +44,7 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
             throw new RuntimeException(e);
         }
         if (respondents.size() < barrierMemberCount()) {
-            throw new CompletionTimeoutException("Timed out waiting for peer config servers to complete operation " +
+            throw new CompletionTimeoutException("Timed out waiting for config servers to complete operation " +
                                                  "(waited for barrier " + barrierPath + ")." +
                                                  "Got response from " + respondents + ", but need response from " +
                                                  "at least " + barrierMemberCount() + " server(s). " +
