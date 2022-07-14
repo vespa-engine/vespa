@@ -30,11 +30,21 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
         for (DocumentSummary documentSummary : schema.getSummaries().values()) {
             derive(documentSummary);
         }
+        addSummaryTransformForDocumentId();
         super.derive(schema);
     }
 
     @Override
     protected void derive(ImmutableSDField field, Schema schema) {
+    }
+
+    private void addSummaryTransformForDocumentId() {
+        // The 'documentid' field is added to the 'default' summary class in SummaryClass.deriveImplicitFields().
+        // This ensures the corresponding transform is added as well.
+        if (!resultTransforms.containsKey(SummaryClass.DOCUMENT_ID_FIELD)) {
+            resultTransforms.put(SummaryClass.DOCUMENT_ID_FIELD,
+                    new FieldResultTransform(SummaryClass.DOCUMENT_ID_FIELD, SummaryTransform.DOCUMENT_ID, ""));
+        }
     }
 
     private void derive(DocumentSummary documentSummary) {
