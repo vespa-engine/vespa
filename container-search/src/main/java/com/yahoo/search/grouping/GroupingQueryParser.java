@@ -50,30 +50,35 @@ public class GroupingQueryParser extends Searcher {
     @Override
     public Result search(Query query, Execution execution) {
         try {
-            if (query.getHttpRequest().getProperty(GROUPING_GLOBAL_MAX_GROUPS.toString()) != null) {
-                throw new IllegalInputException(GROUPING_GLOBAL_MAX_GROUPS + " must be specified in a query profile.");
-            }
+            validate(query);
 
             String reqParam = query.properties().getString(PARAM_REQUEST);
             if (reqParam == null) return execution.search(query);
 
             List<Continuation> continuations = getContinuations(query.properties().getString(PARAM_CONTINUE));
-            TimeZone zone = getTimeZone(query.properties().getString(PARAM_TIMEZONE, "utc"));
-            for (GroupingOperation op : GroupingOperation.fromStringAsList(reqParam)) {
-                GroupingRequest grpRequest = GroupingRequest.newInstance(query);
-                grpRequest.setRootOperation(op);
-                grpRequest.setTimeZone(zone);
-                grpRequest.continuations().addAll(continuations);
-                intProperty(query, PARAM_DEFAULT_MAX_GROUPS).ifPresent(grpRequest::setDefaultMaxGroups);
-                intProperty(query, PARAM_DEFAULT_MAX_HITS).ifPresent(grpRequest::setDefaultMaxHits);
-                longProperty(query, GROUPING_GLOBAL_MAX_GROUPS).ifPresent(grpRequest::setGlobalMaxGroups);
-                doubleProperty(query, PARAM_DEFAULT_PRECISION_FACTOR).ifPresent(grpRequest::setDefaultPrecisionFactor);
-            }
+            for (GroupingOperation operation : GroupingOperation.fromStringAsList(reqParam))
+                createGroupingRequestIn(query, operation, continuations);
             return execution.search(query);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalInputException(e);
         }
+    }
+
+    public static void validate(Query query) {
+        if (query.getHttpRequest().getProperty(GROUPING_GLOBAL_MAX_GROUPS.toString()) != null)
+            throw new IllegalInputException(GROUPING_GLOBAL_MAX_GROUPS + " must be specified in a query profile.");
+    }
+
+    public static void createGroupingRequestIn(Query query, GroupingOperation operation, List<Continuation> continuations) {
+        GroupingRequest request = GroupingRequest.newInstance(query);
+        request.setRootOperation(operation);
+        request.setTimeZone(getTimeZone(query.properties().getString(PARAM_TIMEZONE, "utc")));
+        request.continuations().addAll(continuations);
+        intProperty(query, PARAM_DEFAULT_MAX_GROUPS).ifPresent(request::setDefaultMaxGroups);
+        intProperty(query, PARAM_DEFAULT_MAX_HITS).ifPresent(request::setDefaultMaxHits);
+        longProperty(query, GROUPING_GLOBAL_MAX_GROUPS).ifPresent(request::setGlobalMaxGroups);
+        doubleProperty(query, PARAM_DEFAULT_PRECISION_FACTOR).ifPresent(request::setDefaultPrecisionFactor);
     }
 
     private List<Continuation> getContinuations(String param) {
@@ -87,7 +92,7 @@ public class GroupingQueryParser extends Searcher {
         return ret;
     }
 
-    private TimeZone getTimeZone(String name) {
+    private static TimeZone getTimeZone(String name) {
         ZoneCache cache = zoneCache.get();
         if (cache == null) {
             cache = new ZoneCache();

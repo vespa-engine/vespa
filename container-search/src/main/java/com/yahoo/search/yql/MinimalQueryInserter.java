@@ -10,7 +10,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.processing.request.CompoundName;
-import com.yahoo.search.grouping.GroupingRequest;
+import com.yahoo.search.grouping.GroupingQueryParser;
 import com.yahoo.search.query.QueryTree;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
@@ -116,11 +116,11 @@ public class MinimalQueryInserter extends Searcher {
         }
         query.getModel().getQueryTree().setRoot(newTree.getRoot());
         query.getPresentation().getSummaryFields().addAll(parser.getYqlSummaryFields());
-        for (VespaGroupingStep step : parser.getGroupingSteps()) {
-            GroupingRequest.newInstance(query)
-                    .setRootOperation(step.getOperation())
-                    .continuations().addAll(step.continuations());
-        }
+
+        GroupingQueryParser.validate(query);
+        for (VespaGroupingStep step : parser.getGroupingSteps())
+            GroupingQueryParser.createGroupingRequestIn(query, step.getOperation(), step.continuations());
+
         if (parser.getYqlSources().size() == 0) {
             query.getModel().getSources().clear();
         } else {

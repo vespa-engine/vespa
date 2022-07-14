@@ -406,8 +406,9 @@ class RequestBuilder {
     }
 
     private void validateGlobalMax() {
-        this.totalGroupsAndSummaries = -1;
         if (globalMaxGroups < 0) return;
+
+        this.totalGroupsAndSummaries = -1;
         int totalGroupsAndSummaries = 0;
         for (Grouping grp : requestList) {
             int levelMultiplier = 1;
