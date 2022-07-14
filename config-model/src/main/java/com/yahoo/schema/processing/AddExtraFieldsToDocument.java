@@ -38,7 +38,6 @@ public class AddExtraFieldsToDocument extends Processor {
                     case BOLDED:
                     case DYNAMICBOLDED:
                     case DYNAMICTEASER:
-                    case TEXTEXTRACTOR:
                     case DOCUMENT_ID: // TODO: Adding the 'documentid' field should no longer be needed when the docsum framework in the backend has been simplified and the transform is always used.
                         addSummaryField(schema, document, summaryField, validate);
                         break;

@@ -59,7 +59,7 @@ public class SummaryMap extends Derived implements SummarymapConfig.Producer {
                 // This works, but is suboptimal. We could consolidate to a minimal set and
                 // use the right value from the minimal set as the third parameter here,
                 // and add "override" commands to multiple static values
-                boolean useFieldNameAsArgument = summaryField.getTransform().isDynamic() || summaryField.getTransform() == SummaryTransform.TEXTEXTRACTOR;
+                boolean useFieldNameAsArgument = summaryField.getTransform().isDynamic();
                 resultTransforms.put(summaryField.getName(), new FieldResultTransform(summaryField.getName(),
                                                                                       summaryField.getTransform(),
                                                                                       useFieldNameAsArgument ? summaryField.getName() : ""));
