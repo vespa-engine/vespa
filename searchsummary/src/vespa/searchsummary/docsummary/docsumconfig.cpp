@@ -12,7 +12,6 @@
 #include "matched_elements_filter_dfw.h"
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
-#include "textextractordfw.h"
 #include "summaryfeaturesdfw.h"
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -40,14 +39,6 @@ DynamicDocsumConfig::createFieldWriter(const string & fieldName, const string & 
             DynamicTeaserDFW *fw = new DynamicTeaserDFW(getEnvironment()->getJuniper());
             fieldWriter.reset(fw);
             rc = fw->Init(fieldName.c_str(), langFieldName, resultConfig, argument.c_str());
-        } else {
-            throw IllegalArgumentException("Missing argument");
-        }
-    } else if (overrideName == "textextractor") {
-        if ( ! argument.empty() ) {
-            TextExtractorDFW * fw = new TextExtractorDFW();
-            fieldWriter.reset(fw);
-            rc = fw->init(fieldName, argument, resultConfig);
         } else {
             throw IllegalArgumentException("Missing argument");
         }
