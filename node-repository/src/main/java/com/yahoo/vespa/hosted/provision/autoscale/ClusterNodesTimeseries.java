@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -65,6 +66,20 @@ public class ClusterNodesTimeseries {
                 total = total.add(snapshot.load());
                 count++;
             }
+        }
+        return total.divide(count);
+    }
+
+    /** Returns average of the latest load reading from each node */
+    public Load currentLoad() {
+        Load total = Load.zero();
+        int count = 0;
+        for (var nodeTimeseries : timeseries) {
+            Optional<NodeMetricSnapshot> last = nodeTimeseries.last();
+            if (last.isEmpty()) continue;
+
+            total = total.add(last.get().load());
+            count++;
         }
         return total.divide(count);
     }

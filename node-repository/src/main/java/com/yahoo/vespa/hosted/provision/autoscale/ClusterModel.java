@@ -27,8 +27,6 @@ public class ClusterModel {
     /** Containers typically use more cpu right after generation change, so discard those metrics */
     public static final Duration warmupDuration = Duration.ofMinutes(5);
 
-    private static final Duration currentLoadDuration = Duration.ofMinutes(5);
-
     static final double idealQueryCpuLoad = 0.8;
     static final double idealWriteCpuLoad = 0.95;
     static final double idealMemoryLoad = 0.65;
@@ -110,8 +108,8 @@ public class ClusterModel {
         return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
     }
 
-    /** Returns average load during the last {@link #currentLoadDuration} */
-    public Load currentLoad() { return nodeTimeseries().averageLoad(clock.instant().minus(currentLoadDuration)); }
+    /** Returns average of the last load reading from each node. */
+    public Load currentLoad() { return nodeTimeseries().currentLoad(); }
 
     /** Returns average load during the last {@link #scalingDuration()} */
     public Load averageLoad() { return nodeTimeseries().averageLoad(clock.instant().minus(scalingDuration())); }
