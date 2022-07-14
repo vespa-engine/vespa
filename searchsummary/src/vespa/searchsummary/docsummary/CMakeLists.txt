@@ -19,6 +19,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     general_result.cpp
     geoposdfw.cpp
     getdocsumargs.cpp
+    juniper_input.cpp
     juniperproperties.cpp
     keywordextractor.cpp
     linguisticsannotation.cpp
