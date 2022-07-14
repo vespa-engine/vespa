@@ -62,7 +62,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     protected boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
         return cloud.equals(zone.getCloudName()) && // Cloud is managed by this upgrader
                application.shouldUpgradeOs() &&     // Application should upgrade in this cloud
-               canUpgrade(node);
+               canUpgrade(node, false);
     }
 
     @Override
@@ -102,8 +102,8 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     }
 
     /** Returns whether node currently allows upgrades */
-    public static boolean canUpgrade(Node node) {
-        return !node.deferOsUpgrade() && upgradableNodeStates.contains(node.state());
+    public static boolean canUpgrade(Node node, boolean includeDeferring) {
+        return (includeDeferring || !node.deferOsUpgrade()) && upgradableNodeStates.contains(node.state());
     }
 
     private static String name(CloudName cloud) {
