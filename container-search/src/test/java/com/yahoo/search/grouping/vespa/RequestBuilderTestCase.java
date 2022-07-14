@@ -784,6 +784,16 @@ public class RequestBuilderTestCase {
     }
 
     @Test
+    public void require_that_total_groups_restriction_can_be_disabled() {
+        assertTotalGroupsAndSummaries(3+3*5+3*5*7+3*5*7*100,
+                                      -1, // disable
+                                      "all( group(a) max(3) each(output(count())" +
+                                      "     all(group(b) max(5) each(output(count())" +
+                                      "         all(group(c) max(7) each(max(100) output(count())" +
+                                      "             each(output(summary()))))))))");
+    }
+
+    @Test
     public void require_that_unbounded_queries_fails_when_global_max_is_enabled() {
         assertQueryFailsOnGlobalMax(4, "all(group(a) max(5) each(output(count())))", "5 > 4");
         assertQueryFailsOnGlobalMax(Long.MAX_VALUE, "all(group(a) each(output(count())))", "unbounded number of groups");
@@ -810,10 +820,15 @@ public class RequestBuilderTestCase {
     }
 
     private static void assertTotalGroupsAndSummaries(long expected, String query) {
+        assertTotalGroupsAndSummaries(expected, Long.MAX_VALUE, query);
+    }
+
+    private static void assertTotalGroupsAndSummaries(long expected, long globalMaxGroups, String query) {
         RequestBuilder builder = new RequestBuilder(0)
-                .setRootOperation(GroupingOperation.fromString(query)).setGlobalMaxGroups(Long.MAX_VALUE);
+                .setRootOperation(GroupingOperation.fromString(query)).setGlobalMaxGroups(globalMaxGroups);
         builder.build();
-        assertEquals(expected, builder.totalGroupsAndSummaries().orElseThrow());
+        if (globalMaxGroups >= 0) // otherwise, totalGroupsAndSummaries is not computed
+            assertEquals(expected, builder.totalGroupsAndSummaries().orElseThrow());
     }
 
     private static void assertQueryFailsOnGlobalMax(long globalMax, String query, String errorSubstring) {
@@ -938,11 +953,13 @@ public class RequestBuilderTestCase {
         String expectedOutput;
         OutputWriter outputWriter;
         Continuation continuation;
+
     }
 
-    private static interface OutputWriter {
+    private interface OutputWriter {
 
         String write(List<Grouping> groupingList, GroupingTransform transform);
+
     }
 
     private static class OffsetWriter implements OutputWriter {

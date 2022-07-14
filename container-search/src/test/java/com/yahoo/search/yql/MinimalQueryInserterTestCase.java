@@ -5,6 +5,7 @@ import com.google.common.base.Charsets;
 import com.yahoo.component.chain.Chain;
 import com.yahoo.language.Language;
 import com.yahoo.language.simple.SimpleLinguistics;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -29,6 +30,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Smoke test for first generation YQL+ integration.
@@ -347,6 +349,36 @@ public class MinimalQueryInserterTestCase {
         execution.search(query);
         assertEquals("select * from sources * where (default contains \"m\" AND default contains ({origin: {original: \"m\\'s\", offset: 0, length: 3}, andSegmenting: true}phrase(\"m\", \"s\")))",
                      query.yqlRepresentation());
+    }
+
+    @Test
+    public void globalMaxGroupsIsCarriedOver() {
+        URIBuilder builder = new URIBuilder();
+        builder.setPath("search/");
+        builder.setParameter("yql", "select foo from bar where baz contains 'cox' " +
+                                    "| all(group(a) each(output(count())))");
+        Query query = new Query(builder.toString());
+        query.properties().set("grouping.globalMaxGroups", -1);
+        execution.search(query);
+        assertEquals(1, query.getSelect().getGrouping().size());
+        assertEquals(-1L, query.getSelect().getGrouping().get(0).globalMaxGroups().getAsLong());
+    }
+
+    @Test
+    public void globalMaxGroupsCannotBeSetInRequest() {
+        try {
+            URIBuilder builder = new URIBuilder();
+            builder.setPath("search/");
+            builder.setParameter("yql", "select foo from bar where baz contains 'cox' " +
+                                        "| all(group(a) each(output(count())))");
+            builder.setParameter("grouping.globalMaxGroups", "-1");
+            Query query = new Query(builder.toString());
+            execution.search(query);
+            fail();
+        }
+        catch (IllegalInputException e) {
+            assertEquals("grouping.globalMaxGroups must be specified in a query profile.", e.getCause().getMessage());
+        }
     }
 
     @Test
