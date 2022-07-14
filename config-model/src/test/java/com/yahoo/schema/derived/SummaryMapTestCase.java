@@ -70,6 +70,10 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         assertEquals("access", transform.getFieldName());
         assertEquals(SummaryTransform.ATTRIBUTE, transform.getTransform());
 
+        transform = transforms.next();
+        assertEquals("documentid", transform.getFieldName());
+        assertEquals(SummaryTransform.DOCUMENT_ID, transform.getTransform());
+
         assertFalse(transforms.hasNext());
     }
     @Test
@@ -103,6 +107,10 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         assertEquals("location_zcurve", transform.getFieldName());
         assertEquals(SummaryTransform.ATTRIBUTE,transform.getTransform());
 
+        transform = transforms.next();
+        assertEquals("documentid", transform.getFieldName());
+        assertEquals(SummaryTransform.DOCUMENT_ID,transform.getTransform());
+
         assertFalse(transforms.hasNext());
 
         SummarymapConfig.Builder scb = new SummarymapConfig.Builder();
@@ -110,7 +118,7 @@ public class SummaryMapTestCase extends AbstractSchemaTestCase {
         SummarymapConfig c = scb.build();
         
         assertEquals(-1, c.defaultoutputclass());
-        assertEquals(c.override().size(), 4);
+        assertEquals(c.override().size(), 5);
 
         assertEquals(c.override(0).field(), fieldName);
         assertEquals(c.override(0).command(), "geopos");
