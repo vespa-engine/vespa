@@ -442,6 +442,11 @@ public class StorageGroup {
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
             else if (nodesElement.isEmpty() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
+            else if (nodesElement.isPresent() && nodesElement.get().stringAttribute("count") == null && context.getDeployState().isHosted())
+                throw new IllegalArgumentException("""
+                                                           Clusters in hosted environments must have a <nodes count='N'> tag
+                                                           matching all zones, and having no <node> subtags,
+                                                           see https://cloud.vespa.ai/en/reference/services""");
             else // Nodes or groups explicitly listed - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
 

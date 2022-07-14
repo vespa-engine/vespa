@@ -39,7 +39,6 @@ import com.yahoo.vespa.model.test.VespaModelTester;
 import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
@@ -1660,6 +1659,37 @@ public class ModelProvisioningTest {
         assertEquals(1, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes(true));
         assertEquals(1, model.getAdmin().getClusterControllers().getContainers().size());
+    }
+
+    @Test
+    public void testThatStandaloneSyntaxWithClusterControllerWorksOnHostedManuallyDeployed() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                        "<services>" +
+                        "   <container id='foo' version='1.0'>" +
+                        "      <nodes count=\"2\" />" +
+                        "   </container>" +
+                        "   <content id='bar' version='1.0'>" +
+                        "      <documents>" +
+                        "         <document type='type1' mode='index'/>" +
+                        "      </documents>" +
+                        "      <redundancy>1</redundancy>" +
+                        "      <nodes>" +
+                        "          <group>" +
+                        "            <node distribution-key='0' hostalias='node3'/>" +
+                        "          </group>" +
+                        "      </nodes>" +
+                        "   </content>" +
+                        "</services>";
+        VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(true);
+        tester.addHosts(4);
+        try {
+            VespaModel model = tester.createModel(new Zone(Environment.staging, RegionName.from("us-central-1")), services, true);
+            fail("expected failure");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().startsWith("Clusters in hosted environments must have a <nodes count='N'> tag"));
+        }
     }
 
     /** Deploying an application with "nodes count" standalone should give a single-node deployment */

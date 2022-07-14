@@ -54,7 +54,7 @@ public class Content extends ConfigModel {
     // Dependencies to other models
     private final AdminModel adminModel;
 
-    // to find or add the docproc container and supplement cluster controllers with clusters having less then 3 nodes
+    // to find or add the docproc container and supplement cluster controllers with clusters having less than 3 nodes
     private final Collection<ContainerModel> containers;
 
     @SuppressWarnings("UnusedDeclaration") // Created by reflection in ConfigModelRepo
