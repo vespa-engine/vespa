@@ -66,7 +66,7 @@ public record OsVersionStatus(Map<OsVersion, List<NodeVersion>> versions) {
                                                     .orElse(Version.emptyVersion);
 
                 for (var node : controller.serviceRegistry().configServer().nodeRepository().list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))) {
-                    if (!OsUpgrader.canUpgrade(node)) continue;
+                    if (!OsUpgrader.canUpgrade(node, true)) continue;
                     Optional<Instant> suspendedAt = node.suspendedSince();
                     NodeVersion nodeVersion = new NodeVersion(node.hostname(), zone.getVirtualId(), node.currentOsVersion(),
                                                               targetOsVersion, suspendedAt);

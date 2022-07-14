@@ -94,7 +94,7 @@ public class OsUpgraderTest {
         completeUpgrade(version1, SystemApplication.tenantHost, zone1);
         statusUpdater.maintain();
         assertEquals(5, nodesOn(version1).size());
-        assertEquals(10, nodesOn(Version.emptyVersion).size());
+        assertEquals(11, nodesOn(Version.emptyVersion).size());
 
         // zone 2 and 3: begins upgrading
         osUpgrader.maintain();
@@ -121,8 +121,10 @@ public class OsUpgraderTest {
         osUpgrader.maintain();
         assertWanted(version1, SystemApplication.tenantHost, zone1, zone2, zone3, zone4);
         statusUpdater.maintain();
-        assertTrue("All nodes on target version", tester.controller().osVersionStatus().nodesIn(cloud1).stream()
-                                                        .allMatch(node -> node.currentVersion().equals(version1)));
+        assertTrue("All non-deferring nodes are on target version",
+                   tester.controller().osVersionStatus().nodesIn(cloud1).stream()
+                         .filter(node -> !node.hostname().equals(nodeDeferringOsUpgrade.hostname()))
+                         .allMatch(node -> node.currentVersion().equals(version1)));
     }
 
     @Test
@@ -274,7 +276,7 @@ public class OsUpgraderTest {
     private List<Node> nodesRequiredToUpgrade(ZoneApi zone, SystemApplication application) {
         return nodeRepository().list(zone.getVirtualId(), NodeFilter.all().applications(application.id()))
                                .stream()
-                               .filter(OsUpgrader::canUpgrade)
+                               .filter(node -> OsUpgrader.canUpgrade(node, false))
                                .collect(Collectors.toList());
     }
 
