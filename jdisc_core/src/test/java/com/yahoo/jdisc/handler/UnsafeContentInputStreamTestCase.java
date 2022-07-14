@@ -10,9 +10,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -67,6 +68,21 @@ public class UnsafeContentInputStreamTestCase {
         } catch (Throwable t) {
             fail("Did not expect " + t);
         }
+    }
+
+    @Test
+    public void requireThatReadAfterResetIncludesDataAfterMark() throws IOException {
+        ReadableContentChannel content = new ReadableContentChannel();
+        UnsafeContentInputStream in = new UnsafeContentInputStream(content);
+        byte[] outBuf = new byte[] {1, 2, 3};
+        content.write(ByteBuffer.wrap(outBuf), null);
+        in.mark(4);
+        assertEquals(3, in.read(new byte[] {101, 102, 103, 104}));
+        in.reset();
+        byte[] inBuf = new byte[4];
+        int read = in.read(inBuf);
+        assertEquals(3, read);
+        assertArrayEquals(new byte[]{1, 2, 3, 0}, inBuf);
     }
 
     @Test
