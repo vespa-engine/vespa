@@ -5,6 +5,7 @@
 #include "general_result.h"
 #include "resultconfig.h"
 #include "docsum_field_writer.h"
+#include "juniper_input.h"
 #include <vespa/searchlib/util/rawbuf.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/juniper/rpinterface.h>
@@ -24,6 +25,7 @@ protected:
     ~JuniperDFW() override;
 
     uint32_t                         _inputFieldEnumValue;
+    vespalib::string                 _input_field_name;
     std::unique_ptr<juniper::Config> _juniperConfig;
     uint32_t                         _langFieldEnumValue;
     juniper::Juniper                *_juniper;
@@ -46,13 +48,12 @@ protected:
 
 class DynamicTeaserDFW : public JuniperTeaserDFW
 {
-public:
-    DynamicTeaserDFW(juniper::Juniper * juniper) : JuniperTeaserDFW(juniper) { }
-
-    vespalib::stringref getJuniperInput(GeneralResult *gres);
+    JuniperInput getJuniperInput(GeneralResult *gres);
     vespalib::string makeDynamicTeaser(uint32_t docid,
                                        vespalib::stringref input,
                                        GetDocsumsState *state);
+public:
+    DynamicTeaserDFW(juniper::Juniper * juniper) : JuniperTeaserDFW(juniper) { }
 
     void insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state,
                      ResType type, vespalib::slime::Inserter &target) override;

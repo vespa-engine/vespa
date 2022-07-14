@@ -3,6 +3,8 @@
 #include "juniperdfw.h"
 #include "docsumwriter.h"
 #include "docsumstate.h"
+#include "i_docsum_store_document.h"
+#include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/queryeval/split_float.h>
 #include <vespa/vespalib/objects/hexdump.h>
@@ -282,10 +284,11 @@ JuniperQueryAdapter::Traverse(juniper::IQueryVisitor *v) const
 }
 
 JuniperDFW::JuniperDFW(juniper::Juniper * juniper)
-    : _inputFieldEnumValue(static_cast<uint32_t>(-1))
-    , _juniperConfig()
-    , _langFieldEnumValue(static_cast<uint32_t>(-1))
-    , _juniper(juniper)
+    : _inputFieldEnumValue(static_cast<uint32_t>(-1)),
+      _input_field_name(),
+      _juniperConfig(),
+      _langFieldEnumValue(static_cast<uint32_t>(-1)),
+      _juniper(juniper)
 {
 }
 
@@ -310,6 +313,7 @@ JuniperDFW::Init(
     }
 
     _inputFieldEnumValue = enums.Lookup(inputField);
+    _input_field_name = inputField;
 
     if (_inputFieldEnumValue >= enums.GetNumEntries()) {
         LOG(warning, "no docsum format contains field '%s'; dynamic teasers will be empty",
@@ -344,7 +348,7 @@ JuniperTeaserDFW::Init(
     return rc;
 }
 
-vespalib::stringref
+JuniperInput
 DynamicTeaserDFW::getJuniperInput(GeneralResult *gres) {
     int idx = gres->GetClass()->GetIndexFromEnumValue(_inputFieldEnumValue);
     ResEntry *entry = gres->GetPresentEntry(idx);
@@ -352,9 +356,13 @@ DynamicTeaserDFW::getJuniperInput(GeneralResult *gres) {
         const char *buf;
         uint32_t    buflen;
         entry->_resolve_field(&buf, &buflen);
-        return vespalib::stringref(buf, buflen);
+        return JuniperInput(vespalib::stringref(buf, buflen));
     }
-    return vespalib::stringref();
+    const auto* document = gres->get_document();
+    if (document != nullptr) {
+        return JuniperInput(document->get_field_value(_input_field_name).get());
+    }
+    return JuniperInput(vespalib::stringref());
 }
 
 vespalib::string
@@ -428,9 +436,9 @@ void
 DynamicTeaserDFW::insertField(uint32_t docid, GeneralResult *gres, GetDocsumsState *state, ResType,
                               vespalib::slime::Inserter &target)
 {
-    vespalib::stringref input = getJuniperInput(gres);
-    if (input.length() > 0) {
-        vespalib::string teaser = makeDynamicTeaser(docid, input, state);
+    auto input = getJuniperInput(gres);
+    if (!input.empty()) {
+        vespalib::string teaser = makeDynamicTeaser(docid, input.get_value(), state);
         vespalib::Memory value(teaser.c_str(), teaser.size());
         target.insertString(value);
     }
