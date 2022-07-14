@@ -178,6 +178,9 @@ public class AutoscalingMaintainerTest {
         }
 
         assertEquals(Cluster.maxScalingEvents, tester.cluster(app1, cluster1).scalingEvents().size());
+        assertEquals("The latest rescaling is the last event stored",
+                     tester.clock().instant(),
+                     tester.cluster(app1, cluster1).scalingEvents().get(Cluster.maxScalingEvents - 1).at());
     }
 
     @Test

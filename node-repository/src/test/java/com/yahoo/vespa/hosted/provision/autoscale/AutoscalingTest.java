@@ -87,8 +87,6 @@ public class AutoscalingTest {
         tester.assertResources("Scaling down to minimum since usage has gone down significantly",
                                7, 1, 1.0, 66.7, 66.7,
                                tester.autoscale(application1, cluster1, capacity));
-
-        var events = tester.nodeRepository().applications().get(application1).get().cluster(cluster1.id()).get().scalingEvents();
     }
 
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */

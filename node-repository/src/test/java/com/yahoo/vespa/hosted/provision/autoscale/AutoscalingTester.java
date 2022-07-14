@@ -61,9 +61,17 @@ class AutoscalingTester {
         this(zone, hostResources, null);
     }
 
+    public AutoscalingTester(Zone zone, NodeResources hostResources, int hostCount) {
+        this(zone, hostResources, null, hostCount);
+    }
+
     public AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
+        this(zone, hostResources, resourcesCalculator, 20);
+    }
+
+    private AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator, int hostCount) {
         this(zone, List.of(new Flavor("hostFlavor", hostResources)), resourcesCalculator);
-        provisioningTester.makeReadyNodes(20, "hostFlavor", NodeType.host, 8);
+        provisioningTester.makeReadyNodes(hostCount, "hostFlavor", NodeType.host, 8);
         provisioningTester.activateTenantHosts();
     }
 
@@ -71,8 +79,7 @@ class AutoscalingTester {
         this(zone, flavors, new MockHostResourcesCalculator(zone));
     }
 
-    private AutoscalingTester(Zone zone, List<Flavor> flavors,
-                              HostResourcesCalculator resourcesCalculator) {
+    private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator) {
         provisioningTester = new ProvisioningTester.Builder().zone(zone)
                                                              .flavors(flavors)
                                                              .resourcesCalculator(resourcesCalculator)
@@ -377,7 +384,7 @@ class AutoscalingTester {
 
     public MetricsDb nodeMetricsDb() { return nodeRepository().metricsDb(); }
 
-    private static class MockHostResourcesCalculator implements HostResourcesCalculator {
+    public static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
         private final Zone zone;
 
