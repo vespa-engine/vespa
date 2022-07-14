@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.zone.NodeSlice;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -54,8 +55,9 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     }
 
     @Override
-    protected boolean convergedOn(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
-        return !currentVersion(zone, application, target.osVersion().version()).isBefore(target.osVersion().version());
+    protected boolean convergedOn(OsVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
+        Version currentVersion = versionOf(nodeSlice, zone, application, Node::currentOsVersion).orElse(target.osVersion().version());
+        return !currentVersion.isBefore(target.osVersion().version());
     }
 
     @Override
@@ -74,7 +76,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     }
 
     @Override
-    protected boolean changeTargetTo(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
+    protected boolean changeTargetTo(OsVersionTarget target, SystemApplication application, ZoneApi zone, NodeSlice nodeSlice) {
         if (!application.shouldUpgradeOs()) return false;
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getVirtualId())
@@ -83,15 +85,11 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
                            .orElse(true);
     }
 
-    private Version currentVersion(ZoneApi zone, SystemApplication application, Version defaultVersion) {
-        return minVersion(zone, application, Node::currentOsVersion).orElse(defaultVersion);
-    }
-
     /** Returns the available upgrade budget for given zone */
     private Duration zoneBudgetOf(Duration totalBudget, ZoneApi zone) {
         if (!spendBudgetOn(zone)) return Duration.ZERO;
         long consecutiveZones = upgradePolicy.steps().stream()
-                                             .filter(parallelZones -> parallelZones.stream().anyMatch(this::spendBudgetOn))
+                                             .filter(step -> step.zones().stream().anyMatch(this::spendBudgetOn))
                                              .count();
         return totalBudget.dividedBy(consecutiveZones);
     }

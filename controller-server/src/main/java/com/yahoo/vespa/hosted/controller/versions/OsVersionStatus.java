@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.versions;
 import com.google.common.collect.ImmutableMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
+import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeFilter;
@@ -83,6 +84,7 @@ public record OsVersionStatus(Map<OsVersion, List<NodeVersion>> versions) {
     private static List<ZoneApi> zonesToUpgrade(Controller controller) {
         return controller.zoneRegistry().osUpgradePolicies().stream()
                          .flatMap(upgradePolicy -> upgradePolicy.steps().stream())
+                         .map(UpgradePolicy.Step::zones)
                          .flatMap(Collection::stream)
                          .toList();
     }
