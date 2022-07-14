@@ -2319,7 +2319,9 @@
     ],
     "methods": [
       "public void <init>()",
-      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)"
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "public static void validate(com.yahoo.search.Query)",
+      "public static void createGroupingRequestIn(com.yahoo.search.Query, com.yahoo.search.grouping.request.GroupingOperation, java.util.List)"
     ],
     "fields": [
       "public static final java.lang.String SELECT_PARAMETER_PARSING",
