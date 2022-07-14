@@ -122,7 +122,7 @@ SummarySetup(const vespalib::string & baseDir, const DocTypeName & docTypeName, 
     DynamicDocsumConfig dynCfg(this, _docsumWriter.get());
     dynCfg.configure(summarymapCfg);
     for (const auto & o : summarymapCfg.override) {
-        if (o.command == "dynamicteaser" || o.command == "textextractor") {
+        if (o.command == "dynamicteaser") {
             vespalib::string markupField = o.arguments;
             if (markupField.empty())
                 continue;
