@@ -144,6 +144,7 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_FLOAT);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_DOUBLE);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_INT64);
+    docsum_blob_entry_filter.add_skip(search::docsummary::RES_STRING);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_DATA);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_LONG_DATA);
     docsum_blob_entry_filter.add_skip(search::docsummary::RES_TENSOR);
