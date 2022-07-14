@@ -212,12 +212,12 @@ public class Nodes {
         return setReady(List.of(nodeToReady), agent, reason).get(0);
     }
 
-    /** Reserve nodes. This method does <b>not</b> lock the node repository */
+    /** Reserve nodes. This method does <b>not</b> lock the node repository. */
     public List<Node> reserve(List<Node> nodes) {
         return db.writeTo(Node.State.reserved, nodes, Agent.application, Optional.empty());
     }
 
-    /** Activate nodes. This method does <b>not</b> lock the node repository */
+    /** Activate nodes. This method does <b>not</b> lock the node repository. */
     public List<Node> activate(List<Node> nodes, NestedTransaction transaction) {
         return db.writeTo(Node.State.active, nodes, Agent.application, Optional.empty(), transaction);
     }

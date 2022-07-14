@@ -26,7 +26,7 @@ public class Autoscaler {
     /** What cost difference is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
     /** What resource difference is worth a reallocation? */
-    private static final double resourceDifferenceWorthReallocation = 0.1;
+    private static final double resourceDifferenceWorthReallocation = 0.03;
 
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
