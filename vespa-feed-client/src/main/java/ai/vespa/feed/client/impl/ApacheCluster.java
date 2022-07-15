@@ -15,7 +15,6 @@ import org.apache.hc.core5.http.message.BasicHeader;
 import org.apache.hc.core5.http2.config.H2Config;
 import org.apache.hc.core5.net.URIAuthority;
 import org.apache.hc.core5.reactor.IOReactorConfig;
-import org.apache.hc.core5.reactor.ssl.TlsDetails;
 import org.apache.hc.core5.util.Timeout;
 
 import javax.net.ssl.SSLContext;
@@ -131,10 +130,9 @@ class ApacheCluster implements Cluster {
             throw new IllegalStateException("No adequate SSL cipher suites supported by the JVM");
 
         ClientTlsStrategyBuilder tlsStrategyBuilder = ClientTlsStrategyBuilder.create()
-                                                                              .setTlsDetailsFactory(sslEngine ->
-                                                                                                    new TlsDetails(sslEngine.getSession(), sslEngine.getApplicationProtocol()))
-                                                                              .setCiphers(allowedCiphers)
-                                                                              .setSslContext(sslContext);
+                .setTlsDetailsFactory(TlsDetailsFactory::create)
+                .setCiphers(allowedCiphers)
+                .setSslContext(sslContext);
         if (builder.hostnameVerifier != null)
             tlsStrategyBuilder.setHostnameVerifier(builder.hostnameVerifier);
 
