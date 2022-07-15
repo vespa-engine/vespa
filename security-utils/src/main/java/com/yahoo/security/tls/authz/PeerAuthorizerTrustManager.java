@@ -125,9 +125,10 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         }
     }
 
-    private static String createInfoString(X509Certificate certificate, String authType, boolean isVerifyingClient) {
-        return String.format("DN='%s', SANs=%s, authType='%s', isVerifyingClient='%b'",
-                             certificate.getSubjectX500Principal(), X509CertificateUtils.getSubjectAlternativeNames(certificate), authType, isVerifyingClient);
+    private String createInfoString(X509Certificate certificate, String authType, boolean isVerifyingClient) {
+        return String.format("DN='%s', SANs=%s, authType='%s', isVerifyingClient='%b', mode=%s",
+                certificate.getSubjectX500Principal(), X509CertificateUtils.getSubjectAlternativeNames(certificate),
+                authType, isVerifyingClient, mode);
     }
 
     private void overrideHostnameVerificationForClient(SSLEngine engine) {
