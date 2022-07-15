@@ -70,7 +70,7 @@ Some suggested improvements with pointers to code are in [TODO.md](TODO.md).
 ### Development environment
 
 C++ and Java building is supported on CentOS 7.
-The Java source can also be built on any platform having Java 11 and Maven installed.
+The Java source can also be built on any platform having Java 17 and Maven installed.
 Use the following guide to set up a complete development environment using Docker
 for building Vespa, running unit tests and running system tests:
 [Vespa development on CentOS 7](https://github.com/vespa-engine/docker-image-dev#vespa-development-on-centos-7).
