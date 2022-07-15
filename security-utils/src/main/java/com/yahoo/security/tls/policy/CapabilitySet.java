@@ -70,7 +70,7 @@ public class CapabilitySet {
     public static CapabilitySet all() { return ALL_CAPABILITIES; }
     public static CapabilitySet none() { return NO_CAPABILITIES; }
 
-    public boolean hasAllCapabilities() { return this.caps.equals(ALL_CAPABILITIES.caps); }
+    public boolean hasAll() { return this.caps.equals(ALL_CAPABILITIES.caps); }
 
     public SortedSet<String> toCapabilityNames() {
         return caps.stream().map(Capability::asString).collect(Collectors.toCollection(TreeSet::new));

@@ -154,7 +154,7 @@ public class TransportSecurityOptionsJsonSerializer {
                             authorizedPeer.requiredCredentials = new ArrayList<>();
                             authorizedPeer.description = peerPolicy.description().orElse(null);
                             CapabilitySet caps = peerPolicy.capabilities();
-                            if (!caps.hasAllCapabilities()) {
+                            if (!caps.hasAll()) {
                                 authorizedPeer.capabilities = List.copyOf(caps.toCapabilityNames());
                             }
                             for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
