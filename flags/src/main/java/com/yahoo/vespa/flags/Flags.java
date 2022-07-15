@@ -332,7 +332,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_DATA_HIGHWAY_IN_AWS = defineFeatureFlag(
             "enable-data-highway-in-aws", false,
-            List.of("hmusum"), "2022-01-06", "2022-08-01",
+            List.of("hmusum"), "2022-01-06", "2022-09-01",
             "Enable Data Highway in AWS",
             "Takes effect on restart of Docker container",
             ZONE_ID, APPLICATION_ID);
@@ -410,7 +410,7 @@ public class Flags {
 
     public static final UnboundStringFlag APPLICATION_FILES_WITH_UNKNOWN_EXTENSION = defineStringFlag(
             "fail-deployment-for-files-with-unknown-extension", "LOG",
-            List.of("hmusum"), "2022-04-27", "2022-07-27",
+            List.of("hmusum"), "2022-04-27", "2022-09-01",
             "Whether to log, fail or do nothing for deployments when app has a file with unknown extension (valid values LOG, FAIL, NOOP)",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
