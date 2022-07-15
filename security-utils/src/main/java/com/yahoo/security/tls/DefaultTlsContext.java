@@ -11,7 +11,6 @@ import javax.net.ssl.SSLParameters;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -136,13 +135,9 @@ public class DefaultTlsContext implements TlsContext {
         if (!caCertificates.isEmpty()) {
             builder.withTrustStore(caCertificates);
         }
-        if (authorizedPeers != null) {
-            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, truststore));
-        } else {
-            builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(
-                    new AuthorizedPeers(Collections.emptySet()), AuthorizationMode.DISABLE, hostnameVerification, truststore));
-        }
-        return builder.build();
+        return builder.withTrustManagerFactory(truststore ->
+                        new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, truststore))
+                .build();
     }
 
 }

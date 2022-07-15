@@ -39,6 +39,9 @@ public class PeerAuthorizer {
     public ConnectionAuthContext authorizePeer(X509Certificate cert) { return authorizePeer(List.of(cert)); }
 
     public ConnectionAuthContext authorizePeer(List<X509Certificate> certChain) {
+        if (authorizedPeers.isEmpty()) {
+            return new ConnectionAuthContext(certChain, CapabilitySet.all(), Set.of());
+        }
         X509Certificate cert = certChain.get(0);
         Set<String> matchedPolicies = new HashSet<>();
         Set<CapabilitySet> grantedCapabilities = new HashSet<>();

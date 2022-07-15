@@ -6,6 +6,7 @@ import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.TrustManagerUtils;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.CapabilitySet;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
@@ -17,6 +18,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -105,11 +107,10 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     }
 
     private void authorizePeer(X509Certificate[] certChain, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
-        if (mode == AuthorizationMode.DISABLE) return;
-
-
         log.fine(() -> "Verifying certificate: " + createInfoString(certChain[0], authType, isVerifyingClient));
-        ConnectionAuthContext result = authorizer.authorizePeer(List.of(certChain));
+        ConnectionAuthContext result = mode != AuthorizationMode.DISABLE
+                ? authorizer.authorizePeer(List.of(certChain))
+                : new ConnectionAuthContext(List.of(certChain), CapabilitySet.all(), Set.of());
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
             sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY, result);
         }

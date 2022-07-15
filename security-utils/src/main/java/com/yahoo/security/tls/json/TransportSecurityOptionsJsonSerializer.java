@@ -144,28 +144,27 @@ public class TransportSecurityOptionsJsonSerializer {
         options.getCaCertificatesFile().ifPresent(value -> entity.files.caCertificatesFile = value.toString());
         options.getCertificatesFile().ifPresent(value -> entity.files.certificatesFile = value.toString());
         options.getPrivateKeyFile().ifPresent(value -> entity.files.privateKeyFile = value.toString());
-        options.getAuthorizedPeers().ifPresent( authorizedPeers -> entity.authorizedPeers =
-                authorizedPeers.peerPolicies().stream()
-                        // Makes tests stable
-                        .sorted(Comparator.comparing(PeerPolicy::policyName))
-                        .map(peerPolicy -> {
-                            AuthorizedPeer authorizedPeer = new AuthorizedPeer();
-                            authorizedPeer.name = peerPolicy.policyName();
-                            authorizedPeer.requiredCredentials = new ArrayList<>();
-                            authorizedPeer.description = peerPolicy.description().orElse(null);
-                            CapabilitySet caps = peerPolicy.capabilities();
-                            if (!caps.hasAll()) {
-                                authorizedPeer.capabilities = List.copyOf(caps.toCapabilityNames());
-                            }
-                            for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
-                                RequiredCredential requiredCredential = new RequiredCredential();
-                                requiredCredential.field = toField(requiredPeerCredential.field());
-                                requiredCredential.matchExpression = requiredPeerCredential.pattern().asString();
-                                authorizedPeer.requiredCredentials.add(requiredCredential);
-                            }
-                            return authorizedPeer;
-                        })
-                        .collect(toList()));
+        entity.authorizedPeers = options.getAuthorizedPeers().peerPolicies().stream()
+                // Makes tests stable
+                .sorted(Comparator.comparing(PeerPolicy::policyName))
+                .map(peerPolicy -> {
+                    AuthorizedPeer authorizedPeer = new AuthorizedPeer();
+                    authorizedPeer.name = peerPolicy.policyName();
+                    authorizedPeer.requiredCredentials = new ArrayList<>();
+                    authorizedPeer.description = peerPolicy.description().orElse(null);
+                    CapabilitySet caps = peerPolicy.capabilities();
+                    if (!caps.hasAll()) {
+                        authorizedPeer.capabilities = List.copyOf(caps.toCapabilityNames());
+                    }
+                    for (RequiredPeerCredential requiredPeerCredential : peerPolicy.requiredCredentials()) {
+                        RequiredCredential requiredCredential = new RequiredCredential();
+                        requiredCredential.field = toField(requiredPeerCredential.field());
+                        requiredCredential.matchExpression = requiredPeerCredential.pattern().asString();
+                        authorizedPeer.requiredCredentials.add(requiredCredential);
+                    }
+                    return authorizedPeer;
+                })
+                .toList();
         if (!options.getAcceptedCiphers().isEmpty()) {
             entity.acceptedCiphers = options.getAcceptedCiphers();
         }

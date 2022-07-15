@@ -71,6 +71,7 @@ public class CapabilitySet {
     public static CapabilitySet none() { return NO_CAPABILITIES; }
 
     public boolean hasAll() { return this.caps.equals(ALL_CAPABILITIES.caps); }
+    public boolean hasNone() { return this.caps.equals(NO_CAPABILITIES.caps); }
 
     public SortedSet<String> toCapabilityNames() {
         return caps.stream().map(Capability::asString).collect(Collectors.toCollection(TreeSet::new));
