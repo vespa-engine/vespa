@@ -5,7 +5,6 @@ import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.handler.threadpool.ContainerThreadpoolConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerThreadpool;
-import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
@@ -23,6 +22,8 @@ import static com.yahoo.container.bundle.BundleInstantiationSpecification.fromSe
 class SearchHandler extends ProcessingHandler<SearchChains> {
 
     static final String HANDLER_CLASS = com.yahoo.search.handler.SearchHandler.class.getName();
+    static final String EXECUTION_FACTORY_CLASS = com.yahoo.search.searchchain.ExecutionFactory.class.getName();
+
     static final BundleInstantiationSpecification HANDLER_SPEC = fromSearchAndDocproc(HANDLER_CLASS);
     static final BindingPattern DEFAULT_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
 

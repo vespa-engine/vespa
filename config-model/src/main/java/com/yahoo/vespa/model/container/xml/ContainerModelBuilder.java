@@ -30,7 +30,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.schema.OnnxModel;
@@ -63,13 +62,13 @@ import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.BindingPattern;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.ConnectionLogComponent;
 import com.yahoo.vespa.model.container.component.FileStatusHandlerComponent;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
-import com.yahoo.vespa.model.container.component.chain.ProcessingHandler;
 import com.yahoo.vespa.model.container.docproc.ContainerDocproc;
 import com.yahoo.vespa.model.container.docproc.DocprocChains;
 import com.yahoo.vespa.model.container.http.AccessControl;
@@ -89,6 +88,7 @@ import com.yahoo.vespa.model.container.xml.embedder.EmbedderConfig;
 import com.yahoo.vespa.model.content.StorageGroup;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -886,16 +886,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
-        // Magic spell is needed to receive the chains config :-|
-        cluster.addComponent(new ProcessingHandler<>(
-                cluster.getSearch().getChains(),
-                BundleInstantiationSpecification.fromSearchAndDocproc("com.yahoo.search.searchchain.ExecutionFactory")));
+        SearchHandler searchHandler = new SearchHandler(cluster,
+                                                        serverBindings(searchElement, SearchHandler.DEFAULT_BINDING),
+                                                        ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null));
+        cluster.addComponent(searchHandler);
 
-        cluster.addComponent(
-                new SearchHandler(
-                        cluster,
-                        serverBindings(searchElement, SearchHandler.DEFAULT_BINDING),
-                        ContainerThreadpool.UserOptions.fromXml(searchElement).orElse(null)));
+        // Add as child to SearchHandler to get the correct chains config.
+        searchHandler.addComponent(Component.fromClassAndBundle(SearchHandler.EXECUTION_FACTORY_CLASS, PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE));
     }
 
     private void addGUIHandler(ApplicationContainerCluster cluster) {
