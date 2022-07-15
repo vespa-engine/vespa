@@ -53,10 +53,33 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <release>${vespaClients.jdk.releaseVersion}</release>
-          <showDeprecation>true</showDeprecation>
-        </configuration>
+        <executions>
+          <execution>
+            <id>compile-java-${vespaClients.jdk.releaseVersion}</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <release>${vespaClients.jdk.releaseVersion}</release>
+              <showDeprecation>true</showDeprecation>
+            </configuration>
+          </execution>
+          <execution>
+            <id>compile-java-9</id>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <release>9</release>
+              <compileSourceRoots>
+                <compileSourceRoot>${project.basedir}/src/main/java9</compileSourceRoot>
+              </compileSourceRoots>
+              <outputDirectory>${project.build.outputDirectory}/META-INF/versions/9</outputDirectory>
+              <showDeprecation>true</showDeprecation>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
