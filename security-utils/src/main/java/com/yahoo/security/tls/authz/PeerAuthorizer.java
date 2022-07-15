@@ -13,8 +13,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
@@ -42,7 +40,7 @@ public class PeerAuthorizer {
 
     public ConnectionAuthContext authorizePeer(List<X509Certificate> certChain) {
         X509Certificate cert = certChain.get(0);
-        SortedSet<String> matchedPolicies = new TreeSet<>();
+        Set<String> matchedPolicies = new HashSet<>();
         Set<CapabilitySet> grantedCapabilities = new HashSet<>();
         String cn = getCommonName(cert).orElse(null);
         List<String> sans = getSubjectAlternativeNames(cert);
