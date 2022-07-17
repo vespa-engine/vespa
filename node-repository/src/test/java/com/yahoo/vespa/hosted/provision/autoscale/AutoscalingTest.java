@@ -50,10 +50,10 @@ public class AutoscalingTest {
                                                                             9, 1, 2.8,  5.0, 50.0,
                                                                             fixture.autoscale());
 
-        fixture.deploy(scaledResources);
+        fixture.deploy(Capacity.from(scaledResources));
         assertTrue("Cluster in flux -> No further change", fixture.autoscale().isEmpty());
 
-        fixture.deactivateRetired(scaledResources);
+        fixture.deactivateRetired(Capacity.from(scaledResources));
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.applyCpuLoad(0.8f, 3);
@@ -88,7 +88,7 @@ public class AutoscalingTest {
         ClusterResources scaledResources = fixture.tester().assertResources("Scaling up since cpu usage is too high",
                                                                   5, 1, 3.8,  8.0, 50.5,
                                                                   fixture.autoscale());
-        fixture.deploy(scaledResources);
+        fixture.deploy(Capacity.from(scaledResources));
         fixture.applyCpuLoad(0.1f, 120);
         fixture.tester().assertResources("Scaling down since cpu usage has gone down",
                                          4, 1, 2.5, 6.4, 25.5,
@@ -97,65 +97,56 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_handles_disk_setting_changes() {
-        NodeResources hostResources = new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.slow);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
+        var resources = new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.slow);
+        var fixture = AutoscalingTester.fixture()
+                                       .hostResources(resources)
+                                       .initialResources(Optional.of(new ClusterResources(5, 1, resources)))
+                                       .capacity(Capacity.from(new ClusterResources(5, 1, resources)))
+                                       .build();
 
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
-
-        // deploy with slow
-        tester.deploy(application1, cluster1, 5, 1, hostResources);
-        assertTrue(tester.nodeRepository().nodes().list().owner(application1).stream()
+        assertTrue(fixture.tester().nodeRepository().nodes().list().owner(fixture.application).stream()
                          .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.slow));
 
-        tester.clock().advance(Duration.ofDays(2));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyCpuLoad(0.25, 120);
+
         // Changing min and max from slow to any
         ClusterResources min = new ClusterResources( 2, 1,
                                                      new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
         ClusterResources max = new ClusterResources(20, 1,
                                                     new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
         var capacity = Capacity.from(min, max);
-        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                  14, 1, 1.4,  30.8, 30.8,
-                                                                  tester.autoscale(application1, cluster1, capacity));
-        assertEquals("Disk speed from min/max is used",
+        ClusterResources scaledResources = fixture.tester().assertResources("Scaling up",
+                                                                            14, 1, 1.4,  30.8, 30.8,
+                                                                            fixture.autoscale(capacity));
+        assertEquals("Disk speed from new capacity is used",
                      NodeResources.DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
-        tester.deploy(application1, cluster1, scaledResources);
-        assertTrue(tester.nodeRepository().nodes().list().owner(application1).stream()
-                         .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+        fixture.deploy(Capacity.from(scaledResources));
+        assertTrue(fixture.nodes().stream()
+                          .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
     }
 
     @Test
     public void autoscaling_target_preserves_any() {
-        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
-
-        // Initial deployment
         NodeResources resources = new NodeResources(1, 10, 10, 1);
-        var min = new ClusterResources( 2, 1, resources.with(NodeResources.DiskSpeed.any));
-        var max = new ClusterResources( 10, 1, resources.with(NodeResources.DiskSpeed.any));
-        var capacity = Capacity.from(min, max);
-        tester.deploy(application1, cluster1, Capacity.from(min, max));
+        var capacity = Capacity.from(new ClusterResources( 2, 1, resources.with(NodeResources.DiskSpeed.any)),
+                                     new ClusterResources( 10, 1, resources.with(NodeResources.DiskSpeed.any)));
+
+        var fixture = AutoscalingTester.fixture()
+                                       .capacity(capacity)
+                                       .initialResources(Optional.empty())
+                                       .build();
 
         // Redeployment without target: Uses current resource numbers with *requested* non-numbers (i.e disk-speed any)
-        assertTrue(tester.nodeRepository().applications().get(application1).get().cluster(cluster1.id()).get().targetResources().isEmpty());
-        tester.deploy(application1, cluster1, Capacity.from(min, max));
-        assertEquals(NodeResources.DiskSpeed.any,
-                     tester.nodeRepository().nodes().list().owner(application1).cluster(cluster1.id()).first().get()
-                           .allocation().get().requestedResources().diskSpeed());
+        assertTrue(fixture.tester().nodeRepository().applications().get(fixture.application).get().cluster(fixture.cluster.id()).get().targetResources().isEmpty());
+        fixture.deploy();
+        assertEquals(NodeResources.DiskSpeed.any, fixture.nodes().first().get().allocation().get().requestedResources().diskSpeed());
 
         // Autoscaling: Uses disk-speed any as well
-        tester.clock().advance(Duration.ofDays(2));
-        tester.addCpuMeasurements(0.8f, 1f, 120, application1);
-        Autoscaler.Advice advice = tester.autoscale(application1, cluster1, capacity);
-        assertEquals(NodeResources.DiskSpeed.any, advice.target().get().nodeResources().diskSpeed());
-
-
+        fixture.deactivateRetired(capacity);
+        fixture.tester().clock().advance(Duration.ofDays(1));
+        fixture.applyCpuLoad(0.8, 120);
+        assertEquals(NodeResources.DiskSpeed.any, fixture.autoscale(capacity).target().get().nodeResources().diskSpeed());
     }
 
     @Test

@@ -130,13 +130,17 @@ class AutoscalingTester {
     }
 
     public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
+        deactivateRetired(application, cluster, Capacity.from(resources));
+    }
+
+    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
         try (Mutex lock = nodeRepository().nodes().lock(application)) {
             for (Node node : nodeRepository().nodes().list(Node.State.active).owner(application)) {
                 if (node.allocation().get().membership().retired())
                     nodeRepository().nodes().write(node.with(node.allocation().get().removable(true, true)), lock);
             }
         }
-        deploy(application, cluster, resources);
+        deploy(application, cluster, capacity);
     }
 
     public ClusterModel clusterModel(ApplicationId applicationId, ClusterSpec clusterSpec) {

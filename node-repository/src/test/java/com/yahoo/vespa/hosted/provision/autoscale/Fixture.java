@@ -6,8 +6,10 @@ import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.NodeList;
 
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * Fixture for autoscaling tests.
@@ -21,26 +23,44 @@ public class Fixture {
     final ClusterSpec cluster;
     final Capacity capacity;
 
-    public Fixture(Fixture.Builder builder) {
+    public Fixture(Fixture.Builder builder, Optional<ClusterResources> initialResources) {
         application = builder.application;
         cluster = builder.cluster;
-        capacity = Capacity.from(builder.min, builder.max);
+        capacity = builder.capacity;
         tester = new AutoscalingTester(builder.hostResources);
-        tester.deploy(builder.application, builder.cluster, 5, 1, builder.nodeResources);
+        var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
+        tester.deploy(builder.application, builder.cluster, deployCapacity);
     }
 
     public AutoscalingTester  tester() { return tester; }
 
+    /** Autoscale within the deployed capacity of this. */
     public Autoscaler.Advice autoscale() {
+        return autoscale(capacity);
+    }
+
+    /** Autoscale within the given capacity. */
+    public Autoscaler.Advice autoscale(Capacity capacity) {
         return tester.autoscale(application, cluster, capacity);
     }
 
-    public void deploy(ClusterResources resources) {
-        tester.deploy(application, cluster, resources);
+    /** Redeploy with the deployed capacity of this. */
+    public void deploy() {
+        deploy(capacity);
     }
 
-    public void deactivateRetired(ClusterResources resources) {
-        tester.deactivateRetired(application, cluster, resources);
+    /** Redeploy with the given capacity. */
+    public void deploy(Capacity capacity) {
+        tester.deploy(application, cluster, capacity);
+    }
+
+    /** Returns the nodes allocated to the fixture application cluster */
+    public NodeList nodes() {
+        return tester.nodeRepository().nodes().list().owner(application).cluster(cluster.id());
+    }
+
+    public void deactivateRetired(Capacity capacity) {
+        tester.deactivateRetired(application, cluster, capacity);
     }
 
     public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int measurements) {
@@ -60,11 +80,11 @@ public class Fixture {
     public static class Builder {
 
         NodeResources hostResources = new NodeResources(100, 100, 100, 1);
-        NodeResources nodeResources = new NodeResources(3, 10, 100, 1);
-        ClusterResources min = new ClusterResources(2, 1,
-                                                    new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
-        ClusterResources max = new ClusterResources(20, 1,
-                                                    new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
+        Optional<ClusterResources> initialResources = Optional.of(new ClusterResources(5, 1, new NodeResources(3, 10, 100, 1)));
+        Capacity capacity = Capacity.from(new ClusterResources(2, 1,
+                                                               new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
+                                          new ClusterResources(20, 1,
+                                                               new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
 
         ApplicationId application = AutoscalingTester.applicationId("application1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
@@ -74,8 +94,23 @@ public class Fixture {
             return this;
         }
 
+        public Fixture.Builder hostResources(NodeResources hostResources) {
+            this.hostResources = hostResources;
+            return this;
+        }
+
+        public Fixture.Builder initialResources(Optional<ClusterResources> initialResources) {
+            this.initialResources = initialResources;
+            return this;
+        }
+
+        public Fixture.Builder capacity(Capacity capacity) {
+            this.capacity = capacity;
+            return this;
+        }
+
         public Fixture build() {
-            return new Fixture(this);
+            return new Fixture(this, initialResources);
         }
 
     }
