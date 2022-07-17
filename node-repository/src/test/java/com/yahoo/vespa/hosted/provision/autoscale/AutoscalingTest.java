@@ -376,31 +376,14 @@ public class AutoscalingTest {
 
     @Test
     public void scaling_down_only_after_delay() {
-        NodeResources hostResources = new NodeResources(6, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
-
-        tester.deploy(application1, cluster1, 6, 1, hostResources.withVcpu(hostResources.vcpu() / 2));
-
-        // No autoscaling as it is too soon to scale down after initial deploy (counting as a scaling event)
-        tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        assertTrue(tester.autoscale(application1, cluster1, capacity).target().isEmpty());
-
-        // Trying the same later causes autoscaling
-        tester.clock().advance(Duration.ofDays(2));
-        tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling down",
-                               6, 1, 1.4, 4.0, 95.0,
-                               tester.autoscale(application1, cluster1, capacity));
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.applyMemLoad(0.02, 120);
+        assertTrue("Too soon  after initial deployment", fixture.autoscale().target().isEmpty());
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyMemLoad(0.02, 120);
+        fixture.tester().assertResources("Scaling down since enough time has passed",
+                                         6, 1, 1.2, 4.0, 80.0,
+                                         fixture.autoscale());
     }
 
     @Test
