@@ -36,57 +36,37 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_single_content_group() {
-        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 1,
-                                                     new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any));
-        ClusterResources max = new ClusterResources(20, 1,
-                                                    new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
+        var fixture = AutoscalingTester.fixture().build();
 
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        fixture.tester().clock().advance(Duration.ofDays(1));
+        assertTrue("No measurements -> No change", fixture.autoscale().isEmpty());
 
-        // deploy
-        tester.deploy(application1, cluster1, 5, 1, hostResources);
+        fixture.applyCpuLoad(0.7f, 59);
+        assertTrue("Too few measurements -> No change", fixture.autoscale().isEmpty());
 
-        tester.clock().advance(Duration.ofDays(1));
-        assertTrue("No measurements -> No change", tester.autoscale(application1, cluster1, capacity).isEmpty());
+        fixture.tester().clock().advance(Duration.ofDays(1));
+        fixture.applyCpuLoad(0.7f, 120);
+        ClusterResources scaledResources = fixture.tester().assertResources("Scaling up since resource usage is too high",
+                                                                            9, 1, 2.8,  5.0, 50.0,
+                                                                            fixture.autoscale());
 
-        tester.addCpuMeasurements(0.25f, 1f, 59, application1);
-        assertTrue("Too few measurements -> No change", tester.autoscale(application1, cluster1, capacity).isEmpty());
+        fixture.deploy(scaledResources);
+        assertTrue("Cluster in flux -> No further change", fixture.autoscale().isEmpty());
 
-        tester.clock().advance(Duration.ofDays(1));
-        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                  15, 1, 1.2,  28.6, 28.6,
-                                                                  tester.autoscale(application1, cluster1, capacity));
+        fixture.deactivateRetired(scaledResources);
 
-        tester.deploy(application1, cluster1, scaledResources);
-        assertTrue("Cluster in flux -> No further change", tester.autoscale(application1, cluster1, capacity).isEmpty());
-
-        tester.deactivateRetired(application1, cluster1, scaledResources);
-
-        tester.clock().advance(Duration.ofDays(2));
-        tester.addCpuMeasurements(0.8f, 1f, 3, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyCpuLoad(0.8f, 3);
         assertTrue("Load change is large, but insufficient measurements for new config -> No change",
-                   tester.autoscale(application1, cluster1, capacity).isEmpty());
+                   fixture.autoscale().isEmpty());
 
-        tester.addCpuMeasurements(0.19f, 1f, 100, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        assertEquals("Load change is small -> No change", Optional.empty(), tester.autoscale(application1, cluster1, capacity).target());
+        fixture.applyCpuLoad(0.19f, 100);
+        assertEquals("Load change is small -> No change", Optional.empty(), fixture.autoscale().target());
 
-        tester.addCpuMeasurements(0.1f, 1f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling down to minimum since usage has gone down significantly",
-                               7, 1, 1.0, 66.7, 66.7,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.applyCpuLoad(0.1f, 120);
+        fixture.tester().assertResources("Scaling cpu down since usage has gone down significantly",
+                                         9, 1, 1.0, 5.0, 50.0,
+                                         fixture.autoscale());
     }
 
     /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
