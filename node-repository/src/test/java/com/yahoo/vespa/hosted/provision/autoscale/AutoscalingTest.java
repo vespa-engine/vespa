@@ -344,24 +344,18 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_group_size() {
-        NodeResources hostResources = new NodeResources(100, 1000, 1000, 100);
-        ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(30, 30, new NodeResources(100, 100, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 6, 2, new NodeResources(10, 100, 100, 1));
-        tester.clock().advance(Duration.ofDays(1));
-        tester.addMemMeasurements(1.0f, 1f, 1000, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Increase group size to reduce memory load",
-                               8, 2, 12.4,  96.2, 62.5,
-                               tester.autoscale(application1, cluster1, capacity));
+        var min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
+        var now = new ClusterResources(6, 2, new NodeResources(10, 100, 100, 1));
+        var max = new ClusterResources(30, 30, new NodeResources(100, 100, 1000, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(1));
+        fixture.applyMemLoad(1.0, 1000);
+        fixture.tester().assertResources("Increase group size to reduce memory load",
+                                         8, 2, 6.5,  96.2, 62.5,
+                                         fixture.autoscale());
     }
 
     @Test

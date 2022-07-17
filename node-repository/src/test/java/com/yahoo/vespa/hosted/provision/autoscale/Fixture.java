@@ -79,6 +79,13 @@ public class Fixture {
         tester().addQueryRateMeasurements(application, cluster.id(), measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
+    public void applyMemLoad(double memLoad, int measurements) {
+        Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
+        tester().addMemMeasurements((float)memLoad, 1.0f, measurements, application);
+        tester().clock().advance(samplingInterval.negated().multipliedBy(measurements));
+        tester().addQueryRateMeasurements(application, cluster.id(), measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+    }
+
     public void applyLoad(double cpuLoad, double memoryLoad, double diskLoad, int measurements) {
         Duration samplingInterval = Duration.ofSeconds(150L); // in addCpuMeasurements
         tester().addMeasurements((float)cpuLoad, (float)memoryLoad, (float)diskLoad, measurements, application);
