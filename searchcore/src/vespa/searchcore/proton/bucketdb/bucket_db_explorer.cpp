@@ -33,10 +33,11 @@ checksumToString(storage::spi::BucketChecksum checksum)
 void
 convertBucketsToSlime(const BucketDB &bucketDb, Cursor &array)
 {
-    for (auto itr = bucketDb.begin(); itr != bucketDb.end(); ++itr) {
+    BucketId::List buckets = bucketDb.getBuckets();
+    for (BucketId bucketId : buckets) {
         Cursor &object = array.addObject();
-        object.setString("id", bucketIdToString(itr->first));
-        const bucketdb::BucketState &state = itr->second;
+        object.setString("id", bucketIdToString(bucketId));
+        bucketdb::BucketState state = bucketDb.get(bucketId);
         object.setString("checksum", checksumToString(state.getChecksum()));
         object.setLong("readyCount", state.getReadyCount());
         object.setLong("notReadyCount", state.getNotReadyCount());

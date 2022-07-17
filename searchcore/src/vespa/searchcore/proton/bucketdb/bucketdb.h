@@ -64,7 +64,6 @@ public:
     BucketId::List getActiveBuckets() const;
     BucketId::List populateActiveBuckets(BucketId::List buckets);
 
-    ConstMapIterator begin() const { return _map.begin(); }
     ConstMapIterator end() const { return _map.end(); }
     ConstMapIterator lowerBound(const BucketId &bucket) const { return _map.lower_bound(bucket); }
     size_t size() const { return _map.size(); }
