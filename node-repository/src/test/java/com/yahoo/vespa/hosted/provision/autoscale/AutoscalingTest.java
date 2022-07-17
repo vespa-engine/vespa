@@ -266,45 +266,27 @@ public class AutoscalingTest {
         var fixture = AutoscalingTester.fixture().capacity(Capacity.from(min, min)).build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.applyCpuLoad(1.0, 120);
-        fixture.tester().assertResources("Scaling up ",
+        fixture.tester().assertResources("Suggesting above capacity limit",
                                          8, 1, 9.3,  5.7, 57.1,
                                          fixture.tester().suggest(fixture.application, fixture.cluster.id(), min, min));
     }
 
     @Test
     public void not_using_out_of_service_measurements() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(5, 1, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 2, 1, resources);
-        tester.addMeasurements(0.5f, 0.6f, 0.7f, 1, false, true, 120, application1);
-        assertTrue("Not scaling up since nodes were measured while cluster was unstable",
-                   tester.autoscale(application1, cluster1, capacity).isEmpty());
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(0.9, 0.6, 0.7,  1, false, true, 120);
+        assertTrue("Not scaling up since nodes were measured while cluster was out of service",
+                   fixture.autoscale().isEmpty());
     }
 
     @Test
     public void not_using_unstable_measurements() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources(2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(5, 1, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 2, 1, resources);
-        tester.addMeasurements(0.5f, 0.6f, 0.7f, 1, true, false, 120, application1);
-        assertTrue("Not scaling up since nodes were measured while cluster was unstable",
-                   tester.autoscale(application1, cluster1, capacity).isEmpty());
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(0.9, 0.6, 0.7,  1, true, false, 120);
+        assertTrue("Not scaling up since nodes were measured while cluster was out of service",
+                   fixture.autoscale().isEmpty());
     }
 
     @Test
