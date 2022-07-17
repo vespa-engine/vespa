@@ -291,23 +291,18 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_group_size_1() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(20, 20, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 5, 5, resources);
-        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling up since resource usage is too high",
-                               7, 7, 2.5,  80.0, 50.5,
-                               tester.autoscale(application1, cluster1, capacity));
+        var min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
+        var now = new ClusterResources(5, 5, new NodeResources(3, 100, 100, 1));
+        var max = new ClusterResources(20, 20, new NodeResources(10, 1000, 1000, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyCpuLoad(0.9, 120);
+        fixture.tester().assertResources("Scaling the number of groups, but nothing requires us to stay with 1 node per group",
+                                         10, 5, 7.7,  40.0, 40.0,
+                                         fixture.autoscale());
     }
 
     @Test
