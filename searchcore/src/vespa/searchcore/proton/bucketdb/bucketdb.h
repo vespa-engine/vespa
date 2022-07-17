@@ -56,7 +56,7 @@ public:
     storage::spi::BucketInfo cachedGetBucketInfo(const BucketId &bucketId) const;
     BucketState cachedGet(const BucketId &bucketId) const;
     bool hasBucket(const BucketId &bucketId) const;
-    void getBuckets(BucketId::List & buckets) const;
+    BucketId::List getBuckets() const;
     bool empty() const;
     void setBucketState(const BucketId &bucketId, bool active);
     void createBucket(const BucketId &bucketId);
@@ -67,7 +67,6 @@ public:
     ConstMapIterator begin() const { return _map.begin(); }
     ConstMapIterator end() const { return _map.end(); }
     ConstMapIterator lowerBound(const BucketId &bucket) const { return _map.lower_bound(bucket); }
-    ConstMapIterator upperBound(const BucketId &bucket) const { return _map.upper_bound(bucket); }
     size_t size() const { return _map.size(); }
     bool isActiveBucket(const BucketId &bucketId) const;
     BucketState *getBucketStatePtr(const BucketId &bucket);
