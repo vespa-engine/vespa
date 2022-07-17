@@ -150,10 +150,11 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_respects_upper_limit() {
-        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
+        var min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
+        var now = new ClusterResources(5, 1, new NodeResources(1.9, 70, 70, 1));
+        var max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
         var fixture = AutoscalingTester.fixture()
-                                       .initialResources(Optional.of(new ClusterResources(5, 1, new NodeResources(1.9, 70, 70, 1) )))
+                                       .initialResources(Optional.of(now))
                                        .capacity(Capacity.from(min, max)).build();
 
         fixture.tester().clock().advance(Duration.ofDays(1));
@@ -179,51 +180,41 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_with_unspecified_resources_use_defaults() {
-        NodeResources hostResources = new NodeResources(6, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, NodeResources.unspecified());
         ClusterResources max = new ClusterResources( 6, 1, NodeResources.unspecified());
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        var fixture = AutoscalingTester.fixture()
+                                       .initialResources(Optional.empty())
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
 
         NodeResources defaultResources =
-                new CapacityPolicies(tester.nodeRepository()).defaultNodeResources(cluster1, application1, false);
+                new CapacityPolicies(fixture.tester().nodeRepository()).defaultNodeResources(fixture.cluster, fixture.application, false);
 
-        // deploy
-        tester.deploy(application1, cluster1, Capacity.from(min, max));
-        tester.assertResources("Min number of nodes and default resources",
-                               2, 1, defaultResources,
-                               tester.nodeRepository().nodes().list().owner(application1).toResources());
-        tester.addMeasurements(0.25f, 0.95f, 0.95f, 0, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling up to limit since resource usage is too high",
-                               4, 1,
-                               defaultResources.vcpu(), defaultResources.memoryGb(), defaultResources.diskGb(),
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().assertResources("Min number of nodes and default resources",
+                                         2, 1, defaultResources,
+                                         fixture.nodes().toResources());
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(0.25, 0.95, 0.95, 120);
+        fixture.tester().assertResources("Scaling up",
+                                         5, 1,
+                                         defaultResources.vcpu(), defaultResources.memoryGb(), defaultResources.diskGb(),
+                                         fixture.autoscale());
     }
 
     @Test
     public void autoscaling_respects_group_limit() {
-        NodeResources hostResources = new NodeResources(30.0, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(18, 6, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 5, 5, new NodeResources(3.0, 10, 10, 1));
-        tester.addCpuMeasurements( 0.3f, 1f, 240, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling up since resource usage is too high",
-                               6, 6, 3.6,  8.0, 10.0,
-                               tester.autoscale(application1, cluster1, capacity));
+        var min = new ClusterResources( 2, 2, new NodeResources(1, 1, 1, 1));
+        var now = new ClusterResources(5, 5, new NodeResources(3.0, 10, 10, 1));
+        var max = new ClusterResources(18, 6, new NodeResources(100, 1000, 1000, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyCpuLoad(0.3, 240);
+        fixture.tester().assertResources("Scaling up",
+                                         6, 6, 3.8,  8.0, 10.0,
+                                         fixture.autoscale());
     }
 
     @Test
