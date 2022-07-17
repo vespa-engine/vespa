@@ -166,8 +166,8 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_respects_lower_limit() {
-        ClusterResources min = new ClusterResources( 4, 1, new NodeResources(1.8, 7.4, 8.5, 1));
-        ClusterResources max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
+        var min = new ClusterResources( 4, 1, new NodeResources(1.8, 7.4, 8.5, 1));
+        var max = new ClusterResources( 6, 1, new NodeResources(2.4, 78, 79, 1));
         var fixture = AutoscalingTester.fixture().capacity(Capacity.from(min, max)).build();
 
         // deploy
@@ -180,8 +180,8 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_with_unspecified_resources_use_defaults() {
-        ClusterResources min = new ClusterResources( 2, 1, NodeResources.unspecified());
-        ClusterResources max = new ClusterResources( 6, 1, NodeResources.unspecified());
+        var min = new ClusterResources( 2, 1, NodeResources.unspecified());
+        var max = new ClusterResources( 6, 1, NodeResources.unspecified());
         var fixture = AutoscalingTester.fixture()
                                        .initialResources(Optional.empty())
                                        .capacity(Capacity.from(min, max))
@@ -219,20 +219,13 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_limits_when_min_equals_max() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = min;
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources);
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        var fixture = AutoscalingTester.fixture().capacity(Capacity.from(min, min)).build();
 
         // deploy
-        tester.deploy(application1, cluster1, 5, 1, resources);
-        tester.clock().advance(Duration.ofDays(1));
-        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
-        assertTrue(tester.autoscale(application1, cluster1, capacity).isEmpty());
+        fixture.tester().clock().advance(Duration.ofDays(1));
+        fixture.applyCpuLoad(0.25, 120);
+        assertTrue(fixture.autoscale().isEmpty());
     }
 
     @Test
