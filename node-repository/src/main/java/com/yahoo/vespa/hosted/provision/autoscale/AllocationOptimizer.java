@@ -67,7 +67,6 @@ public class AllocationOptimizer {
                                                                                limits, target, current, clusterModel));
                 var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits,
                                                                             hosts, nodeRepository);
-
                 if (allocatableResources.isEmpty()) continue;
                 if (bestAllocation.isEmpty() || allocatableResources.get().preferableTo(bestAllocation.get()))
                     bestAllocation = allocatableResources;

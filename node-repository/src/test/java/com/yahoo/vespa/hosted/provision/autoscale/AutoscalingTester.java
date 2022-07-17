@@ -91,13 +91,15 @@ class AutoscalingTester {
         capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
     }
 
+    public static Fixture.Builder fixture() { return new Fixture.Builder(); }
+
     public ProvisioningTester provisioning() { return provisioningTester; }
 
-    public ApplicationId applicationId(String applicationName) {
+    public static ApplicationId applicationId(String applicationName) {
         return ApplicationId.from("tenant1", applicationName, "instance1");
     }
 
-    public ClusterSpec clusterSpec(ClusterSpec.Type type, String clusterId) {
+    public static ClusterSpec clusterSpec(ClusterSpec.Type type, String clusterId) {
         return ClusterSpec.request(type, ClusterSpec.Id.from(clusterId)).vespaVersion("7").build();
     }
 
@@ -128,13 +130,23 @@ class AutoscalingTester {
     }
 
     public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
-        try (Mutex lock = nodeRepository().nodes().lock(application)){
+        try (Mutex lock = nodeRepository().nodes().lock(application)) {
             for (Node node : nodeRepository().nodes().list(Node.State.active).owner(application)) {
                 if (node.allocation().get().membership().retired())
                     nodeRepository().nodes().write(node.with(node.allocation().get().removable(true, true)), lock);
             }
         }
         deploy(application, cluster, resources);
+    }
+
+    public ClusterModel clusterModel(ApplicationId applicationId, ClusterSpec clusterSpec) {
+        var application = nodeRepository().applications().get(applicationId).get();
+        return new ClusterModel(application,
+                                clusterSpec,
+                                application.cluster(clusterSpec.id()).get(),
+                                nodeRepository().nodes().list(Node.State.active).cluster(clusterSpec.id()),
+                                nodeRepository().metricsDb(),
+                                nodeRepository().clock());
     }
 
     /**
@@ -236,6 +248,10 @@ class AutoscalingTester {
         }
     }
 
+    public void addMeasurements(float cpu, float memory, float disk, int count, ApplicationId applicationId)  {
+        addMeasurements(cpu, memory, disk, 0, true, true, count, applicationId);
+    }
+
     public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId)  {
         addMeasurements(cpu, memory, disk, generation, true, true, count, applicationId);
     }
@@ -304,13 +320,21 @@ class AutoscalingTester {
                                              ClusterSpec.Id cluster,
                                              int measurements,
                                              IntFunction<Double> queryRate) {
+        return addQueryRateMeasurements(application, cluster, measurements, Duration.ofMinutes(5), queryRate);
+    }
+
+    public Duration addQueryRateMeasurements(ApplicationId application,
+                                             ClusterSpec.Id cluster,
+                                             int measurements,
+                                             Duration samplingInterval,
+                                             IntFunction<Double> queryRate) {
         Instant initialTime = clock().instant();
         for (int i = 0; i < measurements; i++) {
             nodeMetricsDb().addClusterMetrics(application,
                                               Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
                                                                                         queryRate.apply(i),
                                                                                         0.0)));
-            clock().advance(Duration.ofMinutes(5));
+            clock().advance(samplingInterval);
         }
         return Duration.between(initialTime, clock().instant());
     }

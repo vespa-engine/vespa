@@ -37,8 +37,8 @@ public class AutoscalingIntegrationTest {
                                                                       new MockHttpClient(tester.clock()));
         Autoscaler autoscaler = new Autoscaler(tester.nodeRepository());
 
-        ApplicationId application1 = tester.applicationId("test1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "test");
+        ApplicationId application1 = AutoscalingTester.applicationId("test1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "test");
         Set<String> hostnames = tester.deploy(application1, cluster1, 2, 1, nodes)
                                       .stream().map(HostSpec::hostname)
                                       .collect(Collectors.toSet());

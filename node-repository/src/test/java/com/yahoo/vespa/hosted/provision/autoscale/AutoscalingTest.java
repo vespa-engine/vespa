@@ -44,8 +44,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 1, hostResources);
@@ -89,36 +89,30 @@ public class AutoscalingTest {
                                tester.autoscale(application1, cluster1, capacity));
     }
 
+    /** Using too many resources for a short period is proof we should scale up regardless of the time that takes. */
+    @Test
+    public void test_autoscaling_up_is_fast_TODO() {
+        var fixture = AutoscalingTester.fixture().build();
+        fixture.tester().clock().advance(Duration.ofDays(1)); // TODO: Remove the need for this
+        fixture.applyLoad(1.0, 1.0, 1.0, 120); // TODO: Make this low
+        fixture.tester().assertResources("Scaling up since resource usage is too high",
+                                         10, 1, 9.4, 8.5, 92.6,
+                                         fixture.autoscale());
+    }
+
     /** We prefer fewer nodes for container clusters as (we assume) they all use the same disk and memory */
     @Test
     public void test_autoscaling_single_container_group() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 5, 1, resources);
-        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        ClusterResources scaledResources = tester.assertResources("Scaling up since cpu usage is too high",
-                                                                  7, 1, 2.5,  80.0, 50.5,
-                                                                  tester.autoscale(application1, cluster1, capacity));
-
-        tester.deploy(application1, cluster1, scaledResources);
-        tester.deactivateRetired(application1, cluster1, scaledResources);
-
-        tester.addCpuMeasurements(0.1f, 1f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling down since cpu usage has gone down",
-                               4, 1, 2.5, 68.6, 27.4,
-                               tester.autoscale(application1, cluster1, capacity));
+        var fixture = AutoscalingTester.fixture().clusterType(ClusterSpec.Type.container).build();
+        fixture.applyCpuLoad(0.25f, 120);
+        ClusterResources scaledResources = fixture.tester().assertResources("Scaling up since cpu usage is too high",
+                                                                  5, 1, 3.8,  8.0, 50.5,
+                                                                  fixture.autoscale());
+        fixture.deploy(scaledResources);
+        fixture.applyCpuLoad(0.1f, 120);
+        fixture.tester().assertResources("Scaling down since cpu usage has gone down",
+                                         4, 1, 2.5, 6.4, 25.5,
+                                         fixture.autoscale());
     }
 
     @Test
@@ -126,8 +120,8 @@ public class AutoscalingTest {
         NodeResources hostResources = new NodeResources(3, 100, 100, 1, NodeResources.DiskSpeed.slow);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy with slow
         tester.deploy(application1, cluster1, 5, 1, hostResources);
@@ -158,8 +152,8 @@ public class AutoscalingTest {
         NodeResources hostResources = new NodeResources(3, 100, 100, 1);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // Initial deployment
         NodeResources resources = new NodeResources(1, 10, 10, 1);
@@ -192,8 +186,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 1,
@@ -214,8 +208,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 1, resources);
@@ -233,8 +227,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         NodeResources defaultResources =
                 new CapacityPolicies(tester.nodeRepository()).defaultNodeResources(cluster1, application1, false);
@@ -261,8 +255,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 5, new NodeResources(3.0, 10, 10, 1));
@@ -282,8 +276,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 1, resources);
@@ -308,8 +302,8 @@ public class AutoscalingTest {
         tester.provisioning().makeReadyNodes(5, remoteFlavor.name(), NodeType.host, 8);
         tester.provisioning().activateTenantHosts();
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 3, 1, min.nodeResources());
@@ -331,8 +325,8 @@ public class AutoscalingTest {
         ClusterResources max = min;
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 1, resources);
@@ -352,8 +346,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 2, 1, resources);
@@ -370,8 +364,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 2, 1, resources);
@@ -388,8 +382,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 5, 5, resources);
@@ -409,8 +403,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 6, 2, resources);
@@ -433,8 +427,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 6, 2, resources);
@@ -456,8 +450,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 6, 2, new NodeResources(10, 100, 100, 1));
@@ -478,8 +472,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy
         tester.deploy(application1, cluster1, 6, 1, hostResources.withVcpu(hostResources.vcpu() / 2));
@@ -499,8 +493,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(hostResources);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         tester.deploy(application1, cluster1, 6, 1, hostResources.withVcpu(hostResources.vcpu() / 2));
 
@@ -532,8 +526,8 @@ public class AutoscalingTest {
                                                              hostResources,
                                                              new OnlySubtractingWhenForecastingCalculator(0));
 
-            ApplicationId application1 = tester.applicationId("app1");
-            ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+            ApplicationId application1 = AutoscalingTester.applicationId("app1");
+            ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
             tester.deploy(application1, cluster1, min);
             tester.addMeasurements(1.0f, 1.0f, 0.7f, 0, 1000, application1);
@@ -549,8 +543,8 @@ public class AutoscalingTest {
                                                              hostResources,
                                                              new OnlySubtractingWhenForecastingCalculator(15));
 
-            ApplicationId application1 = tester.applicationId("app1");
-            ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+            ApplicationId application1 = AutoscalingTester.applicationId("app1");
+            ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
             tester.deploy(application1, cluster1, min);
             tester.addMeasurements(1.0f, 1.0f, 0.7f, 0, 1000, application1);
@@ -579,8 +573,8 @@ public class AutoscalingTest {
                                                                   Environment.prod, RegionName.from("us-east")),
                                                          flavors);
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
 
         // deploy (Why 103 Gb memory? See AutoscalingTester.MockHostResourcesCalculator
         tester.deploy(application1, cluster1, 5, 1, new NodeResources(3, 103, 100, 1));
@@ -611,8 +605,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         tester.deploy(application1, cluster1, 5, 1, resources);
         tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
@@ -645,8 +639,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(maxResources.withVcpu(maxResources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         tester.deploy(application1, cluster1, 5, 1, midResources);
         Duration timeAdded = tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0);
@@ -691,8 +685,8 @@ public class AutoscalingTest {
         var capacity = Capacity.from(min, max);
         AutoscalingTester tester = new AutoscalingTester(maxResources.withVcpu(maxResources.vcpu() * 2));
 
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         tester.deploy(application1, cluster1, 5, 1, midResources);
         tester.addCpuMeasurements(0.4f, 1f, 120, application1);
@@ -744,8 +738,8 @@ public class AutoscalingTest {
         Capacity capacity = Capacity.from(min, max, false, true);
 
         AutoscalingTester tester = new AutoscalingTester(Environment.dev, resources.withVcpu(resources.vcpu() * 2));
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         tester.deploy(application1, cluster1, capacity);
         tester.addQueryRateMeasurements(application1, cluster1.id(),
@@ -764,8 +758,8 @@ public class AutoscalingTest {
         Capacity capacity = Capacity.from(min, max, true, true);
 
         AutoscalingTester tester = new AutoscalingTester(Environment.dev, resources.withVcpu(resources.vcpu() * 2));
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         tester.deploy(application1, cluster1, capacity);
         tester.addQueryRateMeasurements(application1, cluster1.id(),
@@ -785,8 +779,8 @@ public class AutoscalingTest {
 
         AutoscalingTester tester = new AutoscalingTester(Environment.dev,
                                                          new NodeResources(10, 16, 100, 2));
-        ApplicationId application1 = tester.applicationId("application1");
-        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        ApplicationId application1 = AutoscalingTester.applicationId("application1");
+        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         tester.deploy(application1, cluster1, capacity);
         tester.addQueryRateMeasurements(application1, cluster1.id(),
