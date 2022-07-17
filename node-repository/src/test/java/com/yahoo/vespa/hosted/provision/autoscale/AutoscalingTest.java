@@ -262,22 +262,13 @@ public class AutoscalingTest {
 
     @Test
     public void suggestions_ignores_limits() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = min;
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 5, 1, resources);
-        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.assertResources("Scaling up since resource usage is too high",
-                               7, 1, 2.5,  80.0, 50.5,
-                               tester.suggest(application1, cluster1.id(), min, max));
+        var fixture = AutoscalingTester.fixture().capacity(Capacity.from(min, min)).build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyCpuLoad(1.0, 120);
+        fixture.tester().assertResources("Scaling up ",
+                                         8, 1, 9.3,  5.7, 57.1,
+                                         fixture.tester().suggest(fixture.application, fixture.cluster.id(), min, min));
     }
 
     @Test
