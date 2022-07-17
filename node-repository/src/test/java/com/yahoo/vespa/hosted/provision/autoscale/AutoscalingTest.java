@@ -307,25 +307,18 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_groupsize_by_cpu_read_dominated() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 6, 2, resources);
-        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
-        tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addLoadMeasurements(application1, cluster1.id(), 10,
-                                   t -> t == 0 ? 20.0 : 10.0,
-                                   t -> 1.0);
-        tester.assertResources("Scaling up since resource usage is too high, changing to 1 group is cheaper",
-                               8, 1, 2.6,  83.3, 52.6,
-                               tester.autoscale(application1, cluster1, capacity));
+        var fixture = AutoscalingTester.fixture()
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        Duration timePassed = fixture.addCpuMeasurements(0.25, 120);
+        fixture.tester().clock().advance(timePassed.negated());
+        fixture.addLoadMeasurements(10, t -> t == 0 ? 20.0 : 10.0, t -> 1.0);
+        fixture.tester().assertResources("Scaling up since resource usage is too high, changing to 1 group is cheaper",
+                                         9, 1, 1.8, 5.0, 50.0,
+                                         fixture.autoscale());
     }
 
     /** Same as above but mostly write traffic, which favors smaller groups */

@@ -10,6 +10,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.function.IntFunction;
 
 /**
  * Fixture for autoscaling tests.
@@ -61,6 +62,14 @@ public class Fixture {
 
     public void deactivateRetired(Capacity capacity) {
         tester.deactivateRetired(application, cluster, capacity);
+    }
+
+    public Duration addCpuMeasurements(double cpuLoad, int measurements) {
+        return tester().addCpuMeasurements((float)cpuLoad, 1.0f, measurements, application);
+    }
+
+    public void addLoadMeasurements(int measurements, IntFunction<Double> queryRate, IntFunction<Double> writeRate) {
+        tester().addLoadMeasurements(application, cluster.id(), measurements, queryRate, writeRate);
     }
 
     public void applyCpuLoad(double cpuLoad, int measurements) {

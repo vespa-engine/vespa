@@ -163,10 +163,11 @@ class AutoscalingTester {
      * @param count the number of measurements
      * @param applicationId the application we're adding measurements for all nodes of
      */
-    public void addCpuMeasurements(float value, float otherResourcesLoad,
-                                   int count, ApplicationId applicationId) {
+    public Duration addCpuMeasurements(float value, float otherResourcesLoad,
+                                       int count, ApplicationId applicationId) {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        Instant initialTime = clock().instant();
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofSeconds(150));
             for (Node node : nodes) {
@@ -182,6 +183,7 @@ class AutoscalingTester {
                                                                                          0.0))));
             }
         }
+        return Duration.between(initialTime, clock().instant());
     }
 
     /**
