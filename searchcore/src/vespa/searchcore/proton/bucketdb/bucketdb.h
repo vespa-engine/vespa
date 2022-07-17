@@ -20,9 +20,7 @@ public:
     typedef storage::spi::BucketChecksum BucketChecksum;
     typedef bucketdb::BucketState BucketState;
     typedef std::map<BucketId, BucketState> Map;
-    typedef Map::iterator MapIterator;
     typedef Map::const_iterator ConstMapIterator;
-    typedef std::pair<MapIterator, bool> InsertResult;
 
 private:
     Map _map;

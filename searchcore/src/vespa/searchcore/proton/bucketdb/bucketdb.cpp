@@ -261,8 +261,8 @@ BucketDB::populateActiveBuckets(BucketId::List buckets)
     BucketState activeState;
     activeState.setActive(true);
     for (const BucketId & bucketId : toAdd) {
-        InsertResult ins(_map.emplace(bucketId, activeState));
-        assert(ins.second);
+        auto [itr, inserted] = _map.emplace(bucketId, activeState);
+        assert(inserted);
     }
     return fixupBuckets;
 }
