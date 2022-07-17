@@ -360,23 +360,18 @@ public class AutoscalingTest {
 
     @Test
     public void autoscaling_avoids_illegal_configurations() {
-        NodeResources hostResources = new NodeResources(6, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
-        ClusterResources max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(hostResources);
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
-
-        // deploy
-        tester.deploy(application1, cluster1, 6, 1, hostResources.withVcpu(hostResources.vcpu() / 2));
-        tester.clock().advance(Duration.ofDays(2));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
-        tester.assertResources("Scaling down",
-                               6, 1, 2.9, 4.0, 95.0,
-                               tester.autoscale(application1, cluster1, capacity));
+        var min = new ClusterResources( 2, 1, new NodeResources(1, 1, 1, 1));
+        var now = new ClusterResources(6, 1, new NodeResources(3, 100, 100, 1));
+        var max = new ClusterResources(20, 1, new NodeResources(100, 1000, 1000, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyMemLoad(0.02, 120);
+        fixture.tester().assertResources("Scaling down",
+                                         6, 1, 3.1, 4.0, 100.0,
+                                         fixture.autoscale());
     }
 
     @Test
