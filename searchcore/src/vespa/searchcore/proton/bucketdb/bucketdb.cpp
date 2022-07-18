@@ -164,13 +164,15 @@ BucketDB::isActiveBucket(const BucketId &bucketId) const
     return (itr != _map.end()) && itr->second.isActive();
 }
 
-void
-BucketDB::getBuckets(BucketId::List &buckets) const
+document::BucketId::List
+BucketDB::getBuckets() const
 {
+    BucketId::List buckets;
     buckets.reserve(_map.size());
     for (const auto & entry : _map) {
         buckets.push_back(entry.first);
     }
+    return buckets;
 }
 
 bool
@@ -261,8 +263,8 @@ BucketDB::populateActiveBuckets(BucketId::List buckets)
     BucketState activeState;
     activeState.setActive(true);
     for (const BucketId & bucketId : toAdd) {
-        InsertResult ins(_map.emplace(bucketId, activeState));
-        assert(ins.second);
+        auto [itr, inserted] = _map.emplace(bucketId, activeState);
+        assert(inserted);
     }
     return fixupBuckets;
 }

@@ -90,8 +90,7 @@ BucketHandler::handleListBuckets(IBucketIdListResultHandler &resultHandler)
     // Called by SPI thread.
     // BucketDBOwner ensures synchronization between SPI thread and
     // master write thread in document database.
-    BucketIdListResult::List buckets;
-    _ready->getBucketDB().takeGuard()->getBuckets(buckets);
+    BucketIdListResult::List buckets = _ready->getBucketDB().takeGuard()->getBuckets();
     resultHandler.handle(BucketIdListResult(std::move(buckets)));
 }
 
