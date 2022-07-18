@@ -120,7 +120,6 @@ public class Fixture {
                                                                new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
                                           new ClusterResources(20, 1,
                                                                new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)));
-
         ApplicationId application = AutoscalingTester.applicationId("application1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));

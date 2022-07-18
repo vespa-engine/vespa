@@ -563,7 +563,9 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_in_dev() {
-        var fixture = AutoscalingTester.fixture().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+        var fixture = AutoscalingTester.fixture()
+                                       .zone(new Zone(Environment.dev, RegionName.from("us-east")))
+                                       .build();
         fixture.tester().clock().advance(Duration.ofDays(2));
         fixture.applyLoad(1.0, 1.0, 1.0, 200);
         assertTrue("Not attempting to scale up because policies dictate we'll only get one node",
@@ -573,43 +575,42 @@ public class AutoscalingTest {
     /** Same setup as test_autoscaling_in_dev(), just with required = true */
     @Test
     public void test_autoscaling_in_dev_with_required_resources() {
-        NodeResources resources = new NodeResources(1, 4, 50, 1);
-        ClusterResources min = new ClusterResources( 1, 1, resources);
-        ClusterResources max = new ClusterResources(3, 1, resources);
-        Capacity capacity = Capacity.from(min, max, true, true);
+        var requiredCapacity =
+                Capacity.from(new ClusterResources(2, 1,
+                                                   new NodeResources(1, 1, 1, 1, NodeResources.DiskSpeed.any)),
+                              new ClusterResources(20, 1,
+                                                   new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any)),
+                              true,
+                              true);
 
-        AutoscalingTester tester = new AutoscalingTester(Environment.dev, resources.withVcpu(resources.vcpu() * 2));
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        tester.deploy(application1, cluster1, capacity);
-        tester.addQueryRateMeasurements(application1, cluster1.id(),
-                                        500, t -> 100.0);
-        tester.addCpuMeasurements(1.0f, 1f, 10, application1);
-        tester.assertResources("We scale up even in dev because resources are required",
-                               3, 1, 1.0,  4, 50,
-                               tester.autoscale(application1, cluster1, capacity));
+        var fixture = AutoscalingTester.fixture()
+                                       .capacity(requiredCapacity)
+                                       .zone(new Zone(Environment.dev, RegionName.from("us-east")))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(1.0, 1.0, 1.0, 200);
+        fixture.tester().assertResources("We scale even in dev because resources are required",
+                                         3, 1, 1.0,  7.7, 83.3,
+                                         fixture.autoscale());
     }
 
     @Test
     public void test_autoscaling_in_dev_with_required_unspecified_resources() {
-        NodeResources resources = NodeResources.unspecified();
-        ClusterResources min = new ClusterResources( 1, 1, resources);
-        ClusterResources max = new ClusterResources(3, 1, resources);
-        Capacity capacity = Capacity.from(min, max, true, true);
+        var requiredCapacity =
+                Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified()),
+                              new ClusterResources(3, 1, NodeResources.unspecified()),
+                              true,
+                              true);
 
-        AutoscalingTester tester = new AutoscalingTester(Environment.dev,
-                                                         new NodeResources(10, 16, 100, 2));
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        tester.deploy(application1, cluster1, capacity);
-        tester.addQueryRateMeasurements(application1, cluster1.id(),
-                                        500, t -> 100.0);
-        tester.addCpuMeasurements(1.0f, 1f, 10, application1);
-        tester.assertResources("We scale up even in dev because resources are required",
-                               3, 1, 1.5,  8, 50,
-                               tester.autoscale(application1, cluster1, capacity));
+        var fixture = AutoscalingTester.fixture()
+                                       .capacity(requiredCapacity)
+                                       .zone(new Zone(Environment.dev, RegionName.from("us-east")))
+                                       .build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(1.0, 1.0, 1.0, 200);
+        fixture.tester().assertResources("We scale even in dev because resources are required",
+                                         3, 1, 1.5,  8, 50,
+                                         fixture.autoscale());
     }
 
     /**
