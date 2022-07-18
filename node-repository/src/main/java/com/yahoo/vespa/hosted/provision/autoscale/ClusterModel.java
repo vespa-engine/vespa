@@ -48,8 +48,8 @@ public class ClusterModel {
     private Double maxQueryGrowthRate = null;
 
     public ClusterModel(Application application,
-                        Cluster cluster,
                         ClusterSpec clusterSpec,
+                        Cluster cluster,
                         NodeList clusterNodes,
                         MetricsDb metricsDb,
                         Clock clock) {
@@ -169,7 +169,6 @@ public class ClusterModel {
             // Assume we have missed timely recording completion if it is longer than 4 days
             totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
         }
-
         if (completedEventCount == 0) { // Use defaults
             if (clusterSpec.isStateful()) return Duration.ofHours(12);
             return Duration.ofMinutes(10);
@@ -210,13 +209,13 @@ public class ClusterModel {
      * as QuestDb is known to temporarily fail during reading of data.
      */
     public static Optional<ClusterModel> create(Application application,
-                                                Cluster cluster,
                                                 ClusterSpec clusterSpec,
+                                                Cluster cluster,
                                                 NodeList clusterNodes,
                                                 MetricsDb metricsDb,
                                                 Clock clock) {
         try {
-            return Optional.of(new ClusterModel(application, cluster, clusterSpec, clusterNodes, metricsDb, clock));
+            return Optional.of(new ClusterModel(application, clusterSpec, cluster, clusterNodes, metricsDb, clock));
         }
         catch (Exception e) {
             log.log(Level.WARNING, "Failed creating a cluster model for " + application + " " + cluster, e);

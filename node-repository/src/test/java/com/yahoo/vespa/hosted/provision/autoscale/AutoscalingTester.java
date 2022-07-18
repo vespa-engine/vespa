@@ -45,7 +45,7 @@ class AutoscalingTester {
 
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
-    private final MockHostResourcesCalculator hostResourcesCalculator;
+    private final HostResourcesCalculator hostResourcesCalculator;
     private final CapacityPolicies capacityPolicies;
 
     /** Creates an autoscaling tester with a single host type ready */
@@ -55,14 +55,6 @@ class AutoscalingTester {
 
     public AutoscalingTester(Environment environment, NodeResources hostResources) {
         this(new Zone(environment, RegionName.from("us-east")), hostResources, null);
-    }
-
-    public AutoscalingTester(Zone zone, NodeResources hostResources) {
-        this(zone, hostResources, null);
-    }
-
-    public AutoscalingTester(Zone zone, NodeResources hostResources, int hostCount) {
-        this(zone, hostResources, null, hostCount);
     }
 
     public AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
@@ -76,7 +68,7 @@ class AutoscalingTester {
     }
 
     public AutoscalingTester(Zone zone, List<Flavor> flavors) {
-        this(zone, flavors, new MockHostResourcesCalculator(zone));
+        this(zone, flavors, new MockHostResourcesCalculator(zone, 3));
     }
 
     private AutoscalingTester(Zone zone, List<Flavor> flavors, HostResourcesCalculator resourcesCalculator) {
@@ -86,18 +78,20 @@ class AutoscalingTester {
                                                              .hostProvisioner(zone.getCloud().dynamicProvisioning() ? new MockHostProvisioner(flavors) : null)
                                                              .build();
 
-        hostResourcesCalculator = new MockHostResourcesCalculator(zone);
+        hostResourcesCalculator = resourcesCalculator;
         autoscaler = new Autoscaler(nodeRepository());
         capacityPolicies = new CapacityPolicies(provisioningTester.nodeRepository());
     }
 
+    public static Fixture.Builder fixture() { return new Fixture.Builder(); }
+
     public ProvisioningTester provisioning() { return provisioningTester; }
 
-    public ApplicationId applicationId(String applicationName) {
+    public static ApplicationId applicationId(String applicationName) {
         return ApplicationId.from("tenant1", applicationName, "instance1");
     }
 
-    public ClusterSpec clusterSpec(ClusterSpec.Type type, String clusterId) {
+    public static ClusterSpec clusterSpec(ClusterSpec.Type type, String clusterId) {
         return ClusterSpec.request(type, ClusterSpec.Id.from(clusterId)).vespaVersion("7").build();
     }
 
@@ -128,13 +122,27 @@ class AutoscalingTester {
     }
 
     public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
-        try (Mutex lock = nodeRepository().nodes().lock(application)){
+        deactivateRetired(application, cluster, Capacity.from(resources));
+    }
+
+    public void deactivateRetired(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
+        try (Mutex lock = nodeRepository().nodes().lock(application)) {
             for (Node node : nodeRepository().nodes().list(Node.State.active).owner(application)) {
                 if (node.allocation().get().membership().retired())
                     nodeRepository().nodes().write(node.with(node.allocation().get().removable(true, true)), lock);
             }
         }
-        deploy(application, cluster, resources);
+        deploy(application, cluster, capacity);
+    }
+
+    public ClusterModel clusterModel(ApplicationId applicationId, ClusterSpec clusterSpec) {
+        var application = nodeRepository().applications().get(applicationId).get();
+        return new ClusterModel(application,
+                                clusterSpec,
+                                application.cluster(clusterSpec.id()).get(),
+                                nodeRepository().nodes().list(Node.State.active).cluster(clusterSpec.id()),
+                                nodeRepository().metricsDb(),
+                                nodeRepository().clock());
     }
 
     /**
@@ -147,10 +155,11 @@ class AutoscalingTester {
      * @param count the number of measurements
      * @param applicationId the application we're adding measurements for all nodes of
      */
-    public void addCpuMeasurements(float value, float otherResourcesLoad,
-                                   int count, ApplicationId applicationId) {
+    public Duration addCpuMeasurements(float value, float otherResourcesLoad,
+                                       int count, ApplicationId applicationId) {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
+        Instant initialTime = clock().instant();
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofSeconds(150));
             for (Node node : nodes) {
@@ -166,6 +175,7 @@ class AutoscalingTester {
                                                                                          0.0))));
             }
         }
+        return Duration.between(initialTime, clock().instant());
     }
 
     /**
@@ -236,8 +246,8 @@ class AutoscalingTester {
         }
     }
 
-    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId)  {
-        addMeasurements(cpu, memory, disk, generation, true, true, count, applicationId);
+    public void addMeasurements(float cpu, float memory, float disk, int count, ApplicationId applicationId)  {
+        addMeasurements(cpu, memory, disk, 0, true, true, count, applicationId);
     }
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, boolean inService, boolean stable,
@@ -285,11 +295,12 @@ class AutoscalingTester {
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
-    public void addLoadMeasurements(ApplicationId application,
+    public Duration addLoadMeasurements(ApplicationId application,
                                     ClusterSpec.Id cluster,
                                     int measurements,
                                     IntFunction<Double> queryRate,
                                     IntFunction<Double> writeRate) {
+        Instant initialTime = clock().instant();
         for (int i = 0; i < measurements; i++) {
             nodeMetricsDb().addClusterMetrics(application,
                                               Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
@@ -297,6 +308,7 @@ class AutoscalingTester {
                                                                                         writeRate.apply(i))));
             clock().advance(Duration.ofMinutes(5));
         }
+        return Duration.between(initialTime, clock().instant());
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
@@ -304,19 +316,23 @@ class AutoscalingTester {
                                              ClusterSpec.Id cluster,
                                              int measurements,
                                              IntFunction<Double> queryRate) {
+        return addQueryRateMeasurements(application, cluster, measurements, Duration.ofMinutes(5), queryRate);
+    }
+
+    public Duration addQueryRateMeasurements(ApplicationId application,
+                                             ClusterSpec.Id cluster,
+                                             int measurements,
+                                             Duration samplingInterval,
+                                             IntFunction<Double> queryRate) {
         Instant initialTime = clock().instant();
         for (int i = 0; i < measurements; i++) {
             nodeMetricsDb().addClusterMetrics(application,
                                               Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
                                                                                         queryRate.apply(i),
                                                                                         0.0)));
-            clock().advance(Duration.ofMinutes(5));
+            clock().advance(samplingInterval);
         }
         return Duration.between(initialTime, clock().instant());
-    }
-
-    public void clearQueryRateMeasurements(ApplicationId application, ClusterSpec.Id cluster) {
-        ((MemoryMetricsDb)nodeMetricsDb()).clearClusterMetrics(application, cluster);
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {
@@ -387,15 +403,17 @@ class AutoscalingTester {
     public static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
         private final Zone zone;
+        private double memoryTax = 0;
 
-        public MockHostResourcesCalculator(Zone zone) {
+        public MockHostResourcesCalculator(Zone zone, double memoryTax) {
             this.zone = zone;
+            this.memoryTax = memoryTax;
         }
 
         @Override
         public NodeResources realResourcesOf(Nodelike node, NodeRepository nodeRepository) {
             if (zone.getCloud().dynamicProvisioning())
-                return node.resources().withMemoryGb(node.resources().memoryGb() - 3);
+                return node.resources().withMemoryGb(node.resources().memoryGb() - memoryTax);
             else
                 return node.resources();
         }
@@ -403,19 +421,19 @@ class AutoscalingTester {
         @Override
         public NodeResources advertisedResourcesOf(Flavor flavor) {
             if (zone.getCloud().dynamicProvisioning())
-                return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + 3);
+                return flavor.resources().withMemoryGb(flavor.resources().memoryGb() + memoryTax);
             else
                 return flavor.resources();
         }
 
         @Override
         public NodeResources requestToReal(NodeResources resources, boolean exclusive) {
-            return resources.withMemoryGb(resources.memoryGb() - 3);
+            return resources.withMemoryGb(resources.memoryGb() - memoryTax);
         }
 
         @Override
         public NodeResources realToRequest(NodeResources resources, boolean exclusive) {
-            return resources.withMemoryGb(resources.memoryGb() + 3);
+            return resources.withMemoryGb(resources.memoryGb() + memoryTax);
         }
 
         @Override

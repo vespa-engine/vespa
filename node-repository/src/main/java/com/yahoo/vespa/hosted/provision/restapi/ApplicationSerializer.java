@@ -62,7 +62,7 @@ public class ApplicationSerializer {
         NodeList nodes = applicationNodes.not().retired().cluster(cluster.id());
         if (nodes.isEmpty()) return;
         ClusterResources currentResources = nodes.toResources();
-        Optional<ClusterModel> clusterModel = ClusterModel.create(application, cluster, nodes.clusterSpec(), nodes, metricsDb, nodeRepository.clock());
+        Optional<ClusterModel> clusterModel = ClusterModel.create(application, nodes.clusterSpec(), cluster, nodes, metricsDb, nodeRepository.clock());
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", nodes.clusterSpec().type().name());
         toSlime(cluster.minResources(), clusterObject.setObject("min"));
