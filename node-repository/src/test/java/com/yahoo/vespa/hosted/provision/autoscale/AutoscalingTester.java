@@ -250,10 +250,6 @@ class AutoscalingTester {
         addMeasurements(cpu, memory, disk, 0, true, true, count, applicationId);
     }
 
-    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId)  {
-        addMeasurements(cpu, memory, disk, generation, true, true, count, applicationId);
-    }
-
     public void addMeasurements(float cpu, float memory, float disk, int generation, boolean inService, boolean stable,
                                 int count, ApplicationId applicationId) {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
