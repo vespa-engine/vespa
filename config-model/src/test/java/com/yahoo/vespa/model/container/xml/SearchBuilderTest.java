@@ -9,6 +9,7 @@ import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.search.GUIHandler;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -39,13 +40,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void gui_search_handler_is_always_included_when_search_is_specified() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>",
-                "  <search />",
-                nodesXml,
-                "</container>");
-
-        createModel(root, clusterElem);
+        createBasicSearchModel();
 
         String discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default").toString();
         assertTrue(discBindingsConfig.contains(GUIHandler.BINDING_PATH));
@@ -190,7 +185,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         VespaModel model = getVespaModelWithMusic(hosts, services);
 
-        ContainerCluster cluster = model.getContainerClusters().get("container");
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
         assertFalse(cluster.getSearchChains().localProviders().isEmpty());
     }
 
@@ -216,19 +211,13 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         VespaModel model = getVespaModelWithMusic(hosts, services);
 
-        ContainerCluster cluster = model.getContainerClusters().get("container");
+        ApplicationContainerCluster cluster = model.getContainerClusters().get("container");
         assertFalse(cluster.getSearchChains().localProviders().isEmpty());
     }
 
     @Test
     public void search_handler_has_dedicated_threadpool() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container id='default' version='1.0'>",
-                "  <search />",
-                nodesXml,
-                "</container>");
-
-        createModel(root, clusterElem);
+        createBasicSearchModel();
 
         Handler searchHandler = getHandler("default", SearchHandler.HANDLER_CLASS);
         assertTrue(searchHandler.getInjectedComponentIds().contains("threadpool@search-handler"));
@@ -261,8 +250,28 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
         assertEquals(10, config.queueSize());
     }
 
+    @Test
+    public void ExecutionFactory_gets_same_chains_config_as_SearchHandler() {
+        createBasicSearchModel();
+        Component<?,?> executionFactory = ((SearchHandler) getComponent("default",SearchHandler.HANDLER_CLASS))
+                .getChildren().get(SearchHandler.EXECUTION_FACTORY_CLASS);
+
+        ChainsConfig executionFactoryChainsConfig = root.getConfig(ChainsConfig.class, executionFactory.getConfigId());
+        assertEquals(chainsConfig(), executionFactoryChainsConfig);
+    }
+
     private VespaModel getVespaModelWithMusic(String hosts, String services) {
         return new VespaModelCreatorWithMockPkg(hosts, services, ApplicationPackageUtils.generateSchemas("music")).create();
+    }
+
+    private void createBasicSearchModel() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <search />",
+                nodesXml,
+                "</container>");
+
+        createModel(root, clusterElem);
     }
 
     private String hostsXml() {

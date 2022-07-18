@@ -6,12 +6,13 @@ import com.yahoo.vespa.defaults.Defaults;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
+ * NOTE: Stable ordering of bundles in config is handled by {@link ContainerCluster#addPlatformBundle(Path)}
+ *
  * @author gjoranv
  * @author Ulf Lilleengen
  */
@@ -31,11 +32,18 @@ public class PlatformBundles {
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
     public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
 
-    public static Set<Path> commonVespaBundles() {
-        var bundles = new LinkedHashSet<Path>();
-        commonVespaBundles.stream().map(PlatformBundles::absoluteBundlePath).forEach(bundles::add);
-        return Collections.unmodifiableSet(bundles);
-    }
+    // Bundles that must be loaded for all container types.
+    public static final Set<Path> commonVespaBundles = Stream.of(
+            "zkfacade",
+            "zookeeper-server"  // TODO: not necessary in metrics-proxy.
+    ).map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
+
+    public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = Stream.of(
+            PlatformBundles.SEARCH_AND_DOCPROC_BUNDLE,
+            "container-search-gui",
+            "docprocs",
+            "linguistics-components"
+    ).map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
 
     public static Path absoluteBundlePath(String fileName) {
         return absoluteBundlePath(fileName, JarSuffix.JAR_WITH_DEPS);
@@ -49,12 +57,6 @@ public class PlatformBundles {
     public static boolean isSearchAndDocprocClass(String className) {
         return searchAndDocprocComponents.contains(className);
     }
-
-    // Bundles that must be loaded for all container types.
-    private static final List<String> commonVespaBundles = List.of(
-            "zkfacade",
-            "zookeeper-server"  // TODO: not necessary in metrics-proxy.
-    );
 
     // This is a hack to allow users to declare components from the search-and-docproc bundle without naming the bundle.
     private static final Set<String> searchAndDocprocComponents = Set.of(
