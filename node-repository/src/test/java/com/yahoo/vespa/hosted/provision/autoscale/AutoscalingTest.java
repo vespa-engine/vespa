@@ -563,21 +563,11 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_in_dev() {
-        NodeResources resources = new NodeResources(1, 4, 50, 1);
-        ClusterResources min = new ClusterResources( 1, 1, resources);
-        ClusterResources max = new ClusterResources(3, 1, resources);
-        Capacity capacity = Capacity.from(min, max, false, true);
-
-        AutoscalingTester tester = new AutoscalingTester(Environment.dev, resources.withVcpu(resources.vcpu() * 2));
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        tester.deploy(application1, cluster1, capacity);
-        tester.addQueryRateMeasurements(application1, cluster1.id(),
-                                        500, t -> 100.0);
-        tester.addCpuMeasurements(1.0f, 1f, 10, application1);
+        var fixture = AutoscalingTester.fixture().zone(new Zone(Environment.dev, RegionName.from("us-east"))).build();
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        fixture.applyLoad(1.0, 1.0, 1.0, 200);
         assertTrue("Not attempting to scale up because policies dictate we'll only get one node",
-                   tester.autoscale(application1, cluster1, capacity).target().isEmpty());
+                   fixture.autoscale().target().isEmpty());
     }
 
     /** Same setup as test_autoscaling_in_dev(), just with required = true */

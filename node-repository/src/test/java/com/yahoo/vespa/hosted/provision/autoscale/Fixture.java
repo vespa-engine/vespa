@@ -126,6 +126,11 @@ public class Fixture {
         Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
         HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone, 0);
 
+        public Fixture.Builder zone(Zone zone) {
+            this.zone = zone;
+            return this;
+        }
+
         public Fixture.Builder clusterType(ClusterSpec.Type type) {
             cluster = ClusterSpec.request(type, cluster.id()).vespaVersion("7").build();
             return this;

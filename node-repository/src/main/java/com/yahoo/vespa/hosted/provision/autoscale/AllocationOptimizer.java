@@ -57,8 +57,8 @@ public class AllocationOptimizer {
 
                 // Adjust for redundancy: Node in group if groups = 1, an extra group if multiple groups
                 // TODO: Make the best choice based on size and redundancy setting instead
-                int nodesAdjustedForRedundancy = target.adjustForRedundancy() ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
-                int groupsAdjustedForRedundancy = target.adjustForRedundancy() ? (groups == 1 ? 1 : groups - 1) : groups;
+                int nodesAdjustedForRedundancy =  target.adjustForRedundancy() && nodes > 1 ? (groups == 1 ? nodes - 1 : nodes - groupSize) : nodes;
+                int groupsAdjustedForRedundancy = target.adjustForRedundancy() && nodes > 1 ? (groups == 1 ? 1 : groups - 1) : groups;
 
                 ClusterResources next = new ClusterResources(nodes,
                                                              groups,
@@ -95,6 +95,7 @@ public class AllocationOptimizer {
             // The fixed cost portion of cpu does not scale with changes to the node count
             double queryCpuPerGroup = fixedCpuCostFraction * target.resources().vcpu() +
                                       (1 - fixedCpuCostFraction) * target.resources().vcpu() * current.groupSize() / groupSize;
+
             double queryCpu = queryCpuPerGroup * current.groups() / groups;
             double writeCpu = target.resources().vcpu() * current.groupSize() / groupSize;
             cpu = clusterModel.queryCpuFraction() * queryCpu + (1 - clusterModel.queryCpuFraction()) * writeCpu;
@@ -106,7 +107,6 @@ public class AllocationOptimizer {
             memory = target.resources().memoryGb();
             disk = target.resources().diskGb();
         }
-
         // Combine the scaled resource values computed here
         // with the currently configured non-scaled values, given in the limits, if any
         NodeResources nonScaled = limits.isEmpty() || limits.min().nodeResources().isUnspecified()
