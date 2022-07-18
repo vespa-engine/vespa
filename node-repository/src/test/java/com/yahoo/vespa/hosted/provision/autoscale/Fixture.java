@@ -46,7 +46,7 @@ public class Fixture {
 
     /** Autoscale within the given capacity. */
     public Autoscaler.Advice autoscale(Capacity capacity) {
-        return tester.autoscale(application, cluster, capacity);
+        return tester().autoscale(application, cluster, capacity);
     }
 
     /** Redeploy with the deployed capacity of this. */
@@ -56,24 +56,28 @@ public class Fixture {
 
     /** Redeploy with the given capacity. */
     public void deploy(Capacity capacity) {
-        tester.deploy(application, cluster, capacity);
+        tester().deploy(application, cluster, capacity);
     }
 
     /** Returns the nodes allocated to the fixture application cluster */
     public NodeList nodes() {
-        return tester.nodeRepository().nodes().list().owner(application).cluster(cluster.id());
+        return tester().nodeRepository().nodes().list().owner(application).cluster(cluster.id());
     }
 
     public void deactivateRetired(Capacity capacity) {
-        tester.deactivateRetired(application, cluster, capacity);
+        tester().deactivateRetired(application, cluster, capacity);
+    }
+
+    public void setScalingDuration(Duration duration) {
+        tester().setScalingDuration(application, cluster.id(), duration);
     }
 
     public Duration addCpuMeasurements(double cpuLoad, int measurements) {
         return tester().addCpuMeasurements((float)cpuLoad, 1.0f, measurements, application);
     }
 
-    public void addLoadMeasurements(int measurements, IntFunction<Double> queryRate, IntFunction<Double> writeRate) {
-        tester().addLoadMeasurements(application, cluster.id(), measurements, queryRate, writeRate);
+    public Duration addLoadMeasurements(int measurements, IntFunction<Double> queryRate, IntFunction<Double> writeRate) {
+        return tester().addLoadMeasurements(application, cluster.id(), measurements, queryRate, writeRate);
     }
 
     public void applyCpuLoad(double cpuLoad, int measurements) {
@@ -105,7 +109,7 @@ public class Fixture {
     }
 
     public void storeReadShare(double currentReadShare, double maxReadShare) {
-        tester.storeReadShare(currentReadShare, maxReadShare, application);
+        tester().storeReadShare(currentReadShare, maxReadShare, application);
     }
 
     public static class Builder {

@@ -299,11 +299,12 @@ class AutoscalingTester {
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
-    public void addLoadMeasurements(ApplicationId application,
+    public Duration addLoadMeasurements(ApplicationId application,
                                     ClusterSpec.Id cluster,
                                     int measurements,
                                     IntFunction<Double> queryRate,
                                     IntFunction<Double> writeRate) {
+        Instant initialTime = clock().instant();
         for (int i = 0; i < measurements; i++) {
             nodeMetricsDb().addClusterMetrics(application,
                                               Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
@@ -311,6 +312,7 @@ class AutoscalingTester {
                                                                                         writeRate.apply(i))));
             clock().advance(Duration.ofMinutes(5));
         }
+        return Duration.between(initialTime, clock().instant());
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
@@ -335,10 +337,6 @@ class AutoscalingTester {
             clock().advance(samplingInterval);
         }
         return Duration.between(initialTime, clock().instant());
-    }
-
-    public void clearQueryRateMeasurements(ApplicationId application, ClusterSpec.Id cluster) {
-        ((MemoryMetricsDb)nodeMetricsDb()).clearClusterMetrics(application, cluster);
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec cluster, Capacity capacity) {

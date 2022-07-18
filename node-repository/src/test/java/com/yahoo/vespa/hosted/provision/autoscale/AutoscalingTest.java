@@ -478,48 +478,46 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_considers_growth_rate() {
-        NodeResources minResources = new NodeResources( 1, 100, 100, 1);
-        NodeResources midResources = new NodeResources( 5, 100, 100, 1);
-        NodeResources maxResources = new NodeResources(10, 100, 100, 1);
-        ClusterResources min = new ClusterResources(5, 1, minResources);
-        ClusterResources max = new ClusterResources(5, 1, maxResources);
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(maxResources.withVcpu(maxResources.vcpu() * 2));
+        var min = new ClusterResources(5, 1, new NodeResources( 1, 100, 100, 1));
+        var now = new ClusterResources(5, 1, new NodeResources( 5, 100, 100, 1));
+        var max = new ClusterResources(5, 1, new NodeResources(10, 100, 100, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .initialResources(Optional.of(now))
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
 
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
-        tester.deploy(application1, cluster1, 5, 1, midResources);
-        Duration timeAdded = tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0);
-        tester.clock().advance(timeAdded.negated());
-        tester.addCpuMeasurements(0.25f, 1f, 200, application1);
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        Duration timeAdded = fixture.addLoadMeasurements(100, t -> t == 0 ? 20.0 : 10.0, t -> 0.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.25, 200);
 
         // (no query rate data)
-        tester.assertResources("Scale up since we assume we need 2x cpu for growth when no data scaling time data",
-                               5, 1, 6.3,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().assertResources("Scale up since we assume we need 2x cpu for growth when no data scaling time data",
+                                         5, 1, 6.4,  100, 100,
+                                         fixture.autoscale());
 
-        tester.setScalingDuration(application1, cluster1.id(), Duration.ofMinutes(5));
-        timeAdded = tester.addQueryRateMeasurements(application1, cluster1.id(),
-                                                    100,
-                                                    t -> 10.0 + (t < 50 ? t : 100 - t));
-        tester.clock().advance(timeAdded.negated());
-        tester.addCpuMeasurements(0.25f, 1f, 200, application1);
-        tester.assertResources("Scale down since observed growth is slower than scaling time",
-                               5, 1, 3.4,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.setScalingDuration(Duration.ofMinutes(5));
 
-        tester.clearQueryRateMeasurements(application1, cluster1.id());
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        timeAdded = fixture.addLoadMeasurements(100, t -> 10.0 + (t < 50 ? t : 100 - t), t -> 0.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.25, 200);
+        fixture.tester().assertResources("Scale down since observed growth is slower than scaling time",
+                                         5, 1, 5.6,  100, 100,
+                                         fixture.autoscale());
 
-        tester.setScalingDuration(application1, cluster1.id(), Duration.ofMinutes(60));
-        timeAdded = tester.addQueryRateMeasurements(application1, cluster1.id(),
-                                                    100,
-                                                    t -> 10.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)));
-        tester.clock().advance(timeAdded.negated());
-        tester.addCpuMeasurements(0.25f, 1f, 200, application1);
-        tester.assertResources("Scale up since observed growth is faster than scaling time",
-                               5, 1, 10.0,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.setScalingDuration(Duration.ofMinutes(60));
+
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        timeAdded = fixture.addLoadMeasurements(100,
+                                                t -> 10.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)),
+                                                t -> 0.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.25, 200);
+        fixture.tester().assertResources("Scale up since observed growth is faster than scaling time",
+                                         5, 1, 6.6,  100, 100,
+                                         fixture.autoscale());
     }
 
     @Test
