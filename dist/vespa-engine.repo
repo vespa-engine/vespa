@@ -1,8 +1,10 @@
-[vespa-engine-stable]
-name=vespa-engine-stable
-baseurl=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/epel-7-$basearch/
+[copr:copr.fedorainfracloud.org:group_vespa:vespa]
+name=Copr repo for vespa owned by @vespa
+baseurl=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/centos-stream-8-$basearch/
 type=rpm-md
+skip_if_unavailable=True
 gpgcheck=1
 gpgkey=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/pubkey.gpg
 repo_gpgcheck=0
 enabled=1
+enabled_metadata=1
