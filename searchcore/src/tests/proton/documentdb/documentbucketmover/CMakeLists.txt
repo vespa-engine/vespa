@@ -17,18 +17,6 @@ vespa_add_executable(searchcore_documentbucketmover_test_app TEST
 )
 vespa_add_test(NAME searchcore_documentbucketmover_test_app COMMAND searchcore_documentbucketmover_test_app)
 
-vespa_add_executable(searchcore_scaniterator_test_app TEST
-    SOURCES
-    scaniterator_test.cpp
-    DEPENDS
-    searchcore_bucketmover_test
-    searchcore_server
-    searchcore_test
-    searchcore_feedoperation
-    GTest::GTest
-)
-vespa_add_test(NAME searchcore_scaniterator_test_app COMMAND searchcore_scaniterator_test_app)
-
 vespa_add_executable(searchcore_documentmover_test_app TEST
     SOURCES
     documentmover_test.cpp

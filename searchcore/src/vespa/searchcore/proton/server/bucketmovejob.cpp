@@ -9,6 +9,7 @@
 #include "document_db_maintenance_config.h"
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_notifier.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
@@ -141,7 +142,7 @@ BucketMoveJob::create(const std::shared_ptr<IBucketStateCalculator> &calc,
 }
 
 BucketMoveJob::NeedResult
-BucketMoveJob::needMove(const ScanIterator &itr) const {
+BucketMoveJob::needMove(BucketId bucketId, const BucketStateWrapper &itr) const {
     NeedResult noMove(false, false);
     const bool hasReadyDocs = itr.hasReadyBucketDocs();
     const bool hasNotReadyDocs = itr.hasNotReadyBucketDocs();
@@ -154,13 +155,13 @@ BucketMoveJob::needMove(const ScanIterator &itr) const {
     if (!_calc || (_calc->nodeRetired() && !isActive)) {
         return noMove;
     }
-    const Trinary shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, itr.getBucket()));
+    const Trinary shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, bucketId));
     if (shouldBeReady == Trinary::Undefined) {
         return noMove;
     }
     const bool wantReady = (shouldBeReady == Trinary::True) || isActive;
     LOG(spam, "needMove(): bucket(%s), shouldBeReady(%s), active(%s)",
-        itr.getBucket().toString().c_str(), toStr(shouldBeReady), toStr(isActive));
+        bucketId.toString().c_str(), toStr(shouldBeReady), toStr(isActive));
     if (wantReady) {
         if (!hasNotReadyDocs) {
             return noMove; // No notready bucket to make ready
@@ -301,8 +302,7 @@ BucketMoveJob::considerBucket(const bucketdb::Guard & guard, BucketId bucket) {
 void
 BucketMoveJob::reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket) {
     assert( ! _bucketsInFlight.contains(bucket));
-    ScanIterator itr(guard, bucket);
-    auto [mustMove, wantReady] = needMove(itr);
+    auto [mustMove, wantReady] = needMove(bucket, guard->get(bucket));
     if (mustMove) {
         _buckets2Move[bucket] = wantReady;
     } else {
@@ -322,10 +322,11 @@ BucketMoveJob::BucketMoveSet
 BucketMoveJob::computeBuckets2Move(const bucketdb::Guard & guard)
 {
     BucketMoveJob::BucketMoveSet toMove;
-    for (ScanIterator itr(guard, BucketId()); itr.valid(); ++itr) {
-        auto [mustMove, wantReady] = needMove(itr);
+    BucketId::List buckets = guard->getBuckets();
+    for (BucketId bucketId : buckets) {
+        auto [mustMove, wantReady] = needMove(bucketId, guard->get(bucketId));
         if (mustMove) {
-            toMove[itr.getBucket()] = wantReady;
+            toMove[bucketId] = wantReady;
         }
     }
     return toMove;
