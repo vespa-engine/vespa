@@ -5,8 +5,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 
 import java.time.Duration;
 import java.util.Optional;
@@ -28,7 +32,7 @@ public class Fixture {
         application = builder.application;
         cluster = builder.cluster;
         capacity = builder.capacity;
-        tester = new AutoscalingTester(builder.hostResources);
+        tester = new AutoscalingTester(builder.zone, builder.hostResources, builder.resourceCalculator);
         var deployCapacity = initialResources.isPresent() ? Capacity.from(initialResources.get()) : capacity;
         tester.deploy(builder.application, builder.cluster, deployCapacity);
     }
@@ -111,6 +115,8 @@ public class Fixture {
 
         ApplicationId application = AutoscalingTester.applicationId("application1");
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster1")).vespaVersion("7").build();
+        Zone zone = new Zone(Environment.prod, RegionName.from("us-east"));
+        HostResourcesCalculator resourceCalculator = new AutoscalingTester.MockHostResourcesCalculator(zone, 0);
 
         public Fixture.Builder clusterType(ClusterSpec.Type type) {
             cluster = ClusterSpec.request(type, cluster.id()).vespaVersion("7").build();
@@ -129,6 +135,11 @@ public class Fixture {
 
         public Fixture.Builder capacity(Capacity capacity) {
             this.capacity = capacity;
+            return this;
+        }
+
+        public Fixture.Builder resourceCalculator(HostResourcesCalculator resourceCalculator) {
+            this.resourceCalculator = resourceCalculator;
             return this;
         }
 

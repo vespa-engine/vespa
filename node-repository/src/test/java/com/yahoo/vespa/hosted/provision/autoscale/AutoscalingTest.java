@@ -388,43 +388,24 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_considers_real_resources() {
-        NodeResources hostResources = new NodeResources(60, 100, 1000, 10);
-        ClusterResources min = new ClusterResources(2, 1, new NodeResources( 2,  20,  200, 1));
-        ClusterResources max = new ClusterResources(4, 1, new NodeResources(60, 100, 1000, 1));
-        var capacity = Capacity.from(min, max);
-
         { // No memory tax
-            AutoscalingTester tester = new AutoscalingTester(new Zone(Environment.prod, RegionName.from("us-east")),
-                                                             hostResources,
-                                                             new OnlySubtractingWhenForecastingCalculator(0));
-
-            ApplicationId application1 = AutoscalingTester.applicationId("app1");
-            ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
-
-            tester.deploy(application1, cluster1, min);
-            tester.addMeasurements(1.0f, 1.0f, 0.7f, 0, 1000, application1);
-            tester.clock().advance(Duration.ofMinutes(-10 * 5));
-            tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-            tester.assertResources("Scaling up",
-                                   4, 1, 6.7, 20.5, 200,
-                                   tester.autoscale(application1, cluster1, capacity));
+            var fixture = AutoscalingTester.fixture()
+                                           .resourceCalculator(new OnlySubtractingWhenForecastingCalculator(0))
+                                           .build();
+            fixture.applyLoad(1.0, 1.0, 0.7, 1000);
+            fixture.tester().assertResources("Scaling up",
+                                             9, 1, 5.0, 9.6, 72.9,
+                                             fixture.autoscale());
         }
 
-        { // 15 Gb memory tax
-            AutoscalingTester tester = new AutoscalingTester(new Zone(Environment.prod, RegionName.from("us-east")),
-                                                             hostResources,
-                                                             new OnlySubtractingWhenForecastingCalculator(15));
-
-            ApplicationId application1 = AutoscalingTester.applicationId("app1");
-            ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.content, "cluster1");
-
-            tester.deploy(application1, cluster1, min);
-            tester.addMeasurements(1.0f, 1.0f, 0.7f, 0, 1000, application1);
-            tester.clock().advance(Duration.ofMinutes(-10 * 5));
-            tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-            tester.assertResources("Scaling up",
-                                   4, 1, 6.7, 35.5, 200,
-                                   tester.autoscale(application1, cluster1, capacity));
+        {
+            var fixture = AutoscalingTester.fixture()
+                                           .resourceCalculator(new OnlySubtractingWhenForecastingCalculator(3))
+                                           .build();
+            fixture.applyLoad(1.0, 1.0, 0.7, 1000);
+            fixture.tester().assertResources("With 3Gb memory tax, we scale up memory more",
+                                             7, 1, 6.4, 15.8, 97.2,
+                                             fixture.autoscale());
         }
     }
 
