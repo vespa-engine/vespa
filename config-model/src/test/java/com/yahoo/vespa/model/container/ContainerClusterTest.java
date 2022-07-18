@@ -32,6 +32,8 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import org.junit.Test;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -79,6 +81,26 @@ public class ContainerClusterTest {
     }
 
     @Test
+    public void search_and_docproc_bundles_are_not_installed_for_plain_application_clusters() {
+        ApplicationContainerCluster cluster = newContainerCluster();
+
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
+        cluster.getConfig(bundleBuilder);
+        List<Path> installedBundles = bundleBuilder.build().bundlePaths().stream().map(Paths::get).toList();
+        installedBundles.forEach(bundle -> assertFalse(PlatformBundles.SEARCH_AND_DOCPROC_BUNDLES.contains(bundle)));
+    }
+
+    @Test
+    public void search_and_docproc_bundles_are_installed_for_application_clusters_with_search() {
+        ApplicationContainerCluster cluster = createContainerCluster(createRoot(false), false, null);
+
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
+        cluster.getConfig(bundleBuilder);
+        List<Path> installedBundles = bundleBuilder.build().bundlePaths().stream().map(Paths::get).toList();
+        PlatformBundles.SEARCH_AND_DOCPROC_BUNDLES.forEach(bundle -> assertTrue(installedBundles.contains(bundle)));
+    }
+
+    @Test
     public void requireThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true))
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
@@ -96,6 +118,7 @@ public class ContainerClusterTest {
     private ApplicationContainerCluster createContainerCluster(MockRoot root) {
         return createContainerCluster(root, false, null);
     }
+
     private ApplicationContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", root.getDeployState());
         if (isCombinedCluster)
@@ -104,13 +127,16 @@ public class ContainerClusterTest {
         cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
         return cluster;
     }
+
     private ClusterControllerContainerCluster createClusterControllerCluster(MockRoot root) {
         return new ClusterControllerContainerCluster(root, "container0", "container1", root.getDeployState());
     }
+
     private MockRoot createRoot(boolean isHosted) {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
         return createRoot(state);
     }
+
     private MockRoot createRoot(DeployState deployState) {
         return new MockRoot("foo", deployState);
     }
@@ -119,7 +145,7 @@ public class ContainerClusterTest {
                                                             boolean isCombinedCluster,
                                                             Integer explicitMemoryPercentage,
                                                             int expectedMemoryPercentage) {
-        ContainerCluster<?> cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
+        ApplicationContainerCluster cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
@@ -194,6 +220,17 @@ public class ContainerClusterTest {
     }
 
     @Test
+    public void search_and_docproc_bundles_are_not_installed_for_cluster_controllers() {
+        MockRoot root = createRoot(false);
+        ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
+
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
+        cluster.getConfig(bundleBuilder);
+        List<Path> installedBundles = bundleBuilder.build().bundlePaths().stream().map(Paths::get).toList();
+        installedBundles.forEach(bundle -> assertFalse(PlatformBundles.SEARCH_AND_DOCPROC_BUNDLES.contains(bundle)));
+    }
+
+    @Test
     public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
@@ -235,7 +272,7 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatWeCanHandleNull() {
+    public void requireThatWeCanHandleNullJvmOptions() {
         MockRoot root = createRoot(false);
         ApplicationContainerCluster cluster = createContainerCluster(root);
         addContainer(root, cluster, "c1", "host-c1");
