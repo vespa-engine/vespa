@@ -5,7 +5,7 @@
 #include "bucketstate.h"
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/persistence/spi/result.h>
-#include <map>
+#include <vespa/vespalib/stllike/hash_map.h>
 
 namespace proton::bucketdb { class RemoveBatchEntry; }
 
@@ -19,7 +19,7 @@ public:
     typedef storage::spi::Timestamp Timestamp;
     typedef storage::spi::BucketChecksum BucketChecksum;
     typedef bucketdb::BucketState BucketState;
-    typedef std::map<BucketId, BucketState> Map;
+    typedef vespalib::hash_map<BucketId, BucketState, BucketId::hash> Map;
 
 private:
     Map _map;

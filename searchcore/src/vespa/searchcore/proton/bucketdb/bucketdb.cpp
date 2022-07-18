@@ -2,6 +2,7 @@
 
 #include "bucketdb.h"
 #include "remove_batch_entry.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <cassert>
 #include <algorithm>
 #include <optional>
@@ -35,10 +36,7 @@ bucketdb::BucketState *
 BucketDB::getBucketStatePtr(BucketId bucket)
 {
     auto it(_map.find(bucket));
-    if (it != _map.end()) {
-        return &it->second;
-    }
-    return nullptr;
+    return (it != _map.end()) ? &it->second : nullptr;
 }
 
 void
@@ -102,10 +100,7 @@ bucketdb::BucketState
 BucketDB::get(BucketId bucketId) const
 {
     auto itr = _map.find(bucketId);
-    if (itr != _map.end()) {
-        return itr->second;
-    }
-    return BucketState();
+    return (itr != _map.end()) ? itr->second : BucketState();
 }
 
 void
@@ -143,11 +138,7 @@ BucketDB::cachedGetBucketInfo(BucketId bucketId) const
     if (isCachedBucket(bucketId)) {
         return _cachedBucketState;
     }
-    auto itr = _map.find(bucketId);
-    if (itr != _map.end()) {
-        return itr->second;
-    }
-    return BucketState();
+    return get(bucketId);
 }
 
 bool
@@ -172,6 +163,7 @@ BucketDB::getBuckets() const
     for (const auto & entry : _map) {
         buckets.push_back(entry.first);
     }
+    std::sort(buckets.begin(), buckets.end());
     return buckets;
 }
 
@@ -231,11 +223,13 @@ document::BucketId::List
 BucketDB::getActiveBuckets() const
 {
     BucketId::List buckets;
+    buckets.reserve(_map.size());
     for (const auto & entry : _map) {
         if (entry.second.isActive()) {
             buckets.push_back(entry.first);
         }
     }
+    std::sort(buckets.begin(), buckets.end());
     return buckets;
 }
 
@@ -247,11 +241,12 @@ BucketDB::populateActiveBuckets(BucketId::List buckets)
     std::sort(buckets.begin(), buckets.end());
     auto si = buckets.begin();
     auto se = buckets.end();
-    for (const auto & entry : _map) {
-        for (; si != se && !(entry.first < *si); ++si) {
-            if (*si < entry.first) {
+    BucketId::List currentBuckets = getBuckets();
+    for (BucketId bucketId : currentBuckets) {
+        for (; si != se && !(bucketId < *si); ++si) {
+            if (*si < bucketId) {
                 toAdd.push_back(*si);
-            } else if (!entry.second.isActive()) {
+            } else if (!isActiveBucket(bucketId)) {
                 fixupBuckets.push_back(*si);
                 setBucketState(*si, true);
             }
@@ -263,7 +258,7 @@ BucketDB::populateActiveBuckets(BucketId::List buckets)
     BucketState activeState;
     activeState.setActive(true);
     for (BucketId  bucketId : toAdd) {
-        auto [itr, inserted] = _map.emplace(bucketId, activeState);
+        auto [itr, inserted] = _map.insert(std::make_pair(bucketId, activeState));
         assert(inserted);
     }
     return fixupBuckets;
