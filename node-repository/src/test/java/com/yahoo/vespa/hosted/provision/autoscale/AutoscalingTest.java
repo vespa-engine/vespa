@@ -478,37 +478,27 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_considers_growth_rate() {
-        var min = new ClusterResources(5, 1, new NodeResources( 1, 100, 100, 1));
-        var now = new ClusterResources(5, 1, new NodeResources( 5, 100, 100, 1));
-        var max = new ClusterResources(5, 1, new NodeResources(10, 100, 100, 1));
-        var fixture = AutoscalingTester.fixture()
-                                       .initialResources(Optional.of(now))
-                                       .capacity(Capacity.from(min, max))
-                                       .build();
-
+        var fixture = AutoscalingTester.fixture().build();
 
         fixture.tester().clock().advance(Duration.ofDays(2));
         Duration timeAdded = fixture.addLoadMeasurements(100, t -> t == 0 ? 20.0 : 10.0, t -> 0.0);
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.addCpuMeasurements(0.25, 200);
 
-        // (no query rate data)
         fixture.tester().assertResources("Scale up since we assume we need 2x cpu for growth when no data scaling time data",
-                                         5, 1, 6.4,  100, 100,
+                                         9, 1, 2.1,  5, 50,
                                          fixture.autoscale());
 
         fixture.setScalingDuration(Duration.ofMinutes(5));
-
         fixture.tester().clock().advance(Duration.ofDays(2));
         timeAdded = fixture.addLoadMeasurements(100, t -> 10.0 + (t < 50 ? t : 100 - t), t -> 0.0);
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.addCpuMeasurements(0.25, 200);
         fixture.tester().assertResources("Scale down since observed growth is slower than scaling time",
-                                         5, 1, 5.6,  100, 100,
+                                         9, 1, 1.8,  5, 50,
                                          fixture.autoscale());
 
         fixture.setScalingDuration(Duration.ofMinutes(60));
-
         fixture.tester().clock().advance(Duration.ofDays(2));
         timeAdded = fixture.addLoadMeasurements(100,
                                                 t -> 10.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)),
@@ -516,63 +506,59 @@ public class AutoscalingTest {
         fixture.tester.clock().advance(timeAdded.negated());
         fixture.addCpuMeasurements(0.25, 200);
         fixture.tester().assertResources("Scale up since observed growth is faster than scaling time",
-                                         5, 1, 6.6,  100, 100,
+                                         9, 1, 2.1,  5, 50,
                                          fixture.autoscale());
     }
 
     @Test
     public void test_autoscaling_considers_query_vs_write_rate() {
-        NodeResources minResources = new NodeResources( 1, 100, 100, 1);
-        NodeResources midResources = new NodeResources( 5, 100, 100, 1);
-        NodeResources maxResources = new NodeResources(10, 100, 100, 1);
-        ClusterResources min = new ClusterResources(5, 1, minResources);
-        ClusterResources max = new ClusterResources(5, 1, maxResources);
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(maxResources.withVcpu(maxResources.vcpu() * 2));
+        var fixture = AutoscalingTester.fixture().build();
 
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        tester.deploy(application1, cluster1, 5, 1, midResources);
-        tester.addCpuMeasurements(0.4f, 1f, 120, application1);
+        fixture.addCpuMeasurements(0.4, 220);
 
         // Why twice the query rate at time = 0?
         // This makes headroom for queries doubling, which we want to observe the effect of here
 
-        tester.addCpuMeasurements(0.4f, 1f, 100, application1);
-        tester.clock().advance(Duration.ofMinutes(-100 * 5));
-        tester.addLoadMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0, t -> 10.0);
-        tester.assertResources("Query and write load is equal -> scale up somewhat",
-                               5, 1, 7.3,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        var timeAdded = fixture.addLoadMeasurements(100, t -> t == 0 ? 20.0 : 10.0, t -> 10.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.4, 200);
+        fixture.tester.assertResources("Query and write load is equal -> scale up somewhat",
+                                       9, 1, 2.4,  5, 50,
+                                       fixture.autoscale());
 
-        tester.addCpuMeasurements(0.4f, 1f, 100, application1);
-        tester.clock().advance(Duration.ofMinutes(-100 * 5));
-        tester.addLoadMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 80.0 : 40.0, t -> 10.0);
-        tester.assertResources("Query load is 4x write load -> scale up more",
-                               5, 1, 9.5,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        timeAdded = fixture.addLoadMeasurements(100, t -> t == 0 ? 80.0 : 40.0, t -> 10.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.4, 200);
+        // TODO: Ackhually, we scale down here - why?
+        fixture.tester().assertResources("Query load is 4x write load -> scale up more",
+                                         9, 1, 2.1,  5, 50,
+                                         fixture.autoscale());
 
-        tester.addCpuMeasurements(0.3f, 1f, 100, application1);
-        tester.clock().advance(Duration.ofMinutes(-100 * 5));
-        tester.addLoadMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0, t -> 100.0);
-        tester.assertResources("Write load is 10x query load -> scale down",
-                               5, 1, 2.9,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        timeAdded = fixture.addLoadMeasurements(100, t -> t == 0 ? 20.0 : 10.0, t -> 100.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.4, 200);
+        fixture.tester().assertResources("Write load is 10x query load -> scale down",
+                                         9, 1, 1.1,  5, 50,
+                                         fixture.autoscale());
 
-        tester.addCpuMeasurements(0.4f, 1f, 100, application1);
-        tester.clock().advance(Duration.ofMinutes(-100 * 5));
-        tester.addLoadMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0, t-> 0.0);
-        tester.assertResources("Query only -> largest possible",
-                               5, 1, 10.0,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        timeAdded = fixture.addLoadMeasurements(100, t -> t == 0 ? 20.0 : 10.0, t-> 0.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.4, 200);
+        fixture.tester().assertResources("Query only -> largest possible",
+                                         8, 1, 4.9,  5.7, 57.1,
+                                         fixture.autoscale());
 
-        tester.addCpuMeasurements(0.4f, 1f, 100, application1);
-        tester.clock().advance(Duration.ofMinutes(-100 * 5));
-        tester.addLoadMeasurements(application1, cluster1.id(), 100, t ->  0.0, t -> 10.0);
-        tester.assertResources("Write only -> smallest possible",
-                               5, 1, 2.1,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().clock().advance(Duration.ofDays(2));
+        timeAdded = fixture.addLoadMeasurements(100, t ->  0.0, t -> 10.0);
+        fixture.tester.clock().advance(timeAdded.negated());
+        fixture.addCpuMeasurements(0.4, 200);
+        fixture.tester().assertResources("Write only -> smallest possible",
+                                         6, 1, 1.0,  8, 80,
+                                         fixture.autoscale());
     }
 
     @Test
