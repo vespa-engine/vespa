@@ -104,6 +104,10 @@ public class Fixture {
         tester().addQueryRateMeasurements(application, cluster.id(), measurements, samplingInterval, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
     }
 
+    public void storeReadShare(double currentReadShare, double maxReadShare) {
+        tester.storeReadShare(currentReadShare, maxReadShare, application);
+    }
+
     public static class Builder {
 
         NodeResources hostResources = new NodeResources(100, 100, 100, 1);

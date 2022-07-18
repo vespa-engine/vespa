@@ -452,34 +452,28 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_considers_read_share() {
-        NodeResources resources = new NodeResources(3, 100, 100, 1);
-        ClusterResources min = new ClusterResources( 1, 1, resources);
-        ClusterResources max = new ClusterResources(10, 1, resources);
-        var capacity = Capacity.from(min, max);
-        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
-
-        ApplicationId application1 = AutoscalingTester.applicationId("application1");
-        ClusterSpec cluster1 = AutoscalingTester.clusterSpec(ClusterSpec.Type.container, "cluster1");
-
-        tester.deploy(application1, cluster1, 5, 1, resources);
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
-        tester.clock().advance(Duration.ofMinutes(-100 * 5));
-        tester.addCpuMeasurements(0.25f, 1f, 100, application1);
+        var min = new ClusterResources( 1, 1, new NodeResources(3, 100, 100, 1));
+        var max = new ClusterResources(10, 1, new NodeResources(3, 100, 100, 1));
+        var fixture = AutoscalingTester.fixture()
+                                       .capacity(Capacity.from(min, max))
+                                       .build();
+        fixture.tester.clock().advance(Duration.ofDays(1));
+        fixture.applyCpuLoad(0.25, 120);
 
         // (no read share stored)
-        tester.assertResources("Advice to scale up since we set aside for bcp by default",
-                               7, 1, 3,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.tester().assertResources("Advice to scale up since we set aside for bcp by default",
+                                         7, 1, 3,  100, 100,
+                                         fixture.autoscale());
 
-        tester.storeReadShare(0.25, 0.5, application1);
-        tester.assertResources("Half of global share is the same as the default assumption used above",
-                               7, 1, 3,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.storeReadShare(0.25, 0.5);
+        fixture.tester().assertResources("Half of global share is the same as the default assumption used above",
+                                         7, 1, 3,  100, 100,
+                                         fixture.autoscale());
 
-        tester.storeReadShare(0.5, 0.5, application1);
-        tester.assertResources("Advice to scale down since we don't need room for bcp",
-                               4, 1, 3,  100, 100,
-                               tester.autoscale(application1, cluster1, capacity));
+        fixture.storeReadShare(0.5, 0.5);
+        fixture.tester().assertResources("Advice to scale down since we don't need room for bcp",
+                                         6, 1, 3,  100, 100,
+                                         fixture.autoscale());
     }
 
     @Test

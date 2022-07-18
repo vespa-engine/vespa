@@ -57,14 +57,6 @@ class AutoscalingTester {
         this(new Zone(environment, RegionName.from("us-east")), hostResources, null);
     }
 
-    public AutoscalingTester(Zone zone, NodeResources hostResources) {
-        this(zone, hostResources, null);
-    }
-
-    public AutoscalingTester(Zone zone, NodeResources hostResources, int hostCount) {
-        this(zone, hostResources, null, hostCount);
-    }
-
     public AutoscalingTester(Zone zone, NodeResources hostResources, HostResourcesCalculator resourcesCalculator) {
         this(zone, hostResources, resourcesCalculator, 20);
     }
