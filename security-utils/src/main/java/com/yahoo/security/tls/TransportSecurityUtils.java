@@ -18,6 +18,7 @@ public class TransportSecurityUtils {
     public static final String CONFIG_FILE_ENVIRONMENT_VARIABLE = "VESPA_TLS_CONFIG_FILE";
     public static final String INSECURE_MIXED_MODE_ENVIRONMENT_VARIABLE = "VESPA_TLS_INSECURE_MIXED_MODE";
     public static final String INSECURE_AUTHORIZATION_MODE_ENVIRONMENT_VARIABLE = "VESPA_TLS_INSECURE_AUTHORIZATION_MODE";
+    public static final String CAPABILITIES_ENV_VAR = "VESPA_TLS_CAPABILITIES_ENFORCEMENT_MODE";
 
     private TransportSecurityUtils() {}
 
@@ -47,6 +48,12 @@ public class TransportSecurityUtils {
         return getEnvironmentVariable(envVariables, INSECURE_AUTHORIZATION_MODE_ENVIRONMENT_VARIABLE)
                 .map(AuthorizationMode::fromConfigValue)
                 .orElse(AuthorizationMode.defaultValue());
+    }
+
+    public static CapabilityMode getCapabilityMode() {
+        return getEnvironmentVariable(System.getenv(), CAPABILITIES_ENV_VAR)
+                .map(CapabilityMode::fromConfigValue)
+                .orElse(CapabilityMode.defaultValue());
     }
 
     public static Optional<Path> getConfigFile() {
