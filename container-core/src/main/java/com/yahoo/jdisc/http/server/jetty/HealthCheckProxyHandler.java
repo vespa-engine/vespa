@@ -6,7 +6,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.security.tls.TrustAllX509TrustManager;
+import com.yahoo.security.TrustAllX509TrustManager;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory;
 import org.eclipse.jetty.client.api.ContentResponse;

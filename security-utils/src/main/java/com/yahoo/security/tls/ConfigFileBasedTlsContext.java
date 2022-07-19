@@ -4,6 +4,8 @@ package com.yahoo.security.tls;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.MutableX509KeyManager;
+import com.yahoo.security.MutableX509TrustManager;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
 

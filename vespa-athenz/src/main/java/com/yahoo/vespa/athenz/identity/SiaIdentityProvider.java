@@ -5,7 +5,7 @@ import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateWithKey;
-import com.yahoo.security.tls.AutoReloadingX509KeyManager;
+import com.yahoo.security.AutoReloadingX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
