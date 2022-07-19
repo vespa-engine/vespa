@@ -8,9 +8,13 @@ import java.util.Set;
  */
 public record AuthorizedPeers(Set<PeerPolicy> peerPolicies) {
 
+    private static final AuthorizedPeers EMPTY = new AuthorizedPeers(Set.of());
+
     public AuthorizedPeers {
         peerPolicies = verifyPeerPolicies(peerPolicies);
     }
+
+    public static AuthorizedPeers empty() { return EMPTY; }
 
     private static Set<PeerPolicy> verifyPeerPolicies(Set<PeerPolicy> peerPolicies) {
         long distinctNames = peerPolicies.stream()
@@ -22,5 +26,7 @@ public record AuthorizedPeers(Set<PeerPolicy> peerPolicies) {
         }
         return Set.copyOf(peerPolicies);
     }
+
+    public boolean isEmpty() { return peerPolicies.isEmpty(); }
 
 }

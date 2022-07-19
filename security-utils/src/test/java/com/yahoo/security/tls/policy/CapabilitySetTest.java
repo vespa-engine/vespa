@@ -20,7 +20,7 @@ class CapabilitySetTest {
         SortedSet<String> expectedNames = Arrays.stream(Capability.values())
                 .map(Capability::asString)
                 .collect(Collectors.toCollection(TreeSet::new));
-        SortedSet<String> actualNames = CapabilitySet.all().toCapabilityNames();
+        SortedSet<String> actualNames = CapabilitySet.all().toNames();
         assertEquals(expectedNames, actualNames);
     }
 

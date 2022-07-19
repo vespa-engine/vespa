@@ -6,6 +6,8 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SubjectAlternativeName.Type;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.Capability;
+import com.yahoo.security.tls.policy.CapabilitySet;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
@@ -19,6 +21,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
@@ -46,7 +50,7 @@ public class PeerAuthorizerTest {
         RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
         PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, cnRequirement, sanRequirement));
 
-        AuthorizationResult result = authorizer.authorizePeer(createCertificate("foo.matching.cn", asList("foo.matching.san", "foo.invalid.san"), emptyList()));
+        ConnectionAuthContext result = authorizer.authorizePeer(createCertificate("foo.matching.cn", asList("foo.matching.san", "foo.invalid.san"), emptyList()));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
 
@@ -64,7 +68,7 @@ public class PeerAuthorizerTest {
                 createPolicy(POLICY_1, cnRequirement, sanRequirement),
                 createPolicy(POLICY_2, cnRequirement, sanRequirement));
 
-        AuthorizationResult result = peerAuthorizer
+        ConnectionAuthContext result = peerAuthorizer
                 .authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.matching.san"), emptyList()));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1, POLICY_2);
@@ -76,7 +80,7 @@ public class PeerAuthorizerTest {
                 createPolicy(POLICY_1, createRequiredCredential(CN, "*.matching.cn")),
                 createPolicy(POLICY_2, createRequiredCredential(SAN_DNS, "*.matching.san")));
 
-        AuthorizationResult result = peerAuthorizer.authorizePeer(createCertificate("foo.invalid.cn", singletonList("foo.matching.san"), emptyList()));
+        ConnectionAuthContext result = peerAuthorizer.authorizePeer(createCertificate("foo.invalid.cn", singletonList("foo.matching.san"), emptyList()));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_2);
     }
@@ -101,11 +105,26 @@ public class PeerAuthorizerTest {
         RequiredPeerCredential sanUriRequirement = createRequiredCredential(SAN_URI, "myscheme://my/*/uri");
         PeerAuthorizer authorizer = createPeerAuthorizer(createPolicy(POLICY_1, cnRequirement, sanUriRequirement));
 
-        AuthorizationResult result = authorizer.authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.irrelevant.san"), singletonList("myscheme://my/matching/uri")));
+        ConnectionAuthContext result = authorizer.authorizePeer(createCertificate("foo.matching.cn", singletonList("foo.irrelevant.san"), singletonList("myscheme://my/matching/uri")));
         assertAuthorized(result);
         assertThat(result.matchedPolicies()).containsOnly(POLICY_1);
 
         assertUnauthorized(authorizer.authorizePeer(createCertificate("foo.matching.cn", emptyList(), singletonList("myscheme://my/nonmatching/url"))));
+    }
+
+    @Test
+    public void auth_context_contains_union_of_granted_capabilities_from_policies() {
+        RequiredPeerCredential cnRequirement = createRequiredCredential(CN, "*.matching.cn");
+        RequiredPeerCredential sanRequirement = createRequiredCredential(SAN_DNS, "*.matching.san");
+
+        PeerAuthorizer peerAuthorizer = createPeerAuthorizer(
+                createPolicy(POLICY_1, List.of(Capability.SLOBROK__API, Capability.CONTENT__DOCUMENT_API), List.of(cnRequirement)),
+                createPolicy(POLICY_2, List.of(Capability.SLOBROK__API, Capability.CONTENT__SEARCH_API), List.of(sanRequirement)));
+
+        var result = peerAuthorizer
+                .authorizePeer(createCertificate("foo.matching.cn", List.of("foo.matching.san"), List.of()));
+        assertAuthorized(result);
+        assertCapabiltiesGranted(result, Set.of(Capability.SLOBROK__API, Capability.CONTENT__DOCUMENT_API, Capability.CONTENT__SEARCH_API));
     }
 
     private static X509Certificate createCertificate(String subjectCn, List<String> sanDns, List<String> sanUri) {
@@ -134,12 +153,20 @@ public class PeerAuthorizerTest {
         return new PeerPolicy(name, asList(requiredCredentials));
     }
 
-    private static void assertAuthorized(AuthorizationResult result) {
-        assertTrue(result.succeeded());
+    private static PeerPolicy createPolicy(String name, List<Capability> caps, List<RequiredPeerCredential> creds) {
+        return new PeerPolicy(name, Optional.empty(), CapabilitySet.from(caps), creds);
     }
 
-    private static void assertUnauthorized(AuthorizationResult result) {
-        assertFalse(result.succeeded());
+    private static void assertAuthorized(ConnectionAuthContext result) {
+        assertTrue(result.authorized());
+    }
+
+    private static void assertUnauthorized(ConnectionAuthContext result) {
+        assertFalse(result.authorized());
+    }
+
+    private static void assertCapabiltiesGranted(ConnectionAuthContext ctx, Set<Capability> expected) {
+        assertThat(ctx.capabilities().asSet()).containsOnly(expected.toArray(new Capability[0]));
     }
 
 }

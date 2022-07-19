@@ -4,6 +4,7 @@ package com.yahoo.security.tls.authz;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.CapabilitySet;
 import com.yahoo.security.tls.policy.PeerPolicy;
 import com.yahoo.security.tls.policy.RequiredPeerCredential;
 
@@ -34,17 +35,26 @@ public class PeerAuthorizer {
         this.authorizedPeers = authorizedPeers;
     }
 
-    public AuthorizationResult authorizePeer(X509Certificate peerCertificate) {
+
+    public ConnectionAuthContext authorizePeer(X509Certificate cert) { return authorizePeer(List.of(cert)); }
+
+    public ConnectionAuthContext authorizePeer(List<X509Certificate> certChain) {
+        if (authorizedPeers.isEmpty()) {
+            return new ConnectionAuthContext(certChain, CapabilitySet.all(), Set.of());
+        }
+        X509Certificate cert = certChain.get(0);
         Set<String> matchedPolicies = new HashSet<>();
-        String cn = getCommonName(peerCertificate).orElse(null);
-        List<String> sans = getSubjectAlternativeNames(peerCertificate);
+        Set<CapabilitySet> grantedCapabilities = new HashSet<>();
+        String cn = getCommonName(cert).orElse(null);
+        List<String> sans = getSubjectAlternativeNames(cert);
         log.fine(() -> String.format("Subject info from x509 certificate: CN=[%s], 'SAN=%s", cn, sans));
         for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
             if (matchesPolicy(peerPolicy, cn, sans)) {
                 matchedPolicies.add(peerPolicy.policyName());
+                grantedCapabilities.add(peerPolicy.capabilities());
             }
         }
-        return new AuthorizationResult(matchedPolicies);
+        return new ConnectionAuthContext(certChain, CapabilitySet.unionOf(grantedCapabilities), matchedPolicies);
     }
 
     private static boolean matchesPolicy(PeerPolicy peerPolicy, String cn, List<String> sans) {

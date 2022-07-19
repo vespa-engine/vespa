@@ -6,6 +6,7 @@ import com.yahoo.security.tls.AuthorizationMode;
 import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.TrustManagerUtils;
 import com.yahoo.security.tls.policy.AuthorizedPeers;
+import com.yahoo.security.tls.policy.CapabilitySet;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
@@ -15,7 +16,9 @@ import java.net.Socket;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -26,7 +29,7 @@ import java.util.logging.Logger;
 // Note: Implementation assumes that provided X509ExtendedTrustManager will throw IllegalArgumentException when chain is empty or null
 public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
 
-    public static final String HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY = "vespa.tls.authorization.result";
+    public static final String HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY = "vespa.tls.auth.ctx";
 
     private static final Logger log = Logger.getLogger(PeerAuthorizerTrustManager.class.getName());
 
@@ -55,39 +58,39 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType);
-        authorizePeer(chain[0], authType, true, null);
+        authorizePeer(chain, authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType) throws CertificateException {
         defaultTrustManager.checkServerTrusted(chain, authType);
-        authorizePeer(chain[0], authType, false, null);
+        authorizePeer(chain, authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType, socket);
-        authorizePeer(chain[0], authType, true, null);
+        authorizePeer(chain, authType, true, null);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, Socket socket) throws CertificateException {
         overrideHostnameVerificationForClient(socket);
         defaultTrustManager.checkServerTrusted(chain, authType, socket);
-        authorizePeer(chain[0], authType, false, null);
+        authorizePeer(chain, authType, false, null);
     }
 
     @Override
     public void checkClientTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         defaultTrustManager.checkClientTrusted(chain, authType, sslEngine);
-        authorizePeer(chain[0], authType, true, sslEngine);
+        authorizePeer(chain, authType, true, sslEngine);
     }
 
     @Override
     public void checkServerTrusted(X509Certificate[] chain, String authType, SSLEngine sslEngine) throws CertificateException {
         overrideHostnameVerificationForClient(sslEngine);
         defaultTrustManager.checkServerTrusted(chain, authType, sslEngine);
-        authorizePeer(chain[0], authType, false, sslEngine);
+        authorizePeer(chain, authType, false, sslEngine);
     }
 
     @Override
@@ -98,23 +101,23 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     /**
      * Note: The authorization result is only available during handshake. The underlying handshake session is removed once handshake is complete.
      */
-    public static Optional<AuthorizationResult> getAuthorizationResult(SSLEngine sslEngine) {
+    public static Optional<ConnectionAuthContext> getConnectionAuthContext(SSLEngine sslEngine) {
         return Optional.ofNullable(sslEngine.getHandshakeSession())
-                .flatMap(session -> Optional.ofNullable((AuthorizationResult) session.getValue(HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY)));
+                .flatMap(session -> Optional.ofNullable((ConnectionAuthContext) session.getValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY)));
     }
 
-    private void authorizePeer(X509Certificate certificate, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
-        if (mode == AuthorizationMode.DISABLE) return;
-
-        log.fine(() -> "Verifying certificate: " + createInfoString(certificate, authType, isVerifyingClient));
-        AuthorizationResult result = authorizer.authorizePeer(certificate);
+    private void authorizePeer(X509Certificate[] certChain, String authType, boolean isVerifyingClient, SSLEngine sslEngine) throws CertificateException {
+        log.fine(() -> "Verifying certificate: " + createInfoString(certChain[0], authType, isVerifyingClient));
+        ConnectionAuthContext result = mode != AuthorizationMode.DISABLE
+                ? authorizer.authorizePeer(List.of(certChain))
+                : new ConnectionAuthContext(List.of(certChain), CapabilitySet.all(), Set.of());
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
-            sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTHZ_RESULT_PROPERTY, result);
+            sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY, result);
         }
-        if (result.succeeded()) {
+        if (result.authorized()) {
             log.fine(() -> String.format("Verification result: %s", result));
         } else {
-            String errorMessage = "Authorization failed: " + createInfoString(certificate, authType, isVerifyingClient);
+            String errorMessage = "Authorization failed: " + createInfoString(certChain[0], authType, isVerifyingClient);
             log.warning(errorMessage);
             if (mode == AuthorizationMode.ENFORCE) {
                 throw new CertificateException(errorMessage);
@@ -122,9 +125,10 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         }
     }
 
-    private static String createInfoString(X509Certificate certificate, String authType, boolean isVerifyingClient) {
-        return String.format("DN='%s', SANs=%s, authType='%s', isVerifyingClient='%b'",
-                             certificate.getSubjectX500Principal(), X509CertificateUtils.getSubjectAlternativeNames(certificate), authType, isVerifyingClient);
+    private String createInfoString(X509Certificate certificate, String authType, boolean isVerifyingClient) {
+        return String.format("DN='%s', SANs=%s, authType='%s', isVerifyingClient='%b', mode=%s",
+                certificate.getSubjectX500Principal(), X509CertificateUtils.getSubjectAlternativeNames(certificate),
+                authType, isVerifyingClient, mode);
     }
 
     private void overrideHostnameVerificationForClient(SSLEngine engine) {

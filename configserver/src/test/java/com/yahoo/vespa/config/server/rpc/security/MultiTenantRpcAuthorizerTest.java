@@ -11,7 +11,6 @@ import com.yahoo.config.provision.security.NodeIdentifier;
 import com.yahoo.config.provision.security.NodeIdentifierException;
 import com.yahoo.config.provision.security.NodeIdentity;
 import com.yahoo.jrt.Request;
-import com.yahoo.jrt.SecurityContext;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Values;
@@ -19,6 +18,8 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.policy.CapabilitySet;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
@@ -248,10 +249,10 @@ public class MultiTenantRpcAuthorizerTest {
     }
 
     private static Request mockJrtRpcRequest(String payload) {
-        SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.peerCertificateChain()).thenReturn(PEER_CERTIFICATE_CHAIN);
+        ConnectionAuthContext authContext =
+                new ConnectionAuthContext(PEER_CERTIFICATE_CHAIN, CapabilitySet.none(), Set.of());
         Target target = mock(Target.class);
-        when(target.getSecurityContext()).thenReturn(Optional.of(securityContext));
+        when(target.getConnectionAuthContext()).thenReturn(Optional.of(authContext));
         Request request = mock(Request.class);
         when(request.target()).thenReturn(target);
         Values values = new Values();
