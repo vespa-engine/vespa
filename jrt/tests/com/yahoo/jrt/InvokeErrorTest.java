@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.Before;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class InvokeErrorTest {
@@ -16,6 +17,7 @@ public class InvokeErrorTest {
     Supervisor   client;
     Target       target;
     Test.Barrier barrier;
+    SimpleRequestAccessFilter filter;
 
     @Before
     public void setUp() throws ListenFailedException {
@@ -23,7 +25,8 @@ public class InvokeErrorTest {
         client   = new Supervisor(new Transport());
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
-        server.addMethod(new Method("test", "iib", "i", this::rpc_test));
+        filter = new SimpleRequestAccessFilter();
+        server.addMethod(new Method("test", "iib", "i", this::rpc_test).requestAccessFilter(filter));
         server.addMethod(new Method("test_barrier", "iib", "i", this::rpc_test_barrier));
         barrier = new Test.Barrier();
     }
@@ -155,6 +158,38 @@ public class InvokeErrorTest {
         assertTrue(req1.isError());
         assertEquals(0, req1.returnValues().size());
         assertEquals(ErrorCode.CONNECTION, req1.errorCode());
+    }
+
+    @org.junit.Test
+    public void testFilterIsInvoked() {
+        Request r = new Request("test");
+        r.parameters().add(new Int32Value(42));
+        r.parameters().add(new Int32Value(0));
+        r.parameters().add(new Int8Value((byte)0));
+        assertFalse(filter.invoked);
+        target.invokeSync(r, timeout);
+        assertFalse(r.isError());
+        assertTrue(filter.invoked);
+    }
+
+    @org.junit.Test
+    public void testFilterFailsRequest() {
+        Request r = new Request("test");
+        r.parameters().add(new Int32Value(42));
+        r.parameters().add(new Int32Value(0));
+        r.parameters().add(new Int8Value((byte)0));
+        filter.allowed = false;
+        assertFalse(filter.invoked);
+        target.invokeSync(r, timeout);
+        assertTrue(r.isError());
+        assertTrue(filter.invoked);
+        assertEquals(ErrorCode.PERMISSION_DENIED, r.errorCode());
+        assertEquals("Permission denied", r.errorMessage());
+    }
+
+    private static class SimpleRequestAccessFilter implements RequestAccessFilter {
+        boolean invoked = false, allowed = true;
+        @Override public boolean allow(Request r) { invoked = true; return allowed; }
     }
 
 }

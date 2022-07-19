@@ -31,7 +31,11 @@ class InvocationServer {
     public void invoke() {
         if (method != null) {
             if (method.checkParameters(request)) {
-                method.invoke(request);
+                if (method.requestAccessFilter().allow(request)) {
+                    method.invoke(request);
+                } else {
+                    request.setError(ErrorCode.PERMISSION_DENIED, "Permission denied");
+                }
             } else {
                 request.setError(ErrorCode.WRONG_PARAMS, "Parameters in " + request + " does not match " + method);
             }

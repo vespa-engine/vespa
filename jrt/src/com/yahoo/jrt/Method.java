@@ -40,6 +40,8 @@ public class Method {
     private String[] returnName;
     private String[] returnDesc;
 
+    private RequestAccessFilter filter = RequestAccessFilter.ALLOW_ALL;
+
     private static final String undocumented = "???";
 
 
@@ -146,6 +148,10 @@ public class Method {
         paramDesc[index] = desc;
         return this;
     }
+
+    public Method requestAccessFilter(RequestAccessFilter filter) { this.filter = filter; return this; }
+
+    public RequestAccessFilter requestAccessFilter() { return filter; }
 
     /**
      * Obtain the name of a parameter
