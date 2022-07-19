@@ -93,6 +93,7 @@
           <discApplicationClass>com.yahoo.container.standalone.StandaloneContainerApplication</discApplicationClass>
           <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
           <discPreInstallBundle>
+            <!-- Standalone container has an embedded config model, so model related bundles cannot be retrieved via config -->
             configdefinitions-jar-with-dependencies.jar,
             config-provisioning-jar-with-dependencies.jar,
             config-bundle-jar-with-dependencies.jar,

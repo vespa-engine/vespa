@@ -266,7 +266,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      * @return the removed component, or null if it was not present
      */
     @SuppressWarnings("unused") // Used from other repositories
-    public Component removeComponent(ComponentId componentId) {
+    public Component<?, ?> removeComponent(ComponentId componentId) {
         return componentGroup.removeComponent(componentId);
     }
 

@@ -32,6 +32,8 @@ import com.yahoo.vespa.model.container.search.ContainerSearch;
 import com.yahoo.vespa.model.container.search.searchchain.SearchChains;
 import org.junit.Test;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -79,6 +81,26 @@ public class ContainerClusterTest {
     }
 
     @Test
+    public void search_and_docproc_bundles_are_not_installed_for_plain_application_clusters() {
+        ApplicationContainerCluster cluster = newContainerCluster();
+
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
+        cluster.getConfig(bundleBuilder);
+        List<Path> installedBundles = bundleBuilder.build().bundlePaths().stream().map(Paths::get).toList();
+        installedBundles.forEach(bundle -> assertFalse(PlatformBundles.SEARCH_AND_DOCPROC_BUNDLES.contains(bundle)));
+    }
+
+    @Test
+    public void search_and_docproc_bundles_are_installed_for_application_clusters_with_search() {
+        ApplicationContainerCluster cluster = newClusterWithSearch(createRoot(false), false, null);
+
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
+        cluster.getConfig(bundleBuilder);
+        List<Path> installedBundles = bundleBuilder.build().bundlePaths().stream().map(Paths::get).toList();
+        PlatformBundles.SEARCH_AND_DOCPROC_BUNDLES.forEach(bundle -> assertTrue(installedBundles.contains(bundle)));
+    }
+
+    @Test
     public void requireThatWeCanGetTheZoneConfig() {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true))
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
@@ -93,33 +115,11 @@ public class ContainerClusterTest {
         assertEquals("cd", config.system());
     }
 
-    private ApplicationContainerCluster createContainerCluster(MockRoot root) {
-        return createContainerCluster(root, false, null);
-    }
-    private ApplicationContainerCluster createContainerCluster(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
-        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", root.getDeployState());
-        if (isCombinedCluster)
-            cluster.setHostClusterId("test-content-cluster");
-        cluster.setMemoryPercentage(memoryPercentage);
-        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
-        return cluster;
-    }
-    private ClusterControllerContainerCluster createClusterControllerCluster(MockRoot root) {
-        return new ClusterControllerContainerCluster(root, "container0", "container1", root.getDeployState());
-    }
-    private MockRoot createRoot(boolean isHosted) {
-        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
-        return createRoot(state);
-    }
-    private MockRoot createRoot(DeployState deployState) {
-        return new MockRoot("foo", deployState);
-    }
-
     private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted,
                                                             boolean isCombinedCluster,
                                                             Integer explicitMemoryPercentage,
                                                             int expectedMemoryPercentage) {
-        ContainerCluster<?> cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
+        ApplicationContainerCluster cluster = newClusterWithSearch(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
@@ -155,7 +155,7 @@ public class ContainerClusterTest {
 
     private void verifyJvmArgs(boolean isHosted, boolean hasDocProc) {
         MockRoot root = createRoot(isHosted);
-        ApplicationContainerCluster cluster = createContainerCluster(root);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root);
         if (hasDocProc) {
             cluster.setDocproc(new ContainerDocproc(cluster, null));
         }
@@ -194,6 +194,17 @@ public class ContainerClusterTest {
     }
 
     @Test
+    public void search_and_docproc_bundles_are_not_installed_for_cluster_controllers() {
+        MockRoot root = createRoot(false);
+        ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
+
+        var bundleBuilder = new PlatformBundlesConfig.Builder();
+        cluster.getConfig(bundleBuilder);
+        List<Path> installedBundles = bundleBuilder.build().bundlePaths().stream().map(Paths::get).toList();
+        installedBundles.forEach(bundle -> assertFalse(PlatformBundles.SEARCH_AND_DOCPROC_BUNDLES.contains(bundle)));
+    }
+
+    @Test
     public void testThatLinguisticsIsExcludedForClusterControllerCluster() {
         MockRoot root = createRoot(false);
         ClusterControllerContainerCluster cluster = createClusterControllerCluster(root);
@@ -220,7 +231,7 @@ public class ContainerClusterTest {
     public void requireThatJvmOmitStackTraceInFastThrowOptionWorks() {
         // Empty option if option not set in property
         MockRoot root = createRoot(new DeployState.Builder().build());
-        ApplicationContainerCluster cluster = createContainerCluster(root);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
         ApplicationContainer container = cluster.getContainers().get(0);
         assertEquals("", container.getJvmOptions());
@@ -228,16 +239,16 @@ public class ContainerClusterTest {
         String jvmOption = "-XX:-foo";
         DeployState deployState = new DeployState.Builder().properties(new TestProperties().setJvmOmitStackTraceInFastThrowOption(jvmOption)).build();
         root = createRoot(deployState);
-        cluster = createContainerCluster(root);
+        cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
         container = cluster.getContainers().get(0);
         assertEquals(jvmOption, container.getJvmOptions());
     }
 
     @Test
-    public void requireThatWeCanHandleNull() {
+    public void requireThatWeCanHandleNullJvmOptions() {
         MockRoot root = createRoot(false);
-        ApplicationContainerCluster cluster = createContainerCluster(root);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
         Container container = cluster.getContainers().get(0);
         container.setJvmOptions("");
@@ -249,7 +260,7 @@ public class ContainerClusterTest {
     @Test
     public void requireThatNonHostedUsesExpectedDefaultThreadpoolConfiguration() {
         MockRoot root = new MockRoot("foo");
-        ApplicationContainerCluster cluster = createContainerCluster(root);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
@@ -261,7 +272,7 @@ public class ContainerClusterTest {
     @Test
     public void container_cluster_has_default_threadpool_provider() {
         MockRoot root = new MockRoot("foo");
-        ApplicationContainerCluster cluster = createContainerCluster(root);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
@@ -280,7 +291,7 @@ public class ContainerClusterTest {
                         .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
                         .build());
-        ApplicationContainerCluster cluster = createContainerCluster(root);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
@@ -297,7 +308,7 @@ public class ContainerClusterTest {
                         .properties(new TestProperties().setHostedVespa(true))
                         .applicationPackage(new MockApplicationPackage.Builder().build())
                         .build());
-        ApplicationContainerCluster cluster = createContainerCluster(root);
+        ApplicationContainerCluster cluster = newClusterWithSearch(root);
         addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
@@ -471,6 +482,31 @@ public class ContainerClusterTest {
         expectedBundleNames.forEach(b -> assertTrue(installedBundles.stream().filter(p -> p.endsWith(b)).count() > 0));
     }
 
+    private static ApplicationContainerCluster newClusterWithSearch(MockRoot root) {
+        return newClusterWithSearch(root, false, null);
+    }
+
+    private static ApplicationContainerCluster newClusterWithSearch(MockRoot root, boolean isCombinedCluster, Integer memoryPercentage) {
+        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", root.getDeployState());
+        if (isCombinedCluster)
+            cluster.setHostClusterId("test-content-cluster");
+        cluster.setMemoryPercentage(memoryPercentage);
+        cluster.setSearch(new ContainerSearch(cluster, new SearchChains(cluster, "search-chain"), new ContainerSearch.Options()));
+        return cluster;
+    }
+
+    private static ClusterControllerContainerCluster createClusterControllerCluster(MockRoot root) {
+        return new ClusterControllerContainerCluster(root, "container0", "container1", root.getDeployState());
+    }
+
+    private static MockRoot createRoot(boolean isHosted) {
+        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
+        return createRoot(state);
+    }
+
+    private static MockRoot createRoot(DeployState deployState) {
+        return new MockRoot("foo", deployState);
+    }
 
     private static void addContainer(MockRoot root, ApplicationContainerCluster cluster, String name, String hostName) {
         addContainerWithHostResource(root, cluster, name, new HostResource(new Host(null, hostName)));
