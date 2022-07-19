@@ -1,9 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
-import com.yahoo.security.tls.json.TransportSecurityOptionsJsonSerializer;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;

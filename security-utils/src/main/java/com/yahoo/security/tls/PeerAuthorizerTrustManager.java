@@ -1,12 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.security.tls.authz;
+package com.yahoo.security.tls;
 
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.tls.AuthorizationMode;
-import com.yahoo.security.tls.HostnameVerification;
-import com.yahoo.security.tls.TrustManagerUtils;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.CapabilitySet;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;

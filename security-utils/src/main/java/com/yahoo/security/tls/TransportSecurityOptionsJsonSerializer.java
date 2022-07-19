@@ -1,16 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.security.tls.json;
+package com.yahoo.security.tls;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.yahoo.security.tls.TransportSecurityOptions;
-import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.AuthorizedPeer;
-import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.CredentialField;
-import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.Files;
-import com.yahoo.security.tls.json.TransportSecurityOptionsEntity.RequiredCredential;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.CapabilitySet;
-import com.yahoo.security.tls.policy.PeerPolicy;
-import com.yahoo.security.tls.policy.RequiredPeerCredential;
+import com.yahoo.security.tls.TransportSecurityOptionsEntity.AuthorizedPeer;
+import com.yahoo.security.tls.TransportSecurityOptionsEntity.CredentialField;
+import com.yahoo.security.tls.TransportSecurityOptionsEntity.Files;
+import com.yahoo.security.tls.TransportSecurityOptionsEntity.RequiredCredential;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,11 +24,11 @@ import static java.util.stream.Collectors.toSet;
 /**
  * @author bjorncs
  */
-public class TransportSecurityOptionsJsonSerializer {
+class TransportSecurityOptionsJsonSerializer {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    public TransportSecurityOptions deserialize(InputStream in) {
+    TransportSecurityOptions deserialize(InputStream in) {
         try {
             TransportSecurityOptionsEntity entity = mapper.readValue(in, TransportSecurityOptionsEntity.class);
             return toTransportSecurityOptions(entity);
@@ -42,7 +37,7 @@ public class TransportSecurityOptionsJsonSerializer {
         }
     }
 
-    public void serialize(OutputStream out, TransportSecurityOptions options) {
+    void serialize(OutputStream out, TransportSecurityOptions options) {
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(out, toTransportSecurityOptionsEntity(options));
         } catch (IOException e) {

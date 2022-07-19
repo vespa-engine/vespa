@@ -12,7 +12,7 @@ import com.yahoo.config.provision.security.NodeIdentity;
 import com.yahoo.jrt.Request;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.ConnectionAuthContext;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.server.RequestHandler;

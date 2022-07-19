@@ -2,7 +2,7 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.ConnectionAuthContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;

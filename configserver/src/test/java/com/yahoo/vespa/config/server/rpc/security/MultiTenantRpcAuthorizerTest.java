@@ -18,7 +18,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.ConnectionAuthContext;
 import com.yahoo.security.tls.policy.CapabilitySet;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.JsonFormat;

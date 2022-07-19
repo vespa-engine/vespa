@@ -3,9 +3,6 @@ package com.yahoo.security.tls;
 
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.PeerPolicy;
-import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import org.junit.Test;
 
 import javax.net.ssl.SSLEngine;

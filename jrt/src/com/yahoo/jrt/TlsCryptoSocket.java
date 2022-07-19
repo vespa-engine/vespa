@@ -1,8 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
+import com.yahoo.security.tls.ConnectionAuthContext;
+import com.yahoo.security.tls.PeerAuthorizerTrustManager;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;

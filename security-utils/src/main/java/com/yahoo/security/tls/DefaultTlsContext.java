@@ -2,8 +2,6 @@
 package com.yahoo.security.tls;
 
 import com.yahoo.security.SslContextBuilder;
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;

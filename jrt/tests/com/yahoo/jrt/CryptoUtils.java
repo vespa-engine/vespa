@@ -4,14 +4,14 @@ package com.yahoo.jrt;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.AuthorizationMode;
+import com.yahoo.security.tls.AuthorizedPeers;
 import com.yahoo.security.tls.DefaultTlsContext;
 import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.PeerAuthentication;
+import com.yahoo.security.tls.PeerPolicy;
+import com.yahoo.security.tls.RequiredPeerCredential;
+import com.yahoo.security.tls.RequiredPeerCredential.Field;
 import com.yahoo.security.tls.TlsContext;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.PeerPolicy;
-import com.yahoo.security.tls.policy.RequiredPeerCredential;
-import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;

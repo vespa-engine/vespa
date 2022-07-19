@@ -1,12 +1,6 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.security.tls.json;
+package com.yahoo.security.tls;
 
-import com.yahoo.security.tls.TransportSecurityOptions;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.Capability;
-import com.yahoo.security.tls.policy.CapabilitySet;
-import com.yahoo.security.tls.policy.PeerPolicy;
-import com.yahoo.security.tls.policy.RequiredPeerCredential;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -24,9 +18,9 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 
-import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
-import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
-import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_URI;
+import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
+import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_DNS;
+import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_URI;
 import static com.yahoo.test.json.JsonTestHelper.assertJsonEquals;
 import static org.junit.Assert.assertEquals;
 

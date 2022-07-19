@@ -1,6 +1,4 @@
-package com.yahoo.security.tls.authz;
-
-import com.yahoo.security.tls.policy.CapabilitySet;
+package com.yahoo.security.tls;
 
 import java.security.cert.X509Certificate;
 import java.util.List;

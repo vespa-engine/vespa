@@ -1,16 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.security.tls.authz;
+package com.yahoo.security.tls;
 
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SubjectAlternativeName.Type;
 import com.yahoo.security.X509CertificateBuilder;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
-import com.yahoo.security.tls.policy.Capability;
-import com.yahoo.security.tls.policy.CapabilitySet;
-import com.yahoo.security.tls.policy.PeerPolicy;
-import com.yahoo.security.tls.policy.RequiredPeerCredential;
-import com.yahoo.security.tls.policy.RequiredPeerCredential.Field;
+import com.yahoo.security.tls.RequiredPeerCredential.Field;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
@@ -25,9 +20,9 @@ import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
-import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.CN;
-import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_DNS;
-import static com.yahoo.security.tls.policy.RequiredPeerCredential.Field.SAN_URI;
+import static com.yahoo.security.tls.RequiredPeerCredential.Field.CN;
+import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_DNS;
+import static com.yahoo.security.tls.RequiredPeerCredential.Field.SAN_URI;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;

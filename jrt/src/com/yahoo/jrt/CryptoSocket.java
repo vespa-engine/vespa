@@ -2,7 +2,7 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.ConnectionAuthContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
