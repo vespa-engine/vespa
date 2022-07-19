@@ -97,9 +97,9 @@ ExternalOperationHandler::~ExternalOperationHandler() = default;
 bool
 ExternalOperationHandler::handleMessage(const std::shared_ptr<api::StorageMessage>& msg, Operation::SP& op)
 {
-    _op = Operation::SP();
+    _op.reset();
     bool retVal = msg->callHandler(*this, msg);
-    op = _op;
+    op = std::move(_op); // Don't maintain any strong refs in _op after we've passed it on.
     return retVal;
 }
 
