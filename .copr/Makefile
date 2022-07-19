@@ -17,7 +17,11 @@ srpm: deps
 	rpmbuild -bs --define "_topdir $(RPMTOPDIR)" $(SPECDIR)/vespa-$(VESPA_VERSION).spec
 	cp -a $(RPMTOPDIR)/SRPMS/* $(outdir)
 
+rpms: srpm
+	rpmbuild --rebuild $(outdir)/*.src.rpm
+	cp -a $(RPMTOPDIR)/RPMS/*/*.rpm $(outdir)
+
 clean:
 	-rm -rf $(RPMTOPDIR)
 
-.PHONY: clean deps srpm
+.PHONY: clean deps srpm rpms
