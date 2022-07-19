@@ -101,7 +101,7 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
     /**
      * Note: The authorization result is only available during handshake. The underlying handshake session is removed once handshake is complete.
      */
-    public static Optional<ConnectionAuthContext> getAuthorizationResult(SSLEngine sslEngine) {
+    public static Optional<ConnectionAuthContext> getConnectionAuthContext(SSLEngine sslEngine) {
         return Optional.ofNullable(sslEngine.getHandshakeSession())
                 .flatMap(session -> Optional.ofNullable((ConnectionAuthContext) session.getValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY)));
     }

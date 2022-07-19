@@ -41,7 +41,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     private int sessionApplicationBufferSize;
     private ByteBuffer handshakeDummyBuffer;
     private HandshakeState handshakeState;
-    private ConnectionAuthContext authorizationResult;
+    private ConnectionAuthContext authContext;
 
     public TlsCryptoSocket(SocketChannel channel, SSLEngine sslEngine) {
         this.channel = channel;
@@ -97,13 +97,13 @@ public class TlsCryptoSocket implements CryptoSocket {
                     channelRead();
                     break;
                 case NEED_WORK:
-                    if (authorizationResult == null) {
-                        PeerAuthorizerTrustManager.getAuthorizationResult(sslEngine) // only available during handshake
-                                .ifPresent(result ->  {
-                                    if (!result.authorized()) {
+                    if (authContext == null) {
+                        PeerAuthorizerTrustManager.getConnectionAuthContext(sslEngine) // only available during handshake
+                                .ifPresent(ctx ->  {
+                                    if (!ctx.authorized()) {
                                         metrics.incrementPeerAuthorizationFailures();
                                     }
-                                    authorizationResult = result;
+                                    authContext = ctx;
                                 });
                     }
                     break;
@@ -144,7 +144,7 @@ public class TlsCryptoSocket implements CryptoSocket {
             }
         } catch (SSLHandshakeException e) {
             // sslEngine.getDelegatedTask().run() and handshakeWrap() may throw SSLHandshakeException, potentially handshakeUnwrap() and sslEngine.beginHandshake() as well.
-            if (authorizationResult == null || authorizationResult.authorized()) { // don't include handshake failures due from PeerAuthorizerTrustManager
+            if (authContext == null || authContext.authorized()) { // don't include handshake failures due from PeerAuthorizerTrustManager
                 metrics.incrementTlsCertificateVerificationFailures();
             }
             throw e;
@@ -221,7 +221,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     @Override
     public Optional<ConnectionAuthContext> getConnectionAuthContext() {
         if (handshakeState != HandshakeState.COMPLETED) return Optional.empty();
-        return Optional.ofNullable(authorizationResult);
+        return Optional.ofNullable(authContext);
     }
 
     private boolean handshakeWrap() throws IOException {
