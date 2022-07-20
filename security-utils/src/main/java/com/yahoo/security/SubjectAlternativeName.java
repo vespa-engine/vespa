@@ -99,15 +99,15 @@ public class SubjectAlternativeName {
     }
 
     public enum Type {
-        OTHER_NAME(0),
-        RFC822_NAME(1),
-        DNS_NAME(2),
-        X400_ADDRESS(3),
-        DIRECTORY_NAME(4),
-        EDI_PARITY_NAME(5),
-        UNIFORM_RESOURCE_IDENTIFIER(6),
-        IP_ADDRESS(7),
-        REGISTERED_ID(8);
+        OTHER(0),
+        EMAIL(1),
+        DNS(2),
+        X400(3),
+        DIRECTORY(4),
+        EDI_PARITY(5),
+        URI(6),
+        IP(7),
+        REGISTERED(8);
 
         final int tag;
 

@@ -17,7 +17,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
-import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 
 /**
  * Helper class for creating {@link X509Certificate}s.
@@ -66,7 +66,7 @@ public class Certificates {
 
     private static Optional<String> getInstanceIdFromSAN(List<SubjectAlternativeName> subjectAlternativeNames) {
         return subjectAlternativeNames.stream()
-                .filter(san -> san.getType() == DNS_NAME)
+                .filter(san -> san.getType() == DNS)
                 .map(SubjectAlternativeName::getValue)
                 .map(Certificates::parseInstanceId)
                 .flatMap(Optional::stream)

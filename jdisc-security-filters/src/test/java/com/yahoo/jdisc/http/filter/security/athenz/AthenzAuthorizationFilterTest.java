@@ -37,7 +37,7 @@ import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFil
 import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter.MATCHED_ROLE_ATTRIBUTE;
 import static com.yahoo.jdisc.http.filter.security.athenz.AthenzAuthorizationFilter.RESULT_ATTRIBUTE;
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
-import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.EMAIL;
 import static com.yahoo.vespa.athenz.zpe.AuthorizationResult.Type;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -262,7 +262,7 @@ public class AthenzAuthorizationFilterTest {
         Instant now = Instant.now();
         return X509CertificateBuilder
                 .fromKeypair(keyPair, x500Name, now, now.plus(Duration.ofDays(30)), SHA256_WITH_ECDSA, BigInteger.ONE)
-                .addSubjectAlternativeName(new SubjectAlternativeName(RFC822_NAME, identity.getFullName() + "@my.domain.my-identity-provider"))
+                .addSubjectAlternativeName(new SubjectAlternativeName(EMAIL, identity.getFullName() + "@my.domain.my-identity-provider"))
                 .build();
     }
 

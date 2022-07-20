@@ -131,8 +131,8 @@ public class PeerAuthorizerTest {
                         Instant.EPOCH.plus(100000, ChronoUnit.DAYS),
                         SHA256_WITH_ECDSA,
                         BigInteger.ONE);
-        sanDns.forEach(san -> builder.addSubjectAlternativeName(Type.DNS_NAME, san));
-        sanUri.forEach(san -> builder.addSubjectAlternativeName(Type.UNIFORM_RESOURCE_IDENTIFIER, san));
+        sanDns.forEach(san -> builder.addSubjectAlternativeName(Type.DNS, san));
+        sanUri.forEach(san -> builder.addSubjectAlternativeName(Type.URI, san));
         return builder.build();
     }
 

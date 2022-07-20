@@ -48,9 +48,9 @@ public class CertificatesTest {
         assertEquals(2, certificate.getSubjectAlternativeNames().size());
 
         var subjectAlternativeNames = List.copyOf(certificate.getSubjectAlternativeNames());
-        assertEquals(List.of(SubjectAlternativeName.Type.DNS_NAME.getTag(), dnsName),
+        assertEquals(List.of(SubjectAlternativeName.Type.DNS.getTag(), dnsName),
                      subjectAlternativeNames.get(0));
-        assertEquals(List.of(SubjectAlternativeName.Type.IP_ADDRESS.getTag(), ip),
+        assertEquals(List.of(SubjectAlternativeName.Type.IP.getTag(), ip),
                      subjectAlternativeNames.get(1));
     }
 

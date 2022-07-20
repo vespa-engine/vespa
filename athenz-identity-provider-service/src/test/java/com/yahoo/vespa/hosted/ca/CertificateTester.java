@@ -68,10 +68,10 @@ public class CertificateTester {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         var builder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SignatureAlgorithm.SHA512_WITH_ECDSA);
         for (var dnsName : dnsNames) {
-            builder = builder.addSubjectAlternativeName(SubjectAlternativeName.Type.DNS_NAME, dnsName);
+            builder = builder.addSubjectAlternativeName(SubjectAlternativeName.Type.DNS, dnsName);
         }
         for (var ipAddress : ipAddresses) {
-            builder = builder.addSubjectAlternativeName(SubjectAlternativeName.Type.IP_ADDRESS, ipAddress);
+            builder = builder.addSubjectAlternativeName(SubjectAlternativeName.Type.IP, ipAddress);
         }
         return builder.build();
     }
