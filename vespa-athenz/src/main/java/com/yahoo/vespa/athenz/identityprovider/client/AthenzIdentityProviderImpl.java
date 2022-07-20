@@ -14,7 +14,7 @@ import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.Pkcs10Csr;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateWithKey;
-import com.yahoo.security.tls.MutableX509KeyManager;
+import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzRole;

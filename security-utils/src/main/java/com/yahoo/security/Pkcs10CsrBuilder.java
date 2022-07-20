@@ -21,7 +21,7 @@ import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 
 /**
  * @author bjorncs
@@ -49,7 +49,7 @@ public class Pkcs10CsrBuilder {
     }
 
     public Pkcs10CsrBuilder addSubjectAlternativeName(String dns) {
-        this.subjectAlternativeNames.add(new SubjectAlternativeName(DNS_NAME, dns));
+        this.subjectAlternativeNames.add(new SubjectAlternativeName(DNS, dns));
         return this;
     }
 

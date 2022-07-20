@@ -4,9 +4,10 @@ package com.yahoo.security.tls;
 import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.MutableX509KeyManager;
+import com.yahoo.security.MutableX509TrustManager;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.tls.authz.PeerAuthorizerTrustManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;

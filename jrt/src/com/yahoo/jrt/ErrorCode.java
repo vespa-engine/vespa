@@ -49,4 +49,7 @@ public class ErrorCode
 
     /** Method failed (111) **/
     public static final int METHOD_FAILED   = 111;
+
+    /** Permission denied (112) **/
+    public static final int PERMISSION_DENIED = 112;
 }

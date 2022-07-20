@@ -59,7 +59,7 @@ public class EndpointCertificateValidatorImpl implements EndpointCertificateVali
 
             X509Certificate endEntityCertificate = x509CertificateList.get(0);
             Set<String> subjectAlternativeNames = X509CertificateUtils.getSubjectAlternativeNames(endEntityCertificate).stream()
-                    .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS_NAME))
+                    .filter(san -> san.getType().equals(SubjectAlternativeName.Type.DNS))
                     .map(SubjectAlternativeName::getValue).collect(Collectors.toSet());
 
             if (!subjectAlternativeNames.containsAll(requiredNamesForZone))

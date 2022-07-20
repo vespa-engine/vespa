@@ -2,12 +2,11 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.ConnectionAuthContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Optional;
 
 
 /**
@@ -104,11 +103,6 @@ public interface CryptoSocket {
      **/
     public void dropEmptyBuffers();
 
-    /**
-     * Returns the auth context for the current connection (given handshake completed),
-     * or empty if the current connection is not secure.
-     */
-    default public Optional<ConnectionAuthContext> getConnectionAuthContext() {
-        return Optional.empty();
-    }
+    /** Returns the auth context for the current connection (given handshake completed) */
+    default ConnectionAuthContext connectionAuthContext() { return ConnectionAuthContext.defaultAllCapabilities(); }
 }

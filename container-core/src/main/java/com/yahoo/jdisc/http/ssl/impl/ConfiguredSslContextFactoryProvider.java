@@ -6,7 +6,7 @@ import com.yahoo.jdisc.http.SslProvider;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.security.tls.AutoReloadingX509KeyManager;
+import com.yahoo.security.AutoReloadingX509KeyManager;
 import com.yahoo.security.tls.TlsContext;
 
 import javax.net.ssl.SSLContext;

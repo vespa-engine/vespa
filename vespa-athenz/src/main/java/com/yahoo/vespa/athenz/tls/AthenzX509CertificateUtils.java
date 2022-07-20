@@ -12,9 +12,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 
-import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
-import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
-import static com.yahoo.security.SubjectAlternativeName.Type.UNIFORM_RESOURCE_IDENTIFIER;
+import static com.yahoo.security.SubjectAlternativeName.Type;
 
 /**
  * Utility methods for Athenz issued x509 certificates
@@ -34,7 +32,7 @@ public class AthenzX509CertificateUtils {
 
     private static Optional<AthenzIdentity> getRoleIdentityFromEmail(List<SubjectAlternativeName> sans) {
         return sans.stream()
-                .filter(san -> san.getType() == RFC822_NAME)
+                .filter(san -> san.getType() == Type.EMAIL)
                 .map(com.yahoo.security.SubjectAlternativeName::getValue)
                 .map(AthenzX509CertificateUtils::getIdentityFromSanEmail)
                 .findFirst();
@@ -43,7 +41,7 @@ public class AthenzX509CertificateUtils {
     private static Optional<AthenzIdentity> getRoleIdentityFromUri(List<SubjectAlternativeName> sans) {
         String uriPrefix = "athenz://principal/";
         return sans.stream()
-                .filter(s -> s.getType() == UNIFORM_RESOURCE_IDENTIFIER && s.getValue().startsWith(uriPrefix))
+                .filter(s -> s.getType() == Type.URI && s.getValue().startsWith(uriPrefix))
                 .map(san -> {
                     String uriPath = URI.create(san.getValue()).getPath();
                     return AthenzIdentities.from(uriPath.substring(uriPrefix.length()));
@@ -78,7 +76,7 @@ public class AthenzX509CertificateUtils {
         String uriPrefix = "athenz://instanceid/";
         return sans.stream()
                 .filter(san -> {
-                    if (san.getType() != UNIFORM_RESOURCE_IDENTIFIER) return false;
+                    if (san.getType() != Type.URI) return false;
                     return san.getValue().startsWith(uriPrefix);
                 })
                 .map(san -> {
@@ -92,7 +90,7 @@ public class AthenzX509CertificateUtils {
         String dnsNameDelimiter = ".instanceid.athenz.";
         return sans.stream()
                 .filter(san -> {
-                    if (san.getType() != DNS_NAME) return false;
+                    if (san.getType() != Type.DNS) return false;
                     return san.getValue().contains(dnsNameDelimiter);
                 })
                 .map(san -> {

@@ -29,10 +29,10 @@ public class RoleCsrGenerator {
     public Pkcs10Csr generateCsr(AthenzIdentity identity, AthenzRole role, KeyPair keyPair) {
         return Pkcs10CsrBuilder.fromKeypair(new X500Principal("CN=" + role.toResourceNameString()), keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(
-                        Type.DNS_NAME,
+                        Type.DNS,
                         String.format("%s.%s.%s", identity.getName(), identity.getDomainName().replace(".", "-"), dnsSuffix))
                 .addSubjectAlternativeName(
-                        Type.RFC822_NAME,
+                        Type.EMAIL,
                         String.format("%s@%s", identity.getFullName(), dnsSuffix))
                 .build();
     }

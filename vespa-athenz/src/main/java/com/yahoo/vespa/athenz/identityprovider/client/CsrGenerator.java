@@ -13,9 +13,9 @@ import java.security.KeyPair;
 import java.util.Set;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
-import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
-import static com.yahoo.security.SubjectAlternativeName.Type.IP_ADDRESS;
-import static com.yahoo.security.SubjectAlternativeName.Type.RFC822_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
+import static com.yahoo.security.SubjectAlternativeName.Type.IP;
+import static com.yahoo.security.SubjectAlternativeName.Type.EMAIL;
 
 /**
  * Generates a {@link Pkcs10Csr} for an instance.
@@ -41,14 +41,14 @@ public class CsrGenerator {
         // and SAN dnsname <provider-unique-instance-id>.instanceid.athenz.<provider-dnsname-suffix>
         Pkcs10CsrBuilder pkcs10CsrBuilder = Pkcs10CsrBuilder.fromKeypair(subject, keyPair, SHA256_WITH_RSA)
                 .addSubjectAlternativeName(
-                        DNS_NAME,
+                        DNS,
                         String.format(
                                 "%s.%s.%s",
                                 instanceIdentity.getName(),
                                 instanceIdentity.getDomainName().replace(".", "-"),
                                 dnsSuffix))
-                .addSubjectAlternativeName(DNS_NAME, getIdentitySAN(instanceId));
-        ipAddresses.forEach(ip ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP_ADDRESS, ip)));
+                .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId));
+        ipAddresses.forEach(ip ->  pkcs10CsrBuilder.addSubjectAlternativeName(new SubjectAlternativeName(IP, ip)));
         return pkcs10CsrBuilder.build();
     }
 
@@ -58,8 +58,8 @@ public class CsrGenerator {
                                      KeyPair keyPair) {
         X500Principal principal = new X500Principal(String.format("OU=%s, cn=%s:role.%s", providerService, role.domain().getName(), role.roleName()));
         return Pkcs10CsrBuilder.fromKeypair(principal, keyPair, SHA256_WITH_RSA)
-                .addSubjectAlternativeName(DNS_NAME, getIdentitySAN(instanceId))
-                .addSubjectAlternativeName(RFC822_NAME, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix))
+                .addSubjectAlternativeName(DNS, getIdentitySAN(instanceId))
+                .addSubjectAlternativeName(EMAIL, String.format("%s.%s@%s", identity.getDomainName(), identity.getName(), dnsSuffix))
                 .build();
     }
 

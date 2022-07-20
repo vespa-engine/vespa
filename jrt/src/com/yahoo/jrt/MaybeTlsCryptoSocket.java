@@ -1,12 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jrt;
 
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.ConnectionAuthContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
-import java.util.Optional;
 
 /**
  * A crypto socket for the server side of a connection that
@@ -132,7 +131,5 @@ public class MaybeTlsCryptoSocket implements CryptoSocket {
     @Override public int write(ByteBuffer src) throws IOException { return socket.write(src); }
     @Override public FlushResult flush() throws IOException { return socket.flush(); }
     @Override public void dropEmptyBuffers() { socket.dropEmptyBuffers(); }
-    @Override public Optional<ConnectionAuthContext> getConnectionAuthContext() {
-        return Optional.ofNullable(socket).flatMap(CryptoSocket::getConnectionAuthContext);
-    }
+    @Override public ConnectionAuthContext connectionAuthContext() { return socket.connectionAuthContext(); }
 }

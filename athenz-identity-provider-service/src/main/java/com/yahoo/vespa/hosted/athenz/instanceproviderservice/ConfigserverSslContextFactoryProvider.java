@@ -8,7 +8,7 @@ import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.tls.DefaultTlsContext;
-import com.yahoo.security.tls.MutableX509KeyManager;
+import com.yahoo.security.MutableX509KeyManager;
 import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.athenz.api.AthenzService;

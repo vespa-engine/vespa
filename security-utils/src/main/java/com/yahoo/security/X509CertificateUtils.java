@@ -32,10 +32,10 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 import static com.yahoo.security.Extension.SUBJECT_ALTERNATIVE_NAMES;
@@ -113,6 +113,12 @@ public class X509CertificateUtils {
 
     public static List<String> getSubjectCommonNames(X509Certificate certificate) {
         return getCommonNames(certificate.getSubjectX500Principal());
+    }
+
+    public static Optional<String> getSubjectCommonName(X509Certificate c) {
+        List<String> names = getSubjectCommonNames(c);
+        if (names.isEmpty()) return Optional.empty();
+        return Optional.of(names.get(names.size() - 1));
     }
 
     public static List<String> getIssuerCommonNames(X509Certificate certificate) {

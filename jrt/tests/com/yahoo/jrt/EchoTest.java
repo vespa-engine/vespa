@@ -2,7 +2,7 @@
 package com.yahoo.jrt;
 
 
-import com.yahoo.security.tls.authz.ConnectionAuthContext;
+import com.yahoo.security.tls.ConnectionAuthContext;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -16,7 +16,6 @@ import java.util.List;
 import static com.yahoo.jrt.CryptoUtils.createTestTlsContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(Parameterized.class)
@@ -147,7 +146,7 @@ public class EchoTest {
         for (int i = 0; i < p.size(); i++) {
             r.add(p.get(i));
         }
-        connAuthCtx = req.target().getConnectionAuthContext().orElse(null);
+        connAuthCtx = req.target().connectionAuthContext();
     }
 
     @org.junit.Test
@@ -168,8 +167,6 @@ public class EchoTest {
         if (connAuthCtxAssertion != null) {
             assertNotNull(connAuthCtx);
             connAuthCtxAssertion.assertConnectionAuthContext(connAuthCtx);
-        } else {
-            assertNull(connAuthCtx);
         }
     }
 }

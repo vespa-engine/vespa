@@ -12,7 +12,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,7 +54,7 @@ public class X509CertificateUtilsTest {
     public void can_list_subject_alternative_names() {
         KeyPair keypair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 256);
         X500Principal subject = new X500Principal("CN=myservice");
-        SubjectAlternativeName san = new SubjectAlternativeName(DNS_NAME, "dns-san");
+        SubjectAlternativeName san = new SubjectAlternativeName(DNS, "dns-san");
         X509Certificate cert = X509CertificateBuilder
                 .fromKeypair(
                         keypair,

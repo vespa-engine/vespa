@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import static com.yahoo.security.SubjectAlternativeName.Type.DNS_NAME;
+import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
 
 
 /**
@@ -116,7 +116,7 @@ public class X509CertificateBuilder {
     }
 
     public X509CertificateBuilder addSubjectAlternativeName(String dnsName) {
-        this.subjectAlternativeNames.add(new SubjectAlternativeName(DNS_NAME, dnsName));
+        this.subjectAlternativeNames.add(new SubjectAlternativeName(DNS, dnsName));
         return this;
     }
 

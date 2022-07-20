@@ -4,11 +4,11 @@ package com.yahoo.jdisc.http.ssl.impl;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.tls.AuthorizationMode;
+import com.yahoo.security.tls.AuthorizedPeers;
 import com.yahoo.security.tls.DefaultTlsContext;
 import com.yahoo.security.tls.HostnameVerification;
 import com.yahoo.security.tls.PeerAuthentication;
 import com.yahoo.security.tls.TlsContext;
-import com.yahoo.security.tls.policy.AuthorizedPeers;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
