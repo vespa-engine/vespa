@@ -10,15 +10,20 @@ ARTIFACTORY_URL="https://artifactory.yahooinc.com/artifactory"
 # JFrog Cloud repo file
 if [[ ! -f /etc/yum.repos.d/vespa.repo ]]; then
     cat << EOF > /etc/yum.repos.d/vespa.repo
-[vespa-release]
+[vespa-release-el8]
 name=Vespa releases
 baseurl=$ARTIFACTORY_URL/vespa/centos/8/release/\$basearch
+gpgcheck=0
+enabled=1
+[vespa-release-el7]
+name=Vespa releases
+baseurl=$ARTIFACTORY_URL/vespa/centos/7/release/\$basearch
 gpgcheck=0
 enabled=1
 EOF
 fi
 
-VERSIONS_TO_DELETE=$(dnf list --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-release vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -200)
+VERSIONS_TO_DELETE=$(dnf list --quiet --showduplicates --disablerepo='*' --enablerepo=vespa-release-el7,vespa-release-el8 vespa | awk '/[0-9].*\.[0-9].*\.[0-9].*/{print $2}' | sort -V | head -n -200 | grep -v "7.594.36")
 
 RPMS_TO_DELETE=$(mktemp)
 trap "rm -f $RPMS_TO_DELETE" EXIT
