@@ -18,13 +18,14 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
                                     CapabilitySet capabilities,
                                     Set<String> matchedPolicies) {
 
-    private static final ConnectionAuthContext DEFAULT_ALL_CAPABILITIES =
-            new ConnectionAuthContext(List.of(), CapabilitySet.all(), Set.of());
+    private static final ConnectionAuthContext DEFAULT_ALL_CAPABILITIES = new ConnectionAuthContext(List.of());
 
     public ConnectionAuthContext {
         peerCertificateChain = List.copyOf(peerCertificateChain);
         matchedPolicies = Set.copyOf(matchedPolicies);
     }
+
+    private ConnectionAuthContext(List<X509Certificate> certs) { this(certs, CapabilitySet.all(), Set.of()); }
 
     public boolean authorized() { return !capabilities.hasNone(); }
 
@@ -60,6 +61,12 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
         return Optional.of(b.append("]").toString());
     }
 
+    /** Construct instance with all capabilities */
     public static ConnectionAuthContext defaultAllCapabilities() { return DEFAULT_ALL_CAPABILITIES; }
+
+    /** Construct instance with all capabilities */
+    public static ConnectionAuthContext defaultAllCapabilities(List<X509Certificate> certs) {
+        return new ConnectionAuthContext(certs);
+    }
 
 }

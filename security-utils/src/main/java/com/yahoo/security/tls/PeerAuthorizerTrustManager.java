@@ -105,7 +105,7 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         log.fine(() -> "Verifying certificate: " + createInfoString(certChain[0], authType, isVerifyingClient));
         ConnectionAuthContext result = mode != AuthorizationMode.DISABLE
                 ? authorizer.authorizePeer(List.of(certChain))
-                : ConnectionAuthContext.defaultAllCapabilities();
+                : ConnectionAuthContext.defaultAllCapabilities(List.of(certChain));
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
             sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY, result);
         }

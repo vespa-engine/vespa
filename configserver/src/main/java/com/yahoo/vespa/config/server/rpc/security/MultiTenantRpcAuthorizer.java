@@ -166,14 +166,14 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
 
     // TODO Make peer identity mandatory once TLS mixed mode is removed
     private Optional<NodeIdentity> getPeerIdentity(Request request) {
-        Optional<ConnectionAuthContext> authCtx = request.target().getConnectionAuthContext();
-        if (authCtx.isEmpty()) {
+        ConnectionAuthContext authCtx = request.target().connectionAuthContext();
+        if (authCtx.peerCertificate().isEmpty()) {
             if (TransportSecurityUtils.getInsecureMixedMode() == MixedMode.DISABLED) {
                 throw new IllegalStateException("Security context missing"); // security context should always be present
             }
             return Optional.empty(); // client choose to communicate over insecure channel
         }
-        List<X509Certificate> certChain = authCtx.get().peerCertificateChain();
+        List<X509Certificate> certChain = authCtx.peerCertificateChain();
         if (certChain.isEmpty()) {
             throw new IllegalStateException("Client authentication is not enforced!"); // clients should be required to authenticate when TLS is enabled
         }
