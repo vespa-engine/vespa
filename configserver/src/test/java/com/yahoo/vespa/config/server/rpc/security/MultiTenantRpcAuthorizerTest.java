@@ -250,9 +250,9 @@ public class MultiTenantRpcAuthorizerTest {
 
     private static Request mockJrtRpcRequest(String payload) {
         ConnectionAuthContext authContext =
-                new ConnectionAuthContext(PEER_CERTIFICATE_CHAIN, CapabilitySet.none(), Set.of());
+                new ConnectionAuthContext(PEER_CERTIFICATE_CHAIN, CapabilitySet.all(), Set.of());
         Target target = mock(Target.class);
-        when(target.getConnectionAuthContext()).thenReturn(Optional.of(authContext));
+        when(target.connectionAuthContext()).thenReturn(authContext);
         Request request = mock(Request.class);
         when(request.target()).thenReturn(target);
         Values values = new Values();

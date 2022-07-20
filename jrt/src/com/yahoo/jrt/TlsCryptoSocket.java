@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
-import java.util.Optional;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import static javax.net.ssl.SSLEngineResult.Status;
@@ -219,9 +219,9 @@ public class TlsCryptoSocket implements CryptoSocket {
     }
 
     @Override
-    public Optional<ConnectionAuthContext> getConnectionAuthContext() {
-        if (handshakeState != HandshakeState.COMPLETED) return Optional.empty();
-        return Optional.ofNullable(authContext);
+    public ConnectionAuthContext connectionAuthContext() {
+        if (handshakeState != HandshakeState.COMPLETED) throw new IllegalStateException("Handshake not complete");
+        return Objects.requireNonNull(authContext);
     }
 
     private boolean handshakeWrap() throws IOException {

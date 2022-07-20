@@ -18,8 +18,10 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
                                     CapabilitySet capabilities,
                                     Set<String> matchedPolicies) {
 
+    private static final ConnectionAuthContext DEFAULT_ALL_CAPABILITIES =
+            new ConnectionAuthContext(List.of(), CapabilitySet.all(), Set.of());
+
     public ConnectionAuthContext {
-        if (peerCertificateChain.isEmpty()) throw new IllegalArgumentException("Peer certificate chain is empty");
         peerCertificateChain = List.copyOf(peerCertificateChain);
         matchedPolicies = Set.copyOf(matchedPolicies);
     }
@@ -33,7 +35,7 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
     public Optional<String> peerCertificateString() {
         X509Certificate cert = peerCertificate().orElse(null);
         if (cert == null) return Optional.empty();
-        StringBuilder b = new StringBuilder("X.509Cert{");
+        StringBuilder b = new StringBuilder("[");
         String cn = X509CertificateUtils.getSubjectCommonName(cert).orElse(null);
         if (cn != null) {
             b.append("CN='").append(cn).append("'");
@@ -55,7 +57,9 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
             if (cn != null || !dnsNames.isEmpty()) b.append(", ");
             b.append("SAN_URI=").append(uris);
         }
-        return Optional.of(b.append("}").toString());
+        return Optional.of(b.append("]").toString());
     }
+
+    public static ConnectionAuthContext defaultAllCapabilities() { return DEFAULT_ALL_CAPABILITIES; }
 
 }

@@ -4,6 +4,7 @@ package com.yahoo.jrt;
 import com.yahoo.security.tls.ConnectionAuthContext;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -11,7 +12,6 @@ import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -438,9 +438,16 @@ class Connection extends Target {
     }
 
     @Override
-    public Optional<ConnectionAuthContext> getConnectionAuthContext() {
-        return Optional.ofNullable(socket)
-                .flatMap(CryptoSocket::getConnectionAuthContext);
+    public ConnectionAuthContext connectionAuthContext() {
+        if (socket == null) throw new IllegalStateException("Not connected");
+        return socket.connectionAuthContext();
+    }
+
+    @Override
+    public Spec peerSpec() {
+        if (socket == null) throw new IllegalStateException("Not connected");
+        InetSocketAddress addr = (InetSocketAddress) socket.channel().socket().getRemoteSocketAddress();
+        return new Spec(addr.getHostString(), addr.getPort());
     }
 
     public boolean isClient() {

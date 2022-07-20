@@ -14,7 +14,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -106,7 +105,7 @@ public class PeerAuthorizerTrustManager extends X509ExtendedTrustManager {
         log.fine(() -> "Verifying certificate: " + createInfoString(certChain[0], authType, isVerifyingClient));
         ConnectionAuthContext result = mode != AuthorizationMode.DISABLE
                 ? authorizer.authorizePeer(List.of(certChain))
-                : new ConnectionAuthContext(List.of(certChain), CapabilitySet.all(), Set.of());
+                : ConnectionAuthContext.defaultAllCapabilities();
         if (sslEngine != null) { // getHandshakeSession() will never return null in this context
             sslEngine.getHandshakeSession().putValue(HANDSHAKE_SESSION_AUTH_CONTEXT_PROPERTY, result);
         }
