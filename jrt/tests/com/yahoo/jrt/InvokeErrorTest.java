@@ -18,6 +18,7 @@ public class InvokeErrorTest {
     Target       target;
     Test.Barrier barrier;
     SimpleRequestAccessFilter filter;
+    RpcTestMethod             testMethod;
 
     @Before
     public void setUp() throws ListenFailedException {
@@ -26,7 +27,8 @@ public class InvokeErrorTest {
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
         filter = new SimpleRequestAccessFilter();
-        server.addMethod(new Method("test", "iib", "i", this::rpc_test).requestAccessFilter(filter));
+        testMethod = new RpcTestMethod();
+        server.addMethod(new Method("test", "iib", "i", testMethod).requestAccessFilter(filter));
         server.addMethod(new Method("test_barrier", "iib", "i", this::rpc_test_barrier));
         barrier = new Test.Barrier();
     }
@@ -39,22 +41,8 @@ public class InvokeErrorTest {
         server.transport().shutdown().join();
     }
 
-    private void rpc_test(Request req) {
-        int value = req.parameters().get(0).asInt32();
-        int error = req.parameters().get(1).asInt32();
-        int extra = req.parameters().get(2).asInt8();
-
-        req.returnValues().add(new Int32Value(value));
-        if (extra != 0) {
-            req.returnValues().add(new Int32Value(value));
-        }
-        if (error != 0) {
-            req.setError(error, "Custom error");
-        }
-    }
-
     private void rpc_test_barrier(Request req) {
-        rpc_test(req);
+        testMethod.invoke(req);
         barrier.waitFor();
     }
 
@@ -161,18 +149,6 @@ public class InvokeErrorTest {
     }
 
     @org.junit.Test
-    public void testFilterIsInvoked() {
-        Request r = new Request("test");
-        r.parameters().add(new Int32Value(42));
-        r.parameters().add(new Int32Value(0));
-        r.parameters().add(new Int8Value((byte)0));
-        assertFalse(filter.invoked);
-        target.invokeSync(r, timeout);
-        assertFalse(r.isError());
-        assertTrue(filter.invoked);
-    }
-
-    @org.junit.Test
     public void testFilterFailsRequest() {
         Request r = new Request("test");
         r.parameters().add(new Int32Value(42));
@@ -183,13 +159,29 @@ public class InvokeErrorTest {
         target.invokeSync(r, timeout);
         assertTrue(r.isError());
         assertTrue(filter.invoked);
+        assertFalse(testMethod.invoked);
         assertEquals(ErrorCode.PERMISSION_DENIED, r.errorCode());
         assertEquals("Permission denied", r.errorMessage());
     }
 
-    private static class SimpleRequestAccessFilter implements RequestAccessFilter {
-        boolean invoked = false, allowed = true;
-        @Override public boolean allow(Request r) { invoked = true; return allowed; }
+    private static class RpcTestMethod implements MethodHandler {
+        boolean invoked = false;
+
+        @Override public void invoke(Request req) { invoked = true; rpc_test(req); }
+
+        void rpc_test(Request req) {
+            int value = req.parameters().get(0).asInt32();
+            int error = req.parameters().get(1).asInt32();
+            int extra = req.parameters().get(2).asInt8();
+
+            req.returnValues().add(new Int32Value(value));
+            if (extra != 0) {
+                req.returnValues().add(new Int32Value(value));
+            }
+            if (error != 0) {
+                req.setError(error, "Custom error");
+            }
+        }
     }
 
 }

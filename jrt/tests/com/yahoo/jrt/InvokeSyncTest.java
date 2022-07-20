@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
@@ -21,6 +22,7 @@ public class InvokeSyncTest {
     Acceptor   acceptor;
     Supervisor client;
     Target     target;
+    SimpleRequestAccessFilter filter;
     
     @Before
     public void setUp() throws ListenFailedException {
@@ -28,11 +30,13 @@ public class InvokeSyncTest {
         client   = new Supervisor(new Transport());
         acceptor = server.listen(new Spec(0));
         target   = client.connect(new Spec("localhost", acceptor.port()));
+        filter = new SimpleRequestAccessFilter();
         server.addMethod(new Method("concat", "ss", "s", this::rpc_concat)
                          .methodDesc("Concatenate 2 strings")
                          .paramDesc(0, "str1", "a string")
                          .paramDesc(1, "str2", "another string")
-                         .returnDesc(0, "ret", "str1 followed by str2"));
+                         .returnDesc(0, "ret", "str1 followed by str2")
+                          .requestAccessFilter(filter));
         server.addMethod(new Method("alltypes", "bhilfds", "s", this::rpc_alltypes)
                           .methodDesc("Method taking all types of params"));
     }
@@ -83,5 +87,18 @@ public class InvokeSyncTest {
         baos.flush();
         assertEquals(baos.toString(), "This was alltypes. The string param was: baz\n");
     }
+
+    @org.junit.Test
+    public void testFilterIsInvoked() {
+        Request req = new Request("concat");
+        req.parameters().add(new StringValue("abc"));
+        req.parameters().add(new StringValue("def"));
+        assertFalse(filter.invoked);
+        target.invokeSync(req, 10);
+        assertFalse(req.isError());
+        assertEquals("abcdef", req.returnValues().get(0).asString());
+        assertTrue(filter.invoked);
+    }
+
 
 }
