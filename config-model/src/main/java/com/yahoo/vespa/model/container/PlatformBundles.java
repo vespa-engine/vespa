@@ -34,9 +34,9 @@ public class PlatformBundles {
 
     // Bundles that must be loaded for all container types.
     public static final Set<Path> commonVespaBundles = Stream.of(
-            "container-apache-http-client-bundle-jar-with-dependencies.jar", // Apache http client repackaged
+            "container-apache-http-client-bundle", // Apache http client repackaged
             "container-spifly.jar",  // Aries SPIFly repackaged
-            "hosted-zone-api-jar-with-dependencies.jar",
+            "hosted-zone-api",
             "security-utils.jar",
             "zkfacade",
             "zookeeper-server"  // TODO: not necessary in metrics-proxy.
@@ -55,7 +55,8 @@ public class PlatformBundles {
 
     public static Path absoluteBundlePath(String fileName, JarSuffix jarSuffix) {
         if (fileName == null) return null;
-        return LIBRARY_PATH.resolve(Paths.get(fileName + jarSuffix.suffix));
+        String fullFilename = fileName.endsWith(".jar") ? fileName : fileName + jarSuffix.suffix;
+        return LIBRARY_PATH.resolve(Paths.get(fullFilename));
     }
 
     public static boolean isSearchAndDocprocClass(String className) {
