@@ -73,7 +73,7 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
         }
         b.append(". Peer ");
         if (peer != null) b.append("'").append(peer).append("' ");
-        return b.append("with ").append(peerCertificateString()).append(". Requires capabilities ")
+        return b.append("with ").append(peerCertificateString().orElse("<missing-certificate>")).append(". Requires capabilities ")
                 .append(required.toNames()).append(" but peer has ").append(capabilities.toNames())
                 .append(".").toString();
     }

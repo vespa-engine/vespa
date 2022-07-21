@@ -33,7 +33,7 @@ class ConnectionAuthContextTest {
         ConnectionAuthContext ctx = createConnectionAuthContext();
         CapabilitySet requiredCaps = CapabilitySet.from(Capability.CONTENT__STATUS_PAGES);
         String expectedMessage = """
-                Permission denied for 'myaction' on 'myresource'. Peer 'mypeer' with Optional[[CN='myidentity']].
+                Permission denied for 'myaction' on 'myresource'. Peer 'mypeer' with [CN='myidentity'].
                 Requires capabilities [vespa.content.status_pages] but peer has
                 [vespa.content.document_api, vespa.content.search_api, vespa.slobrok.api].
                 """;
