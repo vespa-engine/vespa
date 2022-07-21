@@ -34,10 +34,7 @@ public class PlatformBundles {
 
     // Bundles that must be loaded for all container types.
     public static final Set<Path> commonVespaBundles = Stream.of(
-            "container-apache-http-client-bundle", // Apache http client repackaged
             "container-spifly.jar",  // Aries SPIFly repackaged
-            "hosted-zone-api",
-            "security-utils.jar",
             "zkfacade",
             "zookeeper-server"  // TODO: not necessary in metrics-proxy.
     ).map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());

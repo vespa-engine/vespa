@@ -103,10 +103,7 @@
             container-disc-jar-with-dependencies.jar,
 
             <!-- START bundles that can be moved to config-model when all standalone containers are set up via the model -->
-            container-apache-http-client-bundle-jar-with-dependencies.jar,
             container-spifly.jar,  <!-- Aries SPIFly repackaged -->
-            hosted-zone-api-jar-with-dependencies.jar,
-            security-utils.jar,
             <!-- END bundles that can be moved to config-model -->
 
             <!-- START config-model dependencies -->

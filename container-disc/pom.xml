@@ -185,17 +185,20 @@
             <discApplicationClass>com.yahoo.container.jdisc.ConfiguredApplication</discApplicationClass>
             <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
-                <!-- Bundles needed to retrieve config -->
+                <!-- BEGIN Bundles needed to retrieve config, or used by container-disc -->
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
-
+                hosted-zone-api-jar-with-dependencies.jar,
                 jdisc-security-filters-jar-with-dependencies.jar,
                 vespa-athenz-jar-with-dependencies.jar,
-
-                javax.servlet-api-3.1.0.jar, <!-- TODO: Move to model, only needed for application container clusters -->
+                container-apache-http-client-bundle-jar-with-dependencies.jar,
+                security-utils.jar,
+                bcprov-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
+                <!-- END Bundles needed to retrieve config, or used by container-disc -->
 
                 bcpkix-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
-                bcprov-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
+
+                javax.servlet-api-3.1.0.jar, <!-- TODO: Move to model, only needed for application container clusters -->
 
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,
