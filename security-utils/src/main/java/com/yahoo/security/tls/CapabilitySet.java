@@ -30,15 +30,17 @@ public class CapabilitySet {
         ;
 
         private final String name;
-        private final EnumSet<Capability> caps;
+        private final CapabilitySet set;
 
         Predefined(String name, Capability... caps) {
             this.name = name;
-            this.caps = caps.length == 0 ? EnumSet.noneOf(Capability.class) : EnumSet.copyOf(List.of(caps)); }
+            this.set = caps.length == 0 ? CapabilitySet.none() : CapabilitySet.from(caps); }
 
         public static Optional<Predefined> fromName(String name) {
             return Arrays.stream(values()).filter(p -> p.name.equals(name)).findAny();
         }
+
+        public CapabilitySet capabilities() { return set; }
     }
 
     private static final CapabilitySet ALL_CAPABILITIES = new CapabilitySet(EnumSet.allOf(Capability.class));
@@ -52,7 +54,7 @@ public class CapabilitySet {
         EnumSet<Capability> caps = EnumSet.noneOf(Capability.class);
         for (String name : names) {
             Predefined predefined = Predefined.fromName(name).orElse(null);
-            if (predefined != null) caps.addAll(predefined.caps);
+            if (predefined != null) caps.addAll(predefined.set.caps);
             else caps.add(Capability.fromName(name));
         }
         return new CapabilitySet(caps);

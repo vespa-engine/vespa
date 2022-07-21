@@ -18,6 +18,7 @@ import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
+import com.yahoo.security.tls.CapabilityMode;
 import com.yahoo.security.tls.CapabilitySet;
 import com.yahoo.security.tls.ConnectionAuthContext;
 import com.yahoo.slime.Cursor;
@@ -250,7 +251,7 @@ public class MultiTenantRpcAuthorizerTest {
 
     private static Request mockJrtRpcRequest(String payload) {
         ConnectionAuthContext authContext =
-                new ConnectionAuthContext(PEER_CERTIFICATE_CHAIN, CapabilitySet.all(), Set.of());
+                new ConnectionAuthContext(PEER_CERTIFICATE_CHAIN, CapabilitySet.all(), Set.of(), CapabilityMode.ENFORCE);
         Target target = mock(Target.class);
         when(target.connectionAuthContext()).thenReturn(authContext);
         Request request = mock(Request.class);
