@@ -471,6 +471,14 @@ public class Flags {
             "Takes effect on next tick",
             HOSTNAME);
 
+    public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
+            "tls-capabilities-enforcement-mode", "disable",
+            List.of("bjorncs", "vekterli"), "2022-07-21", "2024-01-01",
+            "Configure Vespa TLS capability enforcement mode",
+            "Takes effect on restart of Docker container",
+            APPLICATION_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
