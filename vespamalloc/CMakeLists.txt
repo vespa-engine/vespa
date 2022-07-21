@@ -26,7 +26,6 @@ vespa_define_module(
     src/vespamalloc/util
 )
 
-vespa_install_script(bin/parsememorydump.pl vespa-malloc-parse-memorydump.pl bin)
 else()
 install(DIRECTORY DESTINATION lib64/vespa)
 endif()
