@@ -2,7 +2,8 @@
 package com.yahoo.jrt;
 
 import com.yahoo.security.tls.ConnectionAuthContext;
-import com.yahoo.security.tls.PeerAuthorizerTrustManager;
+import com.yahoo.security.tls.PeerAuthorizationFailedException;
+import com.yahoo.security.tls.TransportSecurityUtils;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
@@ -97,15 +98,6 @@ public class TlsCryptoSocket implements CryptoSocket {
                     channelRead();
                     break;
                 case NEED_WORK:
-                    if (authContext == null) {
-                        PeerAuthorizerTrustManager.getConnectionAuthContext(sslEngine) // only available during handshake
-                                .ifPresent(ctx ->  {
-                                    if (!ctx.authorized()) {
-                                        metrics.incrementPeerAuthorizationFailures();
-                                    }
-                                    authContext = ctx;
-                                });
-                    }
                     break;
                 case COMPLETED:
                     return HandshakeState.COMPLETED;
@@ -122,6 +114,10 @@ public class TlsCryptoSocket implements CryptoSocket {
                         SSLSession session = sslEngine.getSession();
                         sessionApplicationBufferSize = session.getApplicationBufferSize();
                         sessionPacketBufferSize = session.getPacketBufferSize();
+                        authContext = TransportSecurityUtils.getConnectionAuthContext(session).orElseThrow();
+                        if (!authContext.authorized()) {
+                            metrics.incrementPeerAuthorizationFailures();
+                        }
                         log.fine(() -> String.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
                         if (sslEngine.getUseClientMode()) {
                             metrics.incrementClientTlsConnectionsEstablished();
@@ -143,8 +139,7 @@ public class TlsCryptoSocket implements CryptoSocket {
                 }
             }
         } catch (SSLHandshakeException e) {
-            // sslEngine.getDelegatedTask().run() and handshakeWrap() may throw SSLHandshakeException, potentially handshakeUnwrap() and sslEngine.beginHandshake() as well.
-            if (authContext == null || authContext.authorized()) { // don't include handshake failures due from PeerAuthorizerTrustManager
+            if (!(e.getCause() instanceof PeerAuthorizationFailedException)) {
                 metrics.incrementTlsCertificateVerificationFailures();
             }
             throw e;
