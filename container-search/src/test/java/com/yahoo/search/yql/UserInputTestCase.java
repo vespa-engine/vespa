@@ -359,4 +359,13 @@ public class UserInputTestCase {
         assertQueryFails(builder);
     }
 
+    @Test
+    public void testUserInputWithEmptyRangeStart() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("wql", "[;boom]");
+        builder.setParameter("yql", "select * from sources * where ([{\"defaultIndex\": \"text_field\",\"grammar\": \"any\"}]userInput(@wql))");
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where text_field contains \"boom\"", query.yqlRepresentation());
+    }
+
 }

@@ -333,6 +333,7 @@ abstract class StructuredParser extends AbstractParser {
             if (tokens.currentIs(NUMBER)) {
                 rangeEnd = (negative ? "-" : "") + tokens.next().toString() + decimalPart();
             }
+            if (rangeStart.isBlank() && rangeEnd.isBlank()) return null;
 
 
             String range = "[" + rangeStart + ";" + rangeEnd;
