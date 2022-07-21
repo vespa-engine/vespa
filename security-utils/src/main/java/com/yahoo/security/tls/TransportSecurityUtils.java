@@ -1,6 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security.tls;
 
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -85,6 +88,24 @@ public class TransportSecurityUtils {
             }
             return Optional.of(systemTlsContext);
         }
+    }
+
+    /**
+     * @return {@link ConnectionAuthContext} instance if {@link SSLEngine} was constructed by a {@link TlsContext}.
+     *         Only available after TLS handshake is completed.
+     */
+    public static Optional<ConnectionAuthContext> getConnectionAuthContext(SSLSession s) {
+        return Optional.ofNullable((ConnectionAuthContext) s.getValue(PeerAuthorizerTrustManager.AUTH_CONTEXT_PROPERTY));
+    }
+
+    /** @see #getConnectionAuthContext(SSLSession) */
+    public static Optional<ConnectionAuthContext> getConnectionAuthContext(SSLEngine e) {
+        return getConnectionAuthContext(e.getSession());
+    }
+
+    /** @see #getConnectionAuthContext(SSLSession) */
+    public static Optional<ConnectionAuthContext> getConnectionAuthContext(SSLSocket s) {
+        return getConnectionAuthContext(s.getSession());
     }
 
     private static Optional<String> getEnvironmentVariable(Map<String, String> environmentVariables, String variableName) {

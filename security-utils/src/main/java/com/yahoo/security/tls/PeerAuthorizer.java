@@ -7,7 +7,6 @@ import com.yahoo.security.X509CertificateUtils;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -39,7 +38,7 @@ public class PeerAuthorizer {
         X509Certificate cert = certChain.get(0);
         Set<String> matchedPolicies = new HashSet<>();
         Set<CapabilitySet> grantedCapabilities = new HashSet<>();
-        String cn = getCommonName(cert).orElse(null);
+        String cn = X509CertificateUtils.getSubjectCommonName(cert).orElse(null);
         List<String> sans = getSubjectAlternativeNames(cert);
         log.fine(() -> String.format("Subject info from x509 certificate: CN=[%s], 'SAN=%s", cn, sans));
         for (PeerPolicy peerPolicy : authorizedPeers.peerPolicies()) {
@@ -48,7 +47,10 @@ public class PeerAuthorizer {
                 grantedCapabilities.add(peerPolicy.capabilities());
             }
         }
-        return new ConnectionAuthContext(certChain, CapabilitySet.unionOf(grantedCapabilities), matchedPolicies);
+        // TODO Pass this through constructor
+        CapabilityMode capabilityMode = TransportSecurityUtils.getCapabilityMode();
+        return new ConnectionAuthContext(
+                certChain, CapabilitySet.unionOf(grantedCapabilities), matchedPolicies, capabilityMode);
     }
 
     private static boolean matchesPolicy(PeerPolicy peerPolicy, String cn, List<String> sans) {
@@ -67,11 +69,6 @@ public class PeerAuthorizer {
             default:
                 throw new RuntimeException("Unknown field: " + requiredCredential.field());
         }
-    }
-
-    private static Optional<String> getCommonName(X509Certificate peerCertificate) {
-        return X509CertificateUtils.getSubjectCommonNames(peerCertificate).stream()
-                .findFirst();
     }
 
     private static List<String> getSubjectAlternativeNames(X509Certificate peerCertificate) {
