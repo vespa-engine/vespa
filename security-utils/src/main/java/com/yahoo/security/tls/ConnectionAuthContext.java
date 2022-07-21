@@ -7,7 +7,6 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 import static com.yahoo.security.SubjectAlternativeName.Type.DNS;
@@ -36,27 +35,29 @@ public record ConnectionAuthContext(List<X509Certificate> peerCertificateChain,
 
     public boolean authorized() { return !capabilities.hasNone(); }
 
-    public boolean hasCapabilities(CapabilitySet requiredCapabilities) {
-        return hasCapabilities(requiredCapabilities, null, null, null);
+    /** Throws checked exception to force caller to handle verification failed. */
+    public void verifyCapabilities(CapabilitySet requiredCapabilities) throws MissingCapabilitiesException {
+        verifyCapabilities(requiredCapabilities, null, null, null);
     }
 
-    /** Provided strings are used for improved logging only */
-    public boolean hasCapabilities(CapabilitySet requiredCapabilities, String action, String resource, String peer) {
-        if (capabilityMode == DISABLE) return authorized();
+    /**
+     * Throws checked exception to force caller to handle verification failed.
+     * Provided strings are used for improved logging only
+     * */
+    public void verifyCapabilities(CapabilitySet requiredCapabilities, String action, String resource, String peer)
+            throws MissingCapabilitiesException {
+        if (capabilityMode == DISABLE) return;
         boolean hasCapabilities = capabilities.has(requiredCapabilities);
         if (!hasCapabilities) {
-            Supplier<String> errorMessageProvider = () ->
-                    createPermissionDeniedErrorMessage(requiredCapabilities, action, resource, peer);
+            String msg = createPermissionDeniedErrorMessage(requiredCapabilities, action, resource, peer);
             if (capabilityMode == LOG_ONLY) {
-                log.info(errorMessageProvider);
-                return true;
+                log.info(msg);
             } else {
-                // Ideally log as warning but we have no mechanism for de-duplicating repeated log spamming.
-                log.fine(errorMessageProvider);
-                return false;
+                // Ideally log as warning, but we have no mechanism for de-duplicating repeated log spamming.
+                log.fine(msg);
+                throw new MissingCapabilitiesException(msg);
             }
         }
-        return true;
     }
 
     String createPermissionDeniedErrorMessage(

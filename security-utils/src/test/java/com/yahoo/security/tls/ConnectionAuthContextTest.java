@@ -1,4 +1,5 @@
-package com.yahoo.security.tls;// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.security.tls;
 
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -16,16 +17,18 @@ import java.util.Set;
 
 import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author bjorncs
  */
 class ConnectionAuthContextTest {
+
     @Test
     void fails_on_missing_capabilities() {
         ConnectionAuthContext ctx = createConnectionAuthContext();
-        assertFalse(ctx.hasCapabilities(CapabilitySet.from(Capability.CONTENT__STATUS_PAGES)));
+        assertThrows(MissingCapabilitiesException.class,
+                () -> ctx.verifyCapabilities(CapabilitySet.from(Capability.CONTENT__STATUS_PAGES)));
     }
 
     @Test

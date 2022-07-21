@@ -3,6 +3,7 @@ package com.yahoo.jrt;
 
 import com.yahoo.security.tls.Capability;
 import com.yahoo.security.tls.CapabilitySet;
+import com.yahoo.security.tls.MissingCapabilitiesException;
 
 /**
  * @author bjorncs
@@ -21,8 +22,13 @@ public class RequireCapabilitiesFilter implements RequestAccessFilter {
 
     @Override
     public boolean allow(Request r) {
-        return r.target().connectionAuthContext()
-                .hasCapabilities(requiredCapabilities, "RPC", r.methodName(), r.target().peerSpec().toString());
+        try {
+            r.target().connectionAuthContext()
+                    .verifyCapabilities(requiredCapabilities, "RPC", r.methodName(), r.target().peerSpec().toString());
+            return true;
+        } catch (MissingCapabilitiesException e) {
+            return false;
+        }
     }
 
 }
