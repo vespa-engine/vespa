@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Level;
-import java.util.stream.Stream;
 
 /**
  * REST API for issuing and refreshing node certificates in a hosted Vespa system.
@@ -177,9 +176,7 @@ public class CertificateAuthorityApiHandler extends ThreadedHttpRequestHandler {
     private AthenzService getRequestAthenzService(HttpRequest request) {
         return getRequestCertificateChain(request).stream()
                 .findFirst()
-                .map(X509CertificateUtils::getSubjectCommonNames)
-                .map(List::stream)
-                .flatMap(Stream::findFirst)
+                .flatMap(X509CertificateUtils::getSubjectCommonName)
                 .map(AthenzService::new)
                 .orElseThrow(() -> new RuntimeException("No certificate found"));
     }
