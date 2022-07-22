@@ -493,13 +493,19 @@ DummyPersistence::removeAsync(const Bucket& b, std::vector<spi::IdAndTimestamp> 
             bc = acquireBucketWithLock(b);
         }
         DocEntry::SP entry((*bc)->getEntry(id));
-        numRemoves += (entry.get() && !entry->isRemove()) ? 1 : 0;
-        auto remEntry = DocEntry::create(t, DocumentMetaEnum::REMOVE_ENTRY, id);
+        if (!entry || entry->getTimestamp() <= t) {
+            numRemoves += (entry && !entry->isRemove()) ? 1 : 0;
+            auto remEntry = DocEntry::create(t, DocumentMetaEnum::REMOVE_ENTRY, id);
 
-        if ((*bc)->hasTimestamp(t)) {
-            (*bc)->eraseEntry(t);
+            if ((*bc)->hasTimestamp(t)) {
+                (*bc)->eraseEntry(t);
+            }
+            (*bc)->insert(std::move(remEntry));
+        } else {
+            LOG(debug, "Not adding tombstone for %s at %" PRIu64 " since it has already "
+                       "been succeeded by a newer write at timestamp %" PRIu64,
+                id.toString().c_str(), t.getValue(), entry->getTimestamp().getValue());
         }
-        (*bc)->insert(std::move(remEntry));
     }
     bc.reset();
     onComplete->onComplete(std::make_unique<RemoveResult>(numRemoves));
