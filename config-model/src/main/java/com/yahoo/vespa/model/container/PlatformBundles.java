@@ -33,7 +33,7 @@ public class PlatformBundles {
     public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
 
     // Bundles that must be loaded for all container types.
-    public static final Set<Path> commonVespaBundles = Stream.of(
+    public static final Set<Path> COMMON_VESPA_BUNDLES = Stream.of(
             "container-spifly.jar",  // Aries SPIFly repackaged
             "zkfacade",
             "zookeeper-server"  // TODO: not necessary in metrics-proxy.

@@ -458,7 +458,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
      * Adds the Vespa bundles that are necessary for all container types.
      */
     public void addCommonVespaBundles() {
-        PlatformBundles.commonVespaBundles.forEach(this::addPlatformBundle);
+        PlatformBundles.COMMON_VESPA_BUNDLES.forEach(this::addPlatformBundle);
     }
 
     /*
