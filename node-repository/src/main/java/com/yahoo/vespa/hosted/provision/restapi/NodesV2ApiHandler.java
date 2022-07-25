@@ -44,6 +44,7 @@ import com.yahoo.vespa.hosted.provision.node.filter.ParentHostFilter;
 import com.yahoo.vespa.hosted.provision.restapi.NodesResponse.ResponseType;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.yolean.Exceptions;
+
 import javax.inject.Inject;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -453,8 +454,8 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
         Slime slime = new Slime();
         Cursor root = slime.setObject();
 
-        root.setDouble("total-cost", stats.totalCost());
-        root.setDouble("total-allocated-cost", stats.totalAllocatedCost());
+        root.setDouble("totalCost", stats.totalCost());
+        root.setDouble("totalAllocatedCost", stats.totalAllocatedCost());
         toSlime(stats.load(), root.setObject("load"));
         toSlime(stats.activeLoad(), root.setObject("activeLoad"));
         Cursor applicationsArray = root.setArray("applications");
