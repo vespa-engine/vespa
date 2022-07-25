@@ -1,6 +1,6 @@
 {
-  "total-cost" : 8.591999999999999,
-  "total-allocated-cost": 5.356,
+  "totalCost": 8.591999999999999,
+  "totalAllocatedCost": 5.356,
   "load": {
     "cpu": 0.0,
     "memory": 0.0,
