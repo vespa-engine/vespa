@@ -1,0 +1,8 @@
+Container.ai.onnx.Test
+Container.com.fasterxml.jackson.jaxrs.json.Test
+Container.com.google.Test
+Container.com.yahooapis.foo.Test
+Container.com.yahoo.newssearch.Test
+Container.com.yahoo.Test
+Container.com.yahoo.testing.Test
+Container.org.apache.http.Test
