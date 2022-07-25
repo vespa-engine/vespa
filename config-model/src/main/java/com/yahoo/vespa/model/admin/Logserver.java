@@ -7,8 +7,7 @@ import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.PortAllocBridge;
 
 /**
- * Represents the Logserver. There is exactly one logserver in a Vespa
- * system.
+ * Represents the Logserver. There is exactly one logserver in a Vespa system.
  *
  * @author gjoranv
  * @author bjorncs
@@ -42,9 +41,7 @@ public class Logserver extends AbstractService {
         return "exec $ROOT/bin/vespa-logserver-start " + getMyJVMArgs() + " " + getJvmOptions();
     }
 
-    /**
-     * @return the jvm args to be used by the logserver.
-     */
+    /** Returns the jvm args to be used by the logserver. */
     private String getMyJVMArgs() {
         StringBuilder sb = new StringBuilder();
         sb.append("--add-opens=java.base/java.io=ALL-UNNAMED");
@@ -57,9 +54,7 @@ public class Logserver extends AbstractService {
         return sb.toString();
     }
 
-    /**
-     * Returns the desired base port for this service.
-     */
+    /** Returns the desired base port for this service. */
     public int getWantedPort() {
         return 19080;
     }
@@ -73,9 +68,7 @@ public class Logserver extends AbstractService {
         return true; // TODO Support dynamic port allocation for logserver
     }
 
-    /**
-     * @return the number of ports needed by the logserver.
-     */
+    /** Returns the number of ports needed by the logserver. */
     public int getPortCount() {
         return 4;
     }

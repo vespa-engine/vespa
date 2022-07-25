@@ -1844,7 +1844,8 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
                                 response.setString("status", "complete");
                             else if (stepStatus.readyAt(instance.change()).map(controller.clock().instant()::isBefore).orElse(true))
                                 response.setString("status", "pending");
-                            else response.setString("status", "running");
+                            else
+                                response.setString("status", "running");
                         });
             } else {
                 var deploymentRun = controller.jobController().last(deploymentId.applicationId(), JobType.deploymentTo(deploymentId.zoneId()));
