@@ -78,8 +78,7 @@ public class Defaults {
         try {
             return Integer.parseInt(port.get());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("must be an integer, was '" +
-                                               port.get() + "'");
+            throw new IllegalArgumentException("must be an integer, was '" + port.get() + "'");
         }
     }
 
@@ -97,9 +96,10 @@ public class Defaults {
     }
 
     /**
-     * Get the username to own directories, files and processes
+     * Get the username to own directories, files and processes.
+     *
      * @return the vespa user name
-     **/
+     */
     public String vespaUser() { return vespaUser; }
 
 
@@ -108,8 +108,9 @@ public class Defaults {
      * Detection of the hostname is now done before starting any Vespa
      * programs and provided in the environment variable VESPA_HOSTNAME;
      * if that variable isn't set a default of "localhost" is always returned.
+     *
      * @return the vespa host name
-     **/
+     */
     public String vespaHostname() { return vespaHost; }
 
     /**
@@ -159,13 +160,13 @@ public class Defaults {
      */
     public int vespaPortBase() { return vespaPortBase; }
 
-    /** @return port number used by cloud config server (for its RPC protocol) */
+    /** Returns port number used by cloud config server (for its RPC protocol) */
     public int vespaConfigServerRpcPort() { return vespaPortConfigServerRpc; }
 
-    /** @return port number used by cloud config server (REST api on HTTP) */
+    /** Returns port number used by cloud config server (REST api on HTTP) */
     public int vespaConfigServerHttpPort() { return vespaPortConfigServerHttp; }
 
-    /** @return port number used by config proxy server (RPC protocol) */
+    /** Returns port number used by config proxy server (RPC protocol) */
     public int vespaConfigProxyRpcPort() { return vespaPortConfigProxyRpc; }
 
     /** Returns the defaults of this runtime environment */

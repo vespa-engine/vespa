@@ -36,14 +36,13 @@ import java.util.logging.Level;
  */
 public class CreatePositionZCurve extends Processor {
 
+    private boolean useV8GeoPositions = false;
     private final SDDocumentType repo;
 
     public CreatePositionZCurve(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
         this.repo = schema.getDocument();
     }
-
-    private boolean useV8GeoPositions = false;
 
     @Override
     public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
