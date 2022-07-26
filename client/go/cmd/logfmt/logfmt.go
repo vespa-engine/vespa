@@ -15,41 +15,6 @@ import (
 	"github.com/mattn/go-isatty"
 )
 
-type Options struct {
-	ShowFields        flagValueForShow
-	ShowLevels        flagValueForLevel
-	OnlyHostname      string
-	OnlyPid           string
-	OnlyService       string
-	OnlyInternal      bool
-	FollowTail        bool
-	DequoteNewlines   bool
-	TruncateService   bool
-	TruncateComponent bool
-	ComponentFilter   regexFlag
-	MessageFilter     regexFlag
-}
-
-func NewOptions() (ret Options) {
-	ret.ShowLevels.levels = defaultLevelFlags()
-	ret.ShowFields.shown = defaultShowFlags()
-	return
-}
-
-func (o *Options) showField(field string) bool {
-	return o.ShowFields.shown[field]
-}
-
-func (o *Options) showLevel(level string) bool {
-	rv, ok := o.ShowLevels.levels[level]
-	if !ok {
-		o.ShowLevels.levels[level] = true
-		fmt.Fprintf(os.Stderr, "Warnings: unknown level '%s' in input\n", level)
-		return true
-	}
-	return rv
-}
-
 func inputIsTty() bool {
 	return isatty.IsTerminal(os.Stdin.Fd())
 }
@@ -85,7 +50,7 @@ func formatFile(opts *Options, arg *os.File) {
 	input := bufio.NewScanner(arg)
 	input.Buffer(make([]byte, 64*1024), 4*1024*1024)
 	for input.Scan() {
-		output, err := handle(opts, input.Text())
+		output, err := handleLine(opts, input.Text())
 		if err != nil {
 			fmt.Fprintln(os.Stdout, "bad log line:", err)
 		} else {
@@ -94,7 +59,7 @@ func formatFile(opts *Options, arg *os.File) {
 	}
 }
 
-func handle(opts *Options, line string) (output string, err error) {
+func handleLine(opts *Options, line string) (output string, err error) {
 	fields := strings.SplitN(line, "\t", 7)
 	if len(fields) < 7 {
 		return "", fmt.Errorf("not enough fields: '%s'", line)
