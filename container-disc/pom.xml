@@ -198,8 +198,6 @@
 
                 bcpkix-jdk15on-${bouncycastle.version}.jar, <!-- Used by security-utils -->
 
-                javax.servlet-api-3.1.0.jar, <!-- TODO: Move to model, only needed for application container clusters -->
-
                 jackson-annotations-${jackson2.version}.jar,
                 jackson-core-${jackson2.version}.jar,
                 jackson-databind-${jackson-databind.version}.jar,
