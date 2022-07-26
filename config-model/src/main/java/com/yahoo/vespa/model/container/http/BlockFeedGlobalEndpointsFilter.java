@@ -7,7 +7,7 @@ import com.yahoo.component.chain.dependencies.Dependencies;
 import com.yahoo.component.chain.model.ChainedComponentModel;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig;
+import com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig;
 import com.yahoo.vespa.model.clients.ContainerDocumentApi;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
@@ -17,11 +17,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.DefaultRule.Action.Enum.ALLOW;
-import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Action.Enum.BLOCK;
-import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Methods.Enum.DELETE;
-import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Methods.Enum.POST;
-import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Methods.Enum.PUT;
+import static com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.DefaultRule.Action.Enum.ALLOW;
+import static com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Action.Enum.BLOCK;
+import static com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Methods.Enum.DELETE;
+import static com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Methods.Enum.POST;
+import static com.yahoo.vespa.config.jdisc.http.filter.RuleBasedFilterConfig.Rule.Methods.Enum.PUT;
 
 /**
  * @author mortent
