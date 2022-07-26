@@ -33,18 +33,28 @@ public class PlatformBundles {
     public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
 
     // Bundles that must be loaded for all container types.
-    public static final Set<Path> COMMON_VESPA_BUNDLES = Stream.of(
+    public static final Set<Path> COMMON_VESPA_BUNDLES = toBundlePaths(
             "container-spifly.jar",  // Aries SPIFly repackaged
             "zkfacade",
             "zookeeper-server"  // TODO: not necessary in metrics-proxy.
-    ).map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
+    );
 
-    public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = Stream.of(
+    public static final Set<Path> VESPA_SECURITY_BUNDLES = toBundlePaths(
+            "jdisc-security-filters",
+            "vespa-athenz");
+
+    public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = toBundlePaths(
             SEARCH_AND_DOCPROC_BUNDLE,
             "container-search-gui",
             "docprocs",
             "linguistics-components"
-    ).map(PlatformBundles::absoluteBundlePath).collect(Collectors.toSet());
+    );
+
+    private static Set<Path> toBundlePaths(String... bundleNames) {
+        return Stream.of(bundleNames)
+                .map(PlatformBundles::absoluteBundlePath)
+                .collect(Collectors.toSet());
+    }
 
     public static Path absoluteBundlePath(String fileName) {
         return absoluteBundlePath(fileName, JarSuffix.JAR_WITH_DEPS);

@@ -20,6 +20,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.di.config.PlatformBundlesConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
@@ -29,6 +30,7 @@ import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainerCluster;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
@@ -38,11 +40,14 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
+import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -110,8 +115,16 @@ public class ClusterControllerTestCase extends DomBuilderTest {
             assertEquals(4000, cfg.storage_transition_time());
             assertEquals(3600000, cfg.stable_state_time_period());
         }
+
+        assertOnlyNecessaryBundles(model);
     }
 
+    private void assertOnlyNecessaryBundles(VespaModel model) {
+        PlatformBundlesConfig config = model.getConfig(PlatformBundlesConfig.class, "admin/cluster-controllers");
+        Set<String> unnecessaryBundles = PlatformBundles.VESPA_SECURITY_BUNDLES.stream().map(Path::toString).collect(toSet());
+        assertTrue(config.bundlePaths().stream()
+                           .noneMatch(unnecessaryBundles::contains));
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void testSeparateHostsRequired() {

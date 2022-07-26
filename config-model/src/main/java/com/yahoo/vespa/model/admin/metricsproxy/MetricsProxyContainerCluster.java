@@ -45,6 +45,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.addMetrics;
@@ -74,6 +75,7 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private static final String METRICS_PROXY_NAME = "metrics-proxy";
     static final Path METRICS_PROXY_BUNDLE_FILE = PlatformBundles.absoluteBundlePath(METRICS_PROXY_NAME);
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
+    private static final Set<Path> UNNECESSARY_BUNDLES = Collections.unmodifiableSet(PlatformBundles.VESPA_SECURITY_BUNDLES);
 
     static final class AppDimensionNames {
         static final String SYSTEM = "system";
@@ -97,6 +99,9 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
     }
+
+    @Override
+    protected Set<Path> unnecessaryPlatformBundles() { return UNNECESSARY_BUNDLES; }
 
     private void addClusterComponents() {
         addMetricsProxyComponent(ApplicationDimensions.class);
