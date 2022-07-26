@@ -1,9 +1,7 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.application;
 
-import com.yahoo.application.container.MockClient;
 import com.yahoo.application.container.MockServer;
-import com.yahoo.application.container.docprocs.MockDispatchDocproc;
 import com.yahoo.application.container.docprocs.MockDocproc;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
@@ -12,10 +10,8 @@ import com.yahoo.application.container.renderers.MockRenderer;
 import com.yahoo.application.container.searchers.MockSearcher;
 import com.yahoo.component.Component;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.docproc.DocumentProcessor;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.docproc.Processing;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentRemove;
 import com.yahoo.document.DocumentType;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -67,6 +63,20 @@ public class ApplicationTest {
         }
     }
 
+    /** Tests that an application with query profile sets up the QueryProfileRegistry */
+    @Test
+    public void container_and_query_profile() {
+        try (Application application =
+                     Application.fromApplicationPackage(new File("src/test/app-packages/withqueryprofile"), Networking.disable)) {
+            Query query = new Query(HttpRequest.createTestRequest("?query=substring:foobar&timeout=20000", com.yahoo.jdisc.http.HttpRequest.Method.GET), application.getCompiledQueryProfileRegistry().findQueryProfile("default"));
+            Result result = application.getJDisc("default").search().process(new ComponentSpecification("default"), query);
+
+            assertEquals("WEAKAND(100) (AND substring:fo substring:oo substring:ob substring:ba substring:ar)",
+                    result.hits().get("hasQuery").getQuery().getModel().getQueryTree().toString());
+            assertEquals("2", application.getCompiledQueryProfileRegistry().findQueryProfile("default").get("hits"));
+            assertEquals("select * from sources * where weakAnd(substring contains \"foobar\") limit 2 timeout 20000000", result.getQuery().yqlRepresentation(true));
+        }
+    }
     private void printTrace(Result result) {
         for (String message : result.getQuery().getContext(true).getTrace().traceNode().descendants(String.class))
             System.out.println(message);
