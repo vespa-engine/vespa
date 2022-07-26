@@ -12,75 +12,46 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
-	"golang.org/x/sys/unix"
+	"github.com/mattn/go-isatty"
 )
 
-type myOptions struct {
-	showFlags    flagValueForShow
-	levelFlags   flagValueForLevel
-	onlyhst      string
-	onlypid      string
-	onlysvc      string
-	onlyint      bool
-	compore      string
-	msgtxre      string
-	optfollow    bool
-	optnldequote bool
-	shortsvc     bool
-	shortcmp     bool
-	compFilter   regexFlag
-	msgFilter    regexFlag
+type Options struct {
+	ShowFields        flagValueForShow
+	ShowLevels        flagValueForLevel
+	OnlyHostname      string
+	OnlyPid           string
+	OnlyService       string
+	OnlyInternal      bool
+	FollowTail        bool
+	DequoteNewlines   bool
+	TruncateService   bool
+	TruncateComponent bool
+	ComponentFilter   regexFlag
+	MessageFilter     regexFlag
 }
 
-func (o *myOptions) showField(field string) bool {
-	return o.showFlags.shown[field]
+func NewOptions() (ret Options) {
+	ret.ShowLevels.levels = defaultLevelFlags()
+	ret.ShowFields.shown = defaultShowFlags()
+	return
 }
 
-func (o *myOptions) showLevel(level string) bool {
-	rv, ok := o.levelFlags.levels[level]
+func (o *Options) showField(field string) bool {
+	return o.ShowFields.shown[field]
+}
+
+func (o *Options) showLevel(level string) bool {
+	rv, ok := o.ShowLevels.levels[level]
 	if !ok {
-		o.levelFlags.levels[level] = true
+		o.ShowLevels.levels[level] = true
 		fmt.Fprintf(os.Stderr, "Warnings: unknown level '%s' in input\n", level)
 		return true
 	}
 	return rv
 }
 
-func NewLogfmtCommand() *cobra.Command {
-	var (
-		curOptions myOptions
-	)
-	cmd := &cobra.Command{
-		Use:   "logfmt",
-		Short: "convert vespa.log to human-readable format",
-		Long: `vespa logfmt takes input in the internal vespa format
-and converts it to something human-readable`,
-		Run: func(cmd *cobra.Command, args []string) {
-			runLogfmt(&curOptions, args)
-		},
-		Args: cobra.MaximumNArgs(1),
-	}
-	curOptions.levelFlags.levels = defaultLevelFlags()
-	curOptions.showFlags.shown = defaultShowFlags()
-	cmd.Flags().VarP(&curOptions.levelFlags, "level", "l", "turn levels on/off\n")
-	cmd.Flags().VarP(&curOptions.showFlags, "show", "s", "turn fields shown on/off\n")
-	cmd.Flags().Var(&curOptions.compFilter, "component", "select components by regexp")
-	cmd.Flags().Var(&curOptions.msgFilter, "message", "select messages by regexp")
-	cmd.Flags().BoolVar(&curOptions.onlyint, "internal", false, "select only internal components")
-	cmd.Flags().BoolVar(&curOptions.shortsvc, "truncateservice", false, "truncate service name")
-	cmd.Flags().BoolVarP(&curOptions.optfollow, "follow", "f", false, "follow logfile with tail -f")
-	cmd.Flags().BoolVarP(&curOptions.optnldequote, "nldequote", "N", false, "dequote newlines embedded in message")
-	cmd.Flags().BoolVarP(&curOptions.shortcmp, "truncatecomponent", "X", false, "truncate component name")
-	cmd.Flags().StringVarP(&curOptions.onlyhst, "host", "H", "", "select only one host")
-	cmd.Flags().StringVarP(&curOptions.onlypid, "pid", "p", "", "select only one process ID")
-	cmd.Flags().StringVarP(&curOptions.onlysvc, "service", "S", "", "select only one service")
-	return cmd
-}
-
 func inputIsTty() bool {
-	_, err := unix.IoctlGetWinsize(int(os.Stdin.Fd()), unix.TIOCGWINSZ)
-	return err == nil
+	return isatty.IsTerminal(os.Stdin.Fd())
 }
 
 func vespaHome() string {
@@ -91,7 +62,7 @@ func vespaHome() string {
 	return ev
 }
 
-func runLogfmt(opts *myOptions, args []string) {
+func RunLogfmt(opts *Options, args []string) {
 	if len(args) == 0 {
 		if inputIsTty() {
 			args = append(args, vespaHome()+"/logs/vespa/vespa.log")
@@ -102,14 +73,14 @@ func runLogfmt(opts *myOptions, args []string) {
 	for _, arg := range args {
 		file, err := os.Open(arg)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Cannot open '%s': %v", err)
+			fmt.Fprintf(os.Stderr, "Cannot open '%s': %v", arg, err)
 		} else {
 			formatFile(opts, file)
 		}
 	}
 }
 
-func formatFile(opts *myOptions, arg *os.File) {
+func formatFile(opts *Options, arg *os.File) {
 	stdout := os.Stdout
 	input := bufio.NewScanner(arg)
 	input.Buffer(make([]byte, 64*1024), 4*1024*1024)
@@ -123,7 +94,7 @@ func formatFile(opts *myOptions, arg *os.File) {
 	}
 }
 
-func handle(opts *myOptions, line string) (output string, err error) {
+func handle(opts *Options, line string) (output string, err error) {
 	fields := strings.SplitN(line, "\t", 7)
 	if len(fields) < 7 {
 		return "", fmt.Errorf("not enough fields: '%s'", line)
@@ -139,22 +110,22 @@ func handle(opts *myOptions, line string) (output string, err error) {
 	if !opts.showLevel(levelfield) {
 		return "", nil
 	}
-	if opts.onlyhst != "" && opts.onlyhst != hostfield {
+	if opts.OnlyHostname != "" && opts.OnlyHostname != hostfield {
 		return "", nil
 	}
-	if opts.onlypid != "" && opts.onlypid != pidfield {
+	if opts.OnlyPid != "" && opts.OnlyPid != pidfield {
 		return "", nil
 	}
-	if opts.onlysvc != "" && opts.onlysvc != servicefield {
+	if opts.OnlyService != "" && opts.OnlyService != servicefield {
 		return "", nil
 	}
-	if opts.onlyint && !isInternal(componentfield) {
+	if opts.OnlyInternal && !isInternal(componentfield) {
 		return "", nil
 	}
-	if opts.compFilter.unmatched(componentfield) {
+	if opts.ComponentFilter.unmatched(componentfield) {
 		return "", nil
 	}
-	if opts.msgFilter.unmatched(strings.Join(messagefields, "\t")) {
+	if opts.MessageFilter.unmatched(strings.Join(messagefields, "\t")) {
 		return "", nil
 	}
 
@@ -185,18 +156,18 @@ func handle(opts *myOptions, line string) (output string, err error) {
 		buf.WriteString(fmt.Sprintf("%-7s ", strings.ToUpper(levelfield)))
 	}
 	if opts.showField("pid") {
-		// onlypid, _, _ := strings.Cut(pidfield, "/")
+		// OnlyPid, _, _ := strings.Cut(pidfield, "/")
 		buf.WriteString(fmt.Sprintf("%6s ", pidfield))
 	}
 	if opts.showField("service") {
-		if opts.shortsvc {
+		if opts.TruncateService {
 			buf.WriteString(fmt.Sprintf("%-9.9s ", servicefield))
 		} else {
 			buf.WriteString(fmt.Sprintf("%-16s ", servicefield))
 		}
 	}
 	if opts.showField("component") {
-		if opts.shortcmp {
+		if opts.TruncateComponent {
 			buf.WriteString(fmt.Sprintf("%-15.15s ", componentfield))
 		} else {
 			buf.WriteString(fmt.Sprintf("%s\t", componentfield))
@@ -208,7 +179,7 @@ func handle(opts *myOptions, line string) (output string, err error) {
 			if idx > 0 {
 				msgBuf.WriteString("\n\t")
 			}
-			if opts.optnldequote {
+			if opts.DequoteNewlines {
 				message = strings.ReplaceAll(message, "\\n\\t", "\n\t")
 				message = strings.ReplaceAll(message, "\\n", "\n\t")
 			}
