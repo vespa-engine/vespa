@@ -32,8 +32,6 @@ public class PlatformBundles {
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
     public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
 
-    public static final Path SERVLET_API_BUNDLE = absoluteBundlePath("javax.servlet-api-3.1.0.jar");
-
     // Bundles that must be loaded for all container types.
     public static final Set<Path> COMMON_VESPA_BUNDLES = toBundlePaths(
             "container-spifly.jar",  // Aries SPIFly repackaged
