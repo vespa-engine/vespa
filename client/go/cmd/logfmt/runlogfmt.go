@@ -62,7 +62,7 @@ func formatLine(opts *Options, line string) {
 func tailFile(opts *Options, fn string) {
 	tailed, err := FollowFile(fn)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed tailing file %s: %v\n", fn, err)
+		fmt.Fprintf(os.Stderr, "Failed tailing, %v\n", err)
 		return
 	}
 	for line := range tailed.Lines {

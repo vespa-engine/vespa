@@ -93,8 +93,16 @@ loop:
 				}
 			}
 			// try reopening
-			file, err := os.Open(t.fn)
-			if err == nil {
+			for cnt := 0; cnt < 100; cnt++ {
+				file, r := os.Open(t.fn)
+				if r != nil {
+					pos = -1
+					if cnt == 0 {
+						fmt.Fprintf(os.Stderr, "re%v (waiting for log file to reappear)\n", r)
+					}
+					time.Sleep(1000 * time.Millisecond)
+					continue
+				}
 				sz, _ := file.Seek(0, os.SEEK_END)
 				if sz != pos {
 					file.Seek(0, os.SEEK_SET)
@@ -102,12 +110,13 @@ loop:
 					t.curFile = file
 					reader = bufio.NewReaderSize(t.curFile, 1024*1024)
 				} else {
+					// same size, same file (probably), continue following it
 					file.Close()
 				}
-			} else {
-				fmt.Fprintf(os.Stderr, "reopen '%s': %v\n", t.fn, err)
+				break
 			}
 		} else {
+			fmt.Fprintf(os.Stderr, "other error: %v\n", err)
 			close(t.Lines)
 			t.lastError = err
 			return
