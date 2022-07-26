@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"github.com/mattn/go-isatty"
-	"github.com/nxadm/tail"
 )
 
 func inputIsTty() bool {
@@ -61,11 +60,7 @@ func formatLine(opts *Options, line string) {
 }
 
 func tailFile(opts *Options, fn string) {
-	tailed, err := tail.TailFile(fn, tail.Config{
-		ReOpen:    true,
-		MustExist: true,
-		Follow:    true,
-	})
+	tailed, err := FollowFile(fn)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed tailing file %s: %v\n", fn, err)
 		return
@@ -73,7 +68,7 @@ func tailFile(opts *Options, fn string) {
 	for line := range tailed.Lines {
 		formatLine(opts, line.Text)
 	}
-	err = tailed.Err()
+	err = tailed.lastError
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error tailing file %s: %v\n", fn, err)
 	}
