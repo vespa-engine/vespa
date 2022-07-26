@@ -82,8 +82,7 @@ public final class Application implements AutoCloseable {
         this.deletePathWhenClosing = deletePathWhenClosing;
         contentClusters = ContentCluster.fromPath(path);
         container = JDisc.fromPath(path, networking, createVespaModel().configModelRepo());
-        QueryProfileXMLReader queryProfileXMLReader = new QueryProfileXMLReader();
-        compiledQueryProfileRegistry = queryProfileXMLReader.read(path + "/search/query-profiles").compile();
+        compiledQueryProfileRegistry = readQueryProfilesFromApplicationPackage(path);
     }
 
     @Beta
@@ -126,6 +125,17 @@ public final class Application implements AutoCloseable {
      */
     public static Application fromApplicationPackage(File file, Networking networking) {
         return fromApplicationPackage(file.toPath(), networking);
+    }
+
+    private CompiledQueryProfileRegistry readQueryProfilesFromApplicationPackage(Path path) {
+        String queryProfilePath = path + "/search/query-profiles";
+        QueryProfileXMLReader queryProfileXMLReader = new QueryProfileXMLReader();
+
+        File f = new File(queryProfilePath);
+        if(f.exists() && f.isDirectory()) {
+            return queryProfileXMLReader.read(queryProfilePath).compile();
+        }
+        return CompiledQueryProfileRegistry.empty;
     }
 
     private VespaModel createVespaModel() {
