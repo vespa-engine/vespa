@@ -19,15 +19,38 @@ type Line struct {
 }
 
 type Tail struct {
-	Lines     chan Line
-	lineBuf   []byte
-	lastError error
-	curFile   *os.File
-	fn        string
+	Lines   chan Line
+	lineBuf []byte
+	curFile *os.File
+	fn      string
+	reader  *bufio.Reader
 }
 
 func FollowFile(fn string) (res Tail, err error) {
-	file, err := os.Open(fn)
+	res.fn = fn
+	res.lineBuf = make([]byte, lastLinesSize)
+	res.openTail()
+	res.Lines = make(chan Line, 20)
+	res.lineBuf = res.lineBuf[:0]
+	go runTailWith(&res)
+	return res, nil
+}
+
+func (t *Tail) setFile(f *os.File) {
+	if t.curFile != nil {
+		t.curFile.Close()
+	}
+	t.curFile = f
+	if f != nil {
+		t.reader = bufio.NewReaderSize(f, 1024*1024)
+	} else {
+		t.reader = nil
+	}
+}
+
+// open log file and seek to the start of a line near the end, if possible.
+func (t *Tail) openTail() {
+	file, err := os.Open(t.fn)
 	if err != nil {
 		return
 	}
@@ -35,40 +58,65 @@ func FollowFile(fn string) (res Tail, err error) {
 	if err != nil {
 		return
 	}
-	res.lineBuf = make([]byte, lastLinesSize)
-	if sz > lastLinesSize {
-		sz, err = file.Seek(-lastLinesSize, os.SEEK_END)
-		if err != nil {
-			return
+	if sz < lastLinesSize {
+		sz, err = file.Seek(0, os.SEEK_SET)
+		if err == nil {
+			// just read from start of file, all OK
+			t.setFile(file)
 		}
-		var n int
-		n, err = file.Read(res.lineBuf)
-		if err != nil {
-			return
-		}
-		for i := 0; i < n; i++ {
-			if res.lineBuf[i] == '\n' {
-				sz, err = file.Seek(sz+int64(i)+1, os.SEEK_SET)
-				if err != nil {
-					return
-				}
-				break
+		return
+	}
+	sz, _ = file.Seek(-lastLinesSize, os.SEEK_END)
+	n, err := file.Read(t.lineBuf)
+	if err != nil {
+		return
+	}
+	for i := 0; i < n; i++ {
+		if t.lineBuf[i] == '\n' {
+			sz, err = file.Seek(sz+int64(i+1), os.SEEK_SET)
+			if err == nil {
+				t.setFile(file)
 			}
+			return
 		}
 	}
-	res.fn = fn
-	res.Lines = make(chan Line, 20)
-	res.curFile = file
-	res.lineBuf = res.lineBuf[:0]
-	go runTailWith(&res)
-	return
 }
 
+func (t *Tail) reopen(oldSize int64) {
+	for cnt := 0; cnt < 100; cnt++ {
+		file, r := os.Open(t.fn)
+		if r != nil {
+			t.setFile(nil)
+			if cnt == 0 {
+				fmt.Fprintf(os.Stderr, "%v (waiting for log file to appear)\n", r)
+			}
+			time.Sleep(1000 * time.Millisecond)
+			continue
+		}
+		sz, _ := file.Seek(0, os.SEEK_END)
+		if sz != oldSize {
+			file.Seek(0, os.SEEK_SET)
+			if t.curFile != nil {
+				t.curFile.Close()
+			}
+			t.setFile(file)
+		} else {
+			// same size, same file (probably), continue following it
+			file.Close()
+		}
+		return
+	}
+}
+
+// runs as a goroutine
 func runTailWith(t *Tail) {
-	reader := bufio.NewReaderSize(t.curFile, 1024*1024)
+	defer t.setFile(nil)
 loop:
 	for {
-		bytes, err := reader.ReadSlice('\n')
+		for t.curFile == nil {
+			t.reopen(-1)
+		}
+		bytes, err := t.reader.ReadSlice('\n')
 		t.lineBuf = append(t.lineBuf, bytes...)
 		if err == bufio.ErrBufferFull {
 			continue
@@ -86,39 +134,18 @@ loop:
 				sz, _ := t.curFile.Seek(0, os.SEEK_END)
 				if sz != pos {
 					if sz < pos {
+						// truncation case
 						pos = 0
 					}
 					t.curFile.Seek(pos, os.SEEK_SET)
 					continue loop
 				}
 			}
-			// try reopening
-			for cnt := 0; cnt < 100; cnt++ {
-				file, r := os.Open(t.fn)
-				if r != nil {
-					pos = -1
-					if cnt == 0 {
-						fmt.Fprintf(os.Stderr, "re%v (waiting for log file to reappear)\n", r)
-					}
-					time.Sleep(1000 * time.Millisecond)
-					continue
-				}
-				sz, _ := file.Seek(0, os.SEEK_END)
-				if sz != pos {
-					file.Seek(0, os.SEEK_SET)
-					t.curFile.Close()
-					t.curFile = file
-					reader = bufio.NewReaderSize(t.curFile, 1024*1024)
-				} else {
-					// same size, same file (probably), continue following it
-					file.Close()
-				}
-				break
-			}
+			// no change in file size, try reopening
+			t.reopen(pos)
 		} else {
-			fmt.Fprintf(os.Stderr, "other error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "error tailing '%s': %v\n", t.fn, err)
 			close(t.Lines)
-			t.lastError = err
 			return
 		}
 	}
