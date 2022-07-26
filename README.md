@@ -83,10 +83,6 @@ for building Vespa, running unit tests and running system tests:
 
 Use this if you only need to build the Java modules, otherwise follow the complete development guide above.
 
-### Build RPM packages
-
-See [Building Vespa RPM](docker/README.md#building-vespa-rpm) for details.
-
 
 ## License
 
