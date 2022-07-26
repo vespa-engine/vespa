@@ -10,6 +10,7 @@ import (
 	"os"
 
 	"github.com/mattn/go-isatty"
+	"github.com/nxadm/tail"
 )
 
 func inputIsTty() bool {
@@ -32,26 +33,56 @@ func RunLogfmt(opts *Options, args []string) {
 			formatFile(opts, os.Stdin)
 		}
 	}
+	if opts.FollowTail {
+		if len(args) != 1 {
+			fmt.Fprintf(os.Stderr, "Must have exact 1 file for 'follow' option, got %d\n", len(args))
+			return
+		}
+		tailFile(opts, args[0])
+		return
+	}
 	for _, arg := range args {
 		file, err := os.Open(arg)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Cannot open '%s': %v", arg, err)
+			fmt.Fprintf(os.Stderr, "Cannot open '%s': %v\n", arg, err)
 		} else {
 			formatFile(opts, file)
 		}
 	}
 }
 
+func formatLine(opts *Options, line string) {
+	output, err := handleLine(opts, line)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "bad log line:", err)
+	} else {
+		os.Stdout.WriteString(output)
+	}
+}
+
+func tailFile(opts *Options, fn string) {
+	tailed, err := tail.TailFile(fn, tail.Config{
+		ReOpen:    true,
+		MustExist: true,
+		Follow:    true,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed tailing file %s: %v\n", fn, err)
+		return
+	}
+	for line := range tailed.Lines {
+		formatLine(opts, line.Text)
+	}
+	err = tailed.Err()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error tailing file %s: %v\n", fn, err)
+	}
+}
+
 func formatFile(opts *Options, arg *os.File) {
-	stdout := os.Stdout
 	input := bufio.NewScanner(arg)
 	input.Buffer(make([]byte, 64*1024), 4*1024*1024)
 	for input.Scan() {
-		output, err := handleLine(opts, input.Text())
-		if err != nil {
-			fmt.Fprintln(os.Stdout, "bad log line:", err)
-		} else {
-			stdout.WriteString(output)
-		}
+		formatLine(opts, input.Text())
 	}
 }
