@@ -8,7 +8,6 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -30,8 +29,8 @@ type myOptions struct {
 	optnldequote bool
 	shortsvc     bool
 	shortcmp     bool
-	compFilter   *regexp.Regexp
-	msgFilter    *regexp.Regexp
+	compFilter   regexFlag
+	msgFilter    regexFlag
 }
 
 func (o *myOptions) showField(field string) bool {
@@ -66,13 +65,13 @@ and converts it to something human-readable`,
 	curOptions.showFlags.shown = defaultShowFlags()
 	cmd.Flags().VarP(&curOptions.levelFlags, "level", "l", "turn levels on/off\n")
 	cmd.Flags().VarP(&curOptions.showFlags, "show", "s", "turn fields shown on/off\n")
+	cmd.Flags().Var(&curOptions.compFilter, "component", "select components by regexp")
+	cmd.Flags().Var(&curOptions.msgFilter, "message", "select messages by regexp")
 	cmd.Flags().BoolVar(&curOptions.onlyint, "internal", false, "select only internal components")
 	cmd.Flags().BoolVar(&curOptions.shortsvc, "truncateservice", false, "truncate service name")
 	cmd.Flags().BoolVarP(&curOptions.optfollow, "follow", "f", false, "follow logfile with tail -f")
 	cmd.Flags().BoolVarP(&curOptions.optnldequote, "nldequote", "N", false, "dequote newlines embedded in message")
 	cmd.Flags().BoolVarP(&curOptions.shortcmp, "truncatecomponent", "X", false, "truncate component name")
-	cmd.Flags().StringVar(&curOptions.compore, "component", "", "select components by regexp")
-	cmd.Flags().StringVar(&curOptions.msgtxre, "message", "", "select messages by regexp")
 	cmd.Flags().StringVarP(&curOptions.onlyhst, "host", "H", "", "select only one host")
 	cmd.Flags().StringVarP(&curOptions.onlypid, "pid", "p", "", "select only one process ID")
 	cmd.Flags().StringVarP(&curOptions.onlysvc, "service", "S", "", "select only one service")
@@ -93,22 +92,6 @@ func vespaHome() string {
 }
 
 func runLogfmt(opts *myOptions, args []string) {
-	if opts.compore != "" {
-		re, err := regexp.Compile(opts.compore)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "bad component-match regexp '%s': %v", opts.compore, err)
-		} else {
-			opts.compFilter = re
-		}
-	}
-	if opts.msgtxre != "" {
-		re, err := regexp.Compile(opts.msgtxre)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "bad message-match regexp '%s': %v", opts.msgtxre, err)
-		} else {
-			opts.msgFilter = re
-		}
-	}
 	if len(args) == 0 {
 		if inputIsTty() {
 			args = append(args, vespaHome()+"/logs/vespa/vespa.log")
@@ -166,14 +149,11 @@ func handle(opts *myOptions, line string) (output string, err error) {
 		if opts.onlyint && !isInternal(componentfield) {
 			return "", nil
 		}
-		if opts.compFilter != nil && opts.compFilter.FindStringIndex(componentfield) == nil {
+		if opts.compFilter.unmatched(componentfield) {
 			return "", nil
 		}
-		if opts.msgFilter != nil {
-			msgs := strings.Join(messagefields, "\t")
-			if opts.msgFilter.FindStringIndex(msgs) == nil {
-				return "", nil
-			}
+		if opts.msgFilter.unmatched(strings.Join(messagefields, "\t")) {
+			return "", nil
 		}
 
 		var buf strings.Builder
