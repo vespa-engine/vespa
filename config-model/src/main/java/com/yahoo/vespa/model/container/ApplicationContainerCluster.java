@@ -105,8 +105,6 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                                                .map(HostSpec::hostname)
                                                                .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));
 
-        addPlatformBundle(PlatformBundles.SERVLET_API_BUNDLE);
-
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
         addSimpleComponent("com.yahoo.container.jdisc.SecretStoreProvider");

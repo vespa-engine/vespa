@@ -32,7 +32,6 @@ public class PlatformBundles {
     public static final Path LIBRARY_PATH = Paths.get(Defaults.getDefaults().underVespaHome("lib/jars"));
     public static final String SEARCH_AND_DOCPROC_BUNDLE = BundleInstantiationSpecification.CONTAINER_SEARCH_AND_DOCPROC;
 
-    // TODO Vespa 9: stop installing and providing servlet-api
     public static final Path SERVLET_API_BUNDLE = absoluteBundlePath("javax.servlet-api-3.1.0.jar");
 
     // Bundles that must be loaded for all container types.
@@ -44,7 +43,11 @@ public class PlatformBundles {
 
     public static final Set<Path> VESPA_SECURITY_BUNDLES = toBundlePaths(
             "jdisc-security-filters",
-            "vespa-athenz");
+            "vespa-athenz",
+            // Used by vespa-athenz and imported by nearly all hosted apps.
+            // TODO Vespa 9: stop installing and providing servlet-api
+            "javax.servlet-api-3.1.0.jar"
+    );
 
     public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = toBundlePaths(
             SEARCH_AND_DOCPROC_BUNDLE,
