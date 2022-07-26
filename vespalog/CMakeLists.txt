@@ -17,6 +17,5 @@ vespa_define_module(
     src/test/threads
 )
 
-vespa_install_script(src/vespa-logfmt/vespa-logfmt.pl vespa-logfmt bin)
 install(FILES src/vespa-logfmt/vespa-logfmt.1 DESTINATION man/man1)
 install(DIRECTORY DESTINATION var/db/vespa/logcontrol)
