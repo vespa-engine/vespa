@@ -48,7 +48,9 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
     private Instant currentContainerActivationTime;
     private int numStaleContainers;
     private Instant lastLogTime;
-    private ScheduledFuture<?> previousThreadMonitoringTask;
+    private ScheduledFuture<?> threadMonitoringTask;
+    private ScheduledFuture<?> containerMontoringTask;
+
 
     ContainerWatchdog() {
         this(new ScheduledThreadPoolExecutor(
@@ -65,7 +67,11 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
         this.scheduler = scheduler;
         this.clock = clock;
         this.lastLogTime = clock.instant();
-        scheduler.scheduleAtFixedRate(this::monitorDeactivatedContainers, CONTAINER_CHECK_PERIOD.getSeconds(), CONTAINER_CHECK_PERIOD.getSeconds(), TimeUnit.SECONDS);
+    }
+
+    void start() {
+        this.containerMontoringTask = scheduler.scheduleAtFixedRate(this::monitorDeactivatedContainers,
+                CONTAINER_CHECK_PERIOD.getSeconds(), CONTAINER_CHECK_PERIOD.getSeconds(), TimeUnit.SECONDS);
     }
 
     @Override
@@ -79,8 +85,8 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
 
     @Override
     public void close() throws InterruptedException {
-        scheduler.shutdownNow();
-        scheduler.awaitTermination(1, TimeUnit.MINUTES);
+        if (containerMontoringTask != null) containerMontoringTask.cancel(false);
+        if (threadMonitoringTask != null) threadMonitoringTask.cancel(false);
         synchronized (monitor) {
             deactivatedContainers.clear();
             currentContainer = null;
@@ -95,8 +101,8 @@ class ContainerWatchdog implements ContainerWatchdogMetrics, AutoCloseable {
             }
             currentContainer = nextContainer;
             currentContainerActivationTime = clock.instant();
-            if (previousThreadMonitoringTask != null) previousThreadMonitoringTask.cancel(false);
-            previousThreadMonitoringTask = scheduler.schedule(this::monitorThreads, 1, TimeUnit.MINUTES);
+            if (threadMonitoringTask != null) threadMonitoringTask.cancel(false);
+            threadMonitoringTask = scheduler.schedule(this::monitorThreads, 1, TimeUnit.MINUTES);
         }
     }
 
