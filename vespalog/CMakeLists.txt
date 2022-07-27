@@ -17,6 +17,17 @@ vespa_define_module(
     src/test/threads
 )
 
-vespa_install_script(src/vespa-logfmt/vespa-logfmt.pl vespa-logfmt bin)
+set(GODIR ${CMAKE_CURRENT_SOURCE_DIR}/go)
+
+file(GLOB_RECURSE GOSRCFILES ${GODIR}/*.go)
+
+add_custom_command(OUTPUT ${GODIR}/bin/vespa-logfmt
+                   COMMAND make
+                   DEPENDS ${GODIR}/Makefile ${GOSRCFILES}
+                   WORKING_DIRECTORY ${GODIR})
+
+add_custom_target(vespalog_logfmt ALL DEPENDS ${GODIR}/bin/vespa-logfmt)
+
+install(PROGRAMS ${GODIR}/bin/vespa-logfmt DESTINATION bin)
 install(FILES src/vespa-logfmt/vespa-logfmt.1 DESTINATION man/man1)
 install(DIRECTORY DESTINATION var/db/vespa/logcontrol)
