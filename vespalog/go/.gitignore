@@ -1,0 +1,4 @@
+bin/
+!Makefile
+mytestapp/
+mytestapp-cache/
