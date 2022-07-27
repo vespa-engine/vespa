@@ -7,9 +7,9 @@ import org.apache.http.HttpRequest;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.routing.HttpRoute;
 import org.apache.http.conn.routing.HttpRoutePlanner;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 
 /**
@@ -18,17 +18,17 @@ import static org.mockito.Mockito.mock;
 public class VespaHttpClientBuilderTest {
 
     @Test
-    public void route_planner_modifies_scheme_of_requests() throws HttpException {
+    void route_planner_modifies_scheme_of_requests() throws HttpException {
         verifyProcessedUriMatchesExpectedOutput("http://dummyhostname:8080", "https://dummyhostname:8080");
     }
 
     @Test
-    public void route_planer_handles_implicit_http_port() throws HttpException {
+    void route_planer_handles_implicit_http_port() throws HttpException {
         verifyProcessedUriMatchesExpectedOutput("http://dummyhostname", "https://dummyhostname:80");
     }
 
     @Test
-    public void route_planer_handles_https_port() throws HttpException {
+    void route_planer_handles_https_port() throws HttpException {
         verifyProcessedUriMatchesExpectedOutput("http://dummyhostname:443", "https://dummyhostname:443");
     }
 
