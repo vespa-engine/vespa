@@ -11,7 +11,7 @@ endif
 PREFIX ?= $(CURDIR)
 BIN ?= $(PREFIX)/bin
 
-GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/vespalog/go/build.Version=$(VERSION)"
+GO_FLAGS := -ldflags "-X github.com/vespa-engine/vespa/client/go/build.Version=$(VERSION)"
 GIT_ROOT := $(shell git rev-parse --show-toplevel)
 
 all: checkfmt install
