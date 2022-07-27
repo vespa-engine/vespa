@@ -36,15 +36,15 @@ public class PlatformBundles {
     public static final Set<Path> COMMON_VESPA_BUNDLES = toBundlePaths(
             "container-spifly.jar",  // Aries SPIFly repackaged
             "zkfacade",
-            "zookeeper-server"  // TODO: not necessary in metrics-proxy.
+            "zookeeper-server",  // TODO: not necessary in metrics-proxy.
+            // Used by vespa-athenz, zkfacade, other vespa bundles and nearly all hosted apps.
+            // TODO Vespa 9: stop installing and providing servlet-api. Seems difficult, though.
+            "javax.servlet-api-3.1.0.jar"
     );
 
     public static final Set<Path> VESPA_SECURITY_BUNDLES = toBundlePaths(
             "jdisc-security-filters",
-            "vespa-athenz",
-            // Used by vespa-athenz and imported by nearly all hosted apps.
-            // TODO Vespa 9: stop installing and providing servlet-api
-            "javax.servlet-api-3.1.0.jar"
+            "vespa-athenz"
     );
 
     public static final Set<Path> SEARCH_AND_DOCPROC_BUNDLES = toBundlePaths(
