@@ -4,11 +4,11 @@ package com.yahoo.vespa.security.tool.securityenv;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -30,18 +30,18 @@ public class MainTest {
     private final PrintStream stdOut = new PrintStream(stdOutBytes);
     private final PrintStream stdError = new PrintStream(stdErrBytes);
 
-    @Rule
-    public TemporaryFolder tmpFolder = new TemporaryFolder();
+    @TempDir
+    public File tmpFolder;
 
     @Test
-    public void prints_help_page_on_help_option() throws IOException {
+    void prints_help_page_on_help_option() throws IOException {
         int exitCode = runMain(List.of("--help"), Map.of());
         assertThat(exitCode).isEqualTo(0);
         assertThat(stdOut()).isEqualTo(readTestResource("expected-help-output.txt"));
     }
 
     @Test
-    public void unsets_all_variables_when_no_security_config() throws IOException {
+    void unsets_all_variables_when_no_security_config() throws IOException {
         int exitCode = runMain(List.of(), Map.of());
         assertThat(exitCode).isEqualTo(0);
         assertThat(stdErr()).isEmpty();
@@ -49,7 +49,7 @@ public class MainTest {
     }
 
     @Test
-    public void prints_security_variables_with_specified_shell() throws IOException {
+    void prints_security_variables_with_specified_shell() throws IOException {
         Path configFile = generateConfigFile();
         Map<String, String> env = Map.of(TransportSecurityUtils.CONFIG_FILE_ENVIRONMENT_VARIABLE, configFile.toString());
         int exitCode = runMain(List.of(), env);
@@ -58,7 +58,7 @@ public class MainTest {
     }
 
     @Test
-    public void prints_security_variables_with_auto_detected_shell() throws IOException {
+    void prints_security_variables_with_auto_detected_shell() throws IOException {
         Path configFile = generateConfigFile();
         Map<String, String> env = Map.of(
                 TransportSecurityUtils.CONFIG_FILE_ENVIRONMENT_VARIABLE, configFile.toString(),
@@ -71,14 +71,14 @@ public class MainTest {
 
 
     @Test
-    public void prints_error_message_on_unknown_shell_name() {
+    void prints_error_message_on_unknown_shell_name() {
         int exitCode = runMain(List.of("--shell", "invalid-shell-name"), Map.of());
         assertThat(exitCode).isEqualTo(1);
         assertThat(stdErr()).isEqualTo("Invalid command line arguments: Unknown shell: invalid-shell-name\n");
     }
 
     @Test
-    public void prints_error_message_on_unknown_command_line_parameter() {
+    void prints_error_message_on_unknown_command_line_parameter() {
         int exitCode = runMain(List.of("--unknown-parameter"), Map.of());
         assertThat(exitCode).isEqualTo(1);
         assertThat(stdErr()).isEqualTo("Failed to parse command line arguments: Unrecognized option: --unknown-parameter\n");
@@ -108,7 +108,7 @@ public class MainTest {
                 .withCaCertificates(Paths.get("/path/to/cacerts"))
                 .withHostnameValidationDisabled(true)
                 .build();
-        Path configFile = tmpFolder.newFile().toPath();
+        Path configFile = File.createTempFile("junit", null, tmpFolder).toPath();
         options.toJsonFile(configFile);
         return configFile;
     }
