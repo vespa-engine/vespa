@@ -36,9 +36,9 @@ import com.yahoo.vespa.model.admin.monitoring.MetricSet;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.container.ContainerCluster;
+import com.yahoo.vespa.model.container.PlatformBundles;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
-import com.yahoo.vespa.model.container.PlatformBundles;
 
 import java.nio.file.Path;
 import java.util.Collections;
@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.addMetrics;
 import static com.yahoo.vespa.model.admin.metricsproxy.ConsumersConfigGenerator.generateConsumers;
@@ -75,7 +77,12 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
     private static final String METRICS_PROXY_NAME = "metrics-proxy";
     static final Path METRICS_PROXY_BUNDLE_FILE = PlatformBundles.absoluteBundlePath(METRICS_PROXY_NAME);
     static final String METRICS_PROXY_BUNDLE_NAME = "com.yahoo.vespa." + METRICS_PROXY_NAME;
-    private static final Set<Path> UNNECESSARY_BUNDLES = Collections.unmodifiableSet(PlatformBundles.VESPA_SECURITY_BUNDLES);
+
+    private static final Set<Path> UNNECESSARY_BUNDLES = Stream.concat
+            (
+                    PlatformBundles.VESPA_SECURITY_BUNDLES.stream(),
+                    PlatformBundles.VESPA_ZK_BUNDLES.stream()
+            ).collect(Collectors.toSet());
 
     static final class AppDimensionNames {
         static final String SYSTEM = "system";

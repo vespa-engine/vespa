@@ -23,6 +23,7 @@ import org.junit.Test;
 import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.METRICS_PROXY_BUNDLE_FILE;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyContainerCluster.zoneString;
@@ -59,7 +60,12 @@ public class MetricsProxyContainerClusterTest {
         VespaModel model = getModel(servicesWithAdminOnly(), self_hosted);
         PlatformBundlesConfig config = model.getConfig(PlatformBundlesConfig.class, CLUSTER_CONFIG_ID);
 
-        Set<String> unnecessaryBundles = PlatformBundles.VESPA_SECURITY_BUNDLES.stream().map(Path::toString).collect(toSet());
+        Set<String> unnecessaryBundles = Stream.concat
+                (
+                        PlatformBundles.VESPA_SECURITY_BUNDLES.stream(),
+                        PlatformBundles.VESPA_ZK_BUNDLES.stream()
+                ).map(Path::toString).collect(toSet());
+
         assertTrue(config.bundlePaths().stream()
                             .noneMatch(unnecessaryBundles::contains));
     }
