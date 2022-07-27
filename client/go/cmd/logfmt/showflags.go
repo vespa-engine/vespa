@@ -46,7 +46,6 @@ func (v *flagValueForShow) Type() string {
 func (v *flagValueForShow) String() string {
 	mv := v.shown
 	var buf strings.Builder
-	buf.WriteString("show flags:")
 	for flag, active := range mv {
 		if active {
 			buf.WriteString(" +")

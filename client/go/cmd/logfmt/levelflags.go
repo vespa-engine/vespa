@@ -34,7 +34,6 @@ func (v *flagValueForLevel) Type() string {
 func (v *flagValueForLevel) String() string {
 	mv := v.levels
 	var buf strings.Builder
-	buf.WriteString("level flags:")
 	for flag, active := range mv {
 		if active {
 			buf.WriteString(" +")
