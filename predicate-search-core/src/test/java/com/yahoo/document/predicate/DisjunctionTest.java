@@ -1,14 +1,11 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document.predicate;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -16,12 +13,12 @@ import static org.junit.Assert.assertTrue;
 public class DisjunctionTest {
 
     @Test
-    public void requireThatDisjunctionIsAnOperator() {
+    void requireThatDisjunctionIsAnOperator() {
         assertTrue(PredicateOperator.class.isAssignableFrom(Disjunction.class));
     }
 
     @Test
-    public void requireThatAccessorsWork() {
+    void requireThatAccessorsWork() {
         Disjunction node = new Disjunction();
         Predicate a = SimplePredicates.newString("a");
         node.addOperand(a);
@@ -40,7 +37,7 @@ public class DisjunctionTest {
     }
 
     @Test
-    public void requireThatConstructorsWork() {
+    void requireThatConstructorsWork() {
         Predicate foo = SimplePredicates.newString("foo");
         Predicate bar = SimplePredicates.newString("bar");
         Disjunction node = new Disjunction(foo, bar);
@@ -51,7 +48,7 @@ public class DisjunctionTest {
     }
 
     @Test
-    public void requireThatCloneIsImplemented() throws CloneNotSupportedException {
+    void requireThatCloneIsImplemented() throws CloneNotSupportedException {
         Disjunction node1 = new Disjunction(SimplePredicates.newString("a"), SimplePredicates.newString("b"));
         Disjunction node2 = node1.clone();
         assertEquals(node1, node2);
@@ -60,27 +57,27 @@ public class DisjunctionTest {
     }
 
     @Test
-    public void requireThatHashCodeIsImplemented() {
+    void requireThatHashCodeIsImplemented() {
         assertEquals(new Disjunction().hashCode(), new Disjunction().hashCode());
     }
 
     @Test
-    public void requireThatEqualsIsImplemented() {
+    void requireThatEqualsIsImplemented() {
         Disjunction lhs = new Disjunction(SimplePredicates.newString("foo"),
-                                          SimplePredicates.newString("bar"));
-        assertTrue(lhs.equals(lhs));
-        assertFalse(lhs.equals(new Object()));
+                SimplePredicates.newString("bar"));
+        assertEquals(lhs, lhs);
+        assertNotEquals(lhs, new Object());
 
         Disjunction rhs = new Disjunction();
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.addOperand(SimplePredicates.newString("foo"));
-        assertFalse(lhs.equals(rhs));
+        assertNotEquals(lhs, rhs);
         rhs.addOperand(SimplePredicates.newString("bar"));
-        assertTrue(lhs.equals(rhs));
+        assertEquals(lhs, rhs);
     }
 
     @Test
-    public void requireThatNodeDelimiterIsOR() {
+    void requireThatNodeDelimiterIsOR() {
         assertEquals("", newDisjunction().toString());
         assertEquals("foo", newDisjunction("foo").toString());
         assertEquals("foo or bar", newDisjunction("foo", "bar").toString());
@@ -88,22 +85,22 @@ public class DisjunctionTest {
     }
 
     @Test
-    public void requireThatSimpleDisjunctionsArePrettyPrinted() {
+    void requireThatSimpleDisjunctionsArePrettyPrinted() {
         assertEquals("foo or bar",
-                     new Disjunction(SimplePredicates.newString("foo"),
-                                     SimplePredicates.newString("bar")).toString());
+                new Disjunction(SimplePredicates.newString("foo"),
+                        SimplePredicates.newString("bar")).toString());
     }
 
     @Test
-    public void requireThatComplexDisjunctionsArePrintedAsGroup() {
+    void requireThatComplexDisjunctionsArePrintedAsGroup() {
         assertEquals("foo or bar or baz",
-                     new Disjunction(SimplePredicates.newString("foo"),
-                                     new Disjunction(SimplePredicates.newString("bar"),
-                                                     SimplePredicates.newString("baz"))).toString());
+                new Disjunction(SimplePredicates.newString("foo"),
+                        new Disjunction(SimplePredicates.newString("bar"),
+                                SimplePredicates.newString("baz"))).toString());
         assertEquals("foo or (bar and baz)",
-                     new Disjunction(SimplePredicates.newString("foo"),
-                                     new Conjunction(SimplePredicates.newString("bar"),
-                                                     SimplePredicates.newString("baz"))).toString());
+                new Disjunction(SimplePredicates.newString("foo"),
+                        new Conjunction(SimplePredicates.newString("bar"),
+                                SimplePredicates.newString("baz"))).toString());
     }
 
     private static Disjunction newDisjunction(String... operands) {
