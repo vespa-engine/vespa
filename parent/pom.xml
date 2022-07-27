@@ -301,6 +301,27 @@
                         </execution>
                     </executions>
                 </plugin>
+                <plugin>
+                    <!--
+                    Configure rewrite-maven-plugin to facilitate Junit4 to Junit5 conversion.
+                    Run "mvn rewrite:run" to perform automated rewrite to Junit5.
+                    -->
+                    <groupId>org.openrewrite.maven</groupId>
+                    <artifactId>rewrite-maven-plugin</artifactId>
+                    <version>4.27.0</version>
+                    <configuration>
+                        <activeRecipes>
+                            <recipe>org.openrewrite.java.testing.junit5.JUnit5BestPractices</recipe>
+                        </activeRecipes>
+                    </configuration>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.openrewrite.recipe</groupId>
+                            <artifactId>rewrite-testing-frameworks</artifactId>
+                            <version>1.24.0</version>
+                        </dependency>
+                    </dependencies>
+                </plugin>
             </plugins>
         </pluginManagement>
     </build>
@@ -422,7 +443,6 @@
     </profiles>
     <dependencyManagement>
         <dependencies>
-
             <!-- Please keep this list lexically sorted by groupId, then artifactId.-->
 
             <dependency>
@@ -917,6 +937,15 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope> <!-- TODO: remove scope from parent pom -->
+            </dependency>
+            <dependency>
+                <!-- Facilitates automated Junit4 to Junit5 conversion.
+                     See pluginManagement of rewrite-maven-plugin for more details -->
+                <groupId>org.openrewrite.recipe</groupId>
+                <artifactId>rewrite-recipe-bom</artifactId>
+                <version>1.5.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>org.ow2.asm</groupId>
