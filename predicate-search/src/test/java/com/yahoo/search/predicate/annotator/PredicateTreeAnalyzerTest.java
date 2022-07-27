@@ -4,7 +4,7 @@ package com.yahoo.search.predicate.annotator;
 import com.yahoo.document.predicate.FeatureConjunction;
 import com.yahoo.document.predicate.Predicate;
 import com.yahoo.document.predicate.PredicateOperator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
@@ -12,14 +12,12 @@ import static com.yahoo.document.predicate.Predicates.and;
 import static com.yahoo.document.predicate.Predicates.feature;
 import static com.yahoo.document.predicate.Predicates.not;
 import static com.yahoo.document.predicate.Predicates.or;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PredicateTreeAnalyzerTest {
 
     @Test
-    public void require_that_minfeature_is_1_for_simple_term() {
+    void require_that_minfeature_is_1_for_simple_term() {
         Predicate p = feature("foo").inSet("bar");
         PredicateTreeAnalyzerResult r = PredicateTreeAnalyzer.analyzePredicateTree(p);
         assertEquals(1, r.minFeature);
@@ -28,14 +26,14 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_minfeature_is_1_for_simple_negative_term() {
+    void require_that_minfeature_is_1_for_simple_negative_term() {
         Predicate p = not(feature("foo").inSet("bar"));
         PredicateTreeAnalyzerResult r = PredicateTreeAnalyzer.analyzePredicateTree(p);
         assertEquals(1, r.minFeature);
     }
 
     @Test
-    public void require_that_minfeature_is_sum_for_and() {
+    void require_that_minfeature_is_sum_for_and() {
         Predicate p =
                 and(
                         feature("foo").inSet("bar"),
@@ -51,7 +49,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_minfeature_is_min_for_or() {
+    void require_that_minfeature_is_min_for_or() {
         Predicate p =
                 or(
                         and(
@@ -73,7 +71,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_minfeature_rounds_up() {
+    void require_that_minfeature_rounds_up() {
         Predicate p =
                 or(
                         feature("foo").inSet("bar"),
@@ -85,7 +83,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_minvalue_feature_set_considers_all_values() {
+    void require_that_minvalue_feature_set_considers_all_values() {
         {
             Predicate p =
                     and(
@@ -107,7 +105,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_not_features_dont_count_towards_minfeature_calculation() {
+    void require_that_not_features_dont_count_towards_minfeature_calculation() {
         Predicate p =
                 and(
                         feature("foo").inSet("A"),
@@ -120,7 +118,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_multilevel_and_stores_size() {
+    void require_that_multilevel_and_stores_size() {
         Predicate p =
                 and(
                         and(
@@ -144,7 +142,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_not_ranges_dont_count_towards_minfeature_calculation() {
+    void require_that_not_ranges_dont_count_towards_minfeature_calculation() {
         Predicate p =
                 and(
                         feature("foo").inRange(0, 10),
@@ -157,7 +155,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_featureconjunctions_contribute_as_one_feature() {
+    void require_that_featureconjunctions_contribute_as_one_feature() {
         Predicate p =
                 conj(
                         feature("foo").inSet("bar"),
@@ -168,7 +166,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_featureconjunctions_count_as_leaf_in_subtree_calculation() {
+    void require_that_featureconjunctions_count_as_leaf_in_subtree_calculation() {
         Predicate p =
                 and(
                         and(
@@ -189,7 +187,7 @@ public class PredicateTreeAnalyzerTest {
     }
 
     @Test
-    public void require_that_multiple_indentical_feature_conjunctions_does_not_contribute_more_than_one() {
+    void require_that_multiple_indentical_feature_conjunctions_does_not_contribute_more_than_one() {
         Predicate p =
                 and(
                         or(

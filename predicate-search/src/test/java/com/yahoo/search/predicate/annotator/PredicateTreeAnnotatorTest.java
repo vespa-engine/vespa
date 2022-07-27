@@ -11,7 +11,7 @@ import com.yahoo.document.predicate.RangePartition;
 import com.yahoo.search.predicate.index.Feature;
 import com.yahoo.search.predicate.index.IntervalWithBounds;
 import com.yahoo.search.predicate.index.conjunction.IndexableFeatureConjunction;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,14 +21,12 @@ import static com.yahoo.document.predicate.Predicates.and;
 import static com.yahoo.document.predicate.Predicates.feature;
 import static com.yahoo.document.predicate.Predicates.not;
 import static com.yahoo.document.predicate.Predicates.or;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PredicateTreeAnnotatorTest {
 
     @Test
-    public void require_that_or_intervals_are_the_same() {
+    void require_that_or_intervals_are_the_same() {
         Predicate p =
                 or(
                         feature("key1").inSet("value1"),
@@ -42,7 +40,7 @@ public class PredicateTreeAnnotatorTest {
     }
 
     @Test
-    public void require_that_ands_below_ors_get_different_intervals() {
+    void require_that_ands_below_ors_get_different_intervals() {
         Predicate p =
                 or(
                         and(
@@ -62,7 +60,7 @@ public class PredicateTreeAnnotatorTest {
     }
 
     @Test
-    public void require_that_nots_get_correct_intervals() {
+    void require_that_nots_get_correct_intervals() {
         Predicate p =
                 and(
                         feature("key").inSet("value"),
@@ -78,7 +76,7 @@ public class PredicateTreeAnnotatorTest {
     }
 
     @Test
-    public void require_that_final_first_not_interval_is_extended() {
+    void require_that_final_first_not_interval_is_extended() {
         Predicate p = not(feature("key").inSet("A"));
         PredicateTreeAnnotations r = PredicateTreeAnnotator.createPredicateTreeAnnotations(p);
         assertEquals(1, r.minFeature);
@@ -89,7 +87,7 @@ public class PredicateTreeAnnotatorTest {
     }
 
     @Test
-    public void show_different_types_of_not_intervals() {
+    void show_different_types_of_not_intervals() {
         {
             Predicate p =
                     and(
@@ -151,7 +149,7 @@ public class PredicateTreeAnnotatorTest {
     }
 
     @Test
-    public void require_that_hashed_ranges_get_correct_intervals() {
+    void require_that_hashed_ranges_get_correct_intervals() {
         Predicate p =
                 and(
                         range("key",
@@ -183,7 +181,7 @@ public class PredicateTreeAnnotatorTest {
     }
 
     @Test
-    public void require_that_extreme_ranges_works() {
+    void require_that_extreme_ranges_works() {
         Predicate p =
                 and(
                         range("max range", partition("max range=9223372036854775806-9223372036854775807")),
@@ -202,7 +200,7 @@ public class PredicateTreeAnnotatorTest {
     }
 
     @Test
-    public void require_that_featureconjunctions_are_registered_and_given_an_interval() {
+    void require_that_featureconjunctions_are_registered_and_given_an_interval() {
         Predicate p =
                 and(
                         or(

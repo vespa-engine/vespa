@@ -4,7 +4,7 @@ package com.yahoo.search.predicate.index.conjunction;
 import com.yahoo.document.predicate.FeatureConjunction;
 import com.yahoo.document.predicate.Predicate;
 import com.yahoo.search.predicate.PredicateQuery;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -14,14 +14,12 @@ import java.util.List;
 import static com.yahoo.document.predicate.Predicates.feature;
 import static com.yahoo.document.predicate.Predicates.not;
 import static com.yahoo.search.predicate.serialization.SerializationTestHelper.assertSerializationDeserializationMatches;
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ConjunctionIndexTest {
 
     @Test
-    public void require_that_single_conjunction_can_be_indexed() {
+    void require_that_single_conjunction_can_be_indexed() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         builder.indexConjunction(indexableConj(conj(feature("a").inSet("1"), feature("b").inSet("2"))));
         assertEquals(2, builder.calculateFeatureCount());
@@ -29,7 +27,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_large_conjunction_can_be_indexed() {
+    void require_that_large_conjunction_can_be_indexed() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         builder.indexConjunction(indexableConj(
                 conj(
@@ -41,7 +39,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_multiple_conjunctions_can_be_indexed() {
+    void require_that_multiple_conjunctions_can_be_indexed() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         builder.indexConjunction(indexableConj(
                 conj(
@@ -70,7 +68,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_search_for_simple_conjunctions_work() {
+    void require_that_search_for_simple_conjunctions_work() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
 
         IndexableFeatureConjunction c1 = indexableConj(
@@ -105,7 +103,7 @@ public class ConjunctionIndexTest {
 
 
     @Test
-    public void require_that_conjunction_with_not_is_indexed() {
+    void require_that_conjunction_with_not_is_indexed() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         builder.indexConjunction(indexableConj(
                 conj(
@@ -121,7 +119,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_not_works_when_k_is_0() {
+    void require_that_not_works_when_k_is_0() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         IndexableFeatureConjunction c1 = indexableConj(
                 conj(
@@ -161,7 +159,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_not_works_when_k_is_1() {
+    void require_that_not_works_when_k_is_1() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         IndexableFeatureConjunction c1 = indexableConj(
                 conj(
@@ -197,7 +195,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_not_works_when_k_is_2() {
+    void require_that_not_works_when_k_is_2() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         IndexableFeatureConjunction c1 = indexableConj(
                 conj(
@@ -236,7 +234,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_multi_term_queries_are_supported() {
+    void require_that_multi_term_queries_are_supported() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         IndexableFeatureConjunction c1 = indexableConj(
                 conj(
@@ -255,7 +253,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_subqueries_are_supported() {
+    void require_that_subqueries_are_supported() {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         IndexableFeatureConjunction c1 = indexableConj(
                 conj(
@@ -328,7 +326,7 @@ public class ConjunctionIndexTest {
     }
 
     @Test
-    public void require_that_serialization_and_deserialization_retain_data() throws IOException {
+    void require_that_serialization_and_deserialization_retain_data() throws IOException {
         ConjunctionIndexBuilder builder = new ConjunctionIndexBuilder();
         builder.indexConjunction(indexableConj(
                 conj(

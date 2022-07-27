@@ -1,9 +1,9 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.predicate.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
@@ -11,7 +11,7 @@ import static org.junit.Assert.assertEquals;
 public class PostingListSearchTest {
 
     @Test
-    public void require_that_search_find_index_of_first_element_higher() {
+    void require_that_search_find_index_of_first_element_higher() {
         int[] values = {2, 8, 4000, 4001, 4100, 10000, 10000000};
         int length = values.length;
         assertEquals(0, PostingListSearch.interpolationSearch(values, 0, length, 1));
@@ -24,7 +24,7 @@ public class PostingListSearchTest {
     }
 
     @Test
-    public void require_that_search_is_correct_for_one_size_arrays() {
+    void require_that_search_is_correct_for_one_size_arrays() {
         int[] values = {100};
         assertEquals(0, PostingListSearch.interpolationSearch(values, 0, 1, 0));
         assertEquals(0, PostingListSearch.interpolationSearch(values, 0, 1, 99));
@@ -34,7 +34,7 @@ public class PostingListSearchTest {
     }
 
     @Test
-    public void require_that_search_is_correct_for_sub_arrays() {
+    void require_that_search_is_correct_for_sub_arrays() {
         int[] values = {0, 2, 8, 4000, 4001, 4100};
         assertEquals(1, PostingListSearch.interpolationSearch(values, 1, 2, 1));
         assertEquals(2, PostingListSearch.interpolationSearch(values, 1, 2, 2));
@@ -45,7 +45,7 @@ public class PostingListSearchTest {
     }
 
     @Test
-    public void require_that_search_is_correct_for_large_arrays() {
+    void require_that_search_is_correct_for_large_arrays() {
         int length = 10000;
         int[] values = new int[length];
         for (int i = 0; i < length; i++) {

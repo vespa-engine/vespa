@@ -2,11 +2,9 @@
 package com.yahoo.search.predicate.index.conjunction;
 
 import com.yahoo.search.predicate.SubqueryBitmap;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author bjorncs
@@ -15,7 +13,7 @@ public class ConjunctionIdIteratorTest {
 
     @SuppressWarnings("PointlessBitwiseExpression")
     @Test
-    public void require_that_next_returns_skips_to_correct_value() {
+    void require_that_next_returns_skips_to_correct_value() {
         // NOTE: LST bit represents the conjunction sign: 0 => negative, 1 => positive.
         int[] conjunctionIds = new int[]{
                 0 | 1,
@@ -49,7 +47,7 @@ public class ConjunctionIdIteratorTest {
     }
 
     @Test
-    public void require_that_subquery_is_correct() {
+    void require_that_subquery_is_correct() {
         ConjunctionIdIterator iterator = new ConjunctionIdIterator(0b1111, new int[]{1});
         assertEquals(0b1111, iterator.getSubqueryBitmap());
     }
