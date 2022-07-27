@@ -1,9 +1,8 @@
 // Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.security;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -14,35 +13,35 @@ import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author bjorncs
  */
-@RunWith(Parameterized.class)
 public class X509CertificateBuilderTest {
 
-    @Parameterized.Parameters(name = "{0}")
     public static Collection<Object[]> data() {
-        return Arrays.asList(new Object[][] {
+        return Arrays.asList(new Object[][]{
                 {KeyAlgorithm.RSA, 2048, SignatureAlgorithm.SHA512_WITH_RSA},
                 {KeyAlgorithm.EC, 256, SignatureAlgorithm.SHA512_WITH_ECDSA}});
     }
 
-    private final KeyAlgorithm keyAlgorithm;
-    private final int keySize;
-    private final SignatureAlgorithm signatureAlgorithm;
+    private KeyAlgorithm keyAlgorithm;
+    private int keySize;
+    private SignatureAlgorithm signatureAlgorithm;
 
-    public X509CertificateBuilderTest(KeyAlgorithm keyAlgorithm,
-                                      int keySize,
-                                      SignatureAlgorithm signatureAlgorithm) {
+    public void initX509CertificateBuilderTest(KeyAlgorithm keyAlgorithm,
+                                                int keySize,
+                                                SignatureAlgorithm signatureAlgorithm) {
         this.keyAlgorithm = keyAlgorithm;
         this.keySize = keySize;
         this.signatureAlgorithm = signatureAlgorithm;
     }
 
-    @Test
-    public void can_build_self_signed_certificate() {
+    @MethodSource("data")
+    @ParameterizedTest(name = "{0}")
+    void can_build_self_signed_certificate(KeyAlgorithm keyAlgorithm, int keySize, SignatureAlgorithm signatureAlgorithm) {
+        initX509CertificateBuilderTest(keyAlgorithm, keySize, signatureAlgorithm);
         KeyPair keyPair = KeyUtils.generateKeypair(keyAlgorithm, keySize);
         X500Principal subject = new X500Principal("CN=myservice");
         X509Certificate cert =
@@ -53,13 +52,15 @@ public class X509CertificateBuilderTest {
                         Instant.now().plus(1, ChronoUnit.DAYS),
                         signatureAlgorithm,
                         BigInteger.valueOf(1))
-                .setBasicConstraints(true, true)
-                .build();
+                        .setBasicConstraints(true, true)
+                        .build();
         assertEquals(subject, cert.getSubjectX500Principal());
     }
 
-    @Test
-    public void can_build_certificate_from_csr() {
+    @MethodSource("data")
+    @ParameterizedTest(name = "{0}")
+    void can_build_certificate_from_csr(KeyAlgorithm keyAlgorithm, int keySize, SignatureAlgorithm signatureAlgorithm) {
+        initX509CertificateBuilderTest(keyAlgorithm, keySize, signatureAlgorithm);
         X500Principal subject = new X500Principal("CN=subject");
         X500Principal issuer = new X500Principal("CN=issuer");
         KeyPair csrKeypair = KeyUtils.generateKeypair(keyAlgorithm, keySize);

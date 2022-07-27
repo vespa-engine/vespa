@@ -7,13 +7,14 @@ import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import javax.security.auth.x500.X500Principal;
+
+import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Files;
@@ -36,16 +37,16 @@ import static org.mockito.Mockito.verify;
 public class AutoReloadingX509KeyManagerTest {
     private static final X500Principal SUBJECT = new X500Principal("CN=dummy");
 
-    @Rule
-    public TemporaryFolder tempDirectory = new TemporaryFolder();
+    @TempDir
+    public File tempDirectory;
 
     @Test
-    public void crypto_material_is_reloaded_when_scheduler_task_is_executed() throws IOException {
+    void crypto_material_is_reloaded_when_scheduler_task_is_executed() throws IOException {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
-        Path privateKeyFile = tempDirectory.newFile().toPath();
+        Path privateKeyFile = File.createTempFile("junit", null, tempDirectory).toPath();
         Files.write(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()).getBytes());
 
-        Path certificateFile = tempDirectory.newFile().toPath();
+        Path certificateFile = File.createTempFile("junit", null, tempDirectory).toPath();
         BigInteger serialNumberInitialCertificate = BigInteger.ONE;
         X509Certificate initialCertificate = generateCertificate(keyPair, serialNumberInitialCertificate);
         Files.write(certificateFile, X509CertificateUtils.toPem(initialCertificate).getBytes());
